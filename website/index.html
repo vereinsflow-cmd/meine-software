@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VereinsFlow – Vereinsverwaltung mit Helferplanung</title>
+  <meta name="description" content="VereinsFlow bringt Vereinsarbeit in Fluss: Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten an einem Ort – sicher, mobil nutzbar und auf Deutsch.">
+  <link rel="canonical" href="https://vereinsflow.example/">
+  <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1420" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:site_name" content="VereinsFlow">
+  <meta property="og:title" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
+  <meta property="og:description" content="Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten an einem Ort – sicher, mobil nutzbar und auf Deutsch.">
+  <meta property="og:url" content="https://vereinsflow.example/">
+  <meta property="og:image" content="https://vereinsflow.example/assets/img/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script src="assets/js/site.js" defer></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "VereinsFlow",
+    "url": "https://vereinsflow.example/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "de",
+    "description": "Webanwendung für die Vereinsverwaltung: Mitglieder, Abteilungen, Veranstaltungen, Helferschichten, Aufgaben, Kalender, Nachrichten und Dokumente mit Rollen, Rechten und DSGVO-Funktionen."
+  }
+  </script>
+</head>
+<body id="top">
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<!-- Symbole: lucide (ISC-Lizenz), dieselbe Bibliothek wie in der Anwendung -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
+  <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+  <symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></symbol>
+  <symbol id="i-hand-helping" viewBox="0 0 24 24"><path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14"/><path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 13 6 6"/></symbol>
+  <symbol id="i-list-checks" viewBox="0 0 24 24"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></symbol>
+  <symbol id="i-calendar-sync" viewBox="0 0 24 24"><path d="M11 10v4h4"/><path d="m11 14 1.535-1.605a5 5 0 018 1.5"/><path d="M16 2v3"/><path d="m21 18-1.535 1.605a5 5 0 01-8-1.5"/><path d="M21 22v-4h-4"/><path d="M21 8.517V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h3.517"/><path d="M3 9h4"/><path d="M8 2v3"/></symbol>
+  <symbol id="i-message-square" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+  <symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
+  <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-shield-user" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M6.376 18.91a6 6 0 0 1 11.249.003"/><circle cx="12" cy="11" r="4"/></symbol>
+  <symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1"/><rect x="3" y="10" width="18" height="12" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></symbol>
+  <symbol id="i-rotate-ccw-clock" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+  <symbol id="i-file-check" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m9 15 2 2 4-4"/></symbol>
+  <symbol id="i-building-complex" viewBox="0 0 24 24"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol>
+  <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></symbol>
+  <symbol id="i-mail-plus" viewBox="0 0 24 24"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h8"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><path d="M19 16v6"/><path d="M16 19h6"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+  <symbol id="i-user-cog" viewBox="0 0 24 24"><path d="M10 15H6a4 4 0 0 0-4 4v2"/><path d="m14.305 16.53.923-.382"/><path d="m15.228 13.852-.923-.383"/><path d="m16.852 12.228-.383-.923"/><path d="m16.852 17.772-.383.924"/><path d="m19.148 12.228.383-.923"/><path d="m19.53 18.696-.382-.924"/><path d="m20.772 13.852.924-.383"/><path d="m20.772 16.148.924.383"/><circle cx="18" cy="15" r="3"/><circle cx="9" cy="7" r="4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-bell-ring" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></symbol>
+</svg>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#top" aria-label="VereinsFlow – zum Seitenanfang">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/img/logo-dark.svg">
+        <img src="assets/img/logo.svg" alt="" width="174" height="28">
+      </picture>
+    </a>
+    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
+      <ul>
+        <li><a href="#funktionen">Funktionen</a></li>
+        <li><a href="#helferschichten">Helferschichten</a></li>
+        <li><a href="#rollen">Rollen</a></li>
+        <li><a href="#sicherheit">Sicherheit</a></li>
+        <li><a href="#faq">Fragen</a></li>
+      </ul>
+      <a class="btn btn-primary btn-sm btn-header" href="#kontakt">Demo anfragen</a>
+    </nav>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="inhalt">
+
+  <!-- ===== Einstieg ===== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="container">
+      <p class="eyebrow">Vereinsverwaltung für den Alltag im Ehrenamt</p>
+      <h1 id="hero-title">Bringt Vereinsarbeit <span class="flow-word">in Fluss</span>.</h1>
+      <p class="lead">VereinsFlow bündelt Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten an einem Ort – übersichtlich, sicher und komplett auf Deutsch.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+        <a class="btn btn-secondary btn-lg" href="#funktionen">Funktionen ansehen</a>
+      </div>
+      <ul class="hero-points">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Zugang nur per Einladung</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Daten jedes Vereins strikt getrennt</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Am Rechner und Smartphone nutzbar</li>
+      </ul>
+
+      <div class="hero-visual">
+        <div class="browser">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/dashboard-dark-960.webp 960w, assets/img/app/dashboard-dark-1920.webp 1920w" sizes="(max-width: 719px) 1px, (min-width: 1200px) 1120px, 92vw">
+            <img src="assets/img/app/dashboard-light-960.webp" srcset="assets/img/app/dashboard-light-960.webp 960w, assets/img/app/dashboard-light-1920.webp 1920w" sizes="(max-width: 719px) 1px, (min-width: 1200px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern, Terminen, freien Helferplätzen und Helferstunden sowie eigene Aufgaben und Einsätze">
+          </picture>
+        </div>
+        <div class="phone hero-phone">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-helferplanung-dark-390.webp 390w, assets/img/app/phone-helferplanung-dark-780.webp 780w" sizes="(max-width: 719px) 70vw, 230px">
+            <img src="assets/img/app/phone-helferplanung-light-390.webp" srcset="assets/img/app/phone-helferplanung-light-390.webp 390w, assets/img/app/phone-helferplanung-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 230px" width="780" height="1688" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten zum Eintragen">
+          </picture>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Kennzahlen ===== -->
+  <section class="facts" aria-label="VereinsFlow in Kürze">
+    <div class="container">
+      <ul>
+        <li><strong>5 Rollen</strong><span>vom Vereinsadministrator bis zum Mitglied, mit Rechten je Verein, Abteilung oder nur für eigene Daten</span></li>
+        <li><strong>1 Verein = 1 Mandant</strong><span>Daten mehrfach getrennt und automatisch geprüft</span></li>
+        <li><strong>1 Cookie</strong><span>nur das technisch notwendige für die Anmeldung – kein Tracking</span></li>
+        <li><strong>100 % Deutsch</strong><span>Oberfläche, Anleitung und E-Mails</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Ausgangslage ===== -->
+  <section class="section" aria-labelledby="problem-title">
+    <div class="container">
+      <div class="section-head center">
+        <h2 id="problem-title">Vereinsarbeit ist Ehrenamt. Die Verwaltung sollte es nicht schwerer machen.</h2>
+        <p class="lead">Aus Listen, Chats und Rundmails wird ein gemeinsamer Ablauf – für Vorstand, Abteilungen und Helfer.</p>
+      </div>
+      <div class="grid grid-3 swap">
+        <article class="card reveal">
+          <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-hand-helping"/></svg></div>
+          <h3>Helfer koordinieren</h3>
+          <div class="before"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></span><div><small>Bisher</small><p>Chatgruppen, Zettel am Schwarzen Brett und doppelt vergebene Plätze.</p></div></div>
+          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Helfer tragen sich selbst in Schichten ein. Überbuchung und Doppelbelegung sind ausgeschlossen.</p></div></div>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
+          <h3>Mitglieder verwalten</h3>
+          <div class="before"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></span><div><small>Bisher</small><p>Mehrere Excel-Listen mit unterschiedlichem Stand.</p></div></div>
+          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Eine Mitgliederverwaltung mit Import, Suche, Abteilungen, Einwilligungen und Änderungshistorie.</p></div></div>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
+          <h3>Informationen verteilen</h3>
+          <div class="before"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></span><div><small>Bisher</small><p>Rundmails an wechselnde Verteiler – und niemand weiß, wer sie gelesen hat.</p></div></div>
+          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Nachrichten an den ganzen Verein, eine Abteilung oder gezielt an Teilnehmer und Helfer – mit Lesestatistik.</p></div></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Funktionen ===== -->
+  <section class="section section-alt" id="funktionen" aria-labelledby="funktionen-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Funktionen</p>
+        <h2 id="funktionen-title">Alles, was Vereinsarbeit braucht</h2>
+        <p class="lead">Neun Bereiche, die zusammenarbeiten – statt neun einzelner Werkzeuge.</p>
+      </div>
+      <div class="grid grid-3">
+        <article class="card reveal">
+          <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
+          <h3>Mitglieder</h3>
+          <p>Stammdaten, Notizen, Einwilligungen und Änderungshistorie. CSV-Import mit Vorschau, Export, Statistik, Archiv und Papierkorb.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-teal"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
+          <h3>Abteilungen und Gruppen</h3>
+          <p>Abteilungen mit eigenen Leitungen und Gruppen. Rechte und Nachrichten lassen sich auf sie beschränken.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg></div>
+          <h3>Veranstaltungen</h3>
+          <p>Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-hand-helping"/></svg></div>
+          <h3>Helferschichten</h3>
+          <p>Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Druckansicht und Erinnerungen.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-amber"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg></div>
+          <h3>Aufgaben und Checklisten</h3>
+          <p>Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status – auch als Checkliste je Veranstaltung.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
+          <h3>Kalender</h3>
+          <p>Monat, Woche, Tag oder Liste. Export je Termin und ein persönlicher Abo-Link für jede Kalender-App.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-rose"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
+          <h3>Nachrichten</h3>
+          <p>An Verein, Abteilung, Teilnehmer oder Helfer. Entwürfe, Ankündigungen, Rückruf, Lesestatistik und Benachrichtigungscenter.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-amber"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></div>
+          <h3>Dokumente</h3>
+          <p>Satzung, Protokolle und Formulare an einem Ort – mit Zugriffsstufen für alle Mitglieder, nur den Vorstand oder nur die Verwaltung.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
+          <h3>Auswertungen</h3>
+          <p>Ein Dashboard je Rolle mit Kennzahlen und Diagrammen zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Herzstück: Helferschichten ===== -->
+  <section class="section" id="helferschichten" aria-labelledby="helfer-title">
+    <div class="container">
+      <div class="spot">
+        <div class="spot-text reveal">
+          <p class="eyebrow">Das Herzstück</p>
+          <h2 id="helfer-title">Helferschichten, die sich fast von selbst organisieren</h2>
+          <p class="lead">Kein Zettelchaos, keine Nachfragen, kein Loch beim Sommerfest: Helfer sehen offene Schichten und tragen sich mit einem Klick ein. Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</p>
+          <ul class="checks">
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen.</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung.</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht,</strong> zum Beispiel für den Getränkestand.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel-Übersicht:</strong> „Beginnt bald“, „Teilweise besetzt“, „Voll besetzt“ – ganz ohne Tabelle.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, Stundenerfassung, Druckansicht, CSV-Export und Erinnerungen.</span></li>
+          </ul>
+        </div>
+        <div class="spot-media reveal">
+          <div class="browser">
+            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/schichten-dark-960.webp 960w, assets/img/app/schichten-dark-1920.webp 1920w" sizes="(min-width: 900px) 620px, 92vw">
+              <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 900px) 620px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
+            </picture>
+          </div>
+          <div class="phone">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-schichten-dark-390.webp 390w, assets/img/app/phone-schichten-dark-780.webp 780w" sizes="190px">
+              <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="190px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
+            </picture>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Im Detail ===== -->
+  <section class="section section-alt" id="details" aria-labelledby="details-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Im Detail</p>
+        <h2 id="details-title">Weniger suchen, mehr Verein</h2>
+      </div>
+
+      <div class="spot" id="mitglieder">
+        <div class="spot-text reveal">
+          <h3>Mitglieder im Griff – ohne Datenchaos</h3>
+          <p class="lead">Vorhandene Listen lassen sich per CSV übernehmen, nach Abteilung, Status oder Namen filtern und mit Einwilligungen dokumentieren. Jede Änderung bleibt nachvollziehbar.</p>
+          <ul class="checks">
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>CSV-Import mit Vorschau:</strong> erst prüfen, dann übernehmen.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Suche, Filter und Sortierung,</strong> dazu Archiv und Papierkorb statt endgültigem Löschen.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Abteilungen und Gruppen</strong> mit eigenen Leitungen.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Einwilligungen und Notizen</strong> je Mitglied, samt Änderungshistorie.</span></li>
+          </ul>
+        </div>
+        <div class="spot-media reveal">
+          <div class="browser">
+            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/mitglieder-dark-960.webp 960w, assets/img/app/mitglieder-dark-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw">
+              <img src="assets/img/app/mitglieder-light-960.webp" srcset="assets/img/app/mitglieder-light-960.webp 960w, assets/img/app/mitglieder-light-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
+            </picture>
+          </div>
+        </div>
+      </div>
+
+      <div class="spot flip" id="veranstaltungen">
+        <div class="spot-text reveal">
+          <h3>Von der Anmeldung bis zum Kalender-Abo</h3>
+          <p class="lead">Veranstaltungen durchlaufen einen klaren Ablauf, Teilnehmer melden sich an, und der Kalender zeigt Termine und eigene Einsätze in einer Ansicht.</p>
+          <ul class="checks">
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Anmeldung mit Teilnehmerlimit</strong> und Warteliste.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Serientermine und Duplizieren</strong> sparen Tipparbeit.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Absage mit Benachrichtigung</strong> an alle Betroffenen.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kalender-Abo:</strong> ein persönlicher, jederzeit widerrufbarer Link für jede Kalender-App.</span></li>
+          </ul>
+        </div>
+        <div class="spot-media reveal">
+          <div class="browser">
+            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/kalender-dark-960.webp 960w, assets/img/app/kalender-dark-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw">
+              <img src="assets/img/app/kalender-light-960.webp" srcset="assets/img/app/kalender-light-960.webp 960w, assets/img/app/kalender-light-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
+            </picture>
+          </div>
+        </div>
+      </div>
+
+      <div class="spot" id="auswertungen">
+        <div class="spot-text reveal">
+          <h3>Zahlen, die dem Vorstand helfen</h3>
+          <p class="lead">Das Dashboard passt sich der Rolle an: Helfer sehen ihre Einsätze, der Vorstand sieht Mitgliederentwicklung, Termine, Helferstunden und offene Aufgaben.</p>
+          <ul class="checks">
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Diagramme oder Tabelle:</strong> Donut, Balken, Linie und Fläche – jederzeit auch als Tabelle.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Zeiträume</strong> von Wochen bis Jahren.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Warnungen an der richtigen Stelle,</strong> etwa wenn Helferschichten noch nicht besetzt sind.</span></li>
+          </ul>
+        </div>
+        <div class="spot-media reveal">
+          <div class="browser">
+            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/auswertung-dark-960.webp 960w, assets/img/app/auswertung-dark-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw">
+              <img src="assets/img/app/auswertung-light-960.webp" srcset="assets/img/app/auswertung-light-960.webp 960w, assets/img/app/auswertung-light-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Donut-Diagramm der Mitglieder nach Status">
+            </picture>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Rollen ===== -->
+  <section class="section" id="rollen" aria-labelledby="rollen-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Rollen und Rechte</p>
+        <h2 id="rollen-title">Jeder sieht, was er braucht</h2>
+        <p class="lead">Fünf Standardrollen sind sofort einsatzbereit. Die Rechte gelten je nach Rolle für den ganzen Verein, die eigene Abteilung oder nur für die eigenen Daten.</p>
+      </div>
+      <div class="roles">
+        <article class="role reveal">
+          <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-user-cog"/></svg></div>
+          <h3>Vereinsadministrator</h3>
+          <p>Verwaltet den gesamten Verein: Benutzer, Rollen, Mitglieder, Veranstaltungen und Einstellungen.</p>
+          <span class="scope-gap"></span>
+          <span class="scope"><small>Mitgliederdaten</small>Gesamter Verein</span>
+        </article>
+        <article class="role reveal">
+          <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-shield-user"/></svg></div>
+          <h3>Vorstandsmitglied</h3>
+          <p>Verwaltet Mitglieder, erstellt Veranstaltungen, organisiert Helfer und versendet Nachrichten.</p>
+          <span class="scope-gap"></span>
+          <span class="scope"><small>Mitgliederdaten</small>Gesamter Verein</span>
+        </article>
+        <article class="role reveal">
+          <div class="card-icon tone-amber"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
+          <h3>Abteilungsleiter</h3>
+          <p>Verwaltet Mitglieder, Veranstaltungen und Helferschichten der eigenen Abteilung.</p>
+          <span class="scope-gap"></span>
+          <span class="scope"><small>Mitgliederdaten</small>Eigene Abteilung</span>
+        </article>
+        <article class="role reveal">
+          <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-hand-helping"/></svg></div>
+          <h3>Helfer</h3>
+          <p>Sieht Veranstaltungen, trägt sich in Helferschichten ein und sieht die eigenen Aufgaben.</p>
+          <span class="scope-gap"></span>
+          <span class="scope"><small>Mitgliederdaten</small>Nur eigene</span>
+        </article>
+        <article class="role reveal">
+          <div class="card-icon tone-teal"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></div>
+          <h3>Mitglied</h3>
+          <p>Sieht das eigene Profil und die Veranstaltungen und kann sich für Helferschichten eintragen.</p>
+          <span class="scope-gap"></span>
+          <span class="scope"><small>Mitgliederdaten</small>Nur eigene</span>
+        </article>
+      </div>
+      <p class="note">Dokumente lassen sich zusätzlich in Zugriffsstufen ablegen: für alle Mitglieder, nur für den Vorstand oder nur für die Verwaltung.</p>
+    </div>
+  </section>
+
+  <!-- ===== Mobil ===== -->
+  <section class="section section-alt" id="mobil" aria-labelledby="mobil-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Mobil</p>
+        <h2 id="mobil-title">Im Browser – auf jedem Gerät</h2>
+        <p class="lead">Keine Installation und kein App-Store-Konto: VereinsFlow passt sich Smartphone, Tablet und Rechner an. Helfer tragen sich unterwegs ein, der Vorstand hat den Überblick in der Hosentasche.</p>
+      </div>
+      <div class="phones">
+        <figure class="reveal">
+          <div class="phone">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-dashboard-dark-390.webp 390w, assets/img/app/phone-dashboard-dark-780.webp 780w" sizes="250px">
+              <img src="assets/img/app/phone-dashboard-light-390.webp" srcset="assets/img/app/phone-dashboard-light-390.webp 390w, assets/img/app/phone-dashboard-light-780.webp 780w" sizes="250px" width="780" height="1688" loading="lazy" decoding="async" alt="Dashboard auf dem Smartphone mit Kennzahlen und Warnung zu nicht besetzten Schichten">
+            </picture>
+          </div>
+          <figcaption>Dashboard mit Kennzahlen und Hinweisen</figcaption>
+        </figure>
+        <figure class="reveal">
+          <div class="phone">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-schichten-dark-390.webp 390w, assets/img/app/phone-schichten-dark-780.webp 780w" sizes="250px">
+              <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="250px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone mit besetzter Schicht und eingetragenen Helfern">
+            </picture>
+          </div>
+          <figcaption>Helferplan zur Veranstaltung</figcaption>
+        </figure>
+        <figure class="reveal">
+          <div class="phone">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-kalender-dark-390.webp 390w, assets/img/app/phone-kalender-dark-780.webp 780w" sizes="250px">
+              <img src="assets/img/app/phone-kalender-light-390.webp" srcset="assets/img/app/phone-kalender-light-390.webp 390w, assets/img/app/phone-kalender-light-780.webp 780w" sizes="250px" width="780" height="1688" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone mit den nächsten Terminen des Vereins">
+            </picture>
+          </div>
+          <figcaption>Kalender mit den nächsten Terminen</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Sicherheit und Datenschutz ===== -->
+  <section class="section band" id="sicherheit" aria-labelledby="sicherheit-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Sicherheit und Datenschutz</p>
+        <h2 id="sicherheit-title">Mitgliederdaten verdienen mehr als ein Passwortschutz</h2>
+        <p class="lead">Vereine verwalten Namen, Adressen und Geburtstage – oft auch von Kindern und Jugendlichen. Sicherheit ist deshalb Grundlage von VereinsFlow, kein Zusatzmodul.</p>
+      </div>
+      <div class="grid grid-3">
+        <article class="card reveal">
+          <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-key-round"/></svg></div>
+          <h3>Geschlossene Plattform</h3>
+          <p>Konten entstehen nur durch die Einladung des Vereins. Niemand kann sich selbst Zugang zu Mitgliederdaten verschaffen.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-layers"/></svg></div>
+          <h3>Strikt getrennte Vereine</h3>
+          <p>Jeder Verein ist ein eigener Mandant. Drei Schutzschichten trennen die Daten, und automatische Tests mit zwei Vereinen prüfen das in jedem Fachbereich.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-shield-check"/></svg></div>
+          <h3>Rechte mit Reichweite</h3>
+          <p>Ganzer Verein, eigene Abteilung oder nur eigene Daten – bei jeder Anfrage auf dem Server geprüft, nicht nur in der Oberfläche versteckt.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-lock-keyhole"/></svg></div>
+          <h3>Sichere Anmeldung</h3>
+          <p>Passwörter werden mit Argon2id gesichert. Wiederholte Fehlversuche werden gebremst, inaktive Sitzungen laufen automatisch ab.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw-clock"/></svg></div>
+          <h3>Nachvollziehbar</h3>
+          <p>Ein unveränderliches Änderungsprotokoll zeigt, wer wann was geändert hat. Sensible Werte erscheinen darin nur als „geändert“.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-file-check"/></svg></div>
+          <h3>DSGVO-Werkzeuge</h3>
+          <p>Datenexport, Löschantrag mit 14 Tagen Bedenkzeit, Einwilligungen, Anonymisierung und Aufbewahrungsfristen je Verein.</p>
+        </article>
+      </div>
+      <p class="small-print">Auch die Plattformverwaltung, die neue Vereine anlegt, sieht keine Mitgliederdaten. Die Anwendung setzt nur ein technisch notwendiges Cookie für die Anmeldung.</p>
+    </div>
+  </section>
+
+  <!-- ===== Ablauf ===== -->
+  <section class="section" id="ablauf" aria-labelledby="ablauf-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Ablauf</p>
+        <h2 id="ablauf-title">In drei Schritten startklar</h2>
+      </div>
+      <ol class="steps">
+        <li class="step reveal">
+          <svg class="icon step-icon" aria-hidden="true"><use href="#i-building-complex"/></svg>
+          <h3>Verein einrichten</h3>
+          <p>Neue Vereine werden von uns eingerichtet. Danach übernimmt der Vereinsadministrator: Einstellungen, Abteilungen und Benutzer.</p>
+        </li>
+        <li class="step reveal">
+          <svg class="icon step-icon" aria-hidden="true"><use href="#i-file-up"/></svg>
+          <h3>Mitglieder übernehmen</h3>
+          <p>Vorhandene Listen per CSV importieren – mit Vorschau, bevor etwas gespeichert wird. Eine Vorlage liegt bereit.</p>
+        </li>
+        <li class="step reveal">
+          <svg class="icon step-icon" aria-hidden="true"><use href="#i-mail-plus"/></svg>
+          <h3>Team einladen</h3>
+          <p>Vorstand, Abteilungsleiter, Helfer und Mitglieder erhalten einen persönlichen Einladungslink per E-Mail und legen ihr Passwort selbst fest.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== Ausblick ===== -->
+  <section class="section section-alt" id="ausblick" aria-labelledby="ausblick-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Ausblick</p>
+        <h2 id="ausblick-title">Was als Nächstes geplant ist</h2>
+        <p class="lead">VereinsFlow wächst mit den Anforderungen der Vereine. Diese Bereiche stehen auf der Liste – Reihenfolge und Zeitpunkt stehen noch nicht fest.</p>
+      </div>
+      <div class="road">
+        <article class="card reveal">
+          <span class="chip">Geplant</span>
+          <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg></div>
+          <h3>Finanzen</h3>
+          <p>Mitgliedsbeiträge, Kassenbuch und Spendenbescheinigungen.</p>
+        </article>
+        <article class="card reveal">
+          <span class="chip">Geplant</span>
+          <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-smartphone"/></svg></div>
+          <h3>Zwei-Faktor-Anmeldung</h3>
+          <p>Zusätzlicher Schutz für Administrator-Konten.</p>
+        </article>
+        <article class="card reveal">
+          <span class="chip">Geplant</span>
+          <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></div>
+          <h3>Öffentliche Veranstaltungsseite</h3>
+          <p>Veranstaltungen auf der Website des Vereins verlinken.</p>
+        </article>
+        <article class="card reveal">
+          <span class="chip">Geplant</span>
+          <div class="card-icon tone-amber"><svg class="icon" aria-hidden="true"><use href="#i-bell-ring"/></svg></div>
+          <h3>Push und mobile Apps</h3>
+          <p>Benachrichtigungen direkt aufs Smartphone.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Häufige Fragen ===== -->
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="container">
+      <div class="section-head center">
+        <p class="eyebrow">Fragen und Antworten</p>
+        <h2 id="faq-title">Häufige Fragen</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Für welche Vereine ist VereinsFlow gedacht?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Für Vereine jeder Größe – besonders für solche mit mehreren Abteilungen, regelmäßigen Veranstaltungen und vielen ehrenamtlichen Helfern, etwa Sport-, Kultur- und Fördervereine.</p></div>
+        </details>
+        <details>
+          <summary>Muss etwas installiert werden?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Nein. VereinsFlow läuft im Browser – am Rechner, Tablet und Smartphone. Eine App für Android oder iOS gibt es derzeit nicht; sie ist geplant.</p></div>
+        </details>
+        <details>
+          <summary>Können vorhandene Mitgliederlisten übernommen werden?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Ja. Der CSV-Import zeigt vorab eine Vorschau, damit Fehler auffallen, bevor etwas gespeichert wird. Eine Vorlage steht bereit. Umgekehrt lassen sich Mitglieder jederzeit als CSV exportieren.</p></div>
+        </details>
+        <details>
+          <summary>Wie funktioniert der Schutz vor Überbuchung?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Beim Eintragen sperrt die Datenbank den Platz: Wählen mehrere Personen gleichzeitig den letzten freien Platz, bekommt ihn genau eine. Zusätzlich verhindert VereinsFlow, dass jemand zur selben Zeit in zwei Schichten steht.</p></div>
+        </details>
+        <details>
+          <summary>Wer sieht welche Daten?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Das bestimmen Rollen und Rechte: Vereinsadministrator, Vorstand, Abteilungsleiter, Helfer und Mitglied. Abteilungsleiter sehen zum Beispiel nur die Mitglieder ihrer Abteilung, Helfer und Mitglieder nur die eigenen Daten. Dokumente lassen sich zusätzlich für alle Mitglieder, nur den Vorstand oder nur die Verwaltung freigeben.</p></div>
+        </details>
+        <details>
+          <summary>Wie steht es um den Datenschutz?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer">
+            <p>VereinsFlow bringt die Werkzeuge mit, die ein Verein für die DSGVO braucht: Datenexport, Löschantrag mit Bedenkzeit, Einwilligungen, Anonymisierung und Aufbewahrungsfristen. Die Anwendung setzt nur ein technisch notwendiges Cookie für die Anmeldung und verwendet kein Tracking.</p>
+            <p>Verantwortlich für die Daten bleibt der Verein – VereinsFlow ist das Werkzeug dafür.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Gibt es eine Finanzverwaltung?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Noch nicht. Beitragsverwaltung, Kassenbuch und Spendenbescheinigungen sind in Planung.</p></div>
+        </details>
+        <details>
+          <summary>Wie lässt sich VereinsFlow ausprobieren?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+          <div class="answer"><p>Am besten in einer persönlichen Demo. Eine kurze E-Mail genügt – wir melden uns und zeigen VereinsFlow anhand der Fragen des Vereins.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Kontakt ===== -->
+  <section class="section kontakt" id="kontakt" aria-labelledby="kontakt-title">
+    <div class="container">
+      <div class="cta reveal">
+        <h2 id="kontakt-title">Bereit, Vereinsarbeit in Fluss zu bringen?</h2>
+        <p>Wir zeigen VereinsFlow in einer persönlichen Demo – unverbindlich und passend zu den Fragen Ihres Vereins.</p>
+        <div class="hero-actions">
+          <a class="btn btn-light btn-lg" href="mailto:[[E-MAIL]]?subject=Demo-Anfrage%20VereinsFlow&amp;body=Guten%20Tag%2C%0D%0A%0D%0Awir%20interessieren%20uns%20f%C3%BCr%20VereinsFlow.%0D%0A%0D%0AVerein%3A%20%0D%0AAnsprechperson%3A%20%0D%0ACa.%20Mitglieder%3A%20%0D%0AWunschtermin%3A%20%0D%0A"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>Demo per E-Mail anfragen</a>
+        </div>
+        <p class="mail-line">Oder direkt schreiben an <a href="mailto:[[E-MAIL]]">[[E-MAIL]]</a></p>
+        <small>Neue Vereine richten wir selbst ein. Zugänge entstehen danach ausschließlich über Einladungen des Vereins.</small>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="assets/img/logo-dark.svg">
+          <img src="assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
+        </picture>
+        <p>Bringt Vereinsarbeit in Fluss.</p>
+      </div>
+      <div>
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="#funktionen">Funktionen</a></li>
+          <li><a href="#helferschichten">Helferschichten</a></li>
+          <li><a href="#rollen">Rollen und Rechte</a></li>
+          <li><a href="#sicherheit">Sicherheit</a></li>
+          <li><a href="#faq">Häufige Fragen</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Rechtliches</h2>
+        <ul>
+          <li><a href="impressum.html">Impressum</a></li>
+          <li><a href="datenschutz.html">Datenschutz</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 VereinsFlow</span>
+      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

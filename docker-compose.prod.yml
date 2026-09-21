@@ -1,0 +1,104 @@
+# Produktionsbetrieb von VereinsFlow (Beispiel – anpassen!). Anleitung: docs/OPERATIONS.md
+#
+#   cp .env.production.example .env.production        # Werte eintragen, Geheimnisse zufällig erzeugen
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Bestandteile:
+#   db       PostgreSQL (nicht von außen erreichbar)
+#   migrate  wendet die Datenbank-Migrationen an und beendet sich (die Anwendung startet erst danach)
+#   app      die Anwendung, nur auf 127.0.0.1:3000 – davor gehört ein Reverse-Proxy mit TLS
+#   cron     ruft alle 15 Minuten die Hintergrundjobs auf (Erinnerungen, Mailversand, Aufbewahrung, ...)
+#   tools    Verwaltungsbefehle von Hand (Profil "tools"), z. B. den ersten Plattform-Administrator anlegen
+#
+# HINWEIS: Diese Datei wurde in der Entwicklungsumgebung (ohne Docker) nicht gestartet. Bitte vor dem
+# Produktiveinsatz einmal auf einem Testserver durchspielen.
+name: vereinsflow-prod
+
+x-database-url: &database-url
+  DATABASE_URL: postgresql://vereinsflow:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt (.env.production)}@db:5432/vereinsflow
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vereinsflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt (.env.production)}
+      POSTGRES_DB: vereinsflow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=de-DE"
+      PGDATA: /var/lib/postgresql/data
+      TZ: UTC
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vereinsflow -d vereinsflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Bewusst kein "ports": Die Datenbank ist nur im Compose-Netz erreichbar.
+
+  migrate:
+    build:
+      context: .
+      target: tools
+    image: vereinsflow-tools:local
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *database-url
+    command: ["npx", "prisma", "migrate", "deploy"]
+
+  app:
+    build:
+      context: .
+      target: runner
+    image: vereinsflow:local
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file: .env.production
+    environment:
+      <<: *database-url
+      STORAGE_DIR: /data/storage
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - storage:/data/storage
+
+  cron:
+    image: curlimages/curl:8.11.1
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET fehlt (.env.production)}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          sleep 900
+          curl -fsS -X POST -H "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/run > /dev/null || echo "Cron-Aufruf fehlgeschlagen"
+        done
+
+  tools:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: tools
+    image: vereinsflow-tools:local
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env.production
+    environment:
+      <<: *database-url
+
+volumes:
+  db-data:
+  storage:

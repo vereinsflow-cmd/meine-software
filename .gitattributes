@@ -1,0 +1,17 @@
+# Einheitliche Zeilenenden (LF) – wichtig für Dockerfile, Skripte und Prüfsummen, auch auf Windows.
+* text=auto eol=lf
+
+# Binärdateien nie umwandeln
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Windows-Stapeldateien (Doppelklick-Starter) brauchen CRLF – ohne diese Zeile würden sie unter Windows mit LF ausgecheckt.
+*.cmd text eol=crlf
+*.bat text eol=crlf

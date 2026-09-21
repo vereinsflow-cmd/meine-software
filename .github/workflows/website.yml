@@ -1,0 +1,31 @@
+name: Website
+
+# Prüft die Werbe-Website (website/) bei jeder Änderung daran: Verweise, Bilder, Symbole, keine fremden Server,
+# keine Inline-Skripte oder -Stile (wegen der strengen Content-Security-Policy). Ohne Abhängigkeiten, dauert Sekunden.
+# Offene Platzhalter ([[…]]) werden nur gemeldet; zum Veröffentlichen auf "--strict" umstellen.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "website/**"
+      - ".github/workflows/website.yml"
+  pull_request:
+    paths:
+      - "website/**"
+      - ".github/workflows/website.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Website prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verweise, Bilder und Sicherheitsrichtlinie prüfen
+        run: node website/tools/check-site.mjs

@@ -1,0 +1,992 @@
+// =============================================================================
+// VereinsFlow – Datenmodell
+//
+// Mandantenfähigkeit (Shared Database, Shared Schema):
+//   * Der Verein (Club) ist der Mandant. Jede mandantenbezogene Tabelle trägt `clubId`.
+//   * Beziehungen zwischen mandantenbezogenen Tabellen sind als ZUSAMMENGESETZTE
+//     Fremdschlüssel (clubId, id) modelliert. Dadurch kann die Datenbank selbst
+//     keine Zeile eines Vereins mit einer Zeile eines anderen Vereins verknüpfen –
+//     unabhängig davon, ob der Anwendungscode einen Fehler enthält.
+//   * Globale Tabellen (User, Session, Permission, VerificationToken, RateLimitBucket)
+//     tragen bewusst keine clubId.
+//
+// Konventionen:
+//   * IDs: UUIDv7 (zeitlich sortierbar, nicht erratbar).
+//   * Zeitstempel: timestamptz(3), immer UTC gespeichert; Anzeige in Europe/Berlin.
+//   * Reine Kalendertage (Geburtsdatum, Eintritt, Fälligkeit): @db.Date.
+//   * Weiche Löschung: `deletedAt`; Archivierung: `archivedAt`.
+//   * Felder `*ById` ohne Relation sind reine Herkunftsangaben (Audit) ohne Fremdschlüssel,
+//     damit Benutzer datenschutzkonform entfernt werden können.
+//   * Optionale zusammengesetzte Relationen nutzen `onDelete: Restrict`, weil "SetNull" die
+//     Pflichtspalte clubId mit auf NULL setzen würde. Das Aufräumen übernimmt der Service.
+//   * CHECK-Constraints (z. B. endsAt > startsAt) stehen in den SQL-Migrationen.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum ClubStatus {
+  ACTIVE
+  DEACTIVATED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+/// Reichweite einer Berechtigung: ganzer Verein, nur eigene Abteilung(en) oder nur eigene Daten.
+enum PermissionScope {
+  CLUB
+  DEPARTMENT
+  OWN
+}
+
+enum MemberStatus {
+  ACTIVE
+  PASSIVE
+  LEFT
+  HONORARY
+  BLOCKED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum EventType {
+  EVENT
+  TRAINING
+  MEETING
+  COMPETITION
+  WORK_ASSIGNMENT
+  OTHER
+}
+
+enum EventVisibility {
+  INTERNAL
+  PUBLIC
+}
+
+enum ParticipantStatus {
+  ACCEPTED
+  DECLINED
+  WAITLISTED
+}
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  SYSTEM
+  SHIFT_ASSIGNED
+  SHIFT_CHANGED
+  SHIFT_CANCELLED
+  SHIFT_REMINDER
+  EVENT_PUBLISHED
+  EVENT_CHANGED
+  EVENT_CANCELLED
+  EVENT_REMINDER
+  TASK_ASSIGNED
+  MESSAGE
+  INVITATION
+}
+
+enum EmailStatus {
+  NONE
+  PENDING
+  SENT
+  FAILED
+}
+
+enum MessageStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
+enum MessageAudience {
+  ALL_MEMBERS
+  DEPARTMENT
+  EVENT_PARTICIPANTS
+  EVENT_HELPERS
+}
+
+enum ConsentType {
+  PRIVACY_POLICY
+  DATA_PROCESSING
+  NEWSLETTER
+  PHOTO_PUBLICATION
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+}
+
+enum DeletionRequestStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+}
+
+enum DocumentAccess {
+  ALL_MEMBERS
+  BOARD
+  ADMIN
+}
+
+enum SupportCategory {
+  PROBLEM
+  QUESTION
+  IDEA
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+// ----------------------------------------------------------------------------
+// Plattform: Benutzer, Sitzungen, Tokens (global, ohne clubId)
+// ----------------------------------------------------------------------------
+
+model User {
+  id                 String    @id @default(uuid(7))
+  /// Immer klein geschrieben gespeichert (Constraint in der Migration).
+  email              String    @unique
+  emailVerifiedAt    DateTime? @db.Timestamptz(3)
+  /// Argon2id-Hash. Niemals das Klartextpasswort speichern oder loggen.
+  passwordHash       String
+  firstName          String
+  lastName           String
+  /// Superadministrator der Plattform (verwaltet Vereine, sieht KEINE Mitgliederdaten).
+  isPlatformAdmin    Boolean   @default(false)
+  /// TOTP-Secret, AES-256-GCM-verschlüsselt (optionale Zwei-Faktor-Authentifizierung).
+  totpSecretEnc      String?
+  totpEnabledAt      DateTime? @db.Timestamptz(3)
+  /// Einmal-Wiederherstellungscodes, als Hash gespeichert.
+  recoveryCodeHashes String[]
+  lastLoginAt        DateTime? @db.Timestamptz(3)
+  termsAcceptedAt    DateTime? @db.Timestamptz(3)
+  termsVersion       String?
+  emailNotifications Boolean   @default(true)
+  disabledAt         DateTime? @db.Timestamptz(3)
+  deletedAt          DateTime? @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @db.Timestamptz(3)
+
+  memberships        ClubMembership[]
+  sessions           Session[]
+  verificationTokens VerificationToken[]
+
+  @@index([deletedAt])
+}
+
+model Session {
+  /// SHA-256 des Sitzungstokens (das Token selbst steht nur im Cookie des Browsers).
+  id           String   @id
+  userId       String
+  activeClubId String?
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  lastSeenAt   DateTime @default(now()) @db.Timestamptz(3)
+  /// Absolutes Ablaufdatum unabhängig von Aktivität.
+  expiresAt    DateTime @db.Timestamptz(3)
+  userAgent    String?
+  /// Gekürzte IP (letztes Oktett bzw. Suffix entfernt) – Datensparsamkeit.
+  ipPrefix     String?
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeClub Club? @relation(fields: [activeClubId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model VerificationToken {
+  id        String                @id @default(uuid(7))
+  userId    String
+  type      VerificationTokenType
+  /// SHA-256 des Tokens aus dem E-Mail-Link.
+  tokenHash String                @unique
+  /// Nur bei EMAIL_CHANGE: die neue Adresse.
+  newEmail  String?
+  expiresAt DateTime              @db.Timestamptz(3)
+  usedAt    DateTime?             @db.Timestamptz(3)
+  createdAt DateTime              @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
+}
+
+/// Datenbankgestütztes Rate-Limiting (funktioniert auch mit mehreren Server-Instanzen).
+model RateLimitBucket {
+  key     String   @id
+  count   Int
+  resetAt DateTime @db.Timestamptz(3)
+
+  @@index([resetAt])
+}
+
+/// Globaler Katalog aller Berechtigungen. Quelle der Wahrheit ist der Code
+/// (src/server/permissions/catalog.ts); die Tabelle wird beim Seeden synchronisiert.
+model Permission {
+  key         String   @id
+  module      String
+  description String
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  rolePermissions RolePermission[]
+}
+
+// ----------------------------------------------------------------------------
+// Mandant: Verein, Mitgliedschaft, Rollen
+// ----------------------------------------------------------------------------
+
+model Club {
+  id             String     @id @default(uuid(7))
+  name           String
+  /// URL-tauglicher, eindeutiger Kurzname.
+  slug           String     @unique
+  status         ClubStatus @default(ACTIVE)
+  timezone       String     @default("Europe/Berlin")
+  contactEmail   String?
+  phone          String?
+  street         String?
+  postalCode     String?
+  city           String?
+  website        String?
+  /// Ansprechpartner für Datenschutzanfragen (erscheint in den Datenschutzhinweisen).
+  privacyContact String?
+  /// Aufbewahrungsfristen und weitere Vereinseinstellungen.
+  settings       Json       @default("{}")
+  deactivatedAt  DateTime?  @db.Timestamptz(3)
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+
+  roles          Role[]
+  memberships    ClubMembership[]
+  members        Member[]
+  departments    Department[]
+  groups         Group[]
+  events         Event[]
+  tasks          Task[]
+  checklists     Checklist[]
+  messages       Message[]
+  documents      Document[]
+  folders        DocumentFolder[]
+  invitations    Invitation[]
+  sessions       Session[]
+  supportTickets SupportTicket[]
+}
+
+model Role {
+  id          String   @id @default(uuid(7))
+  clubId      String
+  /// Systemrollen: CLUB_ADMIN, BOARD, DEPARTMENT_LEAD, HELPER, MEMBER. Eigene Rollen: "custom:<name>".
+  key         String
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  club        Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  permissions RolePermission[]
+  memberships ClubMembership[]
+  invitations Invitation[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, key])
+}
+
+model RolePermission {
+  clubId        String
+  roleId        String
+  permissionKey String
+  scope         PermissionScope @default(CLUB)
+
+  role       Role       @relation(fields: [clubId, roleId], references: [clubId, id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+
+  @@id([roleId, permissionKey])
+  @@index([clubId])
+}
+
+/// Zugehörigkeit eines Benutzers zu einem Verein (ein Benutzer kann mehreren Vereinen angehören).
+model ClubMembership {
+  id        String           @id @default(uuid(7))
+  clubId    String
+  userId    String
+  roleId    String
+  status    MembershipStatus @default(ACTIVE)
+  joinedAt  DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @db.Timestamptz(3)
+
+  club   Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role    @relation(fields: [clubId, roleId], references: [clubId, id], onDelete: Restrict)
+  member Member?
+
+  notifications      Notification[]
+  calendarFeedTokens CalendarFeedToken[]
+
+  @@unique([clubId, userId])
+  @@index([userId])
+  @@index([clubId, roleId])
+}
+
+model Invitation {
+  id              String    @id @default(uuid(7))
+  clubId          String
+  email           String
+  roleId          String
+  /// Optional: bestehender Mitgliedsdatensatz, der mit dem neuen Konto verknüpft werden soll.
+  memberId        String?
+  tokenHash       String    @unique
+  invitedByUserId String?
+  expiresAt       DateTime  @db.Timestamptz(3)
+  acceptedAt      DateTime? @db.Timestamptz(3)
+  revokedAt       DateTime? @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+
+  club   Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  role   Role    @relation(fields: [clubId, roleId], references: [clubId, id], onDelete: Restrict)
+  member Member? @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Restrict)
+
+  @@index([clubId, email])
+  @@index([clubId, acceptedAt, revokedAt])
+}
+
+// ----------------------------------------------------------------------------
+// Mitglieder, Abteilungen, Gruppen
+// ----------------------------------------------------------------------------
+
+model Member {
+  id              String       @id @default(uuid(7))
+  clubId          String
+  /// Vereinsinterne Mitgliedsnummer (eindeutig je Verein).
+  memberNumber    String?
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  street          String?
+  postalCode      String?
+  city            String?
+  country         String?      @default("DE")
+  birthDate       DateTime?    @db.Date
+  joinedAt        DateTime?    @db.Date
+  leftAt          DateTime?    @db.Date
+  status          MemberStatus @default(ACTIVE)
+  /// Funktion im Verein, z. B. "1. Vorsitzende", "Kassenwart".
+  clubFunction    String?
+  /// Interne Notizen – nur für berechtigte Rollen sichtbar.
+  internalNotes   String?
+  /// Verweis auf ein Document (Profilbild); bewusst ohne Fremdschlüssel (vermeidet Zirkel).
+  photoDocumentId String?
+  /// Verknüpftes Benutzerkonto (Mitgliedschaft im selben Verein erforderlich).
+  userId          String?
+  archivedAt      DateTime?    @db.Timestamptz(3)
+  deletedAt       DateTime?    @db.Timestamptz(3)
+  /// Gesetzt, wenn die personenbezogenen Daten gelöscht/anonymisiert wurden (Art. 17 DSGVO).
+  anonymizedAt    DateTime?    @db.Timestamptz(3)
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+
+  club       Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  membership ClubMembership? @relation(fields: [clubId, userId], references: [clubId, userId], onDelete: Restrict)
+
+  departments       MemberDepartment[]
+  groups            GroupMember[]
+  consents          Consent[]
+  participations    EventParticipant[]
+  shiftAssignments  ShiftAssignment[]
+  contactForEvents  Event[]            @relation("EventContact")
+  responsibleShifts EventShift[]       @relation("ShiftResponsible")
+  assignedTasks     Task[]             @relation("TaskAssignee")
+  checklistItems    ChecklistItem[]    @relation("ChecklistItemAssignee")
+  documents         Document[]
+  invitations       Invitation[]
+  messageRecipients MessageRecipient[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, memberNumber])
+  @@unique([clubId, userId])
+  @@index([clubId, status])
+  @@index([clubId, lastName, firstName])
+  @@index([clubId, archivedAt, deletedAt])
+}
+
+model Department {
+  id          String   @id @default(uuid(7))
+  clubId      String
+  name        String
+  description String?
+  color       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  club     Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  members  MemberDepartment[]
+  groups   Group[]
+  events   Event[]
+  messages Message[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, name])
+}
+
+/// Zuordnung Mitglied ↔ Abteilung. `isLeader` macht das Mitglied zum Abteilungsleiter.
+model MemberDepartment {
+  clubId       String
+  memberId     String
+  departmentId String
+  isLeader     Boolean   @default(false)
+  since        DateTime? @db.Date
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+
+  member     Member     @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  department Department @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Cascade)
+
+  @@id([memberId, departmentId])
+  @@index([clubId, departmentId])
+}
+
+/// Gruppen/Teams, optional innerhalb einer Abteilung.
+model Group {
+  id           String   @id @default(uuid(7))
+  clubId       String
+  departmentId String?
+  name         String
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  club       Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  department Department?   @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
+  members    GroupMember[]
+  tasks      Task[]
+
+  @@unique([clubId, id])
+  @@index([clubId, departmentId])
+}
+
+model GroupMember {
+  clubId    String
+  groupId   String
+  memberId  String
+  isLead    Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  group  Group  @relation(fields: [clubId, groupId], references: [clubId, id], onDelete: Cascade)
+  member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@id([groupId, memberId])
+  @@index([clubId, memberId])
+}
+
+/// Protokoll von Einwilligungen (Nachweispflicht nach DSGVO). Der aktuelle Status ist der
+/// jeweils neueste Eintrag je Member und Typ; Widerruf = neuer Eintrag mit granted = false.
+model Consent {
+  id          String      @id @default(uuid(7))
+  clubId      String
+  memberId    String
+  type        ConsentType
+  granted     Boolean
+  /// Version des Einwilligungstexts, auf die sich die Zustimmung bezieht.
+  textVersion String?
+  /// Herkunft: "app", "paper", "import".
+  source      String?
+  recordedBy  String?
+  recordedAt  DateTime    @default(now()) @db.Timestamptz(3)
+
+  member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@index([clubId, memberId, type, recordedAt])
+}
+
+// ----------------------------------------------------------------------------
+// Veranstaltungen, Teilnehmer, Helferschichten
+// ----------------------------------------------------------------------------
+
+model Event {
+  id                   String          @id @default(uuid(7))
+  clubId               String
+  /// Gemeinsame ID aller Termine einer Terminserie (wiederkehrende Termine).
+  seriesId             String?
+  title                String
+  description          String?
+  type                 EventType       @default(EVENT)
+  status               EventStatus     @default(DRAFT)
+  visibility           EventVisibility @default(INTERNAL)
+  startsAt             DateTime        @db.Timestamptz(3)
+  endsAt               DateTime        @db.Timestamptz(3)
+  allDay               Boolean         @default(false)
+  locationName         String?
+  address              String?
+  contactMemberId      String?
+  contactName          String?
+  contactEmail         String?
+  contactPhone         String?
+  /// Zielgruppe als Freitext, z. B. "Jugend ab 12 Jahren".
+  targetAudience       String?
+  departmentId         String?
+  maxParticipants      Int?
+  registrationRequired Boolean         @default(false)
+  registrationDeadline DateTime?       @db.Timestamptz(3)
+  waitlistEnabled      Boolean         @default(false)
+  internalNotes        String?
+  publishedAt          DateTime?       @db.Timestamptz(3)
+  cancelledAt          DateTime?       @db.Timestamptz(3)
+  cancelReason         String?
+  createdById          String?
+  deletedAt            DateTime?       @db.Timestamptz(3)
+  createdAt            DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime        @updatedAt @db.Timestamptz(3)
+
+  club          Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  department    Department?        @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
+  contactMember Member?            @relation("EventContact", fields: [clubId, contactMemberId], references: [clubId, id], onDelete: Restrict)
+  participants  EventParticipant[]
+  shifts        EventShift[]
+  tasks         Task[]
+  checklists    Checklist[]
+  documents     Document[]
+  messages      Message[]
+
+  @@unique([clubId, id])
+  @@index([clubId, startsAt])
+  @@index([clubId, status, startsAt])
+  @@index([clubId, departmentId, startsAt])
+  @@index([clubId, seriesId])
+}
+
+model EventParticipant {
+  id          String            @id @default(uuid(7))
+  clubId      String
+  eventId     String
+  memberId    String
+  status      ParticipantStatus
+  note        String?
+  respondedAt DateTime          @default(now()) @db.Timestamptz(3)
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
+
+  event  Event  @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([eventId, memberId])
+  @@index([clubId, eventId, status, createdAt])
+  @@index([clubId, memberId])
+}
+
+model EventShift {
+  id                  String      @id @default(uuid(7))
+  clubId              String
+  eventId             String
+  /// Bezeichnung, z. B. "Getränkestand".
+  title               String
+  /// Aufgabe, z. B. "Getränke ausschenken und kassieren".
+  taskName            String?
+  description         String?
+  startsAt            DateTime    @db.Timestamptz(3)
+  endsAt              DateTime    @db.Timestamptz(3)
+  meetingPoint        String?
+  requiredCount       Int
+  minAge              Int?
+  requirements        String?
+  internalNotes       String?
+  responsibleMemberId String?
+  status              ShiftStatus @default(OPEN)
+  deletedAt           DateTime?   @db.Timestamptz(3)
+  createdAt           DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime    @updatedAt @db.Timestamptz(3)
+
+  event       Event             @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  responsible Member?           @relation("ShiftResponsible", fields: [clubId, responsibleMemberId], references: [clubId, id], onDelete: Restrict)
+  assignments ShiftAssignment[]
+
+  @@unique([clubId, id])
+  @@index([clubId, eventId])
+  @@index([clubId, startsAt])
+}
+
+/// Eintragung eines Mitglieds in eine Schicht. Pro (Schicht, Mitglied) genau eine Zeile;
+/// Abmeldung setzt den Status auf CANCELLED, erneute Anmeldung reaktiviert die Zeile.
+model ShiftAssignment {
+  id                String           @id @default(uuid(7))
+  clubId            String
+  shiftId           String
+  memberId          String
+  status            AssignmentStatus @default(CONFIRMED)
+  /// Wer die Eintragung vorgenommen hat (Mitglied selbst oder Verantwortliche).
+  assignedByUserId  String?
+  assignedAt        DateTime         @default(now()) @db.Timestamptz(3)
+  cancelledAt       DateTime?        @db.Timestamptz(3)
+  /// Tatsächlich geleistete Minuten (Helferstunden); leer = noch nicht dokumentiert.
+  workedMinutes     Int?
+  hoursApprovedAt   DateTime?        @db.Timestamptz(3)
+  hoursApprovedById String?
+  reminderSentAt    DateTime?        @db.Timestamptz(3)
+  note              String?
+  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
+
+  shift  EventShift @relation(fields: [clubId, shiftId], references: [clubId, id], onDelete: Cascade)
+  member Member     @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([shiftId, memberId])
+  @@index([clubId, shiftId, status])
+  @@index([clubId, memberId, status])
+}
+
+// ----------------------------------------------------------------------------
+// Aufgaben und Checklisten
+// ----------------------------------------------------------------------------
+
+model Task {
+  id               String       @id @default(uuid(7))
+  clubId           String
+  eventId          String?
+  title            String
+  description      String?
+  assigneeMemberId String?
+  groupId          String?
+  dueDate          DateTime?    @db.Date
+  status           TaskStatus   @default(OPEN)
+  priority         TaskPriority @default(NORMAL)
+  notes            String?
+  completedAt      DateTime?    @db.Timestamptz(3)
+  createdById      String?
+  deletedAt        DateTime?    @db.Timestamptz(3)
+  createdAt        DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @db.Timestamptz(3)
+
+  club      Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  event     Event?     @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  assignee  Member?    @relation("TaskAssignee", fields: [clubId, assigneeMemberId], references: [clubId, id], onDelete: Restrict)
+  group     Group?     @relation(fields: [clubId, groupId], references: [clubId, id], onDelete: Restrict)
+  documents Document[]
+
+  @@unique([clubId, id])
+  @@index([clubId, status, dueDate])
+  @@index([clubId, assigneeMemberId, status])
+  @@index([clubId, eventId])
+}
+
+model Checklist {
+  id        String    @id @default(uuid(7))
+  clubId    String
+  eventId   String?
+  title     String
+  deletedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+
+  club  Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  event Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  items ChecklistItem[]
+
+  @@unique([clubId, id])
+  @@index([clubId, eventId])
+}
+
+model ChecklistItem {
+  id               String    @id @default(uuid(7))
+  clubId           String
+  checklistId      String
+  text             String
+  position         Int       @default(0)
+  isDone           Boolean   @default(false)
+  doneAt           DateTime? @db.Timestamptz(3)
+  doneById         String?
+  assigneeMemberId String?
+  dueDate          DateTime? @db.Date
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+
+  checklist Checklist @relation(fields: [clubId, checklistId], references: [clubId, id], onDelete: Cascade)
+  assignee  Member?   @relation("ChecklistItemAssignee", fields: [clubId, assigneeMemberId], references: [clubId, id], onDelete: Restrict)
+
+  @@index([clubId, checklistId, position])
+}
+
+// ----------------------------------------------------------------------------
+// Kommunikation
+// ----------------------------------------------------------------------------
+
+/// In-App-Benachrichtigung für einen Benutzer im Kontext eines Vereins.
+model Notification {
+  id          String           @id @default(uuid(7))
+  clubId      String
+  userId      String
+  type        NotificationType
+  title       String
+  body        String?
+  /// Interner, relativer Link (z. B. "/veranstaltungen/…"); niemals eine externe URL.
+  linkUrl     String?
+  readAt      DateTime?        @db.Timestamptz(3)
+  /// Verhindert doppelte Erinnerungen (z. B. "shift-reminder:<assignmentId>:24h").
+  dedupeKey   String?
+  emailStatus EmailStatus      @default(NONE)
+  emailSentAt DateTime?        @db.Timestamptz(3)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+
+  membership ClubMembership @relation(fields: [clubId, userId], references: [clubId, userId], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([clubId, userId, readAt, createdAt])
+  @@index([emailStatus, createdAt])
+}
+
+model Message {
+  id             String          @id @default(uuid(7))
+  clubId         String
+  authorUserId   String?
+  subject        String
+  /// Reiner Text (wird nie als HTML gerendert).
+  body           String
+  audience       MessageAudience
+  departmentId   String?
+  eventId        String?
+  isAnnouncement Boolean         @default(false)
+  sendInApp      Boolean         @default(true)
+  sendEmail      Boolean         @default(false)
+  status         MessageStatus   @default(DRAFT)
+  scheduledAt    DateTime?       @db.Timestamptz(3)
+  sentAt         DateTime?       @db.Timestamptz(3)
+  recipientCount Int             @default(0)
+  deletedAt      DateTime?       @db.Timestamptz(3)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+
+  club       Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  department Department?        @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
+  event      Event?             @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Restrict)
+  recipients MessageRecipient[]
+
+  @@unique([clubId, id])
+  @@index([clubId, status, scheduledAt])
+  @@index([clubId, createdAt])
+}
+
+model MessageRecipient {
+  id          String      @id @default(uuid(7))
+  clubId      String
+  messageId   String
+  memberId    String
+  userId      String?
+  readAt      DateTime?   @db.Timestamptz(3)
+  emailStatus EmailStatus @default(NONE)
+  emailSentAt DateTime?   @db.Timestamptz(3)
+
+  message Message @relation(fields: [clubId, messageId], references: [clubId, id], onDelete: Cascade)
+  member  Member  @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([messageId, memberId])
+  @@index([clubId, userId, readAt])
+  @@index([emailStatus])
+}
+
+// ----------------------------------------------------------------------------
+// Hilfe und Support
+// ----------------------------------------------------------------------------
+
+/// Meldung eines Mitglieds an die Vereinsverwaltung: Problem, Frage oder Verbesserungsvorschlag.
+/// Reiner Text; die Verwaltung kann antworten (die Antwort sieht die meldende Person).
+model SupportTicket {
+  id            String          @id @default(uuid(7))
+  clubId        String
+  /// Herkunftsangabe ohne Fremdschlüssel (wird beim Löschen des Kontos mit entfernt).
+  createdById   String?
+  category      SupportCategory
+  subject       String
+  description   String
+  /// Interner Pfad der Seite, auf der das Problem auftrat (z. B. "/helferplanung"); nie eine externe Adresse.
+  pagePath      String?
+  /// Gekürzte Geräteangabe ("Edge auf Windows") – hilft bei der Fehlersuche.
+  userAgent     String?
+  status        SupportStatus   @default(OPEN)
+  /// Antwort der Verwaltung; erscheint bei der meldenden Person.
+  response      String?
+  respondedAt   DateTime?       @db.Timestamptz(3)
+  respondedById String?
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@index([clubId, status, createdAt])
+  @@index([clubId, createdById, createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// Dokumente
+// ----------------------------------------------------------------------------
+
+model DocumentFolder {
+  id        String   @id @default(uuid(7))
+  clubId    String
+  parentId  String?
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  club      Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  parent    DocumentFolder?  @relation("FolderTree", fields: [clubId, parentId], references: [clubId, id], onDelete: Restrict)
+  children  DocumentFolder[] @relation("FolderTree")
+  documents Document[]
+
+  @@unique([clubId, id])
+  @@index([clubId, parentId])
+}
+
+/// Metadaten einer hochgeladenen Datei. Die Datei selbst liegt außerhalb von /public im
+/// Speicher (StorageProvider) und wird nur über eine berechtigte Route ausgeliefert.
+model Document {
+  id           String         @id @default(uuid(7))
+  clubId       String
+  /// Anzeigename (bereinigt).
+  name         String
+  /// Zufälliger, nicht erratbarer Schlüssel im Speicher – niemals der Originaldateiname.
+  storageKey   String         @unique
+  mimeType     String
+  sizeBytes    Int
+  sha256       String
+  category     String?
+  access       DocumentAccess @default(ALL_MEMBERS)
+  folderId     String?
+  eventId      String?
+  memberId     String?
+  taskId       String?
+  uploadedById String?
+  archivedAt   DateTime?      @db.Timestamptz(3)
+  deletedAt    DateTime?      @db.Timestamptz(3)
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime       @updatedAt @db.Timestamptz(3)
+
+  club   Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  folder DocumentFolder? @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
+  event  Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  member Member?         @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  task   Task?           @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@index([clubId, folderId])
+  @@index([clubId, eventId])
+  @@index([clubId, memberId])
+}
+
+// ----------------------------------------------------------------------------
+// Datenschutz, Kalender-Abos, Audit
+// ----------------------------------------------------------------------------
+
+/// Persönlicher iCal-Abo-Link. Gespeichert wird nur der Hash des Tokens; der Link ist widerrufbar.
+model CalendarFeedToken {
+  id         String    @id @default(uuid(7))
+  clubId     String
+  userId     String
+  tokenHash  String    @unique
+  label      String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  revokedAt  DateTime? @db.Timestamptz(3)
+
+  membership ClubMembership @relation(fields: [clubId, userId], references: [clubId, userId], onDelete: Cascade)
+
+  @@index([clubId, userId])
+}
+
+/// Antrag auf Löschung des Kontos bzw. der Mitgliedsdaten (Art. 17 DSGVO).
+/// Bewusst ohne Fremdschlüssel: Der Antrag bleibt als Nachweis auch nach der Löschung bestehen.
+model DeletionRequest {
+  id                String                @id @default(uuid(7))
+  userId            String
+  clubId            String?
+  status            DeletionRequestStatus @default(PENDING)
+  reason            String?
+  requestedAt       DateTime              @default(now()) @db.Timestamptz(3)
+  /// Frühester Zeitpunkt der Ausführung (Bedenkzeit).
+  scheduledFor      DateTime              @db.Timestamptz(3)
+  processedAt       DateTime?             @db.Timestamptz(3)
+  processedByUserId String?
+  note              String?
+
+  @@index([status, scheduledFor])
+  @@index([userId])
+}
+
+/// Unveränderliches Protokoll wichtiger Änderungen. Die Anwendung legt nur Zeilen an und
+/// ändert/löscht sie nie. `clubId` ist bei Plattform-Ereignissen leer.
+model AuditLog {
+  id          String         @id @default(uuid(7))
+  clubId      String?
+  actorUserId String?
+  actorType   AuditActorType @default(USER)
+  /// Ereignisname, z. B. "member.updated".
+  action      String
+  entityType  String
+  entityId    String?
+  summary     String?
+  /// Änderungen (vorher/nachher). Sensible Felder werden vor dem Speichern maskiert.
+  changes     Json?
+  /// Gekürzte IP-Adresse.
+  ipPrefix    String?
+  requestId   String?
+  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([clubId, createdAt])
+  @@index([clubId, entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+}

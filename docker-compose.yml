@@ -1,0 +1,45 @@
+# Lokale Entwicklungsumgebung für VereinsFlow.
+#
+#   docker compose up -d        # PostgreSQL + Mailpit starten
+#   docker compose down         # stoppen (Daten bleiben im Volume erhalten)
+#   docker compose down -v      # stoppen UND alle Daten löschen
+#
+# Die Zugangsdaten sind nur für die lokale Entwicklung gedacht. Die Ports sind
+# ausschließlich an 127.0.0.1 gebunden und damit nicht aus dem Netzwerk erreichbar.
+# Für den Produktionsbetrieb siehe docker-compose.prod.yml und docs/OPERATIONS.md.
+name: vereinsflow
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vereinsflow
+      POSTGRES_PASSWORD: vereinsflow
+      POSTGRES_DB: vereinsflow
+      # UTF-8 erzwingen und deutsch sortieren (ICU) – unabhängig vom Betriebssystem des Rechners (siehe docs/adr/0008-utf8-ueberall.md).
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale-provider=icu --icu-locale=de-DE"
+      # PGDATA explizit setzen: das Verzeichnis-Layout der Images hat sich mit PostgreSQL 18 geändert.
+      PGDATA: /var/lib/postgresql/data
+      TZ: UTC
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vereinsflow -d vereinsflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Fängt alle ausgehenden E-Mails ab (Einladungen, Passwort-Reset, Erinnerungen).
+  # Weboberfläche: http://localhost:8025  – dafür in .env MAIL_TRANSPORT=smtp setzen.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # Weboberfläche
+
+volumes:
+  db-data:

@@ -1,0 +1,220 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Kleine Schriftgrößen etwas größer als der Tailwind-Standard (text-xs 12 → 13 px, text-sm 14 → 15 px bei 16 px Grundschrift):
+     Hinweise, Zeitangaben, Abzeichen und Nebentexte waren sonst auf dem Bildschirm schwer zu lesen. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.45;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+  --color-chart-6: var(--chart-6);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Ein- und Ausklappen von Bereichen (Radix Collapsible liefert die Höhe in --radix-collapsible-content-height). */
+  --animate-collapsible-down: collapsible-down 220ms ease-out;
+  --animate-collapsible-up: collapsible-up 180ms ease-in;
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+      opacity: 0;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+  }
+  @keyframes collapsible-up {
+    from {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+    to {
+      height: 0;
+      opacity: 0;
+    }
+  }
+}
+
+:root {
+  /* Der Seitengrund ist einen Hauch bläulich-grau, die Karten sind weiß: so heben sich Inhalte ab, ohne dass es Rahmen braucht. */
+  --background: oklch(0.972 0.005 258);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.47 0.17 258);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  /* Kontrast mindestens 4,5:1 (WCAG AA) auch auf --muted, --accent und der Seitenleiste; der Standardwert 0.556 verfehlte das knapp (4,3–4,4:1). */
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  /* Etwas dunkler als der Standard (0.577): als Text auf Weiß 4,5:1 und mehr (vorher 4,49:1). */
+  --destructive: oklch(0.55 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.6 0.15 258);
+  /* Diagrammfarben: 6 Kategorien in FESTER Reihenfolge (nie zyklisch), geprüft mit dem Palettenvalidator gegen Weiß (Abstand für
+     Farbsehschwächen ΔE ≥ 8, Normalsicht ≥ 15). Aqua, Gelb und Magenta liegen im Hellen unter 3:1 Kontrast – deshalb hat jedes
+     Diagramm sichtbare Beschriftungen/Legende mit Werten und eine Tabellenansicht. Einzelne Reihen nehmen immer Farbe 1. */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-grid: oklch(0.93 0 0);
+  --chart-axis: oklch(0.8 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.47 0.17 258);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.96 0.01 258);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  /* Logo (siehe components/shared/brand-logo.tsx): Farben des Originals */
+  --logo-dark: #1c4a7a;
+  --logo-light: #5b9cd6;
+  --logo-overlap: #112e4f;
+  --logo-ink: #12253b;
+  --logo-muted: #78827a;
+}
+
+.dark {
+  /* Dunkle Darstellung mit leichtem Blaustich (passend zum Logo): Seitengrund, Seitenleiste und Karten liegen in drei erkennbar
+     verschiedenen Stufen, statt überall fast dasselbe Grau zu zeigen. */
+  --background: oklch(0.15 0.02 258);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.215 0.026 258);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.235 0.028 258);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.72 0.14 258);
+  --primary-foreground: oklch(0.17 0.03 258);
+  --secondary: oklch(0.29 0.03 258);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.27 0.03 258);
+  --muted-foreground: oklch(0.75 0.015 258);
+  --accent: oklch(0.29 0.035 258);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.556 0 0);
+  /* Dieselben sechs Farbtöne, für den dunklen Grund nachgestuft und gegen die dunkle Kartenfläche (#121a25) validiert: alle ≥ 3:1. */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --chart-grid: oklch(1 0 0 / 8%);
+  --chart-axis: oklch(1 0 0 / 22%);
+  --sidebar: oklch(0.185 0.03 258);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.72 0.14 258);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.29 0.04 258);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  /* Logo in der dunklen Darstellung: hellere Blautöne und helle Schrift, damit es auf dunklem Grund lesbar bleibt */
+  --logo-dark: #4a8ccf;
+  --logo-light: #8dbbe8;
+  --logo-overlap: #2b5f98;
+  --logo-ink: #eef3f9;
+  --logo-muted: #9aa5a0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Überschriften brechen ausgewogen um (kein einzelnes Wort in der letzten Zeile). */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Grundschrift wächst mit dem Bildschirm: Auf großen Monitoren wirkte dieselbe Pixelgröße sonst klein. Da Tailwind in rem
+     rechnet, wachsen Texte UND Abstände mit. Smartphones und Tablets behalten die Standardgröße (16 px); die Schrifteinstellung
+     der Nutzer bleibt erhalten (Prozentwerte, keine festen px-Werte). Die Schwellen entsprechen den Breiten gängiger
+     Bildschirme: kleiner Laptop (1024+), Laptop (1280+), Desktop (1536+). */
+  @media (min-width: 64rem) {
+    html {
+      font-size: 106.25%; /* 17 px */
+    }
+  }
+  @media (min-width: 80rem) {
+    html {
+      font-size: 110%; /* 17,6 px */
+    }
+  }
+  @media (min-width: 96rem) {
+    html {
+      font-size: 112.5%; /* 18 px */
+    }
+  }
+}

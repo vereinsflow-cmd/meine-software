@@ -1,0 +1,30 @@
+# Nicht ins Image: Abhängigkeiten werden im Image installiert, Build-Ergebnisse dort neu erzeugt.
+node_modules
+.next
+.next-e2e
+out
+build
+coverage
+playwright-report
+test-results
+tsconfig.tsbuildinfo
+
+# Geheimnisse und lokale Daten – niemals ins Image
+.env
+.env.*
+!.env.example
+.local
+storage
+
+# Werkzeug-Ordner und Versionsverwaltung
+.git
+.github
+.claude
+.windsurf
+.vscode
+.idea
+
+# Nur Dokumentation und die Werbe-Website
+*.md
+docs
+website

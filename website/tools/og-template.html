@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- Vorlage für das Vorschaubild beim Teilen der Website (1200 × 630). Erzeugt wird es mit: node tools/make-og-image.mjs -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>VereinsFlow – Vorschaubild</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    position: relative;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #f6f3ec;
+    color: #12253b;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .circle { position: absolute; border-radius: 50%; }
+  .c1 { width: 520px; height: 520px; left: -150px; top: -190px; background: #1c4a7a; opacity: .08; }
+  .c2 { width: 520px; height: 520px; left: 20px; top: -190px; background: #5b9cd6; opacity: .2; }
+  .logo { position: absolute; left: 72px; top: 64px; width: 300px; height: auto; }
+  .copy { position: absolute; left: 72px; top: 170px; width: 540px; }
+  h1 { margin: 0; font-size: 76px; line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; }
+  h1 span { color: #1c4a7a; }
+  p { margin: 28px 0 0; font-size: 28px; line-height: 1.4; color: #55677b; }
+  .frame {
+    position: absolute;
+    left: 640px;
+    top: 150px;
+    width: 760px;
+    border: 1px solid #c8c0ac;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 30px 70px rgb(18 37 59 / 24%), 0 8px 20px rgb(18 37 59 / 12%);
+  }
+  .bar { display: flex; gap: 8px; padding: 12px 16px; background: #faf8f3; border-bottom: 1px solid #ddd6c6; }
+  .bar i { width: 12px; height: 12px; border-radius: 50%; background: #c8c0ac; }
+  .frame img { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+  <div class="circle c1"></div>
+  <div class="circle c2"></div>
+  <img class="logo" src="../assets/img/logo.svg" alt="VereinsFlow">
+  <div class="copy">
+    <h1>Bringt Vereinsarbeit <span>in Fluss.</span></h1>
+    <p>Mitglieder, Veranstaltungen, Helferschichten und Aufgaben an einem Ort.</p>
+  </div>
+  <div class="frame">
+    <div class="bar"><i></i><i></i><i></i></div>
+    <img src="../assets/img/app/dashboard-light-1920.webp" alt="">
+  </div>
+</body>
+</html>

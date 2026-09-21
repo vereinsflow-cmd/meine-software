@@ -1,0 +1,16 @@
+.next
+.local
+node_modules
+coverage
+playwright-report
+test-results
+storage
+package-lock.json
+src/generated
+prisma/migrations
+next-env.d.ts
+.next-e2e
+# Wird von Next.js automatisch angepasst (Typ-Ordner der Build-Verzeichnisse) – nicht formatieren.
+tsconfig.json
+# Die Werbe-Website ist eine eigenständige statische Seite mit eigenen Werkzeugen (siehe website/README.md).
+website

@@ -1,0 +1,213 @@
+name: CI
+
+# Läuft bei jeder Änderung an der Anwendung: Typen, Lint, Formatierung, alle Tests, Produktions-Build, Ende-zu-Ende-Tests
+# im Browser (Dev-Server), ein Rauchtest gegen den Produktions-Build (strenge Sicherheitsrichtlinie, Cookies, Header) und
+# ein Docker-Rauchtest (Image bauen, Migrationen anwenden, Anwendung starten, Health-Endpunkt prüfen).
+# Reine Änderungen an der Werbe-Website (website/) lösen das nicht aus – dafür gibt es website.yml.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "website/**"
+  pull_request:
+    paths-ignore:
+      - "website/**"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+  # Verbindung (Superuser) zur Datenbank-Instanz, in der die Tests ihre Datenbanken anlegen.
+  TEST_DATABASE_ADMIN_URL: postgresql://vereinsflow:vereinsflow@localhost:5432/postgres
+
+jobs:
+  check:
+    name: Prüfen und testen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: vereinsflow
+          POSTGRES_PASSWORD: vereinsflow
+          POSTGRES_DB: postgres
+          POSTGRES_INITDB_ARGS: --encoding=UTF8
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vereinsflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Konfiguration aus der Vorlage (nur Entwicklungswerte)
+        run: cp .env.example .env
+      - name: Typprüfung
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Formatierung
+        run: npm run format:check
+      - name: Unit- und Integrationstests
+        run: npm test
+      - name: Produktions-Build
+        run: npm run build
+
+  e2e:
+    name: Ende-zu-Ende-Tests (Browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: vereinsflow
+          POSTGRES_PASSWORD: vereinsflow
+          POSTGRES_DB: postgres
+          POSTGRES_INITDB_ARGS: --encoding=UTF8
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vereinsflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env
+      - name: Browser installieren
+        run: npx playwright install --with-deps chromium
+      - name: Tests (Desktop und Smartphone)
+        run: npx playwright test
+      - name: Berichte sichern (nur bei Fehlern)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-bericht
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+
+  prod-smoke:
+    name: Produktions-Rauchtest (Browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: vereinsflow
+          POSTGRES_PASSWORD: vereinsflow
+          POSTGRES_DB: postgres
+          POSTGRES_INITDB_ARGS: --encoding=UTF8
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vereinsflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env
+      - name: Browser installieren
+        run: npx playwright install --with-deps chromium
+      - name: Produktions-Build
+        run: npm run build
+      - name: Rauchtest gegen den Produktions-Build (Sicherheitsrichtlinie, Cookies, Header)
+        run: npm run test:prod-smoke
+      - name: Berichte sichern (nur bei Fehlern)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-smoke-bericht
+          path: test-results
+          retention-days: 7
+
+  docker:
+    name: Docker-Rauchtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Images bauen
+        run: |
+          docker build --target runner -t vereinsflow:ci .
+          docker build --target tools -t vereinsflow-tools:ci .
+      - name: Datenbank, Migrationen, Anwendung starten
+        run: |
+          docker network create vf-ci
+          docker run -d --name db --network vf-ci \
+            -e POSTGRES_USER=vereinsflow -e POSTGRES_PASSWORD=vereinsflow -e POSTGRES_DB=vereinsflow \
+            -e POSTGRES_INITDB_ARGS="--encoding=UTF8 --locale-provider=icu --icu-locale=de-DE" \
+            postgres:18
+          until docker exec db pg_isready -U vereinsflow -d vereinsflow; do sleep 2; done
+
+          DATABASE_URL=postgresql://vereinsflow:vereinsflow@db:5432/vereinsflow
+          docker run --rm --network vf-ci -e DATABASE_URL="$DATABASE_URL" vereinsflow-tools:ci
+
+          docker run -d --name app --network vf-ci -p 3000:3000 \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e APP_URL=https://ci.example.org \
+            -e APP_SECRET="$(openssl rand -base64 36)" \
+            -e CRON_SECRET="$(openssl rand -hex 16)" \
+            -e MAIL_TRANSPORT=smtp \
+            vereinsflow:ci
+      - name: Health-Endpunkt und Sicherheits-Header prüfen
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:3000/api/health | grep -q '"ok":true'; then ok=1; break; fi
+            sleep 2
+          done
+          [ "${ok:-0}" = "1" ] || { docker logs app; echo "Health-Endpunkt antwortet nicht"; exit 1; }
+          curl -s -D - -o /dev/null http://localhost:3000/anmelden | tee /dev/stderr | grep -i "content-security-policy"
+      - name: Erster Plattform-Administrator lässt sich anlegen
+        run: |
+          docker run --rm --network vf-ci \
+            -e DATABASE_URL=postgresql://vereinsflow:vereinsflow@db:5432/vereinsflow \
+            -e APP_URL=https://ci.example.org \
+            -e APP_SECRET="$(openssl rand -base64 36)" -e CRON_SECRET="$(openssl rand -hex 16)" \
+            vereinsflow-tools:ci npm run admin:create -- --email ci@example.org --first-name CI --last-name Test \
+            | grep -q "passwort-zuruecksetzen?token="
+      - name: Der Start scheitert bei unsicherer Konfiguration (Platzhalter-Geheimnis)
+        run: |
+          set +e
+          timeout 60 docker run --rm --network vf-ci \
+            -e DATABASE_URL=postgresql://vereinsflow:vereinsflow@db:5432/vereinsflow \
+            -e APP_URL=http://unsicher.example.org -e APP_SECRET=change-me-change-me-change-me-change-me \
+            -e CRON_SECRET=change-me-change-me -e MAIL_TRANSPORT=log \
+            vereinsflow:ci
+          code=$?
+          set -e
+          # 0 = lief einfach los, 124 = lief bis zum Zeitlimit – beides bedeutet: Die Prüfung hat nicht gegriffen.
+          if [ "$code" -eq 0 ] || [ "$code" -eq 124 ]; then
+            echo "Der Server hätte bei unsicherer Konfiguration nicht starten dürfen (Exit-Code $code)"
+            exit 1
+          fi
+      - name: Anwendungsprotokoll
+        if: always()
+        run: docker logs app || true

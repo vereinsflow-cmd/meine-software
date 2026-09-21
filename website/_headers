@@ -1,0 +1,18 @@
+# Sicherheits- und Cache-Header für Netlify und Cloudflare Pages (beide lesen diese Datei).
+# Für Apache-Webspace gilt stattdessen die Datei .htaccess, für nginx siehe README.md.
+#
+# Die Content-Security-Policy ist streng: Die Seite lädt nur eigene Dateien und benötigt weder Inline-Skripte noch Inline-Stile.
+# Wer später etwas Fremdes einbindet (Statistik, Karte, Video), muss die Richtlinie – und die Datenschutzerklärung – anpassen.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+# Dateinamen enthalten keine Prüfsummen, deshalb keine „immutable“-Zwischenspeicherung
+/assets/*
+  Cache-Control: public, max-age=86400
