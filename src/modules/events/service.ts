@@ -163,13 +163,25 @@ async function decorate(ctx: TenantContext, rows: EventRow[]): Promise<EventList
   });
 }
 
+/** Auch von der zentralen Suche verwendet (src/modules/search/service.ts). */
+export function searchWhere(q: string): Prisma.EventWhereInput {
+  const tokens = q.trim().split(/\s+/).filter(Boolean).slice(0, 5);
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        { title: { contains: token, mode: "insensitive" as const } },
+        { locationName: { contains: token, mode: "insensitive" as const } },
+      ],
+    })),
+  };
+}
+
 export async function listEvents(
   ctx: TenantContext,
   query: EventListQuery,
 ): Promise<Paged<EventListItem>> {
   assertCan(ctx, "events:read");
   const now = new Date();
-  const tokens = (query.q ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 5);
   const where: Prisma.EventWhereInput = {
     AND: [
       eventVisibilityWhere(ctx),
@@ -181,12 +193,7 @@ export async function listEvents(
         : query.period === "past"
           ? { endsAt: { lt: now } }
           : {},
-      ...tokens.map((token) => ({
-        OR: [
-          { title: { contains: token, mode: "insensitive" as const } },
-          { locationName: { contains: token, mode: "insensitive" as const } },
-        ],
-      })),
+      searchWhere(query.q ?? ""),
     ],
   };
   const [rows, total] = await Promise.all([

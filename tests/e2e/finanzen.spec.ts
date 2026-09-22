@@ -1,16 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { USERS, login, open } from "./helpers";
+import { USERS, login, open, openNavGroup } from "./helpers";
 
 test.describe("Finanzen (Platzhalter)", () => {
   test("Vereinsadmin sieht ehrlich, dass das Modul noch nicht verfügbar ist – ohne vorgetäuschte Funktionen", async ({
     page,
   }) => {
     await login(page, USERS.admin);
-    await page
-      .getByRole("navigation", { name: "Hauptnavigation" })
-      .first()
-      .getByRole("link", { name: "Finanzen" })
-      .click();
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
+    await openNavGroup(nav, "Einstellungen");
+    await nav.getByRole("link", { name: "Finanzen" }).click();
     await expect(page).toHaveURL(/\/finanzen$/);
     await expect(page.getByRole("heading", { level: 1, name: "Finanzen" })).toBeVisible();
     await expect(page.getByText("In Vorbereitung")).toBeVisible();

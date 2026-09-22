@@ -50,11 +50,25 @@ export function allowedAccessLevels(ctx: TenantContext): DocumentAccess[] {
   return levels;
 }
 
-const visibleWhere = (ctx: TenantContext): Prisma.DocumentWhereInput => ({
+/** Auch von der zentralen Suche verwendet (src/modules/search/service.ts). */
+export const visibleWhere = (ctx: TenantContext): Prisma.DocumentWhereInput => ({
   deletedAt: null,
   archivedAt: null,
   access: { in: allowedAccessLevels(ctx) },
 });
+
+/** Auch von der zentralen Suche verwendet (src/modules/search/service.ts). */
+export function searchWhere(q: string): Prisma.DocumentWhereInput {
+  const tokens = q.trim().split(/\s+/).filter(Boolean).slice(0, 5);
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        { name: { contains: token, mode: "insensitive" as const } },
+        { category: { contains: token, mode: "insensitive" as const } },
+      ],
+    })),
+  };
+}
 
 /** Darf der Benutzer dieses Dokument ändern oder löschen? Verwalter immer; Hochladende ihr eigenes. */
 const canManageDocument = (ctx: TenantContext, row: { uploadedById: string | null }): boolean =>
@@ -97,18 +111,12 @@ export async function listDocuments(
   query: DocumentQuery,
 ): Promise<Paged<DocumentDto>> {
   assertCan(ctx, "documents:read");
-  const tokens = (query.q ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 5);
   const where: Prisma.DocumentWhereInput = {
     AND: [
       visibleWhere(ctx),
       query.category ? { category: query.category } : {},
       query.eventId ? { eventId: query.eventId } : {},
-      ...tokens.map((token) => ({
-        OR: [
-          { name: { contains: token, mode: "insensitive" as const } },
-          { category: { contains: token, mode: "insensitive" as const } },
-        ],
-      })),
+      searchWhere(query.q ?? ""),
     ],
   };
   const [rows, total] = await Promise.all([

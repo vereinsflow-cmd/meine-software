@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { USERS, login, open } from "./helpers";
+import { USERS, login, open, openNavGroup } from "./helpers";
 
 test.describe("Logo", () => {
   test("Anmeldeseite zeigt das gestapelte Logo (Symbol oben, Wortmarke und Slogan darunter) als Link zur Startseite", async ({
@@ -34,12 +34,15 @@ test.describe("Logo", () => {
       .locator("svg")
       .boundingBox())!;
     expect(box.y).toBeGreaterThanOrEqual(8);
-    // Die ganze Navigation des Administrators passt in 720 px Höhe; die Gruppe „Persönlich“ bleibt zusätzlich unten angeheftet,
-    // falls sie (kleinere Fenster, mehr Menüpunkte) doch scrollen muss.
+    // Im eingeklappten Grundzustand (alle Untermenüs zu) passt die Navigation in 720 px Höhe; die Gruppe „Persönlich“
+    // bleibt zusätzlich unten angeheftet, falls sie (kleinere Fenster, mehr Menüpunkte) doch scrollen muss.
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
-    await expect(nav.getByRole("link", { name: "Änderungsprotokoll" })).toBeInViewport();
     await expect(nav.getByRole("link", { name: "Hilfe & Support" })).toBeInViewport();
     await expect(nav.getByRole("link", { name: "Mein Profil" })).toBeInViewport();
+    // Öffnet man ein Untermenü, bleibt sein Inhalt erreichbar – notfalls durch Scrollen innerhalb der Seitenleiste.
+    await openNavGroup(nav, "Einstellungen");
+    await nav.getByRole("link", { name: "Änderungsprotokoll" }).scrollIntoViewIfNeeded();
+    await expect(nav.getByRole("link", { name: "Änderungsprotokoll" })).toBeVisible();
   });
 
   test("dunkle Darstellung: Wortmarke wechselt auf helle Schrift und bleibt lesbar", async ({

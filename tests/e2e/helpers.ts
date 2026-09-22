@@ -57,6 +57,21 @@ export async function open(page: Page, path: string): Promise<void> {
   await page.waitForLoadState("networkidle");
 }
 
+/**
+ * Klappt in der übergebenen Navigation (Seitenleiste oder mobiles Menü) das einklappbare Untermenü mit dem
+ * angegebenen Namen auf, falls es noch geschlossen ist – die Menüpunkte „Verein“, „Organisation“, „Kommunikation“ und
+ * „Einstellungen“ sind standardmäßig zu. Ohne Wirkung, wenn die Gruppe schon offen ist.
+ */
+export async function openNavGroup(
+  nav: ReturnType<Page["getByRole"]>,
+  groupLabel: string,
+): Promise<void> {
+  const trigger = nav.getByRole("button", { name: groupLabel, exact: true });
+  if ((await trigger.getAttribute("aria-expanded")) === "true") return;
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+}
+
 export async function logout(page: Page): Promise<void> {
   await page.getByRole("button", { name: /Benutzermenü/ }).click();
   await page.getByRole("menuitem", { name: "Abmelden" }).click();

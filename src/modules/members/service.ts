@@ -129,7 +129,8 @@ export interface MemberListQuery {
   request: PageRequest;
 }
 
-function searchWhere(ctx: TenantContext, q: string): Prisma.MemberWhereInput {
+/** Auch von der zentralen Suche verwendet (src/modules/search/service.ts). */
+export function searchWhere(ctx: TenantContext, q: string): Prisma.MemberWhereInput {
   const tokens = q.trim().split(/\s+/).filter(Boolean).slice(0, 5);
   // Wer keine Kontaktdaten sehen darf, kann auch nicht danach suchen (sonst ließe sich die E-Mail erraten).
   const searchEmail = can(ctx, "members:read_contact");

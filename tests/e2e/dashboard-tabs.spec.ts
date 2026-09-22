@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, chooseTab, loginSettled as login, open } from "./helpers";
+import { USERS, chooseTab, loginSettled as login, open, openNavGroup } from "./helpers";
 
 /**
  * Reiter innerhalb der Dashboard-Seite: Die Seitenleiste behält den einen Punkt „Dashboard“, der aktive Reiter ist eindeutig
@@ -29,6 +29,7 @@ test.describe("Dashboard-Reiter", () => {
       await expect(nav(page).getByText(name, { exact: true })).toHaveCount(0);
     }
     // „Mitglieder“ ist zugleich ein echter Bereich der Anwendung (Mitgliederliste) – genau einmal, mit eigenem Ziel
+    await openNavGroup(nav(page), "Verein");
     await expect(nav(page).getByRole("link", { name: "Mitglieder", exact: true })).toHaveAttribute(
       "href",
       "/mitglieder",

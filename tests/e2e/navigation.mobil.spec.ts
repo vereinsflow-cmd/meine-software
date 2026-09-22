@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { USERS, login } from "./helpers";
+import { USERS, login, openNavGroup } from "./helpers";
 
 /**
  * Ausklappendes Menü auf dem Smartphone: Die Einträge blenden gestaffelt ein, solange „Bewegung reduzieren“ nicht
@@ -28,10 +28,11 @@ test.describe("Smartphone-Menü – Animationen", () => {
     page,
   }) => {
     const menu = await openMenu(page);
+    await openNavGroup(menu, "Verein");
     await menu.getByRole("link", { name: "Kalender", exact: true }).click();
     await expect(page).toHaveURL(/\/kalender/);
     await expect(menu).toBeHidden();
-    // Erneut öffnen: Die Animation läuft jedes Mal neu
+    // Erneut öffnen: Die Animation läuft jedes Mal neu, die Gruppe „Verein“ ist jetzt automatisch offen (aktive Seite)
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     await expect(
       page.getByRole("dialog").getByRole("link", { name: "Kalender", exact: true }),

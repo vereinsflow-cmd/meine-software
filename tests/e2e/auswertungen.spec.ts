@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, login, open } from "./helpers";
+import { USERS, login, open, openNavGroup } from "./helpers";
 
 /**
  * Auswertungen auf dem Dashboard: Themen als Reiter, Ansicht, Diagrammtyp und Zeitraum wählbar, Tabellenansicht,
@@ -280,6 +280,7 @@ test.describe("Seitenleiste – Animationen", () => {
 
   test("Überfahren: Symbol wird leicht größer und bekommt Farbe und Grund", async ({ page }) => {
     await login(page, USERS.admin);
+    await openNavGroup(nav(page), "Verein");
     const icon = tile(page, "Kalender");
     await expect.poll(() => style(icon, "scale")).toBe("none");
     const before = await style(icon, "background-color");
@@ -293,6 +294,7 @@ test.describe("Seitenleiste – Animationen", () => {
 
   test("Tastaturfokus reagiert wie der Zeiger", async ({ page }) => {
     await login(page, USERS.admin);
+    await openNavGroup(nav(page), "Organisation");
     const icon = tile(page, "Aufgaben");
     await nav(page).getByRole("link", { name: "Aufgaben", exact: true }).focus();
     await page.keyboard.press("Shift+Tab");
@@ -303,6 +305,7 @@ test.describe("Seitenleiste – Animationen", () => {
   test("„Bewegung reduzieren“: keine Bewegung, aber die Farbänderung bleibt", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, USERS.admin);
+    await openNavGroup(nav(page), "Verein");
     const icon = tile(page, "Kalender");
     const before = await style(icon, "background-color");
     await nav(page).getByRole("link", { name: "Kalender", exact: true }).hover();
@@ -320,6 +323,7 @@ test.describe("Seitenleiste – Animationen", () => {
     expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(
       "rgba(0, 0, 0, 0)",
     );
+    await openNavGroup(nav(page), "Verein");
     await expect(
       nav(page).getByRole("link", { name: "Kalender", exact: true }),
     ).not.toHaveAttribute("aria-current", "page");

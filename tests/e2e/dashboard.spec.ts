@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { USERS, chooseTab, loginSettled as login, open } from "./helpers";
+import { USERS, chooseTab, loginSettled as login, open, openNavGroup } from "./helpers";
 
 /**
  * Listen auf dem Dashboard zeigen zunächst nur die ersten Einträge; „N weitere … anzeigen“ klappt den Rest auf. Ein Klick vor
@@ -155,7 +155,9 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("region", { name: "Kommende Veranstaltungen" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Geburtstage" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Neues Mitglied" })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Kalender" }).first()).toBeVisible();
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    await openNavGroup(nav, "Verein");
+    await expect(nav.getByRole("link", { name: "Kalender" }).first()).toBeVisible();
   });
 
   test("Abteilungsleiterin sieht Kennzahlen und Auswertung nur für ihre Abteilung", async ({

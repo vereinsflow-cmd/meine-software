@@ -1,4 +1,5 @@
 import {
+  BellIcon,
   BuildingIcon,
   CalendarDaysIcon,
   CalendarIcon,
@@ -24,11 +25,15 @@ export interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
+  /** Kleiner Zähler am Zeilenende, z. B. offene Aufgaben oder ungelesene Benachrichtigungen. */
+  badge?: number;
 }
 
 export interface NavGroup {
   label?: string;
   items: NavItem[];
+  /** Einklappbares Untermenü (Akkordeon); ohne Angabe ist die Gruppe immer sichtbar. */
+  collapsible?: boolean;
 }
 
 interface NavDefinition {
@@ -43,38 +48,11 @@ interface NavDefinition {
 
 const icon = "size-5 shrink-0";
 
-const main: NavDefinition[] = [
+const dashboard: NavDefinition[] = [
   { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboardIcon className={icon} /> },
-  {
-    href: "/veranstaltungen",
-    label: "Veranstaltungen",
-    icon: <CalendarDaysIcon className={icon} />,
-    permission: "events:read",
-  },
-  {
-    href: "/helferplanung",
-    label: "Helferplanung",
-    icon: <HandHeartIcon className={icon} />,
-    permission: "shifts:read",
-  },
-  {
-    href: "/kalender",
-    label: "Kalender",
-    icon: <CalendarIcon className={icon} />,
-    permission: "events:read",
-  },
-  {
-    href: "/aufgaben",
-    label: "Aufgaben",
-    icon: <ListChecksIcon className={icon} />,
-    permission: "tasks:read",
-  },
-  {
-    href: "/nachrichten",
-    label: "Nachrichten",
-    icon: <MessageSquareIcon className={icon} />,
-    permission: "messages:read",
-  },
+];
+
+const verein: NavDefinition[] = [
   {
     href: "/mitglieder",
     label: "Mitglieder",
@@ -83,10 +61,37 @@ const main: NavDefinition[] = [
     notOwnOnly: true,
   },
   {
+    href: "/kalender",
+    label: "Termine",
+    icon: <CalendarIcon className={icon} />,
+    permission: "events:read",
+  },
+  {
+    href: "/veranstaltungen",
+    label: "Veranstaltungen",
+    icon: <CalendarDaysIcon className={icon} />,
+    permission: "events:read",
+  },
+  {
+    href: "/helferplanung",
+    label: "Helferstunden",
+    icon: <HandHeartIcon className={icon} />,
+    permission: "shifts:read",
+  },
+  {
     href: "/abteilungen",
     label: "Abteilungen",
     icon: <NetworkIcon className={icon} />,
     permission: "departments:read",
+  },
+];
+
+const organisation: NavDefinition[] = [
+  {
+    href: "/aufgaben",
+    label: "Aufgaben",
+    icon: <ListChecksIcon className={icon} />,
+    permission: "tasks:read",
   },
   {
     href: "/dokumente",
@@ -96,7 +101,17 @@ const main: NavDefinition[] = [
   },
 ];
 
-const admin: NavDefinition[] = [
+const kommunikation: NavDefinition[] = [
+  {
+    href: "/nachrichten",
+    label: "Nachrichten",
+    icon: <MessageSquareIcon className={icon} />,
+    permission: "messages:read",
+  },
+  { href: "/benachrichtigungen", label: "Benachrichtigungen", icon: <BellIcon className={icon} /> },
+];
+
+const einstellungen: NavDefinition[] = [
   {
     href: "/benutzer",
     label: "Benutzer und Rollen",
@@ -140,14 +155,54 @@ function visible(definitions: NavDefinition[], holder: PermissionHolder): NavIte
     .map(({ href, label, icon: nodeIcon }) => ({ href, label, icon: nodeIcon }));
 }
 
+function withBadge(items: NavItem[], href: string, count: number | undefined): NavItem[] {
+  if (!count) return items;
+  return items.map((item) => (item.href === href ? { ...item, badge: count } : item));
+}
+
+/** Zähler für die kleinen Badges an Menüpunkten. */
+export interface NavBadges {
+  /** Meine offenen Aufgaben → Badge am Menüpunkt „Aufgaben“. */
+  tasks?: number;
+  /** Ungelesene Benachrichtigungen → Badge am Menüpunkt „Benachrichtigungen“. */
+  notifications?: number;
+}
+
 /** Menüpunkte, die für die Rolle des Benutzers sichtbar sind (die Seiten prüfen die Rechte zusätzlich selbst). */
 export function getNavigation(
   holder: PermissionHolder,
-  options: { isPlatformAdmin: boolean },
+  options: { isPlatformAdmin: boolean; badges?: NavBadges },
 ): NavGroup[] {
-  const groups: NavGroup[] = [{ items: visible(main, holder) }];
-  const adminItems = visible(admin, holder);
-  if (adminItems.length > 0) groups.push({ label: "Verwaltung", items: adminItems });
+  const groups: NavGroup[] = [{ items: visible(dashboard, holder) }];
+
+  const vereinItems = visible(verein, holder);
+  if (vereinItems.length > 0) {
+    groups.push({ label: "Verein", items: vereinItems, collapsible: true });
+  }
+
+  const organisationItems = withBadge(
+    visible(organisation, holder),
+    "/aufgaben",
+    options.badges?.tasks,
+  );
+  if (organisationItems.length > 0) {
+    groups.push({ label: "Organisation", items: organisationItems, collapsible: true });
+  }
+
+  const kommunikationItems = withBadge(
+    visible(kommunikation, holder),
+    "/benachrichtigungen",
+    options.badges?.notifications,
+  );
+  if (kommunikationItems.length > 0) {
+    groups.push({ label: "Kommunikation", items: kommunikationItems, collapsible: true });
+  }
+
+  const einstellungenItems = visible(einstellungen, holder);
+  if (einstellungenItems.length > 0) {
+    groups.push({ label: "Einstellungen", items: einstellungenItems, collapsible: true });
+  }
+
   const personalItems = visible(personal, holder);
   if (options.isPlatformAdmin) {
     personalItems.unshift({

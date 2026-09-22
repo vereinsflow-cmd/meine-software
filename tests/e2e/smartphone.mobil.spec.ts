@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { USERS, login } from "./helpers";
+import { USERS, login, openNavGroup } from "./helpers";
 
 /**
  * Smartphone-Ansicht (Pixel 7, 412 px breit). Läuft nur im Projekt "mobil": `npx playwright test --project=mobil`.
@@ -24,6 +24,7 @@ test.describe("Smartphone", () => {
     await expect(page.getByRole("navigation", { name: "Hauptnavigation" }).first()).toBeHidden(); // Sidebar ist auf dem Smartphone ausgeblendet
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
+    await openNavGroup(menu, "Verein");
     await expect(menu.getByRole("link", { name: "Helferplanung" })).toBeVisible();
     await menu.getByRole("link", { name: "Helferplanung" }).click();
     await expect(page).toHaveURL(/\/helferplanung$/);

@@ -10,12 +10,15 @@ import { LOGO_PATHS } from "./brand-logo-paths";
  *
  *   horizontal  Symbol links, Wortmarke rechts – für Kopfzeilen und Seitenleisten
  *   stacked     Symbol oben, Wortmarke und Slogan darunter – für die Anmeldung
+ *   icon        nur das Symbol, ohne Wortmarke – für die eingeklappte Seitenleiste
  */
-export type LogoVariant = "horizontal" | "stacked";
+export type LogoVariant = "horizontal" | "stacked" | "icon";
 
 const VIEW_BOX: Record<LogoVariant, string> = {
   horizontal: "0 0 1005 162",
   stacked: "536 286 689 515",
+  // Ausschnitt des Symbols aus der horizontalen Fassung (dieselbe Transformation, siehe unten).
+  icon: "0 0 280 162",
 };
 
 /** Symbol im Raster des Originals: Kreise mit Radius 130,5; der Überschnitt (Linse) hat eine eigene Farbe. */
@@ -67,6 +70,10 @@ export function BrandLogo({
           <Wordmark />
           <path d={LOGO_PATHS.tagline} className="fill-(--logo-muted)" />
         </>
+      ) : variant === "icon" ? (
+        <g transform="scale(0.62) translate(-655 -290)">
+          <Symbol />
+        </g>
       ) : (
         <>
           {/* Symbol verkleinert an den linken Rand, Wortmarke rechts daneben auf halber Symbolhöhe */}

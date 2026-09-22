@@ -133,6 +133,14 @@
   --logo-overlap: #112e4f;
   --logo-ink: #12253b;
   --logo-muted: #78827a;
+  /* Breite der festen Seitenleiste (ab `lg`); die Provider-Komponente überschreibt diesen Wert inline, wenn eingeklappt. */
+  --sidebar-w: 17rem;
+}
+
+@media (width >= 80rem) {
+  :root {
+    --sidebar-w: 18.5rem;
+  }
 }
 
 .dark {
