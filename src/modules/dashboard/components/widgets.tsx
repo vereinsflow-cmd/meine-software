@@ -39,6 +39,14 @@ import { FillBar, UrgencyBadge } from "@/modules/shifts/components/shift-status"
 import type { DashboardData } from "../service";
 import { sortByImportance } from "../task-order";
 
+/**
+ * Zeilen in Listenkarten (Termine, Einsätze, Geburtstage, offene Schichten): Beim Überfahren hellt die ganze Zeile sich
+ * leicht auf, nicht nur der Link-Text – das macht die Zeile als Ganzes als Bedienelement erkennbar. Der negative Rand zieht
+ * die Zeile bis an den Kartenrand; die Karte selbst schneidet das (`overflow-hidden`) wieder passend zur Rundung ab.
+ */
+const LIST_ROW =
+  "-mx-(--card-spacing) rounded-lg px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
+
 export function StatCard({
   label,
   value,
@@ -71,6 +79,9 @@ export function StatCard({
             className={cn(
               "flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
               colors.tile,
+              // Nur bei anklickbaren Karten: leichtes Wachsen beim Überfahren, als Zugabe zum Anheben der ganzen Karte.
+              href &&
+                "transition-transform duration-200 group-hover/card:scale-110 motion-reduce:transition-none",
             )}
             aria-hidden="true"
           >
@@ -261,7 +272,10 @@ export function UpcomingEvents({ events }: { events: NonNullable<DashboardData["
       ) : (
         <ExpandableList className="divide-y" initial={3} itemNoun="weitere Termine">
           {events.upcoming.map((event) => (
-            <li key={event.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+            <li
+              key={event.id}
+              className={cn("flex items-start gap-3 py-3 first:pt-0 last:pb-0", LIST_ROW)}
+            >
               <DateTile value={event.startsAt} accent="violet" />
               <div className="min-w-0 flex-1">
                 <Link
@@ -308,7 +322,7 @@ export function MyShifts({ shifts }: { shifts: NonNullable<DashboardData["shifts
           {shifts.mine.map((assignment) => (
             <li
               key={assignment.assignmentId}
-              className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+              className={cn("flex items-start gap-3 py-3 first:pt-0 last:pb-0", LIST_ROW)}
             >
               <DateTile value={assignment.startsAt} accent="emerald" />
               <Link
@@ -345,7 +359,10 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
       ) : (
         <ExpandableList className="divide-y" initial={3} itemNoun="weitere Schichten">
           {shifts.open.map((shift) => (
-            <li key={shift.shiftId} className="grid gap-2 py-3 first:pt-0 last:pb-0">
+            <li
+              key={shift.shiftId}
+              className={cn("grid gap-2 py-3 first:pt-0 last:pb-0", LIST_ROW)}
+            >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <Link
@@ -418,7 +435,7 @@ export function MyTasks({
             <li
               key={task.id}
               className={cn(
-                "flex flex-wrap items-start justify-between gap-2 rounded-lg border p-3",
+                "flex flex-wrap items-start justify-between gap-2 rounded-lg border p-3 transition-shadow hover:shadow-sm motion-reduce:transition-none",
                 taskRowTone(task),
               )}
             >
@@ -526,7 +543,10 @@ export function Birthdays({ birthdays }: { birthdays: NonNullable<DashboardData[
           {birthdays.map((b) => (
             <li
               key={b.memberId}
-              className="flex flex-wrap items-baseline justify-between gap-x-3 py-2.5 first:pt-0 last:pb-0"
+              className={cn(
+                "flex flex-wrap items-baseline justify-between gap-x-3 py-2.5 first:pt-0 last:pb-0",
+                LIST_ROW,
+              )}
             >
               <Link
                 href={`/mitglieder/${b.memberId}`}

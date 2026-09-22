@@ -168,7 +168,7 @@ export function DashboardTabs({
           reicht sie bis an den Rand (negativer Rand = Seitenrand) und lässt sich wischen, ab `lg` passt sie in den Inhalt. */}
       <div
         ref={bar}
-        className="sticky top-16 z-20 -mx-4 overflow-x-auto border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 [@media(max-height:820px)]:top-14"
+        className="sticky top-16 z-20 -mx-4 overflow-x-auto border-b bg-background/95 px-4 shadow-[0_1px_3px_-1px_rgb(0_0_0/0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:shadow-none [@media(max-height:820px)]:top-14"
       >
         <TabsList
           ref={list}
