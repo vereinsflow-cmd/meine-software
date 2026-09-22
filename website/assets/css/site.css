@@ -58,16 +58,13 @@
   --hero-b: #5b9cd6;
   --hero-b-opacity: 0.24;
 
-  --shadow-sm: 0 1px 2px rgb(18 37 59 / 6%);
-  --shadow-md: 0 20px 45px rgb(18 37 59 / 9%), 0 2px 6px rgb(18 37 59 / 4%);
-  --shadow-lg: 0 40px 90px rgb(18 37 59 / 18%), 0 10px 24px rgb(18 37 59 / 8%);
+  --shadow-sm: 0 2px 6px rgb(18 37 59 / 6%), 0 1px 2px rgb(18 37 59 / 5%);
+  --shadow-md: 0 18px 40px rgb(18 37 59 / 10%), 0 3px 8px rgb(18 37 59 / 5%);
+  --shadow-lg: 0 40px 90px rgb(18 37 59 / 20%), 0 10px 24px rgb(18 37 59 / 10%);
 
-  /* Fast unsichtbare Kante statt sichtbarem Rahmen – Karten setzen sich nur über den Untergrund ab */
-  --card-line: rgb(18 37 59 / 7%);
-
-  --radius: 22px;
+  --radius: 20px;
   --radius-sm: 14px;
-  --header-h: 64px;
+  --header-h: 68px;
   --container: 1160px;
   --gutter: clamp(16px, 4vw, 32px);
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -120,11 +117,9 @@
     --hero-b: #8dbbe8;
     --hero-b-opacity: 0.12;
 
-    --card-line: rgb(255 255 255 / 9%);
-
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 25%);
-    --shadow-md: 0 22px 46px rgb(0 0 0 / 32%), 0 2px 6px rgb(0 0 0 / 22%);
-    --shadow-lg: 0 40px 90px rgb(0 0 0 / 50%), 0 10px 24px rgb(0 0 0 / 28%);
+    --shadow-sm: 0 2px 6px rgb(0 0 0 / 22%), 0 1px 2px rgb(0 0 0 / 18%);
+    --shadow-md: 0 20px 44px rgb(0 0 0 / 32%), 0 3px 8px rgb(0 0 0 / 22%);
+    --shadow-lg: 0 40px 90px rgb(0 0 0 / 48%), 0 10px 24px rgb(0 0 0 / 26%);
   }
 }
 
@@ -175,15 +170,15 @@ h4 {
 }
 
 h1 {
-  font-size: clamp(2.7rem, 7vw + 1rem, 6.6rem);
+  font-size: clamp(2.4rem, 7vw + 0.7rem, 5.2rem);
   font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
+  letter-spacing: -0.038em;
+  line-height: 1.04;
 }
 
 h2 {
-  font-size: clamp(2.05rem, 4vw + 0.6rem, 3.7rem);
-  letter-spacing: -0.03em;
+  font-size: clamp(1.95rem, 3.8vw + 0.5rem, 3.3rem);
+  letter-spacing: -0.025em;
 }
 
 h3 {
@@ -327,13 +322,13 @@ html:not(.js) .site-header,
 .nav {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 28px;
   margin-left: auto;
 }
 
 .nav ul {
   display: flex;
-  gap: 22px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -341,18 +336,17 @@ html:not(.js) .site-header,
 
 .nav ul a {
   display: block;
-  padding: 10px 4px;
+  padding: 10px 14px;
+  border-radius: 999px;
   color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-size: 0.975rem;
+  font-weight: 550;
   text-decoration: none;
-  opacity: 0.82;
-  transition: opacity 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .nav ul a:hover {
-  opacity: 1;
+  background: var(--brand-soft);
   color: var(--brand);
 }
 
@@ -501,41 +495,10 @@ html:not(.js) .site-header,
   transform: translateX(3px);
 }
 
-/* Schlichte Textverbindung statt Schaltfläche – für den zweiten, leiseren Aufruf neben einem Haupt-Button */
-.btn-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
-  color: var(--brand);
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-
-.btn-text .icon {
-  width: 0.95em;
-  height: 0.95em;
-}
-
-.btn-text:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  transform: none;
-  color: var(--brand);
-}
-
-.btn-text:hover .icon-arrow {
-  transform: translateX(3px);
-}
-
 /* ---------- Abschnitte ---------- */
 
 .section {
-  padding-block: clamp(72px, 10vw, 140px);
+  padding-block: clamp(64px, 9vw, 120px);
 }
 
 .section-alt {
@@ -556,18 +519,20 @@ html:not(.js) .site-header,
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--brand-soft);
   color: var(--brand);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .lead {
   margin-top: 20px;
   color: var(--muted);
-  font-size: clamp(1.15rem, 0.7vw + 1rem, 1.4rem);
+  font-size: clamp(1.1rem, 0.6vw + 1rem, 1.3rem);
   line-height: 1.6;
 }
 
@@ -683,9 +648,8 @@ html:not(.js) .site-header,
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   justify-content: center;
-  gap: 22px;
+  gap: 14px;
   margin-top: 34px;
 }
 
@@ -720,34 +684,49 @@ html:not(.js) .site-header,
   margin: clamp(44px, 6vw, 76px) auto 0;
 }
 
-/* Weicher Lichtschein hinter dem Bildschirmfoto statt eines sichtbaren Browser-Rahmens – das Bild wirkt wie schwebend */
+/* Dezenter Lichtschein hinter dem Bildschirmfoto – der Browser-Rahmen bleibt, wirkt dadurch nur etwas schwebender */
 .hero-visual::before,
 .chapter-media::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 6% -4%;
+  inset: 8% -6%;
   border-radius: 50%;
   background: radial-gradient(closest-side, var(--brand-2), transparent 72%);
-  opacity: 0.16;
-  filter: blur(48px);
+  opacity: 0.14;
+  filter: blur(54px);
   pointer-events: none;
 }
 
 @media (prefers-color-scheme: dark) {
   .hero-visual::before,
   .chapter-media::before {
-    opacity: 0.22;
+    opacity: 0.2;
   }
 }
 
 .browser {
   overflow: hidden;
-  border: 1px solid var(--card-line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-lg);
   text-align: left;
+}
+
+.browser-bar {
+  display: flex;
+  gap: 7px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.browser-bar i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--line-strong);
 }
 
 .browser img,
@@ -759,7 +738,7 @@ html:not(.js) .site-header,
 
 .shot {
   overflow: hidden;
-  border: 1px solid var(--card-line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-md);
@@ -839,9 +818,8 @@ html:not(.js) .site-header,
 }
 
 .facts li {
-  padding: 44px 26px;
+  padding: 30px 26px;
   border-left: 1px solid var(--line);
-  text-align: center;
 }
 
 .facts li:first-child {
@@ -851,19 +829,18 @@ html:not(.js) .site-header,
 .facts strong {
   display: block;
   color: var(--ink);
-  font-size: clamp(1.55rem, 2.1vw, 2.3rem);
+  font-size: clamp(1.35rem, 1.9vw, 1.75rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 .facts span {
   display: block;
-  max-width: 26ch;
-  margin: 10px auto 0;
+  margin-top: 6px;
   color: var(--muted);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 @media (max-width: 899px) {
@@ -899,17 +876,18 @@ html:not(.js) .site-header,
 }
 
 .card {
-  padding: 32px;
-  border: 1px solid var(--card-line);
+  padding: 28px;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: none;
-  transition: transform 0.25s, box-shadow 0.25s;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-md);
 }
 
 .card h3 {
@@ -1047,9 +1025,9 @@ html:not(.js) .site-header,
 
 .spot h2,
 .spot h3 {
-  font-size: clamp(1.9rem, 3vw + 0.5rem, 2.75rem);
-  line-height: 1.12;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.7rem, 2.6vw + 0.6rem, 2.5rem);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
 }
 
 .spot .lead {
@@ -1128,7 +1106,7 @@ html:not(.js) .site-header,
   font-weight: 650;
 }
 
-/* Variante für ein ganzseitiges Kapitel: Punkte als Reihe unter einem großen Bild statt als Liste daneben */
+/* Variante für ein ganzseitiges Feature-Kapitel: Punkte als ruhiges Raster unter einem großen Bild statt als Liste daneben */
 .checks-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 28px 40px;
@@ -1141,7 +1119,7 @@ html:not(.js) .site-header,
   gap: 20px;
 }
 
-/* ---------- Ganzseitiges Kapitel (z. B. Helferschichten): Kopf zentriert, ein großes Bild darunter ---------- */
+/* ---------- Ganzseitiges Feature-Kapitel (Helferschichten): Kopf zentriert, ein großes Bild darunter ---------- */
 
 .chapter-media {
   position: relative;
@@ -1154,7 +1132,7 @@ html:not(.js) .site-header,
   position: absolute;
   right: -2%;
   bottom: -9%;
-  width: clamp(120px, 19%, 220px);
+  width: clamp(120px, 19%, 230px);
   transform: rotate(3deg);
 }
 
@@ -1184,11 +1162,11 @@ html:not(.js) .site-header,
 .role {
   display: flex;
   flex-direction: column;
-  padding: 26px 22px;
-  border: 1px solid var(--card-line);
+  padding: 24px 22px;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .role .card-icon {
@@ -1277,16 +1255,14 @@ html:not(.js) .site-header,
   color: var(--band-accent);
 }
 
-/* Auf dem dunklen Band stehen die Punkte ohne Kartenrahmen – nur Symbol, Titel und Text, wie eine Aufzählung */
 .band .card {
-  padding: 0;
-  border: 0;
-  background: transparent;
+  border-color: var(--band-line);
+  background: var(--band-card);
   box-shadow: none;
 }
 
 .band .card:hover {
-  transform: none;
+  border-color: var(--band-accent);
   box-shadow: none;
 }
 
@@ -1321,10 +1297,10 @@ html:not(.js) .site-header,
 .step {
   position: relative;
   padding: 32px 28px 28px;
-  border: 1px solid var(--card-line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
   counter-increment: step;
 }
 
@@ -1574,11 +1550,11 @@ html:not(.js) .site-header,
 /* ---------- Fußzeile ---------- */
 
 .site-footer {
-  padding: 72px 0 40px;
+  padding: 64px 0 40px;
   border-top: 1px solid var(--line);
   background: var(--bg);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.975rem;
 }
 
 .footer-grid {
@@ -1601,9 +1577,9 @@ html:not(.js) .site-header,
 .site-footer h2 {
   margin-bottom: 14px;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -1633,7 +1609,7 @@ html:not(.js) .site-header,
   margin-top: 48px;
   padding-top: 24px;
   border-top: 1px solid var(--line);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 
 /* Schlanke Fußzeile der Rechtstexte */
