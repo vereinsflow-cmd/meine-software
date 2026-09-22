@@ -55,6 +55,8 @@ export interface DashboardData {
     open: OpenShiftItem[];
     /** Summe der freien Plätze in kommenden Schichten veröffentlichter Veranstaltungen. */
     freeSpots: number;
+    /** Besetzte/benötigte Plätze insgesamt – für die Fortschrittsanzeige der Kennzahlenkarte. */
+    staffing: { filled: number; required: number };
     /** Nur für Veranstalter: Veranstaltungen mit unbesetzten Schichten in den nächsten 7 Tagen. */
     warnings: StaffingEvent[];
     hours: {
@@ -137,6 +139,10 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
     mine,
     open,
     freeSpots: staffing.reduce((sum, event) => sum + Math.max(0, event.required - event.filled), 0),
+    staffing: {
+      filled: staffing.reduce((sum, event) => sum + Math.min(event.filled, event.required), 0),
+      required: staffing.reduce((sum, event) => sum + event.required, 0),
+    },
     warnings: isOrganizer
       ? staffing
           .filter(

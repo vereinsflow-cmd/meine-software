@@ -297,6 +297,28 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect(data.shifts!.hours.trend.at(-1)).toBe(1.5); // 90 Minuten, diese Woche geleistet
     expect(data.shifts!.hours.trend.slice(0, -1).every((v) => v === 0)).toBe(true); // sonst nichts dokumentiert
   });
+
+  it("Besetzungsstand (für die Fortschrittsanzeige der Kennzahlenkarte): Summe über alle kommenden Schichten", async () => {
+    const { ctx, club, people } = await setup();
+    const event = await createEvent(club.id, { title: "Fest", startsAt: inDays(5) });
+    const staffed = await createShift(club.id, event.id, {
+      title: "Kasse",
+      startsAt: inDays(5),
+      requiredCount: 2,
+    });
+    await createShift(club.id, event.id, {
+      title: "Aufbau",
+      startsAt: inDays(5),
+      requiredCount: 3,
+    });
+    await prisma.shiftAssignment.create({
+      data: { clubId: club.id, shiftId: staffed.id, memberId: people.helper.member.id },
+    });
+
+    const data = await getDashboard(ctx.admin);
+    expect(data.shifts!.staffing).toEqual({ filled: 1, required: 5 }); // 1 von 2 (Kasse) + 0 von 3 (Aufbau)
+    expect(data.shifts!.freeSpots).toBe(4);
+  });
 });
 
 describe("Dashboard: Geburtstage", () => {

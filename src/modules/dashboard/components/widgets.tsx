@@ -29,7 +29,6 @@ import {
   formatCalendarDate,
   formatDateShort,
   formatDateTime,
-  formatDuration,
   formatTimeRange,
 } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
@@ -38,7 +37,7 @@ import { cn } from "@/lib/utils";
 import { QuickSignUpButton } from "@/modules/shifts/components/quick-actions";
 import { FillBar, UrgencyBadge } from "@/modules/shifts/components/shift-status";
 import type { DashboardData } from "../service";
-import { sortByImportance } from "../task-order";
+import { sortByImportance, taskRank } from "../task-order";
 
 /**
  * Zeilen in Listenkarten (Termine, Einsätze, Geburtstage, offene Schichten): Beim Überfahren hellt die ganze Zeile sich
@@ -48,6 +47,13 @@ import { sortByImportance } from "../task-order";
 const LIST_ROW =
   "-mx-(--card-spacing) rounded-lg px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
 
+/** Farbe der Fortschrittsanzeige einer Kennzahlenkarte: dieselbe Bedeutung wie überall (grün = gut, gelb = teilweise, rot = nichts). */
+function progressTone(ratio: number): string {
+  if (ratio >= 1) return "bg-emerald-500";
+  if (ratio > 0) return "bg-amber-500";
+  return "bg-red-500";
+}
+
 export function StatCard({
   label,
   value,
@@ -55,6 +61,7 @@ export function StatCard({
   href,
   icon,
   trend,
+  progress,
 }: {
   label: string;
   value: React.ReactNode;
@@ -63,7 +70,11 @@ export function StatCard({
   icon: React.ReactNode;
   /** Letzte Werte für eine kleine Trendlinie (älteste zuerst, mind. zwei Werte); ohne Angabe entfällt sie. */
   trend?: readonly number[];
+  /** Anteil an einem Bestand (z. B. besetzte von benötigten Plätzen) als schmale Statusleiste; ohne Angabe entfällt sie. */
+  progress?: { value: number; total: number };
 }) {
+  const ratio =
+    progress && progress.total > 0 ? Math.min(1, progress.value / progress.total) : null;
   const body = (
     <Card
       className={cn(
@@ -72,7 +83,7 @@ export function StatCard({
           "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
       )}
     >
-      <CardContent className="grid gap-1 py-4">
+      <CardContent className="grid gap-1.5 py-5">
         <div className="flex items-start justify-between gap-3">
           <p className="pt-0.5 text-sm font-medium text-muted-foreground">{label}</p>
           <div
@@ -89,9 +100,18 @@ export function StatCard({
             {icon}
           </div>
         </div>
-        <p className="text-3xl leading-tight font-bold tabular-nums">{value}</p>
+        <p className="text-4xl leading-tight font-bold tabular-nums">{value}</p>
         {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
         {trend && trend.length > 1 && <Sparkline values={trend} className="mt-1.5" />}
+        {/* Rein schmückend (wie die Trendlinie): Zahl und Hinweis nennen die Besetzung bereits vollständig als Text. */}
+        {ratio !== null && (
+          <div aria-hidden="true" className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className={cn("h-full rounded-full transition-all", progressTone(ratio))}
+              style={{ width: `${ratio * 100}%` }}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -413,13 +433,15 @@ export function MyTasks({
   organizer: boolean;
 }) {
   const sorted = sortByImportance(tasks.mine);
+  // Hervorhebung nur, wenn wirklich etwas drängt (überfällig/dringend/hoch) – sonst verliert sie ihre Bedeutung.
+  const urgent = sorted.some((task) => taskRank(task) <= 2);
   return (
     <Widget
       id="w-aufgaben"
       title="Meine Aufgaben"
       icon={<ListChecksIcon />}
       accent="blue"
-      emphasis={sorted.length > 0}
+      emphasis={urgent}
       description={
         organizer
           ? `Im Verein: ${tasks.stats.open} offen, ${tasks.stats.overdue} überfällig`
@@ -619,7 +641,7 @@ export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shift
         hours.scope === "ALL" ? `Helferstunden ${hours.year}` : `Meine Helferstunden ${hours.year}`
       }
       value={compactHours(hours.minutes)}
-      hint={`${formatDuration(hours.minutes)} · ${hours.scope === "ALL" ? "vereinsweit dokumentiert" : "dokumentierte Einsätze"}`}
+      hint={hours.scope === "ALL" ? "Vereinsweit dokumentiert" : "Deine dokumentierten Einsätze"}
       href="/helferplanung/stunden"
       icon={<ClockIcon />}
       trend={hours.trend}

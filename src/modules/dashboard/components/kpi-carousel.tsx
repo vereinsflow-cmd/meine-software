@@ -53,7 +53,7 @@ export function KpiCarousel({
           // Smartphone: nebeneinander, einrastend, bis an den Bildschirmrand; Bildlaufleiste ausgeblendet
           "-mx-4 -my-1 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 py-1 [&::-webkit-scrollbar]:hidden",
           // ab `sm`: Raster wie bisher
-          "sm:mx-0 sm:my-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:p-0 xl:grid-cols-4",
+          "sm:mx-0 sm:my-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:p-0 xl:grid-cols-4",
         )}
       >
         {items.map((item, index) => (

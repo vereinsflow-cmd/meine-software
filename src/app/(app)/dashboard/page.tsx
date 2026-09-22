@@ -102,6 +102,7 @@ export default async function DashboardPage({
             hint="In kommenden Schichten"
             href="/helferplanung"
             icon={<HandHeartIcon />}
+            progress={{ value: shifts.staffing.filled, total: shifts.staffing.required }}
           />
         )}
         {shifts && <HelperHours hours={shifts.hours} />}

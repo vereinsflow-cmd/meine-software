@@ -39,11 +39,11 @@ export function CardGrid({ children }: { children: React.ReactNode }) {
   const items = Children.toArray(children);
   if (items.length === 0) return null;
   return (
-    <div className={items.length > 1 ? "-mb-6 md:columns-2 md:gap-x-6" : "-mb-6"}>
+    <div className={items.length > 1 ? "-mb-7 md:columns-2 md:gap-x-7" : "-mb-7"}>
       {items.map((item, index) => (
         <div
           key={isValidElement(item) && item.key !== null ? item.key : index}
-          className="mb-6 break-inside-avoid"
+          className="mb-7 break-inside-avoid"
         >
           {item}
         </div>
