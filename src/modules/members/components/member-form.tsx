@@ -14,9 +14,10 @@ import {
   TextareaField,
 } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { MEMBER_STATUS_LABEL, options } from "@/lib/labels";
 import { createMemberAction, updateMemberAction } from "../actions";
-import { memberFormSchema, type MemberFormInput } from "../schemas";
+import { memberCreateSchema, memberFormSchema, type MemberFormInput } from "../schemas";
 
 interface DepartmentOption {
   id: string;
@@ -33,10 +34,12 @@ function DepartmentAssignment({
   control,
   departments,
   canSetLeaders,
+  required,
 }: {
   control: Control<MemberFormInput>;
   departments: DepartmentOption[];
   canSetLeaders: boolean;
+  required?: boolean;
 }) {
   const ids = useController({ control, name: "departmentIds" });
   const leaders = useController({ control, name: "leaderDepartmentIds" });
@@ -68,7 +71,15 @@ function DepartmentAssignment({
 
   return (
     <fieldset className="grid gap-2">
-      <legend className="mb-1 text-sm font-medium">Abteilungen</legend>
+      <legend className="mb-1 text-sm font-medium">
+        Abteilungen
+        {required && (
+          <span aria-hidden="true" className="text-destructive">
+            {" "}
+            *
+          </span>
+        )}
+      </legend>
       {departments.map((department) => (
         <div key={department.id} className="flex flex-wrap items-center gap-x-6 gap-y-1">
           <div className="flex items-center gap-2.5">
@@ -130,8 +141,9 @@ export function MemberForm({
   editable: { contact: boolean; private: boolean; leaders: boolean };
 }) {
   const router = useRouter();
+  const isCreate = mode === "create";
   const { form, onSubmit, isPending, formError } = useActionForm({
-    schema: memberFormSchema,
+    schema: isCreate ? memberCreateSchema : memberFormSchema,
     defaultValues,
     action: (values) =>
       mode === "create" ? createMemberAction(values) : updateMemberAction(memberId!, values),
@@ -156,11 +168,21 @@ export function MemberForm({
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <TextField form={form} name="firstName" label="Vorname" autoComplete="off" required />
           <TextField form={form} name="lastName" label="Nachname" autoComplete="off" required />
+          {editable.private && (
+            <TextField
+              form={form}
+              name="birthDate"
+              label="Geburtsdatum"
+              type="date"
+              hint="Wird für Altersgrenzen bei Helferschichten und Jugendarbeit genutzt."
+            />
+          )}
           <TextField
             form={form}
             name="memberNumber"
             label="Mitgliedsnummer"
             hint="Eindeutig im Verein, z. B. M-0042."
+            required={isCreate}
           />
           <SelectField
             form={form}
@@ -174,9 +196,15 @@ export function MemberForm({
             name="clubFunction"
             label="Funktion im Verein"
             hint="z. B. Kassenwart, Trainer"
+            required={isCreate}
           />
-          <div className="hidden sm:block" />
-          <TextField form={form} name="joinedAt" label="Eintrittsdatum" type="date" />
+          <TextField
+            form={form}
+            name="joinedAt"
+            label="Eintrittsdatum"
+            type="date"
+            required={isCreate}
+          />
           <TextField form={form} name="leftAt" label="Austrittsdatum" type="date" />
         </CardContent>
       </Card>
@@ -192,6 +220,7 @@ export function MemberForm({
             control={form.control}
             departments={departments}
             canSetLeaders={editable.leaders}
+            required={isCreate}
           />
         </CardContent>
       </Card>
@@ -210,17 +239,39 @@ export function MemberForm({
               label="E-Mail-Adresse"
               type="email"
               autoComplete="off"
+              required={isCreate}
             />
-            <TextField form={form} name="phone" label="Telefon" type="tel" autoComplete="off" />
+            <TextField
+              form={form}
+              name="phone"
+              label="Telefon"
+              type="tel"
+              autoComplete="off"
+              required={isCreate}
+            />
             <TextField
               form={form}
               name="street"
               label="Straße und Hausnummer"
               className="sm:col-span-2"
+              required={isCreate}
             />
-            <TextField form={form} name="postalCode" label="PLZ" inputMode="numeric" />
-            <TextField form={form} name="city" label="Ort" />
-            <TextField form={form} name="country" label="Land" hint="Standard: DE" />
+            <TextField
+              form={form}
+              name="postalCode"
+              label="PLZ"
+              inputMode="numeric"
+              required={isCreate}
+            />
+            <TextField form={form} name="city" label="Ort" required={isCreate} />
+            <SelectField
+              form={form}
+              name="country"
+              label="Land"
+              options={COUNTRY_OPTIONS}
+              placeholder="Bitte wählen"
+              required={isCreate}
+            />
           </CardContent>
         </Card>
       )}
@@ -233,14 +284,6 @@ export function MemberForm({
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <TextField
-              form={form}
-              name="birthDate"
-              label="Geburtsdatum"
-              type="date"
-              className="sm:max-w-xs"
-              hint="Wird für Altersgrenzen bei Helferschichten und Jugendarbeit genutzt."
-            />
             <TextareaField
               form={form}
               name="internalNotes"

@@ -7,7 +7,7 @@ import { badRequest } from "@/server/errors";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
 import { executeMemberImport, previewMemberImport, type ImportPreview } from "./import";
-import { consentSchema, idSchema, memberFormSchema } from "./schemas";
+import { consentSchema, idSchema, memberCreateSchema, memberFormSchema } from "./schemas";
 import {
   archiveMember,
   createMember,
@@ -30,7 +30,7 @@ const refresh = (id?: string) => {
 
 export async function createMemberAction(input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction(async () => {
-    const data = parseInput(memberFormSchema, input);
+    const data = parseInput(memberCreateSchema, input);
     const result = await createMember(await requireTenantContext(), data);
     refresh();
     return result;

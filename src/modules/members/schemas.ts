@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MemberStatus } from "@/generated/prisma/enums";
+import { COUNTRY_CODES } from "@/lib/countries";
 import { parseCalendarDate, todayCalendarDate } from "@/lib/dates";
 
 /**
@@ -101,6 +102,50 @@ export const memberFormSchema = z
       });
     }
   });
+
+const REQUIRED_ON_CREATE: Array<[keyof MemberInput, string]> = [
+  ["memberNumber", "Bitte gib eine Mitgliedsnummer ein."],
+  ["clubFunction", "Bitte gib die Funktion im Verein ein."],
+  ["email", "Bitte gib eine E-Mail-Adresse ein."],
+  ["phone", "Bitte gib eine Telefonnummer ein."],
+  ["street", "Bitte gib die Straße und Hausnummer ein."],
+  ["postalCode", "Bitte gib die Postleitzahl ein."],
+  ["city", "Bitte gib den Ort ein."],
+  ["country", "Bitte gib das Land ein."],
+];
+
+/**
+ * Strengere Prüfung fürs Neuanlegen: Kontaktdaten, Mitgliedsnummer, Funktion, Eintrittsdatum und
+ * mindestens eine Abteilung sind hier zusätzlich Pflicht. Bestehende Mitglieder mit Lücken in
+ * diesen Feldern lassen sich trotzdem weiter bearbeiten, da `memberFormSchema` dafür unverändert
+ * bleibt.
+ */
+export const memberCreateSchema = memberFormSchema.superRefine((data, ctx) => {
+  for (const [field, message] of REQUIRED_ON_CREATE) {
+    if (!data[field]) ctx.addIssue({ code: "custom", path: [field], message });
+  }
+  if (!data.joinedAt) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["joinedAt"],
+      message: "Bitte gib ein Eintrittsdatum ein.",
+    });
+  }
+  if (data.departmentIds.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["departmentIds"],
+      message: "Bitte wähle mindestens eine Abteilung.",
+    });
+  }
+  if (data.country && !COUNTRY_CODES.has(data.country)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["country"],
+      message: "Bitte wähle ein Land aus der Liste.",
+    });
+  }
+});
 
 export type MemberFormInput = z.input<typeof memberFormSchema>;
 export type MemberInput = z.output<typeof memberFormSchema>;
