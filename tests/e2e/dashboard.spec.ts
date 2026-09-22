@@ -39,10 +39,25 @@ test.describe("Dashboard", () => {
     // Reiter „Übersicht“ (zuerst offen): Kennzahlen (Karten sind Links in die jeweiligen Bereiche), eigene Aufgaben,
     // Einsätze und Benachrichtigungen
     await expect(page.getByRole("tab", { name: "Übersicht", selected: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^Mitglieder \d+/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Termine in 30 Tagen \d+/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Freie Helferplätze \d+/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^Helferstunden \d{4}/ })).toBeVisible();
+    const members = page.getByRole("link", { name: /^Mitglieder \d+/ });
+    const nextEvents = page.getByRole("link", { name: /Termine in 30 Tagen \d+/ });
+    const freeShifts = page.getByRole("link", { name: /Freie Helferplätze \d+/ });
+    const hours = page.getByRole("link", { name: /^Helferstunden \d{4}/ });
+    await expect(members).toBeVisible();
+    await expect(nextEvents).toBeVisible();
+    await expect(freeShifts).toBeVisible();
+    await expect(hours).toBeVisible();
+
+    // Jede Kennzahlenkarte nennt einen kurzen Vergleich zur Einordnung der Zahl …
+    await expect(members).toContainText(/gegenüber dem Vormonat/);
+    await expect(nextEvents).toContainText(/Nächster Termin|Keine kommenden Termine/);
+    await expect(freeShifts).toContainText(/Schichten besetzt|Keine Schichten geplant/);
+    await expect(hours).toContainText(/gegenüber letzter Woche|Noch keine Stunden erfasst/);
+    // … und eine kleine, rein schmückende Mini-Grafik (Trendlinie/-balken oder Statusleiste), passend zur Karte.
+    await expect(members.locator('[data-slot="sparkline"]')).toBeVisible();
+    await expect(nextEvents.locator('[data-slot="sparkline"]')).toBeVisible();
+    await expect(hours.locator('[data-slot="sparkline"]')).toBeVisible();
+    await expect(freeShifts.locator('[aria-hidden="true"].rounded-full')).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Für dich" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Aufgaben" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Einsätze" })).toBeVisible();

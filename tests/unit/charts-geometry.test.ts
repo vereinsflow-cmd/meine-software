@@ -13,6 +13,7 @@ import {
   niceScale,
   niceStep,
   polar,
+  sparkBars,
   sparklinePoints,
 } from "@/lib/charts/geometry";
 
@@ -156,6 +157,40 @@ describe("sparklinePoints (Trendlinie)", () => {
     // Trotz kleinem Unterschied nutzt die Linie die volle Höhe (nicht nur die obersten paar Pixel wie bei einer 0-Achse).
     expect(points[0]![1]).toBe(26);
     expect(points[2]![1]).toBe(2);
+  });
+});
+
+describe("sparkBars (kleines Balkendiagramm)", () => {
+  it("skaliert ab der Grundlinie (0), nicht ab dem kleinsten Wert – anders als sparklinePoints", () => {
+    const bars = sparkBars([50, 100], 100, 32, 0); // ohne Lücke: einfache Zahlen
+    expect(bars).toHaveLength(2);
+    expect(bars[0]).toMatchObject({ x: 0, width: 50, y: 16, height: 16 }); // 50 % vom Höchstwert
+    expect(bars[1]).toMatchObject({ x: 50, width: 50, y: 0, height: 32 }); // Höchstwert: volle Höhe
+  });
+
+  it("ein Wert von 0 ergibt einen unsichtbar flachen Balken (Höhe 0), keinen negativen", () => {
+    const bars = sparkBars([0, 10], 100, 32, 0);
+    expect(bars[0]).toMatchObject({ y: 32, height: 0 });
+  });
+
+  it("sind alle Werte 0, sind alle Balken flach (keine Division durch 0)", () => {
+    const bars = sparkBars([0, 0, 0], 100, 32);
+    expect(bars.every((b) => b.height === 0)).toBe(true);
+  });
+
+  it("Balken gleicher Breite mit Lücke bleiben je in ihrem gleich breiten Abschnitt", () => {
+    const bars = sparkBars([1, 2, 3, 4], 100, 32, 0.5);
+    const slot = 100 / 4; // 25 px je Balken samt Lücke
+    const width = slot / 1.5; // Balkenbreite bei gapRatio 0,5
+    for (const [index, bar] of bars.entries()) {
+      expect(bar.width).toBeCloseTo(width);
+      expect(bar.x).toBeCloseTo(index * slot + (slot - width) / 2); // mittig in seinem Abschnitt
+    }
+    expect(bars.at(-1)!.x + bars.at(-1)!.width).toBeLessThanOrEqual(100);
+  });
+
+  it("keine Werte ergeben keine Balken", () => {
+    expect(sparkBars([], 100, 32)).toEqual([]);
   });
 });
 

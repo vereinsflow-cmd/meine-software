@@ -84,6 +84,41 @@ export function sparklinePoints(
   ]);
 }
 
+export interface SparkBar {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Rechtecke für ein kleines Balkendiagramm: gleich breite Balken mit schmaler Lücke dazwischen, Höhe **ab der
+ * Grundlinie** (0), nicht ab dem kleinsten Wert wie bei `sparklinePoints` – ein Balken, der nicht bei 0 beginnt,
+ * würde die Menge falsch darstellen. Ohne Werte oder wenn alle 0 sind, sind die Balken unsichtbar flach (Höhe 0),
+ * nicht negativ oder `NaN`.
+ */
+export function sparkBars(
+  values: readonly number[],
+  width: number,
+  height: number,
+  gapRatio = 0.35,
+): SparkBar[] {
+  if (values.length === 0) return [];
+  const max = Math.max(...values, 0);
+  const slot = width / values.length;
+  const barWidth = slot / (1 + gapRatio);
+  const gap = slot - barWidth;
+  return values.map((value, index) => {
+    const barHeight = max > 0 ? (Math.max(0, value) / max) * height : 0;
+    return {
+      x: index * slot + gap / 2,
+      y: height - barHeight,
+      width: barWidth,
+      height: barHeight,
+    };
+  });
+}
+
 /** Punkt auf dem Kreis; Winkel in Bogenmaß, 0 = 12 Uhr, im Uhrzeigersinn. */
 export function polar(cx: number, cy: number, radius: number, angle: number): [number, number] {
   return [cx + radius * Math.sin(angle), cy - radius * Math.cos(angle)];

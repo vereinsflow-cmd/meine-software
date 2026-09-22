@@ -1,17 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  BellIcon,
-  CalendarDaysIcon,
-  CalendarIcon,
-  HandHeartIcon,
-  PlusIcon,
-  UsersIcon,
-} from "lucide-react";
+import { BellIcon, CalendarIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
-import { formatDateShort } from "@/lib/dates";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
@@ -20,10 +12,13 @@ import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
 import { CardGrid, Group } from "@/modules/dashboard/components/layout";
 import {
   Birthdays,
+  FreeShiftsStat,
   HelperHours,
   LatestNotifications,
+  MembersStat,
   MyShifts,
   MyTasks,
+  NextEventsStat,
   OpenShifts,
   RecentActivity,
   StaffingWarnings,
@@ -50,7 +45,6 @@ export default async function DashboardPage({
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
   const data = await getDashboard(ctx);
   const { members, events, shifts, tasks, notifications, birthdays, activity } = data;
-  const nextEvent = events?.upcoming[0];
 
   // Einmal berechnen, von mehreren Reitern verwendet. Das `catch` verhindert eine „unbehandelte Ablehnung“, falls kein
   // Reiter die Daten abholt; die Reiter selbst bekommen einen Fehler weiterhin zu sehen.
@@ -61,18 +55,7 @@ export default async function DashboardPage({
     <div className="grid gap-10">
       <KpiCarousel>
         {members ? (
-          <StatCard
-            label={members.scope === "CLUB" ? "Mitglieder" : "Mitglieder (deine Abteilung)"}
-            value={members.total}
-            hint={
-              members.joinedThisYear > 0
-                ? `${members.joinedThisYear} neu in diesem Jahr`
-                : "Ohne Archiv"
-            }
-            href="/mitglieder"
-            icon={<UsersIcon />}
-            trend={members.trend}
-          />
+          <MembersStat members={members} />
         ) : (
           <StatCard
             label="Ungelesen"
@@ -82,29 +65,8 @@ export default async function DashboardPage({
             icon={<BellIcon />}
           />
         )}
-        {events && (
-          <StatCard
-            label="Termine in 30 Tagen"
-            value={events.countNext30Days}
-            hint={
-              nextEvent
-                ? `Nächster: ${nextEvent.title} (${formatDateShort(nextEvent.startsAt)})`
-                : "Keine kommenden Termine"
-            }
-            href="/veranstaltungen"
-            icon={<CalendarDaysIcon />}
-          />
-        )}
-        {shifts && (
-          <StatCard
-            label="Freie Helferplätze"
-            value={shifts.freeSpots}
-            hint="In kommenden Schichten"
-            href="/helferplanung"
-            icon={<HandHeartIcon />}
-            progress={{ value: shifts.staffing.filled, total: shifts.staffing.required }}
-          />
-        )}
+        {events && <NextEventsStat events={events} />}
+        {shifts && <FreeShiftsStat shifts={shifts} />}
         {shifts && <HelperHours hours={shifts.hours} />}
       </KpiCarousel>
 

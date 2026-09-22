@@ -1,7 +1,7 @@
 import type { MemberStatus } from "@/generated/prisma/enums";
-import { membersAtBucketEnds, sumPerBucket } from "@/lib/charts/aggregate";
-import { buildBuckets } from "@/lib/charts/time-buckets";
-import { berlinParts } from "@/lib/dates";
+import { countPerBucket, membersAtBucketEnds, sumPerBucket } from "@/lib/charts/aggregate";
+import { buildBuckets, buildUpcomingWeeks } from "@/lib/charts/time-buckets";
+import { berlinParts, daysUntil } from "@/lib/dates";
 import { listRecentActivity, type AuditEntryDto } from "@/modules/audit/service";
 import { eventVisibilityWhere, listEvents, type EventListItem } from "@/modules/events/service";
 import {
@@ -43,13 +43,19 @@ export interface DashboardData {
   members: {
     total: number;
     byStatus: { status: MemberStatus; count: number }[];
-    joinedThisYear: number;
     /** DEPARTMENT: nur die Mitglieder der eigenen Abteilung(en) sind gezählt. */
     scope: "CLUB" | "DEPARTMENT";
-    /** Bestand am Ende jeder der letzten 12 Wochen (älteste zuerst) – für die kleine Trendlinie der Kennzahlenkarte. */
+    /** Bestand am Ende jedes der letzten 6 Monate (älteste zuerst) – für die kleine Trendlinie der Kennzahlenkarte. */
     trend: number[];
   } | null;
-  events: { upcoming: EventListItem[]; countNext30Days: number } | null;
+  events: {
+    upcoming: EventListItem[];
+    countNext30Days: number;
+    /** Veröffentlichte Termine je der nächsten 6 Wochen (laufende Woche zuerst) – kleines Balkendiagramm. */
+    weeklyTrend: number[];
+    /** Tage bis zum nächsten anstehenden Termin (0 = heute); `null` ohne einen. */
+    nextInDays: number | null;
+  } | null;
   shifts: {
     mine: MyAssignment[];
     open: OpenShiftItem[];
@@ -82,11 +88,9 @@ async function loadMembers(ctx: TenantContext, now: Date): Promise<DashboardData
   const scope = scopeOf(ctx, "members:read");
   if (scope !== "CLUB" && scope !== "DEPARTMENT") return null; // "nur eigener Datensatz" braucht keine Kennzahlen
   const where = { AND: [{ archivedAt: null, deletedAt: null }, memberReadScope(ctx) ?? {}] };
-  const yearStart = new Date(Date.UTC(berlinParts(now).year, 0, 1));
   // Für die Trendlinie zählen (wie in den Auswertungen) auch Archivierte mit – sie waren in der Woche Mitglieder.
-  const [groups, joinedThisYear, membershipRows] = await Promise.all([
+  const [groups, membershipRows] = await Promise.all([
     ctx.db.member.groupBy({ by: ["status"], where, _count: { _all: true } }),
-    ctx.db.member.count({ where: { AND: [where, { joinedAt: { gte: yearStart } }] } }),
     ctx.db.member.findMany({
       where: { AND: [{ deletedAt: null }, memberReadScope(ctx) ?? {}] },
       select: { joinedAt: true, leftAt: true, status: true },
@@ -97,15 +101,17 @@ async function loadMembers(ctx: TenantContext, now: Date): Promise<DashboardData
     byStatus: groups
       .map((group) => ({ status: group.status, count: group._count._all }))
       .sort((a, b) => b.count - a.count),
-    joinedThisYear,
     scope,
-    trend: membersAtBucketEnds(membershipRows, buildBuckets("W", now), now).counts,
+    trend: membersAtBucketEnds(membershipRows, buildBuckets("M", now).slice(-6), now).counts,
   };
 }
 
 async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData["events"]> {
   if (!can(ctx, "events:read")) return null;
-  const [upcoming, countNext30Days] = await Promise.all([
+  // Vorausschauend, nicht zurückblickend (`buildUpcomingWeeks`, nicht `buildBuckets`): Die Kennzahl selbst
+  // ("Termine in 30 Tagen") blickt nach vorn – ein Rückblick wäre hier oft leer, wenn gerade nichts anstand.
+  const weeks = buildUpcomingWeeks(now, 6);
+  const [upcoming, countNext30Days, weekRows] = await Promise.all([
     listEvents(ctx, { status: "PUBLISHED", period: "upcoming", request: FIRST_PAGE }),
     ctx.db.event.count({
       where: {
@@ -115,8 +121,25 @@ async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData[
         ],
       },
     }),
+    ctx.db.event.findMany({
+      where: {
+        AND: [
+          eventVisibilityWhere(ctx),
+          { status: "PUBLISHED", startsAt: { gte: weeks[0]!.start, lt: weeks.at(-1)!.end } },
+        ],
+      },
+      select: { startsAt: true },
+    }),
   ]);
-  return { upcoming: upcoming.items, countNext30Days };
+  return {
+    upcoming: upcoming.items,
+    countNext30Days,
+    weeklyTrend: countPerBucket(
+      weekRows.map((row) => row.startsAt),
+      weeks,
+    ),
+    nextInDays: upcoming.items[0] ? daysUntil(upcoming.items[0].startsAt, now) : null,
+  };
 }
 
 async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData["shifts"]> {

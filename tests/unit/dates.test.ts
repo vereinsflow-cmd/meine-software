@@ -4,6 +4,7 @@ import {
   ageOn,
   berlinWeekday,
   calendarDateToInputValue,
+  daysUntil,
   formatCalendarDate,
   formatDate,
   formatDateTime,
@@ -53,6 +54,26 @@ describe("Zeitpunkte in Europe/Berlin", () => {
     expect(
       formatTimeRange(new Date("2026-06-01T20:00:00Z"), new Date("2026-06-02T01:00:00Z")),
     ).toBe("01.06.2026 22:00 – 02.06.2026 03:00 Uhr");
+  });
+});
+
+describe("daysUntil", () => {
+  it("zählt Kalendertage in Berliner Zeit, nicht die reine Millisekunden-Differenz", () => {
+    const now = new Date("2026-06-01T21:00:00Z"); // 23:00 Uhr Berlin (Sommerzeit)
+    // Nur 3 Stunden später, aber schon der nächste Berliner Kalendertag.
+    expect(daysUntil(new Date("2026-06-02T00:00:00Z"), now)).toBe(1);
+  });
+
+  it("heute ist 0, gestern ist -1", () => {
+    const now = new Date("2026-06-01T10:00:00Z"); // 12:00 Uhr Berlin (Sommerzeit)
+    expect(daysUntil(new Date("2026-06-01T19:00:00Z"), now)).toBe(0); // 21:00 Uhr, noch derselbe Berliner Tag
+    expect(daysUntil(new Date("2026-05-31T10:00:00Z"), now)).toBe(-1);
+  });
+
+  it("zählt mehrere Tage in beide Richtungen", () => {
+    const now = new Date("2026-06-01T10:00:00Z");
+    expect(daysUntil(new Date("2026-06-05T10:00:00Z"), now)).toBe(4);
+    expect(daysUntil(new Date("2026-05-25T10:00:00Z"), now)).toBe(-7);
   });
 });
 

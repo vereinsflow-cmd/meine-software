@@ -10,6 +10,7 @@ import {
   GRANULARITY_COUNT,
   bucketIndexOf,
   buildBuckets,
+  buildUpcomingWeeks,
   isoWeek,
   toLabels,
 } from "@/lib/charts/time-buckets";
@@ -102,6 +103,23 @@ describe("buildBuckets", () => {
   it("toLabels gibt nur Beschriftungen weiter (keine Zeitpunkte)", () => {
     const labels = toLabels(buildBuckets("Y", NOW));
     expect(Object.keys(labels[0]!).sort()).toEqual(["fullLabel", "key", "label", "partial"]);
+  });
+});
+
+describe("buildUpcomingWeeks (vorausschauend, anders als buildBuckets)", () => {
+  it("die laufende Woche steht zuerst, danach lückenlos je eine weitere Woche", () => {
+    const weeks = buildUpcomingWeeks(NOW, 6);
+    expect(weeks).toHaveLength(6);
+    expect(weeks[0]!.start.toISOString()).toBe("2026-09-20T22:00:00.000Z"); // Mo 21.9. 00:00 Berlin (dieselbe Woche wie NOW)
+    // Lückenlos aneinandergereiht – die genaue Dauer je Woche ist nicht immer 168 Std. (Zeitumstellung, siehe buildBuckets).
+    for (let i = 1; i < weeks.length; i += 1) {
+      expect(weeks[i]!.start.getTime()).toBe(weeks[i - 1]!.end.getTime());
+    }
+  });
+
+  it("auch mitten in der Woche gehört die laufende Woche (ab Montag) zur ersten", () => {
+    const sunday = new Date("2026-09-27T20:00:00Z"); // So 22:00 Berlin, noch KW 39
+    expect(buildUpcomingWeeks(sunday, 1)[0]!.start.toISOString()).toBe("2026-09-20T22:00:00.000Z");
   });
 });
 

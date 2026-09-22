@@ -24,6 +24,12 @@ export interface TimeBucket extends BucketLabel {
   end: Date;
 }
 
+/** Nur der Zeitraum, ohne Beschriftung – alles, was `countPerBucket`/`sumPerBucket`/`bucketIndexOf` wirklich brauchen. */
+export interface BucketRange {
+  start: Date;
+  end: Date;
+}
+
 const MONTH_SHORT = [
   "Jan",
   "Feb",
@@ -130,12 +136,26 @@ export function buildBuckets(granularity: Granularity, now: Date): TimeBucket[] 
 }
 
 /** Index des Zeitraums, in den `instant` fällt – oder -1, wenn davor oder danach. */
-export function bucketIndexOf(buckets: readonly TimeBucket[], instant: Date): number {
+export function bucketIndexOf(buckets: readonly BucketRange[], instant: Date): number {
   const time = instant.getTime();
   const first = buckets[0];
   const last = buckets[buckets.length - 1];
   if (!first || !last || time < first.start.getTime() || time >= last.end.getTime()) return -1;
   return buckets.findIndex((bucket) => time < bucket.end.getTime());
+}
+
+/**
+ * Die nächsten `count` Wochen ab der laufenden (Montag–Sonntag, Berliner Zeit), die laufende zuerst – für
+ * vorausschauende Übersichten (z. B. Termine je Woche). Anders als `buildBuckets` schaut diese Funktion nach vorn,
+ * nicht zurück, und liefert deshalb bewusst keine Beschriftung/„partial“-Kennzeichnung wie dort: Für eine schmucklose
+ * Mini-Grafik ohne Achsenbeschriftung (siehe `Sparkline`) reicht der reine Zeitraum.
+ */
+export function buildUpcomingWeeks(now: Date, count: number): BucketRange[] {
+  const thisWeekStart = addBerlinDays(startOfBerlinDay(now), -berlinWeekday(now));
+  return Array.from({ length: count }, (_, ahead) => {
+    const start = addBerlinDays(thisWeekStart, 7 * ahead);
+    return { start, end: addBerlinDays(start, 7) };
+  });
 }
 
 /** Nur die Beschriftungen (ohne Zeitpunkte) – das, was die Oberfläche braucht. */

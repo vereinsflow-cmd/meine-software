@@ -126,7 +126,7 @@ describe("Dashboard: Inhalte je Rolle", () => {
 
     const data = await getDashboard(ctx.admin);
 
-    expect(data.members).toMatchObject({ scope: "CLUB", joinedThisYear: 1 });
+    expect(data.members).toMatchObject({ scope: "CLUB" });
     expect(data.members!.total).toBe(5 + 2); // fünf Konten + aktiv + passiv; ohne Archiv und Papierkorb
     expect(data.members!.byStatus.find((s) => s.status === "PASSIVE")?.count).toBe(1);
 
@@ -253,7 +253,7 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect((await getDashboard(ctx.member)).members).toBeNull();
   });
 
-  it("Trendlinien für Mitglieder und Helferstunden: 12 Wochen, älteste zuerst", async () => {
+  it("Trendlinien für Mitglieder (6 Monate) und Helferstunden (12 Wochen), älteste zuerst", async () => {
     const { ctx, club, people } = await setup();
     // Die Testkonten aus setup() haben (wie viele echte Altbestände) kein Eintrittsdatum – sie tauchen in der
     // Trendlinie bewusst nirgends auf (siehe `membersAtBucketEnds`: ohne Eintrittsdatum nicht einordbar), zählen aber
@@ -264,7 +264,7 @@ describe("Dashboard: Inhalte je Rolle", () => {
         firstName: "Alt",
         lastName: "Eingetreten",
         status: "ACTIVE",
-        joinedAt: new Date(Date.now() - 90 * DAY), // vor der Trendlinie (12 Wochen = 84 Tage) beigetreten
+        joinedAt: new Date(Date.now() - 250 * DAY), // vor der Trendlinie (6 Monate) beigetreten
       },
     });
     await prisma.member.create({
@@ -273,7 +273,7 @@ describe("Dashboard: Inhalte je Rolle", () => {
         firstName: "Neu",
         lastName: "Eingetreten",
         status: "ACTIVE",
-        joinedAt: new Date(Date.now() - 14 * DAY), // innerhalb der Trendlinie beigetreten
+        joinedAt: new Date(Date.now() - 40 * DAY), // innerhalb der Trendlinie beigetreten
       },
     });
     const event = await createEvent(club.id, { title: "Fest", startsAt: inDays(-1) });
@@ -288,14 +288,28 @@ describe("Dashboard: Inhalte je Rolle", () => {
     });
 
     const data = await getDashboard(ctx.admin);
-    expect(data.members!.trend).toHaveLength(12);
-    expect(data.members!.trend[0]).toBe(1); // vor 12 Wochen: nur "Alt Eingetreten" war schon dabei
-    expect(data.members!.trend.at(-1)).toBe(2); // laufende Woche: beide beigetreten
+    expect(data.members!.trend).toHaveLength(6);
+    expect(data.members!.trend[0]).toBe(1); // vor 6 Monaten: nur "Alt Eingetreten" war schon dabei
+    expect(data.members!.trend.at(-1)).toBe(2); // laufender Monat: beide beigetreten
     expect(Math.min(...data.members!.trend)).toBeGreaterThanOrEqual(1); // steigt, fällt nie unter den Altbestand
 
     expect(data.shifts!.hours.trend).toHaveLength(12);
     expect(data.shifts!.hours.trend.at(-1)).toBe(1.5); // 90 Minuten, diese Woche geleistet
     expect(data.shifts!.hours.trend.slice(0, -1).every((v) => v === 0)).toBe(true); // sonst nichts dokumentiert
+  });
+
+  it("Wochen-Trend (vorausschauend) und Tage bis zum nächsten Termin (für die Termine-Kennzahlenkarte)", async () => {
+    const { ctx, club } = await setup();
+    await createEvent(club.id, { title: "In 4 Tagen", startsAt: inDays(4) });
+    await createEvent(club.id, { title: "In 10 Tagen", startsAt: inDays(10) });
+    await createEvent(club.id, { title: "Entwurf", status: "DRAFT", startsAt: inDays(4) }); // zählt nicht mit
+    await createEvent(club.id, { title: "Vor 8 Wochen", startsAt: inDays(-56) }); // in der Vergangenheit, außerhalb
+
+    const data = await getDashboard(ctx.admin);
+    expect(data.events!.weeklyTrend).toHaveLength(6);
+    // Nur die beiden veröffentlichten, künftigen Termine – weder der Entwurf noch der vergangene Termin.
+    expect(data.events!.weeklyTrend.reduce((sum, n) => sum + n, 0)).toBe(2);
+    expect(data.events!.nextInDays).toBe(4); // der zeitlich nächste veröffentlichte Termin
   });
 
   it("Besetzungsstand (für die Fortschrittsanzeige der Kennzahlenkarte): Summe über alle kommenden Schichten", async () => {

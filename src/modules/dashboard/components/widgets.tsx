@@ -15,13 +15,19 @@ import {
   PartyPopperIcon,
   SmileIcon,
   TriangleAlertIcon,
+  UsersIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ACCENT, type Accent } from "@/components/shared/accent";
 import { Sparkline } from "@/components/charts/sparkline";
 import { ExpandableList } from "@/components/shared/expandable-list";
-import { TaskPriorityBadge, TaskStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import {
+  TaskPriorityBadge,
+  TaskStatusBadge,
+  ToneBadge,
+  type Tone,
+} from "@/components/shared/status-badge";
 import { auditActionLabel } from "@/lib/audit-labels";
 import {
   MONTH_NAMES,
@@ -30,12 +36,14 @@ import {
   formatDateShort,
   formatDateTime,
   formatTimeRange,
+  inDaysLabel,
 } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { URGENCY_LABEL } from "@/lib/shift-health";
 import { cn } from "@/lib/utils";
 import { QuickSignUpButton } from "@/modules/shifts/components/quick-actions";
 import { FillBar, UrgencyBadge } from "@/modules/shifts/components/shift-status";
+import { hoursCompare, memberCompare, nextEventCompare, staffingCompare } from "../compare";
 import type { DashboardData } from "../service";
 import { sortByImportance, taskRank } from "../task-order";
 
@@ -47,34 +55,57 @@ import { sortByImportance, taskRank } from "../task-order";
 const LIST_ROW =
   "-mx-(--card-spacing) rounded-lg px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
 
-/** Farbe der Fortschrittsanzeige einer Kennzahlenkarte: dieselbe Bedeutung wie überall (grün = gut, gelb = teilweise, rot = nichts). */
-function progressTone(ratio: number): string {
-  if (ratio >= 1) return "bg-emerald-500";
-  if (ratio > 0) return "bg-amber-500";
-  return "bg-red-500";
+/** Stufe einer Besetzung: voll (gut), teilweise (Aufmerksamkeit), leer (dringend) – dieselben drei Stufen wie bei Schichten. */
+function staffingTone(ratio: number): Tone {
+  if (ratio >= 1) return "success";
+  if (ratio > 0) return "warning";
+  return "danger";
 }
+
+const PROGRESS_BAR_COLOR: Partial<Record<Tone, string>> = {
+  success: "bg-emerald-500",
+  warning: "bg-amber-500",
+  danger: "bg-red-500",
+};
+
+/** Textfarbe der Vergleichsinformation – dieselbe Bedeutung wie bei Abzeichen (`ToneBadge`), nur ohne Füllfläche. */
+const COMPARE_TEXT_COLOR: Record<Tone, string> = {
+  neutral: "text-muted-foreground",
+  success: "text-emerald-600 dark:text-emerald-400",
+  info: "text-primary",
+  // amber-600 fällt bei normaler Schriftstärke auf hellem Grund knapp unter 4,5:1 (WCAG AA) – amber-700 besteht sicher.
+  warning: "text-amber-700 dark:text-amber-400",
+  // `text-destructive` statt Tailwind-Rot: derselbe eigens auf 4,5:1 nachgeschärfte Ton wie überall sonst im Verein.
+  danger: "text-destructive",
+};
 
 export function StatCard({
   label,
   value,
   hint,
+  compare,
   href,
   icon,
   trend,
+  trendVariant = "line",
   progress,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
+  /** Kurzer Vergleich zum Vormonat/zur letzten Woche o. Ä. („+3 gegenüber dem Vormonat“); farbig nach `tone`. */
+  compare?: { text: string; tone?: Tone };
   href?: string;
   icon: React.ReactNode;
-  /** Letzte Werte für eine kleine Trendlinie (älteste zuerst, mind. zwei Werte); ohne Angabe entfällt sie. */
+  /** Letzte Werte für eine kleine Trendgrafik (älteste zuerst, mind. zwei Werte); ohne Angabe entfällt sie. */
   trend?: readonly number[];
+  trendVariant?: "line" | "bar";
   /** Anteil an einem Bestand (z. B. besetzte von benötigten Plätzen) als schmale Statusleiste; ohne Angabe entfällt sie. */
   progress?: { value: number; total: number };
 }) {
   const ratio =
     progress && progress.total > 0 ? Math.min(1, progress.value / progress.total) : null;
+  const tone = ratio !== null ? staffingTone(ratio) : null;
   const body = (
     <Card
       className={cn(
@@ -102,14 +133,33 @@ export function StatCard({
         </div>
         <p className="text-4xl leading-tight font-bold tabular-nums">{value}</p>
         {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
-        {trend && trend.length > 1 && <Sparkline values={trend} className="mt-1.5" />}
-        {/* Rein schmückend (wie die Trendlinie): Zahl und Hinweis nennen die Besetzung bereits vollständig als Text. */}
-        {ratio !== null && (
-          <div aria-hidden="true" className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn("h-full rounded-full transition-all", progressTone(ratio))}
-              style={{ width: `${ratio * 100}%` }}
-            />
+        {compare && (
+          <p className={cn("text-sm font-medium", COMPARE_TEXT_COLOR[compare.tone ?? "neutral"])}>
+            {compare.text}
+          </p>
+        )}
+        {/* Immer derselbe Platz (32 px), egal ob Trendgrafik oder Statusleiste – „gleiche Höhen“ über alle vier Karten
+            hinweg. Rein schmückend (`aria-hidden` in den Komponenten selbst): Zahl, Hinweis und Vergleich nennen die
+            Lage bereits vollständig als Text. */}
+        {(trend || ratio !== null) && (
+          <div className="mt-1.5 flex h-8 items-center motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in">
+            {trend && trend.length > 1 ? (
+              <Sparkline values={trend} variant={trendVariant} />
+            ) : ratio !== null ? (
+              <div
+                aria-hidden="true"
+                className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+              >
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all",
+                    PROGRESS_BAR_COLOR[tone!],
+                    "group-hover/card:brightness-110",
+                  )}
+                  style={{ width: `${ratio * 100}%` }}
+                />
+              </div>
+            ) : null}
           </div>
         )}
       </CardContent>
@@ -546,9 +596,6 @@ export function LatestNotifications({
   );
 }
 
-const inDaysLabel = (days: number) =>
-  days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`;
-
 export function Birthdays({ birthdays }: { birthdays: NonNullable<DashboardData["birthdays"]> }) {
   return (
     <Widget
@@ -630,6 +677,53 @@ export function RecentActivity({ entries }: { entries: NonNullable<DashboardData
   );
 }
 
+export function MembersStat({ members }: { members: NonNullable<DashboardData["members"]> }) {
+  return (
+    <StatCard
+      label={members.scope === "CLUB" ? "Mitglieder" : "Mitglieder (deine Abteilung)"}
+      value={members.total}
+      compare={memberCompare(members.trend) ?? undefined}
+      href="/mitglieder"
+      icon={<UsersIcon />}
+      trend={members.trend}
+    />
+  );
+}
+
+export function NextEventsStat({ events }: { events: NonNullable<DashboardData["events"]> }) {
+  return (
+    <StatCard
+      label="Termine in 30 Tagen"
+      value={events.countNext30Days}
+      compare={
+        nextEventCompare(events.nextInDays) ?? {
+          text: "Keine kommenden Termine",
+          tone: "neutral",
+        }
+      }
+      href="/veranstaltungen"
+      icon={<CalendarDaysIcon />}
+      // events.weeklyTrend blickt nach vorn (diese Woche zuerst); für die Grafik gedreht, damit wie bei den anderen
+      // Karten die JÜNGSTE (= hier: diese) Woche zuletzt steht und in der Markenfarbe hervorgehoben wird.
+      trend={[...events.weeklyTrend].reverse()}
+      trendVariant="bar"
+    />
+  );
+}
+
+export function FreeShiftsStat({ shifts }: { shifts: NonNullable<DashboardData["shifts"]> }) {
+  return (
+    <StatCard
+      label="Freie Helferplätze"
+      value={shifts.freeSpots}
+      compare={staffingCompare(shifts.staffing.filled, shifts.staffing.required)}
+      href="/helferplanung"
+      icon={<HandHeartIcon />}
+      progress={{ value: shifts.staffing.filled, total: shifts.staffing.required }}
+    />
+  );
+}
+
 /** Kompakt für die Kennzahlenkarte: "4,5 Std." statt "4 Std. 30 Min." (die genaue Dauer steht im Hinweis). */
 const compactHours = (minutes: number) =>
   `${(minutes / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Std.`;
@@ -641,10 +735,11 @@ export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shift
         hours.scope === "ALL" ? `Helferstunden ${hours.year}` : `Meine Helferstunden ${hours.year}`
       }
       value={compactHours(hours.minutes)}
-      hint={hours.scope === "ALL" ? "Vereinsweit dokumentiert" : "Deine dokumentierten Einsätze"}
+      compare={hoursCompare(hours.trend) ?? undefined}
       href="/helferplanung/stunden"
       icon={<ClockIcon />}
       trend={hours.trend}
+      trendVariant="bar"
     />
   );
 }

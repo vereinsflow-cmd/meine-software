@@ -171,6 +171,21 @@ export function startOfBerlinDay(value: DateInput): Date {
 }
 
 /**
+ * Kalendertage von `now` bis `target`, in Berliner Zeit gezählt (0 = heute, negativ = in der Vergangenheit) – nicht
+ * einfach die Millisekunden-Differenz, sonst würde ein Termin heute Abend als „in 0,8 Tagen“ statt „heute“ zählen.
+ */
+export function daysUntil(target: DateInput, now: DateInput = new Date()): number {
+  return Math.round(
+    (startOfBerlinDay(target).getTime() - startOfBerlinDay(now).getTime()) / 86_400_000,
+  );
+}
+
+/** „heute“ / „morgen“ / „in 4 Tagen“ – für Termine und Geburtstage gleichermaßen (0 = heute, negativ kommt nicht vor). */
+export function inDaysLabel(days: number): string {
+  return days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`;
+}
+
+/**
  * Beginn (00:00 Uhr Berlin) eines Kalendertags als UTC-Zeitpunkt. `month` zählt ab 1; Überläufe rollen wie bei `Date`
  * (Monat 13 = Januar des Folgejahres, Tag 0 = letzter Tag des Vormonats).
  */

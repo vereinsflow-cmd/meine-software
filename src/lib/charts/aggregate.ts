@@ -1,10 +1,10 @@
-import { bucketIndexOf, type TimeBucket } from "./time-buckets";
+import { bucketIndexOf, type BucketRange, type TimeBucket } from "./time-buckets";
 import type { DistributionSlice } from "./types";
 
 /** Anzahl der Zeitpunkte je Zeitraum. Zeitpunkte außerhalb aller Zeiträume werden ignoriert. */
 export function countPerBucket(
   instants: readonly Date[],
-  buckets: readonly TimeBucket[],
+  buckets: readonly BucketRange[],
 ): number[] {
   const counts = buckets.map(() => 0);
   for (const instant of instants) {
