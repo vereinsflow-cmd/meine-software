@@ -13,6 +13,7 @@ import {
   niceScale,
   niceStep,
   polar,
+  sparklinePoints,
 } from "@/lib/charts/geometry";
 
 describe("niceStep / niceScale", () => {
@@ -125,6 +126,36 @@ describe("Hilfen für Achsen und Zeiger", () => {
     expect(nearestIndex(-50, [0, 10, 20])).toBe(0);
     expect(nearestIndex(99, [0, 10, 20])).toBe(2);
     expect(nearestIndex(5, [])).toBe(-1);
+  });
+});
+
+describe("sparklinePoints (Trendlinie)", () => {
+  it("verteilt die Punkte gleichmäßig in der Breite und skaliert Werte auf die Höhe (größer = weiter oben)", () => {
+    const points = sparklinePoints([1, 2, 3], 100, 28, 2);
+    expect(points).toHaveLength(3);
+    expect(points[0]).toEqual([2, 26]); // kleinster Wert, unten
+    expect(points[1]).toEqual([50, 14]); // Mitte
+    expect(points[2]).toEqual([98, 2]); // größter Wert, oben
+  });
+
+  it("überall derselbe Wert ergibt eine waagerechte Linie in der Mitte (keine Division durch 0)", () => {
+    const points = sparklinePoints([5, 5, 5, 5], 100, 28);
+    expect(points.every(([, y]) => y === 14)).toBe(true);
+  });
+
+  it("ein einzelner Wert steht am linken Rand", () => {
+    expect(sparklinePoints([7], 100, 28, 2)).toEqual([[2, 14]]);
+  });
+
+  it("keine Werte ergeben keine Punkte", () => {
+    expect(sparklinePoints([], 100, 28)).toEqual([]);
+  });
+
+  it("skaliert im eigenen Wertebereich, nicht ab 0 – kleine Schwankungen bleiben sichtbar", () => {
+    const points = sparklinePoints([98, 99, 100], 100, 28, 2);
+    // Trotz kleinem Unterschied nutzt die Linie die volle Höhe (nicht nur die obersten paar Pixel wie bei einer 0-Achse).
+    expect(points[0]![1]).toBe(26);
+    expect(points[2]![1]).toBe(2);
   });
 });
 

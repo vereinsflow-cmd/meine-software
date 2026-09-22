@@ -118,8 +118,15 @@ export function createEvent(
     title?: string;
     startsAt?: Date;
     endsAt?: Date;
+    allDay?: boolean;
     departmentId?: string | null;
     maxParticipants?: number | null;
+    status?: "DRAFT" | "PUBLISHED" | "CANCELLED" | "ARCHIVED";
+    locationName?: string | null;
+    address?: string | null;
+    contactName?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
   } = {},
 ) {
   const startsAt = overrides.startsAt ?? new Date(Date.now() + 48 * HOUR);
@@ -129,9 +136,15 @@ export function createEvent(
       title: overrides.title ?? unique("Fest"),
       startsAt,
       endsAt: overrides.endsAt ?? new Date(startsAt.getTime() + 4 * HOUR),
+      allDay: overrides.allDay ?? false,
       departmentId: overrides.departmentId ?? null,
       maxParticipants: overrides.maxParticipants ?? null,
-      status: "PUBLISHED",
+      status: overrides.status ?? "PUBLISHED",
+      locationName: overrides.locationName ?? null,
+      address: overrides.address ?? null,
+      contactName: overrides.contactName ?? null,
+      contactEmail: overrides.contactEmail ?? null,
+      contactPhone: overrides.contactPhone ?? null,
     },
   });
 }

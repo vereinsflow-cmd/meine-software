@@ -10,6 +10,13 @@ export function param(params: RawSearchParams, key: string): string | undefined 
   return single === undefined || single === "" ? undefined : single;
 }
 
+/** Liest alle Werte eines Parameters, der mehrfach vorkommen kann (z. B. angehakte Kästchen gleichen Namens). */
+export function paramList(params: RawSearchParams, key: string): string[] {
+  const value = params[key];
+  if (value === undefined) return [];
+  return (Array.isArray(value) ? value : [value]).filter((v) => v !== "");
+}
+
 /** Liest eine Ganzzahl innerhalb von Grenzen; ungültige Werte ergeben den Standardwert. */
 export function intParam(
   params: RawSearchParams,

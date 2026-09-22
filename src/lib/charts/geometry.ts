@@ -61,6 +61,29 @@ export function areaPath(
   return `${linePath(points)} L${round(last[0])} ${round(baselineY)} L${round(first[0])} ${round(baselineY)} Z`;
 }
 
+/**
+ * Punkte einer kleinen Trendlinie (Sparkline): gleich verteilt in der Breite, Werte auf die Höhe skaliert – im
+ * eigenen Wertebereich (nicht ab 0), damit auch kleine Schwankungen sichtbar bleiben. Bei nur einem Wert oder
+ * überall demselben Wert eine waagerechte Linie in der Mitte, statt einer irreführenden Nulllinie oder eines
+ * Absturzes durch Division durch 0.
+ */
+export function sparklinePoints(
+  values: readonly number[],
+  width: number,
+  height: number,
+  padding = 2,
+): [number, number][] {
+  if (values.length === 0) return [];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const y = linearScale([min, max], [height - padding, padding]); // größerer Wert = weiter oben
+  const stepX = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+  return values.map((value, index) => [
+    padding + index * stepX,
+    max === min ? height / 2 : y(value),
+  ]);
+}
+
 /** Punkt auf dem Kreis; Winkel in Bogenmaß, 0 = 12 Uhr, im Uhrzeigersinn. */
 export function polar(cx: number, cy: number, radius: number, angle: number): [number, number] {
   return [cx + radius * Math.sin(angle), cy - radius * Math.cos(angle)];

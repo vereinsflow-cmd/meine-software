@@ -1,4 +1,6 @@
 import type { MemberStatus } from "@/generated/prisma/enums";
+import { membersAtBucketEnds, sumPerBucket } from "@/lib/charts/aggregate";
+import { buildBuckets } from "@/lib/charts/time-buckets";
 import { berlinParts } from "@/lib/dates";
 import { listRecentActivity, type AuditEntryDto } from "@/modules/audit/service";
 import { eventVisibilityWhere, listEvents, type EventListItem } from "@/modules/events/service";
@@ -18,6 +20,7 @@ import {
   getStaffingOverview,
   listMyAssignments,
   listOpenShifts,
+  listWorkedMinutes,
   type MyAssignment,
   type OpenShiftItem,
   type StaffingEvent,
@@ -43,6 +46,8 @@ export interface DashboardData {
     joinedThisYear: number;
     /** DEPARTMENT: nur die Mitglieder der eigenen Abteilung(en) sind gezählt. */
     scope: "CLUB" | "DEPARTMENT";
+    /** Bestand am Ende jeder der letzten 12 Wochen (älteste zuerst) – für die kleine Trendlinie der Kennzahlenkarte. */
+    trend: number[];
   } | null;
   events: { upcoming: EventListItem[]; countNext30Days: number } | null;
   shifts: {
@@ -52,7 +57,13 @@ export interface DashboardData {
     freeSpots: number;
     /** Nur für Veranstalter: Veranstaltungen mit unbesetzten Schichten in den nächsten 7 Tagen. */
     warnings: StaffingEvent[];
-    hours: { minutes: number; scope: "ALL" | "OWN"; year: number };
+    hours: {
+      minutes: number;
+      scope: "ALL" | "OWN";
+      year: number;
+      /** Summierte Stunden je der letzten 12 Wochen (älteste zuerst) – für die kleine Trendlinie der Kennzahlenkarte. */
+      trend: number[];
+    };
   } | null;
   /** Meine offenen Aufgaben und Kennzahlen im Rahmen der Sichtbarkeit. */
   tasks: { mine: TaskDto[]; stats: TaskStats } | null;
@@ -70,9 +81,14 @@ async function loadMembers(ctx: TenantContext, now: Date): Promise<DashboardData
   if (scope !== "CLUB" && scope !== "DEPARTMENT") return null; // "nur eigener Datensatz" braucht keine Kennzahlen
   const where = { AND: [{ archivedAt: null, deletedAt: null }, memberReadScope(ctx) ?? {}] };
   const yearStart = new Date(Date.UTC(berlinParts(now).year, 0, 1));
-  const [groups, joinedThisYear] = await Promise.all([
+  // Für die Trendlinie zählen (wie in den Auswertungen) auch Archivierte mit – sie waren in der Woche Mitglieder.
+  const [groups, joinedThisYear, membershipRows] = await Promise.all([
     ctx.db.member.groupBy({ by: ["status"], where, _count: { _all: true } }),
     ctx.db.member.count({ where: { AND: [where, { joinedAt: { gte: yearStart } }] } }),
+    ctx.db.member.findMany({
+      where: { AND: [{ deletedAt: null }, memberReadScope(ctx) ?? {}] },
+      select: { joinedAt: true, leftAt: true, status: true },
+    }),
   ]);
   return {
     total: groups.reduce((sum, group) => sum + group._count._all, 0),
@@ -81,6 +97,7 @@ async function loadMembers(ctx: TenantContext, now: Date): Promise<DashboardData
       .sort((a, b) => b.count - a.count),
     joinedThisYear,
     scope,
+    trend: membersAtBucketEnds(membershipRows, buildBuckets("W", now), now).counts,
   };
 }
 
@@ -104,12 +121,18 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
   if (!can(ctx, "shifts:read")) return null;
   const year = berlinParts(now).year;
   const isOrganizer = can(ctx, "shifts:manage") || can(ctx, "shifts:assign");
-  const [mine, open, staffing, hours] = await Promise.all([
+  const weeks = buildBuckets("W", now);
+  const [mine, open, staffing, hours, worked] = await Promise.all([
     listMyAssignments(ctx, { limit: 5 }),
     listOpenShifts(ctx, { limit: 5 }),
     getStaffingOverview(ctx),
     getHoursOverview(ctx, year),
+    listWorkedMinutes(ctx, { from: weeks[0]!.start, to: weeks[weeks.length - 1]!.end }),
   ]);
+  const trend = sumPerBucket(
+    worked.rows.map((row) => ({ at: row.at, value: row.minutes / 60 })),
+    weeks,
+  ).map((value) => Math.round(value * 10) / 10);
   return {
     mine,
     open,
@@ -124,7 +147,7 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
           .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
           .slice(0, 5)
       : [],
-    hours: { minutes: hours.totalMinutes, scope: hours.scope, year },
+    hours: { minutes: hours.totalMinutes, scope: hours.scope, year, trend },
   };
 }
 

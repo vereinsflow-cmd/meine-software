@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClockIcon, ClockIcon, HandHeartIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  CalendarClockIcon,
+  ClockIcon,
+  HandHeartIcon,
+  PrinterIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,11 +45,18 @@ export default async function HelperPlanningPage() {
         title="Helferplanung"
         description="Trage dich in offene Schichten ein und behalte den Überblick über deine Einsätze."
         actions={
-          <Button asChild variant="outline">
-            <Link href="/helferplanung/stunden">
-              <ClockIcon /> Helferstunden
-            </Link>
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link href="/helferplanung/stunden">
+                <ClockIcon /> Helferstunden
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/helferplanung/drucken">
+                <PrinterIcon /> Helferplan drucken
+              </Link>
+            </Button>
+          </>
         }
       />
 

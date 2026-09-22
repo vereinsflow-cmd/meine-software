@@ -19,6 +19,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ACCENT, type Accent } from "@/components/shared/accent";
+import { Sparkline } from "@/components/charts/sparkline";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import { TaskPriorityBadge, TaskStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { auditActionLabel } from "@/lib/audit-labels";
@@ -53,35 +54,35 @@ export function StatCard({
   hint,
   href,
   icon,
-  accent = "blue",
+  trend,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
   href?: string;
   icon: React.ReactNode;
-  accent?: Accent;
+  /** Letzte Werte für eine kleine Trendlinie (älteste zuerst, mind. zwei Werte); ohne Angabe entfällt sie. */
+  trend?: readonly number[];
 }) {
-  const colors = ACCENT[accent];
   const body = (
     <Card
       className={cn(
         "h-full gap-0 py-0",
         href &&
-          "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/25 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+          "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
       )}
     >
-      <div className={cn("h-1.5", colors.bar)} aria-hidden="true" />
       <CardContent className="grid gap-1 py-4">
         <div className="flex items-start justify-between gap-3">
           <p className="pt-0.5 text-sm font-medium text-muted-foreground">{label}</p>
           <div
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
-              colors.tile,
-              // Nur bei anklickbaren Karten: leichtes Wachsen beim Überfahren, als Zugabe zum Anheben der ganzen Karte.
+              // Alle Kennzahlenkarten teilen sich denselben, zurückhaltenden Symbolstil (kein Regenbogen aus
+              // Blau/Lila/Grün/Gelb) – die Markenfarbe bleibt Aktionen vorbehalten und erscheint hier nur beim
+              // Überfahren, als Zugabe zum Anheben der ganzen Karte.
+              "flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground [&_svg]:size-5",
               href &&
-                "transition-transform duration-200 group-hover/card:scale-110 motion-reduce:transition-none",
+                "transition-[transform,background-color,color] duration-200 group-hover/card:scale-110 group-hover/card:bg-primary/10 group-hover/card:text-primary motion-reduce:transition-none",
             )}
             aria-hidden="true"
           >
@@ -90,6 +91,7 @@ export function StatCard({
         </div>
         <p className="text-3xl leading-tight font-bold tabular-nums">{value}</p>
         {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+        {trend && trend.length > 1 && <Sparkline values={trend} className="mt-1.5" />}
       </CardContent>
     </Card>
   );
@@ -620,7 +622,7 @@ export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shift
       hint={`${formatDuration(hours.minutes)} · ${hours.scope === "ALL" ? "vereinsweit dokumentiert" : "dokumentierte Einsätze"}`}
       href="/helferplanung/stunden"
       icon={<ClockIcon />}
-      accent="amber"
+      trend={hours.trend}
     />
   );
 }

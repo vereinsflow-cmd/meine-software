@@ -71,7 +71,7 @@ export default async function DashboardPage({
             }
             href="/mitglieder"
             icon={<UsersIcon />}
-            accent="blue"
+            trend={members.trend}
           />
         ) : (
           <StatCard
@@ -80,7 +80,6 @@ export default async function DashboardPage({
             hint={notifications.unread === 1 ? "Benachrichtigung" : "Benachrichtigungen"}
             href="/benachrichtigungen"
             icon={<BellIcon />}
-            accent="amber"
           />
         )}
         {events && (
@@ -94,7 +93,6 @@ export default async function DashboardPage({
             }
             href="/veranstaltungen"
             icon={<CalendarDaysIcon />}
-            accent="violet"
           />
         )}
         {shifts && (
@@ -104,7 +102,6 @@ export default async function DashboardPage({
             hint="In kommenden Schichten"
             href="/helferplanung"
             icon={<HandHeartIcon />}
-            accent="emerald"
           />
         )}
         {shifts && <HelperHours hours={shifts.hours} />}

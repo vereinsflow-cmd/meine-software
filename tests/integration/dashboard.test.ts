@@ -252,6 +252,51 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect((await getDashboard(ctx.helper)).birthdays).toBeNull();
     expect((await getDashboard(ctx.member)).members).toBeNull();
   });
+
+  it("Trendlinien für Mitglieder und Helferstunden: 12 Wochen, älteste zuerst", async () => {
+    const { ctx, club, people } = await setup();
+    // Die Testkonten aus setup() haben (wie viele echte Altbestände) kein Eintrittsdatum – sie tauchen in der
+    // Trendlinie bewusst nirgends auf (siehe `membersAtBucketEnds`: ohne Eintrittsdatum nicht einordbar), zählen aber
+    // bei `total` mit. Nur Mitglieder MIT Eintrittsdatum prägen deshalb hier den Verlauf.
+    await prisma.member.create({
+      data: {
+        clubId: club.id,
+        firstName: "Alt",
+        lastName: "Eingetreten",
+        status: "ACTIVE",
+        joinedAt: new Date(Date.now() - 90 * DAY), // vor der Trendlinie (12 Wochen = 84 Tage) beigetreten
+      },
+    });
+    await prisma.member.create({
+      data: {
+        clubId: club.id,
+        firstName: "Neu",
+        lastName: "Eingetreten",
+        status: "ACTIVE",
+        joinedAt: new Date(Date.now() - 14 * DAY), // innerhalb der Trendlinie beigetreten
+      },
+    });
+    const event = await createEvent(club.id, { title: "Fest", startsAt: inDays(-1) });
+    const shift = await createShift(club.id, event.id, { title: "Aufbau", startsAt: inDays(-1) });
+    await prisma.shiftAssignment.create({
+      data: {
+        clubId: club.id,
+        shiftId: shift.id,
+        memberId: people.helper.member.id,
+        workedMinutes: 90,
+      },
+    });
+
+    const data = await getDashboard(ctx.admin);
+    expect(data.members!.trend).toHaveLength(12);
+    expect(data.members!.trend[0]).toBe(1); // vor 12 Wochen: nur "Alt Eingetreten" war schon dabei
+    expect(data.members!.trend.at(-1)).toBe(2); // laufende Woche: beide beigetreten
+    expect(Math.min(...data.members!.trend)).toBeGreaterThanOrEqual(1); // steigt, fällt nie unter den Altbestand
+
+    expect(data.shifts!.hours.trend).toHaveLength(12);
+    expect(data.shifts!.hours.trend.at(-1)).toBe(1.5); // 90 Minuten, diese Woche geleistet
+    expect(data.shifts!.hours.trend.slice(0, -1).every((v) => v === 0)).toBe(true); // sonst nichts dokumentiert
+  });
 });
 
 describe("Dashboard: Geburtstage", () => {

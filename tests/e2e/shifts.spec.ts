@@ -103,21 +103,16 @@ test.describe("Helferplanung – Veranstalter", () => {
     await expect(dialog).toBeVisible(); // Dialog bleibt offen, nichts wurde angelegt
   });
 
-  test("Druckansicht enthält die Helferliste mit freien Plätzen und ohne Menü", async ({
+  // Die Druckansicht selbst (Filter, Kopf-/Fußzeile, „Noch nicht besetzt“, print:hidden-Elemente …) hat
+  // eigene, ausführlichere Tests in helferplan-drucken.spec.ts.
+  test("„Drucken“ führt von der Veranstaltung aus in die Druckansicht, bereits auf sie eingegrenzt", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     await openSommerfestPlan(page);
-    await page.getByRole("link", { name: "Druckansicht" }).click();
-    await expect(
-      page.getByRole("heading", { level: 1, name: /Helferliste: Sommerfest 2026/ }),
-    ).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: /Grillstand/ })).toBeVisible();
-    await expect(page.getByText("— frei —").first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Drucken" })).toBeVisible();
-    await page.emulateMedia({ media: "print" });
-    await expect(page.getByRole("navigation", { name: "Hauptnavigation" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Drucken" })).toBeHidden();
+    await page.getByRole("link", { name: "Drucken" }).click();
+    await expect(page).toHaveURL(/\/helferplanung\/drucken\?event=/);
+    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
   });
 
   test("CSV-Export der Helferplanung", async ({ page }) => {

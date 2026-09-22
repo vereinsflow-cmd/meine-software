@@ -8,7 +8,7 @@ import {
   toTimeInputValue,
 } from "@/lib/dates";
 import { toCsv } from "@/lib/csv";
-import { shiftHealth, type ShiftHealth, type ShiftUrgency } from "@/lib/shift-health";
+import { FILL_LABEL, shiftHealth, type ShiftHealth, type ShiftUrgency } from "@/lib/shift-health";
 import { loadVisibleEvent } from "@/modules/events/service";
 import { notifyUsers } from "@/modules/notifications/service";
 import { mapDatabaseError } from "@/server/action";
@@ -1237,6 +1237,161 @@ export async function listResponsibleOptions(
 // ---------------------------------------------------------------------------------------------
 
 /** CSV der Helferplanung einer Veranstaltung (für Veranstalter). Kontaktdaten nur mit entsprechendem Recht. */
+// ---------------------------------------------------------------------------------------------
+// Ausdruck: Helferplan über mehrere Veranstaltungen
+// ---------------------------------------------------------------------------------------------
+
+export interface PrintShiftDto {
+  id: string;
+  title: string;
+  taskName: string | null;
+  startsAt: Date;
+  endsAt: Date;
+  meetingPoint: string | null;
+  requiredCount: number;
+  filled: number;
+  fillLabel: string;
+  responsible: string | null;
+  /** Nur Namen – der Ausdruck ist zum Aushängen gedacht, keine Kontaktdaten wie beim CSV-Export für Organisatoren. */
+  helperNames: string[];
+}
+
+export interface PrintPlanEvent {
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  locationName: string | null;
+  address: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  shifts: PrintShiftDto[];
+}
+
+export interface PrintPlanFilter {
+  /** Nur diese Veranstaltungen (leer/weggelassen = keine Einschränkung nach Veranstaltung). */
+  eventIds?: string[];
+  /** Nur Veranstaltungen, die in diesem Zeitraum beginnen (jeweils optional, `to` ist exklusiv). */
+  from?: Date;
+  to?: Date;
+  /** Nur Schichten mit noch freien Plätzen. */
+  onlyOpen?: boolean;
+}
+
+/**
+ * Helferplan für den Ausdruck, über mehrere Veranstaltungen hinweg und wahlweise eingegrenzt auf bestimmte
+ * Veranstaltungen, einen Zeitraum oder nur offene Schichten. Nur veröffentlichte Veranstaltungen mit mindestens
+ * einer nicht abgesagten Schicht; ohne jede Einschränkung nur Veranstaltungen, die noch nicht begonnen haben (anders
+ * als `getStaffingOverview`, das nach dem Ende der Schicht geht – für den Ausdruck reicht der gröbere Blick).
+ * Veranstaltungen, die nach Anwendung von `onlyOpen` keine Schicht mehr übrig haben, entfallen ganz.
+ */
+export async function listShiftPlanForPrint(
+  ctx: TenantContext,
+  filter: PrintPlanFilter = {},
+): Promise<PrintPlanEvent[]> {
+  assertCan(ctx, "shifts:read");
+  const eventIds = filter.eventIds?.filter((id) => id.length > 0) ?? [];
+  const hasDateFilter = filter.from !== undefined || filter.to !== undefined;
+
+  const events = await ctx.db.event.findMany({
+    where: {
+      deletedAt: null,
+      status: "PUBLISHED",
+      ...(eventIds.length > 0 ? { id: { in: eventIds } } : {}),
+      ...(hasDateFilter
+        ? {
+            startsAt: {
+              ...(filter.from ? { gte: filter.from } : {}),
+              ...(filter.to ? { lt: filter.to } : {}),
+            },
+          }
+        : eventIds.length === 0
+          ? { startsAt: { gte: new Date() } } // Ohne jede Auswahl: nur Kommendes, wie die übrige Helferplanung
+          : {}),
+      shifts: { some: { deletedAt: null, status: { not: "CANCELLED" } } },
+    },
+    select: {
+      id: true,
+      title: true,
+      startsAt: true,
+      endsAt: true,
+      allDay: true,
+      locationName: true,
+      address: true,
+      contactName: true,
+      contactEmail: true,
+      contactPhone: true,
+      shifts: {
+        where: { deletedAt: null, status: { not: "CANCELLED" } },
+        orderBy: [{ startsAt: "asc" }, { title: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          taskName: true,
+          startsAt: true,
+          endsAt: true,
+          meetingPoint: true,
+          requiredCount: true,
+          status: true,
+          responsible: { select: { firstName: true, lastName: true } },
+          assignments: {
+            where: { status: "CONFIRMED" },
+            orderBy: { assignedAt: "asc" },
+            select: { member: { select: { firstName: true, lastName: true } } },
+          },
+        },
+      },
+    },
+    orderBy: { startsAt: "asc" },
+    take: 200,
+  });
+
+  return events
+    .map((event) => {
+      const shifts = event.shifts
+        .map<PrintShiftDto>((row) => {
+          const filled = row.assignments.length;
+          const health = shiftHealth({
+            status: row.status,
+            startsAt: row.startsAt,
+            endsAt: row.endsAt,
+            requiredCount: row.requiredCount,
+            filled,
+          });
+          return {
+            id: row.id,
+            title: row.title,
+            taskName: row.taskName,
+            startsAt: row.startsAt,
+            endsAt: row.endsAt,
+            meetingPoint: row.meetingPoint,
+            requiredCount: row.requiredCount,
+            filled,
+            fillLabel: FILL_LABEL[health.fill],
+            responsible: row.responsible ? fullName(row.responsible) : null,
+            helperNames: row.assignments.map((a) => fullName(a.member)),
+          };
+        })
+        .filter((shift) => !filter.onlyOpen || shift.filled < shift.requiredCount);
+      return {
+        id: event.id,
+        title: event.title,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
+        allDay: event.allDay,
+        locationName: event.locationName,
+        address: event.address,
+        contactName: event.contactName,
+        contactEmail: event.contactEmail,
+        contactPhone: event.contactPhone,
+        shifts,
+      } satisfies PrintPlanEvent;
+    })
+    .filter((event) => event.shifts.length > 0);
+}
+
 export async function exportShiftPlanCsv(
   ctx: TenantContext,
   eventId: string,

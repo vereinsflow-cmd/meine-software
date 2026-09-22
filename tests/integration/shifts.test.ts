@@ -13,6 +13,7 @@ import {
   listAssignableMembers,
   listMyAssignments,
   listOpenShifts,
+  listShiftPlanForPrint,
   listShiftsForEvent,
   recordHours,
   signOut,
@@ -774,6 +775,164 @@ describe("Übersichten und Export", () => {
     expect((await listShiftsForEvent(ctx.board, event.id)).shifts[0]?.internalNotes).toBe(
       "Kasse: Schlüssel im Büro",
     );
+  });
+});
+
+describe("Ausdruck: Helferplan über mehrere Veranstaltungen", () => {
+  async function printSetup() {
+    const base = await setup();
+    const past = await createEventRow(base.club.id, {
+      title: "Letztes Jahr",
+      startsAt: new Date(Date.now() - 40 * 24 * H),
+      endsAt: new Date(Date.now() - 40 * 24 * H + 4 * H),
+      locationName: "Vereinsheim",
+      address: "Dorfstraße 1, 12345 Musterstadt",
+      contactName: "Erika Mustermann",
+      contactEmail: "erika@example.test",
+      contactPhone: "0171 000",
+    });
+    await createShiftRow(base.club.id, past.id, { title: "Vergangen", requiredCount: 1 });
+
+    const draft = await createEventRow(base.club.id, {
+      title: "Entwurf",
+      status: "DRAFT",
+      startsAt: new Date(Date.now() + 5 * 24 * H),
+      endsAt: new Date(Date.now() + 5 * 24 * H + 4 * H),
+    });
+    await createShiftRow(base.club.id, draft.id, { title: "Nicht sichtbar" });
+
+    const cancelled = await createEventRow(base.club.id, {
+      title: "Abgesagt",
+      status: "CANCELLED",
+      startsAt: new Date(Date.now() + 6 * 24 * H),
+      endsAt: new Date(Date.now() + 6 * 24 * H + 4 * H),
+    });
+    await createShiftRow(base.club.id, cancelled.id, { title: "Nicht sichtbar" });
+
+    return { ...base, past, draft, cancelled };
+  }
+
+  it("liefert kommende Veranstaltungen mit Schichten, Helfernamen und Besetzungsstand; ohne Helfer „EMPTY“", async () => {
+    const { ctx, event } = await printSetup();
+    const staffed = await createShift(
+      ctx.board,
+      event.id,
+      shiftInput({ title: "Kasse", requiredCount: 2 }),
+    );
+    const empty = await createShift(
+      ctx.board,
+      event.id,
+      shiftInput({ title: "Aufbau", requiredCount: 1 }),
+    );
+    await signUp(ctx.helper, staffed.id);
+
+    const plan = await listShiftPlanForPrint(ctx.board);
+    const sommerfest = plan.find((e) => e.title === "Sommerfest")!;
+    expect(sommerfest.shifts.map((s) => s.title)).toEqual(["Aufbau", "Kasse"]); // nach Zeit/Titel sortiert
+    const kasse = sommerfest.shifts.find((s) => s.id === staffed.id)!;
+    expect(kasse).toMatchObject({ filled: 1, requiredCount: 2, helperNames: ["Hanna Helfer"] });
+    const aufbau = sommerfest.shifts.find((s) => s.id === empty.id)!;
+    expect(aufbau).toMatchObject({
+      filled: 0,
+      requiredCount: 1,
+      helperNames: [],
+      fillLabel: "Unbesetzt",
+    });
+  });
+
+  it("ohne Auswahl: nur Kommendes – vergangene, Entwurfs- und abgesagte Veranstaltungen fehlen", async () => {
+    const { ctx, event } = await printSetup();
+    await createShift(ctx.board, event.id, shiftInput());
+
+    const plan = await listShiftPlanForPrint(ctx.board);
+    const titles = plan.map((e) => e.title);
+    expect(titles).toContain("Sommerfest");
+    expect(titles).not.toContain("Letztes Jahr");
+    expect(titles).not.toContain("Entwurf");
+    expect(titles).not.toContain("Abgesagt");
+  });
+
+  it("eingegrenzt auf ausgewählte Veranstaltungen (auch vergangene, wenn gezielt angefragt)", async () => {
+    const { ctx, event, past } = await printSetup();
+    await createShift(ctx.board, event.id, shiftInput());
+
+    const plan = await listShiftPlanForPrint(ctx.board, { eventIds: [past.id] });
+    expect(plan.map((e) => e.title)).toEqual(["Letztes Jahr"]);
+    expect(plan[0]).toMatchObject({
+      locationName: "Vereinsheim",
+      address: "Dorfstraße 1, 12345 Musterstadt",
+      contactName: "Erika Mustermann",
+      contactEmail: "erika@example.test",
+      contactPhone: "0171 000",
+    });
+  });
+
+  it("eingegrenzt auf einen Zeitraum", async () => {
+    const { ctx, club, event } = await printSetup();
+    await createShift(ctx.board, event.id, shiftInput());
+    const soon = await createEventRow(club.id, {
+      title: "Nächste Woche",
+      startsAt: new Date(Date.now() + 6 * H),
+      endsAt: new Date(Date.now() + 9 * H),
+    });
+    await createShiftRow(club.id, soon.id, { title: "Schnellschicht" });
+
+    const nurBald = await listShiftPlanForPrint(ctx.board, {
+      from: new Date(Date.now() - H),
+      to: new Date(Date.now() + 24 * H),
+    });
+    expect(nurBald.map((e) => e.title)).toEqual(["Nächste Woche"]);
+  });
+
+  it("„nur freie Plätze“: voll besetzte Schichten entfallen, Veranstaltungen ohne verbleibende Schicht ganz", async () => {
+    const { ctx, club } = await printSetup();
+    // Eigene, sonst leere Veranstaltung: nur so lässt sich prüfen, dass sie bei voller Besetzung ganz verschwindet.
+    const solo = await createEventRow(club.id, {
+      title: "Nur-volle-Schichten-Fest",
+      startsAt: new Date(Date.now() + 3 * 24 * H),
+      endsAt: new Date(Date.now() + 3 * 24 * H + 4 * H),
+    });
+    const full = await createShiftRow(club.id, solo.id, { title: "Voll", requiredCount: 1 });
+    await signUp(ctx.helper, full.id);
+
+    expect(
+      (await listShiftPlanForPrint(ctx.board, { onlyOpen: true })).map((e) => e.title),
+    ).not.toContain("Nur-volle-Schichten-Fest");
+    expect((await listShiftPlanForPrint(ctx.board)).map((e) => e.title)).toContain(
+      "Nur-volle-Schichten-Fest",
+    ); // ohne den Filter bleibt sie sichtbar
+
+    await createShiftRow(club.id, solo.id, { title: "Frei", requiredCount: 2 });
+    const nurOffen = await listShiftPlanForPrint(ctx.board, { onlyOpen: true });
+    expect(
+      nurOffen.find((e) => e.title === "Nur-volle-Schichten-Fest")?.shifts.map((s) => s.title),
+    ).toEqual(["Frei"]);
+  });
+
+  it("gelöschte (abgesagte) Schichten fehlen im Ausdruck", async () => {
+    const { ctx, event } = await printSetup();
+    const deleted = await createShift(ctx.board, event.id, shiftInput({ title: "Gelöscht" }));
+    await deleteShift(ctx.board, deleted.id);
+    await createShift(ctx.board, event.id, shiftInput({ title: "Bleibt" }));
+
+    const plan = await listShiftPlanForPrint(ctx.board);
+    const sommerfest = plan.find((e) => e.title === "Sommerfest")!;
+    expect(sommerfest.shifts.map((s) => s.title)).toEqual(["Bleibt"]);
+  });
+
+  it("enthält keine Kontaktdaten der Helfer (nur Namen) – anders als der CSV-Export", async () => {
+    const { ctx, event, people } = await printSetup();
+    await prisma.member.update({
+      where: { id: people.helper.member.id },
+      data: { phone: "0171 999" },
+    });
+    const shift = await createShift(ctx.board, event.id, shiftInput());
+    await signUp(ctx.helper, shift.id);
+
+    const plan = await listShiftPlanForPrint(ctx.board);
+    const json = JSON.stringify(plan);
+    expect(json).toContain("Hanna Helfer");
+    expect(json).not.toContain("0171 999");
   });
 });
 

@@ -35,7 +35,7 @@ export function SidebarNav({
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="flex flex-1 flex-col gap-5 [@media(max-height:820px)]:gap-3"
+      className="flex flex-1 flex-col gap-7 [@media(max-height:820px)]:gap-4"
     >
       {groups.map((group, groupIndex) => (
         <div

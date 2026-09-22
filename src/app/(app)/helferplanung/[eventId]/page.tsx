@@ -99,8 +99,8 @@ export default async function EventShiftsPage({
               </Button>
             )}
             <Button asChild variant="outline">
-              <Link href={`/helferplanung/${eventId}/drucken`}>
-                <PrinterIcon /> Druckansicht
+              <Link href={`/helferplanung/drucken?event=${eventId}`}>
+                <PrinterIcon /> Drucken
               </Link>
             </Button>
           </>
