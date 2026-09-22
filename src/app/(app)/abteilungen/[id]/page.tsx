@@ -8,13 +8,14 @@ import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
 import {
+  AddDepartmentMemberControls,
   DepartmentActions,
   GroupControls,
   LeaderToggle,
   RemoveGroupMemberButton,
 } from "@/modules/departments/components/department-controls";
 import { DepartmentDialog, GroupDialog } from "@/modules/departments/components/department-dialog";
-import { getDepartment } from "@/modules/departments/service";
+import { getDepartment, listAddableMembers } from "@/modules/departments/service";
 import { isAppError } from "@/server/errors";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -33,6 +34,9 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   if (!department) notFound();
 
   const candidates = (department.members ?? []).map((m) => ({ id: m.id, name: m.name }));
+  const addableMembers = department.canManageClubWide
+    ? await listAddableMembers(ctx, id)
+    : [];
 
   return (
     <>
@@ -74,16 +78,21 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle role="heading" aria-level={2}>
-              Mitglieder ({department.memberCount})
-            </CardTitle>
-            <CardDescription>
-              Leitung:{" "}
-              {department.leaders.length > 0
-                ? department.leaders.map((l) => l.name).join(", ")
-                : "nicht festgelegt"}
-            </CardDescription>
+          <CardHeader className="flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle role="heading" aria-level={2}>
+                Mitglieder ({department.memberCount})
+              </CardTitle>
+              <CardDescription>
+                Leitung:{" "}
+                {department.leaders.length > 0
+                  ? department.leaders.map((l) => l.name).join(", ")
+                  : "nicht festgelegt"}
+              </CardDescription>
+            </div>
+            {department.canManageClubWide && (
+              <AddDepartmentMemberControls departmentId={id} candidates={addableMembers} />
+            )}
           </CardHeader>
           <CardContent>
             {department.members === null ? (

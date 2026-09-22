@@ -416,6 +416,58 @@ export async function addGroupMember(
   });
 }
 
+/**
+ * Mitglieder, die sich der Abteilung neu hinzufügen lassen (noch nicht dabei, nicht archiviert/gelöscht).
+ * Nur für vereinsweit Berechtigte: Abteilungsleiter sehen laut Berechtigungskonzept ohnehin nur Mitglieder
+ * ihrer eigenen Abteilung (siehe `members:read` Scope "DEPARTMENT") und könnten sonst niemanden zum
+ * Hinzufügen finden.
+ */
+export async function listAddableMembers(
+  ctx: TenantContext,
+  departmentId: string,
+): Promise<{ id: string; name: string }[]> {
+  assertCan(ctx, "departments:manage", { departmentIds: [departmentId] });
+  if (!isClubWide(ctx)) return [];
+  const members = await ctx.db.member.findMany({
+    where: {
+      deletedAt: null,
+      archivedAt: null,
+      departments: { none: { departmentId } },
+    },
+    select: { id: true, firstName: true, lastName: true },
+  });
+  return members
+    .map((m) => ({ id: m.id, name: `${m.lastName}, ${m.firstName}` }))
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+}
+
+export async function addDepartmentMember(
+  ctx: TenantContext,
+  input: { departmentId: string; memberId: string },
+): Promise<void> {
+  const department = await loadManageable(ctx, input.departmentId);
+  if (!isClubWide(ctx)) {
+    throw forbidden("Mitglieder können nur vereinsweit Berechtigte einer Abteilung hinzufügen.");
+  }
+  const member = await ctx.db.member.findFirst({
+    where: { id: input.memberId, deletedAt: null, archivedAt: null },
+    select: { id: true, firstName: true, lastName: true },
+  });
+  if (!member) throw notFound("Das Mitglied");
+  await ctx.db.$transaction(async (tx) => {
+    await tx.memberDepartment.createMany({
+      data: [{ clubId: ctx.clubId, memberId: member.id, departmentId: department.id }],
+      skipDuplicates: true,
+    });
+    await recordAudit(tx, auditActor(ctx), {
+      action: "department.member_added",
+      entityType: "Department",
+      entityId: department.id,
+      summary: `${member.firstName} ${member.lastName} zur Abteilung ${department.name} hinzugefügt`,
+    });
+  });
+}
+
 export async function removeGroupMember(
   ctx: TenantContext,
   input: { groupId: string; memberId: string },

@@ -63,3 +63,7 @@ export const leaderSchema = z.object({
   memberId: z.string().min(1).max(64),
   isLeader: z.boolean(),
 });
+export const departmentMemberSchema = z.object({
+  departmentId: z.string().min(1).max(64),
+  memberId: z.string().min(1).max(64),
+});

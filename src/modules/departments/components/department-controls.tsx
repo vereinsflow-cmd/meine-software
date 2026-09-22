@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import {
+  addDepartmentMemberAction,
   addGroupMemberAction,
   deleteDepartmentAction,
   deleteGroupAction,
@@ -98,6 +99,56 @@ export function LeaderToggle({
     >
       {isLeader ? "Leitung entfernen" : "Zur Leitung machen"}
     </Button>
+  );
+}
+
+export function AddDepartmentMemberControls({
+  departmentId,
+  candidates,
+}: {
+  departmentId: string;
+  candidates: { id: string; name: string }[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [selected, setSelected] = useState("");
+
+  if (candidates.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <NativeSelect
+        aria-label="Mitglied zur Abteilung hinzufügen"
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        className="h-8 w-auto max-w-56"
+      >
+        <option value="">Mitglied auswählen …</option>
+        {candidates.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </NativeSelect>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!selected || pending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await addDepartmentMemberAction({ departmentId, memberId: selected });
+            if (!result.ok) toast.error(result.error.message);
+            else {
+              setSelected("");
+              toast.success("Mitglied hinzugefügt.");
+              router.refresh();
+            }
+          })
+        }
+      >
+        <UserPlusIcon /> Mitglied hinzufügen
+      </Button>
+    </div>
   );
 }
 

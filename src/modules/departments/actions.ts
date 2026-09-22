@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
 import {
+  departmentMemberSchema,
   departmentSchema,
   groupMemberSchema,
   groupSchema,
@@ -11,6 +12,7 @@ import {
   leaderSchema,
 } from "./schemas";
 import {
+  addDepartmentMember,
   addGroupMember,
   createDepartment,
   createGroup,
@@ -116,6 +118,15 @@ export async function deleteGroupAction(input: unknown): Promise<ActionResult> {
     refresh(departmentId);
     return undefined;
   }, "group-delete");
+}
+
+export async function addDepartmentMemberAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const data = parseInput(departmentMemberSchema, input);
+    await addDepartmentMember(await requireTenantContext(), data);
+    refresh(data.departmentId);
+    return undefined;
+  }, "department-member-add");
 }
 
 export async function addGroupMemberAction(input: unknown): Promise<ActionResult> {
