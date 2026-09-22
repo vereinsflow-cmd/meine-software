@@ -61,8 +61,14 @@ const followLink = (name) => async (page) => {
  * /nachrichten/neu, /datenschutz, /helferplanung, /dashboard?tab=termine. Nicht verwenden: die Detailseite einer
  * Veranstaltung bei 1280 px Breite (der Titel wird dort von den Schaltflächen überdeckt).
  */
+/** Klappt eine Gruppe der Seitenleiste auf (alle Gruppen sind sonst zu und die Leiste wirkt im Bild leer). */
+const openNavGroup = (label) => async (page) => {
+  await page.getByRole("button", { name: label, exact: true }).first().click();
+  await page.waitForTimeout(300); // Aufklapp-Animation
+};
+
 const shots = [
-  { name: "dashboard", path: "/dashboard" },
+  { name: "dashboard", path: "/dashboard", steps: openNavGroup("Verein") },
   // Die Detailbilder sind schmaler (1140 px statt 1280 px): Bei gleicher Anzeigegröße auf der Seite wird der Text lesbarer.
   // Der Helferplan ist höher, damit die Ampel-Zustände „Voll besetzt“ und „Teilweise besetzt“ beide zu sehen sind.
   { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: DETAIL_TALL },
@@ -80,10 +86,13 @@ const shots = [
 /**
  * In der Entwicklungsdatenbank heißt der Demo-Administrator womöglich anders als im Seed („Anna Admin“). Damit die Bilder
  * der Vorführ-Figur entsprechen, wird der Name nur im Browser (nicht in der Datenbank) ersetzt.
+ * Von Hand angelegte Einträge, die nicht aus dem Seed stammen, bekommen ebenso einen erfundenen Namen: Das Repository
+ * und die Website sind öffentlich, echte Namen gehören nicht ins Bild.
  */
 const DEMO_RENAME = [
   [/Luis Admin/g, "Anna Admin"],
   [/\bLuis\b/g, "Anna"],
+  [/\bBleckert\b/g, "Brandt"],
 ];
 async function normalizeDemoNames(page) {
   await page.evaluate((rules) => {
