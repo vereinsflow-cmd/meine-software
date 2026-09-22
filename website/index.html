@@ -116,7 +116,7 @@
       <p class="lead">VereinsFlow bündelt Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten an einem Ort – übersichtlich, sicher und komplett auf Deutsch.</p>
       <div class="hero-actions">
         <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-        <a class="btn btn-secondary btn-lg" href="#funktionen">Funktionen ansehen</a>
+        <a class="btn-text" href="#funktionen">Funktionen ansehen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
       </div>
       <ul class="hero-points">
         <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Zugang nur per Einladung</li>
@@ -126,7 +126,6 @@
 
       <div class="hero-visual">
         <div class="browser">
-          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
           <picture>
             <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/dashboard-dark-960.webp 960w, assets/img/app/dashboard-dark-1920.webp 1920w" sizes="(max-width: 719px) 1px, (min-width: 1200px) 1120px, 92vw">
             <img src="assets/img/app/dashboard-light-960.webp" srcset="assets/img/app/dashboard-light-960.webp 960w, assets/img/app/dashboard-light-1920.webp 1920w" sizes="(max-width: 719px) 1px, (min-width: 1200px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern, Terminen, freien Helferplätzen und Helferstunden sowie eigene Aufgaben und Einsätze">
@@ -245,35 +244,32 @@
   <!-- ===== Herzstück: Helferschichten ===== -->
   <section class="section" id="helferschichten" aria-labelledby="helfer-title">
     <div class="container">
-      <div class="spot">
-        <div class="spot-text reveal">
-          <p class="eyebrow">Das Herzstück</p>
-          <h2 id="helfer-title">Helferschichten, die sich fast von selbst organisieren</h2>
-          <p class="lead">Kein Zettelchaos, keine Nachfragen, kein Loch beim Sommerfest: Helfer sehen offene Schichten und tragen sich mit einem Klick ein. Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</p>
-          <ul class="checks">
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen.</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung.</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht,</strong> zum Beispiel für den Getränkestand.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel-Übersicht:</strong> „Beginnt bald“, „Teilweise besetzt“, „Voll besetzt“ – ganz ohne Tabelle.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, Stundenerfassung, Druckansicht, CSV-Export und Erinnerungen.</span></li>
-          </ul>
+      <div class="section-head center reveal">
+        <p class="eyebrow">Das Herzstück</p>
+        <h2 id="helfer-title">Helferschichten, die sich fast von selbst organisieren</h2>
+        <p class="lead">Kein Zettelchaos, keine Nachfragen, kein Loch beim Sommerfest: Helfer sehen offene Schichten und tragen sich mit einem Klick ein. Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</p>
+      </div>
+      <div class="chapter-media reveal">
+        <div class="browser">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/schichten-dark-960.webp 960w, assets/img/app/schichten-dark-1920.webp 1920w" sizes="(min-width: 900px) 1000px, 92vw">
+            <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 900px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
+          </picture>
         </div>
-        <div class="spot-media reveal">
-          <div class="browser">
-            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/schichten-dark-960.webp 960w, assets/img/app/schichten-dark-1920.webp 1920w" sizes="(min-width: 900px) 620px, 92vw">
-              <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 900px) 620px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
-            </picture>
-          </div>
-          <div class="phone">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-schichten-dark-390.webp 390w, assets/img/app/phone-schichten-dark-780.webp 780w" sizes="190px">
-              <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="190px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
-            </picture>
-          </div>
+        <div class="phone chapter-phone">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/phone-schichten-dark-390.webp 390w, assets/img/app/phone-schichten-dark-780.webp 780w" sizes="220px">
+            <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="220px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
+          </picture>
         </div>
       </div>
+      <ul class="checks checks-grid reveal">
+        <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen.</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
+        <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung.</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
+        <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht,</strong> zum Beispiel für den Getränkestand.</span></li>
+        <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel-Übersicht:</strong> „Beginnt bald“, „Teilweise besetzt“, „Voll besetzt“ – ganz ohne Tabelle.</span></li>
+        <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, Stundenerfassung, Druckansicht, CSV-Export und Erinnerungen.</span></li>
+      </ul>
     </div>
   </section>
 
@@ -298,7 +294,6 @@
         </div>
         <div class="spot-media reveal">
           <div class="browser">
-            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
             <picture>
               <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/mitglieder-dark-960.webp 960w, assets/img/app/mitglieder-dark-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw">
               <img src="assets/img/app/mitglieder-light-960.webp" srcset="assets/img/app/mitglieder-light-960.webp 960w, assets/img/app/mitglieder-light-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
@@ -320,7 +315,6 @@
         </div>
         <div class="spot-media reveal">
           <div class="browser">
-            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
             <picture>
               <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/kalender-dark-960.webp 960w, assets/img/app/kalender-dark-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw">
               <img src="assets/img/app/kalender-light-960.webp" srcset="assets/img/app/kalender-light-960.webp 960w, assets/img/app/kalender-light-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
@@ -341,7 +335,6 @@
         </div>
         <div class="spot-media reveal">
           <div class="browser">
-            <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i></div>
             <picture>
               <source media="(prefers-color-scheme: dark)" srcset="assets/img/app/auswertung-dark-960.webp 960w, assets/img/app/auswertung-dark-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw">
               <img src="assets/img/app/auswertung-light-960.webp" srcset="assets/img/app/auswertung-light-960.webp 960w, assets/img/app/auswertung-light-1920.webp 1920w" sizes="(min-width: 900px) 700px, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Donut-Diagramm der Mitglieder nach Status">
