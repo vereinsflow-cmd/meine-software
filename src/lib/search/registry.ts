@@ -209,10 +209,11 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
     id: "page:einstellungen",
     category: "seiten",
     title: "Vereinseinstellungen",
-    description: "Stammdaten und Einstellungen des Vereins bearbeiten",
+    description: "Stammdaten, Logo und Einstellungen des Vereins bearbeiten",
     href: "/einstellungen",
     iconKey: "settings",
     permission: "club:update",
+    keywords: ["logo", "wappen", "vereinslogo"],
   },
   {
     id: "page:protokoll",

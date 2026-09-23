@@ -63,13 +63,13 @@ erDiagram
 
 ### Verein, Rollen, Benutzer
 
-| Modell           | Zweck                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| `Club`           | Der Mandant: Name, Kennung (`slug`), Status, Einstellungen (JSON, u. a. Aufbewahrungsfristen), Kontaktdaten |
-| `Role`           | Rolle eines Vereins (Standardrollen und – vorbereitet – eigene)                                             |
-| `RolePermission` | Recht einer Rolle **mit Reichweite** (`CLUB`, `DEPARTMENT`, `OWN`)                                          |
-| `ClubMembership` | Verbindet Benutzer, Verein und Rolle; Status (aktiv/gesperrt)                                               |
-| `Invitation`     | Einladung per Link (Token als Hash), höchstens eine offene je E-Mail und Verein                             |
+| Modell           | Zweck                                                                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Club`           | Der Mandant: Name, Kennung (`slug`), Status, Einstellungen (JSON, u. a. Aufbewahrungsfristen), Kontaktdaten, Vereinslogo (`logo*`: Speicherschlüssel, Typ, Größe, Prüfsumme, Zeitpunkt) |
+| `Role`           | Rolle eines Vereins (Standardrollen und – vorbereitet – eigene)                                                                                                                         |
+| `RolePermission` | Recht einer Rolle **mit Reichweite** (`CLUB`, `DEPARTMENT`, `OWN`)                                                                                                                      |
+| `ClubMembership` | Verbindet Benutzer, Verein und Rolle; Status (aktiv/gesperrt)                                                                                                                           |
+| `Invitation`     | Einladung per Link (Token als Hash), höchstens eine offene je E-Mail und Verein                                                                                                         |
 
 ### Mitglieder
 
@@ -123,6 +123,7 @@ erDiagram
 | Höchstens eine offene Einladung je E-Mail und Verein                  | Teil-Unique-Index                                                    |
 | Benachrichtigungs-Links nur intern (kein Open-Redirect)               | CHECK                                                                |
 | Dokument gehört zu höchstens einem Bezugsobjekt                       | CHECK                                                                |
+| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB  | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
 
 Ein Test gleicht die Einstufung aller Modelle (`MODEL_SCOPE`) mit den echten Datenbankspalten ab – ein Modell mit `clubId`, das
 nicht als mandantenbezogen geführt wird, fällt sofort auf.

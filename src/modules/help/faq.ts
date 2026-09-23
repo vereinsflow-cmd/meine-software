@@ -501,10 +501,22 @@ export const FAQ: readonly FaqSection[] = [
         id: "einstellungen",
         question: "Wo ändere ich Vereinsdaten und Aufbewahrungsfristen?",
         answer: [
-          "Unter „Vereinseinstellungen“ pflegst du Name, Kontaktdaten, den Datenschutz-Ansprechpartner und die Aufbewahrungsfristen (Papierkorb, Ausgetretene, Änderungsprotokoll).",
+          "Unter „Vereinseinstellungen“ pflegst du Name, Logo, Kontaktdaten, den Datenschutz-Ansprechpartner und die Aufbewahrungsfristen (Papierkorb, Ausgetretene, Änderungsprotokoll).",
         ],
         link: { href: "/einstellungen", label: "Zu den Vereinseinstellungen" },
         keywords: "verein name adresse frist datenschutz löschen",
+      },
+      {
+        id: "vereinslogo",
+        question: "Wie ändere ich das Logo unseres Vereins?",
+        steps: [
+          "Öffne „Vereinseinstellungen“ und wähle im Bereich „Vereinslogo“ eine Bilddatei aus – die Vorschau zeigt, wie es aussieht.",
+          "Klicke auf „Logo hochladen“ (bzw. „Logo ersetzen“). Das Logo erscheint sofort neben dem Vereinsnamen in der Kopfzeile, im Vereinswechsler und auf gedruckten Helferplänen.",
+          "Mit „Logo entfernen“ erscheinen wieder die Anfangsbuchstaben des Vereinsnamens.",
+        ],
+        tip: "Erlaubt sind PNG, JPEG und WebP bis 1 MB (kein SVG, keine bewegten Bilder). Am besten eignet sich ein quadratisches Bild ab 128 × 128 Pixeln mit durchsichtigem oder weißem Hintergrund. Alle Mitglieder deines Vereins sehen das Logo – zeige darauf keine Personen.",
+        link: { href: "/einstellungen", label: "Zu den Vereinseinstellungen" },
+        keywords: "logo wappen bild emblem vereinslogo hochladen ändern",
       },
       {
         id: "ansprechpartner-pflegen",

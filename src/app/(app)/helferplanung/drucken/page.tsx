@@ -16,6 +16,7 @@ import {
   formatTimeRange,
   parseBerlinDateTime,
 } from "@/lib/dates";
+import { clubLogoUrl } from "@/lib/club-logo";
 import { buildPrintPageStyle, type PrintOrientation } from "@/lib/print";
 import { enumParam, param, paramList, type RawSearchParams } from "@/lib/search-params";
 import {
@@ -167,6 +168,7 @@ export default async function PrintShiftPlanPage({
     generatedAtLabel: `${formatDateTime(new Date())} Uhr`,
     orientation,
   });
+  const logoUrl = clubLogoUrl(ctx.clubId, ctx.club.logoSha256);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -283,15 +285,23 @@ export default async function PrintShiftPlanPage({
           Seitenzahlen (erscheint auf jeder gedruckten Seite, nicht nur auf der ersten). */}
       <div id="helferplan-ausdruck">
         <style id="helferplan-seitenstil">{pageStyle}</style>
-        <header className="mb-6 border-b-2 border-black pb-3">
-          <h1 className="text-2xl font-bold">{ctx.club.name}</h1>
-          <p className="text-lg font-semibold">Helferplan</p>
-          <p className="text-sm text-muted-foreground print:text-black">
-            {summary || "Alle kommenden Veranstaltungen mit Helferbedarf"}
-          </p>
-          <p className="text-xs text-muted-foreground print:text-black">
-            Erstellt am {formatDateTime(new Date())} Uhr
-          </p>
+        <header className="mb-6 flex items-start justify-between gap-4 border-b-2 border-black pb-3">
+          <div>
+            <h1 className="text-2xl font-bold">{ctx.club.name}</h1>
+            <p className="text-lg font-semibold">Helferplan</p>
+            <p className="text-sm text-muted-foreground print:text-black">
+              {summary || "Alle kommenden Veranstaltungen mit Helferbedarf"}
+            </p>
+            <p className="text-xs text-muted-foreground print:text-black">
+              Erstellt am {formatDateTime(new Date())} Uhr
+            </p>
+          </div>
+          {logoUrl && (
+            // Schlichtes <img> statt Kachel oder next/image: steht sofort im HTML (für schnelles Drucken) und wird
+            // mit Anmeldung geladen; schmückend, der Vereinsname steht daneben. Ohne Logo bleibt der Kopf wie gehabt.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="size-16 shrink-0 object-contain" />
+          )}
         </header>
 
         {planEvents.length === 0 ? (

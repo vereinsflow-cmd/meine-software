@@ -9,6 +9,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { CommandPalette } from "@/components/search/command-palette";
 import { SearchProvider } from "@/components/search/search-provider";
 import { SearchTrigger } from "@/components/search/search-trigger";
+import { clubLogoUrl } from "@/lib/club-logo";
 import { countUnread } from "@/modules/notifications/service";
 import { getStaticSearchEntries } from "@/modules/search/service";
 import { getTaskStats } from "@/modules/tasks/service";
@@ -45,7 +46,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         <div className="flex min-w-0 flex-col">
           <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden [@media(max-height:820px)]:h-14">
-            <MobileNav groups={groups} clubName={ctx.club.name} />
+            <MobileNav
+              groups={groups}
+              clubName={ctx.club.name}
+              clubLogoUrl={clubLogoUrl(ctx.clubId, ctx.club.logoSha256)}
+            />
             <ClubSwitcher clubs={clubs} activeId={ctx.clubId} />
             <div className="flex flex-1 justify-center px-2 sm:px-4">
               <SearchTrigger />
