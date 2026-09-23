@@ -998,23 +998,136 @@ html:not(.js) .nav ul a:hover {
   height: auto;
 }
 
-/* Smartphone-Rahmen. Der Rand entsteht über „inset“ des Bildes: Prozentwerte von padding würden sich auf den
-   umgebenden Container statt auf den Rahmen selbst beziehen und ihn verzerren. */
+/* Smartphone wie ein echtes Gerät: Metallrahmen mit heller Außenkante, schwarzer Glasrand, Tasten an beiden Seiten,
+   Dynamic Island, Statusleiste und Home-Balken. Maße nach einem aktuellen iPhone: Bildschirm 390 × 844 Punkte (so groß
+   sind die Aufnahmen), Gehäuse 420 × 874. Alles in Prozent bzw. `cqw` (Breite des Geräts), damit der Rahmen in jeder
+   Größe gleich aussieht. Prozentwerte über „inset“ (nicht padding): Sie beziehen sich so auf das Gerät selbst. */
 .phone {
   position: relative;
+  container-type: inline-size;
   width: 100%;
-  aspect-ratio: 390 / 844;
-  border-radius: 13% / 6%;
-  background: var(--bezel);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%), var(--shadow-lg);
+  aspect-ratio: 420 / 874;
+  border-radius: 15.6% / 7.5%;
+  background: linear-gradient(
+    135deg,
+    #70757d 0%,
+    #2a2d32 13%,
+    #383c42 40%,
+    #1e2125 68%,
+    #5f646c 100%
+  );
+  box-shadow:
+    0 0 0 1px #c3c8cf,
+    inset 0 0 0 1px rgb(255 255 255 / 24%),
+    inset 0 0 0 2px rgb(0 0 0 / 45%),
+    var(--shadow-lg);
 }
 
-.phone picture {
+/* Schwarzer Glasrand zwischen Rahmen und Bildschirm */
+.phone::before {
+  content: "";
   position: absolute;
-  inset: 2.3% 3.4%;
-  display: block;
+  inset: 0.6% 1.2%;
+  border-radius: 14.8% / 7%;
+  background: #050607;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+}
+
+/* Tasten: links Aktionstaste und Lautstärke, rechts Standby */
+.phone-hw {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.phone-hw::before,
+.phone-hw::after {
+  content: "";
+  position: absolute;
+  width: 1.1%;
+  background: linear-gradient(90deg, #4b4f56, #a3a9b1 55%, #5a5f66);
+}
+
+.phone-hw::before {
+  right: 99.8%;
+  top: 18%;
+  height: 22%;
+  border-radius: 2px 0 0 2px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0 16%,
+    transparent 16% 32%,
+    #000 32% 61%,
+    transparent 61% 71%,
+    #000 71% 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0 16%,
+    transparent 16% 32%,
+    #000 32% 61%,
+    transparent 61% 71%,
+    #000 71% 100%
+  );
+}
+
+.phone-hw::after {
+  left: 99.8%;
+  top: 28%;
+  height: 10.5%;
+  border-radius: 0 2px 2px 0;
+}
+
+.phone-screen {
+  position: absolute;
+  z-index: 1;
+  inset: 1.72% 3.57%;
   overflow: hidden;
-  border-radius: 10% / 4.6%;
+  border-radius: 13.1% / 6.05%;
+  background: #ffffff;
+}
+
+/* Statusleiste mit Uhrzeit, Dynamic Island, Netz, WLAN und Akku – darunter beginnt die App (wie auf dem Gerät) */
+.phone-status {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 6.4%;
+  padding: 0 7% 0 10.5%;
+  background: #ffffff;
+  color: #0a0a0a;
+}
+
+.phone-time {
+  font: 600 4cqw/1 var(--font-display);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.phone-island {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  width: 31%;
+  height: 66%;
+  border-radius: 999px;
+  background: #000000;
+  translate: -50% 0;
+}
+
+.phone-status-icons {
+  width: 16.5cqw;
+  height: auto;
+  aspect-ratio: 72 / 12;
+}
+
+.phone-screen picture {
+  position: absolute;
+  inset: 6.4% 0 0;
+  display: block;
   background: var(--surface-soft);
 }
 
@@ -1024,6 +1137,29 @@ html:not(.js) .nav ul a:hover {
   height: 100%;
   object-fit: cover;
   object-position: top;
+}
+
+/* Home-Balken und ein Hauch Spiegelung auf dem Glas */
+.phone-screen::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  bottom: 0.9%;
+  left: 50%;
+  width: 35%;
+  height: 0.55%;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 82%);
+  translate: -50% 0;
+}
+
+.phone-screen::before {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  background: linear-gradient(118deg, rgb(255 255 255 / 16%) 0%, rgb(255 255 255 / 0%) 30%);
+  pointer-events: none;
 }
 
 /* Schwebendes Telefon im Einstieg: deckt die vierte Kennzahlenkarte vollständig ab (keine abgeschnittenen Reste) */

@@ -82,6 +82,8 @@
   <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
   <symbol id="i-bell-ring" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></symbol>
+  <!-- Statusleiste der Telefon-Rahmen: Mobilfunk, WLAN, Akku (eigene Zeichnung, gefüllt statt Linien) -->
+  <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
 </svg>
 
 <header class="site-header">
@@ -143,9 +145,13 @@
           </div>
         </div>
         <div class="phone hero-phone">
-          <picture>
-            <img src="assets/img/app/phone-helferplanung-light-390.webp" srcset="assets/img/app/phone-helferplanung-light-390.webp 390w, assets/img/app/phone-helferplanung-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 230px" width="780" height="1688" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten zum Eintragen">
-          </picture>
+          <span class="phone-hw" aria-hidden="true"></span>
+          <div class="phone-screen">
+            <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+            <picture>
+              <img src="assets/img/app/phone-helferplanung-light-390.webp" srcset="assets/img/app/phone-helferplanung-light-390.webp 390w, assets/img/app/phone-helferplanung-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 230px" width="780" height="1688" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten zum Eintragen">
+            </picture>
+          </div>
         </div>
         <!-- Schwebende Hinweise: nur Schmuck (Inhalte stehen weiter unten ausführlich), deshalb aria-hidden -->
         <div class="hero-chips" aria-hidden="true">
@@ -325,9 +331,13 @@
           </div>
         </div>
         <div class="phone chapter-phone plx plx-fast">
-          <picture>
-            <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 220px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
-          </picture>
+          <span class="phone-hw" aria-hidden="true"></span>
+          <div class="phone-screen">
+            <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+            <picture>
+              <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 220px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
+            </picture>
+          </div>
         </div>
       </div>
       <ul class="checks checks-grid">
@@ -517,25 +527,37 @@
       <div class="phones">
         <figure class="reveal">
           <div class="phone plx plx-fast">
-            <picture>
-              <img src="assets/img/app/phone-dashboard-light-390.webp" srcset="assets/img/app/phone-dashboard-light-390.webp 390w, assets/img/app/phone-dashboard-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Dashboard auf dem Smartphone mit Kennzahlen und Warnung zu nicht besetzten Schichten">
-            </picture>
+            <span class="phone-hw" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-dashboard-light-390.webp" srcset="assets/img/app/phone-dashboard-light-390.webp 390w, assets/img/app/phone-dashboard-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Dashboard auf dem Smartphone mit Kennzahlen und Warnung zu nicht besetzten Schichten">
+              </picture>
+            </div>
           </div>
           <figcaption>Dashboard mit Kennzahlen</figcaption>
         </figure>
         <figure class="reveal">
           <div class="phone plx plx-slow">
-            <picture>
-              <img src="assets/img/app/phone-suche-light-390.webp" srcset="assets/img/app/phone-suche-light-390.webp 390w, assets/img/app/phone-suche-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone mit Treffern zu Helferplan, Helferstunden und Mitgliedern">
-            </picture>
+            <span class="phone-hw" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-suche-light-390.webp" srcset="assets/img/app/phone-suche-light-390.webp 390w, assets/img/app/phone-suche-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone mit Treffern zu Helferplan, Helferstunden und Mitgliedern">
+              </picture>
+            </div>
           </div>
           <figcaption>Suche mit einem Fingertipp</figcaption>
         </figure>
         <figure class="reveal">
           <div class="phone plx plx-fast">
-            <picture>
-              <img src="assets/img/app/phone-kalender-light-390.webp" srcset="assets/img/app/phone-kalender-light-390.webp 390w, assets/img/app/phone-kalender-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone mit den nächsten Terminen des Vereins">
-            </picture>
+            <span class="phone-hw" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-kalender-light-390.webp" srcset="assets/img/app/phone-kalender-light-390.webp 390w, assets/img/app/phone-kalender-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone mit den nächsten Terminen des Vereins">
+              </picture>
+            </div>
           </div>
           <figcaption>Kalender mit den nächsten Terminen</figcaption>
         </figure>
