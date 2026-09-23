@@ -85,9 +85,13 @@ export function ClubLogoCard({ clubId, clubName, logo }: ClubLogoCardProps) {
         } | null;
         if (response.ok && body?.ok) {
           toast.success(logo ? "Logo ersetzt." : "Logo gespeichert.");
-          formRef.current?.reset();
-          setPreview(null);
-          router.refresh();
+          // In derselben Transition wie das Neuladen: Die Vorschau verschwindet erst zusammen mit dem Eintreffen des
+          // neuen Logos – sonst zeigte die Karte kurz wieder den alten Stand („Noch kein Logo“ bzw. das alte Logo).
+          startTransition(() => {
+            formRef.current?.reset();
+            setPreview(null);
+            router.refresh();
+          });
           return;
         }
         const fileError = body?.error?.fieldErrors?.file?.join(" ");

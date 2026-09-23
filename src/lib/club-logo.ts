@@ -52,17 +52,22 @@ function pngSize(b: Uint8Array): ImageSize | null {
   if (b.length < 24 || fourCC(b, 12) !== "IHDR") return null;
   const width = u32be(b, 16);
   const height = u32be(b, 20);
-  // Animiertes PNG: ein "acTL"-Abschnitt steht vor den eigentlichen Bilddaten ("IDAT").
+  // Animiertes PNG: Ein "acTL"-Abschnitt steht irgendwo vor den Bilddaten ("IDAT") – auch hinter beliebig vielen anderen
+  // Abschnitten. Deshalb bis zu den Bilddaten alle ansehen; jeder Schritt rückt um mindestens 12 Byte vor, die
+  // Dateigröße begrenzt also die Schleife.
   let animated = false;
-  let offset = 8;
-  for (let guard = 0; guard < 64 && offset + 8 <= b.length; guard += 1) {
-    const length = u32be(b, offset);
-    const type = fourCC(b, offset + 4);
+  let imageData = false;
+  for (let offset = 8; offset + 8 <= b.length; offset += 12 + u32be(b, offset)) {
+    const type = fourCC(b, offset + 4); // Länge (4) + Typ (4) + Daten + Prüfsumme (4)
     if (type === "acTL") animated = true;
-    if (type === "IDAT" || type === "IEND") break;
-    offset += 12 + length; // Länge + Typ + Daten + Prüfsumme
+    if (type === "IDAT") {
+      imageData = true;
+      break;
+    }
+    if (type === "IEND") break;
   }
-  return { width, height, animated };
+  // Ohne Bilddaten ist die Datei unvollständig oder manipuliert – lieber ablehnen als ungeprüft annehmen.
+  return imageData ? { width, height, animated } : null;
 }
 
 function jpegSize(b: Uint8Array): ImageSize | null {

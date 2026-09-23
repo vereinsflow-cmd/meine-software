@@ -25,6 +25,17 @@ describe("Bildmaße werden aus dem Dateikopf gelesen", () => {
     expect(readImageSize(pngImage(64, 64, { animated: true }), "png")?.animated).toBe(true);
   });
 
+  it("findet die Animationskennung auch hinter vielen anderen Abschnitten", () => {
+    // Gültiges APNG: acTL muss nur vor dem ersten IDAT stehen – hier hinter 70 Textabschnitten.
+    const hidden = pngImage(64, 64, { animated: true, textChunks: 70 });
+    expect(readImageSize(hidden, "png")?.animated).toBe(true);
+    expect(readImageSize(pngImage(64, 64, { textChunks: 70 }), "png")?.animated).toBe(false);
+  });
+
+  it("ein PNG ohne Bilddaten gilt als unlesbar", () => {
+    expect(readImageSize(pngImage(64, 64, { withoutImageData: true }), "png")).toBeNull();
+  });
+
   it("JPEG mit APP0/APP1 vor dem Bildrahmen – Grundform und progressiv", () => {
     expect(readImageSize(jpegHeader(1024, 768), "jpg")).toEqual({
       width: 1024,
@@ -112,6 +123,11 @@ describe("Prüfung einer Datei als Vereinslogo", () => {
   it("lehnt bewegte Bilder und unlesbare Köpfe ab", () => {
     const apng = checkClubLogo("logo.png", pngImage(64, 64, { animated: true }));
     expect(!apng.ok && apng.reason).toMatch(/Bewegte Bilder/);
+    const hiddenApng = checkClubLogo(
+      "logo.png",
+      pngImage(64, 64, { animated: true, textChunks: 70 }),
+    );
+    expect(!hiddenApng.ok && hiddenApng.reason).toMatch(/Bewegte Bilder/);
     const webp = checkClubLogo("logo.webp", webpExtended(64, 64, { animated: true }));
     expect(webp.ok).toBe(false);
     const broken = checkClubLogo("logo.png", pngImage(64, 64).subarray(0, 16));

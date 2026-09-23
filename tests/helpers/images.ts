@@ -18,7 +18,19 @@ function pngChunk(type: string, data: Uint8Array): Buffer {
 export function pngImage(
   width: number,
   height: number,
-  { animated = false, rgba = [28, 74, 122, 255] }: { animated?: boolean; rgba?: number[] } = {},
+  {
+    animated = false,
+    rgba = [28, 74, 122, 255],
+    textChunks = 0,
+    withoutImageData = false,
+  }: {
+    animated?: boolean;
+    rgba?: number[];
+    /** So viele Textabschnitte („tEXt“) vor einer Animationskennung – versteckt sie weit hinten im Kopf. */
+    textChunks?: number;
+    /** Ohne Bilddaten („IDAT“) – eine unvollständige oder manipulierte Datei. */
+    withoutImageData?: boolean;
+  } = {},
 ): Uint8Array {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
@@ -32,8 +44,11 @@ export function pngImage(
     Buffer.concat([
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       pngChunk("IHDR", header),
+      ...Array.from({ length: textChunks }, (_, i) =>
+        pngChunk("tEXt", Buffer.from(`Kommentar\0Nr. ${i}`, "latin1")),
+      ),
       ...(animated ? [pngChunk("acTL", Buffer.from([0, 0, 0, 2, 0, 0, 0, 0]))] : []),
-      pngChunk("IDAT", pixels),
+      ...(withoutImageData ? [] : [pngChunk("IDAT", pixels)]),
       pngChunk("IEND", Buffer.alloc(0)),
     ]),
   );
