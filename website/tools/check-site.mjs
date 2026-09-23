@@ -135,7 +135,9 @@ for (const file of textFiles) {
 
 // Nicht verwendete Bilder
 const isAsset = (f) => /assets[\\/]img[\\/]/.test(f) && /\.(webp|png|jpe?g|svg)$/.test(f);
-const referencedElsewhere = new Set(["og-image.png"]);
+// og-image.png: Vorschaubild beim Teilen (nur in <meta>); logo-dark.svg: helle Wortmarke für dunkle Hintergründe,
+// erzeugt von make-logo-assets.mjs – die Website selbst ist immer weiß und nutzt sie derzeit nicht.
+const referencedElsewhere = new Set(["og-image.png", "logo-dark.svg"]);
 for (const file of files.filter(isAsset)) {
   if (usedFiles.has(path.normalize(file))) continue;
   if (referencedElsewhere.has(path.basename(file))) continue;

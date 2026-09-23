@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm.cmd",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "website",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["website/tools/serve.mjs", "4173"],
+      "port": 4173
     }
   ]
 }

@@ -1,8 +1,9 @@
 # VereinsFlow – Website
 
 Werbeseite für VereinsFlow: eine Startseite (`index.html`) mit Impressum, Datenschutzerklärung und Fehlerseite. Reines HTML und
-CSS, ein kleines Skript (Menü, Einblenden), **keine Cookies, keine Bibliotheken, keine Webfonts, nichts von fremden Servern**.
-Hell und dunkel folgen der Einstellung des Geräts; die Bilder sind echte Aufnahmen der Anwendung (Demo-Daten).
+CSS, ein kleines Skript (Menü, Einblenden beim Scrollen, aktiver Abschnitt), **keine Cookies, keine Bibliotheken, keine Webfonts,
+nichts von fremden Servern**. Die Seite ist bewusst immer weiß (auch bei dunkel eingestelltem Gerät); die Bilder sind echte Aufnahmen der Anwendung
+(Demo-Daten).
 
 Die Website liegt als Ordner `website/` im VereinsFlow-Repository, neben der Anwendung im Hauptordner. Beide haben getrennte
 Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, Docker, CI), die Website prüft sich selbst
@@ -14,12 +15,12 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `index.html`                          | Startseite (Abschnitte: Einstieg, Funktionen, Helferschichten, Rollen, Sicherheit, FAQ, Kontakt) |
+| `index.html`                          | Startseite (Abschnitte: Einstieg, Kennzahlen, Ausgangslage, Funktionen, Helferschichten mit Helferplan-Aushang, Im Detail mit Suche/Mitglieder/Veranstaltungen/Auswertungen, Rollen, Mobil, Sicherheit, Ablauf, Ausblick, FAQ, Kontakt) |
 | `impressum.html`, `datenschutz.html`  | Rechtstexte als **Muster** mit Platzhaltern (`[[…]]`)                                        |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
-| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, sanftes Einblenden (ohne JavaScript bleibt alles nutzbar)             |
-| `assets/img/app/`                     | Aufnahmen der Anwendung, hell und dunkel (`…-light-…`, `…-dark-…`), je zwei Größen           |
+| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Ladezustand der Bilder (ohne JavaScript bleibt alles nutzbar) |
+| `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je zwei Größen                     |
 | `assets/img/`, `assets/brand/`        | Logo (Seite) und Logo-Vorlagen (Profilbilder, Präsentationen); Vorschaubild `og-image.png`   |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (enthalten die Musterdomain)                                              |
 | `_headers`, `.htaccess`               | Sicherheits- und Cache-Header für Netlify/Cloudflare Pages bzw. Apache-Webspace              |
@@ -54,9 +55,11 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 3. **Rechtstexte prüfen lassen.** Impressum und Datenschutzerklärung sind Muster, keine Rechtsberatung. Wer später Statistik,
    Karten, Videos oder Schriften von fremden Servern einbindet, muss die Datenschutzerklärung **und** die Content-Security-Policy
    (`_headers` / `.htaccess`) anpassen.
-4. **Aussagen abgleichen.** Alle Aussagen stammen aus dem Stand der Anwendung vom 21.09.2026 (`README.md`, `docs/SECURITY.md`,
-   `docs/PRIVACY.md`, `src/server/permissions/defaults.ts`). Kommen Funktionen hinzu (z. B. Finanzen), Abschnitt „Ausblick“ und FAQ anpassen.
-   Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite.
+4. **Aussagen abgleichen.** Alle Aussagen stammen aus dem Stand der Anwendung vom 22.09.2026 (`README.md`, `docs/SECURITY.md`,
+   `docs/PRIVACY.md`, `docs/DESIGN.md`, `src/server/permissions/defaults.ts`, `src/lib/search/registry.ts`,
+   `src/app/(app)/helferplanung/drucken/page.tsx`, `src/server/jobs/reminders.ts`, `src/modules/dashboard/compare.ts`). Kommen
+   Funktionen hinzu (z. B. Finanzen), Abschnitt „Ausblick“, FAQ, die Zahl der Bereiche („12 Bereiche“) und den Stand in der
+   Fußzeile anpassen. Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite.
 5. `node tools/check-site.mjs --strict` muss ohne Meldung durchlaufen.
 
 ## Veröffentlichen
@@ -94,17 +97,32 @@ Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (
 | `node tools/serve.mjs`                     | Vorschau-Server mit Produktions-Headern                                                                   |
 | `node tools/check-site.mjs [--strict]`     | Prüft Verweise, Bilder, Symbole, fremde Server, Inline-Skripte/-Stile und listet offene Platzhalter       |
 | `node tools/set-domain.mjs <https://…>`    | Trägt die echte Domain ein                                                                                |
-| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`; `--only dashboard`, `--scheme dark`) |
+| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`; `--only dashboard`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
 | `node tools/make-og-image.mjs`             | Erzeugt das Vorschaubild für das Teilen (`tools/og-template.html`)                                        |
 | `node tools/make-logo-assets.mjs`          | Erzeugt Logo-Dateien und Favicons aus den Vektordaten der Anwendung                                       |
 
-Hinweise zu den Aufnahmen: Sie entstehen mit dem Demo-Administrator der Entwicklungsdatenbank; dessen Anzeigename wird nur im
-Bild (nicht in der Datenbank) durch „Anna Admin“ ersetzt. Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo.
-Parallel laufende E2E-Tests der Anwendung nicht stören: Aufnahme und Tests belasten denselben Rechner.
+Hinweise zu den Aufnahmen:
+
+- Sie entstehen mit dem Demo-Administrator der Entwicklungsdatenbank. Namen werden **nur im Bild** (nicht in der Datenbank)
+  ersetzt: Die Seed-Personen tragen ihre Rolle als Nachnamen („Hans Helfer“, „Claudia Abteilungsleiterin“) und heißen im Bild
+  „Hans Hellwig“, „Claudia Abel“ usw. (gleicher Anfangsbuchstabe, Sortierung und Initialen bleiben); Anmeldeadressen
+  `…@demo-verein.local` werden zu `…@example.org`. Von Hand angelegte Einträge, die nicht aus dem Seed stammen, bekommen
+  ebenfalls einen erfundenen Namen (Liste `DEMO_RENAME` im Skript) – das Repository ist öffentlich.
+- Die Detailbilder (Mitglieder, Kalender, Auswertungen) sind Ausschnitte rechts neben der Seitenleiste, die Suche ein Ausschnitt
+  um den geöffneten Dialog; der Helferplan-Aushang ist die Druckansicht (A4, nur hell – Papier ist weiß).
+- Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo. Parallel laufende E2E-Tests der Anwendung nicht
+  stören: Aufnahme und Tests belasten denselben Rechner.
 
 ## Entscheidungen, die sich leicht ändern lassen
 
 - **Ansprache:** „Sie“ (die Anwendung selbst duzt). Texte stehen direkt in den HTML-Dateien.
 - **Handlungsaufforderung:** „Demo anfragen“ per E-Mail – die Plattform ist geschlossen, neue Vereine richtet der Betreiber ein
   (siehe `/registrieren` der Anwendung). Ein Kontaktformular gibt es bewusst nicht (würde einen Dienst und Datenschutzhinweise erfordern).
-- **Schrift:** Systemschrift des Geräts. Die Wortmarke des Logos (Poppins) liegt als Vektorgrafik vor.
+- **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Poppins)
+  liegt als Vektorgrafik vor.
+- **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen in deren Hauptfarbe (`--accent`), das Logo-Blau
+  (`--brand`) für Schrift-Akzente. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
+- **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
+  von `site.js`), leichte Parallaxe der Bilder (`.plx`) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
+  Unterstützung zeigen feste Bilder. Bewegt werden nur Transparenz und Transformationen, nie das Layout. Mit „Bewegung
+  reduzieren“ im Betriebssystem ist alles sofort und ohne Animation sichtbar.
