@@ -306,6 +306,15 @@ model Club {
   privacyContact String?
   /// Aufbewahrungsfristen und weitere Vereinseinstellungen.
   settings       Json       @default("{}")
+  /// Vereinslogo: zufälliger Schlüssel der Datei unter STORAGE_DIR/<clubId>/ (nie der Dateiname). Alle logo*-Felder
+  /// sind gemeinsam gesetzt oder gemeinsam leer (Prüfregel in der Migration).
+  logoStorageKey String?    @unique
+  /// Medientyp des Logos aus der Positivliste (PNG, JPEG, WebP) – nie die Angabe des Browsers.
+  logoMimeType   String?
+  logoSizeBytes  Int?
+  /// Prüfsumme der Logo-Datei; ihr Anfang dient als Version in der Bildadresse (Zwischenspeicher).
+  logoSha256     String?
+  logoUpdatedAt  DateTime?  @db.Timestamptz(3)
   deactivatedAt  DateTime?  @db.Timestamptz(3)
   createdAt      DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime   @updatedAt @db.Timestamptz(3)

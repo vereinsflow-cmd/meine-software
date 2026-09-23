@@ -8,6 +8,7 @@ import {
   BuildingIcon,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClubLogo } from "@/components/shared/club-logo";
 import { DescriptionList } from "@/components/shared/description-list";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
@@ -107,7 +108,10 @@ export default async function ProfilePage() {
                 key={club.id}
                 className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
               >
-                <span className="font-medium">{club.name}</span>
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <ClubLogo name={club.name} logoUrl={club.logoUrl} size="sm" />
+                  <span className="truncate font-medium">{club.name}</span>
+                </span>
                 <span className="flex items-center gap-2">
                   <span className="text-muted-foreground">{club.roleName}</span>
                   {club.id === ctx.clubId && <ToneBadge tone="info">Aktiv</ToneBadge>}

@@ -114,6 +114,7 @@ test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung",
     "/veranstaltungen",
     "/hilfe",
     "/datenschutz",
+    "/einstellungen", // Vereinslogo-Karte mit Anfangsbuchstaben auf dunklem Grund
   ]) {
     test(`dunkel: ${path}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: "dark" });

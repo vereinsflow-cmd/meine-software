@@ -133,6 +133,9 @@
   --logo-overlap: #112e4f;
   --logo-ink: #12253b;
   --logo-muted: #78827a;
+  /* Kachel hinter dem Vereinslogo (siehe components/shared/club-logo.tsx): hell, damit auch dunkle Logos mit
+     durchsichtigem Hintergrund sichtbar bleiben */
+  --club-logo-bg: oklch(1 0 0);
   /* Breite der festen Seitenleiste (ab `lg`); die Provider-Komponente überschreibt diesen Wert inline, wenn eingeklappt. */
   --sidebar-w: 17rem;
 }
@@ -187,6 +190,8 @@
   --logo-overlap: #2b5f98;
   --logo-ink: #eef3f9;
   --logo-muted: #9aa5a0;
+  /* Vereinslogos sind für helle Flächen gestaltet – auch im Dunkeln auf heller Kachel */
+  --club-logo-bg: oklch(0.97 0 0);
 }
 
 @layer base {

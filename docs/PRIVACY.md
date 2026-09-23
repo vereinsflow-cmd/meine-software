@@ -25,6 +25,7 @@ Rechtsberatung**; die rechtliche Bewertung (Rechtsgrundlagen, Datenschutzbeauftr
 | Nachrichten, Benachrichtigungen          | Kommunikation                                                        | lit. b / lit. f                                    | Absender, Empfänger                                                                     |
 | Meldungen an die Vereinsverwaltung       | Beantwortung von Fragen und Störungen                                | lit. b / lit. f                                    | Meldende Person, Vereinsverwaltung (`club:update`)                                      |
 | Dokumente                                | Vereinsunterlagen                                                    | lit. f                                             | Nach Zugriffsstufe                                                                      |
+| Vereinslogo                              | Erkennbarkeit des Vereins in der Anwendung (keine Personendaten)     | lit. f                                             | Alle aktiven Mitglieder des Vereins                                                     |
 
 **Nicht erhoben:** keine besonderen Kategorien (Art. 9) als eigene Felder, kein Tracking, keine Analyse- oder Werbedienste, keine
 Einbindung externer Inhalte (Schriften, Karten, Skripte). Die Anwendung lädt nichts von Drittanbietern nach.
@@ -59,6 +60,7 @@ Der Aufbewahrungsjob (`retention`) läuft mit den **Fristen des jeweiligen Verei
 | **Ausgetretene** Mitglieder                                                                    | 24 Monate                           | 0 (nie) – 120 Monate | anonymisiert                 |
 | **Änderungsprotokoll**                                                                         | 36 Monate                           | 6 – 120 Monate       | Einträge gelöscht            |
 | Gelöschte **Dokumente**                                                                        | 30 Tage                             | fest                 | Datei und Datensatz entfernt |
+| Ersetztes oder entferntes **Vereinslogo**                                                      | sofort                              | fest                 | Datei gelöscht               |
 | Erledigte **Meldungen** an die Vereinsverwaltung (Hilfe & Support)                             | 12 Monate nach der letzten Änderung | fest                 | gelöscht                     |
 | Benachrichtigungen                                                                             | gelesen 90, ungelesen 180 Tage      | fest                 | gelöscht                     |
 | Abgelaufene oder lange inaktive Sitzungen, Rate-Limit-Zähler, benutzte/abgelaufene Reset-Token | mit Ablauf (Token: nach 7 Tagen)    | fest                 | gelöscht                     |

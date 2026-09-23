@@ -88,6 +88,13 @@ Umsetzung: `src/lib/uploads.ts`, `src/server/storage/`, `src/modules/documents/s
 - **Zugriffsstufen:** „Alle Mitglieder“, „Nur Vorstand“ (Recht `documents:manage`), „Nur Verwaltung“ (Recht `club:update`). Wer eine Stufe
   nicht sieht, kann sie auch nicht vergeben.
 - **Löschen:** weiches Löschen, nach 30 Tagen entfernt die Aufbewahrungsroutine Datei und Datensatz.
+- **Vereinslogo** (`src/lib/club-logo.ts`, `src/app/api/vereine/[clubId]/logo`): nur **PNG, JPEG, WebP** (kein SVG, kein GIF), höchstens
+  1 MB, Signatur passend zur Endung, **Bildmaße aus dem Dateikopf** 16–4096 Pixel (Schutz vor Dekompressionsbomben; unlesbarer Kopf →
+  abgelehnt), keine bewegten Bilder, Scanner-Erweiterungspunkt, Rate-Limit 20 je Person und Stunde, ändern nur mit `club:update`.
+  Ausgeliefert nur an **aktive Mitglieder des Vereins aus der Adresse** (sonst 404, kein Ausweichen auf den eigenen Verein), **inline**
+  mit Typ aus der Positivliste, `nosniff`, `sandbox`-CSP, `Cross-Origin-Resource-Policy: same-origin` und `private`-Cache (lang nur bei
+  passender Version – ein neues Logo hat eine neue Adresse). Die Datenbank prüft Typ, Größe und Schlüsselformat zusätzlich (CHECK).
+  Hinweis: Metadaten im Bild (z. B. EXIF bei JPEG) werden nicht entfernt – ein Logo sollte keine Personen oder Standortdaten zeigen.
 - **Nicht enthalten: Virenscan.** Dateien werden nicht auf Schadsoftware untersucht. `registerUploadScanner(...)` in
   `src/server/storage/scan.ts` ist der Erweiterungspunkt (z. B. für ClamAV); solange keiner registriert ist, warnt der Server einmalig im
   Protokoll. Für Vereine, die Dateien von Dritten annehmen, empfehlen wir, vor dem Produktiveinsatz einen Scanner anzubinden.
@@ -95,7 +102,7 @@ Umsetzung: `src/lib/uploads.ts`, `src/server/storage/`, `src/modules/documents/s
 ## Rate-Limits
 
 Zähler liegen in PostgreSQL (`RateLimitBucket`), also gemeinsam für alle Server-Instanzen und ohne Zusatzdienst. Begrenzt sind:
-Anmeldung (je Konto und IP), Passwort-Reset (anfordern und einlösen), Passwortwechsel, Einladungen, Datei-Upload, Datenexport,
+Anmeldung (je Konto und IP), Passwort-Reset (anfordern und einlösen), Passwortwechsel, Einladungen, Datei-Upload, Vereinslogo (20 je Person und Stunde), Datenexport,
 Löschantrag, Support-Meldungen (10 je Person und Stunde), Kalender-Feed und der Cron-Endpunkt. **Hinter einem Reverse-Proxy** muss `TRUST_PROXY=true` gesetzt sein, sonst sehen alle
 Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selbst setzt und Fremdwerte überschreibt.
 

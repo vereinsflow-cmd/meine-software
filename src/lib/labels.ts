@@ -96,6 +96,7 @@ export const MEMBER_FIELD_LABEL: Record<string, string> = {
   birthDate: "Geburtsdatum",
   internalNotes: "Notizen",
   departments: "Abteilungen",
+  logo: "Logo",
 };
 
 export function options<T extends string>(

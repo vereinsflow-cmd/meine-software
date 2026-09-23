@@ -15,7 +15,8 @@ import type { AuditActor } from "@/server/audit/audit";
 export interface TenantContext extends PermissionHolder {
   user: SessionUser;
   clubId: string;
-  club: { id: string; name: string; slug: string; timezone: string };
+  /** `logoSha256`: Prüfsumme des Vereinslogos (für die Bildadresse, siehe `clubLogoUrl`) – `null` ohne Logo. */
+  club: { id: string; name: string; slug: string; timezone: string; logoSha256: string | null };
   membershipId: string;
   roleKey: string;
   roleName: string;
@@ -32,7 +33,7 @@ export interface LoadedContext {
 }
 
 const membershipInclude = {
-  club: { select: { id: true, name: true, slug: true, timezone: true } },
+  club: { select: { id: true, name: true, slug: true, timezone: true, logoSha256: true } },
   role: {
     select: {
       key: true,

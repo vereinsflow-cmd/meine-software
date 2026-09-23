@@ -134,6 +134,11 @@ arbeitet nur eine. Alle Jobs sind **idempotent** (bedingte Updates, `dedupeKey`,
 
 Hochgeladene Dateien liegen **außerhalb von `public/`** im `STORAGE_DIR`, unter einem zufälligen Schlüssel (nicht dem Dateinamen)
 je Verein. Zugriff nur über `GET /api/dokumente/<id>/download`, das Anmeldung, Verein und Zugriffsstufe bei jedem Abruf prüft.
+Das **Vereinslogo** liegt im selben Verzeichnis des Vereins (Angaben in eigenen Spalten am `Club`, nicht in `settings`) und wird
+über `GET /api/vereine/<id>/logo` ausgeliefert – als einzige Route mit Vereins-ID in der Adresse: Sie prüft eine aktive
+Mitgliedschaft genau in diesem Verein (`loadTenantContextForUser`, ohne Ausweichen), damit der Vereinswechsler auch die Logos der
+übrigen eigenen Vereine zeigen kann. Hochladen (`POST`, gleiche Adresse) nur in den aktiven Verein der Sitzung. Siehe
+[ADR-0009](adr/0009-vereinslogo.md).
 Details der Prüfungen: [SECURITY.md](SECURITY.md#uploads).
 
 ## Fehlerbehandlung
