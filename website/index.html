@@ -201,7 +201,7 @@
   </div>
 
   <!-- ===== Vorführung am Rechner: Ein Laptop erscheint, klappt beim Scrollen auf und dreht sich zum Betrachter; auf dem
-       Bildschirm das Dashboard. Den Scrollfortschritt setzt site.js als --p, alles Weitere rechnet site.css. ===== -->
+       Bildschirm das Dashboard. Die Bewegung hängt am Scrollfortschritt (Scroll-Timeline, siehe site.css). ===== -->
   <section class="showcase showcase-laptop" aria-labelledby="rechner-title">
     <div class="showcase-stage">
       <div class="showcase-copy">
@@ -218,7 +218,8 @@
               </picture>
             </div>
             <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark"/></svg></div>
-            <span class="laptop-lid-layer" aria-hidden="true"></span>
+            <span class="lid-c lid-tl" aria-hidden="true"></span>
+            <span class="lid-c lid-tr" aria-hidden="true"></span>
             <span class="laptop-edge laptop-edge-top" aria-hidden="true"></span>
             <span class="laptop-edge laptop-edge-l" aria-hidden="true"></span>
             <span class="laptop-edge laptop-edge-r" aria-hidden="true"></span>
@@ -230,7 +231,7 @@
             <span class="laptop-keys"><span class="k kf km u6">esc</span><span class="k kf">F1</span><span class="k kf">F2</span><span class="k kf">F3</span><span class="k kf">F4</span><span class="k kf">F5</span><span class="k kf">F6</span><span class="k kf">F7</span><span class="k kf">F8</span><span class="k kf">F9</span><span class="k kf">F10</span><span class="k kf">F11</span><span class="k kf">F12</span><span class="k kf k-touch"></span><span class="k"><i>°</i>^</span><span class="k"><i>!</i>1</span><span class="k"><i>"</i>2</span><span class="k"><i>§</i>3</span><span class="k"><i>$</i>4</span><span class="k"><i>%</i>5</span><span class="k"><i>&amp;</i>6</span><span class="k"><i>/</i>7</span><span class="k"><i>(</i>8</span><span class="k"><i>)</i>9</span><span class="k"><i>=</i>0</span><span class="k"><i>?</i>ß</span><span class="k"><i>`</i>´</span><span class="k km u6 kr">⌫</span><span class="k km u6">⇥</span><span class="k">Q</span><span class="k">W</span><span class="k">E</span><span class="k">R</span><span class="k">T</span><span class="k">Z</span><span class="k">U</span><span class="k">I</span><span class="k">O</span><span class="k">P</span><span class="k">Ü</span><span class="k"><i>*</i>+</span><span class="k km k-enter">↩</span><span class="k k-enter-low"></span><span class="k km u7">⇪</span><span class="k">A</span><span class="k">S</span><span class="k">D</span><span class="k">F</span><span class="k">G</span><span class="k">H</span><span class="k">J</span><span class="k">K</span><span class="k">L</span><span class="k">Ö</span><span class="k">Ä</span><span class="k"><i>'</i>#</span><span class="k km u5">⇧</span><span class="k"><i>&gt;</i>&lt;</span><span class="k">Y</span><span class="k">X</span><span class="k">C</span><span class="k">V</span><span class="k">B</span><span class="k">N</span><span class="k">M</span><span class="k"><i>;</i>,</span><span class="k"><i>:</i>.</span><span class="k"><i>_</i>-</span><span class="k km u9 kr">⇧</span><span class="k km">fn</span><span class="k km">⌃</span><span class="k km">⌥</span><span class="k km u5">⌘</span><span class="k u20"></span><span class="k km u5 kr">⌘</span><span class="k km kr">⌥</span><span class="k ka">◀</span><span class="k-updown"><span class="k ka">▲</span><span class="k ka">▼</span></span><span class="k ka">▶</span></span>
             <span class="laptop-pad"></span>
           </div>
-          <span class="laptop-base" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="laptop-base" aria-hidden="true"><span class="base-c base-fl"><i></i><i></i><i></i><i></i></span><span class="base-c base-fr"><i></i><i></i><i></i><i></i></span></span>
           <span class="laptop-front" aria-hidden="true"></span>
           <span class="laptop-rear" aria-hidden="true"></span>
           <span class="laptop-side laptop-side-l" aria-hidden="true"></span>
@@ -273,8 +274,8 @@
               </picture>
             </div>
           </div>
-          <!-- Gehäuse: 32 gestapelte Schichten zwischen Vorder- und Rückseite, damit die runden Ecken beim Drehen Tiefe haben -->
-          <div class="iphone-rim" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <!-- Gehäuse: an den vier runden Ecken je sechs Streifen zwischen Vorder- und Rückseite -->
+          <div class="iphone-rim" aria-hidden="true"><span class="rim-c rim-tl"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-tr"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-bl"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-br"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
           <div class="iphone-back" aria-hidden="true">
             <span class="iphone-camera">
               <i class="lens"></i><i class="lens"></i><i class="lens"></i>
