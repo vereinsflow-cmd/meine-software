@@ -41,7 +41,29 @@ const only = flag("only")?.split(",");
 const schemes = flag("scheme") ? [flag("scheme")] : ["light"];
 
 const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960, 1920] };
-const PHONE = { viewport: { width: 390, height: 844 }, scale: 3, widths: [390, 780] };
+/**
+ * Telefonbilder: je Bild die 1-, 1,5-, 2- und 3-fache Breite des Bildschirms, in dem es auf der Website steht (siehe
+ * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Einstieg 221, Kapitel 208, Vorführung 312 – dort je Bild eigene
+ * `widths`), dazu 260, 520 und 780 für das Smartphone (dort sind die Bildschirme 260 px breit). So zeichnet der Browser das
+ * Bild Pixel für Pixel, statt es selbst unscharf umzurechnen. Geänderte Größen hier, in site.css und in „sizes“ im HTML
+ * angleichen. `crisp`: die Breiten, in denen das Bild bei 100 % Skalierung erscheint (siehe encode).
+ */
+const PHONE = { viewport: { width: 390, height: 844 }, scale: 3, widths: [260, 390, 520, 780], crisp: [260] };
+
+/**
+ * Breiten aus `crisp` (das Bild erscheint so groß auf der Seite, die Schrift ist dort nur wenige Pixel hoch) verlustfrei
+ * und leicht nachgeschärft – bewusst größer als manche 1,5×-Datei, dafür bei 100 % Skalierung gestochen scharf. Übrige Telefonbilder verlustbehaftet mit voller Farbauflösung (smartSubsample) – bei hoher
+ * Pixeldichte fallen Artefakte nicht auf –, übrige Desktop-Bilder wie bisher.
+ */
+function encode(png, width, shot, spec) {
+  const resized = sharp(png).resize({ width, withoutEnlargement: true, kernel: "lanczos3" });
+  if ((shot.crisp ?? spec.crisp ?? []).includes(width)) {
+    return resized.sharpen({ sigma: 0.5 }).webp({ lossless: true, effort: 6 });
+  }
+  return spec === PHONE
+    ? resized.webp({ quality: 90, smartSubsample: true, effort: 5 })
+    : resized.webp({ quality: 82, effort: 5 });
+}
 
 /**
  * Detailbilder: Ausschnitt rechts neben der Seitenleiste, 960 × 720 CSS-Pixel (4 : 3, bei doppelter Auflösung
@@ -65,6 +87,19 @@ const followLink = (name) => async (page) => {
 const openNavGroup = (label) => async (page) => {
   await page.getByRole("button", { name: label, exact: true }).first().click();
   await page.waitForTimeout(300); // Aufklapp-Animation
+};
+
+/**
+ * Blendet Textzeilen mit genau diesem Inhalt aus (der Platz bleibt frei, nichts verrutscht). Für die Kennzahl
+ * „Helferstunden“: Sind in den letzten zwei Wochen keine Stunden dazugekommen, steht unter der Jahressumme „Noch keine
+ * Stunden erfasst“ – im Bild wirkt das wie ein Widerspruch zu „9 Std.“.
+ */
+const hideText = (text) => async (page) => {
+  await page.evaluate((wanted) => {
+    for (const el of document.querySelectorAll("p, span, div")) {
+      if (el.children.length === 0 && el.textContent?.trim() === wanted) el.style.setProperty("visibility", "hidden");
+    }
+  }, text);
 };
 
 /**
@@ -110,7 +145,17 @@ const openSearch = (query, { viaButton = false } = {}) => async (page) => {
  * Veranstaltung bei 1280 px Breite (der Titel wird dort von den Schaltflächen überdeckt).
  */
 const shots = [
-  { name: "dashboard", path: "/dashboard", steps: openNavGroup("Verein") },
+  // 880/1760: Bildschirm des Laptops in der Vorführung unter dem Einstieg (.laptop-screen, 880 CSS-Pixel breit)
+  {
+    name: "dashboard",
+    path: "/dashboard",
+    steps: async (page) => {
+      await openNavGroup("Verein")(page);
+      await hideText("Noch keine Stunden erfasst")(page);
+    },
+    widths: [880, 960, 1760, 1920],
+    crisp: [880],
+  },
   // Der Helferplan behält die Seitenleiste (Kapitelbild in voller Breite); höher, damit die Ampel-Zustände
   // „Voll besetzt“, „Teilweise besetzt“ und „Unbesetzt“ zu sehen sind.
   { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1140, height: 1000 } },
@@ -142,8 +187,21 @@ const shots = [
     schemes: ["light"],
   },
   { name: "phone-dashboard", device: "phone", path: "/dashboard" },
-  { name: "phone-helferplanung", device: "phone", path: "/helferplanung" },
-  { name: "phone-schichten", device: "phone", path: "/helferplanung", steps: followLink(/Sommerfest 2026/) },
+  {
+    name: "phone-helferplanung",
+    device: "phone",
+    path: "/helferplanung",
+    widths: [221, 260, 312, 332, 442, 468, 520, 624, 663, 780],
+    crisp: [221, 260, 312],
+  },
+  {
+    name: "phone-schichten",
+    device: "phone",
+    path: "/helferplanung",
+    steps: followLink(/Sommerfest 2026/),
+    widths: [208, 260, 312, 416, 520, 624, 780],
+    crisp: [208, 260],
+  },
   { name: "phone-kalender", device: "phone", path: "/kalender" },
   { name: "phone-suche", device: "phone", path: "/dashboard", steps: openSearch(process.env.VF_SEARCH ?? "Hel", { viaButton: true }) },
 ];
@@ -275,7 +333,7 @@ async function main() {
             const png = await page.screenshot({ type: "png", clip });
             for (const width of shot.widths ?? spec.widths) {
               const file = path.join(out, `${shot.name}-${scheme}-${width}.webp`);
-              await sharp(png).resize({ width, withoutEnlargement: true }).webp({ quality: 82, effort: 5 }).toFile(file);
+              await encode(png, width, shot, spec).toFile(file);
             }
             const { width, height } = await sharp(png).metadata();
             console.log(`${scheme.padEnd(5)} ${shot.name}  ${width}×${height}  (${page.url().replace(BASE, "")})`);

@@ -9,7 +9,10 @@
    - Beim Scrollen (.reveal): site.js schaltet .is-pending; Überschriften blenden aus der Unschärfe ein, Häkchen
      zeichnen sich, Symbole und Kennzahlen erscheinen nacheinander.
    - Parallaxe (.plx), Laufband, Fortschrittsbalken und Scroll-Effekte im Einstieg: CSS-Scroll-Timelines bzw.
-     Transformationen, laufen ohne JavaScript auf dem Compositor.
+     Transformationen, laufen ohne JavaScript auf dem Compositor – außer bei den Telefonen: Ihre Verschiebung
+     (--phone-shift) berechnet der Hauptthread, damit sie nur um ganze Pixel wandern.
+   - Vorführungen (Laptop, Telefon unter dem Einstieg): site.js setzt den Scrollfortschritt --p, das CSS rechnet daraus
+     Aufklappen und Drehen.
    - „Bewegung reduzieren“ (prefers-reduced-motion): keine Animationen, alles sofort sichtbar.
    ========================================================================== */
 
@@ -998,23 +1001,149 @@ html:not(.js) .nav ul a:hover {
   height: auto;
 }
 
-/* Smartphone-Rahmen. Der Rand entsteht über „inset“ des Bildes: Prozentwerte von padding würden sich auf den
-   umgebenden Container statt auf den Rahmen selbst beziehen und ihn verzerren. */
+/* Smartphone wie ein echtes Gerät: Metallrahmen mit heller Außenkante, schwarzer Glasrand, Tasten an beiden Seiten,
+   Dynamic Island, Statusleiste und Home-Balken. Maße nach einem aktuellen iPhone: Bildschirm 390 × 844 Punkte (so groß
+   sind die Aufnahmen), Gehäuse 420 × 874. Alles in Prozent bzw. `cqw` (Breite des Geräts), damit der Rahmen in jeder
+   Größe gleich aussieht. Prozentwerte über „inset“ (nicht padding): Sie beziehen sich so auf das Gerät selbst.
+   Scharf bleibt das Bild, weil der Browser es ohne Umrechnen zeichnet: Jedes Gerät hat eine feste Breite (Einstieg
+   238 px, Kapitel 224 px, Abschnitt „Mobil“ und Smartphone 280 px), der Bildschirm ist genau 26/28 davon (221, 208,
+   260 px), und für diese Breite gibt es je Pixeldichte die passende Bilddatei (tools/capture-screenshots.mjs, die
+   Angabe „sizes“ im HTML nennt dieselben Werte). Deshalb auch keine Drehung und keine Bewegung um Bruchteile von Pixeln. */
 .phone {
   position: relative;
+  container-type: inline-size;
   width: 100%;
-  aspect-ratio: 390 / 844;
-  border-radius: 13% / 6%;
-  background: var(--bezel);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%), var(--shadow-lg);
+  aspect-ratio: 420 / 874;
+  border-radius: 15.6% / 7.5%;
+  background: linear-gradient(
+    135deg,
+    #70757d 0%,
+    #2a2d32 13%,
+    #383c42 40%,
+    #1e2125 68%,
+    #5f646c 100%
+  );
+  box-shadow:
+    0 0 0 1px #c3c8cf,
+    inset 0 0 0 1px rgb(255 255 255 / 24%),
+    inset 0 0 0 2px rgb(0 0 0 / 45%),
+    var(--shadow-lg);
 }
 
-.phone picture {
+/* Schwarzer Glasrand zwischen Rahmen und Bildschirm */
+.phone::before {
+  content: "";
   position: absolute;
-  inset: 2.3% 3.4%;
-  display: block;
+  inset: 0.6% 1.2%;
+  border-radius: 14.8% / 7%;
+  background: #050607;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+}
+
+/* Tasten: links Aktionstaste und Lautstärke, rechts Standby */
+.phone-hw {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.phone-hw::before,
+.phone-hw::after {
+  content: "";
+  position: absolute;
+  width: 1.1%;
+  background: linear-gradient(90deg, #4b4f56, #a3a9b1 55%, #5a5f66);
+}
+
+.phone-hw::before {
+  right: 99.8%;
+  top: 18%;
+  height: 22%;
+  border-radius: 2px 0 0 2px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0 16%,
+    transparent 16% 32%,
+    #000 32% 61%,
+    transparent 61% 71%,
+    #000 71% 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0 16%,
+    transparent 16% 32%,
+    #000 32% 61%,
+    transparent 61% 71%,
+    #000 71% 100%
+  );
+}
+
+.phone-hw::after {
+  left: 99.8%;
+  top: 28%;
+  height: 10.5%;
+  border-radius: 0 2px 2px 0;
+}
+
+.phone-screen {
+  position: absolute;
+  z-index: 1;
+  inset: 1.72% calc(100% / 28);
   overflow: hidden;
-  border-radius: 10% / 4.6%;
+  border-radius: 13.1% / 6.05%;
+  background: #ffffff;
+}
+
+/* Statusleiste mit Uhrzeit, Dynamic Island, Netz, WLAN und Akku – darunter beginnt die App (wie auf dem Gerät) */
+.phone-status {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 6.4%;
+  padding: 0 7% 0 10.5%;
+  background: #ffffff;
+  color: #0a0a0a;
+}
+
+.phone-time {
+  font: 600 4cqw/1 var(--font-display);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.phone-island {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  width: 31%;
+  height: 66%;
+  border-radius: 999px;
+  background: #000000;
+  translate: -50% 0;
+}
+
+.phone-status-icons {
+  width: 16.5cqw;
+  height: auto;
+  aspect-ratio: 72 / 12;
+}
+
+/* Aufnahme mit abgedunkeltem Hintergrund (Suchdialog): Statusleiste und unterer Rand im selben Grau, sonst stünde über
+   dem Schleier ein weißer Streifen – auf dem Gerät läge der Schleier über dem ganzen Bildschirm */
+.phone-dim .phone-screen,
+.phone-dim .phone-status {
+  background: #e4e4e4;
+}
+
+/* Das Bild endet über dem Home-Balken (wie der sichere Bereich am unteren Rand des iPhones) – sonst läge der Balken
+   quer über einer Textzeile und läse sich wie durchgestrichen */
+.phone-screen picture {
+  position: absolute;
+  inset: 6.4% 0 3.6%;
+  display: block;
   background: var(--surface-soft);
 }
 
@@ -1026,14 +1155,38 @@ html:not(.js) .nav ul a:hover {
   object-position: top;
 }
 
-/* Schwebendes Telefon im Einstieg: deckt die vierte Kennzahlenkarte vollständig ab (keine abgeschnittenen Reste) */
+/* Home-Balken und ein Hauch Spiegelung auf dem Glas (nur am Rand, damit die Schrift darunter nicht verblasst) */
+.phone-screen::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  bottom: 0.9%;
+  left: 50%;
+  width: 35%;
+  height: 0.55%;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 82%);
+  translate: -50% 0;
+}
+
+.phone-screen::before {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  background: linear-gradient(118deg, rgb(255 255 255 / 9%) 0%, rgb(255 255 255 / 0%) 16%);
+  pointer-events: none;
+}
+
+/* Telefon im Einstieg, über dem Dashboard: deckt die vierte Kennzahlenkarte vollständig ab (keine abgeschnittenen Reste).
+   Steht das Dashboard gerade (ohne Scroll-Animation, bei reduzierter Bewegung), genügt diese Lage und der Reiter
+   „Aufgaben & Aktivität“ bleibt frei; mit der gekippten Startlage sitzt es etwas höher (siehe Bewegung). */
 .hero-phone {
   position: absolute;
   z-index: 1;
   right: -1.5%;
   bottom: -9%;
-  width: clamp(120px, 21%, 240px);
-  rotate: 3deg;
+  width: clamp(120px, 21.25%, 238px);
 }
 
 @media (max-width: 719px) {
@@ -1046,9 +1199,8 @@ html:not(.js) .nav ul a:hover {
     position: relative;
     right: auto;
     bottom: auto;
-    width: min(270px, 70vw);
+    width: min(280px, 72vw);
     margin: 0 auto;
-    rotate: none;
   }
 }
 
@@ -1163,6 +1315,1288 @@ html:not(.js) .nav ul a:hover {
 
   .facts li + li {
     border-top: 1px solid var(--line);
+  }
+}
+
+/* ---------- Vorführungen: Laptop und Telefon drehen sich beim Scrollen ins Bild ----------
+   site.js setzt den Scrollfortschritt durch den Abschnitt als --p: 0 = der Abschnitt kommt unten ins Fenster, 1 = seine
+   Bühne löst sich oben wieder (dazwischen bleibt sie stehen, position: sticky). Daraus entstehen Teil-Fortschritte mit
+   weichem Anfang und Ende (smoothstep: x² · (3 − 2x)): Erscheinen, Aufklappen, Drehen, Aufrichten. Im letzten Stück steht
+   alles gerade, unverschoben und in der Bildebene – der Bildschirm wird dann Pixel für Pixel gezeichnet, also scharf.
+   Ohne JavaScript oder bei reduzierter Bewegung gilt --p: 1: Die Geräte stehen fertig da, ohne lange Scrollstrecke.
+   Kein opacity/filter/overflow an den Geräten selbst – das würde die 3D-Darstellung flach drücken.
+
+   Licht: Es kommt von vorn links oben (beim Telefon, das sich nach rechts dreht, von vorn rechts). Jede senkrechte Fläche wird nach ihrer Ausrichtung zum Licht abgedunkelt
+   (Lambert: Helligkeit = cos des Winkels zwischen Flächennormale und Licht; --phi = Ausrichtung der Fläche, --ang =
+   aktuelle Drehung um die Hochachse). Dazu wandert beim Drehen ein Glanzstreifen über Metall und Glas. Alle Aufhellungen
+   und Schatten sind Farben mit berechneter Deckkraft – in der Endlage ist die Deckkraft 0, der Bildschirm bleibt
+   unverfälscht. Ohne cos() im Browser entfallen nur die Schatten (die Farbangabe wird ungültig, der Hintergrund leer). */
+.showcase {
+  --p: 1;
+  position: relative;
+}
+
+.showcase-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 3.2vh, 40px);
+  padding: calc(var(--header-h) + clamp(24px, 4vh, 48px)) var(--gutter) clamp(32px, 5vh, 64px);
+}
+
+.showcase-copy {
+  max-width: 920px;
+  text-align: center;
+}
+
+.showcase-copy h2 {
+  font-size: clamp(1.9rem, 1.7vw + 1rem, 2.9rem);
+}
+
+.showcase-copy .eyebrow {
+  margin-bottom: 14px;
+}
+
+.showcase-copy .lead {
+  margin-top: 16px;
+}
+
+/* Bühne mit Blickwinkel; darin steht das Gerät, darunter ein weicher Schatten auf dem „Tisch“ */
+.showcase-scene {
+  position: relative;
+  display: grid;
+  place-items: center;
+  perspective: 2400px;
+  opacity: clamp(0, var(--a) * 1.6, 1);
+}
+
+/* Schatten auf dem Tisch: ein enger, dunkler Kontaktschatten und ein weiter, weicher Umgebungsschatten */
+.showcase-floor {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  bottom: 0;
+  width: 90%;
+  height: 18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(14 20 30 / 26%) 0%,
+    rgb(14 20 30 / 18%) 24%,
+    rgb(14 20 30 / 9%) 50%,
+    rgb(14 20 30 / 3%) 76%,
+    rgb(14 20 30 / 0%) 100%
+  );
+  translate: -50% 0;
+  scale: calc(0.55 + 0.45 * var(--ae));
+}
+
+/* Kontaktschatten: schmal und dunkler, genau unter dem Gerät */
+.showcase-floor::before {
+  content: "";
+  position: absolute;
+  inset: 36% 12%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(10 14 22 / 34%), rgb(10 14 22 / 12%) 55%, rgb(10 14 22 / 0%));
+}
+
+.device-mark {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 451 / 261;
+}
+
+/* Gemeinsame Oberflächen: Aluminium (fein gekörnt) */
+.laptop {
+  --grain: url("../img/textur-koernung.svg");
+  --alu-hi: #eef0f2;
+  --alu: #d9dce0;
+  --alu-lo: #b9bdc3;
+}
+
+/* --- Laptop ---
+   Ablauf: erscheint zugeklappt, von hinten und schräg oben gesehen (das Zeichen auf dem Deckel zeigt zum Betrachter),
+   dreht sich zugeklappt um 180°, klappt vor dem Betrachter auf und richtet sich zur Vorderansicht auf. Beim Aufklappen
+   geht der Bildschirm an (die Abdunklung verschwindet).
+   Maße hängen an der Bildschirmbreite --sw (höchstens 880 px – dafür gibt es die Bilddatei in genau dieser Breite).
+   Deckel = Rand + Bildschirm (16 : 10) + Rand; das Unterteil ist so tief, wie der Deckel hoch ist (zugeklappt deckt er
+   es genau ab). Gedreht wird um die Mitte des Unterteils. Der Blickpunkt liegt auf Höhe der Deckeloberkante, wie bei
+   einem Studiofoto von leicht oben: Der Deckel steht in der Bildebene (bleibt also unverzerrt und scharf), Tastatur und
+   Touchpad liegen perspektivisch davor, die Vorderkante ist etwa 13 % breiter als der Deckel. Beim Aufklappen, schräg von oben gesehen, ist der Laptop kurz etwas
+   kleiner, damit die Vorderkante im Bild bleibt. --sw, --pw: bei Änderung „sizes“ im HTML mitziehen. */
+.showcase-laptop {
+  --a: clamp(0, (var(--p) - 0.03) / 0.27, 1);
+  --r: clamp(0, (var(--p) - 0.3) / 0.26, 1);
+  --o: clamp(0, (var(--p) - 0.5) / 0.28, 1);
+  --k: clamp(0, (var(--p) - 0.58) / 0.26, 1);
+  /* smoothstep, um 1 % überhöht und bei 1 gekappt: Das Ende wird schon kurz vor p-end genau erreicht – wer dort anhält,
+     sieht keinen Rest Drehung mehr (der Bildschirm wäre sonst leicht umgerechnet und damit weich) */
+  --ae: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
+  --re: min(1, var(--r) * var(--r) * (3 - 2 * var(--r)) * 1.01);
+  --oe: min(1, var(--o) * var(--o) * (3 - 2 * var(--o)) * 1.01);
+  --ke: min(1, var(--k) * var(--k) * (3 - 2 * var(--k)) * 1.01);
+  --ang: calc((1 - var(--re)) * 172deg);
+  --p-end: 0.84; /* Ende von --k (0.58 + 0.26): danach bewegt sich nichts mehr, site.js hält --p dort an */
+  /* Höhe in der Endlage ≈ 0,795 · --sw + 218 px (Kopfzeile, Text, Abstände); die Vorderkante ist 1,19 · --sw breit */
+  --sw: min(880px, 80vw, calc((100vh - 218px) * 1.258));
+  --b: calc(var(--sw) / 44);
+  --lw: calc(var(--sw) + 2 * var(--b));
+  --lh: calc(var(--sw) / 1.6 + 2.3 * var(--b));
+  --t: calc(var(--sw) / 55);
+  --tl: calc(var(--sw) / 150);
+}
+
+.showcase-laptop .showcase-scene {
+  perspective: 5000px;
+  perspective: calc(var(--sw) * 5.68); /* bei 880 px Bildschirm 5000 px; kleiner Laptop, gleicher Blick */
+  perspective-origin: 50% 0;
+}
+
+/* Von oben gesehen braucht der Laptop mehr Höhe: Text etwas näher an die Kopfzeile */
+.showcase-laptop .showcase-stage {
+  gap: clamp(14px, 2.4vh, 32px);
+  padding-top: calc(var(--header-h) + clamp(12px, 2.4vh, 32px));
+  padding-bottom: clamp(8px, 1.5vh, 20px);
+}
+
+/* Schatten auf dem Tisch: angehoben (zugeklappt, schwebend) heller und breiter, aufgesetzt dichter */
+.showcase-laptop .showcase-floor {
+  width: 98%;
+  height: 11%;
+  opacity: calc((0.5 + 0.5 * var(--oe)) * (1 - var(--ke)));
+  scale: calc((0.55 + 0.45 * var(--ae)) * (1.1 - 0.1 * var(--oe))) calc(0.55 + 0.45 * var(--ae));
+}
+
+.laptop {
+  position: relative;
+  width: var(--lw);
+  height: calc(var(--lh) + var(--t));
+  margin-bottom: calc(var(--sw) * 0.1); /* Platz für das perspektivisch davor liegende Unterteil */
+  transform-style: preserve-3d;
+  transform-origin: 50% var(--lh) calc(var(--lh) / 2);
+  transform: translateY(
+      calc(
+        (1 - var(--ae)) * 30vh - (1 - var(--oe)) * var(--lh) * 0.42 - var(--oe) * (1 - var(--ke)) *
+          var(--lh) * 0.05
+      )
+    )
+    scale(
+      calc(
+        (0.7 + 0.3 * var(--ae)) * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * var(--oe)) *
+          (1 - 0.26 * var(--oe) * (1 - var(--ke)))
+      )
+    )
+    rotateX(calc((1 - var(--ke)) * -22deg)) rotateY(calc((1 - var(--re)) * 172deg));
+}
+
+.laptop > *,
+.laptop-lid > *,
+.laptop-screen > *,
+.laptop-deck > * {
+  position: absolute;
+}
+
+/* Schatten unter dem aufgesetzten Laptop: eine Fläche knapp unter dem Unterteil mit weichem Auslauf nach außen (nah am
+   Gerät dunkler). Sie erscheint beim Aufsetzen; der flache Bodenschatten der Bühne übernimmt, solange er schwebt. */
+.laptop::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--lh) + var(--t) + 1px);
+  left: 1.5%;
+  width: 97%;
+  height: calc(var(--lh) * 0.97);
+  border-radius: calc(var(--b) * 0.9);
+  background: rgb(14 20 30 / 34%);
+  box-shadow:
+    0 0 calc(var(--sw) * 0.025) calc(var(--sw) * 0.006) rgb(14 20 30 / 26%),
+    0 0 calc(var(--sw) * 0.08) calc(var(--sw) * 0.02) rgb(14 20 30 / 10%);
+  transform-origin: 50% 0;
+  transform: rotateX(90deg) translateY(calc(var(--lh) * 0.015));
+  opacity: calc(var(--ke) * var(--ke));
+  pointer-events: none;
+}
+
+/* Deckel: dreht um seine Unterkante (Scharnier); zugeklappt liegt er auf dem Unterteil */
+.laptop-lid {
+  inset: 0 0 auto;
+  height: var(--lh);
+  transform-style: preserve-3d;
+  transform-origin: 50% 100%;
+  transform: rotateX(calc((1 - var(--oe)) * -90deg));
+}
+
+/* Wendeflächen (Glas vorn, Aluminium hinten). Safari blendet eine abgewandte Fläche nur zuverlässig aus, wenn sie selbst
+   transformiert ist – und manche Browser gar nicht, sobald Teile davon eigene Grafikebenen bekommen. Deshalb schrumpft
+   die jeweils abgewandte Seite zusätzlich auf null, genau dann, wenn sie ohnehin nur von der Kante zu sehen ist: das Glas,
+   solange der Deckel zu ist, die Rückseite, wenn er offen ist. So bleibt nie eine schwarze Fläche stehen. */
+.laptop-screen,
+.laptop-cover {
+  inset: 0;
+  border-radius: calc(var(--b) * 1.1) calc(var(--b) * 1.1) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Vorderseite: schwarzes Glas mit schmaler, heller Aluminiumkante; das Glas fängt oben links etwas Licht. In der Endlage
+   ist scale genau 1 (keine Umrechnung, der Bildschirm bleibt 1 : 1). */
+.laptop-screen {
+  scale: clamp(0, var(--oe) * 50, 1);
+  background: linear-gradient(158deg, #202227 0%, #0c0d10 28%, #07080a 100%);
+  box-shadow:
+    0 0 0 1px #c3c7cc,
+    0 0 0 2px rgb(140 145 152 / 55%),
+    inset 0 0 0 1px rgb(255 255 255 / 9%);
+}
+
+/* Kamera: dunkle Linse mit bläulichem Schimmer und kleinem Lichtpunkt */
+.laptop-camera {
+  top: calc(var(--b) * 0.4);
+  left: 50%;
+  width: calc(var(--b) * 0.28);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 32%, rgb(255 255 255 / 70%) 0 8%, rgb(255 255 255 / 0%) 16%),
+    radial-gradient(circle closest-side, #2d3b55 0 35%, #0b0f16 70%, #1d2026 100%);
+  translate: -50% 0;
+}
+
+.laptop-screen picture {
+  top: var(--b);
+  left: var(--b);
+  width: var(--sw);
+  height: calc(var(--sw) / 1.6);
+  background: var(--surface-soft);
+}
+
+.laptop-screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Über dem Bildschirm: aus beim Aufklappen (dunkel), Spiegelung solange der Laptop schräg steht – in der Endlage beides
+   vollständig durchsichtig */
+.laptop-screen::before,
+.laptop-screen::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.laptop-screen::before {
+  background: #040507;
+  opacity: calc((1 - var(--oe)) * 0.94);
+}
+
+.laptop-screen::after {
+  background: linear-gradient(
+    118deg,
+    rgb(255 255 255 / 16%) 0%,
+    rgb(255 255 255 / 4%) 38%,
+    rgb(255 255 255 / 0%) 55%
+  );
+  opacity: calc(1 - var(--ke));
+}
+
+/* Rückseite des Deckels: gestrahltes Aluminium mit eingelassenem, spiegelndem Zeichen von VereinsFlow */
+.laptop-cover {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(
+        100deg,
+        rgb(255 255 255 / 0%) 34%,
+        rgb(255 255 255 / 50%) 47%,
+        rgb(255 255 255 / 0%) 60%
+      )
+      calc(130% - var(--re) * 160%) 0 / 260% 100% no-repeat,
+    var(--grain),
+    radial-gradient(120% 90% at 20% 0%, rgb(255 255 255 / 55%), rgb(255 255 255 / 0%) 60%),
+    linear-gradient(170deg, var(--alu-hi) 0%, #d4d8dd 55%, #c8ccd2 100%);
+  scale: clamp(0, (0.98 - var(--oe)) * 50, 1);
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 8%),
+    inset 0 2px 0 rgb(255 255 255 / 65%);
+  color: #aeb4bc;
+  transform: rotateY(180deg) translateZ(var(--tl));
+}
+
+.laptop-cover .device-mark {
+  width: 13%;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 70%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 14%));
+}
+
+/* Hochgeklappt zeigt die Rückseite vom Licht weg und wird dunkler */
+.laptop-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(20 26 34);
+  opacity: calc(var(--oe) * 0.4);
+}
+
+/* Kanten des Deckels (oben, links, rechts), damit er beim Drehen nicht zu einem Strich wird */
+.laptop-edge {
+  background: linear-gradient(90deg, #b9bdc3, #eceef0 50%, #b9bdc3);
+}
+
+.laptop-edge-top {
+  top: 0;
+  left: calc(var(--b) * 1.1);
+  width: calc(100% - 2.2 * var(--b));
+  height: var(--tl);
+  transform-origin: 50% 0;
+  transform: rotateX(-90deg);
+}
+
+.laptop-edge-l,
+.laptop-edge-r {
+  top: calc(var(--b) * 1.1);
+  width: var(--tl);
+  height: calc(100% - 1.1 * var(--b));
+}
+
+/* Mittlere Schicht des Deckels in seiner Form: schließt die runden Ecken zwischen Glas und Rückseite */
+.laptop-lid-layer {
+  inset: 1px;
+  border-radius: calc(var(--b) * 1.1) calc(var(--b) * 1.1) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
+  background: linear-gradient(90deg, #b9bdc3, #e2e4e7 50%, #b9bdc3);
+  transform: translateZ(calc(var(--tl) / -2));
+}
+
+.laptop-edge-l {
+  left: 0;
+  transform-origin: 0 50%;
+  transform: rotateY(90deg);
+}
+
+.laptop-edge-r {
+  right: 0;
+  transform-origin: 100% 50%;
+  transform: rotateY(-90deg);
+}
+
+/* Unterteil (von oben): Aluminium mit Lichtverlauf, hinten die Scharnierfuge, Lautsprecher links und rechts, die
+   schwarze Tastaturmulde und das große Glas-Touchpad. Maße der Tastatur in cqw (Breite des Unterteils). */
+.laptop-deck {
+  container-type: inline-size;
+  top: var(--lh);
+  left: 0;
+  width: 100%;
+  height: var(--lh);
+  border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) calc(var(--b) * 0.9) calc(var(--b) * 0.9);
+  background:
+    var(--grain),
+    radial-gradient(90% 70% at 30% 20%, rgb(255 255 255 / 45%), rgb(255 255 255 / 0%) 70%),
+    linear-gradient(180deg, #c3c7cc 0%, var(--alu) 16%, #e4e7ea 70%, #d0d3d7 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 7%),
+    inset 0 -2px 0 rgb(255 255 255 / 70%);
+  transform-origin: 50% 0;
+  transform: rotateX(90deg);
+}
+
+/* Scharnierfuge hinten */
+.laptop-deck::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 1.6%;
+  border-radius: 0 0 0.4cqw 0.4cqw;
+  background: linear-gradient(180deg, #4a4d53, #7a7e85);
+}
+
+.laptop-speaker {
+  top: 6%;
+  width: 7.2%;
+  height: 45%;
+  border-radius: 0.5cqw;
+  background:
+    linear-gradient(rgb(20 24 30 / 9%), rgb(20 24 30 / 9%)),
+    radial-gradient(circle closest-side, rgb(20 24 30 / 26%) 0 45%, rgb(20 24 30 / 0%) 75%) 0 0 / 0.3cqw 0.3cqw;
+}
+
+.laptop-speaker-l {
+  left: 3.2%;
+}
+
+.laptop-speaker-r {
+  right: 3.2%;
+}
+
+/* Tastatur: 58 Viertel-Einheiten breit (Taste = 4), sechs Reihen (Funktionsreihe halb hoch); ISO-Eingabetaste über
+   zwei Reihen aus zwei Teilen (oben 1, unten ¾ Taste breit) */
+.laptop-keys {
+  top: 5.5%;
+  left: 12.5%;
+  display: grid;
+  grid-template-columns: repeat(58, 1fr);
+  grid-template-rows: 0.62fr repeat(5, 1fr);
+  gap: 0.5cqw 0.46cqw;
+  width: 75%;
+  height: 46%;
+  padding: 0.55cqw;
+  border-radius: 0.9cqw;
+  background: #0b0c0e;
+  box-shadow:
+    inset 0 0.12cqw 0.3cqw rgb(0 0 0 / 70%),
+    0 0 0 0.07cqw rgb(255 255 255 / 55%),
+    0 -0.07cqw 0 0.07cqw rgb(0 0 0 / 12%);
+  color: #e3e5e9;
+  font: 500 1.3cqw/1 var(--font-display);
+}
+
+.k {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28cqw;
+  grid-column: span 4;
+  border-radius: 0.5cqw;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 7%), rgb(255 255 255 / 0%) 60%),
+    linear-gradient(180deg, #27292d, #1b1c1f);
+  box-shadow:
+    0 0.1cqw 0 #050506,
+    0 0.18cqw 0.3cqw rgb(0 0 0 / 45%),
+    inset 0 0.06cqw 0 rgb(255 255 255 / 12%);
+  white-space: nowrap;
+}
+
+/* obere Belegung (z. B. „!“ über „1“) */
+.k i {
+  font-style: normal;
+}
+
+.k:has(i) {
+  font-size: 1.02cqw;
+}
+
+/* Sondertasten: Beschriftung klein in der unteren Ecke */
+.km {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0 0.7cqw 0.55cqw;
+  font-size: 1.05cqw;
+}
+
+.kr {
+  align-items: flex-end;
+}
+
+.kf {
+  font-size: 0.82cqw;
+}
+
+.k-touch {
+  background:
+    radial-gradient(circle closest-side, rgb(255 255 255 / 0%) 52%, rgb(255 255 255 / 14%) 56% 62%, rgb(255 255 255 / 0%) 66%),
+    linear-gradient(180deg, #27292d, #1b1c1f);
+}
+
+.u5 {
+  grid-column: span 5;
+}
+
+.u6 {
+  grid-column: span 6;
+}
+
+.u7 {
+  grid-column: span 7;
+}
+
+.u9 {
+  grid-column: span 9;
+}
+
+.u20 {
+  grid-column: span 20;
+}
+
+.k-enter {
+  z-index: 1;
+  grid-area: 3 / 55 / 4 / 59;
+  border-bottom-right-radius: 0;
+}
+
+.k-enter-low {
+  z-index: 2;
+  grid-area: 3 / 56 / 5 / 59;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  box-shadow:
+    0 0.1cqw 0 #050506,
+    0 0.18cqw 0.3cqw rgb(0 0 0 / 45%);
+}
+
+/* Pfeiltasten halb hoch, hoch/runter übereinander */
+.ka {
+  align-self: end;
+  height: 48%;
+  font-size: 0.7cqw;
+}
+
+.k-updown {
+  display: grid;
+  grid-column: span 4;
+  grid-template-rows: 1fr 1fr;
+  gap: 0.14cqw;
+}
+
+.k-updown .ka {
+  height: auto;
+}
+
+/* Touchpad: Glas mit feinem Rand und Lichtverlauf */
+.laptop-pad {
+  top: 56%;
+  left: 29.5%;
+  width: 41%;
+  height: 38.5%;
+  border-radius: 1.1cqw;
+  background:
+    radial-gradient(100% 80% at 30% 0%, rgb(255 255 255 / 50%), rgb(255 255 255 / 0%) 70%),
+    linear-gradient(180deg, #d6d9dd, #cbced3);
+  box-shadow:
+    inset 0 0 0 0.07cqw rgb(0 0 0 / 14%),
+    inset 0 0.12cqw 0 rgb(255 255 255 / 60%),
+    0 0.05cqw 0 rgb(255 255 255 / 70%);
+}
+
+/* Senkrechte Kanten des Unterteils (vorn, hinten, links, rechts) */
+.laptop-front,
+.laptop-rear,
+.laptop-side {
+  top: var(--lh);
+  height: var(--t);
+  background:
+    var(--grain),
+    linear-gradient(180deg, #f5f6f8 0 7%, #dfe2e5 14%, var(--alu) 45%, var(--alu-lo) 100%);
+}
+
+.laptop-front,
+.laptop-rear {
+  left: 0;
+  width: 100%;
+}
+
+/* Vorderkante mit der Mulde zum Aufklappen – nur über den geraden Teil, die runden Ecken bilden die Schichten */
+.laptop-front {
+  --phi: 0deg;
+  left: calc(var(--b) * 0.9);
+  width: calc(100% - 1.8 * var(--b));
+  background:
+    radial-gradient(9% 90% at 50% 0%, rgb(40 44 50 / 20%), rgb(40 44 50 / 0%) 75%),
+    var(--grain),
+    linear-gradient(180deg, #f8f9fa 0 6%, #e3e6e9 12%, #d2d5d9 45%, #adb1b7 82%, #979ba2 100%);
+  transform: translateZ(var(--lh));
+}
+
+/* Rückseite mit dunkler Scharnierabdeckung */
+.laptop-rear {
+  --phi: 180deg;
+  background:
+    linear-gradient(180deg, #6a6e74, #45484e 55%, #55585e) 50% 12% / 84% 62% no-repeat,
+    var(--grain),
+    linear-gradient(180deg, #f5f6f8 0 7%, #dfe2e5 14%, var(--alu) 45%, var(--alu-lo) 100%);
+  transform: rotateY(180deg);
+}
+
+.laptop-side {
+  width: calc(var(--lh) - 0.9 * var(--b));
+}
+
+/* Unterteil als Schichtstapel in der Form der Tastaturfläche (unter ihr): So haben auch die runden Vorderecken eine
+   Seitenwand, wenn man schräg von oben darauf schaut */
+.laptop-base {
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.laptop-base i {
+  position: absolute;
+  top: calc(var(--lh) + var(--t) * var(--n) / 6);
+  left: 1px;
+  width: calc(100% - 2px);
+  height: calc(var(--lh) - 2px);
+  border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) calc(var(--b) * 0.9) calc(var(--b) * 0.9);
+  background: var(--layer); /* derselbe Ton wie die Vorderkante in dieser Höhe: oben Lichtkante, unten dunkler */
+  transform-origin: 50% 0;
+  transform: rotateX(90deg) translateY(1px);
+}
+
+.laptop-base i:nth-child(1) {
+  --n: 1;
+  --layer: #e0e3e6;
+}
+
+.laptop-base i:nth-child(2) {
+  --n: 2;
+  --layer: #d8dbdf;
+}
+
+.laptop-base i:nth-child(3) {
+  --n: 3;
+  --layer: #cfd2d6;
+}
+
+.laptop-base i:nth-child(4) {
+  --n: 4;
+  --layer: #bfc3c8;
+}
+
+.laptop-base i:nth-child(5) {
+  --n: 5;
+  --layer: #adb1b7;
+}
+
+.laptop-base i:nth-child(6) {
+  --n: 6;
+  --layer: #979ba2;
+}
+
+.laptop-side-l {
+  --phi: -90deg;
+  left: 0;
+  transform-origin: 0 50%;
+  transform: rotateY(-90deg);
+}
+
+.laptop-side-r {
+  --phi: 90deg;
+  right: 0;
+  transform-origin: 100% 50%;
+  transform: rotateY(90deg);
+}
+
+/* --- Telefon ---
+   Die Vorderseite ist der bekannte Telefonrahmen (.phone), 336 px breit – der Bildschirm ist damit genau 312 px breit,
+   passend zur Bilddatei. Sie liegt in der Bildebene (z = 0), die Rückseite eine Gehäusedicke dahinter; gedreht wird um
+   die Mitte dazwischen. Das Gehäuse zwischen beiden besteht aus 32 gestapelten Schichten in der Form des Telefons – so
+   haben auch die runden Ecken beim Drehen eine geschlossene Kante. Senkrecht von der Seite gesehen übernehmen gerade
+   Seiten- und Stirnflächen (mit Tasten). */
+.showcase-phone {
+  --a: clamp(0, (var(--p) - 0.03) / 0.3, 1);
+  --r: clamp(0, (var(--p) - 0.26) / 0.46, 1);
+  --ae: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
+  --re: min(1, var(--r) * var(--r) * (3 - 2 * var(--r)) * 1.01); /* siehe .showcase-laptop */
+  --ang: calc((1 - var(--re)) * -172deg);
+  --p-end: 0.72; /* Ende von --r (0.26 + 0.46) */
+}
+
+.iphone {
+  --pw: min(336px, 72vw, calc((100vh - var(--header-h) - 110px) / 2.081));
+  --t: calc(var(--pw) * 0.1);
+  --grain: url("../img/textur-koernung.svg");
+  /* Titan in Champagner: helle Lichtkante, warme Mitteltöne, dunklere Ränder */
+  --titan: linear-gradient(
+    90deg,
+    #9d9488 0%,
+    #e9e2d7 16%,
+    #bdb3a5 42%,
+    #998f82 58%,
+    #ddd5c9 84%,
+    #a0978a 100%
+  );
+  position: relative;
+  width: var(--pw);
+  aspect-ratio: 420 / 874;
+  margin-bottom: calc(var(--pw) * 0.08);
+  transform-style: preserve-3d;
+  transform-origin: 50% 50% calc(var(--t) / -2);
+  transform: translateY(calc((1 - var(--ae)) * 28vh))
+    scale(calc((0.74 + 0.26 * var(--ae)) * (0.9 + 0.1 * var(--re))))
+    rotateZ(calc((1 - var(--re)) * -9deg)) rotateX(calc((1 - var(--re)) * 8deg))
+    rotateY(calc((1 - var(--re)) * -172deg));
+}
+
+/* Vorderseite im selben Titanton wie das Gehäuse (die übrigen Telefone der Seite bleiben dunkel). Sie erscheint erst,
+   wenn man bei der Drehung genau auf die Kante schaut (--re ≈ 0,477 bei 172°), die Rückseite verschwindet dort – siehe
+   .laptop-screen. In der Endlage ist scale genau 1. */
+.iphone-front {
+  scale: clamp(0, (var(--re) - 0.47) * 100, 1);
+  background: linear-gradient(135deg, #b1a797 0%, #756c60 13%, #8a8175 40%, #675f55 68%, #a69c8e 100%);
+  box-shadow:
+    0 0 0 1px #d2c9bb,
+    inset 0 0 0 1px rgb(255 250 240 / 30%),
+    inset 0 0 0 2px rgb(40 30 20 / 40%),
+    var(--shadow-lg);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Beim Drehen spiegelt das Glas; in der Endlage nicht mehr */
+.iphone-front::after {
+  content: "";
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    122deg,
+    rgb(255 255 255 / 0%) 8%,
+    rgb(255 255 255 / 20%) 26%,
+    rgb(255 255 255 / 0%) 46%
+  );
+  opacity: calc(1 - var(--re));
+  pointer-events: none;
+}
+
+/* Das Telefon schwebt: Schatten schmaler und ohne harten Kontaktschatten */
+.showcase-phone .showcase-floor {
+  width: 64%;
+  height: 8%;
+}
+
+.showcase-phone .showcase-floor::before {
+  opacity: 0.45;
+}
+
+/* Die flachen Tasten der Vorderansicht (im Titanton des Gehäuses) erst am Ende – beim Drehen sitzen die Tasten auf den
+   Seitenkanten */
+.iphone-front .phone-hw::before,
+.iphone-front .phone-hw::after {
+  background: linear-gradient(90deg, #7d7468, #c9c0b2 55%, #8a8175);
+}
+
+.iphone-front .phone-hw {
+  opacity: clamp(0, (var(--re) - 0.82) * 6, 1);
+}
+
+.iphone-rim {
+  --rim-shade: 0.1;
+  position: absolute;
+  inset: 0;
+  display: none; /* in der Vorderansicht unsichtbar – nur mit Bewegung nötig (siehe Bewegung) */
+  transform-style: preserve-3d;
+}
+
+.iphone-rim i {
+  position: absolute;
+  inset: 0.6px; /* knapp innerhalb der Seitenflächen: keine gemeinsamen Kanten (Flimmern), keine sichtbare Stufe */
+  border-radius: 15.6% / 7.5%;
+  /* Jede Schicht trägt den Titan-Ton ihrer Tiefe – derselbe Verlauf, den die Seitenflächen über die Dicke zeigen: So
+     setzen die runden Ecken die Lichtstreifen der Seiten nahtlos fort und wirken nicht gerippt */
+  background:
+    linear-gradient(rgb(52 40 24 / var(--rim-shade, 0)), rgb(52 40 24 / var(--rim-shade, 0))),
+    var(--titan) calc((32.5 - var(--n)) / 32 * 100%) 0 / 3300% 100%;
+  transform: translateZ(calc(var(--t) * var(--n) / -33));
+}
+
+.iphone-rim i:nth-child(1) {
+  --n: 1;
+}
+
+.iphone-rim i:nth-child(2) {
+  --n: 2;
+}
+
+.iphone-rim i:nth-child(3) {
+  --n: 3;
+}
+
+.iphone-rim i:nth-child(4) {
+  --n: 4;
+}
+
+.iphone-rim i:nth-child(5) {
+  --n: 5;
+}
+
+.iphone-rim i:nth-child(6) {
+  --n: 6;
+}
+
+.iphone-rim i:nth-child(7) {
+  --n: 7;
+}
+
+.iphone-rim i:nth-child(8) {
+  --n: 8;
+}
+
+.iphone-rim i:nth-child(9) {
+  --n: 9;
+}
+
+.iphone-rim i:nth-child(10) {
+  --n: 10;
+}
+
+.iphone-rim i:nth-child(11) {
+  --n: 11;
+}
+
+.iphone-rim i:nth-child(12) {
+  --n: 12;
+}
+
+.iphone-rim i:nth-child(13) {
+  --n: 13;
+}
+
+.iphone-rim i:nth-child(14) {
+  --n: 14;
+}
+
+.iphone-rim i:nth-child(15) {
+  --n: 15;
+}
+
+.iphone-rim i:nth-child(16) {
+  --n: 16;
+}
+
+.iphone-rim i:nth-child(17) {
+  --n: 17;
+}
+
+.iphone-rim i:nth-child(18) {
+  --n: 18;
+}
+
+.iphone-rim i:nth-child(19) {
+  --n: 19;
+}
+
+.iphone-rim i:nth-child(20) {
+  --n: 20;
+}
+
+.iphone-rim i:nth-child(21) {
+  --n: 21;
+}
+
+.iphone-rim i:nth-child(22) {
+  --n: 22;
+}
+
+.iphone-rim i:nth-child(23) {
+  --n: 23;
+}
+
+.iphone-rim i:nth-child(24) {
+  --n: 24;
+}
+
+.iphone-rim i:nth-child(25) {
+  --n: 25;
+}
+
+.iphone-rim i:nth-child(26) {
+  --n: 26;
+}
+
+.iphone-rim i:nth-child(27) {
+  --n: 27;
+}
+
+.iphone-rim i:nth-child(28) {
+  --n: 28;
+}
+
+.iphone-rim i:nth-child(29) {
+  --n: 29;
+}
+
+.iphone-rim i:nth-child(30) {
+  --n: 30;
+}
+
+.iphone-rim i:nth-child(31) {
+  --n: 31;
+}
+
+.iphone-rim i:nth-child(32) {
+  --n: 32;
+}
+
+/* Rückseite: mattes Glas in Champagner-Titan im Metallrahmen – Licht von oben links, zum Rand hin leicht gewölbt
+   (weiche Innenschattierung), am Übergang zum Rahmen eine feine Lichtkante und eine Fuge. Kameramodul oben links. */
+.iphone-back {
+  container-type: inline-size;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 15.6% / 7.5%;
+  background:
+    var(--grain),
+    radial-gradient(140% 90% at 18% 0%, rgb(255 255 255 / 34%), rgb(255 255 255 / 0%) 55%),
+    radial-gradient(120% 70% at 88% 100%, rgb(110 90 62 / 16%), rgb(110 90 62 / 0%) 60%),
+    linear-gradient(170deg, #e7dfd2 0%, #d9cfbe 48%, #ccc0ad 100%);
+  box-shadow:
+    0 0 0 1px #a89e90,
+    inset 0 0 0 calc(var(--pw) * 0.014) #b8ad9e,
+    inset 0 0 0 calc(var(--pw) * 0.017) rgb(255 252 245 / 60%),
+    inset 0 0 0 calc(var(--pw) * 0.021) rgb(95 78 55 / 18%),
+    inset 0 0 calc(var(--pw) * 0.09) calc(var(--pw) * 0.012) rgb(95 78 55 / 11%),
+    var(--shadow-lg);
+  color: rgb(255 252 244 / 62%);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  scale: clamp(0, (0.485 - var(--re)) * 100, 1);
+  transform: translateZ(calc(var(--t) * -1)) rotateY(180deg);
+}
+
+.iphone-back .device-mark {
+  width: 24%;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 45%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 10%));
+}
+
+/* Glanzstreifen, der beim Drehen über das Glas wandert, und Abdunklung, wenn die Rückseite vom Licht wegzeigt */
+.iphone-back::before,
+.iphone-back::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.iphone-back::before {
+  z-index: 2;
+  background: linear-gradient(
+      100deg,
+      rgb(255 255 255 / 0%) 34%,
+      rgb(255 255 255 / 40%) 47%,
+      rgb(255 255 255 / 0%) 60%
+    )
+    calc(-40% + var(--re) * 260%) 0 / 260% 100% no-repeat;
+}
+
+.iphone-back::after {
+  z-index: 3;
+  background: rgb(12 16 22);
+  opacity: 0;
+}
+
+/* Kameramodul: erhabenes Glas mit Schlagschatten; Objektive mit Metallring, schwarzem Rand, violett vergütetem Glas
+   und Lichtpunkt; Blitz, LiDAR und Mikrofon */
+.iphone-camera {
+  position: absolute;
+  z-index: 1;
+  top: 2.6%;
+  left: 5.6%;
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 25%;
+  background:
+    linear-gradient(
+      135deg,
+      rgb(255 255 255 / 58%) 0%,
+      rgb(255 255 255 / 14%) 36%,
+      rgb(255 255 255 / 0%) 58%,
+      rgb(90 72 48 / 10%) 100%
+    ),
+    linear-gradient(170deg, #e5dbcc, #d3c7b4);
+  box-shadow:
+    0.15cqw 0.3cqw 0.4cqw rgb(60 45 25 / 24%),
+    0.6cqw 1.3cqw 2.6cqw rgb(60 45 25 / 16%),
+    inset 0 0.3cqw 0.2cqw rgb(255 255 255 / 70%),
+    inset 0 -0.3cqw 0.45cqw rgb(90 70 45 / 18%),
+    inset 0 0 0 0.15cqw rgb(120 100 75 / 24%);
+}
+
+.iphone-camera i,
+.iphone-camera b {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.lens {
+  width: 41%;
+  background:
+    radial-gradient(circle at 34% 30%, rgb(255 255 255 / 78%) 0 2.5%, rgb(255 255 255 / 0%) 6%),
+    radial-gradient(60% 40% at 38% 26%, rgb(255 255 255 / 14%), rgb(255 255 255 / 0%) 70%),
+    radial-gradient(circle at 62% 66%, rgb(120 90 200 / 34%) 0 5%, rgb(120 90 200 / 0%) 16%),
+    radial-gradient(circle at 44% 60%, rgb(60 150 140 / 22%) 0 3%, rgb(60 150 140 / 0%) 11%),
+    radial-gradient(
+      circle closest-side,
+      #1d2a3e 0 12%,
+      #0b1019 22%,
+      #16202e 30%,
+      #06080c 38%,
+      #10141b 46%,
+      #020304 56%,
+      #2a2c30 58.5%,
+      #0c0d0f 62%,
+      #18191c 68.5%,
+      rgb(24 25 28 / 0%) 72.5%
+    ),
+    conic-gradient(from 215deg, #f5f0e8, #a99f91, #ece5da, #978d80, #f5f0e8);
+  box-shadow:
+    0.1cqw 0.35cqw 0.5cqw rgb(40 30 15 / 34%),
+    0.4cqw 0.9cqw 1.6cqw rgb(40 30 15 / 18%),
+    inset 0 0 0 0.12cqw rgb(255 255 255 / 35%);
+}
+
+.lens:nth-child(1) {
+  top: 6%;
+  left: 6%;
+}
+
+.lens:nth-child(2) {
+  top: 53%;
+  left: 6%;
+}
+
+.lens:nth-child(3) {
+  top: 29.5%;
+  left: 53%;
+}
+
+.flash {
+  top: 9%;
+  left: 71%;
+  width: 17%;
+  background:
+    radial-gradient(circle at 38% 34%, rgb(255 255 255 / 70%) 0 8%, rgb(255 255 255 / 0%) 22%),
+    radial-gradient(circle closest-side, #fbf4e2 0 40%, #e2d4b6 72%, #a8997c 100%);
+  box-shadow:
+    0.1cqw 0.25cqw 0.4cqw rgb(60 45 25 / 25%),
+    inset 0 0 0 0.25cqw rgb(120 100 70 / 25%);
+}
+
+.lidar {
+  top: 74%;
+  left: 73%;
+  width: 14%;
+  background:
+    radial-gradient(circle at 40% 36%, rgb(255 255 255 / 30%) 0 6%, rgb(255 255 255 / 0%) 14%),
+    radial-gradient(circle closest-side, #15171b 0 58%, #3a3c40 66%, #1a1b1e 100%);
+  box-shadow: 0.1cqw 0.25cqw 0.4cqw rgb(60 45 25 / 25%);
+}
+
+.mic {
+  top: 8%;
+  left: 56%;
+  width: 4%;
+  background: #3a3c40;
+}
+
+/* Gerade Seitenflächen (Titan) mit Antennenfugen und Tasten; unten und oben die Stirnflächen */
+.iphone-side,
+.iphone-cap {
+  position: absolute;
+  background:
+    linear-gradient(rgb(52 40 24 / var(--side-shade, 0)), rgb(52 40 24 / var(--side-shade, 0))),
+    linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0%) 18%,
+      rgb(105 95 82 / 70%) 18% 18.6%,
+      rgb(0 0 0 / 0%) 18.6% 81.4%,
+      rgb(105 95 82 / 70%) 81.4% 82%,
+      rgb(0 0 0 / 0%) 82%
+    ),
+    var(--grain),
+    var(--titan);
+}
+
+.iphone-side {
+  top: 7.5%;
+  width: var(--t);
+  height: 85%;
+}
+
+.iphone-side-l {
+  --phi: -90deg;
+  left: 0;
+  transform-origin: 0 50%;
+  transform: rotateY(90deg);
+}
+
+.iphone-side-r {
+  --phi: 90deg;
+  right: 0;
+  transform-origin: 100% 50%;
+  transform: rotateY(-90deg);
+}
+
+.iphone-side b {
+  position: absolute;
+  left: 20%;
+  width: 60%;
+  border-radius: 999px;
+  background:
+    linear-gradient(rgb(52 40 24 / var(--side-shade, 0)), rgb(52 40 24 / var(--side-shade, 0))),
+    linear-gradient(90deg, #9b9185, #efe9df 45%, #c2b8aa 60%, #92887b);
+  box-shadow:
+    0 0 0 1px rgb(70 55 35 / 22%),
+    0 1px 2px rgb(40 30 15 / 22%);
+}
+
+.btn-action {
+  top: 11.2%;
+  height: 4.7%;
+}
+
+.btn-up {
+  top: 21.8%;
+  height: 8.2%;
+}
+
+.btn-down {
+  top: 33.5%;
+  height: 8.2%;
+}
+
+.btn-power {
+  top: 22.9%;
+  height: 13%;
+}
+
+.iphone-cap {
+  left: 15.6%;
+  width: 68.8%;
+  height: var(--t);
+  background: var(--grain), linear-gradient(180deg, #9d9488, #e9e2d7 30%, #bdb3a5 60%, #a0978a);
+}
+
+.iphone-cap-t {
+  top: 0;
+  transform-origin: 50% 0;
+  transform: rotateX(-90deg);
+}
+
+.iphone-cap-b {
+  bottom: 0;
+  transform-origin: 50% 100%;
+  transform: rotateX(90deg);
+}
+
+/* Unbewegte Teile erben den Scrollfortschritt nicht (die Werte werden dort auf „initial“ gesetzt): Der Browser muss
+   Tasten, Bildschirmbilder, Kamera und Gehäuseschichten beim Scrollen dann nicht in jedem Bild neu berechnen. Wer in
+   diesen Teilen später --p, --a … --ang verwendet, muss sie hier herausnehmen. */
+.laptop-deck,
+.laptop-base,
+.laptop-screen picture,
+.iphone-front .phone-screen,
+.iphone-rim,
+.iphone-camera {
+  --p: initial;
+  --a: initial;
+  --r: initial;
+  --o: initial;
+  --k: initial;
+  --ae: initial;
+  --re: initial;
+  --oe: initial;
+  --ke: initial;
+  --ang: initial;
+}
+
+/* Licht auf den senkrechten Flächen (siehe Kopfkommentar): nur, wo der Browser cos() kennt */
+@supports (width: calc(1px * cos(0deg))) {
+  .laptop-front,
+  .laptop-rear,
+  .laptop-side {
+    --lit: max(0, cos(var(--phi) + var(--ang) + 35deg));
+  }
+
+  .laptop-front::after,
+  .laptop-rear::after,
+  .laptop-side::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgb(12 16 22);
+    opacity: calc((1 - var(--lit)) * 0.5);
+  }
+
+  /* Das Telefon dreht sich nach rechts weg: Sein Licht kommt von vorn rechts oben, damit Rückseite und rechte Kante
+     beim Drehen hell bleiben und erst zum Schluss (von der Seite gesehen) dunkler werden */
+  .iphone-side {
+    --side-shade: calc((1 - max(0, cos(var(--phi) + var(--ang) - 30deg))) * 0.32);
+  }
+
+  .iphone-back::after {
+    opacity: calc((1 - max(0, cos(180deg + var(--ang) - 30deg))) * 0.38);
+  }
+}
+
+/* Breite Fenster: beim Telefon Text links, Gerät rechts */
+@media (min-width: 900px) {
+  .showcase-phone .showcase-stage {
+    flex-direction: row;
+    gap: clamp(48px, 8vw, 140px);
+  }
+
+  .showcase-phone .showcase-copy {
+    max-width: 440px;
+    text-align: left;
+  }
+}
+
+/* Schmale Bildschirme: Telefon nach der sichtbaren Höhe (svh – ohne die ein- und ausfahrende Adressleiste), der
+   Zusatztext entfällt, sonst passt das Telefon nicht mehr ganz aufs Bild (dieselbe Aussage steht unter „Mobil“) */
+/* Zugeklappt und schräg gedreht ist der Laptop breiter als ein schmaler Bildschirm – bis zum Aufklappen etwas kleiner */
+@media (min-width: 720px) and (max-width: 1023px) {
+  .showcase-laptop {
+    --closed-scale: 0.8;
+  }
+}
+
+@media (max-width: 719px) {
+  .showcase-laptop {
+    --closed-scale: 0.76;
+    --sw: min(880px, calc((100vw - 2 * var(--gutter)) / 1.19), calc((100vh - 218px) * 1.258));
+  }
+
+  .iphone {
+    --pw: min(280px, 72vw, calc((100vh - 300px) / 2.16));
+  }
+
+  .showcase-copy .lead {
+    display: none;
+  }
+}
+
+@supports (height: 100svh) {
+  @media (max-width: 719px) {
+    .iphone {
+      --pw: min(280px, 72vw, calc((100svh - 300px) / 2.16));
+    }
+  }
+}
+
+/* Querformat unter 900 px (Smartphone quer, kleine Fenster): Text neben dem Telefon, Größe nur aus der sichtbaren Höhe
+   (sonst würde das Telefon unter dem Text abgeschnitten oder winzig) */
+@media (max-width: 899px) and (orientation: landscape) {
+  .showcase-phone .showcase-stage {
+    flex-direction: row;
+    gap: clamp(32px, 6vw, 140px);
+  }
+
+  .showcase-phone .showcase-copy {
+    max-width: 440px;
+    text-align: left;
+  }
+
+  .iphone {
+    --pw: min(336px, 40vw, calc((100vh - var(--header-h) - 60px) / 2.161));
+  }
+}
+
+@supports (height: 100svh) {
+  @media (max-width: 899px) and (orientation: landscape) {
+    .iphone {
+      --pw: min(336px, 40vw, calc((100svh - var(--header-h) - 60px) / 2.161));
+    }
   }
 }
 
@@ -1499,8 +2933,7 @@ html:not(.js) .nav ul a:hover {
   position: absolute;
   right: -2%;
   bottom: -7%;
-  width: clamp(120px, 19%, 220px);
-  rotate: 3deg;
+  width: clamp(120px, 21.6%, 224px);
 }
 
 @media (max-width: 719px) {
@@ -1512,9 +2945,8 @@ html:not(.js) .nav ul a:hover {
     position: relative;
     right: auto;
     bottom: auto;
-    width: min(270px, 70vw);
+    width: min(280px, 72vw);
     margin: 0 auto;
-    rotate: none;
   }
 }
 
@@ -1784,7 +3216,7 @@ html:not(.js) .nav ul a:hover {
 }
 
 .phones figure {
-  width: min(250px, 28vw);
+  width: min(280px, 28vw);
   margin: 0;
 }
 
@@ -1803,10 +3235,12 @@ html:not(.js) .nav ul a:hover {
 
 /* Smartphone: waagerecht wischen statt drei Telefone untereinander (die Seite selbst scrollt nicht seitlich) */
 @media (max-width: 559px) {
+  /* Genug Innenabstand für den Schatten der Telefone (ein Scrollbereich schneidet auch oben und unten ab); der negative
+     Außenabstand gleicht ihn aus, damit der Abschnitt nicht höher wird */
   .phones {
     justify-content: flex-start;
-    margin-inline: calc(var(--gutter) * -1);
-    padding: 8px var(--gutter) 20px;
+    margin: -32px calc(var(--gutter) * -1) -80px;
+    padding: 40px var(--gutter) 100px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-padding-inline: var(--gutter);
@@ -1818,7 +3252,7 @@ html:not(.js) .nav ul a:hover {
   }
 
   .phones figure {
-    flex: 0 0 68vw;
+    flex: 0 0 min(280px, 72vw);
     width: auto;
     scroll-snap-align: center;
   }
@@ -2249,7 +3683,8 @@ html:not(.js) .nav ul a:hover {
    Alle Effekte stehen unter „prefers-reduced-motion: no-preference“ – wer Bewegung reduziert, sieht die Seite
    sofort vollständig. Bewegt werden nur opacity, filter und die Einzel-Transformationen translate/scale/rotate (vom
    Browser ohne Neuberechnung des Layouts gezeichnet). Aufgeteilt, damit sich nichts in die Quere kommt:
-   translate/scale = Einblenden bzw. Parallaxe, transform = Hover und Schweben.
+   translate/scale = Einblenden bzw. Parallaxe, transform = Hover und Schweben. Ausnahme Telefone: Sie schweben nicht und
+   verschieben sich nur um ganze Pixel (--phone-shift), sonst würde die kleine Schrift im Bildschirm unscharf.
    ========================================================================== */
 
 @media (prefers-reduced-motion: no-preference) {
@@ -2331,10 +3766,6 @@ html:not(.js) .nav ul a:hover {
     animation-delay: 1.35s, 2.1s;
   }
 
-  .hero-phone {
-    animation: bob-soft 7s ease-in-out 1.6s infinite alternate;
-  }
-
   /* Laufband: gleichmäßig, hält beim Überfahren an */
   .ribbon-track {
     animation: marquee 52s linear infinite;
@@ -2352,17 +3783,31 @@ html:not(.js) .nav ul a:hover {
     animation: drift-right 16s ease-in-out infinite alternate;
   }
 
-  /* Telefone im Abschnitt „Mobil“ schweben leicht versetzt */
-  .phones .phone {
-    animation: bob 7s ease-in-out infinite alternate;
+  /* --- Vorführungen: lange Scrollstrecke, die Bühne bleibt so lange stehen (Fortschritt --p aus site.js) --- */
+  .js .showcase {
+    --p: 0;
+    height: 300vh;
   }
 
-  .phones figure:nth-child(2) .phone {
-    animation-delay: -2.3s;
+  .js .showcase-phone {
+    height: 260vh;
   }
 
-  .phones figure:nth-child(3) .phone {
-    animation-delay: -4.6s;
+  .js .iphone-rim {
+    display: block;
+  }
+
+  /* Körnung als Bild auf der großen Tastaturfläche erzwingt beim Drehen in jedem Bild neues Rastern – nur ohne Bewegung */
+  .js .laptop-deck {
+    --grain: none;
+  }
+
+  .js .showcase-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: clip;
   }
 
   /* --- Einblenden beim Scrollen (site.js markiert, was außerhalb des Fensters liegt) --- */
@@ -2631,16 +4076,6 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-@keyframes bob-soft {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-7px);
-  }
-}
-
 @keyframes marquee {
   to {
     translate: -50% 0;
@@ -2697,12 +4132,19 @@ html:not(.js) .nav ul a:hover {
       animation-range: 0 62vh;
     }
 
+    /* Das Dashboard steht anfangs gekippt und verkleinert (hero-tilt): Das Telefon sitzt höher, damit an seiner runden
+       Ecke keine Spur der vierten Kennzahlenkarte hervorschaut */
+    @media (min-width: 720px) {
+      .hero-phone {
+        bottom: -6%;
+      }
+    }
+
     .hero-phone {
-      animation:
-        hero-phone linear both,
-        bob-soft 7s ease-in-out 1.6s infinite alternate;
-      animation-timeline: scroll(root), auto;
-      animation-range: 0 90vh, normal;
+      translate: 0 var(--phone-shift);
+      animation: hero-phone linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 90vh;
     }
 
     .hero-chips {
@@ -2738,12 +4180,22 @@ html:not(.js) .nav ul a:hover {
       --plx: 68px;
     }
 
-    .phones .phone.plx {
-      animation:
-        plx linear both,
-        bob 7s ease-in-out infinite alternate;
-      animation-timeline: view(), auto;
-      animation-range: cover 0% cover 100%, normal;
+    /* Telefone: dieselbe Parallaxe, aber nur um ganze Pixel (siehe --phone-shift) */
+    .phone.plx {
+      translate: 0 var(--phone-shift);
+      animation: phone-plx linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    /* Wo round() bekannt ist, nur um ganze Pixel verschieben; sonst gelten die ungerundeten Zeilen oben. (Eine zweite
+       Deklaration mit var() taugt nicht als Rückfall: Sie gilt beim Einlesen immer als gültig und würde ohne round()
+       erst beim Berechnen ungültig – dann stünde translate auf none.) */
+    @supports (translate: 0 round(1px, 1px)) {
+      .hero-phone,
+      .phone.plx {
+        translate: 0 round(var(--phone-shift), 1px);
+      }
     }
 
     /* Bildschirmfotos wachsen beim Hereinscrollen auf volle Größe */
@@ -2809,9 +4261,28 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Telefone verschieben sich beim Scrollen nur um ganze Pixel: Die Verschiebung läuft über eine registrierte Eigenschaft
+   und wird beim Berechnen gerundet (round() im @supports-Block oben). Bei Bruchteilen von Pixeln rechnet der Browser das
+   ganze Telefon weich – die Schrift im Bildschirm verschwimmt. Ältere Browser ohne round() verschieben ungerundet. */
+@property --phone-shift {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 @keyframes hero-phone {
   to {
-    translate: 0 -64px;
+    --phone-shift: -64px;
+  }
+}
+
+@keyframes phone-plx {
+  from {
+    --phone-shift: var(--plx);
+  }
+
+  to {
+    --phone-shift: calc(var(--plx) * -1);
   }
 }
 
@@ -2914,7 +4385,8 @@ html:not(.js) .nav ul a:hover {
 /* --- Bildschirmfotos: kurzer, ruhiger Platzhalter, bis das Bild geladen ist (site.js setzt „is-loading“) --- */
 @media (prefers-reduced-motion: no-preference) {
   .js .browser img,
-  .js .phone img {
+  .js .phone img,
+  .js .laptop-screen img {
     transition: opacity 0.6s var(--ease-soft);
   }
 
@@ -2925,7 +4397,7 @@ html:not(.js) .nav ul a:hover {
   .js .is-loading picture {
     background-image: linear-gradient(100deg, transparent 30%, rgb(226 232 240 / 70%) 50%, transparent 70%);
     background-size: 220% 100%;
-    animation: shimmer 1.4s ease-in-out infinite;
+    animation: shimmer 1.4s ease-in-out 3; /* nicht endlos: Bilder weit unten laden erst später */
   }
 }
 
@@ -2974,5 +4446,27 @@ html:not(.js) .nav ul a:hover {
     translate: none !important;
     scale: none !important;
     filter: none !important;
+  }
+
+  /* Absolut platzierte Telefone mit Prozentbreite und cqw-Maßen (Uhr, Symbole) lassen Chrome leere Seiten drucken –
+     im Druck deshalb eine feste Breite (entspricht ungefähr der Druckbreite) */
+  .hero-phone,
+  .chapter-phone {
+    width: 150px;
+  }
+
+  /* Vorführungen: Endlage ohne lange Scrollstrecke (das --p von site.js überstimmen) */
+  .showcase {
+    --p: 1 !important;
+  }
+
+  .js .showcase {
+    height: auto;
+  }
+
+  .js .showcase-stage {
+    position: static;
+    height: auto;
+    overflow: visible;
   }
 }
