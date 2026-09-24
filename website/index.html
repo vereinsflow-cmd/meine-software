@@ -25,6 +25,7 @@
   <meta property="og:image:alt" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
   <meta name="twitter:card" content="summary_large_image">
 
+  <script src="assets/js/frueh.js"></script>
   <link rel="stylesheet" href="assets/css/site.css">
   <script src="assets/js/site.js" defer></script>
 
@@ -82,6 +83,8 @@
   <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
   <symbol id="i-bell-ring" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></symbol>
+  <!-- Zeichen von VereinsFlow (die beiden Kreise aus dem Logo), einfarbig für die Rückseiten der Geräte -->
+  <symbol id="i-mark" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="130.5" fill="currentColor" stroke="none" fill-opacity="0.8"/><circle cx="975.5" cy="420.5" r="130.5" fill="currentColor" stroke="none" fill-opacity="0.45"/><path d="M880.5 331.03A130.5 130.5 0 0 0 880.5 509.97A130.5 130.5 0 0 0 880.5 331.03Z" fill="currentColor" stroke="none"/></symbol>
   <!-- Statusleiste der Telefon-Rahmen: Mobilfunk, WLAN, Akku (eigene Zeichnung, gefüllt statt Linien) -->
   <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
 </svg>
@@ -149,7 +152,7 @@
           <div class="phone-screen">
             <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
             <picture>
-              <img src="assets/img/app/phone-helferplanung-light-390.webp" srcset="assets/img/app/phone-helferplanung-light-390.webp 390w, assets/img/app/phone-helferplanung-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 230px" width="780" height="1688" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten zum Eintragen">
+              <img src="assets/img/app/phone-helferplanung-light-221.webp" srcset="assets/img/app/phone-helferplanung-light-221.webp 221w, assets/img/app/phone-helferplanung-light-260.webp 260w, assets/img/app/phone-helferplanung-light-332.webp 332w, assets/img/app/phone-helferplanung-light-442.webp 442w, assets/img/app/phone-helferplanung-light-520.webp 520w, assets/img/app/phone-helferplanung-light-663.webp 663w, assets/img/app/phone-helferplanung-light-780.webp 780w" sizes="(max-width: 719px) min(260px, 67vw), min(221px, 19.7vw)" width="780" height="1688" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten zum Eintragen">
             </picture>
           </div>
         </div>
@@ -197,6 +200,47 @@
     </div>
   </div>
 
+  <!-- ===== Vorführung am Rechner: Ein Laptop erscheint, klappt beim Scrollen auf und dreht sich zum Betrachter; auf dem
+       Bildschirm das Dashboard. Den Scrollfortschritt setzt site.js als --p, alles Weitere rechnet site.css. ===== -->
+  <section class="showcase showcase-laptop" aria-labelledby="rechner-title">
+    <div class="showcase-stage">
+      <div class="showcase-copy">
+        <p class="eyebrow">Am Rechner</p>
+        <h2 id="rechner-title">Der ganze Verein auf einen Blick</h2>
+      </div>
+      <div class="showcase-scene">
+        <div class="laptop">
+          <div class="laptop-lid">
+            <div class="laptop-screen">
+              <span class="laptop-camera" aria-hidden="true"></span>
+              <picture>
+                <img src="assets/img/app/dashboard-light-880.webp" srcset="assets/img/app/dashboard-light-880.webp 880w, assets/img/app/dashboard-light-1760.webp 1760w" sizes="min(880px, 86vw, calc((100vh - 232px) * 1.3))" width="1920" height="1200" loading="lazy" decoding="async" alt="Dashboard von VereinsFlow auf dem Laptop: Kennzahlen zu Mitgliedern, Terminen und freien Helferplätzen, darüber ein Hinweis auf noch nicht besetzte Schichten">
+              </picture>
+            </div>
+            <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark"/></svg></div>
+            <span class="laptop-lid-layer" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-top" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-l" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-r" aria-hidden="true"></span>
+          </div>
+          <!-- Unterteil: Lautsprecher, Tastatur mit deutscher Belegung (QWERTZ, ISO-Eingabetaste), Touchpad -->
+          <div class="laptop-deck" aria-hidden="true">
+            <span class="laptop-speaker laptop-speaker-l"></span>
+            <span class="laptop-speaker laptop-speaker-r"></span>
+            <span class="laptop-keys"><span class="k kf km u6">esc</span><span class="k kf">F1</span><span class="k kf">F2</span><span class="k kf">F3</span><span class="k kf">F4</span><span class="k kf">F5</span><span class="k kf">F6</span><span class="k kf">F7</span><span class="k kf">F8</span><span class="k kf">F9</span><span class="k kf">F10</span><span class="k kf">F11</span><span class="k kf">F12</span><span class="k kf k-touch"></span><span class="k"><i>°</i>^</span><span class="k"><i>!</i>1</span><span class="k"><i>"</i>2</span><span class="k"><i>§</i>3</span><span class="k"><i>$</i>4</span><span class="k"><i>%</i>5</span><span class="k"><i>&amp;</i>6</span><span class="k"><i>/</i>7</span><span class="k"><i>(</i>8</span><span class="k"><i>)</i>9</span><span class="k"><i>=</i>0</span><span class="k"><i>?</i>ß</span><span class="k"><i>`</i>´</span><span class="k km u6 kr">⌫</span><span class="k km u6">⇥</span><span class="k">Q</span><span class="k">W</span><span class="k">E</span><span class="k">R</span><span class="k">T</span><span class="k">Z</span><span class="k">U</span><span class="k">I</span><span class="k">O</span><span class="k">P</span><span class="k">Ü</span><span class="k"><i>*</i>+</span><span class="k km k-enter">↩</span><span class="k k-enter-low"></span><span class="k km u7">⇪</span><span class="k">A</span><span class="k">S</span><span class="k">D</span><span class="k">F</span><span class="k">G</span><span class="k">H</span><span class="k">J</span><span class="k">K</span><span class="k">L</span><span class="k">Ö</span><span class="k">Ä</span><span class="k"><i>'</i>#</span><span class="k km u5">⇧</span><span class="k"><i>&gt;</i>&lt;</span><span class="k">Y</span><span class="k">X</span><span class="k">C</span><span class="k">V</span><span class="k">B</span><span class="k">N</span><span class="k">M</span><span class="k"><i>;</i>,</span><span class="k"><i>:</i>.</span><span class="k"><i>_</i>-</span><span class="k km u9 kr">⇧</span><span class="k km">fn</span><span class="k km">⌃</span><span class="k km">⌥</span><span class="k km u5">⌘</span><span class="k u20"></span><span class="k km u5 kr">⌘</span><span class="k km kr">⌥</span><span class="k ka">◀</span><span class="k-updown"><span class="k ka">▲</span><span class="k ka">▼</span></span><span class="k ka">▶</span></span>
+            <span class="laptop-pad"></span>
+          </div>
+          <span class="laptop-base" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="laptop-front" aria-hidden="true"></span>
+          <span class="laptop-rear" aria-hidden="true"></span>
+          <span class="laptop-side laptop-side-l" aria-hidden="true"></span>
+          <span class="laptop-side laptop-side-r" aria-hidden="true"></span>
+        </div>
+        <span class="showcase-floor" aria-hidden="true"></span>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Kennzahlen ===== -->
   <section class="facts" aria-label="VereinsFlow in Kürze">
     <div class="container">
@@ -206,6 +250,45 @@
         <li class="reveal"><strong>1&nbsp;Cookie</strong><span>nur das technisch notwendige für die Anmeldung – kein Tracking</span></li>
         <li class="reveal"><strong>100&nbsp;%&nbsp;Deutsch</strong><span>Oberfläche, Anleitung und E&#8209;Mails</span></li>
       </ul>
+    </div>
+  </section>
+
+  <!-- ===== Vorführung unterwegs: Ein Telefon zeigt erst seine Rückseite und dreht sich beim Scrollen um 180° zum
+       Betrachter; auf dem Bildschirm die Helferplanung (wie im Einstieg). ===== -->
+  <section class="showcase showcase-phone" aria-labelledby="unterwegs-title">
+    <div class="showcase-stage">
+      <div class="showcase-copy">
+        <p class="eyebrow">Unterwegs</p>
+        <h2 id="unterwegs-title">Die Helferplanung in der Hosentasche</h2>
+        <p class="lead">Eigene Einsätze sehen und sich mit einem Fingertipp in offene Schichten eintragen&nbsp;– im Browser des Smartphones, ganz ohne App.</p>
+      </div>
+      <div class="showcase-scene">
+        <div class="iphone">
+          <div class="phone iphone-front">
+            <span class="phone-hw" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-helferplanung-light-312.webp" srcset="assets/img/app/phone-helferplanung-light-260.webp 260w, assets/img/app/phone-helferplanung-light-312.webp 312w, assets/img/app/phone-helferplanung-light-468.webp 468w, assets/img/app/phone-helferplanung-light-520.webp 520w, assets/img/app/phone-helferplanung-light-624.webp 624w, assets/img/app/phone-helferplanung-light-780.webp 780w" sizes="(max-width: 899px) and (orientation: landscape) min(312px, 37vw, calc((100vh - 124px) / 2.161 * 26 / 28)), (max-width: 719px) min(260px, 67vw, calc((100vh - 300px) / 2.16 * 26 / 28)), min(312px, calc((100vh - 174px) / 2.081 * 26 / 28))" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten mit der Schaltfläche „Eintragen“">
+              </picture>
+            </div>
+          </div>
+          <!-- Gehäuse: 32 gestapelte Schichten zwischen Vorder- und Rückseite, damit die runden Ecken beim Drehen Tiefe haben -->
+          <div class="iphone-rim" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="iphone-back" aria-hidden="true">
+            <span class="iphone-camera">
+              <i class="lens"></i><i class="lens"></i><i class="lens"></i>
+              <b class="flash"></b><b class="lidar"></b><b class="mic"></b>
+            </span>
+            <svg class="device-mark"><use href="#i-mark"/></svg>
+          </div>
+          <span class="iphone-side iphone-side-l" aria-hidden="true"><b class="btn-action"></b><b class="btn-up"></b><b class="btn-down"></b></span>
+          <span class="iphone-side iphone-side-r" aria-hidden="true"><b class="btn-power"></b></span>
+          <span class="iphone-cap iphone-cap-t" aria-hidden="true"></span>
+          <span class="iphone-cap iphone-cap-b" aria-hidden="true"></span>
+        </div>
+        <span class="showcase-floor" aria-hidden="true"></span>
+      </div>
     </div>
   </section>
 
@@ -335,7 +418,7 @@
           <div class="phone-screen">
             <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
             <picture>
-              <img src="assets/img/app/phone-schichten-light-390.webp" srcset="assets/img/app/phone-schichten-light-390.webp 390w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="(max-width: 719px) 70vw, 220px" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
+              <img src="assets/img/app/phone-schichten-light-208.webp" srcset="assets/img/app/phone-schichten-light-208.webp 208w, assets/img/app/phone-schichten-light-260.webp 260w, assets/img/app/phone-schichten-light-312.webp 312w, assets/img/app/phone-schichten-light-416.webp 416w, assets/img/app/phone-schichten-light-520.webp 520w, assets/img/app/phone-schichten-light-624.webp 624w, assets/img/app/phone-schichten-light-780.webp 780w" sizes="(max-width: 719px) min(260px, 67vw), min(208px, 20vw)" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
             </picture>
           </div>
         </div>
@@ -531,19 +614,19 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-dashboard-light-390.webp" srcset="assets/img/app/phone-dashboard-light-390.webp 390w, assets/img/app/phone-dashboard-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Dashboard auf dem Smartphone mit Kennzahlen und Warnung zu nicht besetzten Schichten">
+                <img src="assets/img/app/phone-dashboard-light-260.webp" srcset="assets/img/app/phone-dashboard-light-260.webp 260w, assets/img/app/phone-dashboard-light-390.webp 390w, assets/img/app/phone-dashboard-light-520.webp 520w, assets/img/app/phone-dashboard-light-780.webp 780w" sizes="(max-width: 559px) min(260px, 67vw), min(260px, 26vw)" width="780" height="1688" loading="lazy" decoding="async" alt="Dashboard auf dem Smartphone mit Kennzahlen und Warnung zu nicht besetzten Schichten">
               </picture>
             </div>
           </div>
           <figcaption>Dashboard mit Kennzahlen</figcaption>
         </figure>
         <figure class="reveal">
-          <div class="phone plx plx-slow">
+          <div class="phone phone-dim plx plx-slow">
             <span class="phone-hw" aria-hidden="true"></span>
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-suche-light-390.webp" srcset="assets/img/app/phone-suche-light-390.webp 390w, assets/img/app/phone-suche-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone mit Treffern zu Helferplan, Helferstunden und Mitgliedern">
+                <img src="assets/img/app/phone-suche-light-260.webp" srcset="assets/img/app/phone-suche-light-260.webp 260w, assets/img/app/phone-suche-light-390.webp 390w, assets/img/app/phone-suche-light-520.webp 520w, assets/img/app/phone-suche-light-780.webp 780w" sizes="(max-width: 559px) min(260px, 67vw), min(260px, 26vw)" width="780" height="1688" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone mit Treffern zu Helferplan, Helferstunden und Mitgliedern">
               </picture>
             </div>
           </div>
@@ -555,7 +638,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-kalender-light-390.webp" srcset="assets/img/app/phone-kalender-light-390.webp 390w, assets/img/app/phone-kalender-light-780.webp 780w" sizes="(max-width: 559px) 68vw, 250px" width="780" height="1688" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone mit den nächsten Terminen des Vereins">
+                <img src="assets/img/app/phone-kalender-light-260.webp" srcset="assets/img/app/phone-kalender-light-260.webp 260w, assets/img/app/phone-kalender-light-390.webp 390w, assets/img/app/phone-kalender-light-520.webp 520w, assets/img/app/phone-kalender-light-780.webp 780w" sizes="(max-width: 559px) min(260px, 67vw), min(260px, 26vw)" width="780" height="1688" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone mit den nächsten Terminen des Vereins">
               </picture>
             </div>
           </div>

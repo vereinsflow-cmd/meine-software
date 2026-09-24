@@ -1,5 +1,5 @@
 // VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// hochzählende Kennzahlen, Lichtschein auf Karten und Ladezustand der Bilder.
+// hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und Scrollfortschritt der Vorführungen.
 // Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
 // Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Mausposition setzt das
 // Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
@@ -58,13 +58,56 @@
 
   // Bildschirmfotos: ruhiger Platzhalter, bis das Bild da ist; danach blendet es weich ein. Bereits geladene Bilder
   // (Zwischenspeicher) bleiben unberührt – so blitzt nichts auf.
-  for (const img of document.querySelectorAll(".browser img, .phone img")) {
-    const frame = img.closest(".browser, .phone");
+  for (const img of document.querySelectorAll(".browser img, .phone img, .laptop-screen img")) {
+    const frame = img.closest(".browser, .phone, .laptop-screen");
     if (!frame || (img.complete && img.naturalWidth > 0)) continue;
     frame.classList.add("is-loading");
     const done = () => frame.classList.remove("is-loading");
     img.addEventListener("load", done, { once: true });
     img.addEventListener("error", done, { once: true });
+  }
+
+  // Vorführungen (Laptop, Telefon): Fortschritt durch den Abschnitt als --p – 0, wenn er unten ins Fenster kommt, 1, wenn
+  // seine stehende Bühne sich oben wieder löst. Aufklappen, Drehen und Einblenden rechnet site.css daraus. Bei reduzierter
+  // Bewegung bleibt es beim Endzustand aus dem CSS (--p: 1, keine lange Scrollstrecke) – auch wenn die Einstellung bei
+  // offener Seite wechselt.
+  const showcases = [...document.querySelectorAll(".showcase")];
+  if (showcases.length) {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Ende der letzten Bewegung je Abschnitt (--p-end in site.css): Danach bleibt der Wert stehen, und der Browser muss
+    // den Abschnitt beim Weiterscrollen nicht in jedem Bild neu berechnen
+    const ends = showcases.map((showcase) => Number.parseFloat(getComputedStyle(showcase).getPropertyValue("--p-end")) || 1);
+    let queued = false;
+    const update = () => {
+      queued = false;
+      // Höhe des Anfangsblocks statt innerHeight: Sie bleibt gleich, wenn auf dem Smartphone die Adressleiste ein- und
+      // ausfährt (sonst spränge die Drehung), und entspricht der Bühne (100svh)
+      const height = root.clientHeight;
+      showcases.forEach((showcase, index) => {
+        const box = showcase.getBoundingClientRect();
+        if (box.top > height * 1.5 || box.bottom < -height * 0.5) return; // weit weg: nichts zu tun
+        const value = Math.min(ends[index], Math.max(0, (height - box.top) / box.height)).toFixed(4);
+        if (showcase.style.getPropertyValue("--p") !== value) showcase.style.setProperty("--p", value);
+      });
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+    const apply = () => {
+      if (motion.matches) {
+        window.removeEventListener("scroll", schedule);
+        window.removeEventListener("resize", schedule);
+        for (const showcase of showcases) showcase.style.removeProperty("--p");
+        return;
+      }
+      window.addEventListener("scroll", schedule, { passive: true });
+      window.addEventListener("resize", schedule, { passive: true });
+      update();
+    };
+    apply();
+    motion.addEventListener("change", apply);
   }
 
   // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da)
