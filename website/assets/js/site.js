@@ -1,6 +1,6 @@
 // VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und – nur ohne Scroll-Timeline im Browser –
-// Scrollfortschritt der Vorführungen.
+// Funktionen-Slider, hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und – nur ohne
+// Scroll-Timeline im Browser – Scrollfortschritt der Vorführungen.
 // Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
 // Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Mausposition setzt das
 // Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
@@ -211,6 +211,137 @@
       }
       observer.observe(element);
     }
+  }
+
+  // Funktionen-Slider: Die Karten stehen in einer waagerechten Reihe (site.css), die man wischt oder mit den Pfeilen bzw.
+  // Pfeiltasten blättert – jeweils eine Karte weiter, weich gleitend (bei reduzierter Bewegung sofort). Karten, die nicht
+  // ganz im Bild stehen, werden blass (.is-dim); ein Klick darauf holt sie herein. Am Anfang bzw. Ende sind die Pfeile
+  // ohne Wirkung (aria-disabled – so bleibt der Fokus auf ihnen). Eine unsichtbare Zeile sagt Screenreadern nach dem
+  // Blättern, welche Karten zu sehen sind.
+  const slider = document.querySelector(".features-slider");
+  const track = slider?.querySelector(".features");
+  const prevButton = slider?.querySelector(".slider-prev");
+  const nextButton = slider?.querySelector(".slider-next");
+  if (slider && track && prevButton && nextButton) {
+    const cards = [...track.children];
+    const bar = slider.querySelector(".slider-progress span");
+    const status = slider.querySelector(".slider-status");
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    track.setAttribute("tabindex", "0");
+    track.setAttribute("role", "region");
+    track.setAttribute("aria-roledescription", "Karussell");
+    track.setAttribute("aria-label", "Funktionen, mit den Pfeiltasten blättern");
+    let pad = 0; // Innenabstand der Reihe = Abstand der Karten vom Rand des sichtbaren Bereichs (--bleed)
+    const measure = () => {
+      pad = Number.parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    };
+    // Einrastpunkte: jede Karte am Anfang des Inhaltsbereichs; zum Ende hin begrenzt – dort stehen die letzten gemeinsam
+    const stops = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      const list = [];
+      for (const card of cards) {
+        const stop = Math.round(Math.min(max, Math.max(0, card.offsetLeft - pad)));
+        if (list.at(-1) !== stop) list.push(stop);
+      }
+      return list;
+    };
+    let aim = null; // Ziel eines laufenden Wechsels: schnell hintereinander geklickt, blättert es weiter statt zurück
+    let first = 0;
+    let last = 0;
+    const goTo = (index) => {
+      const list = stops();
+      aim = Math.min(list.length - 1, Math.max(0, index));
+      track.scrollTo({ left: list[aim], behavior: motion.matches ? "auto" : "smooth" });
+    };
+    const step = (delta) => {
+      const list = stops();
+      const current = list.reduce((best, stop, index) =>
+        Math.abs(stop - track.scrollLeft) < Math.abs(list[best] - track.scrollLeft) ? index : best, 0);
+      goTo((aim ?? current) + delta);
+    };
+    let spoken = "";
+    let interacted = false; // erst nach dem ersten Blättern ansagen, nicht schon beim Laden
+    const announce = () => {
+      if (!status || !interacted) return;
+      const text =
+        first === last ? `Funktion ${first + 1} von ${cards.length}` : `Funktionen ${first + 1} bis ${last + 1} von ${cards.length}`;
+      if (text !== spoken) status.textContent = spoken = text;
+    };
+    let queued = false;
+    const update = () => {
+      queued = false;
+      const left = track.scrollLeft;
+      const width = track.clientWidth;
+      const total = track.scrollWidth;
+      const zoneStart = left + pad;
+      const zoneEnd = left + width - pad;
+      let seenFirst = -1;
+      cards.forEach((card, index) => {
+        // offsetLeft/offsetWidth statt getBoundingClientRect: unabhängig von der Verkleinerung blasser Karten
+        const start = card.offsetLeft;
+        const end = start + card.offsetWidth;
+        const inside = (Math.min(end, zoneEnd) - Math.max(start, zoneStart)) / card.offsetWidth > 0.9;
+        card.classList.toggle("is-dim", !inside);
+        if (inside) {
+          if (seenFirst < 0) seenFirst = index;
+          last = index;
+        }
+      });
+      first = Math.max(0, seenFirst);
+      const max = total - width;
+      prevButton.setAttribute("aria-disabled", String(left <= 1));
+      nextButton.setAttribute("aria-disabled", String(left >= max - 1));
+      bar?.style.setProperty("--pos", (left / total).toFixed(4));
+      bar?.style.setProperty("--size", (width / total).toFixed(4));
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+    let settle = 0;
+    track.addEventListener(
+      "scroll",
+      () => {
+        schedule();
+        clearTimeout(settle);
+        settle = setTimeout(() => {
+          aim = null;
+          announce();
+        }, 160);
+      },
+      { passive: true },
+    );
+    const press = (button, delta) =>
+      button.addEventListener("click", () => {
+        if (button.getAttribute("aria-disabled") === "true") return;
+        interacted = true;
+        step(delta);
+      });
+    press(prevButton, -1);
+    press(nextButton, 1);
+    track.addEventListener("keydown", (event) => {
+      const moves = { ArrowLeft: () => step(-1), ArrowRight: () => step(1), Home: () => goTo(0), End: () => goTo(cards.length) };
+      const move = moves[event.key];
+      if (!move || event.altKey || event.ctrlKey || event.metaKey) return;
+      event.preventDefault();
+      interacted = true;
+      move();
+    });
+    track.addEventListener("click", (event) => {
+      const card = event.target instanceof Element ? event.target.closest(".card") : null;
+      if (!card?.classList.contains("is-dim")) return;
+      interacted = true;
+      step(cards.indexOf(card) < first ? -1 : 1);
+    });
+    track.addEventListener("pointerdown", () => (interacted = true), { passive: true });
+    const refresh = () => {
+      measure();
+      update();
+    };
+    if ("ResizeObserver" in window) new ResizeObserver(refresh).observe(track);
+    else window.addEventListener("resize", refresh, { passive: true });
+    refresh();
   }
 
   // Navigation: Abschnitt, der gerade in der Mitte des Fensters steht, wird hervorgehoben; eine Markierung gleitet

@@ -2805,6 +2805,215 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* ---------- Funktionen-Slider ----------
+   Mit JavaScript werden die zwölf Karten eine waagerechte Reihe, die man wischt oder mit den Pfeilen blättert (site.js).
+   Die sichtbaren Karten stehen ganz im Bild und im Fokus; die Nachbarn schauen am Rand ein Stück herein (--peek),
+   etwas kleiner und blasser, und laufen zum Rand hin weich aus. Ohne JavaScript und im Druck bleibt das Raster.
+   Die Reihe reicht über den Inhaltsbereich hinaus bis zu --bleed in den Rand, die Karten richten sich trotzdem am
+   Inhaltsbereich aus (Innenabstand und Einrastabstand gleich --bleed). */
+.section:has(.features-slider) {
+  container-type: inline-size; /* 100cqw = Breite des Abschnitts ohne Scrollleiste (anders als 100vw) */
+}
+
+.slider-btn,
+.slider-progress {
+  display: none;
+}
+
+.js .features-slider {
+  position: relative;
+  padding-bottom: 72px; /* Platz für Fortschritt und – auf schmalen Bildschirmen – die Pfeile */
+}
+
+.js .features {
+  --cols: 1;
+  --gap: 12px;
+  --peek: 22px;
+  /* Rand zwischen Inhaltsbereich und Abschnittskante (wie .container) */
+  --side: calc((100cqw - min(100cqw, var(--container) + 2 * var(--gutter))) / 2 + var(--gutter));
+  --bleed: min(var(--side), var(--peek) + var(--gap));
+  --peek-in: calc(var(--peek) + var(--gap) - var(--bleed)); /* der Rest der Vorschau kommt aus dem Inhaltsbereich */
+  position: relative; /* Bezug für offsetLeft der Karten (site.js) */
+  display: flex;
+  gap: var(--gap);
+  margin: -12px calc(var(--bleed) * -1) -48px; /* Innenabstand oben/unten für Schatten und Anheben (ein Scrollbereich schneidet dort ab) */
+  padding: 12px var(--bleed) 48px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--bleed);
+  scrollbar-width: none;
+  /* zum Rand hin weich auslaufen (erst ganz außen durchsichtig) */
+  --fade: linear-gradient(
+    90deg,
+    transparent,
+    rgb(0 0 0 / 55%) calc(var(--bleed) * 0.4),
+    #000 var(--bleed),
+    #000 calc(100% - var(--bleed)),
+    rgb(0 0 0 / 55%) calc(100% - var(--bleed) * 0.4),
+    transparent
+  );
+  -webkit-mask-image: var(--fade);
+  mask-image: var(--fade);
+}
+
+.js .features::-webkit-scrollbar {
+  display: none;
+}
+
+.js .features:focus-visible {
+  outline: none; /* Fokusrahmen an der Hülle – die Reihe selbst läuft am Rand weich aus */
+}
+
+.js .features-slider:has(> .features:focus-visible)::after {
+  content: "";
+  position: absolute;
+  inset: -8px calc(var(--gutter) * -0.5) 56px;
+  border: 3px solid var(--ring);
+  border-radius: calc(var(--radius) + 8px);
+  pointer-events: none;
+}
+
+.js .features > .card {
+  flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap) - var(--peek-in)) / var(--cols));
+  scroll-snap-align: start;
+}
+
+/* Karten, die nicht ganz im Bild stehen (site.js setzt .is-dim): kleiner und blasser; ein Klick holt sie herein */
+.js .features > .card.is-dim {
+  opacity: 0.55;
+  scale: 0.94;
+  cursor: pointer;
+}
+
+@media (min-width: 600px) {
+  .js .features {
+    --cols: 2;
+    --gap: 20px;
+    --peek: 44px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .js .features {
+    --cols: 3;
+    --peek: 64px;
+  }
+}
+
+/* Pfeile: rund, im Stil der hellen Schaltflächen; am Anfang bzw. Ende blass und ohne Wirkung */
+.js .slider-btn {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 0.3s,
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.28s var(--ease-out),
+    transform 0.28s var(--ease-out);
+}
+
+.js .slider-btn:focus-visible {
+  border-radius: 50%;
+}
+
+.js .slider-btn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.js .slider-prev {
+  left: 0;
+}
+
+.js .slider-next {
+  right: 0;
+}
+
+.js .slider-btn[aria-disabled="true"] {
+  opacity: 0.35;
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .js .slider-btn:not([aria-disabled="true"]):hover {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.js .slider-btn:not([aria-disabled="true"]):active {
+  transform: scale(0.94);
+  transition-duration: 0.08s;
+}
+
+/* Fortschritt: schmale Leiste, der helle Teil zeigt, welcher Ausschnitt der zwölf Karten gerade zu sehen ist */
+.js .slider-progress {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  display: block;
+  width: min(160px, 36%);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+  translate: -50% 0;
+}
+
+.js .slider-progress span {
+  display: block;
+  width: calc(var(--size, 0.25) * 100%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  translate: calc(var(--pos, 0) / var(--size, 0.25) * 100%) 0;
+}
+
+/* Breite Bildschirme: Pfeile links und rechts auf halber Höhe der Karten, halb über dem Rand */
+@media (min-width: 900px) {
+  .js .features-slider {
+    padding-bottom: 40px;
+  }
+
+  .js .slider-btn {
+    top: calc(50% - 20px);
+    bottom: auto;
+    translate: 0 -50%;
+  }
+
+  .js .slider-prev {
+    left: -24px;
+  }
+
+  .js .slider-next {
+    right: -24px;
+  }
+
+  .js .slider-progress {
+    bottom: 6px;
+  }
+
+  .js .features-slider:has(> .features:focus-visible)::after {
+    bottom: 24px;
+  }
+}
+
 /* Vorher/Nachher-Karten */
 .swap .before,
 .swap .after {
@@ -4203,6 +4412,20 @@ html:not(.js) .nav ul a:hover {
     transition-duration: 0.2s;
   }
 
+  /* Funktionen-Slider: Karten gleiten beim Wechsel sanft in den Fokus (Größe, Deckkraft), Fortschritt läuft mit */
+  .js .features > .card {
+    transition:
+      opacity 0.6s cubic-bezier(0.45, 0, 0.25, 1),
+      scale 0.6s cubic-bezier(0.45, 0, 0.25, 1),
+      transform 0.45s var(--ease-out),
+      box-shadow 0.45s var(--ease-out),
+      border-color 0.3s;
+  }
+
+  .js .slider-progress span {
+    transition: translate 0.25s var(--ease-out);
+  }
+
   /* Ablauf: Nummern springen auf, die Verbindungslinie wächst zum nächsten Schritt */
   .reveal .step-no {
     transition: scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--reveal-delay, 0s) + 0.15s);
@@ -4236,6 +4459,11 @@ html:not(.js) .nav ul a:hover {
   .role:hover::before,
   .step:hover::before {
     opacity: 1;
+  }
+
+  /* Blasse Nachbarkarte im Slider: beim Überfahren etwas deutlicher – ein Klick holt sie herein */
+  .js .features > .card.is-dim:hover {
+    opacity: 0.8;
   }
 
   /* Geplantes ist kein Angebot zum Anklicken – bleibt ruhig */
@@ -4714,6 +4942,31 @@ html:not(.js) .nav ul a:hover {
     position: static;
     height: auto;
     overflow: visible;
+  }
+
+  /* Funktionen: im Druck das Raster statt des Sliders */
+  .js .features-slider {
+    padding-bottom: 0;
+  }
+
+  .js .features {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .js .features > .card {
+    opacity: 1 !important;
+    scale: none !important;
+    transition: none !important;
+  }
+
+  .slider-btn,
+  .slider-progress {
+    display: none !important;
   }
 }
 
