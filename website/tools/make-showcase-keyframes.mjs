@@ -52,6 +52,8 @@ const anims = [
   { name: "vf-laptop-lid", fn: (p) => ({ V: (1 - L(p).oe) * -90 }), tol: { V: 0.2 }, css: (v) => `transform: rotateX(${f(v.V, 3)}deg);` },
   { name: "vf-laptop-screen", fn: (p) => ({ V: clamp(L(p).oe * 50) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
   { name: "vf-laptop-cover", fn: (p) => ({ V: clamp((0.98 - L(p).oe) * 50) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
+  // Rückseite des Deckels: hochgeklappt zeigt sie vom Licht weg und wird dunkler
+  { name: "vf-laptop-cover-dark", fn: (p) => ({ V: L(p).oe * 0.4 }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-laptop-screen-off", fn: (p) => ({ V: (1 - L(p).oe) * 0.94 }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-laptop-screen-glare", fn: (p) => ({ V: 1 - L(p).ke }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-laptop-sheen", fn: (p) => { const re = L(p).re; return { V: 4 * re * (1 - re) }; }, tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
@@ -98,8 +100,19 @@ for (const anim of anims) {
   const vals = Array.from({ length: N + 1 }, (_, i) => anim.fn(i / N));
   const err = anim.err ?? ((v, w) => Object.keys(anim.tol).map((k) => Math.abs(v[k] - w[k]) / anim.tol[k]));
   const lerp = (a, b, t) => Object.fromEntries(Object.keys(a).map((k) => [k, a[k] + (b[k] - a[k]) * t]));
-  // Stützpunkte: Anfang und Ende, dann jeweils den schlechtesten Zwischenpunkt einfügen, bis alles in der Toleranz liegt
-  const keys = [0, N];
+  // Stützpunkte: Anfang und Ende sowie jede Stelle, an der ein Wert genau 0 oder 1 erreicht bzw. verlässt (so bleibt etwa
+  // ein zusammengeschobenes scale bis dorthin exakt 0 – nicht nur fast); dann jeweils den schlechtesten Zwischenpunkt
+  // einfügen, bis alles in der Toleranz liegt
+  const atBound = (v) => v === 0 || v === 1;
+  const seeds = new Set([0, N]);
+  for (const k of Object.keys(vals[0])) {
+    for (let i = 0; i < N; i++) {
+      const a = atBound(vals[i][k]), b = atBound(vals[i + 1][k]);
+      if (a && !b) seeds.add(i);
+      if (b && !a) seeds.add(i + 1);
+    }
+  }
+  const keys = [...seeds].sort((x, y) => x - y);
   for (let guard = 0; guard < 400; guard++) {
     let worst = null;
     for (let s = 0; s < keys.length - 1; s++) {
@@ -121,5 +134,8 @@ const css = fs.readFileSync(cssFile, "utf8");
 const head = css.indexOf("Keyframes der Vorführungen");
 if (head < 0) throw new Error("Kommentar „Keyframes der Vorführungen“ in site.css nicht gefunden");
 const start = css.indexOf("*/", head) + 2;
+// Nur erzeugte Keyframes ersetzen: Steht dahinter noch anderes CSS, lieber abbrechen, als es zu überschreiben
+const foreign = css.slice(start).replace(/@keyframes vf-[\w-]+ \{[\s\S]*?\n\}\n?/g, "").trim();
+if (foreign) throw new Error(`Nach den Keyframes der Vorführungen steht anderes CSS – bitte vor den Kommentar verschieben:\n${foreign.slice(0, 200)}`);
 fs.writeFileSync(cssFile, `${css.slice(0, start)}\n\n${out.trimEnd()}\n`);
 console.log(`${anims.length} Animationen, ${total} Stützpunkte, ${(out.length / 1024).toFixed(1)} KB → ${path.relative(root, cssFile)}`);

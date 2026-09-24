@@ -1330,7 +1330,24 @@ html:not(.js) .nav ul a:hover {
    In der Endlage steht alles gerade, unverschoben und in der Bildebene – die Bildschirme werden Pixel für Pixel gezeichnet.
    Kein opacity/filter/overflow an den Geräten selbst – das würde die 3D-Darstellung flach drücken. */
 .showcase {
+  --vf-rest: 0.87; /* ab hier steht alles (Laptop: Ende der letzten Bewegung bei 0,84, plus Reserve) */
   position: relative;
+}
+
+.showcase-phone {
+  --vf-rest: 0.75; /* Telefon: Drehung endet bei 0,72 */
+}
+
+/* Marke für die Ruhelage (legt site.js an): reicht vom Ruhepunkt bis zum Ende des Abschnitts – ist sie im Fenster oder
+   schon darüber, ist die Bewegung vorbei */
+.showcase-rest {
+  position: absolute;
+  top: calc(var(--vf-rest) * 100%);
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .showcase-stage {
@@ -1592,7 +1609,18 @@ html:not(.js) .nav ul a:hover {
   filter: drop-shadow(0 1px 0 rgb(255 255 255 / 70%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 14%));
 }
 
-/* Lichtschein auf dem Aluminium, der beim Drehen auf- und wieder abblendet */
+/* Lichtschein auf dem Aluminium, der beim Drehen auf- und wieder abblendet (::before), und Abdunklung, wenn der Deckel
+   hochklappt und die Rückseite vom Licht wegzeigt (::after, hier Endlage – dann ist die Rückseite ohnehin abgewandt) */
+.laptop-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(20 26 34);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .laptop-cover::before {
   content: "";
   position: absolute;
@@ -1916,7 +1944,7 @@ html:not(.js) .nav ul a:hover {
 }
 
 .laptop-side-l::after {
-  opacity: 0.21;
+  opacity: 0.213;
 }
 
 /* Runde Ecken vorn am Unterteil: je vier schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,4 px neben
@@ -1980,13 +2008,14 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
+/* Verlauf von Stoß zu Stoß: Die Streifen stehen an jedem Ende 1 px über (siehe oben) */
 .base-c i::before {
-  background: linear-gradient(rgb(12 16 22), rgb(12 16 22 / 0%));
+  background: linear-gradient(rgb(12 16 22) 1px, rgb(12 16 22 / 0%) calc(100% - 1px));
   opacity: var(--shade1);
 }
 
 .base-c i::after {
-  background: linear-gradient(rgb(12 16 22 / 0%), rgb(12 16 22));
+  background: linear-gradient(rgb(12 16 22 / 0%) 1px, rgb(12 16 22) calc(100% - 1px));
   opacity: var(--shade0);
 }
 
@@ -2216,7 +2245,7 @@ html:not(.js) .nav ul a:hover {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgb(52 40 24 / var(--w1)), rgb(52 40 24 / var(--w0)));
+  background: linear-gradient(rgb(52 40 24 / var(--w1)) 1px, rgb(52 40 24 / var(--w0)) calc(100% - 1px)); /* von Stoß zu Stoß */
   opacity: var(--side-rest);
   pointer-events: none;
 }
@@ -3884,6 +3913,10 @@ html:not(.js) .nav ul a:hover {
     animation: vf-laptop-sheen 1s linear both paused;
   }
 
+  .js .laptop-cover::after {
+    animation: vf-laptop-cover-dark 1s linear both paused;
+  }
+
   .js .laptop-front::after {
     animation: vf-laptop-lit-front 1s linear both paused;
   }
@@ -3956,7 +3989,7 @@ html:not(.js) .nav ul a:hover {
     animation: var(--side) 1s linear both paused; /* wie die angrenzende Seitenfläche (--side, siehe .rim-c) */
   }
 
-  @supports (animation-timeline: view()) {
+  @supports (animation-timeline: view()) and (animation-range: entry 0% exit 0%) {
     .js .showcase-laptop {
       view-timeline: --vf-laptop block;
     }
@@ -3975,6 +4008,7 @@ html:not(.js) .nav ul a:hover {
     .js .laptop-screen::after,
     .js .laptop-cover,
     .js .laptop-cover::before,
+    .js .laptop-cover::after,
     .js .laptop-front::after,
     .js .laptop-rear::after,
     .js .laptop-side-l::after,
@@ -4004,6 +4038,20 @@ html:not(.js) .nav ul a:hover {
       animation-timeline: --vf-phone;
       animation-range: entry 0% exit 0%;
     }
+  }
+
+  /* Ruhelage (site.js setzt .is-rest, sobald alle Bewegungen fertig sind): Animationen abhängen – die Grundregeln sind
+     genau die Endlage, es springt also nichts. Chromium setzt Ebenen mit angehängter Transform-Animation nicht auf ganze
+     Pixel; ohne sie stehen die Bildschirme wieder Pixel für Pixel scharf. Die Gehäusekante des Telefons wird dann nicht
+     mehr gebraucht (wie ohne Bewegung) – sonst schimmerte sie durch die geglätteten Ecken der Vorderseite. */
+  .js .showcase.is-rest *,
+  .js .showcase.is-rest *::before,
+  .js .showcase.is-rest *::after {
+    animation: none;
+  }
+
+  .js .showcase.is-rest .iphone-rim {
+    display: none;
   }
 
   /* --- Einblenden beim Scrollen (site.js markiert, was außerhalb des Fensters liegt) --- */
@@ -4681,291 +4729,271 @@ html:not(.js) .nav ul a:hover {
     transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  3.23% {
-    transform: translateY(calc(0.9998 * 30vh - 0.42 * var(--lh))) scale(calc(0.7001 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  3% {
+    transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  3.835% {
-    transform: translateY(calc(0.9972 * 30vh - 0.42 * var(--lh))) scale(calc(0.7008 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  3.66% {
+    transform: translateY(calc(0.9982 * 30vh - 0.42 * var(--lh))) scale(calc(0.7005 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  4.445% {
-    transform: translateY(calc(0.9917 * 30vh - 0.42 * var(--lh))) scale(calc(0.7025 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  4.335% {
+    transform: translateY(calc(0.9929 * 30vh - 0.42 * var(--lh))) scale(calc(0.7021 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  5.295% {
-    transform: translateY(calc(0.9796 * 30vh - 0.42 * var(--lh))) scale(calc(0.7061 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  5.025% {
+    transform: translateY(calc(0.984 * 30vh - 0.42 * var(--lh))) scale(calc(0.7048 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  6.165% {
-    transform: translateY(calc(0.962 * 30vh - 0.42 * var(--lh))) scale(calc(0.7114 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  5.725% {
+    transform: translateY(calc(0.9715 * 30vh - 0.42 * var(--lh))) scale(calc(0.7086 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  7.065% {
-    transform: translateY(calc(0.9388 * 30vh - 0.42 * var(--lh))) scale(calc(0.7184 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  6.44% {
+    transform: translateY(calc(0.9554 * 30vh - 0.42 * var(--lh))) scale(calc(0.7134 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  7.99% {
-    transform: translateY(calc(0.9102 * 30vh - 0.42 * var(--lh))) scale(calc(0.727 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  7.175% {
+    transform: translateY(calc(0.9357 * 30vh - 0.42 * var(--lh))) scale(calc(0.7193 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  8.925% {
-    transform: translateY(calc(0.8767 * 30vh - 0.42 * var(--lh))) scale(calc(0.737 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  7.93% {
+    transform: translateY(calc(0.9122 * 30vh - 0.42 * var(--lh))) scale(calc(0.7264 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  9.895% {
-    transform: translateY(calc(0.8377 * 30vh - 0.42 * var(--lh))) scale(calc(0.7487 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  8.705% {
+    transform: translateY(calc(0.8849 * 30vh - 0.42 * var(--lh))) scale(calc(0.7345 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  10.915% {
-    transform: translateY(calc(0.7926 * 30vh - 0.42 * var(--lh))) scale(calc(0.7622 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  9.535% {
+    transform: translateY(calc(0.8526 * 30vh - 0.42 * var(--lh))) scale(calc(0.7442 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  12.005% {
-    transform: translateY(calc(0.7405 * 30vh - 0.42 * var(--lh))) scale(calc(0.7779 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  10.4% {
+    transform: translateY(calc(0.8158 * 30vh - 0.42 * var(--lh))) scale(calc(0.7553 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  13.02% {
-    transform: translateY(calc(0.6891 * 30vh - 0.42 * var(--lh))) scale(calc(0.7933 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  11.305% {
+    transform: translateY(calc(0.7744 * 30vh - 0.42 * var(--lh))) scale(calc(0.7677 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  14.15% {
-    transform: translateY(calc(0.6292 * 30vh - 0.42 * var(--lh))) scale(calc(0.8112 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  12.265% {
+    transform: translateY(calc(0.7276 * 30vh - 0.42 * var(--lh))) scale(calc(0.7817 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  18.26% {
-    transform: translateY(calc(0.4028 * 30vh - 0.42 * var(--lh))) scale(calc(0.8792 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  14.25% {
+    transform: translateY(calc(0.6238 * 30vh - 0.42 * var(--lh))) scale(calc(0.8128 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  19.94% {
-    transform: translateY(calc(0.313 * 30vh - 0.42 * var(--lh))) scale(calc(0.9061 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  18.24% {
+    transform: translateY(calc(0.4039 * 30vh - 0.42 * var(--lh))) scale(calc(0.8788 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  19.925% {
+    transform: translateY(calc(0.3138 * 30vh - 0.42 * var(--lh))) scale(calc(0.9059 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
   21.69% {
     transform: translateY(calc(0.2259 * 30vh - 0.42 * var(--lh))) scale(calc(0.9322 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  22.49% {
-    transform: translateY(calc(0.1891 * 30vh - 0.42 * var(--lh))) scale(calc(0.9433 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  22.5% {
+    transform: translateY(calc(0.1886 * 30vh - 0.42 * var(--lh))) scale(calc(0.9434 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  23.26% {
-    transform: translateY(calc(0.1558 * 30vh - 0.42 * var(--lh))) scale(calc(0.9532 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  23.275% {
+    transform: translateY(calc(0.1552 * 30vh - 0.42 * var(--lh))) scale(calc(0.9534 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  24.175% {
-    transform: translateY(calc(0.1195 * 30vh - 0.42 * var(--lh))) scale(calc(0.9641 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  24.21% {
+    transform: translateY(calc(0.1182 * 30vh - 0.42 * var(--lh))) scale(calc(0.9645 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  25.055% {
-    transform: translateY(calc(0.0883 * 30vh - 0.42 * var(--lh))) scale(calc(0.9735 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  25.11% {
+    transform: translateY(calc(0.0865 * 30vh - 0.42 * var(--lh))) scale(calc(0.974 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  25.91% {
-    transform: translateY(calc(0.0619 * 30vh - 0.42 * var(--lh))) scale(calc(0.9814 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  25.98% {
+    transform: translateY(calc(0.0599 * 30vh - 0.42 * var(--lh))) scale(calc(0.982 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  26.735% {
-    transform: translateY(calc(0.0403 * 30vh - 0.42 * var(--lh))) scale(calc(0.9879 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  26.82% {
+    transform: translateY(calc(0.0383 * 30vh - 0.42 * var(--lh))) scale(calc(0.9885 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  27.54% {
-    transform: translateY(calc(0.0234 * 30vh - 0.42 * var(--lh))) scale(calc(0.993 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  27.64% {
+    transform: translateY(calc(0.0216 * 30vh - 0.42 * var(--lh))) scale(calc(0.9935 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  28.33% {
-    transform: translateY(calc(0.011 * 30vh - 0.42 * var(--lh))) scale(calc(0.9967 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  28.445% {
+    transform: translateY(calc(0.0096 * 30vh - 0.42 * var(--lh))) scale(calc(0.9971 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  29.1% {
-    transform: translateY(calc(0.0033 * 30vh - 0.42 * var(--lh))) scale(calc(0.999 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  29.23% {
+    transform: translateY(calc(0.0024 * 30vh - 0.42 * var(--lh))) scale(calc(0.9993 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  29.855% {
-    transform: translateY(calc(0.0001 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  30% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
   }
 
-  30.56% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(171.762deg);
+  30.74% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(171.586deg);
   }
 
-  31.265% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(170.806deg);
+  31.5% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(170.332deg);
   }
 
-  31.985% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(169.117deg);
+  32.275% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(168.243deg);
   }
 
-  32.725% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(166.675deg);
+  33.07% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(165.306deg);
   }
 
-  33.48% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(163.497deg);
+  33.885% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(161.523deg);
   }
 
-  34.255% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(159.565deg);
+  34.725% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(156.873deg);
   }
 
-  35.055% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(154.853deg);
+  35.59% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(151.362deg);
   }
 
-  35.885% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(149.329deg);
+  36.495% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(144.894deg);
   }
 
-  36.665% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(143.606deg);
+  38.02% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(132.61deg);
   }
 
-  37.475% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(137.179deg);
+  39.725% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(117.269deg);
   }
 
-  38.325% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(129.975deg);
+  41.34% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(101.687deg);
   }
 
-  39.23% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(121.865deg);
+  45.095% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(64.325deg);
   }
 
-  41.025% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(104.782deg);
+  46.905% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(47.18deg);
   }
 
-  44.485% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(70.322deg);
+  48.525% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(33.101deg);
   }
 
-  45.905% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(56.51deg);
+  49.275% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(27.134deg);
   }
 
-  47.385% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(42.859deg);
+  50% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(21.764deg);
   }
 
-  48.715% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(31.552deg);
+  51.145% {
+    transform: translateY(calc(0 * 30vh - 0.4182 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0049) * 0.9987)) rotateX(-22deg) rotateY(14.19deg);
   }
 
-  49.49% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(25.499deg);
+  52.33% {
+    transform: translateY(calc(0 * 30vh - 0.4127 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0198) * 0.9948)) rotateX(-22deg) rotateY(7.687deg);
   }
 
-  50.24% {
-    transform: translateY(calc(0 * 30vh - 0.4199 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0002) * 0.9999)) rotateX(-22deg) rotateY(20.08deg);
-  }
-
-  50.945% {
-    transform: translateY(calc(0 * 30vh - 0.4188 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0034) * 0.9991)) rotateX(-22deg) rotateY(15.427deg);
-  }
-
-  51.66% {
-    transform: translateY(calc(0 * 30vh - 0.4162 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0102) * 0.9973)) rotateX(-22deg) rotateY(11.185deg);
-  }
-
-  52.345% {
-    transform: translateY(calc(0 * 30vh - 0.4126 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0201) * 0.9948)) rotateX(-22deg) rotateY(7.614deg);
-  }
-
-  53.01% {
-    transform: translateY(calc(0 * 30vh - 0.408 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0325) * 0.9915)) rotateX(-22deg) rotateY(4.644deg);
-  }
-
-  53.66% {
-    transform: translateY(calc(0 * 30vh - 0.4025 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0473) * 0.9877)) rotateX(-22deg) rotateY(2.248deg);
-  }
-
-  54.3% {
-    transform: translateY(calc(0 * 30vh - 0.3963 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0641) * 0.9833)) rotateX(-22deg) rotateY(0.411deg);
+  53.425% {
+    transform: translateY(calc(0 * 30vh - 0.4046 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0416) * 0.9892)) rotateX(-22deg) rotateY(3.054deg);
   }
 
   54.48% {
     transform: translateY(calc(0 * 30vh - 0.3944 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0693) * 0.982)) rotateX(-22deg) rotateY(0deg);
   }
 
-  55.445% {
-    transform: translateY(calc(0 * 30vh - 0.3831 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0997) * 0.9741)) rotateX(-22deg) rotateY(0deg);
+  55.615% {
+    transform: translateY(calc(0 * 30vh - 0.3809 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1056) * 0.9726)) rotateX(-22deg) rotateY(0deg);
   }
 
-  56.64% {
-    transform: translateY(calc(0 * 30vh - 0.3669 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1435) * 0.9627)) rotateX(-22deg) rotateY(0deg);
+  56.805% {
+    transform: translateY(calc(0 * 30vh - 0.3645 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.15) * 0.961)) rotateX(-22deg) rotateY(0deg);
   }
 
-  57.915% {
-    transform: translateY(calc(0 * 30vh - 0.3473 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1965) * 0.9489)) rotateX(-22deg) rotateY(0deg);
+  58.075% {
+    transform: translateY(calc(0 * 30vh - 0.3447 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2036) * 0.9471)) rotateX(-21.999deg) rotateY(0deg);
   }
 
-  59.23% {
-    transform: translateY(calc(0 * 30vh - 0.3249 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2569) * 0.9336)) rotateX(-21.856deg) rotateY(0deg);
+  59.375% {
+    transform: translateY(calc(0 * 30vh - 0.3223 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2639) * 0.932)) rotateX(-21.82deg) rotateY(0deg);
   }
 
-  60.57% {
-    transform: translateY(calc(0 * 30vh - 0.3 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.3231) * 0.9183)) rotateX(-21.392deg) rotateY(0deg);
+  60.7% {
+    transform: translateY(calc(0 * 30vh - 0.2975 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.3298) * 0.9169)) rotateX(-21.331deg) rotateY(0deg);
   }
 
-  62.02% {
-    transform: translateY(calc(0 * 30vh - 0.2712 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.3986) * 0.9031)) rotateX(-20.571deg) rotateY(0deg);
+  62.14% {
+    transform: translateY(calc(0 * 30vh - 0.2688 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.405) * 0.9019)) rotateX(-20.489deg) rotateY(0deg);
   }
 
-  63.93% {
-    transform: translateY(calc(0 * 30vh - 0.2312 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5012) * 0.8871)) rotateX(-19.06deg) rotateY(0deg);
+  64.06% {
+    transform: translateY(calc(0 * 30vh - 0.2284 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5082) * 0.8862)) rotateX(-18.941deg) rotateY(0deg);
   }
 
-  65.725% {
-    transform: translateY(calc(0 * 30vh - 0.1924 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5979) * 0.8779)) rotateX(-17.281deg) rotateY(0deg);
+  65.86% {
+    transform: translateY(calc(0 * 30vh - 0.1894 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.605) * 0.8775)) rotateX(-17.136deg) rotateY(0deg);
   }
 
-  67.45% {
-    transform: translateY(calc(0 * 30vh - 0.155 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.6879) * 0.8754)) rotateX(-15.328deg) rotateY(0deg);
+  67.625% {
+    transform: translateY(calc(0 * 30vh - 0.1513 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.6968) * 0.8755)) rotateX(-15.119deg) rotateY(0deg);
   }
 
-  69.2% {
-    transform: translateY(calc(0 * 30vh - 0.1183 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.7734) * 0.8795)) rotateX(-13.183deg) rotateY(0deg);
+  69.43% {
+    transform: translateY(calc(0 * 30vh - 0.1137 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.7841) * 0.8805)) rotateX(-12.893deg) rotateY(0deg);
   }
 
-  70.5% {
-    transform: translateY(calc(0 * 30vh - 0.0926 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8314) * 0.8867)) rotateX(-11.531deg) rotateY(0deg);
+  70.78% {
+    transform: translateY(calc(0 * 30vh - 0.0873 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8432) * 0.8887)) rotateX(-11.172deg) rotateY(0deg);
   }
 
-  71.68% {
-    transform: translateY(calc(0 * 30vh - 0.0709 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8789) * 0.8959)) rotateX(-10.019deg) rotateY(0deg);
+  72% {
+    transform: translateY(calc(0 * 30vh - 0.0653 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8907) * 0.8988)) rotateX(-9.611deg) rotateY(0deg);
   }
 
-  72.82% {
-    transform: translateY(calc(0 * 30vh - 0.0519 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9191) * 0.9069)) rotateX(-8.572deg) rotateY(0deg);
+  73.18% {
+    transform: translateY(calc(0 * 30vh - 0.0464 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9305) * 0.9107)) rotateX(-8.122deg) rotateY(0deg);
   }
 
-  73.89% {
-    transform: translateY(calc(0 * 30vh - 0.0362 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9511) * 0.9185)) rotateX(-7.246deg) rotateY(0deg);
+  74.29% {
+    transform: translateY(calc(0 * 30vh - 0.0309 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9615) * 0.9232)) rotateX(-6.763deg) rotateY(0deg);
   }
 
-  74.91% {
-    transform: translateY(calc(0 * 30vh - 0.0235 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9758) * 0.9305)) rotateX(-6.029deg) rotateY(0deg);
-  }
-
-  75.885% {
-    transform: translateY(calc(0 * 30vh - 0.0138 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9936) * 0.9422)) rotateX(-4.923deg) rotateY(0deg);
+  75.35% {
+    transform: translateY(calc(0 * 30vh - 0.0188 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9846) * 0.9357)) rotateX(-5.522deg) rotateY(0deg);
   }
 
   76.36% {
     transform: translateY(calc(0 * 30vh - 0.01 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9479)) rotateX(-4.408deg) rotateY(0deg);
   }
 
-  77.89% {
-    transform: translateY(calc(0 * 30vh - 0.0066 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9659)) rotateX(-2.885deg) rotateY(0deg);
+  78.045% {
+    transform: translateY(calc(0 * 30vh - 0.0062 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9676)) rotateX(-2.743deg) rotateY(0deg);
   }
 
-  80.275% {
-    transform: translateY(calc(0 * 30vh - 0.0023 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.988)) rotateX(-1.018deg) rotateY(0deg);
+  79.605% {
+    transform: translateY(calc(0 * 30vh - 0.0033 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9826)) rotateX(-1.47deg) rotateY(0deg);
   }
 
-  82.475% {
+  81.08% {
+    transform: translateY(calc(0 * 30vh - 0.0013 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9934)) rotateX(-0.558deg) rotateY(0deg);
+  }
+
+  82.48% {
     transform: translateY(calc(0 * 30vh - 0 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 1)) rotateX(0deg) rotateY(0deg);
   }
 
@@ -4979,60 +5007,68 @@ html:not(.js) .nav ul a:hover {
     transform: rotateX(-90deg);
   }
 
-  50.015% {
+  50.03% {
     transform: rotateX(-90deg);
   }
 
-  51.36% {
-    transform: rotateX(-89.377deg);
+  50.91% {
+    transform: rotateX(-89.718deg);
   }
 
-  52.7% {
-    transform: rotateX(-87.627deg);
+  51.81% {
+    transform: rotateX(-88.91deg);
   }
 
-  54.095% {
-    transform: rotateX(-84.736deg);
+  53.215% {
+    transform: rotateX(-86.68deg);
   }
 
-  55.56% {
-    transform: rotateX(-80.671deg);
+  54.68% {
+    transform: rotateX(-83.231deg);
   }
 
-  57.115% {
-    transform: rotateX(-75.375deg);
+  56.225% {
+    transform: rotateX(-78.519deg);
   }
 
-  58.65% {
-    transform: rotateX(-69.334deg);
+  57.88% {
+    transform: rotateX(-72.454deg);
   }
 
-  60.345% {
-    transform: rotateX(-61.944deg);
+  59.31% {
+    transform: rotateX(-66.534deg);
   }
 
-  66.835% {
-    transform: rotateX(-30.933deg);
+  60.905% {
+    transform: rotateX(-59.376deg);
   }
 
-  69.58% {
-    transform: rotateX(-18.816deg);
+  66.04% {
+    transform: rotateX(-34.686deg);
   }
 
-  71.07% {
-    transform: rotateX(-13.048deg);
+  67.845% {
+    transform: rotateX(-26.297deg);
   }
 
-  72.46% {
-    transform: rotateX(-8.367deg);
+  69.545% {
+    transform: rotateX(-18.96deg);
   }
 
-  73.78% {
-    transform: rotateX(-4.672deg);
+  71.09% {
+    transform: rotateX(-12.976deg);
   }
 
-  75.045% {
-    transform: rotateX(-1.924deg);
+  72.505% {
+    transform: rotateX(-8.229deg);
+  }
+
+  73.845% {
+    transform: rotateX(-4.511deg);
+  }
+
+  75.125% {
+    transform: rotateX(-1.778deg);
   }
 
   76.36% {
@@ -5049,64 +5085,68 @@ html:not(.js) .nav ul a:hover {
     scale: 0;
   }
 
-  50.025% {
-    scale: 0.0001;
+  50% {
+    scale: 0;
   }
 
-  50.165% {
-    scale: 0.0052;
+  50.14% {
+    scale: 0.0038;
   }
 
-  50.305% {
-    scale: 0.0178;
+  50.285% {
+    scale: 0.0156;
   }
 
-  50.445% {
-    scale: 0.0379;
+  50.425% {
+    scale: 0.0346;
   }
 
-  50.59% {
-    scale: 0.0663;
+  50.57% {
+    scale: 0.0619;
   }
 
-  50.73% {
-    scale: 0.1012;
+  50.715% {
+    scale: 0.0971;
   }
 
-  50.875% {
-    scale: 0.1449;
+  50.86% {
+    scale: 0.14;
   }
 
-  51.02% {
-    scale: 0.1962;
+  51.005% {
+    scale: 0.1905;
   }
 
-  51.165% {
-    scale: 0.255;
+  51.15% {
+    scale: 0.2486;
   }
 
-  51.305% {
-    scale: 0.3189;
+  51.295% {
+    scale: 0.3141;
   }
 
-  51.45% {
-    scale: 0.3923;
+  51.44% {
+    scale: 0.387;
   }
 
-  51.595% {
-    scale: 0.4729;
+  51.585% {
+    scale: 0.4671;
   }
 
-  51.74% {
-    scale: 0.5608;
+  51.735% {
+    scale: 0.5577;
   }
 
-  51.88% {
-    scale: 0.6524;
+  51.875% {
+    scale: 0.649;
   }
 
-  52.025% {
-    scale: 0.7542;
+  52.02% {
+    scale: 0.7506;
+  }
+
+  52.1% {
+    scale: 0.8096;
   }
 
   52.18% {
@@ -5135,36 +5175,40 @@ html:not(.js) .nav ul a:hover {
     scale: 1;
   }
 
+  74.225% {
+    scale: 1;
+  }
+
   74.23% {
     scale: 1;
   }
 
-  74.345% {
-    scale: 0.8568;
+  74.35% {
+    scale: 0.8507;
   }
 
-  74.46% {
-    scale: 0.7175;
+  74.47% {
+    scale: 0.7056;
   }
 
-  74.575% {
-    scale: 0.582;
+  74.59% {
+    scale: 0.5646;
   }
 
-  74.685% {
-    scale: 0.4559;
+  74.705% {
+    scale: 0.4334;
   }
 
-  74.8% {
-    scale: 0.328;
+  74.82% {
+    scale: 0.3062;
   }
 
-  74.915% {
-    scale: 0.204;
+  74.93% {
+    scale: 0.1881;
   }
 
-  75.05% {
-    scale: 0.0636;
+  75.06% {
+    scale: 0.0534;
   }
 
   75.11% {
@@ -5180,37 +5224,67 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+@keyframes vf-laptop-cover-dark {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0;
+  }
+
+  53.135% {
+    opacity: 0.014;
+  }
+
+  56.61% {
+    opacity: 0.057;
+  }
+
+  69.655% {
+    opacity: 0.318;
+  }
+
+  75.115% {
+    opacity: 0.392;
+  }
+
+  100% {
+    opacity: 0.4;
+  }
+}
+
 @keyframes vf-laptop-screen-off {
   0% {
     opacity: 0.94;
   }
 
-  51.36% {
-    opacity: 0.933;
+  50.03% {
+    opacity: 0.94;
   }
 
-  54.095% {
-    opacity: 0.885;
+  51.81% {
+    opacity: 0.929;
   }
 
-  57.115% {
-    opacity: 0.787;
+  54.68% {
+    opacity: 0.869;
   }
 
-  60.345% {
-    opacity: 0.647;
+  57.88% {
+    opacity: 0.757;
   }
 
-  69.58% {
-    opacity: 0.197;
+  67.845% {
+    opacity: 0.275;
   }
 
-  72.46% {
-    opacity: 0.087;
+  71.09% {
+    opacity: 0.136;
   }
 
-  75.045% {
-    opacity: 0.02;
+  73.845% {
+    opacity: 0.047;
   }
 
   76.36% {
@@ -5227,32 +5301,32 @@ html:not(.js) .nav ul a:hover {
     opacity: 1;
   }
 
-  59.17% {
-    opacity: 0.994;
+  58% {
+    opacity: 1;
   }
 
-  61.775% {
-    opacity: 0.942;
+  60.8% {
+    opacity: 0.967;
   }
 
-  64.65% {
-    opacity: 0.836;
+  63.89% {
+    opacity: 0.868;
   }
 
-  67.65% {
-    opacity: 0.686;
+  67.215% {
+    opacity: 0.709;
   }
 
-  76.025% {
-    opacity: 0.217;
+  73.94% {
+    opacity: 0.327;
   }
 
-  78.605% {
-    opacity: 0.102;
+  76.795% {
+    opacity: 0.18;
   }
 
-  80.92% {
-    opacity: 0.029;
+  79.795% {
+    opacity: 0.061;
   }
 
   82.48% {
@@ -5269,32 +5343,32 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
   }
 
-  30.67% {
-    opacity: 0.008;
+  30% {
+    opacity: 0;
   }
 
-  31.95% {
-    opacity: 0.064;
+  31.46% {
+    opacity: 0.036;
   }
 
-  33.355% {
-    opacity: 0.176;
+  33.05% {
+    opacity: 0.148;
   }
 
-  34.675% {
-    opacity: 0.315;
+  34.53% {
+    opacity: 0.299;
   }
 
-  37.92% {
-    opacity: 0.695;
+  38.045% {
+    opacity: 0.709;
   }
 
-  39.645% {
-    opacity: 0.861;
+  39.82% {
+    opacity: 0.875;
   }
 
-  41.32% {
-    opacity: 0.966;
+  41.4% {
+    opacity: 0.969;
   }
 
   42.915% {
@@ -5305,23 +5379,23 @@ html:not(.js) .nav ul a:hover {
     opacity: 0.961;
   }
 
-  46.415% {
+  46.41% {
     opacity: 0.841;
   }
 
-  48.125% {
+  48.12% {
     opacity: 0.668;
   }
 
-  52.245% {
-    opacity: 0.18;
+  52.25% {
+    opacity: 0.179;
   }
 
-  53.415% {
-    opacity: 0.071;
+  53.425% {
+    opacity: 0.07;
   }
 
-  54.475% {
+  54.48% {
     opacity: 0;
   }
 
@@ -5670,113 +5744,108 @@ html:not(.js) .nav ul a:hover {
     scale: 0.605 0.55;
   }
 
-  3.245% {
+  4.43% {
     opacity: 0.5;
-    scale: 0.6051 0.5501;
+    scale: 0.609 0.5537;
   }
 
-  4.51% {
+  6.145% {
     opacity: 0.5;
-    scale: 0.6095 0.5541;
+    scale: 0.6236 0.5669;
   }
 
-  6.28% {
+  7.96% {
     opacity: 0.5;
-    scale: 0.6251 0.5683;
+    scale: 0.649 0.59;
   }
 
-  8.16% {
+  9.87% {
     opacity: 0.5;
-    scale: 0.6523 0.593;
+    scale: 0.6848 0.6226;
   }
 
-  10.045% {
+  11.98% {
     opacity: 0.5;
-    scale: 0.6885 0.6259;
+    scale: 0.7328 0.6662;
   }
 
-  12.14% {
+  19.975% {
     opacity: 0.5;
-    scale: 0.7368 0.6698;
+    scale: 0.946 0.86;
   }
 
-  19.755% {
+  23.33% {
     opacity: 0.5;
-    scale: 0.9403 0.8548;
+    scale: 1.0243 0.9312;
   }
 
-  22.865% {
+  25.145% {
     opacity: 0.5;
-    scale: 1.0146 0.9223;
+    scale: 1.0577 0.9616;
   }
 
-  24.535% {
+  26.845% {
     opacity: 0.5;
-    scale: 1.0474 0.9522;
+    scale: 1.0813 0.983;
   }
 
-  26.095% {
+  28.455% {
     opacity: 0.5;
-    scale: 1.0719 0.9745;
+    scale: 1.0953 0.9957;
   }
 
-  27.575% {
+  30% {
     opacity: 0.5;
-    scale: 1.0887 0.9898;
+    scale: 1.1 1;
   }
 
-  28.995% {
-    opacity: 0.5;
-    scale: 1.098 0.9982;
+  52.035% {
+    opacity: 0.508;
+    scale: 1.0985 1;
   }
 
-  51.905% {
-    opacity: 0.507;
-    scale: 1.0987 1;
+  55.06% {
+    opacity: 0.544;
+    scale: 1.0913 1;
   }
 
-  55% {
-    opacity: 0.543;
-    scale: 1.0915 1;
+  60.31% {
+    opacity: 0.64;
+    scale: 1.069 1;
   }
 
-  60.355% {
-    opacity: 0.641;
-    scale: 1.0688 1;
-  }
-
-  63.875% {
+  63.775% {
     opacity: 0.651;
-    scale: 1.0502 1;
+    scale: 1.0507 1;
   }
 
-  66.39% {
-    opacity: 0.614;
-    scale: 1.0367 1;
+  66.355% {
+    opacity: 0.615;
+    scale: 1.0369 1;
   }
 
-  68.99% {
-    opacity: 0.539;
-    scale: 1.0236 1;
+  69.015% {
+    opacity: 0.538;
+    scale: 1.0235 1;
   }
 
-  74.06% {
-    opacity: 0.313;
-    scale: 1.0044 1;
+  71.68% {
+    opacity: 0.428;
+    scale: 1.0121 1;
   }
 
-  78.025% {
-    opacity: 0.126;
+  76.36% {
+    opacity: 0.2;
     scale: 1 1;
   }
 
-  79.98% {
-    opacity: 0.055;
+  79.605% {
+    opacity: 0.067;
     scale: 1 1;
   }
 
-  81.805% {
-    opacity: 0.01;
+  82.48% {
+    opacity: 0;
     scale: 1 1;
   }
 
@@ -5791,36 +5860,40 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
   }
 
-  59.5% {
+  58% {
     opacity: 0;
   }
 
-  63.72% {
-    opacity: 0.016;
+  64.255% {
+    opacity: 0.022;
   }
 
-  67.035% {
-    opacity: 0.079;
+  66.47% {
+    opacity: 0.063;
   }
 
-  70.115% {
-    opacity: 0.206;
+  68.545% {
+    opacity: 0.132;
   }
 
-  72.96% {
-    opacity: 0.382;
+  70.37% {
+    opacity: 0.219;
   }
 
-  79.195% {
-    opacity: 0.845;
+  72.275% {
+    opacity: 0.335;
   }
 
-  80.875% {
-    opacity: 0.94;
+  79.47% {
+    opacity: 0.862;
   }
 
-  82.385% {
-    opacity: 0.998;
+  81.05% {
+    opacity: 0.949;
+  }
+
+  82.48% {
+    opacity: 1;
   }
 
   100% {
@@ -5833,168 +5906,180 @@ html:not(.js) .nav ul a:hover {
     transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  3.33% {
-    transform: translateY(calc(0.9996 * 28vh)) scale(0.6661) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  3% {
+    transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  4.06% {
-    transform: translateY(calc(0.9963 * 28vh)) scale(0.6669) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  3.855% {
+    transform: translateY(calc(0.9976 * 28vh)) scale(0.6666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  4.805% {
-    transform: translateY(calc(0.9896 * 28vh)) scale(0.6684) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  4.725% {
+    transform: translateY(calc(0.9905 * 28vh)) scale(0.6682) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  5.785% {
-    transform: translateY(calc(0.9757 * 28vh)) scale(0.6717) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  5.615% {
+    transform: translateY(calc(0.9785 * 28vh)) scale(0.671) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  6.79% {
-    transform: translateY(calc(0.9562 * 28vh)) scale(0.6763) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  6.53% {
+    transform: translateY(calc(0.9617 * 28vh)) scale(0.675) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  7.825% {
-    transform: translateY(calc(0.9307 * 28vh)) scale(0.6822) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  7.465% {
+    transform: translateY(calc(0.9401 * 28vh)) scale(0.68) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  8.895% {
-    transform: translateY(calc(0.8993 * 28vh)) scale(0.6896) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  8.43% {
+    transform: translateY(calc(0.9136 * 28vh)) scale(0.6862) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  9.91% {
-    transform: translateY(calc(0.8653 * 28vh)) scale(0.6975) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  9.43% {
+    transform: translateY(calc(0.8819 * 28vh)) scale(0.6936) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  10.965% {
-    transform: translateY(calc(0.826 * 28vh)) scale(0.7067) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  10.47% {
+    transform: translateY(calc(0.8449 * 28vh)) scale(0.7023) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  12.075% {
-    transform: translateY(calc(0.7808 * 28vh)) scale(0.7173) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  11.33% {
+    transform: translateY(calc(0.8115 * 28vh)) scale(0.7101) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  13.26% {
-    transform: translateY(calc(0.7291 * 28vh)) scale(0.7294) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  12.23% {
+    transform: translateY(calc(0.7743 * 28vh)) scale(0.7188) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  15.54% {
-    transform: translateY(calc(0.6219 * 28vh)) scale(0.7545) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  14.195% {
+    transform: translateY(calc(0.6862 * 28vh)) scale(0.7394) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  19.8% {
-    transform: translateY(calc(0.4104 * 28vh)) scale(0.804) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  16.065% {
+    transform: translateY(calc(0.5962 * 28vh)) scale(0.7605) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  21.51% {
-    transform: translateY(calc(0.3277 * 28vh)) scale(0.8233) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  20.5% {
+    transform: translateY(calc(0.3762 * 28vh)) scale(0.812) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  23.27% {
-    transform: translateY(calc(0.2473 * 28vh)) scale(0.8421) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  22.71% {
+    transform: translateY(calc(0.2722 * 28vh)) scale(0.8363) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  24.85% {
-    transform: translateY(calc(0.1813 * 28vh)) scale(0.8576) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  23.775% {
+    transform: translateY(calc(0.2255 * 28vh)) scale(0.8472) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  25.76% {
-    transform: translateY(calc(0.1466 * 28vh)) scale(0.8657) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  24.78% {
+    transform: translateY(calc(0.1841 * 28vh)) scale(0.8569) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  26.64% {
-    transform: translateY(calc(0.1158 * 28vh)) scale(0.873) rotateZ(-8.995deg) rotateX(7.995deg) rotateY(-171.9deg);
+  25.74% {
+    transform: translateY(calc(0.1473 * 28vh)) scale(0.8655) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
   }
 
-  27.485% {
-    transform: translateY(calc(0.089 * 28vh)) scale(0.8795) rotateZ(-8.972deg) rotateX(7.975deg) rotateY(-171.469deg);
+  26.66% {
+    transform: translateY(calc(0.1151 * 28vh)) scale(0.8731) rotateZ(-8.994deg) rotateX(7.995deg) rotateY(-171.894deg);
   }
 
-  28.31% {
-    transform: translateY(calc(0.0657 * 28vh)) scale(0.8854) rotateZ(-8.934deg) rotateX(7.941deg) rotateY(-170.73deg);
+  27.525% {
+    transform: translateY(calc(0.0878 * 28vh)) scale(0.8798) rotateZ(-8.971deg) rotateX(7.974deg) rotateY(-171.44deg);
   }
 
-  29.11% {
-    transform: translateY(calc(0.0461 * 28vh)) scale(0.8905) rotateZ(-8.881deg) rotateX(7.894deg) rotateY(-169.725deg);
+  28.36% {
+    transform: translateY(calc(0.0644 * 28vh)) scale(0.8857) rotateZ(-8.931deg) rotateX(7.938deg) rotateY(-170.675deg);
   }
 
-  29.895% {
-    transform: translateY(calc(0.0299 * 28vh)) scale(0.895) rotateZ(-8.816deg) rotateX(7.836deg) rotateY(-168.474deg);
+  29.175% {
+    transform: translateY(calc(0.0446 * 28vh)) scale(0.8909) rotateZ(-8.876deg) rotateX(7.89deg) rotateY(-169.631deg);
   }
 
-  30.665% {
-    transform: translateY(calc(0.0172 * 28vh)) scale(0.8989) rotateZ(-8.739deg) rotateX(7.768deg) rotateY(-167.002deg);
+  29.97% {
+    transform: translateY(calc(0.0285 * 28vh)) scale(0.8954) rotateZ(-8.809deg) rotateX(7.83deg) rotateY(-168.342deg);
   }
 
-  31.415% {
-    transform: translateY(calc(0.0081 * 28vh)) scale(0.902) rotateZ(-8.652deg) rotateX(7.69deg) rotateY(-165.345deg);
+  30.75% {
+    transform: translateY(calc(0.016 * 28vh)) scale(0.8992) rotateZ(-8.729deg) rotateX(7.759deg) rotateY(-166.826deg);
   }
 
-  32.04% {
-    transform: translateY(calc(0.003 * 28vh)) scale(0.9041) rotateZ(-8.571deg) rotateX(7.619deg) rotateY(-163.801deg);
+  31.515% {
+    transform: translateY(calc(0.0071 * 28vh)) scale(0.9023) rotateZ(-8.639deg) rotateX(7.679deg) rotateY(-165.108deg);
   }
 
-  32.655% {
-    transform: translateY(calc(0.0004 * 28vh)) scale(0.9056) rotateZ(-8.484deg) rotateX(7.542deg) rotateY(-162.144deg);
+  32.265% {
+    transform: translateY(calc(0.0018 * 28vh)) scale(0.9047) rotateZ(-8.54deg) rotateX(7.591deg) rotateY(-163.211deg);
   }
 
-  33.805% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9077) rotateZ(-8.304deg) rotateX(7.381deg) rotateY(-158.693deg);
+  33% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9063) rotateZ(-8.433deg) rotateX(7.496deg) rotateY(-161.156deg);
   }
 
-  34.985% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9101) rotateZ(-8.095deg) rotateX(7.196deg) rotateY(-154.706deg);
+  34.815% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9097) rotateZ(-8.127deg) rotateX(7.224deg) rotateY(-155.307deg);
   }
 
-  36.885% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9143) rotateZ(-7.714deg) rotateX(6.857deg) rotateY(-147.422deg);
+  36.715% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9139) rotateZ(-7.75deg) rotateX(6.889deg) rotateY(-148.114deg);
   }
 
-  38.89% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9193) rotateZ(-7.259deg) rotateX(6.452deg) rotateY(-138.722deg);
+  38.715% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9189) rotateZ(-7.3deg) rotateX(6.489deg) rotateY(-139.519deg);
   }
 
-  41.09% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9255) rotateZ(-6.707deg) rotateX(5.962deg) rotateY(-128.182deg);
+  40.85% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9248) rotateZ(-6.77deg) rotateX(6.017deg) rotateY(-129.376deg);
   }
 
-  43.515% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9328) rotateZ(-6.05deg) rotateX(5.378deg) rotateY(-115.622deg);
+  42.735% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9304) rotateZ(-6.266deg) rotateX(5.57deg) rotateY(-119.752deg);
   }
 
-  46.09% {
-    transform: translateY(calc(0 * 28vh)) scale(0.941) rotateZ(-5.313deg) rotateX(4.723deg) rotateY(-101.537deg);
+  44.83% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9369) rotateZ(-5.677deg) rotateX(5.047deg) rotateY(-108.503deg);
   }
 
-  53.42% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9649) rotateZ(-3.161deg) rotateX(2.81deg) rotateY(-60.41deg);
+  51.905% {
+    transform: translateY(calc(0 * 28vh)) scale(0.96) rotateZ(-3.598deg) rotateX(3.199deg) rotateY(-68.771deg);
   }
 
-  55.705% {
-    transform: translateY(calc(0 * 28vh)) scale(0.972) rotateZ(-2.524deg) rotateX(2.243deg) rotateY(-48.234deg);
+  54.59% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9685) rotateZ(-2.831deg) rotateX(2.516deg) rotateY(-54.097deg);
   }
 
-  57.75% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9779) rotateZ(-1.987deg) rotateX(1.766deg) rotateY(-37.964deg);
+  57.28% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9766) rotateZ(-2.107deg) rotateX(1.873deg) rotateY(-40.262deg);
   }
 
-  60.12% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9843) rotateZ(-1.416deg) rotateX(1.258deg) rotateY(-27.056deg);
+  59.7% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9832) rotateZ(-1.512deg) rotateX(1.344deg) rotateY(-28.9deg);
   }
 
-  62.33% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9895) rotateZ(-0.946deg) rotateX(0.841deg) rotateY(-18.083deg);
+  61.025% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9865) rotateZ(-1.215deg) rotateX(1.08deg) rotateY(-23.228deg);
   }
 
-  64.425% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9937) rotateZ(-0.568deg) rotateX(0.505deg) rotateY(-10.861deg);
+  62.305% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9894) rotateZ(-0.951deg) rotateX(0.845deg) rotateY(-18.177deg);
   }
 
-  66.43% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9969) rotateZ(-0.278deg) rotateX(0.247deg) rotateY(-5.304deg);
+  63.545% {
+    transform: translateY(calc(0 * 28vh)) scale(0.992) rotateZ(-0.718deg) rotateX(0.639deg) rotateY(-13.729deg);
   }
 
-  67.885% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9987) rotateZ(-0.115deg) rotateX(0.102deg) rotateY(-2.202deg);
+  64.75% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9943) rotateZ(-0.516deg) rotateX(0.459deg) rotateY(-9.866deg);
+  }
+
+  65.925% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9962) rotateZ(-0.344deg) rotateX(0.306deg) rotateY(-6.569deg);
+  }
+
+  67.075% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9978) rotateZ(-0.2deg) rotateX(0.178deg) rotateY(-3.828deg);
+  }
+
+  68.2% {
+    transform: translateY(calc(0 * 28vh)) scale(0.999) rotateZ(-0.086deg) rotateX(0.076deg) rotateY(-1.641deg);
   }
 
   69.305% {
@@ -6037,36 +6122,36 @@ html:not(.js) .nav ul a:hover {
     opacity: 1;
   }
 
-  26.49% {
+  26% {
     opacity: 1;
   }
 
-  31.805% {
-    opacity: 0.956;
+  30.96% {
+    opacity: 0.967;
   }
 
-  35.835% {
-    opacity: 0.881;
+  36.425% {
+    opacity: 0.868;
   }
 
-  40.33% {
-    opacity: 0.767;
+  42.31% {
+    opacity: 0.709;
   }
 
-  54.625% {
-    opacity: 0.313;
+  54.205% {
+    opacity: 0.327;
   }
 
-  59.55% {
-    opacity: 0.172;
+  59.25% {
+    opacity: 0.18;
   }
 
-  64.08% {
-    opacity: 0.07;
+  64.55% {
+    opacity: 0.061;
   }
 
-  68.195% {
-    opacity: 0.01;
+  69.305% {
+    opacity: 0;
   }
 
   100% {
@@ -6083,19 +6168,19 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
   }
 
-  61.565% {
-    opacity: 0.346;
+  61.57% {
+    opacity: 0.347;
   }
 
-  63.75% {
-    opacity: 0.625;
+  63.755% {
+    opacity: 0.626;
   }
 
-  65.835% {
-    opacity: 0.843;
+  65.845% {
+    opacity: 0.844;
   }
 
-  67.835% {
+  67.84% {
     opacity: 1;
   }
 
@@ -6173,36 +6258,32 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
   }
 
-  26.02% {
+  26% {
     opacity: 0;
   }
 
-  27.065% {
-    opacity: 0.013;
+  27.6% {
+    opacity: 0.03;
   }
 
-  28.615% {
-    opacity: 0.077;
+  29.3% {
+    opacity: 0.12;
   }
 
-  30.305% {
-    opacity: 0.197;
+  31.255% {
+    opacity: 0.281;
   }
 
-  31.89% {
-    opacity: 0.343;
+  35.29% {
+    opacity: 0.693;
   }
 
-  35.555% {
-    opacity: 0.718;
+  37.03% {
+    opacity: 0.848;
   }
 
-  37.35% {
-    opacity: 0.872;
-  }
-
-  39.03% {
-    opacity: 0.968;
+  38.89% {
+    opacity: 0.962;
   }
 
   40.575% {
@@ -6329,47 +6410,47 @@ html:not(.js) .nav ul a:hover {
     scale: 0.55;
   }
 
-  3.33% {
-    scale: 0.5502;
+  4.685% {
+    scale: 0.5541;
   }
 
-  4.805% {
-    scale: 0.5547;
+  6.58% {
+    scale: 0.5677;
   }
 
-  6.79% {
-    scale: 0.5697;
+  8.585% {
+    scale: 0.591;
   }
 
-  8.895% {
-    scale: 0.5953;
+  10.685% {
+    scale: 0.6235;
   }
 
-  10.965% {
-    scale: 0.6283;
+  13.01% {
+    scale: 0.6669;
   }
 
-  13.26% {
-    scale: 0.6719;
+  21.855% {
+    scale: 0.8598;
   }
 
-  21.51% {
-    scale: 0.8525;
+  25.58% {
+    scale: 0.931;
   }
 
-  24.85% {
-    scale: 0.9184;
+  27.6% {
+    scale: 0.9615;
   }
 
-  28.31% {
-    scale: 0.9704;
+  29.49% {
+    scale: 0.983;
   }
 
-  31.415% {
-    scale: 0.9964;
+  31.285% {
+    scale: 0.9958;
   }
 
-  32.98% {
+  33% {
     scale: 1;
   }
 

@@ -69,34 +69,65 @@
   }
 
   // Vorführungen (Laptop, Telefon): Die Bewegungen sind CSS-Animationen an einer Scroll-Timeline (site.css) und laufen
-  // ohne Skript. Browser ohne Scroll-Timeline halten sie an; hier wird dann ihre Zeit nach dem Fortschritt durch den
-  // Abschnitt gesetzt – 0, wenn er unten ins Fenster kommt, 1, wenn sein Ende unten ankommt (dieselbe Strecke wie die
-  // Timeline). Nur Zeit setzen: Die Animationen verändern bloß transform und opacity, der Browser muss dafür weder neu
-  // anordnen noch neu zeichnen. Bei reduzierter Bewegung (und im Druck) entfallen die Animationen im CSS; kommen sie
-  // wieder, entstehen neue – dann wird neu gesammelt.
+  // ohne Skript. Hier geschieht nur zweierlei:
+  // - Ruhelage: Ist alles fertig bewegt (Fortschritt ab --vf-rest), bekommt der Abschnitt .is-rest, und das CSS hängt die
+  //   Animationen ab – Chromium setzt Ebenen mit angehängter Transform-Animation nicht auf ganze Pixel, ohne sie stehen
+  //   die Bildschirme wieder Pixel für Pixel scharf. Mit Scroll-Timeline meldet das ein IntersectionObserver an einer
+  //   Marke (.showcase-rest), ganz ohne Arbeit beim Scrollen.
+  // - Browser ohne Scroll-Timeline halten die Animationen an; dann wird hier ihre Zeit nach dem Fortschritt durch den
+  //   Abschnitt gesetzt – 0, wenn er unten ins Fenster kommt, 1, wenn sein Ende unten ankommt (dieselbe Strecke wie die
+  //   Timeline). Nur Zeit setzen: Die Animationen verändern bloß transform und opacity, der Browser muss dafür weder neu
+  //   anordnen noch neu zeichnen. Entfallen die Animationen (reduzierte Bewegung, Druck, Ruhelage) und entstehen später
+  //   neu, wird neu gesammelt.
   const showcases = [...document.querySelectorAll(".showcase")];
-  const hasScrollTimeline = typeof CSS !== "undefined" && CSS.supports("animation-timeline: view()");
-  if (showcases.length && !hasScrollTimeline && typeof root.getAnimations === "function") {
-    let tracks = [];
-    const collect = () => {
-      tracks = showcases.map((showcase) => ({
-        showcase,
-        animations: showcase.getAnimations({ subtree: true }).filter((animation) => animation.animationName?.startsWith("vf-")),
-        time: -1,
-      }));
-    };
+  const hasScrollTimeline =
+    typeof CSS !== "undefined" && CSS.supports("(animation-timeline: view()) and (animation-range: entry 0% exit 0%)");
+  if (showcases.length && hasScrollTimeline && canObserve) {
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const rest = entry.isIntersecting || entry.boundingClientRect.bottom <= 0;
+        entry.target.parentElement?.classList.toggle("is-rest", rest);
+      }
+    });
+    for (const showcase of showcases) {
+      const mark = document.createElement("span");
+      mark.className = "showcase-rest";
+      mark.setAttribute("aria-hidden", "true");
+      showcase.append(mark);
+      observer.observe(mark);
+    }
+  } else if (showcases.length && !hasScrollTimeline && typeof root.getAnimations === "function") {
+    const collect = (showcase) =>
+      showcase.getAnimations({ subtree: true }).filter((animation) => animation.animationName?.startsWith("vf-"));
+    const tracks = showcases.map((showcase) => ({
+      showcase,
+      restAt: Number.parseFloat(getComputedStyle(showcase).getPropertyValue("--vf-rest")) || 1,
+      rest: false,
+      animations: collect(showcase),
+      time: -1,
+    }));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let queued = false;
     const update = () => {
       queued = false;
+      if (reduce.matches) return; // keine Animationen (site.css)
       // Höhe des Anfangsblocks statt innerHeight: Sie bleibt gleich, wenn auf dem Smartphone die Adressleiste ein- und
       // ausfährt (sonst spränge die Drehung), und entspricht der Bühne (100svh)
       const height = root.clientHeight;
-      if (tracks.some((track) => track.animations[0]?.playState === "idle")) collect(); // nach dem Druck neu erzeugt
       for (const track of tracks) {
-        if (!track.animations.length) continue;
         const box = track.showcase.getBoundingClientRect();
-        const time = Math.round(Math.min(1, Math.max(0, (height - box.top) / box.height)) * 10000) / 10; // in ms, 1 s lang
-        if (time === track.time) continue; // davor und danach: nichts zu tun
+        const progress = Math.min(1, Math.max(0, (height - box.top) / box.height));
+        const rest = progress >= track.restAt;
+        if (rest !== track.rest) {
+          track.rest = rest;
+          track.showcase.classList.toggle("is-rest", rest);
+          track.time = -1;
+        }
+        if (rest) continue;
+        // Animationen neu entstanden (nach Ruhelage, Druck, geänderter Einstellung)? Dann die neuen nehmen
+        if (!track.animations.length || track.animations[0].playState === "idle") track.animations = collect(track.showcase);
+        const time = Math.round(progress * 10000) / 10; // in ms, 1 s lang
+        if (time === track.time) continue; // davor: nichts zu tun
         track.time = time;
         for (const animation of track.animations) animation.currentTime = time;
       }
@@ -107,13 +138,13 @@
       requestAnimationFrame(update);
     };
     const refresh = () => {
-      collect();
+      for (const track of tracks) track.time = -1;
       update();
     };
-    refresh();
+    update();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
-    window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", refresh);
+    reduce.addEventListener("change", refresh);
     window.addEventListener("afterprint", refresh);
   }
 
