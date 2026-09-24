@@ -68,8 +68,30 @@
     img.addEventListener("error", done, { once: true });
   }
 
-  // Vorführungen (Laptop, Telefon): Die Bewegungen sind CSS-Animationen an einer Scroll-Timeline (site.css) und laufen
-  // ohne Skript. Hier geschieht nur zweierlei:
+  // Laptop-Vorführung (.showcase-auto): bewegt sich von selbst, sobald er zur Hälfte im Bild ist – einmal je Aufruf. Danach
+  // Ruhelage (.is-rest, siehe unten). Ohne IntersectionObserver gleich die Endlage.
+  for (const showcase of document.querySelectorAll(".showcase-auto")) {
+    const scene = showcase.querySelector(".showcase-scene");
+    showcase.addEventListener("animationend", (event) => {
+      if (event.animationName === "vf-laptop-body") showcase.classList.add("is-rest");
+    });
+    if (!canObserve || !scene) {
+      showcase.classList.add("is-rest");
+      continue;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        showcase.classList.add("is-playing");
+        observer.disconnect();
+      },
+      { threshold: 0.5, rootMargin: "0px 0px -8% 0px" },
+    );
+    observer.observe(scene);
+  }
+
+  // Telefon-Vorführung: Die Bewegungen sind CSS-Animationen an einer Scroll-Timeline (site.css) und laufen ohne Skript.
+  // Hier geschieht nur zweierlei:
   // - Ruhelage: Ist alles fertig bewegt (Fortschritt ab --vf-rest), bekommt der Abschnitt .is-rest, und das CSS hängt die
   //   Animationen ab – Chromium setzt Ebenen mit angehängter Transform-Animation nicht auf ganze Pixel, ohne sie stehen
   //   die Bildschirme wieder Pixel für Pixel scharf. Mit Scroll-Timeline meldet das ein IntersectionObserver an einer
@@ -79,7 +101,7 @@
   //   Timeline). Nur Zeit setzen: Die Animationen verändern bloß transform und opacity, der Browser muss dafür weder neu
   //   anordnen noch neu zeichnen. Entfallen die Animationen (reduzierte Bewegung, Druck, Ruhelage) und entstehen später
   //   neu, wird neu gesammelt.
-  const showcases = [...document.querySelectorAll(".showcase")];
+  const showcases = [...document.querySelectorAll(".showcase:not(.showcase-auto)")];
   const hasScrollTimeline =
     typeof CSS !== "undefined" && CSS.supports("(animation-timeline: view()) and (animation-range: entry 0% exit 0%)");
   if (showcases.length && hasScrollTimeline && canObserve) {

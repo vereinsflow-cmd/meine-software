@@ -4,7 +4,8 @@
 //   node tools/make-showcase-keyframes.mjs
 //
 // Ohne Abhängigkeiten. Jede Animation läuft über den ganzen Abschnitt: 0 % = Abschnitt kommt unten ins Fenster (p = 0),
-// 100 % = sein Ende kommt unten an (p = 1). Die Formeln bilden weiche Teil-Abläufe (smoothstep) für Erscheinen, Drehen,
+// 100 % = sein Ende kommt unten an (p = 1). Der Laptop spielt dieselben Keyframes über die Zeit ab (3,6 s, site.css),
+// p ist dort der Anteil der Zeit. Die Formeln bilden weiche Teil-Abläufe (smoothstep) für Erscheinen, Drehen,
 // Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert. Stützpunkte werden adaptiv gesetzt – so viele, dass die
 // lineare Interpolation dazwischen höchstens um die Toleranz von der Formel abweicht (etwa 0,3 px, 0,2°, 1 % Deckkraft).
 // Die Endwerte (p = 1) müssen mit den Grundregeln in site.css übereinstimmen: So stehen die Geräte ohne Animation.
