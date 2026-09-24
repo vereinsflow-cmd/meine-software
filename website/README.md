@@ -19,7 +19,7 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 | `impressum.html`, `datenschutz.html`  | Rechtstexte als **Muster** mit Platzhaltern (`[[…]]`)                                        |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
-| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Ladezustand der Bilder (ohne JavaScript bleibt alles nutzbar) |
+| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Funktionen-Slider (Pfeile, Wischen, Pfeiltasten), Ladezustand der Bilder (ohne JavaScript bleibt alles nutzbar; die Funktionen stehen dann als Raster) |
 | `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je zwei Größen                     |
 | `assets/img/`, `assets/brand/`        | Logo (Seite) und Logo-Vorlagen (Profilbilder, Präsentationen); Vorschaubild `og-image.png`   |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (enthalten die Musterdomain)                                              |
