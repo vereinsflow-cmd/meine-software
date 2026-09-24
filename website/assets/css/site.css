@@ -1431,10 +1431,12 @@ html:not(.js) .nav ul a:hover {
   --r: clamp(0, (var(--p) - 0.3) / 0.26, 1);
   --o: clamp(0, (var(--p) - 0.5) / 0.28, 1);
   --k: clamp(0, (var(--p) - 0.58) / 0.26, 1);
+  /* smoothstep, um 1 % überhöht und bei 1 gekappt: Das Ende wird schon kurz vor p-end genau erreicht – wer dort anhält,
+     sieht keinen Rest Drehung mehr (der Bildschirm wäre sonst leicht umgerechnet und damit weich) */
   --ae: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
-  --re: calc(var(--r) * var(--r) * (3 - 2 * var(--r)));
-  --oe: calc(var(--o) * var(--o) * (3 - 2 * var(--o)));
-  --ke: calc(var(--k) * var(--k) * (3 - 2 * var(--k)));
+  --re: min(1, var(--r) * var(--r) * (3 - 2 * var(--r)) * 1.01);
+  --oe: min(1, var(--o) * var(--o) * (3 - 2 * var(--o)) * 1.01);
+  --ke: min(1, var(--k) * var(--k) * (3 - 2 * var(--k)) * 1.01);
   --ang: calc((1 - var(--re)) * 172deg);
   --p-end: 0.84; /* Ende von --k (0.58 + 0.26): danach bewegt sich nichts mehr, site.js hält --p dort an */
   /* Höhe in der Endlage ≈ 0,795 · --sw + 218 px (Kopfzeile, Text, Abstände); die Vorderkante ist 1,19 · --sw breit */
@@ -1448,6 +1450,7 @@ html:not(.js) .nav ul a:hover {
 
 .showcase-laptop .showcase-scene {
   perspective: 5000px;
+  perspective: calc(var(--sw) * 5.68); /* bei 880 px Bildschirm 5000 px; kleiner Laptop, gleicher Blick */
   perspective-origin: 50% 0;
 }
 
@@ -1462,7 +1465,7 @@ html:not(.js) .nav ul a:hover {
 .showcase-laptop .showcase-floor {
   width: 98%;
   height: 11%;
-  opacity: calc(0.5 + 0.5 * var(--oe));
+  opacity: calc((0.5 + 0.5 * var(--oe)) * (1 - var(--ke)));
   scale: calc((0.55 + 0.45 * var(--ae)) * (1.1 - 0.1 * var(--oe))) calc(0.55 + 0.45 * var(--ae));
 }
 
@@ -1493,6 +1496,26 @@ html:not(.js) .nav ul a:hover {
 .laptop-screen > *,
 .laptop-deck > * {
   position: absolute;
+}
+
+/* Schatten unter dem aufgesetzten Laptop: eine Fläche knapp unter dem Unterteil mit weichem Auslauf nach außen (nah am
+   Gerät dunkler). Sie erscheint beim Aufsetzen; der flache Bodenschatten der Bühne übernimmt, solange er schwebt. */
+.laptop::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--lh) + var(--t) + 1px);
+  left: 1.5%;
+  width: 97%;
+  height: calc(var(--lh) * 0.97);
+  border-radius: calc(var(--b) * 0.9);
+  background: rgb(14 20 30 / 34%);
+  box-shadow:
+    0 0 calc(var(--sw) * 0.025) calc(var(--sw) * 0.006) rgb(14 20 30 / 26%),
+    0 0 calc(var(--sw) * 0.08) calc(var(--sw) * 0.02) rgb(14 20 30 / 10%);
+  transform-origin: 50% 0;
+  transform: rotateX(90deg) translateY(calc(var(--lh) * 0.015));
+  opacity: calc(var(--ke) * var(--ke));
+  pointer-events: none;
 }
 
 /* Deckel: dreht um seine Unterkante (Scharnier); zugeklappt liegt er auf dem Unterteil */
@@ -1643,7 +1666,7 @@ html:not(.js) .nav ul a:hover {
 
 /* Mittlere Schicht des Deckels in seiner Form: schließt die runden Ecken zwischen Glas und Rückseite */
 .laptop-lid-layer {
-  inset: 0;
+  inset: 1px;
   border-radius: calc(var(--b) * 1.1) calc(var(--b) * 1.1) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
   background: linear-gradient(90deg, #b9bdc3, #e2e4e7 50%, #b9bdc3);
   transform: translateZ(calc(var(--tl) / -2));
@@ -1698,8 +1721,9 @@ html:not(.js) .nav ul a:hover {
   width: 7.2%;
   height: 45%;
   border-radius: 0.5cqw;
-  background: radial-gradient(circle closest-side, rgb(20 24 30 / 55%) 0 55%, rgb(20 24 30 / 0%) 70%) 0 0 / 0.46cqw
-    0.46cqw;
+  background:
+    linear-gradient(rgb(20 24 30 / 9%), rgb(20 24 30 / 9%)),
+    radial-gradient(circle closest-side, rgb(20 24 30 / 26%) 0 45%, rgb(20 24 30 / 0%) 75%) 0 0 / 0.3cqw 0.3cqw;
 }
 
 .laptop-speaker-l {
@@ -1868,10 +1892,11 @@ html:not(.js) .nav ul a:hover {
   width: 100%;
 }
 
-/* Vorderkante mit der Mulde zum Aufklappen */
+/* Vorderkante mit der Mulde zum Aufklappen – nur über den geraden Teil, die runden Ecken bilden die Schichten */
 .laptop-front {
   --phi: 0deg;
-  border-radius: 0 0 calc(var(--b) * 0.9) calc(var(--b) * 0.9);
+  left: calc(var(--b) * 0.9);
+  width: calc(100% - 1.8 * var(--b));
   background:
     radial-gradient(9% 90% at 50% 0%, rgb(40 44 50 / 20%), rgb(40 44 50 / 0%) 75%),
     var(--grain),
@@ -1903,39 +1928,43 @@ html:not(.js) .nav ul a:hover {
 .laptop-base i {
   position: absolute;
   top: calc(var(--lh) + var(--t) * var(--n) / 6);
-  left: 0;
-  width: 100%;
-  height: var(--lh);
+  left: 1px;
+  width: calc(100% - 2px);
+  height: calc(var(--lh) - 2px);
   border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) calc(var(--b) * 0.9) calc(var(--b) * 0.9);
-  background:
-    linear-gradient(rgb(30 34 40 / calc(var(--n) * 0.07)), rgb(30 34 40 / calc(var(--n) * 0.07))),
-    linear-gradient(90deg, #b3b7bd, #d6d9dd 50%, #b3b7bd);
+  background: var(--layer); /* derselbe Ton wie die Vorderkante in dieser Höhe: oben Lichtkante, unten dunkler */
   transform-origin: 50% 0;
-  transform: rotateX(90deg);
+  transform: rotateX(90deg) translateY(1px);
 }
 
 .laptop-base i:nth-child(1) {
   --n: 1;
+  --layer: #e0e3e6;
 }
 
 .laptop-base i:nth-child(2) {
   --n: 2;
+  --layer: #d8dbdf;
 }
 
 .laptop-base i:nth-child(3) {
   --n: 3;
+  --layer: #cfd2d6;
 }
 
 .laptop-base i:nth-child(4) {
   --n: 4;
+  --layer: #bfc3c8;
 }
 
 .laptop-base i:nth-child(5) {
   --n: 5;
+  --layer: #adb1b7;
 }
 
 .laptop-base i:nth-child(6) {
   --n: 6;
+  --layer: #979ba2;
 }
 
 .laptop-side-l {
@@ -1962,7 +1991,7 @@ html:not(.js) .nav ul a:hover {
   --a: clamp(0, (var(--p) - 0.03) / 0.3, 1);
   --r: clamp(0, (var(--p) - 0.26) / 0.46, 1);
   --ae: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
-  --re: calc(var(--r) * var(--r) * (3 - 2 * var(--r)));
+  --re: min(1, var(--r) * var(--r) * (3 - 2 * var(--r)) * 1.01); /* siehe .showcase-laptop */
   --ang: calc((1 - var(--re)) * -172deg);
   --p-end: 0.72; /* Ende von --r (0.26 + 0.46) */
 }
@@ -2035,7 +2064,13 @@ html:not(.js) .nav ul a:hover {
   opacity: 0.45;
 }
 
-/* Die flachen Tasten der Vorderansicht erst am Ende – beim Drehen sitzen die Tasten auf den Seitenkanten */
+/* Die flachen Tasten der Vorderansicht (im Titanton des Gehäuses) erst am Ende – beim Drehen sitzen die Tasten auf den
+   Seitenkanten */
+.iphone-front .phone-hw::before,
+.iphone-front .phone-hw::after {
+  background: linear-gradient(90deg, #7d7468, #c9c0b2 55%, #8a8175);
+}
+
 .iphone-front .phone-hw {
   opacity: clamp(0, (var(--re) - 0.82) * 6, 1);
 }
@@ -2049,14 +2084,14 @@ html:not(.js) .nav ul a:hover {
 }
 
 .iphone-rim i {
-  --round: calc(var(--n) * (33 - var(--n)) / 272); /* 0 an Vorder- und Rückseite, 1 in der Mitte der Dicke */
   position: absolute;
-  inset: 0.5%;
+  inset: 0.6px; /* knapp innerhalb der Seitenflächen: keine gemeinsamen Kanten (Flimmern), keine sichtbare Stufe */
   border-radius: 15.6% / 7.5%;
+  /* Jede Schicht trägt den Titan-Ton ihrer Tiefe – derselbe Verlauf, den die Seitenflächen über die Dicke zeigen: So
+     setzen die runden Ecken die Lichtstreifen der Seiten nahtlos fort und wirken nicht gerippt */
   background:
-    linear-gradient(rgb(255 250 240 / calc(var(--round) * 0.3)), rgb(255 250 240 / calc(var(--round) * 0.3))),
-    linear-gradient(rgb(12 16 22 / var(--rim-shade, 0)), rgb(12 16 22 / var(--rim-shade, 0))),
-    var(--titan);
+    linear-gradient(rgb(52 40 24 / var(--rim-shade, 0)), rgb(52 40 24 / var(--rim-shade, 0))),
+    var(--titan) calc((32.5 - var(--n)) / 32 * 100%) 0 / 3300% 100%;
   transform: translateZ(calc(var(--t) * var(--n) / -33));
 }
 
@@ -2299,8 +2334,8 @@ html:not(.js) .nav ul a:hover {
       #020304 56%,
       #2a2c30 58.5%,
       #0c0d0f 62%,
-      #18191c 70%,
-      rgb(0 0 0 / 0%) 71.5%
+      #18191c 68.5%,
+      rgb(24 25 28 / 0%) 72.5%
     ),
     conic-gradient(from 215deg, #f5f0e8, #a99f91, #ece5da, #978d80, #f5f0e8);
   box-shadow:
@@ -2330,7 +2365,6 @@ html:not(.js) .nav ul a:hover {
   width: 17%;
   background:
     radial-gradient(circle at 38% 34%, rgb(255 255 255 / 70%) 0 8%, rgb(255 255 255 / 0%) 22%),
-    repeating-radial-gradient(circle closest-side, rgb(190 172 135 / 35%) 0 6%, rgb(190 172 135 / 0%) 6% 12%),
     radial-gradient(circle closest-side, #fbf4e2 0 40%, #e2d4b6 72%, #a8997c 100%);
   box-shadow:
     0.1cqw 0.25cqw 0.4cqw rgb(60 45 25 / 25%),
@@ -2359,7 +2393,7 @@ html:not(.js) .nav ul a:hover {
 .iphone-cap {
   position: absolute;
   background:
-    linear-gradient(rgb(12 16 22 / var(--side-shade, 0)), rgb(12 16 22 / var(--side-shade, 0))),
+    linear-gradient(rgb(52 40 24 / var(--side-shade, 0)), rgb(52 40 24 / var(--side-shade, 0))),
     linear-gradient(
       180deg,
       rgb(0 0 0 / 0%) 18%,
@@ -2397,7 +2431,9 @@ html:not(.js) .nav ul a:hover {
   left: 20%;
   width: 60%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #9b9185, #efe9df 45%, #c2b8aa 60%, #92887b);
+  background:
+    linear-gradient(rgb(52 40 24 / var(--side-shade, 0)), rgb(52 40 24 / var(--side-shade, 0))),
+    linear-gradient(90deg, #9b9185, #efe9df 45%, #c2b8aa 60%, #92887b);
   box-shadow:
     0 0 0 1px rgb(70 55 35 / 22%),
     0 1px 2px rgb(40 30 15 / 22%);
@@ -2485,7 +2521,7 @@ html:not(.js) .nav ul a:hover {
   /* Das Telefon dreht sich nach rechts weg: Sein Licht kommt von vorn rechts oben, damit Rückseite und rechte Kante
      beim Drehen hell bleiben und erst zum Schluss (von der Seite gesehen) dunkler werden */
   .iphone-side {
-    --side-shade: calc((1 - max(0, cos(var(--phi) + var(--ang) - 30deg))) * 0.5);
+    --side-shade: calc((1 - max(0, cos(var(--phi) + var(--ang) - 30deg))) * 0.32);
   }
 
   .iphone-back::after {
@@ -2518,6 +2554,7 @@ html:not(.js) .nav ul a:hover {
 @media (max-width: 719px) {
   .showcase-laptop {
     --closed-scale: 0.76;
+    --sw: min(880px, calc((100vw - 2 * var(--gutter)) / 1.19), calc((100vh - 218px) * 1.258));
   }
 
   .iphone {
@@ -3760,6 +3797,11 @@ html:not(.js) .nav ul a:hover {
     display: block;
   }
 
+  /* Körnung als Bild auf der großen Tastaturfläche erzwingt beim Drehen in jedem Bild neues Rastern – nur ohne Bewegung */
+  .js .laptop-deck {
+    --grain: none;
+  }
+
   .js .showcase-stage {
     position: sticky;
     top: 0;
@@ -4355,7 +4397,7 @@ html:not(.js) .nav ul a:hover {
   .js .is-loading picture {
     background-image: linear-gradient(100deg, transparent 30%, rgb(226 232 240 / 70%) 50%, transparent 70%);
     background-size: 220% 100%;
-    animation: shimmer 1.4s ease-in-out infinite;
+    animation: shimmer 1.4s ease-in-out 3; /* nicht endlos: Bilder weit unten laden erst später */
   }
 }
 
@@ -4404,6 +4446,13 @@ html:not(.js) .nav ul a:hover {
     translate: none !important;
     scale: none !important;
     filter: none !important;
+  }
+
+  /* Absolut platzierte Telefone mit Prozentbreite und cqw-Maßen (Uhr, Symbole) lassen Chrome leere Seiten drucken –
+     im Druck deshalb eine feste Breite (entspricht ungefähr der Druckbreite) */
+  .hero-phone,
+  .chapter-phone {
+    width: 150px;
   }
 
   /* Vorführungen: Endlage ohne lange Scrollstrecke (das --p von site.js überstimmen) */
