@@ -11,8 +11,8 @@
    - Parallaxe (.plx), Laufband, Fortschrittsbalken und Scroll-Effekte im Einstieg: CSS-Scroll-Timelines bzw.
      Transformationen, laufen ohne JavaScript auf dem Compositor – außer bei den Telefonen: Ihre Verschiebung
      (--phone-shift) berechnet der Hauptthread, damit sie nur um ganze Pixel wandern.
-   - Vorführungen (Laptop, Telefon unter dem Einstieg): site.js setzt den Scrollfortschritt --p, das CSS rechnet daraus
-     Aufklappen und Drehen.
+   - Vorführungen (Laptop, Telefon unter dem Einstieg): Aufklappen und Drehen als Animationen an einer Scroll-Timeline,
+     ebenfalls auf dem Compositor; ohne Scroll-Timeline stellt site.js ihre Zeit nach dem Scrollfortschritt ein.
    - „Bewegung reduzieren“ (prefers-reduced-motion): keine Animationen, alles sofort sichtbar.
    ========================================================================== */
 
@@ -1319,20 +1319,17 @@ html:not(.js) .nav ul a:hover {
 }
 
 /* ---------- Vorführungen: Laptop und Telefon drehen sich beim Scrollen ins Bild ----------
-   site.js setzt den Scrollfortschritt durch den Abschnitt als --p: 0 = der Abschnitt kommt unten ins Fenster, 1 = seine
-   Bühne löst sich oben wieder (dazwischen bleibt sie stehen, position: sticky). Daraus entstehen Teil-Fortschritte mit
-   weichem Anfang und Ende (smoothstep: x² · (3 − 2x)): Erscheinen, Aufklappen, Drehen, Aufrichten. Im letzten Stück steht
-   alles gerade, unverschoben und in der Bildebene – der Bildschirm wird dann Pixel für Pixel gezeichnet, also scharf.
-   Ohne JavaScript oder bei reduzierter Bewegung gilt --p: 1: Die Geräte stehen fertig da, ohne lange Scrollstrecke.
-   Kein opacity/filter/overflow an den Geräten selbst – das würde die 3D-Darstellung flach drücken.
-
-   Licht: Es kommt von vorn links oben (beim Telefon, das sich nach rechts dreht, von vorn rechts). Jede senkrechte Fläche wird nach ihrer Ausrichtung zum Licht abgedunkelt
-   (Lambert: Helligkeit = cos des Winkels zwischen Flächennormale und Licht; --phi = Ausrichtung der Fläche, --ang =
-   aktuelle Drehung um die Hochachse). Dazu wandert beim Drehen ein Glanzstreifen über Metall und Glas. Alle Aufhellungen
-   und Schatten sind Farben mit berechneter Deckkraft – in der Endlage ist die Deckkraft 0, der Bildschirm bleibt
-   unverfälscht. Ohne cos() im Browser entfallen nur die Schatten (die Farbangabe wird ungültig, der Hintergrund leer). */
+   Die Bewegungen sind CSS-Animationen auf transform und opacity, deren Zeit am Scrollfortschritt durch den Abschnitt hängt
+   (Scroll-Timeline, siehe „Bewegung“): 0 %, wenn der Abschnitt unten ins Fenster kommt, 100 %, wenn seine stehende Bühne
+   (position: sticky) sich oben wieder löst. Der Browser führt sie beim Scrollen selbst aus – ohne Skript und ohne neu zu
+   zeichnen, deshalb flüssig. Browser ohne Scroll-Timeline (ältere Safari) halten die Animationen an, site.js stellt dort
+   ihre Zeit ein. Die Keyframes (am Dateiende) sind aus Formeln erzeugt: weiche Teil-Abläufe (smoothstep x² · (3 − 2x))
+   für Erscheinen, Drehen, Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert (Helligkeit = cos des Winkels
+   zwischen Flächennormale und Licht, Licht von vorn links oben, beim Telefon von vorn rechts).
+   Die Regeln hier beschreiben die Endlage: So stehen die Geräte ohne JavaScript, bei reduzierter Bewegung und im Druck.
+   In der Endlage steht alles gerade, unverschoben und in der Bildebene – die Bildschirme werden Pixel für Pixel gezeichnet.
+   Kein opacity/filter/overflow an den Geräten selbst – das würde die 3D-Darstellung flach drücken. */
 .showcase {
-  --p: 1;
   position: relative;
 }
 
@@ -1368,7 +1365,6 @@ html:not(.js) .nav ul a:hover {
   display: grid;
   place-items: center;
   perspective: 2400px;
-  opacity: clamp(0, var(--a) * 1.6, 1);
 }
 
 /* Schatten auf dem Tisch: ein enger, dunkler Kontaktschatten und ein weiter, weicher Umgebungsschatten */
@@ -1389,7 +1385,6 @@ html:not(.js) .nav ul a:hover {
     rgb(14 20 30 / 0%) 100%
   );
   translate: -50% 0;
-  scale: calc(0.55 + 0.45 * var(--ae));
 }
 
 /* Kontaktschatten: schmal und dunkler, genau unter dem Gerät */
@@ -1419,7 +1414,7 @@ html:not(.js) .nav ul a:hover {
 /* --- Laptop ---
    Ablauf: erscheint zugeklappt, von hinten und schräg oben gesehen (das Zeichen auf dem Deckel zeigt zum Betrachter),
    dreht sich zugeklappt um 180°, klappt vor dem Betrachter auf und richtet sich zur Vorderansicht auf. Beim Aufklappen
-   geht der Bildschirm an (die Abdunklung verschwindet).
+   geht der Bildschirm an (die Abdunklung über ihm blendet aus).
    Maße hängen an der Bildschirmbreite --sw (höchstens 880 px – dafür gibt es die Bilddatei in genau dieser Breite).
    Deckel = Rand + Bildschirm (16 : 10) + Rand; das Unterteil ist so tief, wie der Deckel hoch ist (zugeklappt deckt er
    es genau ab). Gedreht wird um die Mitte des Unterteils. Der Blickpunkt liegt auf Höhe der Deckeloberkante, wie bei
@@ -1427,18 +1422,6 @@ html:not(.js) .nav ul a:hover {
    Touchpad liegen perspektivisch davor, die Vorderkante ist etwa 13 % breiter als der Deckel. Beim Aufklappen, schräg von oben gesehen, ist der Laptop kurz etwas
    kleiner, damit die Vorderkante im Bild bleibt. --sw, --pw: bei Änderung „sizes“ im HTML mitziehen. */
 .showcase-laptop {
-  --a: clamp(0, (var(--p) - 0.03) / 0.27, 1);
-  --r: clamp(0, (var(--p) - 0.3) / 0.26, 1);
-  --o: clamp(0, (var(--p) - 0.5) / 0.28, 1);
-  --k: clamp(0, (var(--p) - 0.58) / 0.26, 1);
-  /* smoothstep, um 1 % überhöht und bei 1 gekappt: Das Ende wird schon kurz vor p-end genau erreicht – wer dort anhält,
-     sieht keinen Rest Drehung mehr (der Bildschirm wäre sonst leicht umgerechnet und damit weich) */
-  --ae: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
-  --re: min(1, var(--r) * var(--r) * (3 - 2 * var(--r)) * 1.01);
-  --oe: min(1, var(--o) * var(--o) * (3 - 2 * var(--o)) * 1.01);
-  --ke: min(1, var(--k) * var(--k) * (3 - 2 * var(--k)) * 1.01);
-  --ang: calc((1 - var(--re)) * 172deg);
-  --p-end: 0.84; /* Ende von --k (0.58 + 0.26): danach bewegt sich nichts mehr, site.js hält --p dort an */
   /* Höhe in der Endlage ≈ 0,795 · --sw + 218 px (Kopfzeile, Text, Abstände); die Vorderkante ist 1,19 · --sw breit */
   --sw: min(880px, 80vw, calc((100vh - 218px) * 1.258));
   --b: calc(var(--sw) / 44);
@@ -1465,8 +1448,7 @@ html:not(.js) .nav ul a:hover {
 .showcase-laptop .showcase-floor {
   width: 98%;
   height: 11%;
-  opacity: calc((0.5 + 0.5 * var(--oe)) * (1 - var(--ke)));
-  scale: calc((0.55 + 0.45 * var(--ae)) * (1.1 - 0.1 * var(--oe))) calc(0.55 + 0.45 * var(--ae));
+  opacity: 0; /* aufgesetzt übernimmt der Kontaktschatten (.laptop::before) */
 }
 
 .laptop {
@@ -1476,19 +1458,6 @@ html:not(.js) .nav ul a:hover {
   margin-bottom: calc(var(--sw) * 0.1); /* Platz für das perspektivisch davor liegende Unterteil */
   transform-style: preserve-3d;
   transform-origin: 50% var(--lh) calc(var(--lh) / 2);
-  transform: translateY(
-      calc(
-        (1 - var(--ae)) * 30vh - (1 - var(--oe)) * var(--lh) * 0.42 - var(--oe) * (1 - var(--ke)) *
-          var(--lh) * 0.05
-      )
-    )
-    scale(
-      calc(
-        (0.7 + 0.3 * var(--ae)) * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * var(--oe)) *
-          (1 - 0.26 * var(--oe) * (1 - var(--ke)))
-      )
-    )
-    rotateX(calc((1 - var(--ke)) * -22deg)) rotateY(calc((1 - var(--re)) * 172deg));
 }
 
 .laptop > *,
@@ -1514,7 +1483,6 @@ html:not(.js) .nav ul a:hover {
     0 0 calc(var(--sw) * 0.08) calc(var(--sw) * 0.02) rgb(14 20 30 / 10%);
   transform-origin: 50% 0;
   transform: rotateX(90deg) translateY(calc(var(--lh) * 0.015));
-  opacity: calc(var(--ke) * var(--ke));
   pointer-events: none;
 }
 
@@ -1524,13 +1492,12 @@ html:not(.js) .nav ul a:hover {
   height: var(--lh);
   transform-style: preserve-3d;
   transform-origin: 50% 100%;
-  transform: rotateX(calc((1 - var(--oe)) * -90deg));
 }
 
 /* Wendeflächen (Glas vorn, Aluminium hinten). Safari blendet eine abgewandte Fläche nur zuverlässig aus, wenn sie selbst
-   transformiert ist – und manche Browser gar nicht, sobald Teile davon eigene Grafikebenen bekommen. Deshalb schrumpft
-   die jeweils abgewandte Seite zusätzlich auf null, genau dann, wenn sie ohnehin nur von der Kante zu sehen ist: das Glas,
-   solange der Deckel zu ist, die Rückseite, wenn er offen ist. So bleibt nie eine schwarze Fläche stehen. */
+   transformiert ist (deshalb scale auch in der Endlage) – und manche Browser gar nicht, sobald Teile davon eigene
+   Grafikebenen bekommen. Deshalb schrumpft die jeweils abgewandte Seite in der Animation zusätzlich auf null, genau dann,
+   wenn sie ohnehin nur von der Kante zu sehen ist: das Glas, solange der Deckel zu ist, die Rückseite, wenn er offen ist. */
 .laptop-screen,
 .laptop-cover {
   inset: 0;
@@ -1542,7 +1509,7 @@ html:not(.js) .nav ul a:hover {
 /* Vorderseite: schwarzes Glas mit schmaler, heller Aluminiumkante; das Glas fängt oben links etwas Licht. In der Endlage
    ist scale genau 1 (keine Umrechnung, der Bildschirm bleibt 1 : 1). */
 .laptop-screen {
-  scale: clamp(0, var(--oe) * 50, 1);
+  scale: 1;
   background: linear-gradient(158deg, #202227 0%, #0c0d10 28%, #07080a 100%);
   box-shadow:
     0 0 0 1px #c3c7cc,
@@ -1578,8 +1545,8 @@ html:not(.js) .nav ul a:hover {
   object-fit: cover;
 }
 
-/* Über dem Bildschirm: aus beim Aufklappen (dunkel), Spiegelung solange der Laptop schräg steht – in der Endlage beides
-   vollständig durchsichtig */
+/* Über dem Bildschirm: aus, solange der Deckel aufgeht (dunkel), Spiegelung, solange der Laptop schräg steht – in der
+   Endlage beides vollständig durchsichtig */
 .laptop-screen::before,
 .laptop-screen::after {
   content: "";
@@ -1587,12 +1554,12 @@ html:not(.js) .nav ul a:hover {
   z-index: 1;
   inset: 0;
   border-radius: inherit;
+  opacity: 0;
   pointer-events: none;
 }
 
 .laptop-screen::before {
   background: #040507;
-  opacity: calc((1 - var(--oe)) * 0.94);
 }
 
 .laptop-screen::after {
@@ -1602,7 +1569,6 @@ html:not(.js) .nav ul a:hover {
     rgb(255 255 255 / 4%) 38%,
     rgb(255 255 255 / 0%) 55%
   );
-  opacity: calc(1 - var(--ke));
 }
 
 /* Rückseite des Deckels: gestrahltes Aluminium mit eingelassenem, spiegelndem Zeichen von VereinsFlow */
@@ -1610,17 +1576,10 @@ html:not(.js) .nav ul a:hover {
   display: grid;
   place-items: center;
   background:
-    linear-gradient(
-        100deg,
-        rgb(255 255 255 / 0%) 34%,
-        rgb(255 255 255 / 50%) 47%,
-        rgb(255 255 255 / 0%) 60%
-      )
-      calc(130% - var(--re) * 160%) 0 / 260% 100% no-repeat,
     var(--grain),
     radial-gradient(120% 90% at 20% 0%, rgb(255 255 255 / 55%), rgb(255 255 255 / 0%) 60%),
     linear-gradient(170deg, var(--alu-hi) 0%, #d4d8dd 55%, #c8ccd2 100%);
-  scale: clamp(0, (0.98 - var(--oe)) * 50, 1);
+  scale: 0; /* in der Endlage abgewandt (siehe oben) */
   box-shadow:
     inset 0 0 0 1px rgb(0 0 0 / 8%),
     inset 0 2px 0 rgb(255 255 255 / 65%);
@@ -1633,14 +1592,20 @@ html:not(.js) .nav ul a:hover {
   filter: drop-shadow(0 1px 0 rgb(255 255 255 / 70%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 14%));
 }
 
-/* Hochgeklappt zeigt die Rückseite vom Licht weg und wird dunkler */
-.laptop-cover::after {
+/* Lichtschein auf dem Aluminium, der beim Drehen auf- und wieder abblendet */
+.laptop-cover::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgb(20 26 34);
-  opacity: calc(var(--oe) * 0.4);
+  background: linear-gradient(
+    110deg,
+    rgb(255 255 255 / 0%) 25%,
+    rgb(255 255 255 / 42%) 50%,
+    rgb(255 255 255 / 0%) 75%
+  );
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Kanten des Deckels (oben, links, rechts), damit er beim Drehen nicht zu einem Strich wird */
@@ -1664,12 +1629,23 @@ html:not(.js) .nav ul a:hover {
   height: calc(100% - 1.1 * var(--b));
 }
 
-/* Mittlere Schicht des Deckels in seiner Form: schließt die runden Ecken zwischen Glas und Rückseite */
-.laptop-lid-layer {
-  inset: 1px;
-  border-radius: calc(var(--b) * 1.1) calc(var(--b) * 1.1) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
+/* Die oberen runden Ecken des Deckels zwischen Glas und Rückseite (die geraden Stücke bilden die Kanten) */
+.lid-c {
+  top: 1px;
+  width: calc(var(--b) * 1.1);
+  height: calc(var(--b) * 1.1);
   background: linear-gradient(90deg, #b9bdc3, #e2e4e7 50%, #b9bdc3);
   transform: translateZ(calc(var(--tl) / -2));
+}
+
+.lid-tl {
+  left: 1px;
+  border-top-left-radius: 100%;
+}
+
+.lid-tr {
+  right: 1px;
+  border-top-right-radius: 100%;
 }
 
 .laptop-edge-l {
@@ -1875,7 +1851,8 @@ html:not(.js) .nav ul a:hover {
     0 0.05cqw 0 rgb(255 255 255 / 70%);
 }
 
-/* Senkrechte Kanten des Unterteils (vorn, hinten, links, rechts) */
+/* Senkrechte Kanten des Unterteils (vorn, hinten, links, rechts): oben eine Lichtkante, zur Unterseite dunkler. Vorn,
+   an den Seiten und in den runden Ecken derselbe Verlauf – so gehen sie nahtlos ineinander über. */
 .laptop-front,
 .laptop-rear,
 .laptop-side {
@@ -1883,7 +1860,7 @@ html:not(.js) .nav ul a:hover {
   height: var(--t);
   background:
     var(--grain),
-    linear-gradient(180deg, #f5f6f8 0 7%, #dfe2e5 14%, var(--alu) 45%, var(--alu-lo) 100%);
+    linear-gradient(180deg, #f8f9fa 0 6%, #e3e6e9 12%, #d2d5d9 45%, #adb1b7 82%, #979ba2 100%);
 }
 
 .laptop-front,
@@ -1892,11 +1869,10 @@ html:not(.js) .nav ul a:hover {
   width: 100%;
 }
 
-/* Vorderkante mit der Mulde zum Aufklappen – nur über den geraden Teil, die runden Ecken bilden die Schichten */
+/* Vorderkante mit der Mulde zum Aufklappen – über den geraden Teil und je 1 px unter die Streifen der runden Ecken */
 .laptop-front {
-  --phi: 0deg;
-  left: calc(var(--b) * 0.9);
-  width: calc(100% - 1.8 * var(--b));
+  left: calc(var(--b) * 0.9 - 1px);
+  width: calc(100% - 1.8 * var(--b) + 2px);
   background:
     radial-gradient(9% 90% at 50% 0%, rgb(40 44 50 / 20%), rgb(40 44 50 / 0%) 75%),
     var(--grain),
@@ -1906,7 +1882,6 @@ html:not(.js) .nav ul a:hover {
 
 /* Rückseite mit dunkler Scharnierabdeckung */
 .laptop-rear {
-  --phi: 180deg;
   background:
     linear-gradient(180deg, #6a6e74, #45484e 55%, #55585e) 50% 12% / 84% 62% no-repeat,
     var(--grain),
@@ -1915,67 +1890,177 @@ html:not(.js) .nav ul a:hover {
 }
 
 .laptop-side {
-  width: calc(var(--lh) - 0.9 * var(--b));
+  width: calc(var(--lh) - 0.9 * var(--b) + 1px); /* bis 1 px in die runde Ecke vorn */
 }
 
-/* Unterteil als Schichtstapel in der Form der Tastaturfläche (unter ihr): So haben auch die runden Vorderecken eine
-   Seitenwand, wenn man schräg von oben darauf schaut */
-.laptop-base {
+/* Licht auf den senkrechten Kanten: dunkle Schicht, deren Deckkraft die Animation nach der Ausrichtung zum Licht setzt
+   (Werte hier: Endlage) */
+.laptop-front::after,
+.laptop-rear::after,
+.laptop-side::after {
+  content: "";
+  position: absolute;
   inset: 0;
+  border-radius: inherit;
+  background: rgb(12 16 22);
+  pointer-events: none;
+}
+
+.laptop-front::after {
+  opacity: 0.09;
+}
+
+.laptop-rear::after,
+.laptop-side-r::after {
+  opacity: 0.5;
+}
+
+.laptop-side-l::after {
+  opacity: 0.21;
+}
+
+/* Runde Ecken vorn am Unterteil: je vier schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,4 px neben
+   dem Kreis), so hoch wie die Kante, im selben Verlauf und mit Licht wie die Kanten (siehe unten). Liegen in einer Ebene mit der Tastaturfläche; gebaut ist eine Ecke oben
+   links (wie ein Viertelkreis in einem Quadrat), vorn links und vorn rechts ist sie um 270° bzw. 180° gedreht.
+   Streifen statt gestapelter Schichten: keine Stufen, und nur wenige, kleine Grafikebenen. */
+.laptop-base {
+  --rr: calc(var(--b) * 0.9); /* Eckenradius vorn */
+  top: var(--lh);
+  left: 0;
+  width: 100%;
+  height: var(--lh);
+  transform-style: preserve-3d;
+  transform-origin: 50% 0;
+  transform: rotateX(90deg);
+}
+
+.base-c {
+  position: absolute;
+  bottom: 0;
+  width: var(--rr);
+  height: var(--rr);
   transform-style: preserve-3d;
 }
 
-.laptop-base i {
+.base-fl {
+  left: 0;
+  transform: rotateZ(270deg);
+}
+
+.base-fr {
+  right: 0;
+  transform: rotateZ(180deg);
+}
+
+/* Streifen: steht senkrecht (rotateY), liegt als Sehne im Abstand R · cos 11,25° vom Mittelpunkt der Rundung (rechts
+   unten im Quadrat) und ist um ihn auf seinen Winkel gedreht; an jedem Ende 1 px länger als die Sehne (Überlappung
+   statt Fuge) */
+.base-c i {
   position: absolute;
-  top: calc(var(--lh) + var(--t) * var(--n) / 6);
-  left: 1px;
-  width: calc(100% - 2px);
-  height: calc(var(--lh) - 2px);
-  border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) calc(var(--b) * 0.9) calc(var(--b) * 0.9);
-  background: var(--layer); /* derselbe Ton wie die Vorderkante in dieser Höhe: oben Lichtkante, unten dunkler */
-  transform-origin: 50% 0;
-  transform: rotateX(90deg) translateY(1px);
+  top: calc(var(--rr) * 0.80491 - 1px);
+  left: 100%;
+  width: var(--t);
+  height: calc(var(--rr) * 0.39018 + 2px);
+  background:
+    var(--grain),
+    linear-gradient(90deg, #f8f9fa 0 6%, #e3e6e9 12%, #d2d5d9 45%, #adb1b7 82%, #979ba2 100%); /* wie die Kanten */
+  transform-origin: 0 50%;
+  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.98079)) rotateY(90deg);
 }
 
-.laptop-base i:nth-child(1) {
-  --n: 1;
-  --layer: #e0e3e6;
+/* Licht wie auf den Kanten, als Verlauf entlang des Streifens: oben (::before) der Wert an seinem oberen Stoß, unten
+   (::after) der am unteren – zusammen ein weicher Übergang von der Vorderkante zur Seite ohne Stufen zwischen den
+   Streifen. Die Deckkraft setzt die Animation des jeweiligen Winkels (--lit0/--lit1; die Stöße ganz außen teilen sie mit
+   Vorderkante und Seite), hier die Endlage. */
+.base-c i::before,
+.base-c i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.laptop-base i:nth-child(2) {
-  --n: 2;
-  --layer: #d8dbdf;
+.base-c i::before {
+  background: linear-gradient(rgb(12 16 22), rgb(12 16 22 / 0%));
+  opacity: var(--shade1);
 }
 
-.laptop-base i:nth-child(3) {
-  --n: 3;
-  --layer: #cfd2d6;
+.base-c i::after {
+  background: linear-gradient(rgb(12 16 22 / 0%), rgb(12 16 22));
+  opacity: var(--shade0);
 }
 
-.laptop-base i:nth-child(4) {
-  --n: 4;
-  --layer: #bfc3c8;
+.base-fl i:nth-child(1) {
+  --a: 11.25deg;
+  --lit0: vf-laptop-lit-front;
+  --lit1: vf-laptop-lit-m22;
+  --shade0: 0.09;
+  --shade1: 0.012;
 }
 
-.laptop-base i:nth-child(5) {
-  --n: 5;
-  --layer: #adb1b7;
+.base-fl i:nth-child(2) {
+  --a: 33.75deg;
+  --lit0: vf-laptop-lit-m22;
+  --lit1: vf-laptop-lit-m45;
+  --shade0: 0.012;
+  --shade1: 0.008;
 }
 
-.laptop-base i:nth-child(6) {
-  --n: 6;
-  --layer: #979ba2;
+.base-fl i:nth-child(3) {
+  --a: 56.25deg;
+  --lit0: vf-laptop-lit-m45;
+  --lit1: vf-laptop-lit-m67;
+  --shade0: 0.008;
+  --shade1: 0.078;
+}
+
+.base-fl i:nth-child(4) {
+  --a: 78.75deg;
+  --lit0: vf-laptop-lit-m67;
+  --lit1: vf-laptop-lit-side-l;
+  --shade0: 0.078;
+  --shade1: 0.213;
+}
+
+.base-fr i:nth-child(1) {
+  --a: 11.25deg;
+  --lit0: vf-laptop-lit-side-r;
+  --lit1: vf-laptop-lit-p67;
+  --shade0: 0.5;
+  --shade1: 0.5;
+}
+
+.base-fr i:nth-child(2) {
+  --a: 33.75deg;
+  --lit0: vf-laptop-lit-p67;
+  --lit1: vf-laptop-lit-p45;
+  --shade0: 0.5;
+  --shade1: 0.413;
+}
+
+.base-fr i:nth-child(3) {
+  --a: 56.25deg;
+  --lit0: vf-laptop-lit-p45;
+  --lit1: vf-laptop-lit-p22;
+  --shade0: 0.413;
+  --shade1: 0.231;
+}
+
+.base-fr i:nth-child(4) {
+  --a: 78.75deg;
+  --lit0: vf-laptop-lit-p22;
+  --lit1: vf-laptop-lit-front;
+  --shade0: 0.231;
+  --shade1: 0.09;
 }
 
 .laptop-side-l {
-  --phi: -90deg;
   left: 0;
   transform-origin: 0 50%;
   transform: rotateY(-90deg);
 }
 
 .laptop-side-r {
-  --phi: 90deg;
   right: 0;
   transform-origin: 100% 50%;
   transform: rotateY(90deg);
@@ -1984,17 +2069,8 @@ html:not(.js) .nav ul a:hover {
 /* --- Telefon ---
    Die Vorderseite ist der bekannte Telefonrahmen (.phone), 336 px breit – der Bildschirm ist damit genau 312 px breit,
    passend zur Bilddatei. Sie liegt in der Bildebene (z = 0), die Rückseite eine Gehäusedicke dahinter; gedreht wird um
-   die Mitte dazwischen. Das Gehäuse zwischen beiden besteht aus 32 gestapelten Schichten in der Form des Telefons – so
-   haben auch die runden Ecken beim Drehen eine geschlossene Kante. Senkrecht von der Seite gesehen übernehmen gerade
-   Seiten- und Stirnflächen (mit Tasten). */
-.showcase-phone {
-  --a: clamp(0, (var(--p) - 0.03) / 0.3, 1);
-  --r: clamp(0, (var(--p) - 0.26) / 0.46, 1);
-  --ae: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
-  --re: min(1, var(--r) * var(--r) * (3 - 2 * var(--r)) * 1.01); /* siehe .showcase-laptop */
-  --ang: calc((1 - var(--re)) * -172deg);
-  --p-end: 0.72; /* Ende von --r (0.26 + 0.46) */
-}
+   die Mitte dazwischen. Die geraden Stücke des Gehäuses sind Seiten- und Stirnflächen (mit Tasten), die vier runden
+   Ecken je sechs schmale Streifen – so hat das Gehäuse beim Drehen rundum eine geschlossene Kante. */
 
 .iphone {
   --pw: min(336px, 72vw, calc((100vh - var(--header-h) - 110px) / 2.081));
@@ -2010,23 +2086,29 @@ html:not(.js) .nav ul a:hover {
     #ddd5c9 84%,
     #a0978a 100%
   );
+  /* derselbe Verlauf gespiegelt: so liegt er auf der rechten Seitenfläche (sie ist andersherum gedreht) */
+  --titan-r: linear-gradient(
+    270deg,
+    #9d9488 0%,
+    #e9e2d7 16%,
+    #bdb3a5 42%,
+    #998f82 58%,
+    #ddd5c9 84%,
+    #a0978a 100%
+  );
   position: relative;
   width: var(--pw);
   aspect-ratio: 420 / 874;
   margin-bottom: calc(var(--pw) * 0.08);
   transform-style: preserve-3d;
   transform-origin: 50% 50% calc(var(--t) / -2);
-  transform: translateY(calc((1 - var(--ae)) * 28vh))
-    scale(calc((0.74 + 0.26 * var(--ae)) * (0.9 + 0.1 * var(--re))))
-    rotateZ(calc((1 - var(--re)) * -9deg)) rotateX(calc((1 - var(--re)) * 8deg))
-    rotateY(calc((1 - var(--re)) * -172deg));
 }
 
 /* Vorderseite im selben Titanton wie das Gehäuse (die übrigen Telefone der Seite bleiben dunkel). Sie erscheint erst,
-   wenn man bei der Drehung genau auf die Kante schaut (--re ≈ 0,477 bei 172°), die Rückseite verschwindet dort – siehe
+   wenn man bei der Drehung genau auf die Kante schaut (Drehung zu 47,7 % geschafft: 90° von 172°), die Rückseite verschwindet dort – siehe
    .laptop-screen. In der Endlage ist scale genau 1. */
 .iphone-front {
-  scale: clamp(0, (var(--re) - 0.47) * 100, 1);
+  scale: 1;
   background: linear-gradient(135deg, #b1a797 0%, #756c60 13%, #8a8175 40%, #675f55 68%, #a69c8e 100%);
   box-shadow:
     0 0 0 1px #d2c9bb,
@@ -2050,7 +2132,7 @@ html:not(.js) .nav ul a:hover {
     rgb(255 255 255 / 20%) 26%,
     rgb(255 255 255 / 0%) 46%
   );
-  opacity: calc(1 - var(--re));
+  opacity: 0;
   pointer-events: none;
 }
 
@@ -2071,156 +2153,151 @@ html:not(.js) .nav ul a:hover {
   background: linear-gradient(90deg, #7d7468, #c9c0b2 55%, #8a8175);
 }
 
-.iphone-front .phone-hw {
-  opacity: clamp(0, (var(--re) - 0.82) * 6, 1);
-}
-
 .iphone-rim {
-  --rim-shade: 0.1;
+  --rr: calc(var(--pw) * 0.156); /* Eckenradius: 15,6 % der Breite = 7,5 % der Höhe */
   position: absolute;
   inset: 0;
   display: none; /* in der Vorderansicht unsichtbar – nur mit Bewegung nötig (siehe Bewegung) */
   transform-style: preserve-3d;
 }
 
-.iphone-rim i {
+/* Die vier runden Ecken: je sechs schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,5 px neben dem
+   Kreis), so tief wie das Gehäuse und im Titan-Verlauf der Seitenflächen. Gebaut ist die Ecke oben links (Viertelkreis
+   in einem Quadrat); die übrigen sind dieselbe Ecke, um 90°, 180° und 270° gedreht. Streifen statt gestapelter
+   Schichten: keine Stufen an der Kante, wenn man genau von der Seite schaut, und nur wenige, kleine Grafikebenen. */
+.rim-c {
   position: absolute;
-  inset: 0.6px; /* knapp innerhalb der Seitenflächen: keine gemeinsamen Kanten (Flimmern), keine sichtbare Stufe */
-  border-radius: 15.6% / 7.5%;
-  /* Jede Schicht trägt den Titan-Ton ihrer Tiefe – derselbe Verlauf, den die Seitenflächen über die Dicke zeigen: So
-     setzen die runden Ecken die Lichtstreifen der Seiten nahtlos fort und wirken nicht gerippt */
-  background:
-    linear-gradient(rgb(52 40 24 / var(--rim-shade, 0)), rgb(52 40 24 / var(--rim-shade, 0))),
-    var(--titan) calc((32.5 - var(--n)) / 32 * 100%) 0 / 3300% 100%;
-  transform: translateZ(calc(var(--t) * var(--n) / -33));
+  width: var(--rr);
+  height: var(--rr);
+  transform-style: preserve-3d;
 }
 
-.iphone-rim i:nth-child(1) {
-  --n: 1;
+.rim-tl {
+  top: 0;
+  left: 0;
 }
 
-.iphone-rim i:nth-child(2) {
-  --n: 2;
+.rim-tr {
+  top: 0;
+  right: 0;
+  transform: rotateZ(90deg);
 }
 
-.iphone-rim i:nth-child(3) {
-  --n: 3;
+.rim-br {
+  right: 0;
+  bottom: 0;
+  transform: rotateZ(180deg);
 }
 
-.iphone-rim i:nth-child(4) {
-  --n: 4;
+.rim-bl {
+  bottom: 0;
+  left: 0;
+  transform: rotateZ(270deg);
 }
 
-.iphone-rim i:nth-child(5) {
-  --n: 5;
+/* Streifen: steht senkrecht auf der Vorderseite (rotateY), liegt als Sehne im Abstand R · cos 7,5° vom Mittelpunkt der
+   Rundung (rechts unten im Quadrat) und ist um ihn auf seinen Winkel gedreht; an jedem Ende 1 px länger als die Sehne:
+   Die Nachbarn überlappen, sonst schiene an den Stößen der Hintergrund durch die geglätteten Kanten */
+.rim-c i {
+  position: absolute;
+  top: calc(var(--rr) * 0.86947 - 1px);
+  left: 100%;
+  width: var(--t);
+  height: calc(var(--rr) * 0.26105 + 2px);
+  background: var(--grain), var(--titan);
+  transform-origin: 0 50%;
+  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.99144)) rotateY(90deg);
 }
 
-.iphone-rim i:nth-child(6) {
-  --n: 6;
+/* Licht: dieselbe warme, dunkle Schicht wie auf der angrenzenden Seitenfläche (gleiche Animation), zur Stirnseite hin
+   schwächer (Anteil cos² bzw. sin² des Winkels) – die Stirnseiten liegen längs der Drehachse und bleiben gleich hell.
+   Als Verlauf zwischen den Werten an beiden Enden des Streifens (--w1 oben, --w0 unten): keine Stufen zwischen Streifen. */
+.rim-c i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgb(52 40 24 / var(--w1)), rgb(52 40 24 / var(--w0)));
+  opacity: var(--side-rest);
+  pointer-events: none;
 }
 
-.iphone-rim i:nth-child(7) {
-  --n: 7;
+.rim-tl,
+.rim-bl {
+  --side: vf-phone-side-l;
+  --side-rest: 0.32;
 }
 
-.iphone-rim i:nth-child(8) {
-  --n: 8;
+.rim-tr,
+.rim-br {
+  --side: vf-phone-side-r;
+  --side-rest: 0.16;
 }
 
-.iphone-rim i:nth-child(9) {
-  --n: 9;
+.rim-tr i,
+.rim-br i {
+  background: var(--grain), var(--titan-r); /* passend zur rechten Seitenfläche */
 }
 
-.iphone-rim i:nth-child(10) {
-  --n: 10;
+/* Die Ecke oben links beginnt an der linken Seite (Winkel 0°); gedreht beginnt sie oben rechts und unten links an der
+   Stirnseite */
+.rim-tl i,
+.rim-br i {
+  --w0: var(--c0);
+  --w1: var(--c1);
 }
 
-.iphone-rim i:nth-child(11) {
-  --n: 11;
+.rim-tr i,
+.rim-bl i {
+  --w0: var(--s0);
+  --w1: var(--s1);
 }
 
-.iphone-rim i:nth-child(12) {
-  --n: 12;
+.rim-c i:nth-child(1) {
+  --a: 7.5deg;
+  --c0: 1;
+  --c1: 0.933;
+  --s0: 0;
+  --s1: 0.067;
 }
 
-.iphone-rim i:nth-child(13) {
-  --n: 13;
+.rim-c i:nth-child(2) {
+  --a: 22.5deg;
+  --c0: 0.933;
+  --c1: 0.75;
+  --s0: 0.067;
+  --s1: 0.25;
 }
 
-.iphone-rim i:nth-child(14) {
-  --n: 14;
+.rim-c i:nth-child(3) {
+  --a: 37.5deg;
+  --c0: 0.75;
+  --c1: 0.5;
+  --s0: 0.25;
+  --s1: 0.5;
 }
 
-.iphone-rim i:nth-child(15) {
-  --n: 15;
+.rim-c i:nth-child(4) {
+  --a: 52.5deg;
+  --c0: 0.5;
+  --c1: 0.25;
+  --s0: 0.5;
+  --s1: 0.75;
 }
 
-.iphone-rim i:nth-child(16) {
-  --n: 16;
+.rim-c i:nth-child(5) {
+  --a: 67.5deg;
+  --c0: 0.25;
+  --c1: 0.067;
+  --s0: 0.75;
+  --s1: 0.933;
 }
 
-.iphone-rim i:nth-child(17) {
-  --n: 17;
-}
-
-.iphone-rim i:nth-child(18) {
-  --n: 18;
-}
-
-.iphone-rim i:nth-child(19) {
-  --n: 19;
-}
-
-.iphone-rim i:nth-child(20) {
-  --n: 20;
-}
-
-.iphone-rim i:nth-child(21) {
-  --n: 21;
-}
-
-.iphone-rim i:nth-child(22) {
-  --n: 22;
-}
-
-.iphone-rim i:nth-child(23) {
-  --n: 23;
-}
-
-.iphone-rim i:nth-child(24) {
-  --n: 24;
-}
-
-.iphone-rim i:nth-child(25) {
-  --n: 25;
-}
-
-.iphone-rim i:nth-child(26) {
-  --n: 26;
-}
-
-.iphone-rim i:nth-child(27) {
-  --n: 27;
-}
-
-.iphone-rim i:nth-child(28) {
-  --n: 28;
-}
-
-.iphone-rim i:nth-child(29) {
-  --n: 29;
-}
-
-.iphone-rim i:nth-child(30) {
-  --n: 30;
-}
-
-.iphone-rim i:nth-child(31) {
-  --n: 31;
-}
-
-.iphone-rim i:nth-child(32) {
-  --n: 32;
+.rim-c i:nth-child(6) {
+  --a: 82.5deg;
+  --c0: 0.067;
+  --c1: 0;
+  --s0: 0.933;
+  --s1: 1;
 }
 
 /* Rückseite: mattes Glas in Champagner-Titan im Metallrahmen – Licht von oben links, zum Rand hin leicht gewölbt
@@ -2247,7 +2324,7 @@ html:not(.js) .nav ul a:hover {
   color: rgb(255 252 244 / 62%);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  scale: clamp(0, (0.485 - var(--re)) * 100, 1);
+  scale: 0; /* in der Endlage abgewandt (siehe .iphone-front) */
   transform: translateZ(calc(var(--t) * -1)) rotateY(180deg);
 }
 
@@ -2256,7 +2333,7 @@ html:not(.js) .nav ul a:hover {
   filter: drop-shadow(0 1px 0 rgb(255 255 255 / 45%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 10%));
 }
 
-/* Glanzstreifen, der beim Drehen über das Glas wandert, und Abdunklung, wenn die Rückseite vom Licht wegzeigt */
+/* Lichtschein, der beim Drehen auf- und abblendet, und Abdunklung, wenn die Rückseite vom Licht wegzeigt */
 .iphone-back::before,
 .iphone-back::after {
   content: "";
@@ -2269,18 +2346,18 @@ html:not(.js) .nav ul a:hover {
 .iphone-back::before {
   z-index: 2;
   background: linear-gradient(
-      100deg,
-      rgb(255 255 255 / 0%) 34%,
-      rgb(255 255 255 / 40%) 47%,
-      rgb(255 255 255 / 0%) 60%
-    )
-    calc(-40% + var(--re) * 260%) 0 / 260% 100% no-repeat;
+    110deg,
+    rgb(255 255 255 / 0%) 25%,
+    rgb(255 255 255 / 34%) 50%,
+    rgb(255 255 255 / 0%) 75%
+  );
+  opacity: 0;
 }
 
 .iphone-back::after {
   z-index: 3;
   background: rgb(12 16 22);
-  opacity: 0;
+  opacity: 0.38;
 }
 
 /* Kameramodul: erhabenes Glas mit Schlagschatten; Objektive mit Metallring, schwarzem Rand, violett vergütetem Glas
@@ -2393,7 +2470,6 @@ html:not(.js) .nav ul a:hover {
 .iphone-cap {
   position: absolute;
   background:
-    linear-gradient(rgb(52 40 24 / var(--side-shade, 0)), rgb(52 40 24 / var(--side-shade, 0))),
     linear-gradient(
       180deg,
       rgb(0 0 0 / 0%) 18%,
@@ -2406,21 +2482,35 @@ html:not(.js) .nav ul a:hover {
     var(--titan);
 }
 
+/* je 1 px bis in die runden Ecken hinein (unter die Streifen): keine Fuge am Übergang */
 .iphone-side {
-  top: 7.5%;
+  top: calc(7.5% - 1px);
   width: var(--t);
-  height: 85%;
+  height: calc(85% + 2px);
+}
+
+/* Licht auf den Seitenflächen: warme, dunkle Schicht (auch über den Tasten); Deckkraft setzt die Animation (hier Endlage) */
+.iphone-side::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: rgb(52 40 24);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.iphone-side-r::after {
+  opacity: 0.16;
 }
 
 .iphone-side-l {
-  --phi: -90deg;
   left: 0;
   transform-origin: 0 50%;
   transform: rotateY(90deg);
 }
 
 .iphone-side-r {
-  --phi: 90deg;
   right: 0;
   transform-origin: 100% 50%;
   transform: rotateY(-90deg);
@@ -2431,9 +2521,7 @@ html:not(.js) .nav ul a:hover {
   left: 20%;
   width: 60%;
   border-radius: 999px;
-  background:
-    linear-gradient(rgb(52 40 24 / var(--side-shade, 0)), rgb(52 40 24 / var(--side-shade, 0))),
-    linear-gradient(90deg, #9b9185, #efe9df 45%, #c2b8aa 60%, #92887b);
+  background: linear-gradient(90deg, #9b9185, #efe9df 45%, #c2b8aa 60%, #92887b);
   box-shadow:
     0 0 0 1px rgb(70 55 35 / 22%),
     0 1px 2px rgb(40 30 15 / 22%);
@@ -2460,8 +2548,8 @@ html:not(.js) .nav ul a:hover {
 }
 
 .iphone-cap {
-  left: 15.6%;
-  width: 68.8%;
+  left: calc(15.6% - 1px);
+  width: calc(68.8% + 2px);
   height: var(--t);
   background: var(--grain), linear-gradient(180deg, #9d9488, #e9e2d7 30%, #bdb3a5 60%, #a0978a);
 }
@@ -2478,57 +2566,6 @@ html:not(.js) .nav ul a:hover {
   transform: rotateX(90deg);
 }
 
-/* Unbewegte Teile erben den Scrollfortschritt nicht (die Werte werden dort auf „initial“ gesetzt): Der Browser muss
-   Tasten, Bildschirmbilder, Kamera und Gehäuseschichten beim Scrollen dann nicht in jedem Bild neu berechnen. Wer in
-   diesen Teilen später --p, --a … --ang verwendet, muss sie hier herausnehmen. */
-.laptop-deck,
-.laptop-base,
-.laptop-screen picture,
-.iphone-front .phone-screen,
-.iphone-rim,
-.iphone-camera {
-  --p: initial;
-  --a: initial;
-  --r: initial;
-  --o: initial;
-  --k: initial;
-  --ae: initial;
-  --re: initial;
-  --oe: initial;
-  --ke: initial;
-  --ang: initial;
-}
-
-/* Licht auf den senkrechten Flächen (siehe Kopfkommentar): nur, wo der Browser cos() kennt */
-@supports (width: calc(1px * cos(0deg))) {
-  .laptop-front,
-  .laptop-rear,
-  .laptop-side {
-    --lit: max(0, cos(var(--phi) + var(--ang) + 35deg));
-  }
-
-  .laptop-front::after,
-  .laptop-rear::after,
-  .laptop-side::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: rgb(12 16 22);
-    opacity: calc((1 - var(--lit)) * 0.5);
-  }
-
-  /* Das Telefon dreht sich nach rechts weg: Sein Licht kommt von vorn rechts oben, damit Rückseite und rechte Kante
-     beim Drehen hell bleiben und erst zum Schluss (von der Seite gesehen) dunkler werden */
-  .iphone-side {
-    --side-shade: calc((1 - max(0, cos(var(--phi) + var(--ang) - 30deg))) * 0.32);
-  }
-
-  .iphone-back::after {
-    opacity: calc((1 - max(0, cos(180deg + var(--ang) - 30deg))) * 0.38);
-  }
-}
-
 /* Breite Fenster: beim Telefon Text links, Gerät rechts */
 @media (min-width: 900px) {
   .showcase-phone .showcase-stage {
@@ -2542,8 +2579,6 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* Schmale Bildschirme: Telefon nach der sichtbaren Höhe (svh – ohne die ein- und ausfahrende Adressleiste), der
-   Zusatztext entfällt, sonst passt das Telefon nicht mehr ganz aufs Bild (dieselbe Aussage steht unter „Mobil“) */
 /* Zugeklappt und schräg gedreht ist der Laptop breiter als ein schmaler Bildschirm – bis zum Aufklappen etwas kleiner */
 @media (min-width: 720px) and (max-width: 1023px) {
   .showcase-laptop {
@@ -2551,6 +2586,8 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Schmale Bildschirme: Telefon nach der sichtbaren Höhe (svh – ohne die ein- und ausfahrende Adressleiste), der
+   Zusatztext entfällt, sonst passt das Telefon nicht mehr ganz aufs Bild (dieselbe Aussage steht unter „Mobil“) */
 @media (max-width: 719px) {
   .showcase-laptop {
     --closed-scale: 0.76;
@@ -3783,9 +3820,8 @@ html:not(.js) .nav ul a:hover {
     animation: drift-right 16s ease-in-out infinite alternate;
   }
 
-  /* --- Vorführungen: lange Scrollstrecke, die Bühne bleibt so lange stehen (Fortschritt --p aus site.js) --- */
+  /* --- Vorführungen: lange Scrollstrecke, die Bühne bleibt so lange stehen --- */
   .js .showcase {
-    --p: 0;
     height: 300vh;
   }
 
@@ -3797,17 +3833,177 @@ html:not(.js) .nav ul a:hover {
     display: block;
   }
 
-  /* Körnung als Bild auf der großen Tastaturfläche erzwingt beim Drehen in jedem Bild neues Rastern – nur ohne Bewegung */
-  .js .laptop-deck {
-    --grain: none;
-  }
-
   .js .showcase-stage {
     position: sticky;
     top: 0;
     height: 100vh;
     height: 100svh;
     overflow: clip;
+  }
+
+  /* Bewegungen der Vorführungen (Keyframes am Dateiende). Ohne Scroll-Timeline stehen sie still, site.js stellt ihre Zeit
+     nach dem Scrollfortschritt ein; mit Scroll-Timeline laufen sie am Fortschritt durch den Abschnitt – 0 %, wenn er unten
+     ins Fenster kommt, 100 %, wenn sein Ende unten ankommt (die Bühne sich löst). */
+  .js .showcase-laptop .showcase-scene {
+    animation: vf-laptop-scene 1s linear both paused;
+  }
+
+  .js .showcase-laptop .showcase-floor {
+    animation: vf-laptop-floor 1s linear both paused;
+  }
+
+  .js .laptop {
+    animation: vf-laptop-body 1s linear both paused;
+  }
+
+  .js .laptop::before {
+    animation: vf-laptop-contact 1s linear both paused;
+  }
+
+  .js .laptop-lid {
+    animation: vf-laptop-lid 1s linear both paused;
+  }
+
+  .js .laptop-screen {
+    animation: vf-laptop-screen 1s linear both paused;
+  }
+
+  .js .laptop-screen::before {
+    animation: vf-laptop-screen-off 1s linear both paused;
+  }
+
+  .js .laptop-screen::after {
+    animation: vf-laptop-screen-glare 1s linear both paused;
+  }
+
+  .js .laptop-cover {
+    animation: vf-laptop-cover 1s linear both paused;
+  }
+
+  .js .laptop-cover::before {
+    animation: vf-laptop-sheen 1s linear both paused;
+  }
+
+  .js .laptop-front::after {
+    animation: vf-laptop-lit-front 1s linear both paused;
+  }
+
+  .js .laptop-rear::after {
+    animation: vf-laptop-lit-rear 1s linear both paused;
+  }
+
+  .js .laptop-side-l::after {
+    animation: vf-laptop-lit-side-l 1s linear both paused;
+  }
+
+  .js .laptop-side-r::after {
+    animation: vf-laptop-lit-side-r 1s linear both paused;
+  }
+
+  .js .base-c i::before {
+    animation: var(--lit1) 1s linear both paused; /* Keyframes je Stoß (siehe .base-c i) */
+  }
+
+  .js .base-c i::after {
+    animation: var(--lit0) 1s linear both paused;
+  }
+
+  .js .showcase-phone .showcase-scene {
+    animation: vf-phone-scene 1s linear both paused;
+  }
+
+  .js .showcase-phone .showcase-floor {
+    animation: vf-phone-floor 1s linear both paused;
+  }
+
+  .js .iphone {
+    animation: vf-phone-body 1s linear both paused;
+  }
+
+  .js .iphone-front {
+    animation: vf-phone-front 1s linear both paused;
+  }
+
+  .js .iphone-front::after {
+    animation: vf-phone-glare 1s linear both paused;
+  }
+
+  .js .iphone-front .phone-hw {
+    animation: vf-phone-buttons 1s linear both paused;
+  }
+
+  .js .iphone-back {
+    animation: vf-phone-back 1s linear both paused;
+  }
+
+  .js .iphone-back::before {
+    animation: vf-phone-sheen 1s linear both paused;
+  }
+
+  .js .iphone-back::after {
+    animation: vf-phone-back-shade 1s linear both paused;
+  }
+
+  .js .iphone-side-l::after {
+    animation: vf-phone-side-l 1s linear both paused;
+  }
+
+  .js .iphone-side-r::after {
+    animation: vf-phone-side-r 1s linear both paused;
+  }
+
+  .js .rim-c i::after {
+    animation: var(--side) 1s linear both paused; /* wie die angrenzende Seitenfläche (--side, siehe .rim-c) */
+  }
+
+  @supports (animation-timeline: view()) {
+    .js .showcase-laptop {
+      view-timeline: --vf-laptop block;
+    }
+
+    .js .showcase-phone {
+      view-timeline: --vf-phone block;
+    }
+
+    .js .showcase-laptop .showcase-scene,
+    .js .showcase-laptop .showcase-floor,
+    .js .laptop,
+    .js .laptop::before,
+    .js .laptop-lid,
+    .js .laptop-screen,
+    .js .laptop-screen::before,
+    .js .laptop-screen::after,
+    .js .laptop-cover,
+    .js .laptop-cover::before,
+    .js .laptop-front::after,
+    .js .laptop-rear::after,
+    .js .laptop-side-l::after,
+    .js .laptop-side-r::after,
+    .js .base-c i::before,
+    .js .base-c i::after {
+      animation-duration: auto;
+      animation-play-state: running;
+      animation-timeline: --vf-laptop;
+      animation-range: entry 0% exit 0%;
+    }
+
+    .js .showcase-phone .showcase-scene,
+    .js .showcase-phone .showcase-floor,
+    .js .iphone,
+    .js .iphone-front,
+    .js .iphone-front::after,
+    .js .iphone-front .phone-hw,
+    .js .iphone-back,
+    .js .iphone-back::before,
+    .js .iphone-back::after,
+    .js .iphone-side-l::after,
+    .js .iphone-side-r::after,
+    .js .rim-c i::after {
+      animation-duration: auto;
+      animation-play-state: running;
+      animation-timeline: --vf-phone;
+      animation-range: entry 0% exit 0%;
+    }
   }
 
   /* --- Einblenden beim Scrollen (site.js markiert, was außerhalb des Fensters liegt) --- */
@@ -4455,9 +4651,11 @@ html:not(.js) .nav ul a:hover {
     width: 150px;
   }
 
-  /* Vorführungen: Endlage ohne lange Scrollstrecke (das --p von site.js überstimmen) */
-  .showcase {
-    --p: 1 !important;
+  /* Vorführungen: Endlage ohne lange Scrollstrecke und ohne Bewegung */
+  .showcase *,
+  .showcase *::before,
+  .showcase *::after {
+    animation: none !important;
   }
 
   .js .showcase {
@@ -4468,5 +4666,1714 @@ html:not(.js) .nav ul a:hover {
     position: static;
     height: auto;
     overflow: visible;
+  }
+}
+
+/* ==========================================================================
+   Keyframes der Vorführungen – erzeugt aus den Bewegungsformeln (siehe Kopfkommentar „Vorführungen“). Stützpunkte so
+   dicht, dass die Bewegung höchstens 0,3 px, 0,2° oder 1 % Deckkraft von den Formeln abweicht. Prozent = Fortschritt
+   durch den Abschnitt. Nicht von Hand ändern: Formeln in tools/make-showcase-keyframes.mjs anpassen und das Werkzeug
+   ausführen, es ersetzt alles nach diesem Kommentar.
+   ========================================================================== */
+
+@keyframes vf-laptop-body {
+  0% {
+    transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  3.23% {
+    transform: translateY(calc(0.9998 * 30vh - 0.42 * var(--lh))) scale(calc(0.7001 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  3.835% {
+    transform: translateY(calc(0.9972 * 30vh - 0.42 * var(--lh))) scale(calc(0.7008 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  4.445% {
+    transform: translateY(calc(0.9917 * 30vh - 0.42 * var(--lh))) scale(calc(0.7025 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  5.295% {
+    transform: translateY(calc(0.9796 * 30vh - 0.42 * var(--lh))) scale(calc(0.7061 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  6.165% {
+    transform: translateY(calc(0.962 * 30vh - 0.42 * var(--lh))) scale(calc(0.7114 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  7.065% {
+    transform: translateY(calc(0.9388 * 30vh - 0.42 * var(--lh))) scale(calc(0.7184 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  7.99% {
+    transform: translateY(calc(0.9102 * 30vh - 0.42 * var(--lh))) scale(calc(0.727 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  8.925% {
+    transform: translateY(calc(0.8767 * 30vh - 0.42 * var(--lh))) scale(calc(0.737 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  9.895% {
+    transform: translateY(calc(0.8377 * 30vh - 0.42 * var(--lh))) scale(calc(0.7487 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  10.915% {
+    transform: translateY(calc(0.7926 * 30vh - 0.42 * var(--lh))) scale(calc(0.7622 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  12.005% {
+    transform: translateY(calc(0.7405 * 30vh - 0.42 * var(--lh))) scale(calc(0.7779 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  13.02% {
+    transform: translateY(calc(0.6891 * 30vh - 0.42 * var(--lh))) scale(calc(0.7933 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  14.15% {
+    transform: translateY(calc(0.6292 * 30vh - 0.42 * var(--lh))) scale(calc(0.8112 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  18.26% {
+    transform: translateY(calc(0.4028 * 30vh - 0.42 * var(--lh))) scale(calc(0.8792 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  19.94% {
+    transform: translateY(calc(0.313 * 30vh - 0.42 * var(--lh))) scale(calc(0.9061 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  21.69% {
+    transform: translateY(calc(0.2259 * 30vh - 0.42 * var(--lh))) scale(calc(0.9322 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  22.49% {
+    transform: translateY(calc(0.1891 * 30vh - 0.42 * var(--lh))) scale(calc(0.9433 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  23.26% {
+    transform: translateY(calc(0.1558 * 30vh - 0.42 * var(--lh))) scale(calc(0.9532 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  24.175% {
+    transform: translateY(calc(0.1195 * 30vh - 0.42 * var(--lh))) scale(calc(0.9641 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  25.055% {
+    transform: translateY(calc(0.0883 * 30vh - 0.42 * var(--lh))) scale(calc(0.9735 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  25.91% {
+    transform: translateY(calc(0.0619 * 30vh - 0.42 * var(--lh))) scale(calc(0.9814 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  26.735% {
+    transform: translateY(calc(0.0403 * 30vh - 0.42 * var(--lh))) scale(calc(0.9879 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  27.54% {
+    transform: translateY(calc(0.0234 * 30vh - 0.42 * var(--lh))) scale(calc(0.993 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  28.33% {
+    transform: translateY(calc(0.011 * 30vh - 0.42 * var(--lh))) scale(calc(0.9967 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  29.1% {
+    transform: translateY(calc(0.0033 * 30vh - 0.42 * var(--lh))) scale(calc(0.999 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  29.855% {
+    transform: translateY(calc(0.0001 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+  }
+
+  30.56% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(171.762deg);
+  }
+
+  31.265% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(170.806deg);
+  }
+
+  31.985% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(169.117deg);
+  }
+
+  32.725% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(166.675deg);
+  }
+
+  33.48% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(163.497deg);
+  }
+
+  34.255% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(159.565deg);
+  }
+
+  35.055% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(154.853deg);
+  }
+
+  35.885% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(149.329deg);
+  }
+
+  36.665% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(143.606deg);
+  }
+
+  37.475% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(137.179deg);
+  }
+
+  38.325% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(129.975deg);
+  }
+
+  39.23% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(121.865deg);
+  }
+
+  41.025% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(104.782deg);
+  }
+
+  44.485% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(70.322deg);
+  }
+
+  45.905% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(56.51deg);
+  }
+
+  47.385% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(42.859deg);
+  }
+
+  48.715% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(31.552deg);
+  }
+
+  49.49% {
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(25.499deg);
+  }
+
+  50.24% {
+    transform: translateY(calc(0 * 30vh - 0.4199 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0002) * 0.9999)) rotateX(-22deg) rotateY(20.08deg);
+  }
+
+  50.945% {
+    transform: translateY(calc(0 * 30vh - 0.4188 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0034) * 0.9991)) rotateX(-22deg) rotateY(15.427deg);
+  }
+
+  51.66% {
+    transform: translateY(calc(0 * 30vh - 0.4162 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0102) * 0.9973)) rotateX(-22deg) rotateY(11.185deg);
+  }
+
+  52.345% {
+    transform: translateY(calc(0 * 30vh - 0.4126 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0201) * 0.9948)) rotateX(-22deg) rotateY(7.614deg);
+  }
+
+  53.01% {
+    transform: translateY(calc(0 * 30vh - 0.408 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0325) * 0.9915)) rotateX(-22deg) rotateY(4.644deg);
+  }
+
+  53.66% {
+    transform: translateY(calc(0 * 30vh - 0.4025 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0473) * 0.9877)) rotateX(-22deg) rotateY(2.248deg);
+  }
+
+  54.3% {
+    transform: translateY(calc(0 * 30vh - 0.3963 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0641) * 0.9833)) rotateX(-22deg) rotateY(0.411deg);
+  }
+
+  54.48% {
+    transform: translateY(calc(0 * 30vh - 0.3944 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0693) * 0.982)) rotateX(-22deg) rotateY(0deg);
+  }
+
+  55.445% {
+    transform: translateY(calc(0 * 30vh - 0.3831 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0997) * 0.9741)) rotateX(-22deg) rotateY(0deg);
+  }
+
+  56.64% {
+    transform: translateY(calc(0 * 30vh - 0.3669 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1435) * 0.9627)) rotateX(-22deg) rotateY(0deg);
+  }
+
+  57.915% {
+    transform: translateY(calc(0 * 30vh - 0.3473 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1965) * 0.9489)) rotateX(-22deg) rotateY(0deg);
+  }
+
+  59.23% {
+    transform: translateY(calc(0 * 30vh - 0.3249 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2569) * 0.9336)) rotateX(-21.856deg) rotateY(0deg);
+  }
+
+  60.57% {
+    transform: translateY(calc(0 * 30vh - 0.3 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.3231) * 0.9183)) rotateX(-21.392deg) rotateY(0deg);
+  }
+
+  62.02% {
+    transform: translateY(calc(0 * 30vh - 0.2712 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.3986) * 0.9031)) rotateX(-20.571deg) rotateY(0deg);
+  }
+
+  63.93% {
+    transform: translateY(calc(0 * 30vh - 0.2312 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5012) * 0.8871)) rotateX(-19.06deg) rotateY(0deg);
+  }
+
+  65.725% {
+    transform: translateY(calc(0 * 30vh - 0.1924 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5979) * 0.8779)) rotateX(-17.281deg) rotateY(0deg);
+  }
+
+  67.45% {
+    transform: translateY(calc(0 * 30vh - 0.155 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.6879) * 0.8754)) rotateX(-15.328deg) rotateY(0deg);
+  }
+
+  69.2% {
+    transform: translateY(calc(0 * 30vh - 0.1183 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.7734) * 0.8795)) rotateX(-13.183deg) rotateY(0deg);
+  }
+
+  70.5% {
+    transform: translateY(calc(0 * 30vh - 0.0926 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8314) * 0.8867)) rotateX(-11.531deg) rotateY(0deg);
+  }
+
+  71.68% {
+    transform: translateY(calc(0 * 30vh - 0.0709 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8789) * 0.8959)) rotateX(-10.019deg) rotateY(0deg);
+  }
+
+  72.82% {
+    transform: translateY(calc(0 * 30vh - 0.0519 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9191) * 0.9069)) rotateX(-8.572deg) rotateY(0deg);
+  }
+
+  73.89% {
+    transform: translateY(calc(0 * 30vh - 0.0362 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9511) * 0.9185)) rotateX(-7.246deg) rotateY(0deg);
+  }
+
+  74.91% {
+    transform: translateY(calc(0 * 30vh - 0.0235 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9758) * 0.9305)) rotateX(-6.029deg) rotateY(0deg);
+  }
+
+  75.885% {
+    transform: translateY(calc(0 * 30vh - 0.0138 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9936) * 0.9422)) rotateX(-4.923deg) rotateY(0deg);
+  }
+
+  76.36% {
+    transform: translateY(calc(0 * 30vh - 0.01 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9479)) rotateX(-4.408deg) rotateY(0deg);
+  }
+
+  77.89% {
+    transform: translateY(calc(0 * 30vh - 0.0066 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9659)) rotateX(-2.885deg) rotateY(0deg);
+  }
+
+  80.275% {
+    transform: translateY(calc(0 * 30vh - 0.0023 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.988)) rotateX(-1.018deg) rotateY(0deg);
+  }
+
+  82.475% {
+    transform: translateY(calc(0 * 30vh - 0 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 1)) rotateX(0deg) rotateY(0deg);
+  }
+
+  100% {
+    transform: translateY(calc(0 * 30vh - 0 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 1)) rotateX(0deg) rotateY(0deg);
+  }
+}
+
+@keyframes vf-laptop-lid {
+  0% {
+    transform: rotateX(-90deg);
+  }
+
+  50.015% {
+    transform: rotateX(-90deg);
+  }
+
+  51.36% {
+    transform: rotateX(-89.377deg);
+  }
+
+  52.7% {
+    transform: rotateX(-87.627deg);
+  }
+
+  54.095% {
+    transform: rotateX(-84.736deg);
+  }
+
+  55.56% {
+    transform: rotateX(-80.671deg);
+  }
+
+  57.115% {
+    transform: rotateX(-75.375deg);
+  }
+
+  58.65% {
+    transform: rotateX(-69.334deg);
+  }
+
+  60.345% {
+    transform: rotateX(-61.944deg);
+  }
+
+  66.835% {
+    transform: rotateX(-30.933deg);
+  }
+
+  69.58% {
+    transform: rotateX(-18.816deg);
+  }
+
+  71.07% {
+    transform: rotateX(-13.048deg);
+  }
+
+  72.46% {
+    transform: rotateX(-8.367deg);
+  }
+
+  73.78% {
+    transform: rotateX(-4.672deg);
+  }
+
+  75.045% {
+    transform: rotateX(-1.924deg);
+  }
+
+  76.36% {
+    transform: rotateX(0deg);
+  }
+
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+@keyframes vf-laptop-screen {
+  0% {
+    scale: 0;
+  }
+
+  50.025% {
+    scale: 0.0001;
+  }
+
+  50.165% {
+    scale: 0.0052;
+  }
+
+  50.305% {
+    scale: 0.0178;
+  }
+
+  50.445% {
+    scale: 0.0379;
+  }
+
+  50.59% {
+    scale: 0.0663;
+  }
+
+  50.73% {
+    scale: 0.1012;
+  }
+
+  50.875% {
+    scale: 0.1449;
+  }
+
+  51.02% {
+    scale: 0.1962;
+  }
+
+  51.165% {
+    scale: 0.255;
+  }
+
+  51.305% {
+    scale: 0.3189;
+  }
+
+  51.45% {
+    scale: 0.3923;
+  }
+
+  51.595% {
+    scale: 0.4729;
+  }
+
+  51.74% {
+    scale: 0.5608;
+  }
+
+  51.88% {
+    scale: 0.6524;
+  }
+
+  52.025% {
+    scale: 0.7542;
+  }
+
+  52.18% {
+    scale: 0.8707;
+  }
+
+  52.26% {
+    scale: 0.9339;
+  }
+
+  52.34% {
+    scale: 0.9992;
+  }
+
+  52.345% {
+    scale: 1;
+  }
+
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes vf-laptop-cover {
+  0% {
+    scale: 1;
+  }
+
+  74.23% {
+    scale: 1;
+  }
+
+  74.345% {
+    scale: 0.8568;
+  }
+
+  74.46% {
+    scale: 0.7175;
+  }
+
+  74.575% {
+    scale: 0.582;
+  }
+
+  74.685% {
+    scale: 0.4559;
+  }
+
+  74.8% {
+    scale: 0.328;
+  }
+
+  74.915% {
+    scale: 0.204;
+  }
+
+  75.05% {
+    scale: 0.0636;
+  }
+
+  75.11% {
+    scale: 0.0029;
+  }
+
+  75.115% {
+    scale: 0;
+  }
+
+  100% {
+    scale: 0;
+  }
+}
+
+@keyframes vf-laptop-screen-off {
+  0% {
+    opacity: 0.94;
+  }
+
+  51.36% {
+    opacity: 0.933;
+  }
+
+  54.095% {
+    opacity: 0.885;
+  }
+
+  57.115% {
+    opacity: 0.787;
+  }
+
+  60.345% {
+    opacity: 0.647;
+  }
+
+  69.58% {
+    opacity: 0.197;
+  }
+
+  72.46% {
+    opacity: 0.087;
+  }
+
+  75.045% {
+    opacity: 0.02;
+  }
+
+  76.36% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-screen-glare {
+  0% {
+    opacity: 1;
+  }
+
+  59.17% {
+    opacity: 0.994;
+  }
+
+  61.775% {
+    opacity: 0.942;
+  }
+
+  64.65% {
+    opacity: 0.836;
+  }
+
+  67.65% {
+    opacity: 0.686;
+  }
+
+  76.025% {
+    opacity: 0.217;
+  }
+
+  78.605% {
+    opacity: 0.102;
+  }
+
+  80.92% {
+    opacity: 0.029;
+  }
+
+  82.48% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-sheen {
+  0% {
+    opacity: 0;
+  }
+
+  30.67% {
+    opacity: 0.008;
+  }
+
+  31.95% {
+    opacity: 0.064;
+  }
+
+  33.355% {
+    opacity: 0.176;
+  }
+
+  34.675% {
+    opacity: 0.315;
+  }
+
+  37.92% {
+    opacity: 0.695;
+  }
+
+  39.645% {
+    opacity: 0.861;
+  }
+
+  41.32% {
+    opacity: 0.966;
+  }
+
+  42.915% {
+    opacity: 1;
+  }
+
+  44.62% {
+    opacity: 0.961;
+  }
+
+  46.415% {
+    opacity: 0.841;
+  }
+
+  48.125% {
+    opacity: 0.668;
+  }
+
+  52.245% {
+    opacity: 0.18;
+  }
+
+  53.415% {
+    opacity: 0.071;
+  }
+
+  54.475% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-lit-front {
+  0% {
+    opacity: 0.5;
+  }
+
+  46.06% {
+    opacity: 0.5;
+  }
+
+  48.345% {
+    opacity: 0.326;
+  }
+
+  50.32% {
+    opacity: 0.21;
+  }
+
+  52.33% {
+    opacity: 0.132;
+  }
+
+  54.475% {
+    opacity: 0.09;
+  }
+
+  100% {
+    opacity: 0.09;
+  }
+}
+
+@keyframes vf-laptop-lit-rear {
+  0% {
+    opacity: 0.054;
+  }
+
+  30.22% {
+    opacity: 0.054;
+  }
+
+  35.535% {
+    opacity: 0.003;
+  }
+
+  37.47% {
+    opacity: 0.005;
+  }
+
+  39.365% {
+    opacity: 0.045;
+  }
+
+  41.225% {
+    opacity: 0.129;
+  }
+
+  43.12% {
+    opacity: 0.258;
+  }
+
+  46.065% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes vf-laptop-lit-side-l {
+  0% {
+    opacity: 0.5;
+  }
+
+  36.48% {
+    opacity: 0.5;
+  }
+
+  40.545% {
+    opacity: 0.209;
+  }
+
+  42.245% {
+    opacity: 0.104;
+  }
+
+  44.075% {
+    opacity: 0.028;
+  }
+
+  45.855% {
+    opacity: 0;
+  }
+
+  47.01% {
+    opacity: 0.006;
+  }
+
+  48.265% {
+    opacity: 0.029;
+  }
+
+  52.645% {
+    opacity: 0.171;
+  }
+
+  54.48% {
+    opacity: 0.213;
+  }
+
+  100% {
+    opacity: 0.213;
+  }
+}
+
+@keyframes vf-laptop-lit-side-r {
+  0% {
+    opacity: 0.273;
+  }
+
+  30.53% {
+    opacity: 0.275;
+  }
+
+  31.965% {
+    opacity: 0.295;
+  }
+
+  33.42% {
+    opacity: 0.339;
+  }
+
+  34.895% {
+    opacity: 0.406;
+  }
+
+  36.485% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes vf-laptop-lit-m67 {
+  0% {
+    opacity: 0.5;
+  }
+
+  39.16% {
+    opacity: 0.5;
+  }
+
+  42.355% {
+    opacity: 0.243;
+  }
+
+  44.305% {
+    opacity: 0.115;
+  }
+
+  46.235% {
+    opacity: 0.033;
+  }
+
+  48.2% {
+    opacity: 0.001;
+  }
+
+  50.125% {
+    opacity: 0.01;
+  }
+
+  54.48% {
+    opacity: 0.078;
+  }
+
+  100% {
+    opacity: 0.078;
+  }
+}
+
+@keyframes vf-laptop-lit-m45 {
+  0% {
+    opacity: 0.5;
+  }
+
+  41.51% {
+    opacity: 0.5;
+  }
+
+  44.425% {
+    opacity: 0.257;
+  }
+
+  46.545% {
+    opacity: 0.12;
+  }
+
+  48.665% {
+    opacity: 0.036;
+  }
+
+  50.985% {
+    opacity: 0.002;
+  }
+
+  100% {
+    opacity: 0.008;
+  }
+}
+
+@keyframes vf-laptop-lit-m22 {
+  0% {
+    opacity: 0.5;
+  }
+
+  43.76% {
+    opacity: 0.5;
+  }
+
+  46.625% {
+    opacity: 0.267;
+  }
+
+  48.955% {
+    opacity: 0.129;
+  }
+
+  51.37% {
+    opacity: 0.048;
+  }
+
+  54.27% {
+    opacity: 0.013;
+  }
+
+  100% {
+    opacity: 0.012;
+  }
+}
+
+@keyframes vf-laptop-lit-p22 {
+  0% {
+    opacity: 0.5;
+  }
+
+  48.595% {
+    opacity: 0.5;
+  }
+
+  50.18% {
+    opacity: 0.396;
+  }
+
+  51.625% {
+    opacity: 0.32;
+  }
+
+  53.05% {
+    opacity: 0.265;
+  }
+
+  54.475% {
+    opacity: 0.231;
+  }
+
+  100% {
+    opacity: 0.231;
+  }
+}
+
+@keyframes vf-laptop-lit-p45 {
+  0% {
+    opacity: 0.5;
+  }
+
+  51.875% {
+    opacity: 0.5;
+  }
+
+  53.21% {
+    opacity: 0.446;
+  }
+
+  54.48% {
+    opacity: 0.413;
+  }
+
+  100% {
+    opacity: 0.413;
+  }
+}
+
+@keyframes vf-laptop-lit-p67 {
+  0% {
+    opacity: 0.461;
+  }
+
+  30.09% {
+    opacity: 0.461;
+  }
+
+  31.27% {
+    opacity: 0.471;
+  }
+
+  32.5% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes vf-laptop-scene {
+  0% {
+    opacity: 0;
+  }
+
+  3% {
+    opacity: 0;
+  }
+
+  19.875% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes vf-laptop-floor {
+  0% {
+    opacity: 0.5;
+    scale: 0.605 0.55;
+  }
+
+  3.245% {
+    opacity: 0.5;
+    scale: 0.6051 0.5501;
+  }
+
+  4.51% {
+    opacity: 0.5;
+    scale: 0.6095 0.5541;
+  }
+
+  6.28% {
+    opacity: 0.5;
+    scale: 0.6251 0.5683;
+  }
+
+  8.16% {
+    opacity: 0.5;
+    scale: 0.6523 0.593;
+  }
+
+  10.045% {
+    opacity: 0.5;
+    scale: 0.6885 0.6259;
+  }
+
+  12.14% {
+    opacity: 0.5;
+    scale: 0.7368 0.6698;
+  }
+
+  19.755% {
+    opacity: 0.5;
+    scale: 0.9403 0.8548;
+  }
+
+  22.865% {
+    opacity: 0.5;
+    scale: 1.0146 0.9223;
+  }
+
+  24.535% {
+    opacity: 0.5;
+    scale: 1.0474 0.9522;
+  }
+
+  26.095% {
+    opacity: 0.5;
+    scale: 1.0719 0.9745;
+  }
+
+  27.575% {
+    opacity: 0.5;
+    scale: 1.0887 0.9898;
+  }
+
+  28.995% {
+    opacity: 0.5;
+    scale: 1.098 0.9982;
+  }
+
+  51.905% {
+    opacity: 0.507;
+    scale: 1.0987 1;
+  }
+
+  55% {
+    opacity: 0.543;
+    scale: 1.0915 1;
+  }
+
+  60.355% {
+    opacity: 0.641;
+    scale: 1.0688 1;
+  }
+
+  63.875% {
+    opacity: 0.651;
+    scale: 1.0502 1;
+  }
+
+  66.39% {
+    opacity: 0.614;
+    scale: 1.0367 1;
+  }
+
+  68.99% {
+    opacity: 0.539;
+    scale: 1.0236 1;
+  }
+
+  74.06% {
+    opacity: 0.313;
+    scale: 1.0044 1;
+  }
+
+  78.025% {
+    opacity: 0.126;
+    scale: 1 1;
+  }
+
+  79.98% {
+    opacity: 0.055;
+    scale: 1 1;
+  }
+
+  81.805% {
+    opacity: 0.01;
+    scale: 1 1;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1 1;
+  }
+}
+
+@keyframes vf-laptop-contact {
+  0% {
+    opacity: 0;
+  }
+
+  59.5% {
+    opacity: 0;
+  }
+
+  63.72% {
+    opacity: 0.016;
+  }
+
+  67.035% {
+    opacity: 0.079;
+  }
+
+  70.115% {
+    opacity: 0.206;
+  }
+
+  72.96% {
+    opacity: 0.382;
+  }
+
+  79.195% {
+    opacity: 0.845;
+  }
+
+  80.875% {
+    opacity: 0.94;
+  }
+
+  82.385% {
+    opacity: 0.998;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes vf-phone-body {
+  0% {
+    transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  3.33% {
+    transform: translateY(calc(0.9996 * 28vh)) scale(0.6661) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  4.06% {
+    transform: translateY(calc(0.9963 * 28vh)) scale(0.6669) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  4.805% {
+    transform: translateY(calc(0.9896 * 28vh)) scale(0.6684) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  5.785% {
+    transform: translateY(calc(0.9757 * 28vh)) scale(0.6717) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  6.79% {
+    transform: translateY(calc(0.9562 * 28vh)) scale(0.6763) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  7.825% {
+    transform: translateY(calc(0.9307 * 28vh)) scale(0.6822) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  8.895% {
+    transform: translateY(calc(0.8993 * 28vh)) scale(0.6896) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  9.91% {
+    transform: translateY(calc(0.8653 * 28vh)) scale(0.6975) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  10.965% {
+    transform: translateY(calc(0.826 * 28vh)) scale(0.7067) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  12.075% {
+    transform: translateY(calc(0.7808 * 28vh)) scale(0.7173) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  13.26% {
+    transform: translateY(calc(0.7291 * 28vh)) scale(0.7294) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  15.54% {
+    transform: translateY(calc(0.6219 * 28vh)) scale(0.7545) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  19.8% {
+    transform: translateY(calc(0.4104 * 28vh)) scale(0.804) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  21.51% {
+    transform: translateY(calc(0.3277 * 28vh)) scale(0.8233) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  23.27% {
+    transform: translateY(calc(0.2473 * 28vh)) scale(0.8421) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  24.85% {
+    transform: translateY(calc(0.1813 * 28vh)) scale(0.8576) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  25.76% {
+    transform: translateY(calc(0.1466 * 28vh)) scale(0.8657) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+  }
+
+  26.64% {
+    transform: translateY(calc(0.1158 * 28vh)) scale(0.873) rotateZ(-8.995deg) rotateX(7.995deg) rotateY(-171.9deg);
+  }
+
+  27.485% {
+    transform: translateY(calc(0.089 * 28vh)) scale(0.8795) rotateZ(-8.972deg) rotateX(7.975deg) rotateY(-171.469deg);
+  }
+
+  28.31% {
+    transform: translateY(calc(0.0657 * 28vh)) scale(0.8854) rotateZ(-8.934deg) rotateX(7.941deg) rotateY(-170.73deg);
+  }
+
+  29.11% {
+    transform: translateY(calc(0.0461 * 28vh)) scale(0.8905) rotateZ(-8.881deg) rotateX(7.894deg) rotateY(-169.725deg);
+  }
+
+  29.895% {
+    transform: translateY(calc(0.0299 * 28vh)) scale(0.895) rotateZ(-8.816deg) rotateX(7.836deg) rotateY(-168.474deg);
+  }
+
+  30.665% {
+    transform: translateY(calc(0.0172 * 28vh)) scale(0.8989) rotateZ(-8.739deg) rotateX(7.768deg) rotateY(-167.002deg);
+  }
+
+  31.415% {
+    transform: translateY(calc(0.0081 * 28vh)) scale(0.902) rotateZ(-8.652deg) rotateX(7.69deg) rotateY(-165.345deg);
+  }
+
+  32.04% {
+    transform: translateY(calc(0.003 * 28vh)) scale(0.9041) rotateZ(-8.571deg) rotateX(7.619deg) rotateY(-163.801deg);
+  }
+
+  32.655% {
+    transform: translateY(calc(0.0004 * 28vh)) scale(0.9056) rotateZ(-8.484deg) rotateX(7.542deg) rotateY(-162.144deg);
+  }
+
+  33.805% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9077) rotateZ(-8.304deg) rotateX(7.381deg) rotateY(-158.693deg);
+  }
+
+  34.985% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9101) rotateZ(-8.095deg) rotateX(7.196deg) rotateY(-154.706deg);
+  }
+
+  36.885% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9143) rotateZ(-7.714deg) rotateX(6.857deg) rotateY(-147.422deg);
+  }
+
+  38.89% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9193) rotateZ(-7.259deg) rotateX(6.452deg) rotateY(-138.722deg);
+  }
+
+  41.09% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9255) rotateZ(-6.707deg) rotateX(5.962deg) rotateY(-128.182deg);
+  }
+
+  43.515% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9328) rotateZ(-6.05deg) rotateX(5.378deg) rotateY(-115.622deg);
+  }
+
+  46.09% {
+    transform: translateY(calc(0 * 28vh)) scale(0.941) rotateZ(-5.313deg) rotateX(4.723deg) rotateY(-101.537deg);
+  }
+
+  53.42% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9649) rotateZ(-3.161deg) rotateX(2.81deg) rotateY(-60.41deg);
+  }
+
+  55.705% {
+    transform: translateY(calc(0 * 28vh)) scale(0.972) rotateZ(-2.524deg) rotateX(2.243deg) rotateY(-48.234deg);
+  }
+
+  57.75% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9779) rotateZ(-1.987deg) rotateX(1.766deg) rotateY(-37.964deg);
+  }
+
+  60.12% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9843) rotateZ(-1.416deg) rotateX(1.258deg) rotateY(-27.056deg);
+  }
+
+  62.33% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9895) rotateZ(-0.946deg) rotateX(0.841deg) rotateY(-18.083deg);
+  }
+
+  64.425% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9937) rotateZ(-0.568deg) rotateX(0.505deg) rotateY(-10.861deg);
+  }
+
+  66.43% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9969) rotateZ(-0.278deg) rotateX(0.247deg) rotateY(-5.304deg);
+  }
+
+  67.885% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9987) rotateZ(-0.115deg) rotateX(0.102deg) rotateY(-2.202deg);
+  }
+
+  69.305% {
+    transform: translateY(calc(0 * 28vh)) scale(1) rotateZ(0deg) rotateX(0deg) rotateY(0deg);
+  }
+
+  100% {
+    transform: translateY(calc(0 * 28vh)) scale(1) rotateZ(0deg) rotateX(0deg) rotateY(0deg);
+  }
+}
+
+@keyframes vf-phone-front {
+  0% {
+    scale: 0;
+  }
+
+  47.935% {
+    scale: 0;
+  }
+
+  47.94% {
+    scale: 0.0114;
+  }
+
+  48.24% {
+    scale: 0.9979;
+  }
+
+  48.245% {
+    scale: 1;
+  }
+
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes vf-phone-glare {
+  0% {
+    opacity: 1;
+  }
+
+  26.49% {
+    opacity: 1;
+  }
+
+  31.805% {
+    opacity: 0.956;
+  }
+
+  35.835% {
+    opacity: 0.881;
+  }
+
+  40.33% {
+    opacity: 0.767;
+  }
+
+  54.625% {
+    opacity: 0.313;
+  }
+
+  59.55% {
+    opacity: 0.172;
+  }
+
+  64.08% {
+    opacity: 0.07;
+  }
+
+  68.195% {
+    opacity: 0.01;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-phone-buttons {
+  0% {
+    opacity: 0;
+  }
+
+  59.24% {
+    opacity: 0;
+  }
+
+  61.565% {
+    opacity: 0.346;
+  }
+
+  63.75% {
+    opacity: 0.625;
+  }
+
+  65.835% {
+    opacity: 0.843;
+  }
+
+  67.835% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes vf-phone-back {
+  0% {
+    scale: 1;
+  }
+
+  48.085% {
+    scale: 1;
+  }
+
+  48.09% {
+    scale: 0.9955;
+  }
+
+  48.39% {
+    scale: 0.0086;
+  }
+
+  48.395% {
+    scale: 0;
+  }
+
+  100% {
+    scale: 0;
+  }
+}
+
+@keyframes vf-phone-back-shade {
+  0% {
+    opacity: 0.028;
+  }
+
+  26.395% {
+    opacity: 0.028;
+  }
+
+  35.33% {
+    opacity: 0.001;
+  }
+
+  39.135% {
+    opacity: 0.009;
+  }
+
+  42.3% {
+    opacity: 0.044;
+  }
+
+  45.435% {
+    opacity: 0.11;
+  }
+
+  48.655% {
+    opacity: 0.207;
+  }
+
+  53.495% {
+    opacity: 0.38;
+  }
+
+  100% {
+    opacity: 0.38;
+  }
+}
+
+@keyframes vf-phone-sheen {
+  0% {
+    opacity: 0;
+  }
+
+  26.02% {
+    opacity: 0;
+  }
+
+  27.065% {
+    opacity: 0.013;
+  }
+
+  28.615% {
+    opacity: 0.077;
+  }
+
+  30.305% {
+    opacity: 0.197;
+  }
+
+  31.89% {
+    opacity: 0.343;
+  }
+
+  35.555% {
+    opacity: 0.718;
+  }
+
+  37.35% {
+    opacity: 0.872;
+  }
+
+  39.03% {
+    opacity: 0.968;
+  }
+
+  40.575% {
+    opacity: 1;
+  }
+
+  41.59% {
+    opacity: 0.985;
+  }
+
+  42.58% {
+    opacity: 0.939;
+  }
+
+  43.545% {
+    opacity: 0.863;
+  }
+
+  44.495% {
+    opacity: 0.756;
+  }
+
+  45.435% {
+    opacity: 0.617;
+  }
+
+  46.365% {
+    opacity: 0.446;
+  }
+
+  47.29% {
+    opacity: 0.243;
+  }
+
+  48.245% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-phone-side-l {
+  0% {
+    opacity: 0.2;
+  }
+
+  27.33% {
+    opacity: 0.202;
+  }
+
+  31.655% {
+    opacity: 0.238;
+  }
+
+  36.245% {
+    opacity: 0.32;
+  }
+
+  100% {
+    opacity: 0.32;
+  }
+}
+
+@keyframes vf-phone-side-r {
+  0% {
+    opacity: 0.32;
+  }
+
+  36.24% {
+    opacity: 0.32;
+  }
+
+  46.795% {
+    opacity: 0.066;
+  }
+
+  49.935% {
+    opacity: 0.019;
+  }
+
+  52.95% {
+    opacity: 0;
+  }
+
+  57.525% {
+    opacity: 0.021;
+  }
+
+  65.81% {
+    opacity: 0.128;
+  }
+
+  69.305% {
+    opacity: 0.16;
+  }
+
+  100% {
+    opacity: 0.16;
+  }
+}
+
+@keyframes vf-phone-scene {
+  0% {
+    opacity: 0;
+  }
+
+  3% {
+    opacity: 0;
+  }
+
+  21.75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes vf-phone-floor {
+  0% {
+    scale: 0.55;
+  }
+
+  3.33% {
+    scale: 0.5502;
+  }
+
+  4.805% {
+    scale: 0.5547;
+  }
+
+  6.79% {
+    scale: 0.5697;
+  }
+
+  8.895% {
+    scale: 0.5953;
+  }
+
+  10.965% {
+    scale: 0.6283;
+  }
+
+  13.26% {
+    scale: 0.6719;
+  }
+
+  21.51% {
+    scale: 0.8525;
+  }
+
+  24.85% {
+    scale: 0.9184;
+  }
+
+  28.31% {
+    scale: 0.9704;
+  }
+
+  31.415% {
+    scale: 0.9964;
+  }
+
+  32.98% {
+    scale: 1;
+  }
+
+  100% {
+    scale: 1;
   }
 }

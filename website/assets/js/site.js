@@ -1,5 +1,6 @@
 // VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und Scrollfortschritt der Vorführungen.
+// hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und – nur ohne Scroll-Timeline im Browser –
+// Scrollfortschritt der Vorführungen.
 // Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
 // Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Mausposition setzt das
 // Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
@@ -67,47 +68,53 @@
     img.addEventListener("error", done, { once: true });
   }
 
-  // Vorführungen (Laptop, Telefon): Fortschritt durch den Abschnitt als --p – 0, wenn er unten ins Fenster kommt, 1, wenn
-  // seine stehende Bühne sich oben wieder löst. Aufklappen, Drehen und Einblenden rechnet site.css daraus. Bei reduzierter
-  // Bewegung bleibt es beim Endzustand aus dem CSS (--p: 1, keine lange Scrollstrecke) – auch wenn die Einstellung bei
-  // offener Seite wechselt.
+  // Vorführungen (Laptop, Telefon): Die Bewegungen sind CSS-Animationen an einer Scroll-Timeline (site.css) und laufen
+  // ohne Skript. Browser ohne Scroll-Timeline halten sie an; hier wird dann ihre Zeit nach dem Fortschritt durch den
+  // Abschnitt gesetzt – 0, wenn er unten ins Fenster kommt, 1, wenn sein Ende unten ankommt (dieselbe Strecke wie die
+  // Timeline). Nur Zeit setzen: Die Animationen verändern bloß transform und opacity, der Browser muss dafür weder neu
+  // anordnen noch neu zeichnen. Bei reduzierter Bewegung (und im Druck) entfallen die Animationen im CSS; kommen sie
+  // wieder, entstehen neue – dann wird neu gesammelt.
   const showcases = [...document.querySelectorAll(".showcase")];
-  if (showcases.length) {
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // Ende der letzten Bewegung je Abschnitt (--p-end in site.css): Danach bleibt der Wert stehen, und der Browser muss
-    // den Abschnitt beim Weiterscrollen nicht in jedem Bild neu berechnen
-    const ends = showcases.map((showcase) => Number.parseFloat(getComputedStyle(showcase).getPropertyValue("--p-end")) || 1);
+  const hasScrollTimeline = typeof CSS !== "undefined" && CSS.supports("animation-timeline: view()");
+  if (showcases.length && !hasScrollTimeline && typeof root.getAnimations === "function") {
+    let tracks = [];
+    const collect = () => {
+      tracks = showcases.map((showcase) => ({
+        showcase,
+        animations: showcase.getAnimations({ subtree: true }).filter((animation) => animation.animationName?.startsWith("vf-")),
+        time: -1,
+      }));
+    };
     let queued = false;
     const update = () => {
       queued = false;
       // Höhe des Anfangsblocks statt innerHeight: Sie bleibt gleich, wenn auf dem Smartphone die Adressleiste ein- und
       // ausfährt (sonst spränge die Drehung), und entspricht der Bühne (100svh)
       const height = root.clientHeight;
-      showcases.forEach((showcase, index) => {
-        const box = showcase.getBoundingClientRect();
-        if (box.top > height * 1.5 || box.bottom < -height * 0.5) return; // weit weg: nichts zu tun
-        const value = Math.min(ends[index], Math.max(0, (height - box.top) / box.height)).toFixed(4);
-        if (showcase.style.getPropertyValue("--p") !== value) showcase.style.setProperty("--p", value);
-      });
+      if (tracks.some((track) => track.animations[0]?.playState === "idle")) collect(); // nach dem Druck neu erzeugt
+      for (const track of tracks) {
+        if (!track.animations.length) continue;
+        const box = track.showcase.getBoundingClientRect();
+        const time = Math.round(Math.min(1, Math.max(0, (height - box.top) / box.height)) * 10000) / 10; // in ms, 1 s lang
+        if (time === track.time) continue; // davor und danach: nichts zu tun
+        track.time = time;
+        for (const animation of track.animations) animation.currentTime = time;
+      }
     };
     const schedule = () => {
       if (queued) return;
       queued = true;
       requestAnimationFrame(update);
     };
-    const apply = () => {
-      if (motion.matches) {
-        window.removeEventListener("scroll", schedule);
-        window.removeEventListener("resize", schedule);
-        for (const showcase of showcases) showcase.style.removeProperty("--p");
-        return;
-      }
-      window.addEventListener("scroll", schedule, { passive: true });
-      window.addEventListener("resize", schedule, { passive: true });
+    const refresh = () => {
+      collect();
       update();
     };
-    apply();
-    motion.addEventListener("change", apply);
+    refresh();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", refresh);
+    window.addEventListener("afterprint", refresh);
   }
 
   // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da)
