@@ -46,8 +46,8 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 ## Vor der Veröffentlichung
 
 1. **Platzhalter ersetzen.** `node tools/check-site.mjs` listet alle offenen Stellen mit Datei und Zeile:
-   - `[[E-MAIL]]` – Kontaktadresse (Startseite, Impressum, Datenschutz). Die Adresse ist nur Platzhalter; verwendet wurde bewusst
-     **keine** echte Adresse.
+   - `[[E-MAIL]]` – Kontaktadresse in Impressum und Datenschutz. Die Demo-Anfrage auf der Startseite geht bereits an
+     `vereinsflow@gmail.com` (Schaltfläche „Demo per E-Mail anfragen“ und Adresse darunter im Abschnitt „Kontakt“).
    - Betreiberangaben im **Impressum** (Name, Anschrift, Telefon, ggf. Register und USt-IdNr.).
    - Angaben in der **Datenschutzerklärung** (Verantwortlicher, Hosting-Anbieter, Speicherdauer der Server-Logs, Aufsichtsbehörde).
 2. **Domain eintragen:** `node tools/set-domain.mjs https://www.ihre-domain.de` (ersetzt `https://vereinsflow.example` in Seiten,
