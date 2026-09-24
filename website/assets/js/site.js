@@ -1,6 +1,5 @@
 // VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// Slider, Reiter, hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und – nur ohne
-// Scroll-Timeline im Browser – Scrollfortschritt der Vorführungen.
+// Slider, Reiter, hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und Start der Vorführungen.
 // Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
 // Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Mausposition setzt das
 // Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
@@ -68,84 +67,28 @@
     img.addEventListener("error", done, { once: true });
   }
 
-  // Vorführungen (Laptop, Telefon): Die Bewegungen sind CSS-Animationen an einer Scroll-Timeline (site.css) und laufen
-  // ohne Skript. Hier geschieht nur zweierlei:
-  // - Ruhelage: Ist alles fertig bewegt (Fortschritt ab --vf-rest), bekommt der Abschnitt .is-rest, und das CSS hängt die
-  //   Animationen ab – Chromium setzt Ebenen mit angehängter Transform-Animation nicht auf ganze Pixel, ohne sie stehen
-  //   die Bildschirme wieder Pixel für Pixel scharf. Mit Scroll-Timeline meldet das ein IntersectionObserver an einer
-  //   Marke (.showcase-rest), ganz ohne Arbeit beim Scrollen.
-  // - Browser ohne Scroll-Timeline halten die Animationen an; dann wird hier ihre Zeit nach dem Fortschritt durch den
-  //   Abschnitt gesetzt – 0, wenn er unten ins Fenster kommt, 1, wenn sein Ende unten ankommt (dieselbe Strecke wie die
-  //   Timeline). Nur Zeit setzen: Die Animationen verändern bloß transform und opacity, der Browser muss dafür weder neu
-  //   anordnen noch neu zeichnen. Entfallen die Animationen (reduzierte Bewegung, Druck, Ruhelage) und entstehen später
-  //   neu, wird neu gesammelt.
-  const showcases = [...document.querySelectorAll(".showcase")];
-  const hasScrollTimeline =
-    typeof CSS !== "undefined" && CSS.supports("(animation-timeline: view()) and (animation-range: entry 0% exit 0%)");
-  if (showcases.length && hasScrollTimeline && canObserve) {
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const rest = entry.isIntersecting || entry.boundingClientRect.bottom <= 0;
-        entry.target.parentElement?.classList.toggle("is-rest", rest);
-      }
+  // Vorführungen (Laptop, Telefon): Die Geräte bewegen sich von selbst, sobald sie zur Hälfte im Bild sind – einmal je
+  // Aufruf (CSS-Animationen, site.css). Danach Ruhelage: Der Abschnitt bekommt .is-rest, und das CSS hängt die Animationen
+  // ab – Chromium setzt Ebenen mit angehängter Transform-Animation nicht auf ganze Pixel, ohne sie stehen die Bildschirme
+  // wieder Pixel für Pixel scharf. Ohne IntersectionObserver gleich die Endlage.
+  for (const showcase of document.querySelectorAll(".showcase")) {
+    const scene = showcase.querySelector(".showcase-scene");
+    showcase.addEventListener("animationend", (event) => {
+      if (event.animationName.endsWith("-body")) showcase.classList.add("is-rest"); // vf-laptop-body, vf-phone-body
     });
-    for (const showcase of showcases) {
-      const mark = document.createElement("span");
-      mark.className = "showcase-rest";
-      mark.setAttribute("aria-hidden", "true");
-      showcase.append(mark);
-      observer.observe(mark);
+    if (!canObserve || !scene) {
+      showcase.classList.add("is-rest");
+      continue;
     }
-  } else if (showcases.length && !hasScrollTimeline && typeof root.getAnimations === "function") {
-    const collect = (showcase) =>
-      showcase.getAnimations({ subtree: true }).filter((animation) => animation.animationName?.startsWith("vf-"));
-    const tracks = showcases.map((showcase) => ({
-      showcase,
-      restAt: Number.parseFloat(getComputedStyle(showcase).getPropertyValue("--vf-rest")) || 1,
-      rest: false,
-      animations: collect(showcase),
-      time: -1,
-    }));
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let queued = false;
-    const update = () => {
-      queued = false;
-      if (reduce.matches) return; // keine Animationen (site.css)
-      // Höhe des Anfangsblocks statt innerHeight: Sie bleibt gleich, wenn auf dem Smartphone die Adressleiste ein- und
-      // ausfährt (sonst spränge die Drehung), und entspricht der Bühne (100svh)
-      const height = root.clientHeight;
-      for (const track of tracks) {
-        const box = track.showcase.getBoundingClientRect();
-        const progress = Math.min(1, Math.max(0, (height - box.top) / box.height));
-        const rest = progress >= track.restAt;
-        if (rest !== track.rest) {
-          track.rest = rest;
-          track.showcase.classList.toggle("is-rest", rest);
-          track.time = -1;
-        }
-        if (rest) continue;
-        // Animationen neu entstanden (nach Ruhelage, Druck, geänderter Einstellung)? Dann die neuen nehmen
-        if (!track.animations.length || track.animations[0].playState === "idle") track.animations = collect(track.showcase);
-        const time = Math.round(progress * 10000) / 10; // in ms, 1 s lang
-        if (time === track.time) continue; // davor: nichts zu tun
-        track.time = time;
-        for (const animation of track.animations) animation.currentTime = time;
-      }
-    };
-    const schedule = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(update);
-    };
-    const refresh = () => {
-      for (const track of tracks) track.time = -1;
-      update();
-    };
-    update();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule, { passive: true });
-    reduce.addEventListener("change", refresh);
-    window.addEventListener("afterprint", refresh);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        showcase.classList.add("is-playing");
+        observer.disconnect();
+      },
+      { threshold: 0.5, rootMargin: "0px 0px -8% 0px" },
+    );
+    observer.observe(scene);
   }
 
   // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da)

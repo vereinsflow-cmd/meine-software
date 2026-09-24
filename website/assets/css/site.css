@@ -1318,36 +1318,17 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* ---------- Vorführungen: Laptop und Telefon drehen sich beim Scrollen ins Bild ----------
-   Die Bewegungen sind CSS-Animationen auf transform und opacity, deren Zeit am Scrollfortschritt durch den Abschnitt hängt
-   (Scroll-Timeline, siehe „Bewegung“): 0 %, wenn der Abschnitt unten ins Fenster kommt, 100 %, wenn seine stehende Bühne
-   (position: sticky) sich oben wieder löst. Der Browser führt sie beim Scrollen selbst aus – ohne Skript und ohne neu zu
-   zeichnen, deshalb flüssig. Browser ohne Scroll-Timeline (ältere Safari) halten die Animationen an, site.js stellt dort
-   ihre Zeit ein. Die Keyframes (am Dateiende) sind aus Formeln erzeugt: weiche Teil-Abläufe (smoothstep x² · (3 − 2x))
+/* ---------- Vorführungen: Laptop und Telefon drehen sich ins Bild ----------
+   Die Bewegungen sind CSS-Animationen auf transform und opacity, die von selbst ablaufen, sobald das Gerät zur Hälfte im
+   Bild ist (site.js setzt .is-playing; Laptop 3,6 s, Telefon 4 s, einmal je Aufruf). Der Browser führt sie selbst aus –
+   ohne Skript und ohne neu zu zeichnen, deshalb flüssig. Prozent in den Keyframes = Anteil der Zeit. Die Keyframes (am Dateiende) sind aus Formeln erzeugt: weiche Teil-Abläufe (smoothstep x² · (3 − 2x))
    für Erscheinen, Drehen, Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert (Helligkeit = cos des Winkels
    zwischen Flächennormale und Licht, Licht von vorn links oben, beim Telefon von vorn rechts).
    Die Regeln hier beschreiben die Endlage: So stehen die Geräte ohne JavaScript, bei reduzierter Bewegung und im Druck.
    In der Endlage steht alles gerade, unverschoben und in der Bildebene – die Bildschirme werden Pixel für Pixel gezeichnet.
    Kein opacity/filter/overflow an den Geräten selbst – das würde die 3D-Darstellung flach drücken. */
 .showcase {
-  --vf-rest: 0.87; /* ab hier steht alles (Laptop: Ende der letzten Bewegung bei 0,84, plus Reserve) */
   position: relative;
-}
-
-.showcase-phone {
-  --vf-rest: 0.75; /* Telefon: Drehung endet bei 0,72 */
-}
-
-/* Marke für die Ruhelage (legt site.js an): reicht vom Ruhepunkt bis zum Ende des Abschnitts – ist sie im Fenster oder
-   schon darüber, ist die Bewegung vorbei */
-.showcase-rest {
-  position: absolute;
-  top: calc(var(--vf-rest) * 100%);
-  bottom: 0;
-  left: 0;
-  width: 1px;
-  visibility: hidden;
-  pointer-events: none;
 }
 
 .showcase-stage {
@@ -4045,195 +4026,149 @@ html:not(.js) .nav ul a:hover {
     animation: drift-right 16s ease-in-out infinite alternate;
   }
 
-  /* --- Vorführungen: lange Scrollstrecke, die Bühne bleibt so lange stehen --- */
+  /* --- Vorführungen: Die Geräte bewegen sich von selbst, sobald sie ins Bild kommen (site.js setzt .is-playing) – Laptop in
+     3,6 s, Telefon in 4 s. Die ersten 3 % der Keyframes (Warten, bevor sich etwas bewegt) werden übersprungen. --- */
   .js .showcase {
-    height: 300vh;
+    --vf-dur: 3.6s;
+    --vf-delay: -0.108s;
+    --vf-play: paused;
   }
 
   .js .showcase-phone {
-    height: 260vh;
+    --vf-dur: 4s;
+    --vf-delay: -0.12s;
+  }
+
+  .js .showcase.is-playing {
+    --vf-play: running;
   }
 
   .js .iphone-rim {
     display: block;
   }
 
+  /* Bühne eine Bildschirmhöhe hoch; was beim Erscheinen von unten hereinkommt, bleibt in ihr */
   .js .showcase-stage {
-    position: sticky;
-    top: 0;
     height: 100vh;
     height: 100svh;
     overflow: clip;
   }
 
-  /* Bewegungen der Vorführungen (Keyframes am Dateiende). Ohne Scroll-Timeline stehen sie still, site.js stellt ihre Zeit
-     nach dem Scrollfortschritt ein; mit Scroll-Timeline laufen sie am Fortschritt durch den Abschnitt – 0 %, wenn er unten
-     ins Fenster kommt, 100 %, wenn sein Ende unten ankommt (die Bühne sich löst). */
+  /* Bewegungen der Vorführungen (Keyframes am Dateiende); Dauer, Verzögerung und Abspielen aus den Variablen oben */
   .js .showcase-laptop .showcase-scene {
-    animation: vf-laptop-scene 1s linear both paused;
+    animation: vf-laptop-scene var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .showcase-laptop .showcase-floor {
-    animation: vf-laptop-floor 1s linear both paused;
+    animation: vf-laptop-floor var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop {
-    animation: vf-laptop-body 1s linear both paused;
+    animation: vf-laptop-body var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop::before {
-    animation: vf-laptop-contact 1s linear both paused;
+    animation: vf-laptop-contact var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-lid {
-    animation: vf-laptop-lid 1s linear both paused;
+    animation: vf-laptop-lid var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-screen {
-    animation: vf-laptop-screen 1s linear both paused;
+    animation: vf-laptop-screen var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-screen::before {
-    animation: vf-laptop-screen-off 1s linear both paused;
+    animation: vf-laptop-screen-off var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-screen::after {
-    animation: vf-laptop-screen-glare 1s linear both paused;
+    animation: vf-laptop-screen-glare var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-cover {
-    animation: vf-laptop-cover 1s linear both paused;
+    animation: vf-laptop-cover var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-cover::before {
-    animation: vf-laptop-sheen 1s linear both paused;
+    animation: vf-laptop-sheen var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-cover::after {
-    animation: vf-laptop-cover-dark 1s linear both paused;
+    animation: vf-laptop-cover-dark var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-front::after {
-    animation: vf-laptop-lit-front 1s linear both paused;
+    animation: vf-laptop-lit-front var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-rear::after {
-    animation: vf-laptop-lit-rear 1s linear both paused;
+    animation: vf-laptop-lit-rear var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-side-l::after {
-    animation: vf-laptop-lit-side-l 1s linear both paused;
+    animation: vf-laptop-lit-side-l var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .laptop-side-r::after {
-    animation: vf-laptop-lit-side-r 1s linear both paused;
+    animation: vf-laptop-lit-side-r var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .base-c i::before {
-    animation: var(--lit1) 1s linear both paused; /* Keyframes je Stoß (siehe .base-c i) */
+    animation: var(--lit1) var(--vf-dur) linear var(--vf-delay) both var(--vf-play); /* Keyframes je Stoß (siehe .base-c i) */
   }
 
   .js .base-c i::after {
-    animation: var(--lit0) 1s linear both paused;
+    animation: var(--lit0) var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .showcase-phone .showcase-scene {
-    animation: vf-phone-scene 1s linear both paused;
+    animation: vf-phone-scene var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .showcase-phone .showcase-floor {
-    animation: vf-phone-floor 1s linear both paused;
+    animation: vf-phone-floor var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone {
-    animation: vf-phone-body 1s linear both paused;
+    animation: vf-phone-body var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-front {
-    animation: vf-phone-front 1s linear both paused;
+    animation: vf-phone-front var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-front::after {
-    animation: vf-phone-glare 1s linear both paused;
+    animation: vf-phone-glare var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-front .phone-hw {
-    animation: vf-phone-buttons 1s linear both paused;
+    animation: vf-phone-buttons var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-back {
-    animation: vf-phone-back 1s linear both paused;
+    animation: vf-phone-back var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-back::before {
-    animation: vf-phone-sheen 1s linear both paused;
+    animation: vf-phone-sheen var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-back::after {
-    animation: vf-phone-back-shade 1s linear both paused;
+    animation: vf-phone-back-shade var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-side-l::after {
-    animation: vf-phone-side-l 1s linear both paused;
+    animation: vf-phone-side-l var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-side-r::after {
-    animation: vf-phone-side-r 1s linear both paused;
+    animation: vf-phone-side-r var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .rim-c i::after {
-    animation: var(--side) 1s linear both paused; /* wie die angrenzende Seitenfläche (--side, siehe .rim-c) */
-  }
-
-  @supports (animation-timeline: view()) and (animation-range: entry 0% exit 0%) {
-    .js .showcase-laptop {
-      view-timeline: --vf-laptop block;
-    }
-
-    .js .showcase-phone {
-      view-timeline: --vf-phone block;
-    }
-
-    .js .showcase-laptop .showcase-scene,
-    .js .showcase-laptop .showcase-floor,
-    .js .laptop,
-    .js .laptop::before,
-    .js .laptop-lid,
-    .js .laptop-screen,
-    .js .laptop-screen::before,
-    .js .laptop-screen::after,
-    .js .laptop-cover,
-    .js .laptop-cover::before,
-    .js .laptop-cover::after,
-    .js .laptop-front::after,
-    .js .laptop-rear::after,
-    .js .laptop-side-l::after,
-    .js .laptop-side-r::after,
-    .js .base-c i::before,
-    .js .base-c i::after {
-      animation-duration: auto;
-      animation-play-state: running;
-      animation-timeline: --vf-laptop;
-      animation-range: entry 0% exit 0%;
-    }
-
-    .js .showcase-phone .showcase-scene,
-    .js .showcase-phone .showcase-floor,
-    .js .iphone,
-    .js .iphone-front,
-    .js .iphone-front::after,
-    .js .iphone-front .phone-hw,
-    .js .iphone-back,
-    .js .iphone-back::before,
-    .js .iphone-back::after,
-    .js .iphone-side-l::after,
-    .js .iphone-side-r::after,
-    .js .rim-c i::after {
-      animation-duration: auto;
-      animation-play-state: running;
-      animation-timeline: --vf-phone;
-      animation-range: entry 0% exit 0%;
-    }
+    animation: var(--side) var(--vf-dur) linear var(--vf-delay) both var(--vf-play); /* wie die angrenzende Seitenfläche (--side, siehe .rim-c) */
   }
 
   /* Ruhelage (site.js setzt .is-rest, sobald alle Bewegungen fertig sind): Animationen abhängen – die Grundregeln sind
@@ -4911,19 +4846,14 @@ html:not(.js) .nav ul a:hover {
     width: 150px;
   }
 
-  /* Vorführungen: Endlage ohne lange Scrollstrecke und ohne Bewegung */
+  /* Vorführungen: Endlage ohne Bewegung, Bühne in natürlicher Höhe */
   .showcase *,
   .showcase *::before,
   .showcase *::after {
     animation: none !important;
   }
 
-  .js .showcase {
-    height: auto;
-  }
-
   .js .showcase-stage {
-    position: static;
     height: auto;
     overflow: visible;
   }
