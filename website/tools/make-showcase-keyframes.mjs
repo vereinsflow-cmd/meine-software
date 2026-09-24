@@ -1,11 +1,10 @@
-// Erzeugt die Keyframes der Vorführungen (Laptop und Telefon, die sich beim Scrollen drehen) aus den Bewegungsformeln und
+// Erzeugt die Keyframes der Vorführungen (Laptop und Telefon, die sich von selbst ins Bild drehen) aus den Formeln und
 // schreibt sie ans Ende von assets/css/site.css (alles nach dem Kommentar „Keyframes der Vorführungen“ wird ersetzt).
 //
 //   node tools/make-showcase-keyframes.mjs
 //
-// Ohne Abhängigkeiten. Jede Animation läuft über den ganzen Abschnitt: 0 % = Abschnitt kommt unten ins Fenster (p = 0),
-// 100 % = sein Ende kommt unten an (p = 1). Der Laptop spielt dieselben Keyframes über die Zeit ab (3,6 s, site.css),
-// p ist dort der Anteil der Zeit. Die Formeln bilden weiche Teil-Abläufe (smoothstep) für Erscheinen, Drehen,
+// Ohne Abhängigkeiten. p = Anteil der Laufzeit (Laptop 3,6 s, Telefon 4 s, siehe site.css): 0 % = Start, 100 % = Ende.
+// (Die Formeln stammen aus der Zeit, als die Bewegung am Scrollen hing; die ersten 3 % ohne Bewegung überspringt site.css.) Die Formeln bilden weiche Teil-Abläufe (smoothstep) für Erscheinen, Drehen,
 // Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert. Stützpunkte werden adaptiv gesetzt – so viele, dass die
 // lineare Interpolation dazwischen höchstens um die Toleranz von der Formel abweicht (etwa 0,3 px, 0,2°, 1 % Deckkraft).
 // Die Endwerte (p = 1) müssen mit den Grundregeln in site.css übereinstimmen: So stehen die Geräte ohne Animation.
