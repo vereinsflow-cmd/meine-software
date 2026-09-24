@@ -74,7 +74,7 @@
   --header-h: 64px;
   --container: 1160px;
   --gutter: clamp(16px, 4vw, 32px);
-  --section-pad: clamp(80px, 10vw, 144px);
+  --section-pad: clamp(56px, 7vw, 104px);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 
@@ -583,7 +583,7 @@ html:not(.js) .nav ul a:hover {
 
 .section-head {
   max-width: 780px;
-  margin-bottom: clamp(44px, 5.5vw, 72px);
+  margin-bottom: clamp(32px, 4vw, 56px);
 }
 
 .section-head.center {
@@ -2723,8 +2723,7 @@ html:not(.js) .nav ul a:hover {
 
 /* Lichtschein, der dem Mauszeiger folgt (site.js setzt --mx/--my); liegt unter dem Text */
 .card::before,
-.role::before,
-.step::before {
+.role::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -2805,14 +2804,16 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* ---------- Funktionen-Slider ----------
-   Mit JavaScript werden die zwölf Karten eine waagerechte Reihe, die man wischt oder mit den Pfeilen blättert (site.js).
-   Die sichtbaren Karten stehen ganz im Bild und im Fokus; die Nachbarn schauen am Rand ein Stück herein (--peek),
-   etwas kleiner und blasser, und laufen zum Rand hin weich aus. Ohne JavaScript und im Druck bleibt das Raster.
+/* ---------- Slider ----------
+   Karten in einer waagerechten Reihe, die man wischt oder mit den Pfeilen blättert (site.js setzt .is-slider: bei den
+   Funktionen immer, bei Rollen und Sicherheit – .slider-phone – nur auf dem Smartphone). Die sichtbaren Karten stehen
+   ganz im Bild und im Fokus; die Nachbarn schauen am Rand ein Stück herein (--peek), etwas kleiner und blasser, und
+   laufen weich aus. Ohne JavaScript, im Druck und außerhalb der Smartphone-Breite bleibt das Raster.
    Die Reihe reicht über den Inhaltsbereich hinaus bis zu --bleed in den Rand, die Karten richten sich trotzdem am
    Inhaltsbereich aus (Innenabstand und Einrastabstand gleich --bleed). */
-.section:has(.features-slider) {
-  container-type: inline-size; /* 100cqw = Breite des Abschnitts ohne Scrollleiste (anders als 100vw) */
+.section:has(.slider),
+.band-panel:has(.slider) {
+  container-type: inline-size; /* 100cqw = Breite des Abschnitts bzw. der Fläche ohne Scrollleiste (anders als 100vw) */
 }
 
 .slider-btn,
@@ -2820,12 +2821,12 @@ html:not(.js) .nav ul a:hover {
   display: none;
 }
 
-.js .features-slider {
+.slider.is-slider {
   position: relative;
   padding-bottom: 72px; /* Platz für Fortschritt und – auf schmalen Bildschirmen – die Pfeile */
 }
 
-.js .features {
+.slider.is-slider .slider-track {
   --cols: 1;
   --gap: 12px;
   --peek: 22px;
@@ -2833,16 +2834,6 @@ html:not(.js) .nav ul a:hover {
   --side: calc((100cqw - min(100cqw, var(--container) + 2 * var(--gutter))) / 2 + var(--gutter));
   --bleed: min(var(--side), var(--peek) + var(--gap));
   --peek-in: calc(var(--peek) + var(--gap) - var(--bleed)); /* der Rest der Vorschau kommt aus dem Inhaltsbereich */
-  position: relative; /* Bezug für offsetLeft der Karten (site.js) */
-  display: flex;
-  gap: var(--gap);
-  margin: -12px calc(var(--bleed) * -1) -48px; /* Innenabstand oben/unten für Schatten und Anheben (ein Scrollbereich schneidet dort ab) */
-  padding: 12px var(--bleed) 48px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--bleed);
-  scrollbar-width: none;
   /* zum Rand hin weich auslaufen (erst ganz außen durchsichtig) */
   --fade: linear-gradient(
     90deg,
@@ -2853,19 +2844,29 @@ html:not(.js) .nav ul a:hover {
     rgb(0 0 0 / 55%) calc(100% - var(--bleed) * 0.4),
     transparent
   );
+  position: relative; /* Bezug für offsetLeft der Karten (site.js) */
+  display: flex;
+  gap: var(--gap);
+  margin: -12px calc(var(--bleed) * -1) -48px; /* Innenabstand oben/unten für Schatten und Anheben (ein Scrollbereich schneidet dort ab) */
+  padding: 12px var(--bleed) 48px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--bleed);
+  scrollbar-width: none;
   -webkit-mask-image: var(--fade);
   mask-image: var(--fade);
 }
 
-.js .features::-webkit-scrollbar {
+.slider.is-slider .slider-track::-webkit-scrollbar {
   display: none;
 }
 
-.js .features:focus-visible {
+.slider.is-slider .slider-track:focus-visible {
   outline: none; /* Fokusrahmen an der Hülle – die Reihe selbst läuft am Rand weich aus */
 }
 
-.js .features-slider:has(> .features:focus-visible)::after {
+.slider.is-slider:has(> .slider-track:focus-visible)::after {
   content: "";
   position: absolute;
   inset: -8px calc(var(--gutter) * -0.5) 56px;
@@ -2874,20 +2875,20 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
-.js .features > .card {
+.slider.is-slider .slider-track > * {
   flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap) - var(--peek-in)) / var(--cols));
   scroll-snap-align: start;
 }
 
 /* Karten, die nicht ganz im Bild stehen (site.js setzt .is-dim): kleiner und blasser; ein Klick holt sie herein */
-.js .features > .card.is-dim {
+.slider.is-slider .slider-track > .is-dim {
   opacity: 0.55;
   scale: 0.94;
   cursor: pointer;
 }
 
 @media (min-width: 600px) {
-  .js .features {
+  .slider.is-slider .features {
     --cols: 2;
     --gap: 20px;
     --peek: 44px;
@@ -2895,14 +2896,14 @@ html:not(.js) .nav ul a:hover {
 }
 
 @media (min-width: 1100px) {
-  .js .features {
+  .slider.is-slider .features {
     --cols: 3;
     --peek: 64px;
   }
 }
 
 /* Pfeile: rund, im Stil der hellen Schaltflächen; am Anfang bzw. Ende blass und ohne Wirkung */
-.js .slider-btn {
+.slider.is-slider .slider-btn {
   position: absolute;
   z-index: 2;
   bottom: 0;
@@ -2926,44 +2927,44 @@ html:not(.js) .nav ul a:hover {
     transform 0.28s var(--ease-out);
 }
 
-.js .slider-btn:focus-visible {
+.slider.is-slider .slider-btn:focus-visible {
   border-radius: 50%;
 }
 
-.js .slider-btn .icon {
+.slider.is-slider .slider-btn .icon {
   width: 22px;
   height: 22px;
 }
 
-.js .slider-prev {
+.slider.is-slider .slider-prev {
   left: 0;
 }
 
-.js .slider-next {
+.slider.is-slider .slider-next {
   right: 0;
 }
 
-.js .slider-btn[aria-disabled="true"] {
+.slider.is-slider .slider-btn[aria-disabled="true"] {
   opacity: 0.35;
   box-shadow: none;
   cursor: default;
 }
 
 @media (hover: hover) {
-  .js .slider-btn:not([aria-disabled="true"]):hover {
+  .slider.is-slider .slider-btn:not([aria-disabled="true"]):hover {
     border-color: var(--accent-line);
     background: var(--accent-soft);
     box-shadow: var(--shadow-md);
   }
 }
 
-.js .slider-btn:not([aria-disabled="true"]):active {
+.slider.is-slider .slider-btn:not([aria-disabled="true"]):active {
   transform: scale(0.94);
   transition-duration: 0.08s;
 }
 
-/* Fortschritt: schmale Leiste, der helle Teil zeigt, welcher Ausschnitt der zwölf Karten gerade zu sehen ist */
-.js .slider-progress {
+/* Fortschritt: schmale Leiste, der dunkle Teil zeigt, welcher Ausschnitt der Karten gerade zu sehen ist */
+.slider.is-slider .slider-progress {
   position: absolute;
   bottom: 22px;
   left: 50%;
@@ -2976,7 +2977,7 @@ html:not(.js) .nav ul a:hover {
   translate: -50% 0;
 }
 
-.js .slider-progress span {
+.slider.is-slider .slider-progress span {
   display: block;
   width: calc(var(--size, 0.25) * 100%);
   height: 100%;
@@ -2987,29 +2988,29 @@ html:not(.js) .nav ul a:hover {
 
 /* Breite Bildschirme: Pfeile links und rechts auf halber Höhe der Karten, halb über dem Rand */
 @media (min-width: 900px) {
-  .js .features-slider {
+  .slider.is-slider {
     padding-bottom: 40px;
   }
 
-  .js .slider-btn {
+  .slider.is-slider .slider-btn {
     top: calc(50% - 20px);
     bottom: auto;
     translate: 0 -50%;
   }
 
-  .js .slider-prev {
+  .slider.is-slider .slider-prev {
     left: -24px;
   }
 
-  .js .slider-next {
+  .slider.is-slider .slider-next {
     right: -24px;
   }
 
-  .js .slider-progress {
+  .slider.is-slider .slider-progress {
     bottom: 6px;
   }
 
-  .js .features-slider:has(> .features:focus-visible)::after {
+  .slider.is-slider:has(> .slider-track:focus-visible)::after {
     bottom: 24px;
   }
 }
@@ -3080,7 +3081,7 @@ html:not(.js) .nav ul a:hover {
 }
 
 .spot + .spot {
-  margin-top: clamp(96px, 12vw, 168px);
+  margin-top: clamp(72px, 9vw, 128px);
 }
 
 .spot.flip {
@@ -3105,16 +3106,136 @@ html:not(.js) .nav ul a:hover {
   position: relative;
 }
 
+/* ---------- Reiter ----------
+   „Im Detail“: Mit JavaScript werden die vier Themen Reiter (site.js setzt .is-tabs und das hidden der Leiste zurück).
+   Alle Themen liegen übereinander in derselben Rasterzelle – der Bereich ist so hoch wie das längste, beim Umschalten
+   springt nichts. Das gewählte blendet weich ein, die anderen sind unsichtbar (auch für Screenreader). */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto clamp(32px, 4vw, 52px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.tabs[hidden] {
+  display: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.3s var(--ease-soft),
+    color 0.2s,
+    box-shadow 0.3s var(--ease-soft);
+}
+
+.tab .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab:focus-visible {
+  border-radius: 999px;
+}
+
+.tab[aria-selected="true"] {
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--accent);
+}
+
+.spots.is-tabs {
+  display: grid;
+}
+
+.spots.is-tabs > .tabs {
+  grid-row: 1;
+}
+
+.spots.is-tabs > .spot {
+  grid-area: 2 / 1;
+  margin: 0;
+  scroll-margin-top: calc(var(--header-h) + 110px); /* Sprung auf ein Thema (#suche): die Reiterleiste bleibt sichtbar */
+}
+
+/* Im Reiter immer Text links, Bild rechts – der Wechsel links/rechts gehört zum Untereinander */
+.spots.is-tabs > .spot.flip {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
+}
+
+.spots.is-tabs > .spot.flip .spot-media {
+  order: 0;
+}
+
+.spots.is-tabs > .spot:not(.is-active) {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Smartphone: vier Reiter nebeneinander, Symbol über der Beschriftung */
+@media (max-width: 599px) {
+  .tabs {
+    width: 100%;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 22px;
+  }
+
+  .tab {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 56px;
+    padding: 6px 2px;
+    border-radius: 18px;
+    font-size: 0.8rem;
+  }
+
+  .tab:focus-visible {
+    border-radius: 18px;
+  }
+}
+
 /* Helferplan zum Aushängen: eigener Unterabschnitt im Helferschichten-Kapitel */
 .spot-print {
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  margin-top: clamp(104px, 13vw, 176px);
+  margin-top: clamp(72px, 9vw, 128px);
 }
 
 @media (max-width: 899px) {
   .spot,
   .spot.flip,
-  .spot-print {
+  .spot-print,
+  .spots.is-tabs > .spot.flip {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -3400,205 +3521,6 @@ html:not(.js) .nav ul a:hover {
   text-wrap: balance;
 }
 
-/* ---------- Ablauf ---------- */
-
-.steps {
-  display: grid;
-  gap: 24px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.step {
-  position: relative;
-  isolation: isolate;
-  padding: 30px 28px 28px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  counter-increment: step;
-}
-
-.step-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.step-no {
-  display: block;
-}
-
-.step-no::before {
-  content: counter(step);
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: var(--shadow-accent);
-  color: var(--on-accent);
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.step-icon {
-  width: 26px;
-  height: 26px;
-  color: var(--muted);
-}
-
-.step h3 {
-  margin-bottom: 8px;
-}
-
-.step p {
-  color: var(--muted);
-  font-size: 0.98rem;
-}
-
-/* Verbindungslinie zwischen den Schritten */
-@media (min-width: 900px) {
-  .step:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    top: 51px;
-    right: -25px;
-    width: 26px;
-    border-top: 2px dashed var(--line-strong);
-    transform-origin: left;
-  }
-}
-
-@media (max-width: 899px) {
-  .steps {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* ---------- Mobil ---------- */
-
-.phones {
-  display: flex;
-  justify-content: center;
-  gap: clamp(24px, 4vw, 56px);
-}
-
-.phones figure {
-  width: min(280px, 28vw);
-  margin: 0;
-}
-
-/* Die mittlere Aufnahme steht etwas tiefer – ruhiger Rhythmus statt einer starren Reihe */
-.phones figure:nth-child(2) {
-  margin-top: clamp(24px, 4vw, 56px);
-}
-
-.phones figcaption {
-  margin-top: 18px;
-  color: var(--muted);
-  font-size: 0.95rem;
-  text-align: center;
-  text-wrap: balance;
-}
-
-/* Smartphone: waagerecht wischen statt drei Telefone untereinander (die Seite selbst scrollt nicht seitlich) */
-@media (max-width: 559px) {
-  /* Genug Innenabstand für den Schatten der Telefone (ein Scrollbereich schneidet auch oben und unten ab); der negative
-     Außenabstand gleicht ihn aus, damit der Abschnitt nicht höher wird */
-  .phones {
-    justify-content: flex-start;
-    margin: -32px calc(var(--gutter) * -1) -80px;
-    padding: 40px var(--gutter) 100px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: var(--gutter);
-    scrollbar-width: none;
-  }
-
-  .phones::-webkit-scrollbar {
-    display: none;
-  }
-
-  .phones figure {
-    flex: 0 0 min(280px, 72vw);
-    width: auto;
-    scroll-snap-align: center;
-  }
-
-  .phones figure:nth-child(2) {
-    margin-top: 0;
-  }
-}
-
-/* ---------- Ausblick ---------- */
-
-.road {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-/* Geplantes wirkt bewusst leiser als Vorhandenes: gestrichelter Rand, neutrale Symbole */
-.road .card {
-  padding: 24px;
-  border-style: dashed;
-  border-color: var(--line-strong);
-  background: var(--surface-soft);
-  box-shadow: none;
-}
-
-.road .card::before {
-  display: none;
-}
-
-.road .card-icon {
-  width: 42px;
-  height: 42px;
-  margin-bottom: 14px;
-  border-radius: 12px;
-  background: var(--t-slate-bg);
-  color: var(--t-slate-fg);
-}
-
-.road .card-icon .icon {
-  width: 22px;
-  height: 22px;
-}
-
-.chip {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--warn-soft);
-  color: var(--warn);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-@media (max-width: 1099px) {
-  .road {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 559px) {
-  .road {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* ---------- Häufige Fragen ---------- */
 
 .faq {
@@ -3668,6 +3590,17 @@ html:not(.js) .nav ul a:hover {
   margin-top: 12px;
 }
 
+.faq .plan {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding-left: 1.2em;
+}
+
+.faq .plan li::marker {
+  color: var(--accent);
+}
+
 /* ---------- Kontakt ---------- */
 
 #faq {
@@ -3725,6 +3658,60 @@ html:not(.js) .nav ul a:hover {
   margin: 20px auto 0;
   color: var(--muted);
   font-size: 1.15rem;
+}
+
+/* Drei Schritte bis zum Start: kompakt unter der Anfrage, auf breiten Bildschirmen nebeneinander */
+.cta-steps-title {
+  margin-top: clamp(36px, 5vw, 56px);
+  padding-top: clamp(28px, 4vw, 40px);
+  border-top: 1px solid var(--line);
+  font-size: 1.15rem;
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}
+
+.cta-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2.4vw, 32px);
+  max-width: 980px;
+  margin: 20px auto 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.cta-steps li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.cta-steps strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.cta-step-no {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--shadow-accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+@media (max-width: 899px) {
+  .cta-steps {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 34rem;
+  }
 }
 
 .cta .hero-actions {
@@ -4381,8 +4368,7 @@ html:not(.js) .nav ul a:hover {
 
   /* Karten: Einblendung, Symbol springt kurz nach, weiche Reaktion auf den Mauszeiger */
   .card.reveal,
-  .role.reveal,
-  .step.reveal {
+  .role.reveal {
     transition:
       opacity 0.8s var(--ease-out) var(--reveal-delay, 0s),
       translate 0.95s var(--ease-out) var(--reveal-delay, 0s),
@@ -4393,8 +4379,7 @@ html:not(.js) .nav ul a:hover {
   }
 
   .card.reveal.is-pending,
-  .role.reveal.is-pending,
-  .step.reveal.is-pending {
+  .role.reveal.is-pending {
     transition-delay: 0s;
   }
 
@@ -4412,8 +4397,8 @@ html:not(.js) .nav ul a:hover {
     transition-duration: 0.2s;
   }
 
-  /* Funktionen-Slider: Karten gleiten beim Wechsel sanft in den Fokus (Größe, Deckkraft), Fortschritt läuft mit */
-  .js .features > .card {
+  /* Slider: Karten gleiten beim Wechsel sanft in den Fokus (Größe, Deckkraft), Fortschritt läuft mit */
+  .slider.is-slider .slider-track > * {
     transition:
       opacity 0.6s cubic-bezier(0.45, 0, 0.25, 1),
       scale 0.6s cubic-bezier(0.45, 0, 0.25, 1),
@@ -4422,59 +4407,58 @@ html:not(.js) .nav ul a:hover {
       border-color 0.3s;
   }
 
-  .js .slider-progress span {
+  .slider.is-slider .slider-progress span {
     transition: translate 0.25s var(--ease-out);
   }
 
-  /* Ablauf: Nummern springen auf, die Verbindungslinie wächst zum nächsten Schritt */
-  .reveal .step-no {
-    transition: scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--reveal-delay, 0s) + 0.15s);
+  /* Karten im Slider blenden nicht einzeln ein (die nicht sichtbaren kämen sonst beim Wischen von unten herein) */
+  .slider.is-slider .slider-track > .reveal.is-pending {
+    translate: none;
+    scale: none;
   }
 
-  .reveal.is-pending .step-no {
-    scale: 0.4;
-    transition-delay: 0s;
+  .slider.is-slider .slider-track > .reveal.is-pending:not(.is-dim) {
+    opacity: 1;
   }
 
-  .step.reveal::after {
-    transition: scale 0.8s var(--ease-out) calc(var(--reveal-delay, 0s) + 0.45s);
+  .slider.is-slider .slider-track > .reveal.is-pending .card-icon {
+    opacity: 1;
+    scale: none;
   }
 
-  .step.reveal.is-pending::after {
-    scale: 0 1;
-    transition-delay: 0s;
+  /* Reiter: das bisherige Thema blendet kurz aus, das gewählte gleitet danach weich herein */
+  .spots.is-tabs > .spot {
+    transition:
+      opacity 0.5s cubic-bezier(0.45, 0, 0.25, 1) 0.14s,
+      translate 0.6s cubic-bezier(0.45, 0, 0.25, 1) 0.14s,
+      visibility 0s linear 0s;
+  }
+
+  .spots.is-tabs > .spot:not(.is-active) {
+    translate: 0 14px;
+    transition:
+      opacity 0.25s ease-in,
+      translate 0.25s ease-in,
+      visibility 0s linear 0.25s;
   }
 }
 
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   .card:hover,
-  .role:hover,
-  .step:hover {
+  .role:hover {
     transform: translateY(-4px);
     border-color: var(--accent-line);
     box-shadow: var(--shadow-md);
   }
 
   .card:hover::before,
-  .role:hover::before,
-  .step:hover::before {
+  .role:hover::before {
     opacity: 1;
   }
 
   /* Blasse Nachbarkarte im Slider: beim Überfahren etwas deutlicher – ein Klick holt sie herein */
-  .js .features > .card.is-dim:hover {
+  .slider.is-slider .slider-track > .is-dim:hover {
     opacity: 0.8;
-  }
-
-  /* Geplantes ist kein Angebot zum Anklicken – bleibt ruhig */
-  .road .card:hover {
-    transform: none;
-    border-color: var(--line-strong);
-    box-shadow: none;
-  }
-
-  .road .card:hover .card-icon {
-    transform: none;
   }
 
   .card:hover .card-icon,
@@ -4944,12 +4928,12 @@ html:not(.js) .nav ul a:hover {
     overflow: visible;
   }
 
-  /* Funktionen: im Druck das Raster statt des Sliders */
-  .js .features-slider {
+  /* Slider und Reiter: im Druck das Raster bzw. alle Themen untereinander */
+  .slider.is-slider {
     padding-bottom: 0;
   }
 
-  .js .features {
+  .slider.is-slider .slider-track {
     display: grid;
     margin: 0;
     padding: 0;
@@ -4958,7 +4942,25 @@ html:not(.js) .nav ul a:hover {
     mask-image: none;
   }
 
-  .js .features > .card {
+  .spots.is-tabs {
+    display: block;
+  }
+
+  .spots.is-tabs > .tabs {
+    display: none;
+  }
+
+  .spots.is-tabs > .spot {
+    visibility: visible !important;
+    opacity: 1 !important;
+    translate: none !important;
+  }
+
+  .spots.is-tabs > .spot + .spot {
+    margin-top: 48px;
+  }
+
+  .slider.is-slider .slider-track > * {
     opacity: 1 !important;
     scale: none !important;
     transition: none !important;

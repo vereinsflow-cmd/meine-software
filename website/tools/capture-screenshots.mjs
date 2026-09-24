@@ -186,7 +186,6 @@ const shots = [
     widths: [640, 1280],
     schemes: ["light"],
   },
-  { name: "phone-dashboard", device: "phone", path: "/dashboard" },
   {
     name: "phone-helferplanung",
     device: "phone",
@@ -202,8 +201,6 @@ const shots = [
     widths: [208, 260, 312, 416, 520, 624, 780],
     crisp: [208, 260],
   },
-  { name: "phone-kalender", device: "phone", path: "/kalender" },
-  { name: "phone-suche", device: "phone", path: "/dashboard", steps: openSearch(process.env.VF_SEARCH ?? "Hel", { viaButton: true }) },
 ];
 
 /**
