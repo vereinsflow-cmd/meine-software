@@ -3,6 +3,15 @@
 
 ErrorDocument 404 /404.html
 
+<IfModule mod_rewrite.c>
+  # Immer https://vereins-flow.com (ohne „www.“, so lautet auch die kanonische Adresse). Die Prüfung über den Port
+  # entspricht der IONOS-Anleitung. Bei einer anderen Domain auch die Adresse hier anpassen.
+  RewriteEngine On
+  RewriteCond %{SERVER_PORT} !=443 [OR]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://vereins-flow.com%{REQUEST_URI} [R=301,L]
+</IfModule>
+
 <IfModule mod_headers.c>
   # Die Seite lädt nur eigene Dateien und braucht weder Inline-Skripte noch Inline-Stile.
   # Wer später etwas Fremdes einbindet (Statistik, Karte, Video), muss diese Richtlinie – und die Datenschutzerklärung – anpassen.

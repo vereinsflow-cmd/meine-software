@@ -62,7 +62,7 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 2. **Domain:** eingetragen (`https://vereins-flow.com` – **mit Bindestrich**, so steht sie im IONOS-Vertrag; `vereinsflow.com`
    ohne Bindestrich gehört euch nicht). Bei IONOS unter „Domains & SSL“ das **SSL-Zertifikat für `vereins-flow.com` aktivieren**
    (rotes Schloss = noch kein HTTPS); erst danach die HSTS-Zeile in `.htaccess` einschalten. Für eine andere Domain `https://vereins-flow.com` in den Seiten,
-   `robots.txt` und `sitemap.xml` per Suchen/Ersetzen austauschen – `tools/set-domain.mjs` ersetzt nur die ursprüngliche
+   `robots.txt`, `sitemap.xml` und `.htaccess` (Weiterleitung auf HTTPS ohne „www.“) per Suchen/Ersetzen austauschen – `tools/set-domain.mjs` ersetzt nur die ursprüngliche
    Musterdomain `https://vereinsflow.example`.
 3. **Rechtstexte prüfen lassen.** Impressum und Datenschutzerklärung sind Muster, keine Rechtsberatung. Wer später Statistik,
    Karten, Videos oder Schriften von fremden Servern einbindet, muss die Datenschutzerklärung **und** die Content-Security-Policy
