@@ -87,7 +87,9 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   auf `/public`). Weil der Webspace Explorer kein „Entpacken“ anbietet, liegt `upload/entpacken.php` daneben: beide Dateien im
   Webspace Explorer nach `/public` hochladen, `https://vereins-flow.com/entpacken.php` im Browser aufrufen – der Helfer packt das ZIP
   aus (danach liegt `index.html` direkt in `/public`) und löscht sich selbst. Anschließend die ZIP-Datei im Webspace Explorer löschen.
-  Nach Änderungen an der Seite neu packen (im Ordner `website/`):
+  **Einfacher per SFTP** (einmal bei IONOS unter Hosting → SFTP einen Benutzer anlegen, Verzeichnis „/“): im Ordner `website/`
+  `node tools/hochladen.mjs <Server> <Benutzer>` – lädt alles direkt nach `/public`, ohne ZIP und Entpack-Helfer.
+  Nach Änderungen an der Seite das Paket neu packen (im Ordner `website/`):
   `rm -f upload/vereinsflow-website.zip && zip -r -X upload/vereinsflow-website.zip . -x "tools/*" "upload/*" "README.md" "Vorschau-starten.*" "_headers" "*.DS_Store"`
 - **nginx** – Beispiel:
 
@@ -115,6 +117,7 @@ Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (
 | `node tools/serve.mjs`                     | Vorschau-Server mit Produktions-Headern                                                                   |
 | `node tools/check-site.mjs [--strict]`     | Prüft Verweise, Bilder, Symbole, fremde Server, Inline-Skripte/-Stile und listet offene Platzhalter       |
 | `node tools/set-domain.mjs <https://…>`    | Ersetzt die Musterdomain `https://vereinsflow.example` (bereits erledigt)                                   |
+| `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`; `--only dashboard`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
 | `node tools/make-og-image.mjs`             | Erzeugt das Vorschaubild für das Teilen (`tools/og-template.html`)                                        |
 | `node tools/make-logo-assets.mjs`          | Erzeugt Logo-Dateien und Favicons aus den Vektordaten der Anwendung                                       |
