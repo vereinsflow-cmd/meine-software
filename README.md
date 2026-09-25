@@ -52,7 +52,7 @@ Voraussetzungen: **Node.js 22 oder neuer** (entwickelt mit 24), npm, und entwede
 Embedded-PostgreSQL.
 
 > **Kurzweg (ohne Docker):** Nach den Schritten 1 und 2 genügt **ein Befehl** – `npm run dev:all`, unter Windows ein
-> Doppelklick auf **`Start-VereinsFlow.cmd`**. Er startet die Datenbank, legt fehlende Tabellen an (beim allerersten Mal
+> Doppelklick auf **`Start-VereinsFlow.cmd`**, auf dem Mac auf **`Start-VereinsFlow.command`**. Er startet die Datenbank, legt fehlende Tabellen an (beim allerersten Mal
 > auch die Demo-Daten), startet die Anwendung und öffnet den Browser. Das Fenster bleibt offen, solange man VereinsFlow
 > benutzt; mit Strg+C wird alles sauber beendet. Die Schritte 3 bis 6 unten beschreiben dasselbe von Hand.
 
@@ -131,7 +131,7 @@ Server-Konsole.
 
 Das heißt: **Die Datenbank läuft nicht** (oder nicht dort, wo `DATABASE_URL` in `.env` hinzeigt). Die eingebettete
 Datenbank ist ein eigener Prozess, der nur so lange läuft, wie sein Fenster offen ist – nach einem Neustart des Rechners
-oder dem Schließen des Fensters ist sie aus. Lösung: `npm run dev:all` (bzw. `Start-VereinsFlow.cmd`) starten; das holt
+oder dem Schließen des Fensters ist sie aus. Lösung: `npm run dev:all` (bzw. `Start-VereinsFlow.cmd` / `Start-VereinsFlow.command`) starten; das holt
 die Datenbank automatisch hoch. Wer sie lieber einzeln startet: `npm run db:embedded` in einem **eigenen** Fenster
 offen lassen (oder `docker compose up -d`) und erst dann `npm run dev` bzw. `npm run db:seed` ausführen.
 

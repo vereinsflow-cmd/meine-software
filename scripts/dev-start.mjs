@@ -13,7 +13,7 @@
  *   npm run dev:all -- --seed    … und die Demo-Daten (nochmals) einspielen, falls sie fehlen
  *
  * Beenden mit Strg+C: Anwendung UND die von diesem Skript gestartete Datenbank werden sauber gestoppt.
- * Unter Windows genügt ein Doppelklick auf `Start-VereinsFlow.cmd`.
+ * Unter Windows genügt ein Doppelklick auf `Start-VereinsFlow.cmd`, auf dem Mac auf `Start-VereinsFlow.command`.
  */
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";

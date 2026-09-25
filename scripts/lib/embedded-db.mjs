@@ -39,7 +39,11 @@ export async function startEmbeddedDatabase({ port, dbName }) {
     persistent: true,
     // WICHTIG: UTF-8 und deutsche Sortierung erzwingen. Ohne diese Angabe übernimmt initdb unter Windows die
     // Systemkodierung (WIN1252) – Zeichen wie "→", "Ş", "Ż" oder Emojis ließen sich dann nicht speichern.
-    initdbFlags: ["--encoding=UTF8", "--locale=de-DE"],
+    // Der Name der Locale unterscheidet sich: Windows kennt "de-DE", macOS/Linux "de_DE.UTF-8".
+    initdbFlags: [
+      "--encoding=UTF8",
+      process.platform === "win32" ? "--locale=de-DE" : "--locale=de_DE.UTF-8",
+    ],
     onLog: () => {},
     onError: (message) => console.error(String(message)),
   });
