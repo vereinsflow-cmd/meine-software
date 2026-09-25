@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://vereinsflow.example/sitemap.xml
+Sitemap: https://vereinsflow.com/sitemap.xml
