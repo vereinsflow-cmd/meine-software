@@ -28,5 +28,8 @@ ErrorDocument 404 /404.html
 </IfModule>
 
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript image/svg+xml application/json text/xml application/xml
+  # AddOutputFilterByType gehört zu mod_filter – ohne diesen Block gäbe es sonst einen 500-Fehler, falls mod_filter fehlt
+  <IfModule mod_filter.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript image/svg+xml application/json text/xml application/xml
+  </IfModule>
 </IfModule>
