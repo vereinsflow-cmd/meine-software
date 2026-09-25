@@ -1,7 +1,7 @@
 // Kleiner Vorschau-Server ohne Abhängigkeiten:  node tools/serve.mjs [Port] [--open]   →  http://localhost:4173
 // Er liefert die Website aus und setzt dieselben Sicherheits-Header wie in der Datei _headers (Block „/*“) – so fallen
 // Verstöße gegen die Content-Security-Policy schon in der Vorschau auf (Konsole des Browsers).
-// Mit --open öffnet sich zusätzlich der Standardbrowser (unter Windows: Doppelklick auf Vorschau-starten.cmd).
+// Mit --open öffnet sich zusätzlich der Standardbrowser (Doppelklick auf Vorschau-starten.cmd unter Windows bzw. Vorschau-starten.command auf dem Mac).
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";

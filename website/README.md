@@ -9,31 +9,33 @@ Die Website liegt als Ordner `website/` im VereinsFlow-Repository, neben der Anw
 Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, Docker, CI), die Website prüft sich selbst
 (`node tools/check-site.mjs`, in der CI als `website.yml`).
 
-> **Stand:** Die Seite ist fertig gebaut, aber **noch nicht veröffentlicht**. Vorher müssen Angaben ergänzt werden (siehe unten).
+> **Stand:** Die Seite ist fertig gebaut, aber **noch nicht veröffentlicht**. Alle Angaben sind eingetragen (siehe unten).
 
 ## Inhalt
 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `index.html`                          | Startseite (Abschnitte: Einstieg, Laptop- und Telefon-Vorführung, Kennzahlen, Ausgangslage, Funktionen, Helferschichten mit Helferplan-Aushang, Im Detail mit Suche/Mitglieder/Veranstaltungen/Auswertungen als Reiter, Rollen, Sicherheit, FAQ mit Ausblick, Kontakt mit den drei Schritten zum Start) |
-| `impressum.html`, `datenschutz.html`  | Rechtstexte als **Muster** mit Platzhaltern (`[[…]]`)                                        |
+| `impressum.html`, `datenschutz.html`  | Rechtstexte (ausgefüllt, Stand 26.09.2026)                                                 |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
 | `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Slider für Funktionen sowie – auf dem Smartphone – Rollen und Sicherheit (Pfeile, Wischen, Pfeiltasten), Reiter „Im Detail“, Ladezustand der Bilder (ohne JavaScript bleibt alles nutzbar; Karten stehen dann als Raster, die Themen untereinander) |
 | `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je zwei Größen                     |
 | `assets/img/`, `assets/brand/`        | Logo (Seite) und Logo-Vorlagen (Profilbilder, Präsentationen); Vorschaubild `og-image.png`   |
-| `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (enthalten die Musterdomain)                                              |
+| `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (Domain `https://vereinsflow.com`)                                         |
 | `_headers`, `.htaccess`               | Sicherheits- und Cache-Header für Netlify/Cloudflare Pages bzw. Apache-Webspace              |
-| `Vorschau-starten.cmd`                | Windows: Doppelklick startet die Vorschau und öffnet den Browser                            |
+| `Vorschau-starten.cmd`, `.command`    | Windows bzw. Mac: Doppelklick startet die Vorschau und öffnet den Browser                   |
 | `tools/`                              | Werkzeuge (siehe unten); müssen nicht hochgeladen werden                                    |
+| `upload/vereinsflow-website.zip`      | Fertiges Paket zum Hochladen auf den IONOS-Webspace (siehe „Veröffentlichen“)               |
 | `THIRD-PARTY-NOTICES.md`              | Lizenzhinweise der Symbole (lucide, ISC) – bitte mit veröffentlichen                        |
 
 ## Ansehen
 
-**Windows: Doppelklick auf `Vorschau-starten.cmd`.** Das Fenster bleibt offen, solange die Vorschau läuft; beendet wird mit
-Strg+C (Rückfrage mit „J“ beantworten). Der Browser öffnet sich von selbst.
+**Windows: Doppelklick auf `Vorschau-starten.cmd`, Mac: Doppelklick auf `Vorschau-starten.command`.** Das Fenster bleibt offen, solange die Vorschau läuft; beendet wird mit
+Strg+C (unter Windows die Rückfrage mit „J“ beantworten). Der Browser öffnet sich von selbst.
 
-Oder von Hand in einem Terminal im Ordner der Website (Windows 11: Rechtsklick auf den Ordner → „Im Terminal öffnen“):
+Oder von Hand in einem Terminal im Ordner der Website (Windows 11: Rechtsklick auf den Ordner → „Im Terminal öffnen“; Mac: Rechtsklick auf den Ordner → Dienste →
+„Neues Terminal beim Ordner“):
 
 ```bash
 node tools/serve.mjs          # Vorschau auf http://localhost:4173
@@ -45,13 +47,20 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 
 ## Vor der Veröffentlichung
 
-1. **Platzhalter ersetzen.** `node tools/check-site.mjs` listet alle offenen Stellen mit Datei und Zeile:
-   - `[[E-MAIL]]` – Kontaktadresse in Impressum und Datenschutz. Die Demo-Anfrage auf der Startseite geht bereits an
-     `vereinsflow@gmail.com` (Schaltfläche „Demo per E-Mail anfragen“ und Adresse darunter im Abschnitt „Kontakt“).
-   - Betreiberangaben im **Impressum** (Name, Anschrift, Telefon, ggf. Register und USt-IdNr.).
-   - Angaben in der **Datenschutzerklärung** (Verantwortlicher, Hosting-Anbieter, Speicherdauer der Server-Logs, Aufsichtsbehörde).
-2. **Domain eintragen:** `node tools/set-domain.mjs https://www.ihre-domain.de` (ersetzt `https://vereinsflow.example` in Seiten,
-   `robots.txt` und `sitemap.xml`).
+1. **Angaben sind eingetragen** (Stand 26.09.2026): VereinsFlow GbR (Gesellschafter Ben Bleckert und Luis Heidecker),
+   Oberschlesienstraße 6a, 45711 Datteln, `kontakt@vereinsflow.com` (auch für die Demo-Anfrage auf der Startseite),
+   Hosting bei IONOS, Aufsichtsbehörde LDI NRW, Domain `https://vereinsflow.com`. Damit die Texte stimmen:
+   - **IONOS WebAnalytics abschalten.** Es ist bei IONOS standardmäßig an; die Seite verspricht aber „kein Tracking“.
+   - **IONOS-CDN nicht aktivieren** (Cloudflare, USA) – sonst stimmt „innerhalb der Europäischen Union“ nicht mehr.
+   - **Auftragsverarbeitung prüfen:** Die AVV ist Teil der IONOS-AGB (Verträge ab 19.07.2022); nachzulesen unter IONOS-Konto →
+     Mein Konto → „Datenschutz & Privatsphäre“. Der IONOS-Vertrag sollte auf die GbR laufen.
+   - **Postfach `kontakt@vereinsflow.com`** muss bei IONOS eingerichtet sein (die Datenschutzerklärung nennt IONOS als Mail-Anbieter).
+   - **Wirtschafts-Identifikationsnummer** (kommt nach der steuerlichen Erfassung ins ELSTER-Postfach) bzw. eine spätere
+     USt-IdNr. sofort ins Impressum aufnehmen. Bei Eintragung ins Gesellschaftsregister wird aus „GbR“ „eGbR“ mit Registerangaben.
+   - Den Namen „VereinsFlow GbR“ überall gleich schreiben (Gewerbeanmeldung, Finanzamt, Rechnungen).
+2. **Domain:** eingetragen (`https://vereinsflow.com`). Für eine andere Domain `https://vereinsflow.com` in den Seiten,
+   `robots.txt` und `sitemap.xml` per Suchen/Ersetzen austauschen – `tools/set-domain.mjs` ersetzt nur die ursprüngliche
+   Musterdomain `https://vereinsflow.example`.
 3. **Rechtstexte prüfen lassen.** Impressum und Datenschutzerklärung sind Muster, keine Rechtsberatung. Wer später Statistik,
    Karten, Videos oder Schriften von fremden Servern einbindet, muss die Datenschutzerklärung **und** die Content-Security-Policy
    (`_headers` / `.htaccess`) anpassen.
@@ -64,13 +73,18 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 
 ## Veröffentlichen
 
-Der Ordner (ohne `tools/`, `README.md` und `Vorschau-starten.cmd`) ist eine fertige statische Website und läuft bei jedem Anbieter, der Dateien ausliefert:
+Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `Vorschau-starten.command`) ist eine fertige statische Website und läuft bei jedem Anbieter, der Dateien ausliefert:
 
 - **Netlify** oder **Cloudflare Pages**: Ordner `website/` hochladen oder das Repository verbinden (Basisverzeichnis und
   Ausgabeordner `website`, kein Build-Befehl); `_headers` wird automatisch gelesen. Beide unterstützen auch private Repositories.
 - **GitHub Pages**: veröffentlicht nur den Hauptordner oder `docs/`, für `website/` wäre ein eigener Workflow nötig (nicht
   eingerichtet); private Repositories brauchen dafür einen bezahlten GitHub-Tarif. Die Header (`_headers`) wirken dort nicht.
 - **Klassischer Webspace** (IONOS, Strato, all-inkl u. a., Apache): per FTP hochladen; `.htaccess` liefert Fehlerseite und Header.
+  **Fertiges Paket für IONOS:** `upload/vereinsflow-website.zip` enthält genau die Dateien für den Webspace. Im IONOS-Webspace-Explorer
+  nach `/public` hochladen, über ⋮ → „Entpacken“ auspacken (danach liegt `index.html` direkt in `/public`), die ZIP-Datei löschen und
+  unter „Domains & SSL“ die Domain auf den Webspace, Verzeichnis `/public`, zeigen lassen. Nach Änderungen an der Seite neu packen
+  (im Ordner `website/`):
+  `rm -f upload/vereinsflow-website.zip && zip -r -X upload/vereinsflow-website.zip . -x "tools/*" "upload/*" "README.md" "Vorschau-starten.*" "_headers" "*.DS_Store"`
 - **nginx** – Beispiel:
 
   ```nginx
@@ -96,7 +110,7 @@ Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | `node tools/serve.mjs`                     | Vorschau-Server mit Produktions-Headern                                                                   |
 | `node tools/check-site.mjs [--strict]`     | Prüft Verweise, Bilder, Symbole, fremde Server, Inline-Skripte/-Stile und listet offene Platzhalter       |
-| `node tools/set-domain.mjs <https://…>`    | Trägt die echte Domain ein                                                                                |
+| `node tools/set-domain.mjs <https://…>`    | Ersetzt die Musterdomain `https://vereinsflow.example` (bereits erledigt)                                   |
 | `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`; `--only dashboard`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
 | `node tools/make-og-image.mjs`             | Erzeugt das Vorschaubild für das Teilen (`tools/og-template.html`)                                        |
 | `node tools/make-logo-assets.mjs`          | Erzeugt Logo-Dateien und Favicons aus den Vektordaten der Anwendung                                       |
