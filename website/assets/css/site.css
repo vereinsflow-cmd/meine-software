@@ -3306,9 +3306,10 @@ html:not(.js) .nav ul a:hover {
   margin: 0 auto;
 }
 
+/* Links unten über der Seitenleiste – rechts im Bild liegen die Schaltflächen, die das Live-Fenster bedient */
 .chapter-phone {
   position: absolute;
-  right: -2%;
+  left: -2%;
   bottom: -7%;
   width: clamp(120px, 21.6%, 224px);
 }
@@ -3320,11 +3321,24 @@ html:not(.js) .nav ul a:hover {
 
   .chapter-phone {
     position: relative;
-    right: auto;
+    left: auto;
     bottom: auto;
     width: min(280px, 72vw);
     margin: 0 auto;
   }
+}
+
+/* ---------- Live-Fenster ----------
+   Browserbilder, in denen ein Mauszeiger die Anwendung bedient (Helferschichten und die vier Themen „Im Detail“). Über dem
+   ruhigen Bild liegen weitere Aufnahmen aus der Demo-App (tools/capture-screenshots.mjs); site.js blendet sie nach einem
+   kurzen Ablaufplan über (LIVE_SCENES) und bewegt den Zeiger dazu – nur solange das Fenster im Bild ist. Überblendet wird
+   nur opacity, bewegt nur translate (Compositor). Ohne JavaScript, bei reduzierter Bewegung und im Druck: das ruhige Bild. */
+.live-screen {
+  position: relative;
+}
+
+.live-layers {
+  display: none;
 }
 
 /* ---------- Rollen ---------- */
@@ -4361,6 +4375,104 @@ html:not(.js) .nav ul a:hover {
     scale: none;
   }
 
+  /* Live-Fenster: Bildfolge und Mauszeiger (Beschreibung unter „Live-Fenster“) */
+  /* Die Ebenen kommen erst dazu, wenn das Fenster abspielt (site.js setzt .is-live) – vorher lädt der Browser ihre Bilder
+     nicht (Reiter, die niemand öffnet, kosten nichts) */
+  .js .live.is-live .live-layers {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+  }
+
+  .js .live-frame {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 280ms ease-in-out;
+  }
+
+  .js .live-frame.is-on {
+    opacity: 1;
+  }
+
+  /* Zeiger: eine Ebene so groß wie das Bild – ihr translate in Prozent ist damit eine Stelle im Bild */
+  .js .live-pointer {
+    position: absolute;
+    z-index: 100000;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .js .live-pointer.is-on {
+    opacity: 1;
+  }
+
+  .js .live-cursor {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: max(14px, 1.9%);
+    overflow: visible;
+    fill: #111418;
+    stroke: #ffffff;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 35%));
+    transform-origin: 0 0;
+  }
+
+  /* Klick: heller Ring mit feinem blauem Rand – auf blauen Schaltflächen wie auf weißen zu sehen */
+  .js .live-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: max(34px, 5.2%);
+    aspect-ratio: 1;
+    border: 2px solid rgb(255 255 255 / 92%);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 28%);
+    box-shadow:
+      0 0 0 1px rgb(5 85 183 / 45%),
+      0 0 12px rgb(5 85 183 / 30%);
+    translate: -50% -50%;
+    opacity: 0;
+  }
+
+  /* Tastenkürzel (Suche): erscheint kurz oben in der Mitte */
+  .js .live-keys {
+    position: absolute;
+    z-index: 100001;
+    top: 7%;
+    left: 50%;
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgb(17 20 24 / 78%);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    translate: -50% 6px;
+    scale: 0.96;
+    transition:
+      opacity 0.25s ease,
+      translate 0.3s var(--ease-out),
+      scale 0.3s var(--ease-out);
+  }
+
+  .js .live-keys.is-on {
+    opacity: 1;
+    translate: -50% 0;
+    scale: 1;
+  }
+
+  .js .live-keys kbd {
+    min-width: 2.2em;
+    font-size: clamp(0.72rem, 1.4vw, 0.95rem);
+  }
+
   /* Reiter: das bisherige Thema blendet kurz aus, das gewählte gleitet danach weich herein */
   .spots.is-tabs > .spot {
     transition:
@@ -4898,6 +5010,11 @@ html:not(.js) .nav ul a:hover {
 
   .slider-btn,
   .slider-progress {
+    display: none !important;
+  }
+
+  /* Live-Fenster: nur das ruhige Bild */
+  .live-layers {
     display: none !important;
   }
 }

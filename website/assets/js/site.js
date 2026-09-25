@@ -58,7 +58,7 @@
 
   // Bildschirmfotos: ruhiger Platzhalter, bis das Bild da ist; danach blendet es weich ein. Bereits geladene Bilder
   // (Zwischenspeicher) bleiben unberührt – so blitzt nichts auf.
-  for (const img of document.querySelectorAll(".browser img, .phone img, .laptop-screen img")) {
+  for (const img of document.querySelectorAll(".browser img:not(.live-frame), .phone img, .laptop-screen img")) {
     const frame = img.closest(".browser, .phone, .laptop-screen");
     if (!frame || (img.complete && img.naturalWidth > 0)) continue;
     frame.classList.add("is-loading");
@@ -89,6 +89,185 @@
       { threshold: 0.5, rootMargin: "0px 0px -8% 0px" },
     );
     observer.observe(scene);
+  }
+
+  // Live-Fenster: In Browserbildern bedient ein Mauszeiger die Anwendung (site.css „Live-Fenster“). Je Fenster ein kurzer
+  // Ablaufplan: frame n = Bild n der Folge einblenden (0 = das ruhige Bild), move = Zeiger zu einer Stelle (Prozent des
+  // Bildes, Werte aus tools/capture-screenshots.mjs), click = Einfedern und Ring, show/hide = Zeiger ein-/ausblenden,
+  // keys = Tastenkürzel einblenden, wait = Pause (ms). Der Plan wiederholt sich, solange das Fenster im Bild ist (und
+  // sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder geladen sind. Bei reduzierter Bewegung
+  // bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
+  const LIVE_SCENES = {
+    // Helferschichten: beim Getränkestand eintragen, dann zu „Drucken“
+    schichten: {
+      rest: "55% 93%",
+      steps: [
+        ["frame", 1], ["show"], ["wait", 1000],
+        ["move", "82% 72.14%", 1150], ["frame", 2], ["wait", 450], ["click"], ["frame", 3], ["wait", 1900],
+        ["frame", 0], ["move", "92.62% 15.19%", 1100], ["frame", 4], ["wait", 1300],
+        ["frame", 0], ["move", "55% 93%", 1000], ["hide"], ["wait", 900],
+      ],
+    },
+    // Suche: Strg K, „Hel“ tippen, auf einen Treffer zeigen
+    suche: {
+      rest: "72% 90%",
+      steps: [
+        ["frame", 1], ["wait", 900], ["keys", true], ["wait", 650], ["frame", 2], ["wait", 400], ["keys", false], ["wait", 600],
+        ["frame", 3, 90], ["wait", 280], ["frame", 4, 90], ["wait", 280], ["frame", 0, 90], ["wait", 900],
+        ["show"], ["move", "37.07% 37.63%", 1000], ["frame", 5, 150], ["wait", 1900],
+        ["frame", 0, 150], ["move", "72% 90%", 900], ["hide"], ["wait", 900],
+      ],
+    },
+    // Mitglieder: ins Suchfeld klicken, „Koch“ tippen, filtern
+    mitglieder: {
+      rest: "45% 82%",
+      steps: [
+        ["frame", 0], ["show"], ["wait", 900],
+        ["move", "8.98% 29.51%", 1100], ["click"], ["frame", 1, 150], ["wait", 650], ["frame", 2, 120], ["wait", 800],
+        ["move", "93.31% 29.51%", 1100], ["frame", 3, 150], ["wait", 400], ["click"], ["frame", 4], ["wait", 2400],
+        ["move", "45% 82%", 1000], ["hide"], ["wait", 900],
+      ],
+    },
+    // Kalender: Wochenansicht und zurück zum Monat
+    veranstaltungen: {
+      rest: "58% 86%",
+      steps: [
+        ["frame", 0], ["show"], ["wait", 900],
+        ["move", "81.84% 29.64%", 1100], ["frame", 1, 150], ["wait", 400], ["click"], ["frame", 2], ["wait", 2300],
+        ["move", "74.11% 29.64%", 700], ["frame", 3, 150], ["wait", 400], ["click"], ["frame", 0], ["wait", 900],
+        ["move", "58% 86%", 900], ["hide"], ["wait", 900],
+      ],
+    },
+    // Auswertungen: Diagramm als Fläche, als Balken, wieder als Linie
+    auswertungen: {
+      rest: "62% 88%",
+      steps: [
+        ["frame", 0], ["show"], ["wait", 900],
+        ["move", "45.8% 34.89%", 1000], ["click"], ["frame", 1], ["wait", 1900],
+        ["move", "56.21% 34.89%", 650], ["click"], ["frame", 2], ["wait", 1900],
+        ["move", "36.12% 34.89%", 850], ["click"], ["frame", 0], ["wait", 1300],
+        ["move", "62% 88%", 900], ["hide"], ["wait", 900],
+      ],
+    },
+  };
+  const liveWindows = [...document.querySelectorAll(".live[data-live]")];
+  if (liveWindows.length && canObserve && !reduceMotion) {
+    const ease = "cubic-bezier(0.45, 0, 0.25, 1)"; // sanftes Ease-in-out
+    for (const live of liveWindows) {
+      const scene = LIVE_SCENES[live.dataset.live];
+      const frames = [...live.querySelectorAll(".live-frame")];
+      const pointer = live.querySelector(".live-pointer");
+      const cursor = live.querySelector(".live-cursor");
+      const ring = live.querySelector(".live-ring");
+      const keys = live.querySelector(".live-keys");
+      if (!scene || !frames.length || !pointer || !cursor || !ring) continue;
+      let run = 0; // Nummer des laufenden Durchgangs – ändert sie sich, bricht der alte ab
+      let at = scene.rest;
+      let layer = 1;
+      let ready = null;
+      const load = () => {
+        live.classList.add("is-live"); // Ebenen einhängen: erst jetzt lädt der Browser die Bilder der Folge
+        return (ready ??= Promise.all(
+          frames.map((img) => {
+            img.loading = "eager";
+            return img.decode().catch(() => {});
+          }),
+        ));
+      };
+      const place = (spot) => {
+        at = spot;
+        pointer.style.setProperty("translate", spot);
+      };
+      const reset = () => {
+        for (const img of frames) {
+          img.style.setProperty("transition-duration", "0ms");
+          img.classList.remove("is-on");
+          img.style.removeProperty("z-index");
+        }
+        layer = 1;
+        pointer.classList.remove("is-on");
+        keys?.classList.remove("is-on");
+        place(scene.rest);
+      };
+      // Überblenden: das neue Bild legt sich darüber und blendet ein; darunterliegende gehen danach aus. Beim ruhigen
+      // Bild (0) blendet das oberste aus. So scheint nie ein falsches Bild durch.
+      const frame = (n, fade = 280) => {
+        const next = frames[n - 1];
+        const shown = frames.filter((img) => img.classList.contains("is-on"));
+        if (next) {
+          next.style.setProperty("z-index", String(++layer));
+          next.style.setProperty("transition-duration", `${fade}ms`);
+          next.classList.add("is-on");
+          const id = run;
+          setTimeout(() => {
+            if (id !== run) return; // inzwischen angehalten oder neu begonnen
+            for (const img of shown) {
+              if (img === next) continue;
+              img.style.setProperty("transition-duration", "0ms");
+              img.classList.remove("is-on");
+            }
+          }, fade + 30);
+        } else {
+          for (const img of shown) {
+            img.style.setProperty("transition-duration", `${fade}ms`);
+            img.classList.remove("is-on");
+          }
+        }
+      };
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const move = async (spot, ms) => {
+        const motion = pointer.animate([{ translate: at }, { translate: spot }], { duration: ms, easing: ease, fill: "forwards" });
+        await motion.finished.catch(() => {});
+        place(spot);
+        motion.cancel();
+      };
+      const click = async () => {
+        cursor.animate([{ scale: 1 }, { scale: 0.86 }, { scale: 1 }], { duration: 260, easing: "ease-out" });
+        ring.animate(
+          [
+            { opacity: 0, scale: 0.2 },
+            { opacity: 1, scale: 0.4, offset: 0.15 },
+            { opacity: 0, scale: 1 },
+          ],
+          { duration: 620, easing: "ease-out" },
+        );
+        await wait(140);
+      };
+      const play = async (id) => {
+        await load();
+        for (let round = 0; id === run; round++) {
+          for (const [step, a, b] of scene.steps) {
+            if (id !== run) return;
+            if (step === "frame") frame(a, round === 0 && a && !frames.some((img) => img.classList.contains("is-on")) ? 0 : b);
+            else if (step === "move") await move(a, b);
+            else if (step === "click") await click();
+            else if (step === "show") pointer.classList.add("is-on");
+            else if (step === "hide") pointer.classList.remove("is-on");
+            else if (step === "keys") keys?.classList.toggle("is-on", a);
+            else if (step === "wait") await wait(a);
+          }
+        }
+      };
+      let visible = false;
+      const decide = () => {
+        const should = visible && !live.closest("[inert]") && document.visibilityState === "visible";
+        const running = run % 2 === 1; // ungerade = läuft
+        if (should === running) return;
+        run++;
+        if (should) play(run);
+        else reset();
+      };
+      reset();
+      new IntersectionObserver(
+        (entries) => {
+          visible = entries.some((entry) => entry.isIntersecting);
+          decide();
+        },
+        { threshold: 0.4 },
+      ).observe(live);
+      document.addEventListener("visibilitychange", decide);
+      document.addEventListener("vf:tabs", decide); // Reiter „Im Detail“ gewechselt
+    }
   }
 
   // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da)
@@ -322,6 +501,7 @@
         panels[i].toggleAttribute("inert", !on); // unsichtbare Themen: weder Fokus noch Vorlesen
       });
       if (focus) tabs[index].focus();
+      document.dispatchEvent(new CustomEvent("vf:tabs")); // Live-Fenster: nur das sichtbare Thema läuft
     };
     for (const [i, panel] of panels.entries()) {
       panel.setAttribute("role", "tabpanel");

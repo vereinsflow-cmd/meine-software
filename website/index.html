@@ -414,11 +414,22 @@
       </div>
       <div class="chapter-media reveal">
         <div class="plx plx-slow">
-          <div class="browser">
+          <div class="browser live" data-live="schichten">
             <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2026</span></div>
-            <picture>
-              <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
-            </picture>
+            <div class="live-screen">
+              <picture>
+                <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
+              </picture>
+              <!-- Live-Fenster: Ein Mauszeiger trägt sich beim Getränkestand ein – Bildfolge aus der Demo-App
+                   (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js (LIVE_SCENES) -->
+              <div class="live-layers" aria-hidden="true">
+                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp" srcset="assets/img/app/schichten-live-1-light-960.webp 960w, assets/img/app/schichten-live-1-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp" srcset="assets/img/app/schichten-live-2-light-960.webp 960w, assets/img/app/schichten-live-2-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp" srcset="assets/img/app/schichten-live-3-light-960.webp 960w, assets/img/app/schichten-live-3-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp" srcset="assets/img/app/schichten-live-4-light-960.webp 960w, assets/img/app/schichten-live-4-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="phone chapter-phone plx plx-fast">
@@ -491,11 +502,23 @@
         </div>
         <div class="spot-media reveal">
           <div class="plx plx-slow">
-            <div class="browser">
+            <div class="browser live" data-live="suche">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Suche</span></div>
-              <picture>
-                <img src="assets/img/app/suche-light-960.webp" srcset="assets/img/app/suche-light-960.webp 960w, assets/img/app/suche-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
-              </picture>
+              <div class="live-screen">
+                <picture>
+                  <img src="assets/img/app/suche-light-960.webp" srcset="assets/img/app/suche-light-960.webp 960w, assets/img/app/suche-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
+                </picture>
+                <!-- Live-Fenster (Zentrale Suche: Strg K, „Hel“ tippen, Treffer zeigen) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
+                <div class="live-layers" aria-hidden="true">
+                  <img class="live-frame" src="assets/img/app/suche-live-1-light-960.webp" srcset="assets/img/app/suche-live-1-light-960.webp 960w, assets/img/app/suche-live-1-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-2-light-960.webp" srcset="assets/img/app/suche-live-2-light-960.webp 960w, assets/img/app/suche-live-2-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-3-light-960.webp" srcset="assets/img/app/suche-live-3-light-960.webp 960w, assets/img/app/suche-live-3-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-4-light-960.webp" srcset="assets/img/app/suche-live-4-light-960.webp 960w, assets/img/app/suche-live-4-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-5-light-960.webp" srcset="assets/img/app/suche-live-5-light-960.webp 960w, assets/img/app/suche-live-5-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <span class="live-keys"><kbd>Strg</kbd><kbd>K</kbd></span>
+                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -514,11 +537,21 @@
         </div>
         <div class="spot-media reveal">
           <div class="plx plx-slow">
-            <div class="browser">
+            <div class="browser live" data-live="mitglieder">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Mitglieder</span></div>
-              <picture>
-                <img src="assets/img/app/mitglieder-light-960.webp" srcset="assets/img/app/mitglieder-light-960.webp 960w, assets/img/app/mitglieder-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
-              </picture>
+              <div class="live-screen">
+                <picture>
+                  <img src="assets/img/app/mitglieder-light-960.webp" srcset="assets/img/app/mitglieder-light-960.webp 960w, assets/img/app/mitglieder-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
+                </picture>
+                <!-- Live-Fenster (Mitglieder: „Koch“ suchen und filtern) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
+                <div class="live-layers" aria-hidden="true">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-1-light-960.webp" srcset="assets/img/app/mitglieder-live-1-light-960.webp 960w, assets/img/app/mitglieder-live-1-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-2-light-960.webp" srcset="assets/img/app/mitglieder-live-2-light-960.webp 960w, assets/img/app/mitglieder-live-2-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-3-light-960.webp" srcset="assets/img/app/mitglieder-live-3-light-960.webp 960w, assets/img/app/mitglieder-live-3-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-4-light-960.webp" srcset="assets/img/app/mitglieder-live-4-light-960.webp 960w, assets/img/app/mitglieder-live-4-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -537,11 +570,20 @@
         </div>
         <div class="spot-media reveal">
           <div class="plx plx-slow">
-            <div class="browser">
+            <div class="browser live" data-live="veranstaltungen">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Kalender</span></div>
-              <picture>
-                <img src="assets/img/app/kalender-light-960.webp" srcset="assets/img/app/kalender-light-960.webp 960w, assets/img/app/kalender-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
-              </picture>
+              <div class="live-screen">
+                <picture>
+                  <img src="assets/img/app/kalender-light-960.webp" srcset="assets/img/app/kalender-light-960.webp 960w, assets/img/app/kalender-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
+                </picture>
+                <!-- Live-Fenster (Kalender: Wochenansicht und zurück) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
+                <div class="live-layers" aria-hidden="true">
+                  <img class="live-frame" src="assets/img/app/kalender-live-1-light-960.webp" srcset="assets/img/app/kalender-live-1-light-960.webp 960w, assets/img/app/kalender-live-1-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/kalender-live-2-light-960.webp" srcset="assets/img/app/kalender-live-2-light-960.webp 960w, assets/img/app/kalender-live-2-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/kalender-live-3-light-960.webp" srcset="assets/img/app/kalender-live-3-light-960.webp 960w, assets/img/app/kalender-live-3-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -560,11 +602,19 @@
         </div>
         <div class="spot-media reveal">
           <div class="plx plx-slow">
-            <div class="browser">
+            <div class="browser live" data-live="auswertungen">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Auswertungen</span></div>
-              <picture>
-                <img src="assets/img/app/auswertung-light-960.webp" srcset="assets/img/app/auswertung-light-960.webp 960w, assets/img/app/auswertung-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
-              </picture>
+              <div class="live-screen">
+                <picture>
+                  <img src="assets/img/app/auswertung-light-960.webp" srcset="assets/img/app/auswertung-light-960.webp 960w, assets/img/app/auswertung-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
+                </picture>
+                <!-- Live-Fenster (Auswertungen: Diagramm als Fläche und als Balken) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
+                <div class="live-layers" aria-hidden="true">
+                  <img class="live-frame" src="assets/img/app/auswertung-live-1-light-960.webp" srcset="assets/img/app/auswertung-live-1-light-960.webp 960w, assets/img/app/auswertung-live-1-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/auswertung-live-2-light-960.webp" srcset="assets/img/app/auswertung-live-2-light-960.webp 960w, assets/img/app/auswertung-live-2-light-1920.webp 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
