@@ -171,7 +171,7 @@ async function liveFrames(page, snap) {
     if (!box) throw new Error("Schaltfläche nicht gefunden");
     return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
   };
-  const percent = ({ x, y }) => `${((x / viewport.width) * 100).toFixed(2)}% ${((y / viewport.height) * 100).toFixed(2)}%`;
+  const percent = ({ x, y }) => `${((x / viewport.width) * 100).toFixed(2)}% ${((y / viewport.height) * 100).toFixed(2)}%`; // wie spot()
   // Ausgangslage: nicht eingetragen
   if (await button("Austragen").count()) await toggle("Austragen", "Eintragen");
   else await fresh();
@@ -191,6 +191,128 @@ async function liveFrames(page, snap) {
   await page.mouse.move(0, 0);
   await snap("schichten");
   console.log(`      Positionen: Eintragen ${percent(join)} (Austragen ${percent(leave)}), Drucken ${percent(print)}`);
+}
+
+/** Mittelpunkt eines Elements in Prozent des Ausschnitts (für die Zielpunkte in site.js, LIVE_SCENES). */
+async function spot(page, locator, clip, { dx = 0.5 } = {}) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("Element nicht gefunden");
+  const area = clip ?? { x: 0, y: 0, ...page.viewportSize() };
+  const x = ((box.x + box.width * dx - area.x) / area.width) * 100;
+  const y = ((box.y + box.height / 2 - area.y) / area.height) * 100;
+  return { x: box.x + box.width * dx, y: box.y + box.height / 2, at: `${x.toFixed(2)}% ${y.toFixed(2)}%` };
+}
+
+/**
+ * Zentrale Suche: ohne Dialog (Tastenkürzel), Dialog leer, „H“, „He“, „Hel“ (= Standbild „suche“), dann Zeiger auf
+ * „Schicht bearbeiten“. Ausschnitt wie beim Standbild: um den Dialog mit „Hel“ – für alle Bilder derselbe.
+ */
+async function searchFrames(page, snap) {
+  const input = () => page.getByRole("combobox", { name: "Suchen" }).or(page.getByLabel("Suchen", { exact: true })).first();
+  const settle = async () => {
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("status").filter({ hasText: "Suche" }).waitFor({ state: "detached" }).catch(() => {});
+    await page.waitForTimeout(600);
+  };
+  const open = async () => {
+    await page.keyboard.press("Control+k");
+    await input().waitFor();
+    await page.waitForTimeout(400);
+  };
+  await open();
+  await input().pressSequentially("Hel", { delay: 60 });
+  await settle();
+  const clip = await cropArea(page, "dialog");
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "detached" }).catch(() => {});
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(400);
+  await snap("suche-live-1", { clip, gentle: true });
+  await open();
+  await snap("suche-live-2", { clip, gentle: true });
+  await input().pressSequentially("H");
+  await settle();
+  await snap("suche-live-3", { clip, gentle: true });
+  await input().pressSequentially("e");
+  await settle();
+  await snap("suche-live-4", { clip, gentle: true });
+  await input().pressSequentially("l");
+  await settle();
+  await snap("suche", { clip, gentle: true });
+  const option = await spot(page, page.getByRole("option", { name: /Schicht bearbeiten/ }).first(), clip, { dx: 0.3 });
+  await page.mouse.move(option.x, option.y);
+  await page.waitForTimeout(300);
+  await snap("suche-live-5", { clip, gentle: true });
+  console.log(`      Positionen: Option „Schicht bearbeiten“ ${option.at}`);
+}
+
+/** Mitglieder: Klick ins Suchfeld, „Koch“ tippen, „Filtern“ – die Liste zeigt nur noch die Kochs. */
+async function memberFrames(page, snap) {
+  const clip = await cropArea(page, "content");
+  const field = page.getByPlaceholder("Mitglieder durchsuchen").or(page.getByLabel("Mitglieder durchsuchen")).first();
+  const filter = page.getByRole("button", { name: "Filtern", exact: true }).first();
+  const at = { field: await spot(page, field, clip, { dx: 0.18 }), filter: await spot(page, filter, clip) };
+  await page.mouse.move(0, 0);
+  await snap("mitglieder", { clip });
+  await page.mouse.move(at.field.x, at.field.y);
+  await field.click();
+  await page.waitForTimeout(300);
+  await snap("mitglieder-live-1", { clip });
+  await field.pressSequentially("Koch", { delay: 80 });
+  await page.waitForTimeout(900);
+  const live = new URL(page.url()).searchParams.size > 0;
+  await snap("mitglieder-live-2", { clip });
+  await page.mouse.move(at.filter.x, at.filter.y);
+  await page.waitForTimeout(300);
+  await snap("mitglieder-live-3", { clip });
+  const before = page.url();
+  await filter.click();
+  await page.waitForURL((url) => url.href !== before).catch(() => {});
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(500);
+  await snap("mitglieder-live-4", { clip });
+  console.log(`      Positionen: Suchfeld ${at.field.at}, Filtern ${at.filter.at}${live ? " (Liste filterte schon beim Tippen)" : ""}`);
+}
+
+/** Kalender: Zeiger auf „Woche“, Wochenansicht, zurück zu „Monat“. */
+async function calendarFrames(page, snap) {
+  const clip = await cropArea(page, "content");
+  const view = (name) => page.getByRole("link", { name, exact: true }).or(page.getByRole("button", { name, exact: true })).first();
+  const week = await spot(page, view("Woche"), clip);
+  const month = await spot(page, view("Monat"), clip);
+  await page.mouse.move(0, 0);
+  await snap("kalender", { clip });
+  await page.mouse.move(week.x, week.y);
+  await page.waitForTimeout(300);
+  await snap("kalender-live-1", { clip });
+  const before = page.url();
+  await view("Woche").click();
+  await page.waitForURL((url) => url.href !== before);
+  await page.waitForLoadState("networkidle");
+  await page.mouse.move(week.x, week.y);
+  await page.waitForTimeout(500);
+  await snap("kalender-live-2", { clip });
+  await page.mouse.move(month.x, month.y);
+  await page.waitForTimeout(300);
+  await snap("kalender-live-3", { clip });
+  console.log(`      Positionen: Woche ${week.at}, Monat ${month.at}`);
+}
+
+/** Auswertungen: Diagrammart „Fläche“, dann „Balken“ (zurück zu „Linie“ = Standbild). */
+async function chartFrames(page, snap) {
+  const clip = await cropArea(page, "content");
+  const kind = (name) => page.getByRole("radio", { name, exact: true }).or(page.getByRole("button", { name, exact: true })).first();
+  const at = { line: await spot(page, kind("Linie"), clip), area: await spot(page, kind("Fläche"), clip), bars: await spot(page, kind("Balken"), clip) };
+  await page.mouse.move(0, 0);
+  await snap("auswertung", { clip, gentle: true });
+  for (const [name, target, file] of [["Fläche", at.area, "auswertung-live-1"], ["Balken", at.bars, "auswertung-live-2"]]) {
+    await page.mouse.move(target.x, target.y);
+    await kind(name).click();
+    await page.waitForTimeout(1200); // Diagramm-Animation
+    await snap(file, { clip, gentle: true });
+  }
+  await kind("Linie").click(); // wieder wie vorher
+  console.log(`      Positionen: Linie ${at.line.at}, Fläche ${at.area.at}, Balken ${at.bars.at}`);
 }
 
 /**
@@ -219,9 +341,9 @@ const shots = [
   // „Voll besetzt“, „Teilweise besetzt“ und „Unbesetzt“ zu sehen sind. Zusammen mit der Bildfolge für das Live-Fenster
   // aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
   { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1140, height: 1000 }, frames: liveFrames },
-  { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content" },
+  { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content", frames: memberFrames },
   // Der Oktober ist gefüllter als der September (Sommerfest, Trainings); der Monat steht in der Adresse.
-  { name: "kalender", path: "/kalender?ansicht=monat&datum=2026-10-01", viewport: DETAIL, crop: "content" },
+  { name: "kalender", path: "/kalender?ansicht=monat&datum=2026-10-01", viewport: DETAIL, crop: "content", frames: calendarFrames },
   // Diagramme („Auswertungen“) liegen weiter unten auf dem Reiter „Mitglieder“: Verlauf statt Donut, und ein
   // niedrigeres Fenster (720 px), damit die Seite weit genug scrollt, um mit der Karte zu beginnen.
   {
@@ -233,9 +355,10 @@ const shots = [
     },
     viewport: { width: DETAIL.width, height: 720 },
     crop: "content",
+    frames: chartFrames,
   },
   // Zentrale Suche: Treffer aus mehreren Gruppen (Aktionen, Seiten, Mitglieder) – nur lesen, nichts auswählen
-  { name: "suche", path: "/dashboard", steps: openSearch(process.env.VF_SEARCH ?? "Hel"), crop: "dialog" },
+  { name: "suche", path: "/dashboard", crop: "dialog", frames: searchFrames },
   // Der Helferplan zum Aushängen, so wie er gedruckt wird (A4 hoch, 794 px = 210 mm bei 96 dpi). Papier ist in beiden
   // Darstellungen weiß, deshalb nur hell.
   {
@@ -297,15 +420,22 @@ const DEMO_RENAME = [
   [/\bmehrfach@demo-verein\.local\b/g, "michael.meier@example.org"],
   [/@demo-verein\.local\b/g, "@example.org"],
 ];
-async function normalizeDemoNames(page) {
-  await page.evaluate((rules) => {
+/**
+ * `gentle`: für Bildfolgen, in denen danach noch getippt oder geklickt wird – nur Textinhalte ersetzen, keine Knoten
+ * entfernen oder zusammenfassen (React arbeitet sonst mit Knoten weiter, die es nicht mehr gibt). Was dabei nicht
+ * greift, meldet checkDemoNames.
+ */
+async function normalizeDemoNames(page, { gentle = false } = {}) {
+  await page.evaluate(([rules, gentle]) => {
     // React setzt „{Nachname}, {Vorname}“ aus mehreren Textknoten zusammen, beim Rendern auf dem Server getrennt durch
     // leere Kommentare (<!-- -->). Ohne die Kommentare lassen sich die Knoten zusammenfassen, dann greifen die Regeln.
-    const comments = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT);
-    const markers = [];
-    for (let node = comments.nextNode(); node; node = comments.nextNode()) markers.push(node);
-    for (const node of markers) node.remove();
-    document.body.normalize();
+    if (!gentle) {
+      const comments = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT);
+      const markers = [];
+      for (let node = comments.nextNode(); node; node = comments.nextNode()) markers.push(node);
+      for (const node of markers) node.remove();
+      document.body.normalize();
+    }
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       let text = node.nodeValue ?? "";
@@ -315,7 +445,31 @@ async function normalizeDemoNames(page) {
     for (const el of document.querySelectorAll("span, div")) {
       if (el.children.length === 0 && el.textContent?.trim() === "LA") el.textContent = "AA";
     }
-  }, DEMO_RENAME.map(([re, replacement]) => [re.source, re.flags, replacement]));
+  }, [DEMO_RENAME.map(([re, replacement]) => [re.source, re.flags, replacement]), gentle]);
+}
+
+/** Warnt, wenn im Bildausschnitt noch Namen oder Adressen aus dem Seed stehen (das Repository ist öffentlich). */
+async function checkDemoNames(page, clip, name) {
+  const found = await page.evaluate(([area, sources]) => {
+    // dieselben Muster wie beim Umbenennen: Was davon noch im Bild steht, wurde nicht ersetzt
+    const rules = sources.map(([source, flags]) => new RegExp(source, flags.replace("g", "")));
+    const seed = { test: (text) => rules.some((rule) => rule.test(text)) };
+    const box = area ?? { x: 0, y: 0, width: innerWidth, height: innerHeight };
+    const hits = new Set();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const el = node.parentElement;
+      if (!el || !seed.test(el.textContent ?? "")) continue;
+      const r = el.getBoundingClientRect();
+      const inside = r.width && r.right > box.x && r.left < box.x + box.width && r.bottom > box.y && r.top < box.y + box.height;
+      if (inside && getComputedStyle(el).visibility !== "hidden") hits.add(el.textContent.trim().slice(0, 60));
+    }
+    return [...hits];
+  }, [clip, DEMO_RENAME.map(([re]) => [re.source, re.flags])]);
+  if (found.length) {
+    console.error(`WARNUNG ${name}: Seed-Namen im Bild: ${found.join(" | ")}`);
+    process.exitCode = 1;
+  }
 }
 
 /** Das Symbol der Next.js-Entwicklungsumgebung und Einblendungen gehören nicht ins Bild. */
@@ -383,12 +537,14 @@ async function main() {
             await shot.steps?.(page);
             if (shot.frames) {
               // Bildfolge: jedes Bild wie ein einzelnes, der Mauszeiger bleibt, wo ihn die Folge hinstellt
-              const snap = async (name) => {
+              // clip: Ausschnitt für alle Bilder der Folge gleich (sonst ganzes Fenster); gentle: siehe normalizeDemoNames
+              const snap = async (name, { clip, gentle = false } = {}) => {
                 await page.addStyleTag({ content: HIDE_DEV_UI });
                 await page.evaluate(() => document.fonts.ready);
-                await normalizeDemoNames(page);
+                await normalizeDemoNames(page, { gentle });
                 await page.waitForTimeout(500);
-                const png = await page.screenshot({ type: "png" });
+                await checkDemoNames(page, clip, name);
+                const png = await page.screenshot({ type: "png", clip });
                 for (const width of shot.widths ?? spec.widths) {
                   await encode(png, width, shot, spec).toFile(path.join(out, `${name}-${scheme}-${width}.webp`));
                 }
