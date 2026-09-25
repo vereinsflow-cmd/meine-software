@@ -3306,9 +3306,10 @@ html:not(.js) .nav ul a:hover {
   margin: 0 auto;
 }
 
+/* Links unten über der Seitenleiste – rechts im Bild liegen die Schaltflächen, die das Live-Fenster bedient */
 .chapter-phone {
   position: absolute;
-  right: -2%;
+  left: -2%;
   bottom: -7%;
   width: clamp(120px, 21.6%, 224px);
 }
@@ -3320,11 +3321,32 @@ html:not(.js) .nav ul a:hover {
 
   .chapter-phone {
     position: relative;
-    right: auto;
+    left: auto;
     bottom: auto;
     width: min(280px, 72vw);
     margin: 0 auto;
   }
+}
+
+/* ---------- Live-Fenster (Kapitel „Helferschichten“) ----------
+   Über dem ruhigen Bild (nachher, ohne Zeiger) liegen vier Bilder aus der Demo-App (vorher, vorher mit Hover auf
+   „Eintragen“, nachher mit Hover auf „Austragen“, nachher mit Hover auf „Drucken“). Ein Mauszeiger fährt zur
+   Schaltfläche, klickt (Ring), und genau dann wechselt das Bild; danach fährt er zu „Drucken“ und zurück, das Bild kehrt
+   weich in den Anfang zurück. Alles in einer 10 s langen Schleife aus opacity und translate (Compositor, ohne Skript);
+   site.js startet sie nur, solange das Fenster im Bild ist (.is-playing), jedes Mal von vorn.
+   Zielpunkte in Prozent des Bildes – aus der Ausgabe von tools/capture-screenshots.mjs (liveFrames) übernommen. */
+.live-screen {
+  position: relative;
+}
+
+.live-layers {
+  display: none;
+}
+
+.live-screen {
+  --live-rest: 55% 93%;
+  --live-join: 82% 72.14%; /* Schaltfläche „Eintragen“, etwas links der Mitte */
+  --live-print: 92.62% 15.19%; /* „Drucken“ */
 }
 
 /* ---------- Rollen ---------- */
@@ -4361,6 +4383,95 @@ html:not(.js) .nav ul a:hover {
     scale: none;
   }
 
+  /* Live-Fenster: Bildfolge und Mauszeiger (Beschreibung unter „Live-Fenster“) */
+  .js .live-layers {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+  }
+
+  .js .live-frame {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    opacity: 0;
+  }
+
+  .js .live-track {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    translate: var(--live-rest);
+  }
+
+  .js .live-cursor {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 1.8%;
+    overflow: visible;
+    fill: #111418;
+    stroke: #ffffff;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 35%));
+    transform-origin: 0 0;
+  }
+
+  .js .live-tap {
+    translate: var(--live-join);
+  }
+
+  .js .live-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5.2%;
+    aspect-ratio: 1;
+    border: 2px solid rgb(255 255 255 / 92%);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 28%);
+    box-shadow:
+      0 0 0 1px rgb(5 85 183 / 45%),
+      0 0 12px rgb(5 85 183 / 30%);
+    translate: -50% -50%;
+    scale: 0.2;
+    opacity: 0;
+  }
+
+  .js .live.is-playing .live-f1 {
+    animation: live-f1 10s linear infinite;
+  }
+
+  .js .live.is-playing .live-f2 {
+    animation: live-f2 10s linear infinite;
+  }
+
+  .js .live.is-playing .live-f3 {
+    animation: live-f3 10s linear infinite;
+  }
+
+  .js .live.is-playing .live-f4 {
+    animation: live-f4 10s linear infinite;
+  }
+
+  .js .live.is-playing .live-pointer {
+    animation: live-move 10s infinite;
+  }
+
+  .js .live.is-playing .live-cursor {
+    animation: live-press 10s infinite;
+  }
+
+  .js .live.is-playing .live-tap {
+    opacity: 1;
+  }
+
+  .js .live.is-playing .live-ring {
+    animation: live-ring 10s infinite;
+  }
+
   /* Reiter: das bisherige Thema blendet kurz aus, das gewählte gleitet danach weich herein */
   .spots.is-tabs > .spot {
     transition:
@@ -4899,6 +5010,157 @@ html:not(.js) .nav ul a:hover {
   .slider-btn,
   .slider-progress {
     display: none !important;
+  }
+
+  /* Live-Fenster: nur das ruhige Bild */
+  .live-layers {
+    display: none !important;
+  }
+}
+
+/* Live-Fenster: Zeitplan der 10-s-Schleife – 0–12 % Ruhe (vorher), 12–24 % zum Knopf, 25 % Hover, 30 % Klick,
+   31,5–33 % Wechsel auf „nachher“, 53 % Zeiger geht, 53–64 % zu „Drucken“, 65–77 % Hover dort, 77–86 % zurück,
+   94–100 % Bild kehrt weich zum Anfang zurück */
+@keyframes live-f1 {
+  0%,
+  31.5% {
+    opacity: 1;
+  }
+
+  33%,
+  94% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes live-f2 {
+  0%,
+  24% {
+    opacity: 0;
+  }
+
+  25.5%,
+  31.5% {
+    opacity: 1;
+  }
+
+  33%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes live-f3 {
+  0%,
+  31.5% {
+    opacity: 0;
+  }
+
+  33%,
+  53% {
+    opacity: 1;
+  }
+
+  54.5%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes live-f4 {
+  0%,
+  64% {
+    opacity: 0;
+  }
+
+  65.5%,
+  77% {
+    opacity: 1;
+  }
+
+  78.5%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes live-move {
+  0% {
+    opacity: 0;
+    translate: var(--live-rest);
+  }
+
+  4% {
+    opacity: 1;
+    translate: var(--live-rest);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  24% {
+    translate: var(--live-join);
+  }
+
+  53% {
+    translate: var(--live-join);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  64% {
+    translate: var(--live-print);
+  }
+
+  77% {
+    translate: var(--live-print);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  88% {
+    opacity: 1;
+    translate: var(--live-rest);
+  }
+
+  96%,
+  100% {
+    opacity: 0;
+    translate: var(--live-rest);
+  }
+}
+
+@keyframes live-press {
+  0%,
+  29.6% {
+    scale: 1;
+  }
+
+  30.4% {
+    scale: 0.86;
+  }
+
+  31.6%,
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes live-ring {
+  0%,
+  30% {
+    opacity: 0;
+    scale: 0.2;
+  }
+
+  30.6% {
+    opacity: 1;
+  }
+
+  36%,
+  100% {
+    opacity: 0;
+    scale: 1;
   }
 }
 

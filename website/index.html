@@ -414,11 +414,23 @@
       </div>
       <div class="chapter-media reveal">
         <div class="plx plx-slow">
-          <div class="browser">
+          <div class="browser live">
             <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2026</span></div>
-            <picture>
-              <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
-            </picture>
+            <div class="live-screen">
+              <picture>
+                <img src="assets/img/app/schichten-light-960.webp" srcset="assets/img/app/schichten-light-960.webp 960w, assets/img/app/schichten-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
+              </picture>
+              <!-- Live-Fenster: Ein Mauszeiger trägt sich beim Getränkestand ein – Bildfolge aus der Demo-App
+                   (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.css („Live-Fenster“) -->
+              <div class="live-layers" aria-hidden="true">
+                <img class="live-frame live-f1" src="assets/img/app/schichten-live-1-light-960.webp" srcset="assets/img/app/schichten-live-1-light-960.webp 960w, assets/img/app/schichten-live-1-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame live-f2" src="assets/img/app/schichten-live-2-light-960.webp" srcset="assets/img/app/schichten-live-2-light-960.webp 960w, assets/img/app/schichten-live-2-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame live-f3" src="assets/img/app/schichten-live-3-light-960.webp" srcset="assets/img/app/schichten-live-3-light-960.webp 960w, assets/img/app/schichten-live-3-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame live-f4" src="assets/img/app/schichten-live-4-light-960.webp" srcset="assets/img/app/schichten-live-4-light-960.webp 960w, assets/img/app/schichten-live-4-light-1920.webp 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg></span>
+                <span class="live-track live-tap"><span class="live-ring"></span></span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="phone chapter-phone plx plx-fast">

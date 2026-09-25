@@ -58,7 +58,7 @@
 
   // Bildschirmfotos: ruhiger Platzhalter, bis das Bild da ist; danach blendet es weich ein. Bereits geladene Bilder
   // (Zwischenspeicher) bleiben unberührt – so blitzt nichts auf.
-  for (const img of document.querySelectorAll(".browser img, .phone img, .laptop-screen img")) {
+  for (const img of document.querySelectorAll(".browser img:not(.live-frame), .phone img, .laptop-screen img")) {
     const frame = img.closest(".browser, .phone, .laptop-screen");
     if (!frame || (img.complete && img.naturalWidth > 0)) continue;
     frame.classList.add("is-loading");
@@ -89,6 +89,36 @@
       { threshold: 0.5, rootMargin: "0px 0px -8% 0px" },
     );
     observer.observe(scene);
+  }
+
+  // Live-Fenster (Kapitel „Helferschichten“): Die Bildfolge läuft, solange das Fenster im Bild ist, und beginnt jedes Mal
+  // von vorn (site.css, .is-playing). Erst wenn alle Bilder geladen sind – sonst blitzte beim Wechsel ein leeres Bild auf.
+  // Bei reduzierter Bewegung zeigt das CSS nur das ruhige Bild; die Folge wird dann gar nicht geladen.
+  for (const live of document.querySelectorAll(".live")) {
+    const frames = [...live.querySelectorAll(".live-frame")];
+    if (!canObserve || !frames.length || reduceMotion) continue;
+    let ready = null;
+    const load = () =>
+      (ready ??= Promise.all(
+        frames.map((img) => {
+          img.loading = "eager";
+          return img.decode().catch(() => {});
+        }),
+      ));
+    let visible = false;
+    new IntersectionObserver(
+      (entries) => {
+        visible = entries.some((entry) => entry.isIntersecting);
+        if (!visible) {
+          live.classList.remove("is-playing");
+          return;
+        }
+        load().then(() => {
+          if (visible) live.classList.add("is-playing");
+        });
+      },
+      { threshold: 0.45 },
+    ).observe(live);
   }
 
   // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da)

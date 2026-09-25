@@ -135,6 +135,65 @@ const openSearch = (query, { viaButton = false } = {}) => async (page) => {
 };
 
 /**
+ * Bildfolge für das Live-Fenster im Kapitel „Helferschichten“ (site.css „Live-Fenster“): Ein Mauszeiger trägt sich beim
+ * Getränkestand ein. Aufgenommen werden
+ *   schichten-live-1  vorher (Getränkestand 2 von 4, Schaltfläche „Eintragen“)
+ *   schichten-live-2  vorher, Zeiger über „Eintragen“
+ *   schichten-live-3  nachher (3 von 4, „Mein Einsatz“, eigener Name), Zeiger über „Austragen“ (steht an derselben Stelle)
+ *   schichten-live-4  nachher, Zeiger über „Drucken“
+ *   schichten         nachher ohne Zeiger – das bekannte Kapitelbild (ohne JavaScript, bei reduzierter Bewegung)
+ * Die Demo-Datenbank ändert sich dabei nur kurz: Der Administrator trägt sich aus und wieder ein, am Ende ist alles wie
+ * vorher. Nach jedem Klick wird die Seite neu geladen – das Umbenennen im Bild (normalizeDemoNames) verändert die Seite,
+ * die Anwendung soll danach nichts mehr darauf aufbauen. Die Positionen der Schaltflächen (in Prozent des Bildes) stehen
+ * in der Ausgabe; sie gehören nach site.css (--live-*).
+ */
+async function liveFrames(page, snap) {
+  const url = page.url();
+  const card = () =>
+    page
+      .locator("h3", { hasText: /^Getränkestand$/ })
+      .locator("xpath=ancestor::*[.//button[normalize-space()='Austragen' or normalize-space()='Eintragen']][1]");
+  const button = (name) => card().getByRole("button", { name, exact: true });
+  const fresh = async () => {
+    await page.goto(url, { waitUntil: "networkidle" });
+    await card().waitFor();
+  };
+  const toggle = async (from, to) => {
+    await fresh();
+    await button(from).click();
+    await button(to).waitFor();
+    await page.waitForLoadState("networkidle");
+    await fresh();
+  };
+  const viewport = page.viewportSize();
+  const center = async (locator) => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error("Schaltfläche nicht gefunden");
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
+  };
+  const percent = ({ x, y }) => `${((x / viewport.width) * 100).toFixed(2)}% ${((y / viewport.height) * 100).toFixed(2)}%`;
+  // Ausgangslage: nicht eingetragen
+  if (await button("Austragen").count()) await toggle("Austragen", "Eintragen");
+  else await fresh();
+  await page.mouse.move(0, 0);
+  await snap("schichten-live-1");
+  const join = await center(button("Eintragen"));
+  await page.mouse.move(join.x, join.y);
+  await snap("schichten-live-2");
+  // Eintragen – danach steht „Austragen“ an derselben Stelle unter dem Zeiger
+  await toggle("Eintragen", "Austragen");
+  const leave = await center(button("Austragen"));
+  await page.mouse.move(leave.x, leave.y);
+  await snap("schichten-live-3");
+  const print = await center(page.getByRole("button", { name: "Drucken", exact: true }).or(page.getByRole("link", { name: "Drucken", exact: true })).first());
+  await page.mouse.move(print.x, print.y);
+  await snap("schichten-live-4");
+  await page.mouse.move(0, 0);
+  await snap("schichten");
+  console.log(`      Positionen: Eintragen ${percent(join)} (Austragen ${percent(leave)}), Drucken ${percent(print)}`);
+}
+
+/**
  * Bildliste (nur, was die Website tatsächlich zeigt). `path` wird direkt geöffnet; `steps` läuft danach
  * (z. B. Klick auf eine Veranstaltung). `device`: „desktop“ (1280 × 800) oder „phone“ (390 × 844, Touch, mobiles Menü).
  * `crop`: „content“ = Ausschnitt ohne Seitenleiste (siehe DETAIL), „dialog“ = Ausschnitt um den geöffneten Dialog.
@@ -157,8 +216,9 @@ const shots = [
     crisp: [880],
   },
   // Der Helferplan behält die Seitenleiste (Kapitelbild in voller Breite); höher, damit die Ampel-Zustände
-  // „Voll besetzt“, „Teilweise besetzt“ und „Unbesetzt“ zu sehen sind.
-  { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1140, height: 1000 } },
+  // „Voll besetzt“, „Teilweise besetzt“ und „Unbesetzt“ zu sehen sind. Zusammen mit der Bildfolge für das Live-Fenster
+  // aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
+  { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1140, height: 1000 }, frames: liveFrames },
   { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content" },
   // Der Oktober ist gefüllter als der September (Sommerfest, Trainings); der Monat steht in der Adresse.
   { name: "kalender", path: "/kalender?ansicht=monat&datum=2026-10-01", viewport: DETAIL, crop: "content" },
@@ -321,6 +381,23 @@ async function main() {
             await page.emulateMedia({ media: shot.media ?? "screen" });
             await page.goto(shot.path, { waitUntil: "networkidle" });
             await shot.steps?.(page);
+            if (shot.frames) {
+              // Bildfolge: jedes Bild wie ein einzelnes, der Mauszeiger bleibt, wo ihn die Folge hinstellt
+              const snap = async (name) => {
+                await page.addStyleTag({ content: HIDE_DEV_UI });
+                await page.evaluate(() => document.fonts.ready);
+                await normalizeDemoNames(page);
+                await page.waitForTimeout(500);
+                const png = await page.screenshot({ type: "png" });
+                for (const width of shot.widths ?? spec.widths) {
+                  await encode(png, width, shot, spec).toFile(path.join(out, `${name}-${scheme}-${width}.webp`));
+                }
+                const { width, height } = await sharp(png).metadata();
+                console.log(`${scheme.padEnd(5)} ${name}  ${width}×${height}`);
+              };
+              await shot.frames(page, snap);
+              continue;
+            }
             await page.addStyleTag({ content: HIDE_DEV_UI }); // nach den Schritten: ein Link-Klick lädt eine neue Seite
             await page.evaluate(() => document.fonts.ready);
             await normalizeDemoNames(page);

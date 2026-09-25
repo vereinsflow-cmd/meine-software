@@ -127,6 +127,6 @@ Hinweise zu den Aufnahmen:
 - **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen in deren Hauptfarbe (`--accent`), das Logo-Blau
   (`--brand`) für Schrift-Akzente. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
 - **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
-  von `site.js`), leichte Parallaxe der Bilder (`.plx`) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
+  von `site.js`), leichte Parallaxe der Bilder (`.plx`), ein Live-Fenster im Kapitel „Helferschichten“ (Mauszeiger trägt sich in eine Schicht ein – Bildfolge aus der Demo-App, `tools/capture-screenshots.mjs --only schichten`) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
   Unterstützung zeigen feste Bilder. Bewegt werden nur Transparenz und Transformationen, nie das Layout. Mit „Bewegung
   reduzieren“ im Betriebssystem ist alles sofort und ohne Animation sichtbar.
