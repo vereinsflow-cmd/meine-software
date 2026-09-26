@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,9 @@ function FieldShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("grid gap-1.5", className)}>
+    // `content-start`: Im Formularraster wird das Feld auf die Zeilenhöhe gestreckt. Hat das Nachbarfeld einen Hilfetext,
+    // rutschten Beschriftung und Feld sonst ein Stück nach unten – so beginnen die Felder einer Zeile oben bündig.
+    <div className={cn("grid content-start gap-1.5", className)}>
       <Label htmlFor={id}>
         {label}
         {required && (
@@ -190,15 +193,12 @@ export function SelectField<T extends FieldValues>({
       error={error}
       className={className}
     >
-      <select
+      {/* Derselbe Baustein wie in Filterleisten: Rand, Fläche und Fehlerzustand (über aria-invalid) wie bei den Textfeldern. */}
+      <NativeSelect
         id={id}
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={cn(
-          "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
-          error && "border-destructive",
-        )}
         {...form.register(name)}
       >
         {placeholder !== undefined && <option value="">{placeholder}</option>}
@@ -207,7 +207,7 @@ export function SelectField<T extends FieldValues>({
             {option.label}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </FieldShell>
   );
 }
@@ -223,7 +223,7 @@ export function CheckboxField<T extends FieldValues>({
   const id = useId();
   const error = errorOf(form, name);
   return (
-    <div className={cn("grid gap-1", className)}>
+    <div className={cn("grid content-start gap-1", className)}>
       <div className="flex items-start gap-2.5">
         <input
           id={id}
