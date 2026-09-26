@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "vereinsflow-dev",
-      "runtimeExecutable": "npm.cmd",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-start.mjs"],
       "port": 3000
     },
     {

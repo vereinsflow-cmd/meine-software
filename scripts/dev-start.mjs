@@ -8,6 +8,9 @@
  *   3. Demo-Daten: nur beim allerersten Start einer neuen Datenbank oder mit `--seed`.
  *   4. Anwendung: `next dev` auf Port 3000.
  *
+ * Läuft VereinsFlow schon (in einem anderen Fenster oder in der Vorschau von Claude), wird nichts ein zweites Mal
+ * gestartet – ein zweites `next dev` im selben Ordner bricht ohnehin ab. Mit `--open` öffnet sich dann nur der Browser.
+ *
  *   npm run dev:all              alles starten
  *   npm run dev:all -- --open    … und danach den Browser öffnen
  *   npm run dev:all -- --seed    … und die Demo-Daten (nochmals) einspielen, falls sie fehlen
@@ -101,6 +104,18 @@ async function openBrowserWhenReady() {
 
 async function main() {
   console.log("\n=== VereinsFlow: lokaler Start ===\n");
+
+  // 0. Läuft die Anwendung schon, genügt der Browser.
+  if (await isPortOpen(appPort)) {
+    console.log(
+      `✔ VereinsFlow läuft bereits unter ${appUrl} – es wird keine zweite Kopie gestartet.`,
+    );
+    if (args.has("--open")) {
+      console.log("  Der Browser wird geöffnet.");
+      await openBrowserWhenReady();
+    }
+    return;
+  }
 
   // 1. Datenbank
   if (await isPortOpen(dbPort)) {
