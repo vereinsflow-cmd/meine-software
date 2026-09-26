@@ -127,11 +127,13 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
   {
     id: "page:kalender",
     category: "seiten",
-    title: "Termine",
+    title: "Kalender",
     description: "Termine und Veranstaltungen im Kalender ansehen",
     href: "/kalender",
     iconKey: "calendar",
     permission: "events:read",
+    // Hieß im Menü früher „Termine“ – wer danach sucht, soll den Kalender weiter finden.
+    keywords: ["termine"],
   },
   {
     id: "page:veranstaltungen",
@@ -141,6 +143,17 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
     href: "/veranstaltungen",
     iconKey: "calendar-days",
     permission: "events:read",
+  },
+  {
+    id: "page:helferplanung",
+    category: "seiten",
+    title: "Helferplanung",
+    description: "In offene Schichten eintragen und eigene Einsätze im Blick behalten",
+    href: "/helferplanung",
+    iconKey: "hand-heart",
+    permission: "shifts:read",
+    // Hieß im Menü früher „Helferstunden“; die Stunden selbst hat die Unterseite „Helferstunden“ (oben).
+    keywords: ["schichten", "helferstunden"],
   },
   {
     id: "page:helferplanung-drucken",
