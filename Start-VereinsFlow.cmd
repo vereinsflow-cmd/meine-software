@@ -9,5 +9,5 @@ echo  Beenden: Strg+C druecken (bei der Rueckfrage "J" eingeben).
 echo.
 call npm run dev:all -- --open
 echo.
-echo  VereinsFlow wurde beendet.
+echo  Fertig. Dieses Fenster kann geschlossen werden.
 pause
