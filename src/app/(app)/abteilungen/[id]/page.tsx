@@ -34,9 +34,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   if (!department) notFound();
 
   const candidates = (department.members ?? []).map((m) => ({ id: m.id, name: m.name }));
-  const addableMembers = department.canManageClubWide
-    ? await listAddableMembers(ctx, id)
-    : [];
+  const addableMembers = department.canManageClubWide ? await listAddableMembers(ctx, id) : [];
 
   return (
     <>
@@ -58,13 +56,8 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
         }
         actions={
           <>
+            {/* Häufiges als Knöpfe, Seltenes (Deaktivieren, Löschen) in „Weitere Aktionen“. */}
             {department.canManage && <DepartmentDialog department={department} />}
-            <DepartmentActions
-              id={id}
-              name={department.name}
-              isActive={department.isActive}
-              canClubWide={department.canManageClubWide}
-            />
             {can(ctx, "events:read") && (
               <Button asChild variant="outline">
                 <Link href={`/veranstaltungen?abteilung=${id}`}>
@@ -72,6 +65,12 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
                 </Link>
               </Button>
             )}
+            <DepartmentActions
+              id={id}
+              name={department.name}
+              isActive={department.isActive}
+              canClubWide={department.canManageClubWide}
+            />
           </>
         }
       />

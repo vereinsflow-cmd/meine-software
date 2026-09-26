@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,10 +19,15 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { FormError, SubmitButton, TextField, TextareaField } from "@/components/shared/form-fields";
+import {
+  MoreActions,
+  useMoreActions,
+  type MenuDialogProps,
+} from "@/components/shared/more-actions";
 import { useActionForm } from "@/hooks/use-action-form";
 import type { EventStatus } from "@/generated/prisma/enums";
 import {
@@ -35,10 +39,16 @@ import {
   publishEventAction,
   restoreEventAction,
 } from "../actions";
+import { availableEventActions, type EventActionRights } from "../available-actions";
 import { cancelEventSchema, duplicateSchema } from "../schemas";
 
-function CancelDialog({ id, title }: { id: string; title: string }) {
-  const [open, setOpen] = useState(false);
+function CancelDialog({
+  id,
+  title,
+  open,
+  onOpenChange,
+  onCloseAutoFocus,
+}: { id: string; title: string } & MenuDialogProps) {
   const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: cancelEventSchema,
@@ -46,18 +56,13 @@ function CancelDialog({ id, title }: { id: string; title: string }) {
     action: cancelEventAction,
     successMessage: "Veranstaltung abgesagt. Teilnehmer und Helfer werden benachrichtigt.",
     onSuccess: () => {
-      setOpen(false);
+      onOpenChange(false);
       router.refresh();
     },
   });
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="text-destructive">
-          <BanIcon /> Absagen
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>„{title}“ absagen?</DialogTitle>
           <DialogDescription>
@@ -84,8 +89,12 @@ function CancelDialog({ id, title }: { id: string; title: string }) {
   );
 }
 
-function DuplicateDialog({ id }: { id: string }) {
-  const [open, setOpen] = useState(false);
+function DuplicateDialog({
+  id,
+  open,
+  onOpenChange,
+  onCloseAutoFocus,
+}: { id: string } & MenuDialogProps) {
   const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: duplicateSchema,
@@ -93,18 +102,13 @@ function DuplicateDialog({ id }: { id: string }) {
     action: duplicateEventAction,
     successMessage: "Veranstaltung dupliziert (Entwurf).",
     onSuccess: (data) => {
-      setOpen(false);
+      onOpenChange(false);
       router.push(`/veranstaltungen/${(data as { id: string }).id}`);
     },
   });
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <CopyIcon /> Duplizieren
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Veranstaltung duplizieren</DialogTitle>
           <DialogDescription>
@@ -127,7 +131,13 @@ function DuplicateDialog({ id }: { id: string }) {
   );
 }
 
-/** Verwaltungsschaltflächen der Veranstaltungsseite (der Server prüft jede Aktion erneut). */
+type MenuDialog = "complete" | "duplicate" | "archive" | "restore" | "cancel" | "delete";
+
+/**
+ * Verwaltungsschaltflächen der Veranstaltungsseite (der Server prüft jede Aktion erneut). Als Knöpfe stehen nur
+ * „Bearbeiten“ und beim Entwurf „Veröffentlichen“ da, alles Übrige liegt in „Weitere Aktionen“ – Absagen und Löschen
+ * zuletzt, abgesetzt und rot. Jeder Menüpunkt öffnet dieselbe Rückfrage wie zuvor der eigene Knopf.
+ */
 export function EventActions({
   id,
   title,
@@ -137,21 +147,25 @@ export function EventActions({
   id: string;
   title: string;
   status: EventStatus;
-  can: { update: boolean; publish: boolean; archive: boolean; duplicate: boolean };
+  can: EventActionRights;
 }) {
   const router = useRouter();
   const refresh = () => router.refresh();
+  const more = useMoreActions<MenuDialog>();
+  const show = availableEventActions(status, can);
+  const routine = show.complete || show.duplicate || show.archive || show.restore;
+  const dangerous = show.cancel || show.delete;
 
   return (
     <>
-      {can.update && (
+      {show.edit && (
         <Button asChild>
           <Link href={`/veranstaltungen/${id}/bearbeiten`}>
             <PencilIcon /> Bearbeiten
           </Link>
         </Button>
       )}
-      {can.publish && status === "DRAFT" && (
+      {show.publish && (
         <ConfirmAction
           trigger={
             <Button>
@@ -166,13 +180,46 @@ export function EventActions({
           onSuccess={refresh}
         />
       )}
-      {can.publish && status === "PUBLISHED" && (
-        <ConfirmAction
-          trigger={
-            <Button variant="outline">
+      {(routine || dangerous) && (
+        <MoreActions triggerRef={more.triggerRef}>
+          {show.complete && (
+            <DropdownMenuItem onSelect={() => more.show("complete")}>
               <CheckCheckIcon /> Abschließen
-            </Button>
-          }
+            </DropdownMenuItem>
+          )}
+          {show.duplicate && (
+            <DropdownMenuItem onSelect={() => more.show("duplicate")}>
+              <CopyIcon /> Duplizieren
+            </DropdownMenuItem>
+          )}
+          {show.archive && (
+            <DropdownMenuItem onSelect={() => more.show("archive")}>
+              <ArchiveIcon /> Archivieren
+            </DropdownMenuItem>
+          )}
+          {show.restore && (
+            <DropdownMenuItem onSelect={() => more.show("restore")}>
+              <ArchiveRestoreIcon /> Wiederherstellen
+            </DropdownMenuItem>
+          )}
+          {routine && dangerous && <DropdownMenuSeparator />}
+          {show.cancel && (
+            <DropdownMenuItem variant="destructive" onSelect={() => more.show("cancel")}>
+              <BanIcon /> Absagen
+            </DropdownMenuItem>
+          )}
+          {show.delete && (
+            <DropdownMenuItem variant="destructive" onSelect={() => more.show("delete")}>
+              <Trash2Icon /> Löschen
+            </DropdownMenuItem>
+          )}
+        </MoreActions>
+      )}
+
+      {/* Die Rückfragen der Menüpunkte liegen außerhalb des Menüs (siehe useMoreActions). */}
+      {show.complete && (
+        <ConfirmAction
+          {...more.dialog("complete")}
           title="Veranstaltung abschließen?"
           description="Sie gilt als durchgeführt. Danach sind keine Anmeldungen mehr möglich; Helferstunden lassen sich weiter dokumentieren."
           confirmLabel="Abschließen"
@@ -181,17 +228,10 @@ export function EventActions({
           onSuccess={refresh}
         />
       )}
-      {can.publish && (status === "PUBLISHED" || status === "DRAFT") && (
-        <CancelDialog id={id} title={title} />
-      )}
-      {can.duplicate && <DuplicateDialog id={id} />}
-      {can.archive && status !== "ARCHIVED" && (
+      {show.duplicate && <DuplicateDialog id={id} {...more.dialog("duplicate")} />}
+      {show.archive && (
         <ConfirmAction
-          trigger={
-            <Button variant="outline">
-              <ArchiveIcon /> Archivieren
-            </Button>
-          }
+          {...more.dialog("archive")}
           title="Veranstaltung archivieren?"
           description="Sie verschwindet aus den normalen Listen und dem Kalender, bleibt aber erhalten."
           confirmLabel="Archivieren"
@@ -200,13 +240,9 @@ export function EventActions({
           onSuccess={refresh}
         />
       )}
-      {can.archive && status === "ARCHIVED" && (
+      {show.restore && (
         <ConfirmAction
-          trigger={
-            <Button variant="outline">
-              <ArchiveRestoreIcon /> Wiederherstellen
-            </Button>
-          }
+          {...more.dialog("restore")}
           title="Veranstaltung wiederherstellen?"
           description="Sie erscheint wieder in den Listen."
           confirmLabel="Wiederherstellen"
@@ -215,14 +251,11 @@ export function EventActions({
           onSuccess={refresh}
         />
       )}
-      {can.archive && (status === "DRAFT" || status === "ARCHIVED") && (
+      {show.cancel && <CancelDialog id={id} title={title} {...more.dialog("cancel")} />}
+      {show.delete && (
         <ConfirmAction
           destructive
-          trigger={
-            <Button variant="outline" className="text-destructive">
-              <Trash2Icon /> Löschen
-            </Button>
-          }
+          {...more.dialog("delete")}
           title="Veranstaltung löschen?"
           description="Die Veranstaltung wird gelöscht und ist nicht mehr auffindbar."
           confirmLabel="Löschen"

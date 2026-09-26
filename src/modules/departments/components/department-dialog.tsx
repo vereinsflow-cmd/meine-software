@@ -82,9 +82,10 @@ export function DepartmentDialog({
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {/* „Bearbeiten“ ist die Hauptaktion der Abteilungsseite und steht deshalb in der Markenfarbe. */}
       <DialogTrigger asChild>
         {department ? (
-          <Button variant="outline">
+          <Button>
             <PencilIcon /> Bearbeiten
           </Button>
         ) : (
