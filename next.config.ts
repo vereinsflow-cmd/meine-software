@@ -37,6 +37,10 @@ const nextConfig: NextConfig = {
   output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
   // Native Module dürfen nicht gebündelt werden.
   serverExternalPackages: ["@node-rs/argon2", "pg", "@prisma/adapter-pg", "nodemailer"],
+  // Next.js schreibt im Entwicklungsmodus jeden Server-Action-Aufruf samt Argumenten ins
+  // Terminal – also auch Passwörter und Tokens aus Anmeldung, Einladung und Passwort-Formularen.
+  // Eine Schwärzung einzelner Felder bietet Next.js nicht an, daher ganz abgeschaltet.
+  logging: { serverFunctions: false },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
