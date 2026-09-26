@@ -51,7 +51,16 @@ test.describe("Helferplanung – Veranstalter", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Meine Einsätze" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Offene Schichten" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Sommerfest 2026/ }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Helferstunden" })).toBeVisible();
+    // Der Knopf oben auf der Seite führt zu den Helferstunden; der Menüpunkt selbst heißt wie die Seite „Helferplanung“.
+    const hours = page.getByRole("main").getByRole("link", { name: "Helferstunden", exact: true });
+    await expect(hours).toBeVisible();
+    await expect(hours).toHaveAttribute("href", "/helferplanung/stunden");
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    await expect(nav.getByRole("link", { name: "Helferplanung", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.getByRole("link", { name: "Helferstunden" })).toHaveCount(0);
   });
 
   test("Schicht anlegen, Helfer zuweisen, Überschneidung wird verhindert, Schicht löschen", async ({

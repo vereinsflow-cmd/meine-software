@@ -48,7 +48,7 @@ export function MobileNav({
           </SheetDescription>
         </SheetHeader>
         <div className="p-3">
-          <SidebarNav groups={groups} onNavigate={() => setOpen(false)} animateIn />
+          <SidebarNav groups={groups} onNavigate={() => setOpen(false)} animateIn variant="sheet" />
         </div>
       </SheetContent>
     </Sheet>

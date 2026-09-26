@@ -38,6 +38,13 @@ function activeCollapsibleGroup(groups: NavGroup[], pathname: string): string | 
  * Gruppen mit `collapsible: true` (Verein, Organisation, Kommunikation, Einstellungen) klappen sich als Akkordeon auf –
  * standardmäßig geschlossen, aber automatisch offen, wenn die aktuelle Seite darin liegt. Es ist immer höchstens eine
  * Gruppe offen: Ruhiger, als wenn sich mehrere Untermenüs gleichzeitig stapeln.
+ *
+ * `variant="sheet"` ist das ausklappende Menü auf Smartphone und Tablet: Einträge und Gruppenköpfe sind mindestens 44 px
+ * hoch (gut mit dem Finger zu treffen), die Gruppenköpfe stehen in normaler Schrift und Textfarbe mit deutlichem Pfeil –
+ * so sieht man ihnen an, dass sie sich antippen lassen („Persönlich“ lässt sich nicht einklappen und behält deshalb die
+ * kleine graue Überschrift – sie ist kein Knopf und soll auch nicht so aussehen). Die enge Einstellung für niedrige
+ * Bildschirme gilt nur in der festen Seitenleiste (ab `lg`); ein Smartphone ist fast immer niedriger als 820 px und
+ * bekäme sonst winzige Ziele.
  */
 export function SidebarNav({
   groups,
@@ -45,6 +52,7 @@ export function SidebarNav({
   pinLast = false,
   animateIn = false,
   collapsedRail = false,
+  variant = "sidebar",
 }: {
   groups: NavGroup[];
   onNavigate?: () => void;
@@ -54,8 +62,11 @@ export function SidebarNav({
   animateIn?: boolean;
   /** Nur reine Symbole, ohne Gruppen/Text – für die eingeklappte feste Seitenleiste (ab `lg`, nie im mobilen Menü). */
   collapsedRail?: boolean;
+  /** Feste Seitenleiste (`sidebar`) oder ausklappendes Menü für kleine Bildschirme (`sheet`, größere Ziele). */
+  variant?: "sidebar" | "sheet";
 }) {
   const pathname = usePathname();
+  const sheet = variant === "sheet";
   const [openGroup, setOpenGroup] = useState<string | null>(() =>
     activeCollapsibleGroup(groups, pathname),
   );
@@ -97,7 +108,10 @@ export function SidebarNav({
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="flex flex-1 flex-col gap-2 [@media(max-height:820px)]:gap-1.5"
+      className={cn(
+        "flex flex-1 flex-col gap-2",
+        !sheet && "lg:[@media(max-height:820px)]:gap-1.5",
+      )}
     >
       {groups.map((group, groupIndex) => {
         const pinned =
@@ -110,6 +124,7 @@ export function SidebarNav({
             pathname={pathname}
             onNavigate={onNavigate}
             animateIn={animateIn}
+            sheet={sheet}
             style={
               animateIn
                 ? { animationDelay: `${(offsets[groupIndex]! + itemIndex) * 22}ms` }
@@ -129,14 +144,25 @@ export function SidebarNav({
               <CollapsibleTrigger asChild>
                 <button
                   type="button"
-                  className="group/trigger flex w-full items-center justify-between rounded-lg px-3.5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase transition-colors duration-150 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  className={cn(
+                    "group/trigger flex w-full items-center justify-between rounded-lg px-3.5 font-semibold transition-colors duration-150 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                    // Im ausklappenden Menü ein richtiger Knopf: 44 px hoch, normale Schrift in Textfarbe.
+                    sheet
+                      ? "min-h-11 py-2 text-base text-foreground"
+                      : "py-1.5 text-xs tracking-wider text-muted-foreground uppercase",
+                  )}
                 >
                   <span>{group.label}</span>
-                  <ChevronRightIcon className="size-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90" />
+                  <ChevronRightIcon
+                    className={cn(
+                      "shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90",
+                      sheet ? "size-5 text-muted-foreground" : "size-3.5",
+                    )}
+                  />
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="grid gap-0.5 pt-0.5">{items}</div>
+                <div className={cn("grid", sheet ? "gap-1 pt-1" : "gap-0.5 pt-0.5")}>{items}</div>
               </CollapsibleContent>
             </Collapsible>
           );
@@ -146,7 +172,10 @@ export function SidebarNav({
           <div
             key={group.label ?? groupIndex}
             className={cn(
-              "grid gap-0.5",
+              "grid",
+              sheet ? "gap-1" : "gap-0.5",
+              // Im ausklappenden Menü trennt eine Linie „Persönlich“ von den Gruppenköpfen – wie unten in der Seitenleiste.
+              sheet && group.label && "mt-1 border-t pt-3",
               pinned && "sticky bottom-0 z-10 -mx-3 mt-auto border-t bg-sidebar px-3 pt-3 pb-3",
             )}
           >
@@ -169,6 +198,7 @@ function NavLink({
   pathname,
   onNavigate,
   animateIn,
+  sheet,
   style,
 }: {
   item: NavItem;
@@ -176,6 +206,8 @@ function NavLink({
   pathname: string;
   onNavigate?: () => void;
   animateIn: boolean;
+  /** Ausklappendes Menü: mindestens 44 px hoch statt der kompakten Zeile der Seitenleiste. */
+  sheet: boolean;
   style?: React.CSSProperties;
 }) {
   // „Hilfe & Support“ merkt sich die Seite, von der man kam – eine Meldung nennt so gleich, wo das Problem auftrat.
@@ -188,7 +220,8 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       style={style}
       className={cn(
-        "group/nav flex items-center gap-2.5 rounded-lg px-3.5 py-1.5 text-base leading-snug font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none [@media(max-height:820px)]:py-1",
+        "group/nav flex items-center gap-2.5 rounded-lg px-3.5 text-base leading-snug font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+        sheet ? "min-h-11 py-2" : "py-1.5 lg:[@media(max-height:820px)]:py-1",
         // Aktive Seite: gefüllt statt nur getönt – so ist auf einen Blick klar, wo man sich befindet.
         active
           ? "bg-primary font-semibold text-primary-foreground shadow-sm"
