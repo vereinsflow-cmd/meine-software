@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { PowerIcon, PowerOffIcon, Trash2Icon, UserMinusIcon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
+import { MoreActions, useMoreActions } from "@/components/shared/more-actions";
 import {
   addDepartmentMemberAction,
   addGroupMemberAction,
@@ -17,6 +19,10 @@ import {
   setLeaderAction,
 } from "../actions";
 
+/**
+ * Seltene Aktionen der Abteilungsseite im Menü „Weitere Aktionen“: Deaktivieren bzw. Aktivieren und – abgesetzt und
+ * rot – Löschen. Die Rückfragen liegen außerhalb des Menüs (siehe `useMoreActions`).
+ */
 export function DepartmentActions({
   id,
   name,
@@ -29,15 +35,21 @@ export function DepartmentActions({
   canClubWide: boolean;
 }) {
   const router = useRouter();
+  const more = useMoreActions<"active" | "delete">();
   if (!canClubWide) return null;
   return (
     <>
+      <MoreActions triggerRef={more.triggerRef}>
+        <DropdownMenuItem onSelect={() => more.show("active")}>
+          {isActive ? <PowerOffIcon /> : <PowerIcon />} {isActive ? "Deaktivieren" : "Aktivieren"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={() => more.show("delete")}>
+          <Trash2Icon /> Löschen
+        </DropdownMenuItem>
+      </MoreActions>
       <ConfirmAction
-        trigger={
-          <Button variant="outline">
-            {isActive ? <PowerOffIcon /> : <PowerIcon />} {isActive ? "Deaktivieren" : "Aktivieren"}
-          </Button>
-        }
+        {...more.dialog("active")}
         title={isActive ? "Abteilung deaktivieren?" : "Abteilung aktivieren?"}
         description={
           isActive
@@ -51,11 +63,7 @@ export function DepartmentActions({
       />
       <ConfirmAction
         destructive
-        trigger={
-          <Button variant="outline" className="text-destructive">
-            <Trash2Icon /> Löschen
-          </Button>
-        }
+        {...more.dialog("delete")}
         title="Abteilung löschen?"
         description={`${name} wird endgültig gelöscht. Das geht nur, wenn ihr keine Mitglieder, Gruppen oder Veranstaltungen mehr zugeordnet sind – sonst deaktiviere sie besser.`}
         confirmLabel="Endgültig löschen"

@@ -19,9 +19,14 @@ import type { ActionResult } from "@/lib/action-result";
  * Bestätigungsdialog für folgenreiche Aktionen (Löschen, Absagen, …).
  * Barrierefrei: Fokus wird gefangen, Escape bricht ab, Titel und Beschreibung sind für Screenreader verknüpft.
  * Die Aktion wird erst nach der Bestätigung ausgeführt; Fehler erscheinen als Hinweis.
+ * Ohne `trigger` wird der Dialog von außen geöffnet (`open`/`onOpenChange`, z. B. aus „Weitere Aktionen“,
+ * siehe `useMoreActions`); `onCloseAutoFocus` bestimmt dann, wohin der Fokus nach dem Schließen zurückkehrt.
  */
 export function ConfirmAction({
   trigger,
+  open: openProp,
+  onOpenChange,
+  onCloseAutoFocus,
   title,
   description,
   confirmLabel,
@@ -30,7 +35,10 @@ export function ConfirmAction({
   successMessage,
   onSuccess,
 }: {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onCloseAutoFocus?: (event: Event) => void;
   title: string;
   description: React.ReactNode;
   confirmLabel: string;
@@ -39,13 +47,15 @@ export function ConfirmAction({
   successMessage?: string;
   onSuccess?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = openProp ?? ownOpen;
+  const setOpen = onOpenChange ?? setOwnOpen;
   const [pending, startTransition] = useTransition();
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      {trigger && <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>}
+      <AlertDialogContent onCloseAutoFocus={onCloseAutoFocus}>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
