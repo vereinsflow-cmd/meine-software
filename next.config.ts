@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   poweredByHeader: false,
+  // Das runde Next.js-Symbol (nur im Entwicklungsmodus) verdeckt in jeder Ecke etwas: unten links den Knopf zum
+  // Aufklappen der Seitenleiste, unten rechts Knöpfe am Seitenende („Weiter“, „Speichern“), oben Logo und Benutzermenü.
+  // Fehlermeldungen beim Entwickeln zeigt Next.js auch ohne das Symbol an.
+  devIndicators: false,
   // Für das Docker-Image ("standalone"). Lokal unter Windows wird es nicht benötigt und
   // kann dort wegen fehlender Symlink-Rechte scheitern – daher nur per Umgebungsvariable.
   output: process.env.BUILD_STANDALONE === "1" ? "standalone" : undefined,
