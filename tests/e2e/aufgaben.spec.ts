@@ -140,7 +140,8 @@ test.describe("Aufgaben – Verwaltung", () => {
 
     await page.getByRole("link", { name: "Zurücksetzen" }).click();
     await expect(page).toHaveURL(/\/aufgaben$/);
-    await page.getByLabel("Nach Priorität filtern").selectOption("URGENT");
+    // Über die Rolle suchen: Solange die neue Seite nachlädt, liegt kurz noch eine unsichtbare Kopie des Filters im Dokument.
+    await page.getByRole("combobox", { name: "Nach Priorität filtern" }).selectOption("URGENT");
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page.getByRole("listitem", { name: "Aufgabe Getränke bestellen" })).toBeVisible();
     await expect(page.getByRole("listitem", { name: "Aufgabe Helfer einteilen" })).toHaveCount(0);
