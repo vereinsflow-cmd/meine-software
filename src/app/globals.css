@@ -37,6 +37,7 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
+  --color-field: var(--field-border);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -106,7 +107,11 @@
   --destructive: oklch(0.55 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.6 0.15 258);
+  /* Rand der Eingabefelder (Text, Auswahl, Kästchen; Tailwind: `border-field`): mindestens 3:1 gegen Karte UND Seitengrund
+     (WCAG 1.4.11) – auf Weiß 3,6:1, auf dem Seitengrund 3,4:1. --input (0.922, nur 1,3:1) bleibt für Füllflächen. */
+  --field-border: oklch(0.62 0 0);
+  /* Fokusring = Markenfarbe (wie --primary): 7,0:1 auf Weiß, 6,5:1 auf dem Seitengrund. */
+  --ring: oklch(0.47 0.17 258);
   /* Diagrammfarben: 6 Kategorien in FESTER Reihenfolge (nie zyklisch), geprüft mit dem Palettenvalidator gegen Weiß (Abstand für
      Farbsehschwächen ΔE ≥ 8, Normalsicht ≥ 15). Aqua, Gelb und Magenta liegen im Hellen unter 3:1 Kontrast – deshalb hat jedes
      Diagramm sichtbare Beschriftungen/Legende mit Werten und eine Tabellenansicht. Einzelne Reihen nehmen immer Farbe 1. */
@@ -126,7 +131,7 @@
   --sidebar-accent: oklch(0.96 0.01 258);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.47 0.17 258);
   /* Logo (siehe components/shared/brand-logo.tsx): Farben des Originals */
   --logo-dark: #1c4a7a;
   --logo-light: #5b9cd6;
@@ -166,7 +171,11 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.556 0 0);
+  /* Feldrand deckend statt durchscheinend: 3,8:1 auf der Karte, 4,2:1 auf dem Seitengrund, 3,6:1 im Dialog und 3,3:1 gegen
+     die eigene, leicht aufgehellte Feldfläche (vorher 1,4–1,9:1). */
+  --field-border: oklch(0.56 0.02 258);
+  /* Fokusring auch im Dunkeln in der Markenfarbe (wie --primary) statt Grau: 7,0:1 auf der Karte, 7,9:1 auf dem Seitengrund. */
+  --ring: oklch(0.72 0.14 258);
   /* Dieselben sechs Farbtöne, für den dunklen Grund nachgestuft und gegen die dunkle Kartenfläche (#121a25) validiert: alle ≥ 3:1. */
   --chart-1: #3987e5;
   --chart-2: #d95926;
@@ -183,7 +192,7 @@
   --sidebar-accent: oklch(0.29 0.04 258);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.72 0.14 258);
   /* Logo in der dunklen Darstellung: hellere Blautöne und helle Schrift, damit es auf dunklem Grund lesbar bleibt */
   --logo-dark: #4a8ccf;
   --logo-light: #8dbbe8;
@@ -196,7 +205,15 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  /* Tastaturfokus für alles ohne eigenen Fokussaum (Links, Spaltenköpfe, native Kästchen …): 2 px in der Markenfarbe mit 2 px
+     Abstand – so bleibt er auch auf gefüllten Flächen sichtbar. Vorher zeigte der Browser nur 1 px bei 50 % Deckkraft
+     (≈ 1,9:1). Felder und Knöpfe mit eigenem Fokussaum (`outline-none` + `ring-*`) behalten ihn: Utilities schlagen @layer base.
+     Wer nur Breite und Farbe der Linie selbst setzt (Reiter in `ui/tabs.tsx`), setzt auch den Abstand zurück (`outline-offset-0`). */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground antialiased;
