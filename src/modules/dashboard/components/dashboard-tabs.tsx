@@ -28,6 +28,26 @@ const ICON: Record<DashboardTabId, typeof UsersIcon> = {
   aktivitaet: ListChecksIcon,
 };
 
+interface Fade {
+  start: boolean;
+  end: boolean;
+}
+
+/**
+ * Breite des Verlaufs am Rand der Reiterleiste. Sie ist größer als die breiteste textfreie Stelle zwischen zwei Reitern
+ * (2 × 14 px Innenabstand + 4 px Abstand). So blendet am Rand immer ein Stück Schrift sichtbar aus, egal wie breit Schrift
+ * und Bildschirm sind.
+ */
+const FADE = "3rem";
+
+/** Maske für die Leiste: Wo sie weiterläuft, blendet sie zum Rand hin aus; ohne Überlauf keine Maske. */
+function fadeMask({ start, end }: Fade): string | undefined {
+  if (!start && !end) return undefined;
+  const left = start ? `transparent, #000 ${FADE}` : "#000";
+  const right = end ? `#000 calc(100% - ${FADE}), transparent` : "#000";
+  return `linear-gradient(to right, ${left}, ${right})`;
+}
+
 /** Läuft die Geste in etwas, das selbst waagerecht scrollt oder Eingaben annimmt (Tabelle, Diagramm, Feld), gehört sie diesem Element. */
 function ownsGesture(target: Element, boundary: Element): boolean {
   if (
@@ -55,7 +75,8 @@ function ownsGesture(target: Element, boundary: Element): boolean {
  * „Zurück“ verlässt das Dashboard statt durch alle Bereiche zu laufen. Wischen ist nur eine Zugabe – jede Funktion geht auch ohne.
  *
  * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen; ein Strich gleitet unter den aktiven Reiter. Auf schmalen
- * Bildschirmen lässt sie sich seitlich wischen, der gewählte Reiter wird ins Bild geholt. Hat eine Rolle nur einen Bereich,
+ * Bildschirmen lässt sie sich seitlich wischen (ein Verlauf am Rand zeigt, dass es weitergeht), der gewählte Reiter wird
+ * ins Bild geholt. Hat eine Rolle nur einen Bereich,
  * gibt es keine Leiste – nur den Inhalt.
  */
 export function DashboardTabs({
@@ -67,6 +88,7 @@ export function DashboardTabs({
 }) {
   const [active, setActive] = useState<DashboardTabId>(initial);
   const [direction, setDirection] = useState<"next" | "prev" | null>(null);
+  const [fade, setFade] = useState<Fade>({ start: false, end: false });
   const root = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -104,14 +126,30 @@ export function DashboardTabs({
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Ändert sich die Breite (Fenster, Schrift), stimmt die Lage des Strichs sonst nicht mehr.
+  /** Merkt sich, ob die Leiste nach links/rechts weiterläuft – dort blendet sie aus (siehe `fadeMask`). */
+  const updateFade = useCallback(() => {
+    const scroller = bar.current;
+    if (!scroller) return;
+    const start = scroller.scrollLeft > 1;
+    const end = scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1;
+    setFade((current) =>
+      current.start === start && current.end === end ? current : { start, end },
+    );
+  }, []);
+
+  // Ändert sich die Breite (Fenster, Schrift), stimmen die Lage des Strichs und der Verlauf am Rand sonst nicht mehr.
   useEffect(() => {
     const element = list.current;
-    if (!element) return;
-    const observer = new ResizeObserver(placeLine);
+    const scroller = bar.current;
+    if (!element || !scroller) return;
+    const observer = new ResizeObserver(() => {
+      placeLine();
+      updateFade();
+    });
     observer.observe(element);
+    observer.observe(scroller);
     return () => observer.disconnect();
-  }, [placeLine]);
+  }, [placeLine, updateFade]);
 
   if (tabs.length === 1) return <>{tabs[0]!.content}</>;
 
@@ -165,39 +203,49 @@ export function DashboardTabs({
       className="scroll-mt-16 gap-6"
     >
       {/* Leiste: bleibt beim Scrollen unter der Kopfzeile stehen (`sticky`), leicht durchscheinend. Auf kleinen Bildschirmen
-          reicht sie bis an den Rand (negativer Rand = Seitenrand) und lässt sich wischen, ab `lg` passt sie in den Inhalt. */}
-      <div
-        ref={bar}
-        className="sticky top-16 z-20 -mx-4 overflow-x-auto border-b bg-background/95 px-4 shadow-[0_1px_3px_-1px_rgb(0_0_0/0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 dark:shadow-none [@media(max-height:820px)]:top-14"
-      >
-        <TabsList
-          ref={list}
-          variant="line"
-          aria-label="Bereiche des Dashboards"
-          className="relative w-max gap-1 p-0 group-data-horizontal/tabs:h-12"
+          reicht sie bis an den Rand (negativer Rand = Seitenrand) und lässt sich wischen, ab `lg` passt sie in den Inhalt.
+          Läuft sie seitlich weiter, blendet die innere, scrollende Fläche zum Rand hin aus (Hinweis „hier geht es weiter“) –
+          Grund, Rahmen und Schatten sitzen außen und bleiben davon unberührt. `scroll-px-12` hält den gewählten Reiter beim
+          Hereinholen aus dem Verlauf heraus. */}
+      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 shadow-[0_1px_3px_-1px_rgb(0_0_0/0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 lg:mx-0 dark:shadow-none [@media(max-height:820px)]:top-14">
+        <div
+          ref={bar}
+          onScroll={updateFade}
+          data-fade={
+            fade.start && fade.end ? "both" : fade.start ? "start" : fade.end ? "end" : undefined
+          }
+          className="scroll-px-12 overflow-x-auto px-4 sm:px-6 lg:px-0"
+          style={{ maskImage: fadeMask(fade) }}
         >
-          {tabs.map((tab) => {
-            const Icon = ICON[tab.id];
-            return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="h-full flex-none gap-2 rounded-none px-3.5 text-base font-medium text-muted-foreground after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-primary dark:data-active:text-primary"
-              >
-                <Icon className="hidden xl:block" aria-hidden="true" />
-                {tab.label}
-              </TabsTrigger>
-            );
-          })}
-          {/* Der gleitende Strich unter dem aktiven Reiter (rein optisch). Bis zur ersten Messung unsichtbar und ohne Übergang. */}
-          <span
-            ref={line}
-            data-slot="tab-indicator"
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full bg-primary opacity-0 transition-[transform,width] duration-300 ease-out motion-reduce:transition-none"
-            style={{ transition: "none" }}
-          />
-        </TabsList>
+          <TabsList
+            ref={list}
+            variant="line"
+            aria-label="Bereiche des Dashboards"
+            className="relative w-max gap-1 p-0 group-data-horizontal/tabs:h-12"
+          >
+            {tabs.map((tab) => {
+              const Icon = ICON[tab.id];
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="h-full flex-none gap-2 rounded-none px-3.5 text-base font-medium text-muted-foreground after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-primary dark:data-active:text-primary"
+                >
+                  <Icon className="hidden xl:block" aria-hidden="true" />
+                  {tab.label}
+                </TabsTrigger>
+              );
+            })}
+            {/* Der gleitende Strich unter dem aktiven Reiter (rein optisch). Bis zur ersten Messung unsichtbar und ohne Übergang. */}
+            <span
+              ref={line}
+              data-slot="tab-indicator"
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full bg-primary opacity-0 transition-[transform,width] duration-300 ease-out motion-reduce:transition-none"
+              style={{ transition: "none" }}
+            />
+          </TabsList>
+        </div>
       </div>
 
       {/* Bereich mit Wischgeste: senkrechtes Scrollen und Zoomen bleiben dem Browser, waagerechtes Wischen blättert.

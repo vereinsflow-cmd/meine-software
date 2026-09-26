@@ -40,11 +40,13 @@ test.describe("Dashboard-Reiter – mobil", () => {
     });
     expect(bar.scrollWidth).toBeGreaterThan(bar.clientWidth);
     expect(await overflow(page)).toBeLessThanOrEqual(1);
-    // Der letzte Reiter ragt am Rand ins Bild: ein sichtbarer Hinweis, dass es weitergeht
-    const last = (await tabs.last().boundingBox())!;
-    const viewport = page.viewportSize()!;
-    expect(last.x).toBeLessThan(viewport.width);
-    expect(last.x + last.width).toBeGreaterThan(viewport.width);
+    // Sichtbarer Hinweis, dass es weitergeht: Die Leiste blendet am rechten Rand aus (am Anfang links nicht). Das hängt –
+    // anders als ein zufällig angeschnittener letzter Reiter – nicht von Schrift und Bildschirmbreite ab.
+    const scroller = tabBar(page).locator("xpath=..");
+    await expect(scroller).toHaveAttribute("data-fade", "end");
+    expect(await scroller.evaluate((element) => getComputedStyle(element).maskImage)).toContain(
+      "linear-gradient",
+    );
 
     // Den letzten Reiter antippen: Er wird vollständig ins Bild geholt, der Inhalt wechselt
     await select(page, "Aufgaben & Aktivität");
@@ -53,9 +55,11 @@ test.describe("Dashboard-Reiter – mobil", () => {
     });
     await expect(page.getByRole("region", { name: "Auswertungen" })).toBeVisible();
     await expect(page).toHaveURL(/\/dashboard\?tab=aktivitaet$/);
+    await expect(scroller).toHaveAttribute("data-fade", "start"); // am Ende: Verlauf nur noch links
     // …und zurück: Jetzt ist wieder der erste Reiter sichtbar
     await select(page, "Übersicht");
     await expect(page.getByRole("tab", { name: "Übersicht" })).toBeInViewport({ ratio: 0.98 });
+    await expect(scroller).toHaveAttribute("data-fade", "end");
   });
 
   test("Smartphone: jeder Reiter läuft nicht seitlich über den Bildschirm; die Menüleiste hat weiter nur „Dashboard“", async ({
@@ -114,6 +118,7 @@ test.describe("Dashboard-Reiter – mobil", () => {
       return { scrollWidth: parent.scrollWidth, clientWidth: parent.clientWidth };
     });
     expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth + 1); // alles sichtbar, kein Wischen nötig
+    await expect(tabBar(page).locator("xpath=..")).not.toHaveAttribute("data-fade", /./); // kein Verlauf
     for (const name of NAMES) {
       await select(page, name);
       expect(await overflow(page), `Reiter „${name}“`).toBeLessThanOrEqual(1);

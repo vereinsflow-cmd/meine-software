@@ -176,7 +176,7 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("link", { name: "Neues Mitglied" })).toHaveCount(0);
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
     await openNavGroup(nav, "Verein");
-    await expect(nav.getByRole("link", { name: "Kalender" }).first()).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Kalender", exact: true })).toBeVisible();
   });
 
   test("Abteilungsleiterin sieht Kennzahlen und Auswertung nur für ihre Abteilung", async ({

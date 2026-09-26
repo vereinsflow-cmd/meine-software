@@ -35,6 +35,14 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
     await page.getByLabel("Nachname").fill(lastName);
     await page.getByLabel("E-Mail-Adresse").fill("tina@example.org");
     await page.getByLabel("Geburtsdatum").fill("1995-06-15");
+    // Beim Neuanlegen Pflicht: Mitgliedsnummer, Funktion, Eintrittsdatum, Kontakt/Anschrift (Land: vorbelegt) und eine Abteilung
+    await page.getByLabel("Mitgliedsnummer").fill(`T-${lastName}`);
+    await page.getByLabel("Funktion im Verein").fill("Übungsleiterin");
+    await page.getByLabel("Eintrittsdatum").fill("2020-04-01");
+    await page.getByLabel("Telefon").fill("0170 1234567");
+    await page.getByLabel("Straße und Hausnummer").fill("Teststraße 1");
+    await page.getByLabel("PLZ").fill("12345");
+    await page.getByRole("textbox", { name: "Ort", exact: true }).fill("Musterstadt");
     await page.getByRole("group", { name: "Abteilungen" }).getByLabel("Tischtennis").check();
     await page.getByRole("button", { name: "Mitglied anlegen" }).click();
 

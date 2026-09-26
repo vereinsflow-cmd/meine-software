@@ -28,10 +28,12 @@ test.describe("Helferplan drucken", () => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
     await expect(page.getByRole("heading", { name: "TSV Musterstadt 1898 e.V." })).toBeVisible();
-    await expect(page.getByText("Helferplan", { exact: true })).toBeVisible();
+    // Texte im Hauptbereich suchen (siehe unten: unsichtbare Kopie der gestreamten Seite außerhalb davon)
+    const main = page.getByRole("main");
+    await expect(main.getByText("Helferplan", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toBeVisible();
-    await expect(page.getByText(/Erstellt am \d{2}\.\d{2}\.\d{4}/)).toBeVisible();
+    await expect(main.getByText(/Erstellt am \d{2}\.\d{2}\.\d{4}/)).toBeVisible();
   });
 
   test("eine Schicht ohne Helfer zeigt deutlich „Noch nicht besetzt“, freie Plätze stehen als „— frei —“", async ({
@@ -39,9 +41,12 @@ test.describe("Helferplan drucken", () => {
   }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    const malerarbeiten = page.getByText("Malerarbeiten", { exact: false });
+    // Im Hauptbereich suchen: Solange React die gestreamte Seite noch nicht eingeblendet hat, liegt eine unsichtbare
+    // Kopie außerhalb davon (`<div hidden id="S:0">`) – die darf nicht als zweiter Treffer zählen.
+    const main = page.getByRole("main");
+    const malerarbeiten = main.getByText("Malerarbeiten", { exact: false });
     await expect(malerarbeiten).toBeVisible();
-    const section = page.locator("h3", { hasText: "Malerarbeiten" }).locator("xpath=..");
+    const section = main.locator("h3", { hasText: "Malerarbeiten" }).locator("xpath=..");
     await expect(section).toContainText("Noch nicht besetzt");
     await expect(section.getByText("— frei —").first()).toBeVisible();
   });
@@ -60,9 +65,13 @@ test.describe("Helferplan drucken", () => {
   test("Zeitraum grenzt die Veranstaltungen ein", async ({ page }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    const bis = new Date();
-    bis.setDate(bis.getDate() + 6); // vor dem Sommerfest (03.10.), nach dem Arbeitseinsatz (26.09.)
-    await page.getByLabel("Bis").fill(bis.toISOString().slice(0, 10));
+    // Seed: Arbeitseinsatz am nächsten Samstag (in 1–7 Tagen), Sommerfest eine Woche später (in 8–14 Tagen).
+    // „Bis“ in 7 Tagen (einschließlich) trennt beide an jedem Wochentag – auch samstags, wenn der Arbeitseinsatz
+    // erst in genau 7 Tagen ist. Gerechnet in Berliner Zeit wie im Seed.
+    const bis = new Date(Date.now() + 7 * 86_400_000).toLocaleDateString("sv-SE", {
+      timeZone: "Europe/Berlin",
+    });
+    await page.getByLabel("Bis").fill(bis);
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
     await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toHaveCount(0);
@@ -71,11 +80,11 @@ test.describe("Helferplan drucken", () => {
   test("„Nur freie Plätze“ blendet voll besetzte Schichten aus", async ({ page }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    await expect(page.locator("h3", { hasText: "Aufbau" })).toBeVisible(); // 5 von 5 besetzt
+    await expect(page.getByRole("main").locator("h3", { hasText: "Aufbau" })).toBeVisible(); // 5 von 5 besetzt
     await page.getByRole("checkbox", { name: "Nur freie Plätze" }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
-    await expect(page.locator("h3", { hasText: "Aufbau" })).toHaveCount(0);
-    await expect(page.locator("h3", { hasText: "Grillstand" })).toBeVisible(); // hat freie Plätze
+    await expect(page.getByRole("main").locator("h3", { hasText: "Aufbau" })).toHaveCount(0);
+    await expect(page.getByRole("main").locator("h3", { hasText: "Grillstand" })).toBeVisible(); // hat freie Plätze
   });
 
   test("Ausrichtung: Hochformat und Querformat setzen die passende Seitengröße", async ({
@@ -159,7 +168,7 @@ test.describe("Helferplan drucken", () => {
     const weitWeg = new Date();
     weitWeg.setFullYear(weitWeg.getFullYear() + 5);
     await page.goto(`/helferplanung/drucken?von=${weitWeg.toISOString().slice(0, 10)}`);
-    await expect(page.getByText("Nichts zum Drucken")).toBeVisible();
+    await expect(page.getByRole("main").getByText("Nichts zum Drucken")).toBeVisible();
   });
 
   test.describe("Barrierefreiheit (axe)", () => {

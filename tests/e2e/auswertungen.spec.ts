@@ -111,6 +111,9 @@ test.describe("Auswertungen – Bedienung", () => {
     await openDashboard(page);
     const region = analytics(page);
     await region.getByRole("radio", { name: "Entwicklung" }).click();
+    // Die Maus erreicht nur, was im Fenster liegt. Je nach Datum steht über dem Diagramm z. B. die Karte „Geburtstage“
+    // und schiebt es unter den Rand – deshalb erst ins Bild holen, dann messen.
+    await chart(page, /Liniendiagramm/).scrollIntoViewIfNeeded();
     const box = (await chart(page, /Liniendiagramm/).boundingBox())!;
     await page.mouse.move(box.x + box.width - 24, box.y + box.height / 2);
     await expect(region.getByText("laufend, noch nicht abgeschlossen")).toBeVisible();

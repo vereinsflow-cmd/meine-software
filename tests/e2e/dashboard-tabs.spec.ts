@@ -21,6 +21,9 @@ test.describe("Dashboard-Reiter", () => {
         .getByRole("link")
         .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
     await expect(nav(page).getByRole("link", { name: "Dashboard", exact: true })).toHaveCount(1);
+    // „Verein“ aufklappen, bevor die Ausgangslage gemerkt wird: So werden auch dessen Punkte geprüft, und der Vergleich
+    // unten stellt sicher, dass ein Reiterwechsel die geöffnete Gruppe nicht verändert.
+    await openNavGroup(nav(page), "Verein");
     const before = await hrefs();
     expect(before.some((href) => href?.includes("tab="))).toBe(false); // kein Reiter als Menüpunkt
 
@@ -29,7 +32,6 @@ test.describe("Dashboard-Reiter", () => {
       await expect(nav(page).getByText(name, { exact: true })).toHaveCount(0);
     }
     // „Mitglieder“ ist zugleich ein echter Bereich der Anwendung (Mitgliederliste) – genau einmal, mit eigenem Ziel
-    await openNavGroup(nav(page), "Verein");
     await expect(nav(page).getByRole("link", { name: "Mitglieder", exact: true })).toHaveAttribute(
       "href",
       "/mitglieder",

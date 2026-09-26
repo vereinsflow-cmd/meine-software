@@ -25,8 +25,8 @@ test.describe("Smartphone", () => {
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
     await openNavGroup(menu, "Verein");
-    await expect(menu.getByRole("link", { name: "Helferplanung" })).toBeVisible();
-    await menu.getByRole("link", { name: "Helferplanung" }).click();
+    await expect(menu.getByRole("link", { name: "Helferplanung", exact: true })).toBeVisible();
+    await menu.getByRole("link", { name: "Helferplanung", exact: true }).click();
     await expect(page).toHaveURL(/\/helferplanung$/);
     await expect(menu).toBeHidden(); // Menü schließt sich nach der Auswahl
     await expect(page.getByRole("heading", { level: 1, name: "Helferplanung" })).toBeVisible();
