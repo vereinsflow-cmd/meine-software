@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { InboxIcon, MailIcon, PencilLineIcon, PlusIcon } from "lucide-react";
+import { FilePenLineIcon, InboxIcon, PlusIcon, SendIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
@@ -64,11 +64,11 @@ export default async function MessagesPage({
     },
     ...(canSend
       ? [
-          { key: "gesendet" as const, label: "Gesendet", icon: <MailIcon className="size-4" /> },
+          { key: "gesendet" as const, label: "Gesendet", icon: <SendIcon className="size-4" /> },
           {
             key: "entwuerfe" as const,
             label: "Entwürfe",
-            icon: <PencilLineIcon className="size-4" />,
+            icon: <FilePenLineIcon className="size-4" />,
           },
         ]
       : []),

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ListChecksIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
@@ -134,7 +134,7 @@ export default async function TasksPage({
 
       {result.items.length === 0 ? (
         <EmptyState
-          icon={<ListChecksIcon />}
+          icon={<AREA_ICON.aufgaben />}
           title={filtered ? "Keine passenden Aufgaben" : "Keine offenen Aufgaben"}
           description={
             filtered

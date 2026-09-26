@@ -3,9 +3,9 @@ import { rankResults, recordUsage } from "@/lib/search/ranking";
 import type { RecentUsageEntry, SearchResultItem } from "@/lib/search/types";
 
 const items: SearchResultItem[] = [
-  { id: "a", category: "seiten", title: "Alpha", href: "/a", iconKey: "file" },
-  { id: "b", category: "seiten", title: "Beta", href: "/b", iconKey: "file" },
-  { id: "c", category: "seiten", title: "Gamma", href: "/c", iconKey: "file" },
+  { id: "a", category: "seiten", title: "Alpha", href: "/a", iconKey: "dokument" },
+  { id: "b", category: "seiten", title: "Beta", href: "/b", iconKey: "dokument" },
+  { id: "c", category: "seiten", title: "Gamma", href: "/c", iconKey: "dokument" },
 ];
 
 describe("rankResults", () => {
@@ -36,7 +36,7 @@ describe("rankResults", () => {
         category: "seiten",
         title: "Xy Mitglied hinzufügen Za",
         href: "/irgendwo",
-        iconKey: "file",
+        iconKey: "dokument",
       },
     ];
     const usage: RecentUsageEntry[] = [{ id: "weak", count: 10, lastUsedAt: 999 }];

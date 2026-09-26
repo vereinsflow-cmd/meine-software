@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  CheckCheckIcon,
-  ChevronLeftIcon,
-  DownloadIcon,
-  HandHeartIcon,
-  PrinterIcon,
-} from "lucide-react";
+import { CheckCheckIcon, ChevronLeftIcon, DownloadIcon, PrinterIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
@@ -109,7 +104,7 @@ export default async function EventShiftsPage({
 
       {plan.shifts.length === 0 ? (
         <EmptyState
-          icon={<HandHeartIcon />}
+          icon={<AREA_ICON.helferplanung />}
           title="Noch keine Schichten"
           description={
             plan.canManage

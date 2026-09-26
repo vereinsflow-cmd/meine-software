@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeftIcon, HandHeartIcon } from "lucide-react";
+import { ChevronLeftIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -306,7 +307,7 @@ export default async function PrintShiftPlanPage({
 
         {planEvents.length === 0 ? (
           <EmptyState
-            icon={<HandHeartIcon />}
+            icon={<AREA_ICON.helferplanung />}
             title="Nichts zum Drucken"
             description={
               filtered

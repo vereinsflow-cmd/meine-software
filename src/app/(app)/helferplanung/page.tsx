@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  CalendarClockIcon,
-  ClockIcon,
-  HandHeartIcon,
-  PrinterIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { PrinterIcon, TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
@@ -48,7 +43,7 @@ export default async function HelperPlanningPage() {
           <>
             <Button asChild variant="outline">
               <Link href="/helferplanung/stunden">
-                <ClockIcon /> Helferstunden
+                <AREA_ICON.helferstunden /> Helferstunden
               </Link>
             </Button>
             <Button asChild>
@@ -94,7 +89,7 @@ export default async function HelperPlanningPage() {
                 aria-level={2}
                 className="flex items-center gap-2"
               >
-                <CalendarClockIcon className="size-4" aria-hidden="true" /> Meine Einsätze
+                <AREA_ICON.einsaetze className="size-4" aria-hidden="true" /> Meine Einsätze
               </CardTitle>
               <CardDescription>Deine kommenden Helferschichten.</CardDescription>
             </CardHeader>
@@ -151,7 +146,7 @@ export default async function HelperPlanningPage() {
                 aria-level={2}
                 className="flex items-center gap-2"
               >
-                <HandHeartIcon className="size-4" aria-hidden="true" /> Offene Schichten
+                <AREA_ICON.helferplanung className="size-4" aria-hidden="true" /> Offene Schichten
               </CardTitle>
               <CardDescription>Hier werden noch Helfer gesucht.</CardDescription>
             </CardHeader>
@@ -213,7 +208,7 @@ export default async function HelperPlanningPage() {
         </h2>
         {staffing.length === 0 ? (
           <EmptyState
-            icon={<HandHeartIcon />}
+            icon={<AREA_ICON.helferplanung />}
             title="Keine kommenden Schichten"
             description="Sobald für eine veröffentlichte Veranstaltung Schichten geplant sind, erscheinen sie hier."
           />

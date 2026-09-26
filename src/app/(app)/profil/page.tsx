@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import {
-  KeyRoundIcon,
-  MonitorSmartphoneIcon,
-  ShieldCheckIcon,
-  UserRoundIcon,
-  BellIcon,
-  BuildingIcon,
-} from "lucide-react";
+import { BuildingIcon, KeyRoundIcon, MonitorSmartphoneIcon, ShieldCheckIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClubLogo } from "@/components/shared/club-logo";
 import { DescriptionList } from "@/components/shared/description-list";
@@ -77,7 +71,7 @@ export default async function ProfilePage() {
       <div className="grid max-w-4xl gap-6">
         <Section
           id="p-angaben"
-          icon={<UserRoundIcon />}
+          icon={<AREA_ICON.profil />}
           title="Persönliche Angaben"
           description="Diesen Namen sehen andere in der Anwendung, z. B. bei Nachrichten und im Änderungsprotokoll."
         >
@@ -121,7 +115,11 @@ export default async function ProfilePage() {
           </ul>
         </Section>
 
-        <Section id="p-benachrichtigungen" icon={<BellIcon />} title="Benachrichtigungen">
+        <Section
+          id="p-benachrichtigungen"
+          icon={<AREA_ICON.benachrichtigungen />}
+          title="Benachrichtigungen"
+        >
           <EmailNotificationsSwitch enabled={account.emailNotifications} />
         </Section>
 

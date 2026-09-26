@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { InfoIcon, PencilIcon, Trash2Icon, UploadIcon } from "lucide-react";
+import { InfoIcon, PencilIcon, TrashIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
+import { IconButton } from "@/components/shared/icon-button";
 import { FormError, SelectField, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import { ALLOWED_EXTENSIONS_TEXT, ALLOWED_TYPES, extensionOf, formatBytes } from "@/lib/uploads";
@@ -254,14 +255,9 @@ export function EditDocumentDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          aria-label={`${defaults.name} bearbeiten`}
-        >
+        <IconButton className="size-8" label={`${defaults.name} bearbeiten`}>
           <PencilIcon />
-        </Button>
+        </IconButton>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -294,14 +290,9 @@ export function DeleteDocumentButton({ id, name }: { id: string; name: string })
     <ConfirmAction
       destructive
       trigger={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8 text-destructive"
-          aria-label={`${name} löschen`}
-        >
-          <Trash2Icon />
-        </Button>
+        <IconButton className="size-8 text-destructive" label={`${name} löschen`}>
+          <TrashIcon />
+        </IconButton>
       }
       title="Dokument löschen?"
       description={`„${name}“ wird gelöscht und ist danach für niemanden mehr sichtbar. Nach 30 Tagen wird die Datei endgültig entfernt.`}

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDaysIcon, ChevronLeftIcon } from "lucide-react";
+import { ChevronLeftIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
@@ -61,7 +62,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
             {can(ctx, "events:read") && (
               <Button asChild variant="outline">
                 <Link href={`/veranstaltungen?abteilung=${id}`}>
-                  <CalendarDaysIcon /> Veranstaltungen
+                  <AREA_ICON.veranstaltungen /> Veranstaltungen
                 </Link>
               </Button>
             )}

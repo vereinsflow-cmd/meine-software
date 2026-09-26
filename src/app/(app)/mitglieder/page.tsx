@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarChart3Icon, DownloadIcon, PlusIcon, UploadIcon, UsersIcon } from "lucide-react";
+import { DownloadIcon, PlusIcon, UploadIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { MemberStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,7 +111,7 @@ export default async function MembersPage({
             )}
             <Button asChild variant="outline">
               <Link href="/mitglieder/statistik">
-                <BarChart3Icon /> Statistik
+                <AREA_ICON.auswertungen /> Statistik
               </Link>
             </Button>
           </>
@@ -174,7 +175,7 @@ export default async function MembersPage({
 
       {result.items.length === 0 ? (
         <EmptyState
-          icon={<UsersIcon />}
+          icon={<AREA_ICON.mitglieder />}
           title={filtered ? "Keine passenden Mitglieder" : "Noch keine Mitglieder"}
           description={
             filtered

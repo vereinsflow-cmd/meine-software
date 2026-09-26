@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2Icon, UserPlusIcon } from "lucide-react";
+import { UserMinusIcon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ExpandableList } from "@/components/shared/expandable-list";
+import { IconButton } from "@/components/shared/icon-button";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatDateTime } from "@/lib/dates";
@@ -137,12 +138,10 @@ export function ParticipantsPanel({
                       </option>
                     ))}
                   </NativeSelect>
-                  <Button
-                    size="icon"
-                    variant="ghost"
+                  <IconButton
                     className="size-8"
                     disabled={pending}
-                    aria-label={`${row.name} entfernen`}
+                    label={`${row.name} entfernen`}
                     onClick={() =>
                       run(
                         () =>
@@ -155,8 +154,8 @@ export function ParticipantsPanel({
                       )
                     }
                   >
-                    <Trash2Icon />
-                  </Button>
+                    <UserMinusIcon />
+                  </IconButton>
                 </div>
               ) : (
                 <span className="text-muted-foreground">

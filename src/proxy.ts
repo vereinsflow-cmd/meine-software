@@ -82,10 +82,11 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Nicht für API-Routen (eigene Authentifizierung), statische Dateien und Prefetches.
+    // Nicht für API-Routen (eigene Authentifizierung), statische Dateien und Prefetches. Dazu gehören App-Symbole und das
+    // Web-App-Manifest: Browser laden sie ohne Anmelde-Cookie – eine Weiterleitung zur Anmeldung ließe sie ins Leere laufen.
     {
       source:
-        "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

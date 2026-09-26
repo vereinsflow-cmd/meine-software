@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CalendarOffIcon, HandHeartIcon, MapPinIcon } from "lucide-react";
+import { CalendarOffIcon, MapPinIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import type { EventType } from "@/generated/prisma/enums";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ToneBadge } from "@/components/shared/status-badge";
@@ -242,7 +243,7 @@ export function EntryRow({ entry, dayKey }: { entry: CalendarEntry; dayKey: stri
             <span className={cn("font-medium", cancelled && "line-through")}>{entry.title}</span>
             {entry.kind === "shift" && (
               <ToneBadge tone="info">
-                <HandHeartIcon className="size-3" aria-hidden="true" /> Helferschicht
+                <AREA_ICON.helferplanung className="size-3" aria-hidden="true" /> Helferschicht
               </ToneBadge>
             )}
             {cancelled && <ToneBadge tone="danger">Abgesagt</ToneBadge>}

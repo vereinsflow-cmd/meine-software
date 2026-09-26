@@ -87,7 +87,7 @@ export async function searchEntities(
         ? `Mitglied Nr. ${member.memberNumber}`
         : "Mitgliederdetails",
       href: `/mitglieder/${member.id}`,
-      iconKey: "user",
+      iconKey: "mitglied",
     })),
     veranstaltungen: veranstaltungen.map((event) => ({
       id: `event:${event.id}`,
@@ -95,7 +95,7 @@ export async function searchEntities(
       title: event.title,
       description: [formatDate(event.startsAt), event.locationName].filter(Boolean).join(" · "),
       href: `/veranstaltungen/${event.id}`,
-      iconKey: "calendar-days",
+      iconKey: "veranstaltungen",
     })),
     dokumente: dokumente.map((document) => ({
       id: `document:${document.id}`,
@@ -105,7 +105,7 @@ export async function searchEntities(
       // Kein eigenes Detail-/Deep-Link-Ziel (siehe dokumente/page.tsx) – die Dokumentenliste
       // unterstützt aber schon eine Textsuche über denselben Parameter.
       href: `/dokumente?q=${encodeURIComponent(document.name)}`,
-      iconKey: "file",
+      iconKey: "dokument",
     })),
   };
 }

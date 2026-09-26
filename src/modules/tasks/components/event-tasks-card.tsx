@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ListChecksIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { can, scopeOf } from "@/server/permissions/policy";
 import type { TenantContext } from "@/server/tenancy/context-core";
 import { listChecklists } from "../checklists";
@@ -28,7 +28,7 @@ export async function EventTasksCard({ ctx, eventId }: { ctx: TenantContext; eve
             aria-level={2}
             className="flex items-center gap-2 text-base [&_svg]:size-4"
           >
-            <ListChecksIcon aria-hidden="true" /> Aufgaben und Checklisten
+            <AREA_ICON.aufgaben aria-hidden="true" /> Aufgaben und Checklisten
           </CardTitle>
           <CardDescription>Vorbereitung und To-dos für diese Veranstaltung.</CardDescription>
         </CardHeader>

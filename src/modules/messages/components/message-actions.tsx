@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Trash2Icon } from "lucide-react";
+import { TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { deleteMessageAction } from "../actions";
@@ -24,7 +24,7 @@ export function DeleteMessageButton({
       destructive
       trigger={
         <Button variant="outline" className="text-destructive">
-          <Trash2Icon /> {draft ? "Entwurf verwerfen" : "Zurückrufen"}
+          <TrashIcon /> {draft ? "Entwurf verwerfen" : "Zurückrufen"}
         </Button>
       }
       title={draft ? "Entwurf verwerfen?" : "Nachricht zurückrufen?"}

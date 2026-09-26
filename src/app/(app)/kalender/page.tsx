@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarCheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventType } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -80,7 +81,9 @@ export default async function CalendarPage({
               lastUsedLabel={feed.lastUsedAt ? formatDateTime(feed.lastUsedAt) : null}
             />
             <Button asChild variant="outline">
-              <Link href="/veranstaltungen">Veranstaltungen</Link>
+              <Link href="/veranstaltungen">
+                <AREA_ICON.veranstaltungen /> Veranstaltungen
+              </Link>
             </Button>
           </>
         }
@@ -236,7 +239,7 @@ export default async function CalendarPage({
       )}
 
       <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <CalendarCheckIcon className="size-3.5" aria-hidden="true" /> {entries.length}{" "}
+        <AREA_ICON.veranstaltungen className="size-3.5" aria-hidden="true" /> {entries.length}{" "}
         {entries.length === 1 ? "Eintrag" : "Einträge"} im sichtbaren Zeitraum. Zeiten in Ortszeit
         (Europe/Berlin).
       </p>

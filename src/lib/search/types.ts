@@ -1,4 +1,5 @@
 import type { PermissionKey } from "@/server/permissions/catalog";
+import type { SearchIconKey } from "./icon-map";
 
 /**
  * Typen für die zentrale Suche (Strg/⌘+K): Aktionen, Seiten und die durchsuchbaren Datensätze
@@ -33,7 +34,7 @@ export interface SearchResultItem {
   description?: string;
   href: string;
   /** Schlüssel in ICON_MAP (src/lib/search/icon-map.tsx) – kein React-Knoten, bleibt serialisierbar. */
-  iconKey: string;
+  iconKey: SearchIconKey;
   /** Zusätzliche Suchbegriffe (Synonyme), z. B. ["csv", "import"]. */
   keywords?: string[];
 }
@@ -51,7 +52,8 @@ export interface StaticRegistryEntry {
   title: string;
   description: string;
   href: string;
-  iconKey: string;
+  /** Wie bei SearchResultItem; Seiten tragen das Symbol ihres Bereichs (dasselbe wie in der Seitenleiste). */
+  iconKey: SearchIconKey;
   /** Ohne Angabe: für jedes angemeldete Vereinsmitglied sichtbar. */
   permission?: PermissionKey;
   /** Wie NavDefinition.notOwnOnly (nav.tsx): bei reiner OWN-Reichweite nicht sichtbar. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { MoreHorizontalIcon } from "lucide-react";
+import { EllipsisIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -56,7 +56,7 @@ export function MoreActions({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button ref={triggerRef} variant="outline">
-          <MoreHorizontalIcon /> Weitere Aktionen
+          <EllipsisIcon /> Weitere Aktionen
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

@@ -2,14 +2,8 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import {
-  LogOutIcon,
-  MoonIcon,
-  MonitorIcon,
-  ShieldUserIcon,
-  SunIcon,
-  UserRoundIcon,
-} from "lucide-react";
+import { LogOutIcon, MoonIcon, MonitorIcon, SunIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,12 +61,12 @@ export function UserMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/profil">
-            <UserRoundIcon /> Mein Profil
+            <AREA_ICON.profil /> Mein Profil
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/datenschutz">
-            <ShieldUserIcon /> Datenschutz
+            <AREA_ICON.datenschutz /> Datenschutz
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

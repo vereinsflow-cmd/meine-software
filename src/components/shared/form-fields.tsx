@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import type { FieldError, FieldValues, Path, UseFormReturn } from "react-hook-form";
-import { Loader2Icon, TriangleAlertIcon } from "lucide-react";
+import { LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -284,7 +284,7 @@ export function SubmitButton({
       className={className}
       variant={variant}
     >
-      {pending && <Loader2Icon className="animate-spin" aria-hidden="true" />}
+      {pending && <LoaderCircleIcon className="animate-spin" aria-hidden="true" />}
       {pending ? pendingLabel : children}
     </Button>
   );

@@ -1,23 +1,4 @@
-import {
-  BellIcon,
-  BuildingIcon,
-  CalendarDaysIcon,
-  CalendarIcon,
-  FolderOpenIcon,
-  HandHeartIcon,
-  HistoryIcon,
-  LayoutDashboardIcon,
-  LifeBuoyIcon,
-  ListChecksIcon,
-  MessageSquareIcon,
-  NetworkIcon,
-  SettingsIcon,
-  ShieldCheckIcon,
-  ShieldUserIcon,
-  UserRoundIcon,
-  UsersIcon,
-  WalletIcon,
-} from "lucide-react";
+import { AREA_ICON, type Area } from "@/components/shared/area-icons";
 import type { PermissionKey } from "@/server/permissions/catalog";
 import type { PermissionHolder } from "@/server/permissions/policy";
 
@@ -40,49 +21,52 @@ interface NavDefinition {
   href: string;
   /** Heißt wie die Seite selbst (Titel oben auf der Seite) und wie ihr Eintrag in der Suche (`lib/search/registry.ts`). */
   label: string;
-  icon: React.ReactNode;
+  /** Bereich, dessen Symbol der Menüpunkt trägt – dasselbe wie in der Suche und auf dem Dashboard (`area-icons.ts`). */
+  area: Area;
   /** Sichtbar, wenn die Rolle diese Berechtigung besitzt … */
   permission?: PermissionKey;
   /** … und zwar mindestens in dieser Reichweite (OWN-Reichweite sieht nur den eigenen Datensatz → kein Menüpunkt). */
   notOwnOnly?: boolean;
 }
 
-const icon = "size-5 shrink-0";
+/** Alle Menüsymbole in derselben Größe (20 px) und Strichstärke. */
+function areaIcon(area: Area): React.ReactNode {
+  const Icon = AREA_ICON[area];
+  return <Icon className="size-5 shrink-0" />;
+}
 
-const dashboard: NavDefinition[] = [
-  { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboardIcon className={icon} /> },
-];
+const dashboard: NavDefinition[] = [{ href: "/dashboard", label: "Dashboard", area: "dashboard" }];
 
 const verein: NavDefinition[] = [
   {
     href: "/mitglieder",
     label: "Mitglieder",
-    icon: <UsersIcon className={icon} />,
+    area: "mitglieder",
     permission: "members:read",
     notOwnOnly: true,
   },
   {
     href: "/kalender",
     label: "Kalender",
-    icon: <CalendarIcon className={icon} />,
+    area: "kalender",
     permission: "events:read",
   },
   {
     href: "/veranstaltungen",
     label: "Veranstaltungen",
-    icon: <CalendarDaysIcon className={icon} />,
+    area: "veranstaltungen",
     permission: "events:read",
   },
   {
     href: "/helferplanung",
     label: "Helferplanung",
-    icon: <HandHeartIcon className={icon} />,
+    area: "helferplanung",
     permission: "shifts:read",
   },
   {
     href: "/abteilungen",
     label: "Abteilungen",
-    icon: <NetworkIcon className={icon} />,
+    area: "abteilungen",
     permission: "departments:read",
   },
 ];
@@ -91,13 +75,13 @@ const organisation: NavDefinition[] = [
   {
     href: "/aufgaben",
     label: "Aufgaben",
-    icon: <ListChecksIcon className={icon} />,
+    area: "aufgaben",
     permission: "tasks:read",
   },
   {
     href: "/dokumente",
     label: "Dokumente",
-    icon: <FolderOpenIcon className={icon} />,
+    area: "dokumente",
     permission: "documents:read",
   },
 ];
@@ -106,43 +90,43 @@ const kommunikation: NavDefinition[] = [
   {
     href: "/nachrichten",
     label: "Nachrichten",
-    icon: <MessageSquareIcon className={icon} />,
+    area: "nachrichten",
     permission: "messages:read",
   },
-  { href: "/benachrichtigungen", label: "Benachrichtigungen", icon: <BellIcon className={icon} /> },
+  { href: "/benachrichtigungen", label: "Benachrichtigungen", area: "benachrichtigungen" },
 ];
 
 const einstellungen: NavDefinition[] = [
   {
     href: "/benutzer",
     label: "Benutzer und Rollen",
-    icon: <ShieldCheckIcon className={icon} />,
+    area: "benutzer",
     permission: "users:read",
   },
   {
     href: "/einstellungen",
     label: "Vereinseinstellungen",
-    icon: <SettingsIcon className={icon} />,
+    area: "einstellungen",
     permission: "club:update",
   },
   {
     href: "/finanzen",
     label: "Finanzen",
-    icon: <WalletIcon className={icon} />,
+    area: "finanzen",
     permission: "club:update",
   },
   {
     href: "/protokoll",
     label: "Änderungsprotokoll",
-    icon: <HistoryIcon className={icon} />,
+    area: "protokoll",
     permission: "audit:read",
   },
 ];
 
 const personal: NavDefinition[] = [
-  { href: "/profil", label: "Mein Profil", icon: <UserRoundIcon className={icon} /> },
-  { href: "/datenschutz", label: "Datenschutz", icon: <ShieldUserIcon className={icon} /> },
-  { href: "/hilfe", label: "Hilfe & Support", icon: <LifeBuoyIcon className={icon} /> },
+  { href: "/profil", label: "Mein Profil", area: "profil" },
+  { href: "/datenschutz", label: "Datenschutz", area: "datenschutz" },
+  { href: "/hilfe", label: "Hilfe & Support", area: "hilfe" },
 ];
 
 function visible(definitions: NavDefinition[], holder: PermissionHolder): NavItem[] {
@@ -153,7 +137,7 @@ function visible(definitions: NavDefinition[], holder: PermissionHolder): NavIte
       if (!scope) return false;
       return !(definition.notOwnOnly && scope === "OWN");
     })
-    .map(({ href, label, icon: nodeIcon }) => ({ href, label, icon: nodeIcon }));
+    .map(({ href, label, area }) => ({ href, label, icon: areaIcon(area) }));
 }
 
 function withBadge(items: NavItem[], href: string, count: number | undefined): NavItem[] {
@@ -209,7 +193,7 @@ export function getNavigation(
     personalItems.unshift({
       href: "/system",
       label: "Systemadministration",
-      icon: <BuildingIcon className={icon} />,
+      icon: areaIcon("system"),
     });
   }
   groups.push({ label: "Persönlich", items: personalItems });

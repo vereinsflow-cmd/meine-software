@@ -2,7 +2,7 @@
 
 import { ChevronsLeftIcon } from "lucide-react";
 import { Brand } from "@/components/shared/brand";
-import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/shared/icon-button";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
 import { useSidebarCollapse } from "./sidebar-collapse";
@@ -30,17 +30,15 @@ export function Sidebar({ groups }: { groups: NavGroup[] }) {
         <SidebarNav groups={groups} pinLast={!collapsed} collapsedRail={collapsed} />
       </div>
       <div className="shrink-0 border-t p-2">
-        <Button
-          variant="ghost"
-          size="icon"
+        <IconButton
           onClick={toggle}
-          aria-label={collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
+          label={collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
           className="w-full justify-center text-muted-foreground hover:text-foreground"
         >
           <ChevronsLeftIcon
             className={cn("size-5 transition-transform duration-200", collapsed && "rotate-180")}
           />
-        </Button>
+        </IconButton>
       </div>
     </aside>
   );

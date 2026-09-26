@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 import { getNavigation } from "@/components/layout/nav";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { ICON_MAP } from "@/lib/search/icon-map";
 import { rankResults } from "@/lib/search/ranking";
 import { SEARCH_REGISTRY } from "@/lib/search/registry";
 import { PERMISSION_KEYS } from "@/server/permissions/catalog";
@@ -49,6 +52,27 @@ describe("Menüpunkt heißt wie die Seite", () => {
     for (const entry of SEARCH_REGISTRY.filter((entry) => entry.category === "seiten")) {
       const item = items.find((candidate) => candidate.href === entry.href);
       if (item) expect(entry.title, entry.href).toBe(item.label);
+    }
+  });
+});
+
+describe("Ein Bereich, ein Symbol", () => {
+  const iconOf = (item: (typeof items)[number]) => (item.icon as ReactElement).type;
+
+  it("keine zwei Bereiche teilen sich ein Symbol (auch Kalender und Veranstaltungen nicht)", () => {
+    const icons = Object.values(AREA_ICON);
+    expect(new Set(icons).size).toBe(icons.length);
+    const menuIcons = items.map(iconOf);
+    expect(new Set(menuIcons).size).toBe(menuIcons.length);
+    expect(iconOf(items.find((item) => item.href === "/kalender")!)).not.toBe(
+      iconOf(items.find((item) => item.href === "/veranstaltungen")!),
+    );
+  });
+
+  it("die Suche zeigt bei jeder Seite dasselbe Symbol wie das Menü", () => {
+    for (const entry of SEARCH_REGISTRY.filter((entry) => entry.category === "seiten")) {
+      const item = items.find((candidate) => candidate.href === entry.href);
+      if (item) expect(ICON_MAP[entry.iconKey], entry.href).toBe(iconOf(item));
     }
   });
 });

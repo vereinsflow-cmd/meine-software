@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { PowerIcon, PowerOffIcon, Trash2Icon, UserMinusIcon, UserPlusIcon } from "lucide-react";
+import { PowerIcon, PowerOffIcon, TrashIcon, UserMinusIcon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
+import { IconButton } from "@/components/shared/icon-button";
 import { MoreActions, useMoreActions } from "@/components/shared/more-actions";
 import {
   addDepartmentMemberAction,
@@ -45,7 +46,7 @@ export function DepartmentActions({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => more.show("delete")}>
-          <Trash2Icon /> Löschen
+          <TrashIcon /> Löschen
         </DropdownMenuItem>
       </MoreActions>
       <ConfirmAction
@@ -222,7 +223,7 @@ export function GroupControls({
         destructive
         trigger={
           <Button size="sm" variant="ghost" className="text-destructive">
-            <Trash2Icon /> Gruppe löschen
+            <TrashIcon /> Gruppe löschen
           </Button>
         }
         title="Gruppe löschen?"
@@ -250,12 +251,10 @@ export function RemoveGroupMemberButton({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <Button
-      size="icon"
-      variant="ghost"
+    <IconButton
       className="size-7"
       disabled={pending}
-      aria-label={`${name} aus der Gruppe entfernen`}
+      label={`${name} aus der Gruppe entfernen`}
       onClick={() =>
         startTransition(async () => {
           const result = await removeGroupMemberAction({ groupId, memberId, departmentId });
@@ -265,6 +264,6 @@ export function RemoveGroupMemberButton({
       }
     >
       <UserMinusIcon />
-    </Button>
+    </IconButton>
   );
 }

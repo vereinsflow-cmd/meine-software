@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BellIcon, CalendarIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
@@ -62,7 +63,7 @@ export default async function DashboardPage({
             value={notifications.unread}
             hint={notifications.unread === 1 ? "Benachrichtigung" : "Benachrichtigungen"}
             href="/benachrichtigungen"
-            icon={<BellIcon />}
+            icon={<AREA_ICON.benachrichtigungen />}
           />
         )}
         {events && <NextEventsStat events={events} />}
@@ -172,7 +173,7 @@ export default async function DashboardPage({
             {!can(ctx, "events:create") && can(ctx, "events:read") && (
               <Button asChild variant="outline">
                 <Link href="/kalender">
-                  <CalendarIcon /> Kalender
+                  <AREA_ICON.kalender /> Kalender
                 </Link>
               </Button>
             )}

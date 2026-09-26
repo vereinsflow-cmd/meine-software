@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray } from "react-hook-form";
-import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -104,7 +104,7 @@ export function ContactsDialog({ contacts }: { contacts: SupportContact[] }) {
                 className="w-fit text-destructive"
                 onClick={() => remove(index)}
               >
-                <Trash2Icon /> Ansprechpartner {index + 1} entfernen
+                <TrashIcon /> Ansprechpartner {index + 1} entfernen
               </Button>
             </fieldset>
           ))}

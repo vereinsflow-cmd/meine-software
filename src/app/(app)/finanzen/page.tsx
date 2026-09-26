@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
-import {
-  BanknoteIcon,
-  FileSpreadsheetIcon,
-  HeartHandshakeIcon,
-  ReceiptTextIcon,
-  WalletIcon,
-} from "lucide-react";
+import { BanknoteIcon, FileSpreadsheetIcon, HandCoinsIcon, ReceiptTextIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
@@ -34,7 +29,7 @@ const PLANNED = [
     text: "Einnahmen und Ausgaben mit Belegen, zugeordnet zu Abteilungen und Veranstaltungen (Kostenstellen).",
   },
   {
-    icon: <HeartHandshakeIcon aria-hidden="true" />,
+    icon: <HandCoinsIcon aria-hidden="true" />,
     title: "Spenden",
     text: "Spenden erfassen und Zuwendungsbestätigungen erstellen.",
   },
@@ -58,7 +53,7 @@ export default async function FinancePage() {
       />
 
       <Alert role="status" className="mb-6">
-        <WalletIcon aria-hidden="true" />
+        <AREA_ICON.finanzen aria-hidden="true" />
         <AlertTitle>Dieses Modul ist noch nicht verfügbar</AlertTitle>
         <AlertDescription>
           Die Finanzverwaltung gehört nicht zur ersten Ausbaustufe von VereinsFlow. Bis dahin führst

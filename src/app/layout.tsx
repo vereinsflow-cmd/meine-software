@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: { default: "VereinsFlow", template: "%s · VereinsFlow" },
   description: "Vereinsverwaltung für Mitglieder, Veranstaltungen und Helferplanung.",
   applicationName: "VereinsFlow",
+  // Name unter dem Symbol, wenn man VereinsFlow auf iPhone oder iPad zum Home-Bildschirm hinzufügt (sonst der Seitentitel,
+  // etwa „Dashboard · VereinsFlow“). Bewusst nicht über `appleWebApp`: Das schaltet zugleich den Vollbild-App-Modus ein.
+  // Die Symbole selbst sind Dateien in diesem Ordner (favicon.ico, icon.svg, apple-icon.png) und in public/ (app-icon-*.png).
+  other: { "apple-mobile-web-app-title": "VereinsFlow" },
   // Interne Anwendung mit personenbezogenen Daten: nicht von Suchmaschinen indexieren lassen.
   robots: { index: false, follow: false },
 };

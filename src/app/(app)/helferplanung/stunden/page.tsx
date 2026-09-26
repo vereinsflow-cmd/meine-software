@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeftIcon, ClockIcon } from "lucide-react";
+import { ChevronLeftIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
@@ -72,7 +73,7 @@ export default async function HoursPage({
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={<ClockIcon />}
+          icon={<AREA_ICON.helferstunden />}
           title="Keine Stunden dokumentiert"
           description="Nach einer Veranstaltung erfassen Veranstalter die tatsächlich geleisteten Helferstunden. Sie erscheinen dann hier."
         />

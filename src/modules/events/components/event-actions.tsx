@@ -10,7 +10,7 @@ import {
   CopyIcon,
   MegaphoneIcon,
   PencilIcon,
-  Trash2Icon,
+  TrashIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -210,7 +210,7 @@ export function EventActions({
           )}
           {show.delete && (
             <DropdownMenuItem variant="destructive" onSelect={() => more.show("delete")}>
-              <Trash2Icon /> Löschen
+              <TrashIcon /> Löschen
             </DropdownMenuItem>
           )}
         </MoreActions>
