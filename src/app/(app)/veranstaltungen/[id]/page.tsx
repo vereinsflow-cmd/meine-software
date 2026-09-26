@@ -41,6 +41,95 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const openShifts = event.shiftSummary.required - event.shiftSummary.filled;
   const whenLong = event.allDay ? "ganztägig" : formatTimeRange(event.startsAt, event.endsAt);
 
+  // Karten der Seitenspalte. Am Handy stehen sie an anderer Stelle als am Desktop und werden deshalb unten zweimal
+  // eingesetzt; je nach Breite ist genau eine Fassung zu sehen, die andere ist per `display: none` ausgeblendet (auch
+  // für Screenreader und Tastatur). Darum keine festen `id`s darin – sie stünden sonst doppelt im Dokument.
+  const participation = event.can.participate && event.status !== "DRAFT" && (
+    <Card>
+      <CardHeader>
+        <CardTitle role="heading" aria-level={2}>
+          Deine Teilnahme
+        </CardTitle>
+        <CardDescription>
+          {event.registrationRequired ? "Anmeldung erforderlich" : "Anmeldung optional"}
+          {event.registrationDeadline && ` bis ${formatDateTime(event.registrationDeadline)} Uhr`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <RsvpPanel
+          eventId={id}
+          myStatus={event.myStatus}
+          open={event.registration.open}
+          reason={event.registration.reason}
+          full={full}
+          waitlistEnabled={event.waitlistEnabled}
+        />
+      </CardContent>
+    </Card>
+  );
+
+  const attendance = (
+    <Card>
+      <CardHeader>
+        <CardTitle role="heading" aria-level={2}>
+          Teilnehmerzahl
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-1 text-sm">
+        <p>
+          <span className="text-2xl font-semibold tabular-nums">{event.acceptedCount}</span>
+          {event.maxParticipants !== null && (
+            <span className="text-muted-foreground"> von {event.maxParticipants} Plätzen</span>
+          )}
+        </p>
+        {event.waitlistCount > 0 && (
+          <p className="text-muted-foreground">{event.waitlistCount} auf der Warteliste</p>
+        )}
+        {full && (
+          <ToneBadge tone="warning" className="w-fit">
+            Ausgebucht
+          </ToneBadge>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const helpers = (
+    <Card>
+      <CardHeader>
+        <CardTitle role="heading" aria-level={2}>
+          Helfer
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 text-sm">
+        {event.shiftSummary.shifts === 0 ? (
+          <p className="text-muted-foreground">
+            Für diese Veranstaltung sind keine Helferschichten geplant.
+          </p>
+        ) : (
+          <p>
+            <span className="text-2xl font-semibold tabular-nums">{event.shiftSummary.filled}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              von {event.shiftSummary.required} Helfern in {event.shiftSummary.shifts} Schichten
+            </span>
+          </p>
+        )}
+        {openShifts > 0 && event.status === "PUBLISHED" && (
+          <ToneBadge tone="warning" className="w-fit">
+            {openShifts} Plätze noch frei
+          </ToneBadge>
+        )}
+        <Button asChild variant="outline">
+          <Link href={`/helferplanung/${id}`}>
+            <HandHeartIcon />{" "}
+            {event.can.manageShifts ? "Helferplanung öffnen" : "Schichten ansehen"}
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <>
       <p className="mb-3">
@@ -71,8 +160,18 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         </Alert>
       )}
 
+      {/*
+        Ab lg zwei Spalten: links Details und alles Weitere, rechts Teilnahme, Teilnehmerzahl und Helfer – jede Spalte
+        stapelt ihre Karten für sich. Schmaler (Handy, Tablet) steht alles in einer Spalte, zuerst das, was der Einzelne
+        tun will: Teilnahme, dann Details, Helfer und Teilnehmerzahl, danach der Rest. Die Karten der Seitenspalte
+        stehen dort als eigene Fassung an ihrem Platz (`lg:hidden`), die Seitenspalte selbst erscheint erst ab lg. Nur
+        umsortieren (`order`) reicht nicht: Tastatur und Screenreader folgten weiter der alten Reihenfolge. Ein
+        gemeinsames Raster würde die Zeilen beider Spalten koppeln und am Desktop Lücken reißen.
+      */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="grid content-start gap-6 lg:col-span-2">
+          {participation && <div className="lg:hidden">{participation}</div>}
+
           <Card>
             <CardHeader>
               <CardTitle role="heading" aria-level={2}>
@@ -134,6 +233,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </CardContent>
           </Card>
 
+          {/* Ab 640 px stehen die beiden kurzen Karten nebeneinander. */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:hidden">
+            {helpers}
+            {attendance}
+          </div>
+
           {event.internalNotes && (
             <Card>
               <CardHeader>
@@ -152,125 +257,42 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <EventDocumentsCard ctx={ctx} eventId={id} />
 
           {participants && (
-            <Card>
-              <CardHeader>
-                <CardTitle role="heading" aria-level={2}>
-                  Teilnehmer
-                </CardTitle>
-                <CardDescription>
-                  {event.acceptedCount} Zusagen
-                  {event.maxParticipants !== null ? ` von ${event.maxParticipants}` : ""}
-                  {event.waitlistCount > 0 ? ` · ${event.waitlistCount} auf der Warteliste` : ""}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ParticipantsPanel
-                  eventId={id}
-                  editable={
-                    event.can.manageParticipants &&
-                    event.status !== "CANCELLED" &&
-                    event.status !== "ARCHIVED"
-                  }
-                  candidates={candidates}
-                  rows={participants.map((p) => ({
-                    ...p,
-                    respondedAt: p.respondedAt.toISOString(),
-                  }))}
-                />
-              </CardContent>
-            </Card>
+            <section aria-labelledby="event-teilnehmer">
+              <Card>
+                <CardHeader>
+                  <CardTitle id="event-teilnehmer" role="heading" aria-level={2}>
+                    Teilnehmer
+                  </CardTitle>
+                  <CardDescription>
+                    {event.acceptedCount} Zusagen
+                    {event.maxParticipants !== null ? ` von ${event.maxParticipants}` : ""}
+                    {event.waitlistCount > 0 ? ` · ${event.waitlistCount} auf der Warteliste` : ""}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ParticipantsPanel
+                    eventId={id}
+                    editable={
+                      event.can.manageParticipants &&
+                      event.status !== "CANCELLED" &&
+                      event.status !== "ARCHIVED"
+                    }
+                    candidates={candidates}
+                    rows={participants.map((p) => ({
+                      ...p,
+                      respondedAt: p.respondedAt.toISOString(),
+                    }))}
+                  />
+                </CardContent>
+              </Card>
+            </section>
           )}
         </div>
 
-        <div className="grid content-start gap-6">
-          {event.can.participate && event.status !== "DRAFT" && (
-            <Card>
-              <CardHeader>
-                <CardTitle role="heading" aria-level={2}>
-                  Deine Teilnahme
-                </CardTitle>
-                <CardDescription>
-                  {event.registrationRequired ? "Anmeldung erforderlich" : "Anmeldung optional"}
-                  {event.registrationDeadline &&
-                    ` bis ${formatDateTime(event.registrationDeadline)} Uhr`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RsvpPanel
-                  eventId={id}
-                  myStatus={event.myStatus}
-                  open={event.registration.open}
-                  reason={event.registration.reason}
-                  full={full}
-                  waitlistEnabled={event.waitlistEnabled}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle role="heading" aria-level={2}>
-                Teilnehmerzahl
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-1 text-sm">
-              <p>
-                <span className="text-2xl font-semibold tabular-nums">{event.acceptedCount}</span>
-                {event.maxParticipants !== null && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    von {event.maxParticipants} Plätzen
-                  </span>
-                )}
-              </p>
-              {event.waitlistCount > 0 && (
-                <p className="text-muted-foreground">{event.waitlistCount} auf der Warteliste</p>
-              )}
-              {full && (
-                <ToneBadge tone="warning" className="w-fit">
-                  Ausgebucht
-                </ToneBadge>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle role="heading" aria-level={2}>
-                Helfer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-sm">
-              {event.shiftSummary.shifts === 0 ? (
-                <p className="text-muted-foreground">
-                  Für diese Veranstaltung sind keine Helferschichten geplant.
-                </p>
-              ) : (
-                <p>
-                  <span className="text-2xl font-semibold tabular-nums">
-                    {event.shiftSummary.filled}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    von {event.shiftSummary.required} Helfern in {event.shiftSummary.shifts}{" "}
-                    Schichten
-                  </span>
-                </p>
-              )}
-              {openShifts > 0 && event.status === "PUBLISHED" && (
-                <ToneBadge tone="warning" className="w-fit">
-                  {openShifts} Plätze noch frei
-                </ToneBadge>
-              )}
-              <Button asChild variant="outline">
-                <Link href={`/helferplanung/${id}`}>
-                  <HandHeartIcon />{" "}
-                  {event.can.manageShifts ? "Helferplanung öffnen" : "Schichten ansehen"}
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="hidden content-start gap-6 lg:grid">
+          {participation}
+          {attendance}
+          {helpers}
         </div>
       </div>
     </>
