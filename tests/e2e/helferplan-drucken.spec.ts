@@ -80,11 +80,11 @@ test.describe("Helferplan drucken", () => {
   test("„Nur freie Plätze“ blendet voll besetzte Schichten aus", async ({ page }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    await expect(page.locator("h3", { hasText: "Aufbau" })).toBeVisible(); // 5 von 5 besetzt
+    await expect(page.getByRole("main").locator("h3", { hasText: "Aufbau" })).toBeVisible(); // 5 von 5 besetzt
     await page.getByRole("checkbox", { name: "Nur freie Plätze" }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
-    await expect(page.locator("h3", { hasText: "Aufbau" })).toHaveCount(0);
-    await expect(page.locator("h3", { hasText: "Grillstand" })).toBeVisible(); // hat freie Plätze
+    await expect(page.getByRole("main").locator("h3", { hasText: "Aufbau" })).toHaveCount(0);
+    await expect(page.getByRole("main").locator("h3", { hasText: "Grillstand" })).toBeVisible(); // hat freie Plätze
   });
 
   test("Ausrichtung: Hochformat und Querformat setzen die passende Seitengröße", async ({
@@ -168,7 +168,7 @@ test.describe("Helferplan drucken", () => {
     const weitWeg = new Date();
     weitWeg.setFullYear(weitWeg.getFullYear() + 5);
     await page.goto(`/helferplanung/drucken?von=${weitWeg.toISOString().slice(0, 10)}`);
-    await expect(page.getByText("Nichts zum Drucken")).toBeVisible();
+    await expect(page.getByRole("main").getByText("Nichts zum Drucken")).toBeVisible();
   });
 
   test.describe("Barrierefreiheit (axe)", () => {
