@@ -3210,8 +3210,11 @@ html:not(.js) .nav ul a:hover {
 /* ---------- Reiter ----------
    „Im Detail“: Mit JavaScript werden die vier Themen Reiter (site.js setzt .is-tabs und das hidden der Leiste zurück).
    Alle Themen liegen übereinander in derselben Rasterzelle – der Bereich ist so hoch wie das längste, beim Umschalten
-   springt nichts. Das gewählte blendet weich ein, die anderen sind unsichtbar (auch für Screenreader). */
+   springt nichts. Das gewählte gleitet herein, die anderen sind unsichtbar (auch für Screenreader); die Bewegung beim
+   Wechsel steuert site.js. */
 .tabs {
+  position: relative;
+  isolation: isolate; /* die gleitende Fläche (::before) liegt über dem Hintergrund der Leiste, unter den Beschriftungen */
   display: flex;
   justify-content: center;
   gap: 6px;
@@ -3271,6 +3274,33 @@ html:not(.js) .nav ul a:hover {
   color: var(--accent);
 }
 
+/* Weiße Fläche unter dem gewählten Reiter: gleitet beim Wechsel zum neuen Reiter und passt ihre Breite an. Lage und
+   Maße setzt site.js (--pill-*), dazu .has-pill – erst dann übernimmt sie die Fläche des gewählten Reiters. */
+.tabs::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: var(--pill-w, 0px);
+  height: var(--pill-h, 0px);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  translate: var(--pill-x, 0px) var(--pill-y, 0px);
+  pointer-events: none;
+}
+
+.tabs.has-pill::before {
+  opacity: 1;
+}
+
+.tabs.has-pill .tab[aria-selected="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+
 .spots.is-tabs {
   display: grid;
 }
@@ -3300,6 +3330,11 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
+/* Das bisherige Thema bleibt sichtbar, solange es hinausgleitet (site.js) */
+.spots.is-tabs > .spot.is-leaving {
+  visibility: visible;
+}
+
 /* Smartphone: vier Reiter nebeneinander, Symbol über der Beschriftung */
 @media (max-width: 599px) {
   .tabs {
@@ -3322,6 +3357,10 @@ html:not(.js) .nav ul a:hover {
   }
 
   .tab:focus-visible {
+    border-radius: 18px;
+  }
+
+  .tabs::before {
     border-radius: 18px;
   }
 }
@@ -4609,20 +4648,13 @@ html:not(.js) .nav ul a:hover {
     font-size: clamp(0.72rem, 1.4vw, 0.95rem);
   }
 
-  /* Reiter: das bisherige Thema blendet kurz aus, das gewählte gleitet danach weich herein */
-  .spots.is-tabs > .spot {
+  /* Reiter: Die Fläche unter dem gewählten Reiter gleitet weich zum neuen (Wechsel der Themen: site.js). Bei der ersten
+     Anzeige und bei geänderter Fenstergröße springt sie ohne Gleiten an ihre Stelle (.is-instant). */
+  .tabs.has-pill:not(.is-instant)::before {
     transition:
-      opacity 0.5s cubic-bezier(0.45, 0, 0.25, 1) 0.14s,
-      translate 0.6s cubic-bezier(0.45, 0, 0.25, 1) 0.14s,
-      visibility 0s linear 0s;
-  }
-
-  .spots.is-tabs > .spot:not(.is-active) {
-    translate: 0 14px;
-    transition:
-      opacity 0.25s ease-in,
-      translate 0.25s ease-in,
-      visibility 0s linear 0.25s;
+      translate 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+      width 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+      height 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
 }
 
