@@ -8,6 +8,7 @@ import {
   formatCalendarDate,
   formatDate,
   formatDateTime,
+  formatDateWithWeekday,
   formatDuration,
   formatEuroFromCents,
   formatTime,
@@ -39,6 +40,13 @@ describe("Zeitpunkte in Europe/Berlin", () => {
   it("wechselt das Datum nach Berliner Ortszeit, nicht nach UTC", () => {
     // 23:30 UTC ist in Berlin schon der nächste Tag.
     expect(formatDate(new Date("2026-01-15T23:30:00Z"))).toBe("16.01.2026");
+  });
+
+  it("formatiert mit Wochentag und Jahr, Tag nach Berliner Ortszeit", () => {
+    expect(formatDateWithWeekday(new Date("2026-09-29T16:00:00Z"))).toBe("Di., 29.09.2026");
+    // 23:30 UTC an Silvester ist in Berlin schon Neujahr.
+    expect(formatDateWithWeekday(new Date("2026-12-31T23:30:00Z"))).toBe("Fr., 01.01.2027");
+    expect(formatDateWithWeekday(null)).toBe("–");
   });
 
   it("zeigt bei fehlenden oder ungültigen Werten einen Strich", () => {

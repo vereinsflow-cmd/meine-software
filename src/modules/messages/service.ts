@@ -180,7 +180,7 @@ export async function previewRecipients(
 export async function getComposeOptions(ctx: TenantContext): Promise<{
   scope: "CLUB" | "DEPARTMENT";
   departments: { id: string; name: string }[];
-  events: { id: string; title: string }[];
+  events: { id: string; title: string; startsAt: Date }[];
 } | null> {
   const scope = scopeOf(ctx, "messages:send");
   if (scope !== "CLUB" && scope !== "DEPARTMENT") return null;
@@ -200,7 +200,7 @@ export async function getComposeOptions(ctx: TenantContext): Promise<{
         ...(ids ? { departmentId: { in: ids } } : {}),
       },
       orderBy: { startsAt: "asc" },
-      select: { id: true, title: true },
+      select: { id: true, title: true, startsAt: true },
       take: 200,
     }),
   ]);
