@@ -34,9 +34,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   if (!department) notFound();
 
   const candidates = (department.members ?? []).map((m) => ({ id: m.id, name: m.name }));
-  const addableMembers = department.canManageClubWide
-    ? await listAddableMembers(ctx, id)
-    : [];
+  const addableMembers = department.canManageClubWide ? await listAddableMembers(ctx, id) : [];
 
   return (
     <>

@@ -129,10 +129,11 @@ test.describe("Nachrichten – Verfassen und Senden", () => {
     await maria.goto(messageUrl);
     await expect(maria.getByRole("heading", { level: 1, name: subject })).toBeVisible();
 
-    // Die Statistik des Absenders zählt jetzt einen Leser – ohne Namen.
+    // Die Statistik des Absenders zählt jetzt einen Leser – ohne Namen. Im Hauptbereich suchen: Direkt nach dem Neuladen
+    // liegt kurz eine unsichtbare Kopie der gestreamten Seite außerhalb davon, die sonst als zweiter Treffer zählt.
     await page.reload();
     await expect(
-      page.getByText(/^1 von \d+ Empfängern haben die Nachricht geöffnet/),
+      page.getByRole("main").getByText(/^1 von \d+ Empfängern haben die Nachricht geöffnet/),
     ).toBeVisible();
 
     // Rückruf: verschwindet bei Maria

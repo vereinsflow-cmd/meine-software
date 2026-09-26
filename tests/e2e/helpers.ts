@@ -61,6 +61,10 @@ export async function open(page: Page, path: string): Promise<void> {
  * Klappt in der übergebenen Navigation (Seitenleiste oder mobiles Menü) das einklappbare Untermenü mit dem
  * angegebenen Namen auf, falls es noch geschlossen ist – die Menüpunkte „Verein“, „Organisation“, „Kommunikation“ und
  * „Einstellungen“ sind standardmäßig zu. Ohne Wirkung, wenn die Gruppe schon offen ist.
+ *
+ * Wartet, bis das Aufklappen fertig animiert ist: Solange die Gruppe noch wächst, sind untere Einträge abgeschnitten,
+ * und ein Überfahren/Klicken ließe den Browser die halb offene Gruppe verschieben – danach läge ein anderer Eintrag unter
+ * dem Zeiger.
  */
 export async function openNavGroup(
   nav: ReturnType<Page["getByRole"]>,
@@ -70,6 +74,10 @@ export async function openNavGroup(
   if ((await trigger.getAttribute("aria-expanded")) === "true") return;
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  const content = nav.locator(`[id="${await trigger.getAttribute("aria-controls")}"]`);
+  await content.evaluate((element) =>
+    Promise.allSettled(element.getAnimations().map((animation) => animation.finished)),
+  );
 }
 
 export async function logout(page: Page): Promise<void> {

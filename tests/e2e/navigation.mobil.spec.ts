@@ -29,13 +29,13 @@ test.describe("Smartphone-Menü – Animationen", () => {
   }) => {
     const menu = await openMenu(page);
     await openNavGroup(menu, "Verein");
-    await menu.getByRole("link", { name: "Kalender", exact: true }).click();
+    await menu.getByRole("link", { name: "Termine", exact: true }).click();
     await expect(page).toHaveURL(/\/kalender/);
     await expect(menu).toBeHidden();
     // Erneut öffnen: Die Animation läuft jedes Mal neu, die Gruppe „Verein“ ist jetzt automatisch offen (aktive Seite)
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     await expect(
-      page.getByRole("dialog").getByRole("link", { name: "Kalender", exact: true }),
+      page.getByRole("dialog").getByRole("link", { name: "Termine", exact: true }),
     ).toHaveAttribute("aria-current", "page");
   });
 

@@ -90,7 +90,10 @@ test.describe("Kalender – Ansichten", () => {
 
     await page.goto("/kalender?ansicht=tag&datum=2031-01-15");
     await expect(page.getByRole("heading", { level: 2, name: "Keine Termine" })).toBeVisible();
-    await expect(page.getByText("An diesem Tag gibt es keine Termine")).toBeVisible();
+    // Im Hauptbereich suchen: Eine noch nicht eingeblendete, unsichtbare Kopie der gestreamten Seite liegt außerhalb.
+    await expect(
+      page.getByRole("main").getByText("An diesem Tag gibt es keine Termine"),
+    ).toBeVisible();
   });
 
   test("Ungültige Parameter führen nicht zu Fehlern (Fallback auf Monat und heute)", async ({
@@ -116,14 +119,20 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
     await expect(page).toHaveURL(/art=TRAINING/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toHaveCount(0);
 
+    // Nach „Zurücksetzen“ erst warten, bis die Seite ohne Filter da ist: Das Formular wird dabei neu aufgebaut, eine
+    // vorher getroffene Auswahl ginge verloren und „Filtern“ schickte ein leeres Formular ab.
     await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await expect(page).not.toHaveURL(/art=/);
     await page.getByLabel("Art", { exact: true }).selectOption("MEETING");
     await page.getByRole("button", { name: "Filtern" }).click();
+    await expect(page).toHaveURL(/art=MEETING/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible();
 
     await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await expect(page).not.toHaveURL(/art=/);
     await page.getByLabel("Abteilung").selectOption({ label: "Fußball" });
     await page.getByRole("button", { name: "Filtern" }).click();
+    await expect(page).toHaveURL(/abteilung=/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toHaveCount(0); // vereinsweit, nicht Fußball
   });
 
