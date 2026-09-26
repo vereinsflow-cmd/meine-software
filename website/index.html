@@ -25,9 +25,9 @@
   <meta property="og:image:alt" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
   <meta name="twitter:card" content="summary_large_image">
 
-  <script src="assets/js/frueh.js"></script>
-  <link rel="stylesheet" href="assets/css/site.css">
-  <script src="assets/js/site.js" defer></script>
+  <script src="assets/js/frueh.js?v=20260926"></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=20260926">
+  <script src="assets/js/site.js?v=20260926" defer></script>
 
   <script type="application/ld+json">
   {
@@ -85,6 +85,9 @@
   
   <!-- Zeichen von VereinsFlow (die beiden Kreise aus dem Logo), einfarbig für die Rückseiten der Geräte -->
   <symbol id="i-mark" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="130.5" fill="currentColor" stroke="none" fill-opacity="0.8"/><circle cx="975.5" cy="420.5" r="130.5" fill="currentColor" stroke="none" fill-opacity="0.45"/><path d="M880.5 331.03A130.5 130.5 0 0 0 880.5 509.97A130.5 130.5 0 0 0 880.5 331.03Z" fill="currentColor" stroke="none"/></symbol>
+  <!-- Zeichen spiegelpoliert für den Deckel des Laptops: metallischer Verlauf mit Glanzband -->
+  <linearGradient id="g-mirror" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#c9ced4"/><stop offset=".5" stop-color="#9aa0a8"/><stop offset=".62" stop-color="#b3b8bf"/><stop offset="1" stop-color="#8a9098"/></linearGradient>
+  <symbol id="i-mark-mirror" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="130.5" fill="url(#g-mirror)"/><circle cx="975.5" cy="420.5" r="130.5" fill="url(#g-mirror)" fill-opacity="0.62"/><path d="M880.5 331.03A130.5 130.5 0 0 0 880.5 509.97A130.5 130.5 0 0 0 880.5 331.03Z" fill="#7e848c"/></symbol>
   <!-- Statusleiste der Telefon-Rahmen: Mobilfunk, WLAN, Akku (eigene Zeichnung, gefüllt statt Linien) -->
   <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
 </svg>
@@ -214,15 +217,16 @@
             <div class="laptop-screen">
               <span class="laptop-camera" aria-hidden="true"></span>
               <picture>
-                <img src="assets/img/app/dashboard-light-880.webp" srcset="assets/img/app/dashboard-light-880.webp 880w, assets/img/app/dashboard-light-1760.webp 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.19), calc((100vh - 218px) * 1.258)), min(880px, 80vw, calc((100vh - 218px) * 1.258))" width="1920" height="1200" loading="lazy" decoding="async" alt="Dashboard von VereinsFlow auf dem Laptop: Kennzahlen zu Mitgliedern, Terminen und freien Helferplätzen, darüber ein Hinweis auf noch nicht besetzte Schichten">
+                <img src="assets/img/app/dashboard-light-880.webp" srcset="assets/img/app/dashboard-light-880.webp 880w, assets/img/app/dashboard-light-1760.webp 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.2), calc((100vh - 218px) * 1.08)), min(880px, 80vw, calc((100vh - 218px) * 1.08))" width="1920" height="1200" loading="lazy" decoding="async" alt="Dashboard von VereinsFlow auf dem Laptop: Kennzahlen zu Mitgliedern, Terminen und freien Helferplätzen, darüber ein Hinweis auf noch nicht besetzte Schichten">
               </picture>
             </div>
-            <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark"/></svg></div>
-            <span class="lid-c lid-tl" aria-hidden="true"></span>
-            <span class="lid-c lid-tr" aria-hidden="true"></span>
+            <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark-mirror"/></svg></div>
+            <span class="lid-c lid-tl" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="lid-c lid-tr" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
             <span class="laptop-edge laptop-edge-top" aria-hidden="true"></span>
             <span class="laptop-edge laptop-edge-l" aria-hidden="true"></span>
             <span class="laptop-edge laptop-edge-r" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-bottom" aria-hidden="true"></span>
           </div>
           <!-- Unterteil: Lautsprecher, Tastatur mit deutscher Belegung (QWERTZ, ISO-Eingabetaste), Touchpad -->
           <div class="laptop-deck" aria-hidden="true">

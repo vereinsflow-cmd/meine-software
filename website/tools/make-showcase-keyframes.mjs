@@ -38,7 +38,7 @@ const P = (p) => {
 const shade = (phi, ang, light, k) => (1 - Math.max(0, Math.cos(rad(phi + ang + light)))) * k;
 
 // Jede Animation: Parameter je p, Toleranzen je Parameter (in „sichtbaren“ Einheiten), Ausgabe als CSS-Deklaration.
-// Größen für die Fehlerabschätzung: 100vh ≈ 945 px, --lh ≈ 596 px, --closed-scale 0,76 (ungünstigster Fall)
+// Größen für die Fehlerabschätzung: 100vh ≈ 945 px, --lh ≈ 614 px, --closed-scale 0,76 (ungünstigster Fall)
 const anims = [
   {
     name: "vf-laptop-body",
@@ -46,12 +46,14 @@ const anims = [
       const s = L(p);
       return { X: 1 - s.ae, Y: (1 - s.oe) * 0.42 + s.oe * (1 - s.ke) * 0.05, A: 0.7 + 0.3 * s.ae, B: s.oe, C: 1 - 0.26 * s.oe * (1 - s.ke), R: (1 - s.ke) * -22, S: (1 - s.re) * 172 };
     },
-    err: (v, w) => [Math.abs((v.X - w.X) * 283.5 - (v.Y - w.Y) * 596) / 0.3, Math.abs(v.A * (0.76 + 0.24 * v.B) * v.C - w.A * (0.76 + 0.24 * w.B) * w.C) / 0.0015, Math.abs(v.R - w.R) / 0.2, Math.abs(v.S - w.S) / 0.2],
+    err: (v, w) => [Math.abs((v.X - w.X) * 283.5 - (v.Y - w.Y) * 614) / 0.3, Math.abs(v.A * (0.76 + 0.24 * v.B) * v.C - w.A * (0.76 + 0.24 * w.B) * w.C) / 0.0015, Math.abs(v.R - w.R) / 0.2, Math.abs(v.S - w.S) / 0.2],
     css: (v) => `transform: translateY(calc(${f(v.X)} * 30vh - ${f(v.Y)} * var(--lh))) scale(calc(${f(v.A)} * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * ${f(v.B)}) * ${f(v.C)})) rotateX(${f(v.R, 3)}deg) rotateY(${f(v.S, 3)}deg);`,
   },
   { name: "vf-laptop-lid", fn: (p) => ({ V: (1 - L(p).oe) * -90 }), tol: { V: 0.2 }, css: (v) => `transform: rotateX(${f(v.V, 3)}deg);` },
   { name: "vf-laptop-screen", fn: (p) => ({ V: clamp(L(p).oe * 50) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
   { name: "vf-laptop-cover", fn: (p) => ({ V: clamp((0.98 - L(p).oe) * 50) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
+  // Oberseite des Unterteils: verborgen, solange der Deckel zu ist (bis er gut 3° offen steht, siehe vf-laptop-lid)
+  { name: "vf-laptop-deck-parts", fn: (p) => ({ V: p >= 0.5322 ? 1 : 0 }), tol: { V: 0.5 }, css: (v) => `visibility: ${v.V ? "visible" : "hidden"};` },
   // Rückseite des Deckels: hochgeklappt zeigt sie vom Licht weg und wird dunkler
   { name: "vf-laptop-cover-dark", fn: (p) => ({ V: L(p).oe * 0.4 }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-laptop-screen-off", fn: (p) => ({ V: (1 - L(p).oe) * 0.94 }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
@@ -73,6 +75,12 @@ const anims = [
     css: (v) => `opacity: ${f(v.O, 3)}; scale: ${f(v.SX)} ${f(v.SY)};`,
   },
   { name: "vf-laptop-contact", fn: (p) => ({ V: L(p).ke ** 2 }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
+  // Oberseite des Unterteils ganz verborgen, solange der Deckel exakt zu ist (bis p = 0,5): Schutz, falls Safari sie trotz
+  // Bezugspunkt in der Mitte über den Deckel zeichnet (je nach Version und Grafikchip sortiert es anders). Genau 0,5, nicht
+  // 0,532 – sonst Durchblick unter dem sich hebenden Deckel. Toleranz unter 0,5: Der Wechsel liegt genau in der Mitte
+  // zwischen 0 % und 100 %, der Fehler dort wäre genau 1 – dann setzte der Generator keinen Stützpunkt, und die Fläche
+  // wäre durchgehend sichtbar.
+  { name: "vf-laptop-deck", fn: (p) => ({ V: p > 0.5 ? 1 : 0 }), tol: { V: 0.4 }, css: (v) => `visibility: ${v.V ? "visible" : "hidden"};` },
   // ---------- Telefon ----------
   {
     name: "vf-phone-body",
@@ -85,12 +93,16 @@ const anims = [
   { name: "vf-phone-buttons", fn: (p) => ({ V: clamp((P(p).re - 0.82) * 6) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-phone-back", fn: (p) => ({ V: clamp((0.485 - P(p).re) * 100) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
   { name: "vf-phone-back-shade", fn: (p) => ({ V: shade(180, P(p).ang, -30, 0.38) }), tol: { V: 0.008 }, css: (v) => `opacity: ${f(v.V, 3)};` },
-  { name: "vf-phone-sheen", fn: (p) => { const x = clamp(P(p).re / 0.48); return { V: 4 * x * (1 - x) }; }, tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
+  // Glanz auf dem matten Rückglas: wandert beim Drehen über die Fläche zur herandrehenden Kante (Spiegelbild des
+  // ruhenden Lichts; auf der gedrehten Rückseite zeigt +x zur zurückweichenden Kante, daher das Minus), am stärksten,
+  // wenn die Flächennormale auf der Winkelhalbierenden zwischen Blick und Licht steht (≈ −165°)
+  { name: "vf-phone-sheen", fn: (p) => { const d = (P(p).ang + 165) / 40; return { X: clamp(d, -1.5, 1.5), O: Math.exp(-d * d) }; }, tol: { X: 0.01, O: 0.01 }, css: (v) => `translate: ${f(v.X * -40, 2)}% 0; opacity: ${f(v.O, 3)};` },
   ...[["side-l", -90], ["side-r", 90]].map(([n, phi]) => ({
     name: `vf-phone-${n}`, fn: (p) => ({ V: shade(phi, P(p).ang, -30, 0.32) }), tol: { V: 0.008 }, css: (v) => `opacity: ${f(v.V, 3)};`,
   })),
   { name: "vf-phone-scene", fn: (p) => ({ V: clamp(P(p).a * 1.6) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
-  { name: "vf-phone-floor", fn: (p) => ({ V: 0.55 + 0.45 * P(p).ae }), tol: { V: 0.003 }, css: (v) => `scale: ${f(v.V)};` },
+  // Bodenschatten: in der Kantenansicht nur so breit, wie das Gehäuse dick ist (|cos| des Drehwinkels), sonst wie bisher
+  { name: "vf-phone-floor", fn: (p) => { const s = P(p), c = Math.abs(Math.cos(rad(s.ang))), sy = 0.55 + 0.45 * s.ae; return { SX: sy * (0.28 + 0.72 * c), SY: sy }; }, tol: { SX: 0.003, SY: 0.003 }, css: (v) => `scale: ${f(v.SX)} ${f(v.SY)};` },
 ];
 
 const N = 20000; // Rasterschritte für die Fehlersuche
