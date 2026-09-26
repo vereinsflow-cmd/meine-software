@@ -91,6 +91,9 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   `node tools/hochladen.mjs <Server> <Benutzer>` – lädt alles direkt nach `/public`, ohne ZIP und Entpack-Helfer.
   Nach Änderungen an der Seite das Paket neu packen (im Ordner `website/`):
   `rm -f upload/vereinsflow-website.zip && zip -r -X upload/vereinsflow-website.zip . -x "tools/*" "upload/*" "README.md" "Vorschau-starten.*" "_headers" "*.DS_Store"`
+  Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
+  HTML-Dateien erhöhen (`?v=` mit dem Datum, z. B. `site.css?v=20260926`) – sonst liefern Browser und der Zwischenspeicher von
+  IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
 - **nginx** – Beispiel:
 
   ```nginx
