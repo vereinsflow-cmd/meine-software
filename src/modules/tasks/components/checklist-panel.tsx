@@ -19,6 +19,7 @@ import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { FormError, SelectField, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatCalendarDate } from "@/lib/dates";
+import { eventOptions, type EventChoice } from "@/lib/event-options";
 import { cn } from "@/lib/utils";
 import {
   addChecklistItemAction,
@@ -36,7 +37,7 @@ export function NewChecklistDialog({
   events,
 }: {
   eventId?: string;
-  events?: { id: string; title: string }[];
+  events?: EventChoice[];
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -74,7 +75,7 @@ export function NewChecklistDialog({
               name="eventId"
               label="Veranstaltung"
               placeholder="Keine (allgemeine Liste)"
-              options={events.map((e) => ({ value: e.id, label: e.title }))}
+              options={eventOptions(events)}
             />
           )}
           <SubmitButton pending={isPending}>Checkliste anlegen</SubmitButton>

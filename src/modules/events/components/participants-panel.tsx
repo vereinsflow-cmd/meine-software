@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2Icon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
+import { ExpandableList } from "@/components/shared/expandable-list";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatDateTime } from "@/lib/dates";
@@ -22,6 +23,9 @@ interface Row {
 
 const STATUSES: ParticipantStatus[] = ["ACCEPTED", "WAITLISTED", "DECLINED"];
 
+/** So viele Personen zeigt die Liste zunächst; der Rest steht hinter „N weitere Personen anzeigen“. */
+const SHOWN = 5;
+
 /** Teilnehmerverwaltung für Veranstalter: Status ändern, entfernen, Mitglieder hinzufügen. */
 export function ParticipantsPanel({
   eventId,
@@ -38,10 +42,13 @@ export function ParticipantsPanel({
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState("");
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: { message: string } }>) =>
+  // Nach jeder Änderung eine kurze Bestätigung: Die Liste zeigt zunächst nur fünf Personen, und wer neu angemeldet oder
+  // umgestellt wurde, rückt nach unten – womöglich hinter „weitere anzeigen“ und damit außer Sicht.
+  const run = (fn: () => Promise<{ ok: boolean; error?: { message: string } }>, success: string) =>
     startTransition(async () => {
       const result = await fn();
       if (!result.ok) toast.error(result.error?.message ?? "Fehler");
+      else toast.success(success);
       router.refresh();
     });
 
@@ -68,7 +75,10 @@ export function ParticipantsPanel({
             onClick={() => {
               const memberId = selected;
               setSelected("");
-              run(() => setParticipantAction({ eventId, memberId, status: "ACCEPTED" }));
+              run(
+                () => setParticipantAction({ eventId, memberId, status: "ACCEPTED" }),
+                "Mitglied angemeldet.",
+              );
             }}
           >
             <UserPlusIcon /> Anmelden
@@ -79,7 +89,11 @@ export function ParticipantsPanel({
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">Noch keine Antworten.</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ExpandableList
+          className="divide-y rounded-lg border"
+          initial={SHOWN}
+          itemNoun={rows.length - SHOWN === 1 ? "weitere Person" : "weitere Personen"}
+        >
           {rows.map((row) => (
             <li
               key={row.memberId}
@@ -106,12 +120,14 @@ export function ParticipantsPanel({
                     disabled={pending}
                     className="h-8 w-auto"
                     onChange={(e) =>
-                      run(() =>
-                        setParticipantAction({
-                          eventId,
-                          memberId: row.memberId,
-                          status: e.target.value,
-                        }),
+                      run(
+                        () =>
+                          setParticipantAction({
+                            eventId,
+                            memberId: row.memberId,
+                            status: e.target.value,
+                          }),
+                        "Status geändert.",
                       )
                     }
                   >
@@ -128,12 +144,14 @@ export function ParticipantsPanel({
                     disabled={pending}
                     aria-label={`${row.name} entfernen`}
                     onClick={() =>
-                      run(() =>
-                        removeParticipantAction({
-                          eventId,
-                          memberId: row.memberId,
-                          status: "DECLINED",
-                        }),
+                      run(
+                        () =>
+                          removeParticipantAction({
+                            eventId,
+                            memberId: row.memberId,
+                            status: "DECLINED",
+                          }),
+                        "Teilnahme entfernt.",
                       )
                     }
                   >
@@ -147,7 +165,7 @@ export function ParticipantsPanel({
               )}
             </li>
           ))}
-        </ul>
+        </ExpandableList>
       )}
     </div>
   );

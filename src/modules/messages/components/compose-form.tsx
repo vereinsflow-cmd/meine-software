@@ -23,6 +23,7 @@ import {
 } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import type { ActionResult } from "@/lib/action-result";
+import { eventOptions, type EventChoice } from "@/lib/event-options";
 import { previewRecipientsAction, saveDraftAction, sendMessageAction } from "../actions";
 import {
   AUDIENCE_LABEL,
@@ -58,7 +59,7 @@ export function ComposeForm({
   options: {
     scope: "CLUB" | "DEPARTMENT";
     departments: { id: string; name: string }[];
-    events: { id: string; title: string }[];
+    events: EventChoice[];
   };
 }) {
   const router = useRouter();
@@ -166,7 +167,7 @@ export function ComposeForm({
             name="eventId"
             label="Veranstaltung"
             placeholder="Bitte wählen"
-            options={options.events.map((e) => ({ value: e.id, label: e.title }))}
+            options={eventOptions(options.events)}
             required
           />
         )}

@@ -90,6 +90,20 @@ test.describe("Zentrale Suche (Strg/⌘+K)", () => {
     await expect(page).toHaveURL(/\/veranstaltungen$/);
   });
 
+  test("Seiten heißen wie im Menü und sind auch unter dem früheren Menünamen zu finden („Termine“ → Kalender)", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/dashboard");
+    await trigger(page).click();
+
+    await searchInput(page).fill("Termine");
+    const seiten = dialog(page).getByRole("group", { name: "Seiten" });
+    await expect(seiten.getByText("Kalender", { exact: true })).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/kalender$/);
+  });
+
   test("zeigt nur Aktionen, die die Rolle auch darf", async ({ page }) => {
     await login(page, USERS.mitglied);
     await open(page, "/dashboard");

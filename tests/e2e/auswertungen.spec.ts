@@ -284,10 +284,10 @@ test.describe("Seitenleiste – Animationen", () => {
   test("Überfahren: Symbol wird leicht größer und bekommt Farbe und Grund", async ({ page }) => {
     await login(page, USERS.admin);
     await openNavGroup(nav(page), "Verein");
-    const icon = tile(page, "Termine");
+    const icon = tile(page, "Kalender");
     await expect.poll(() => style(icon, "scale")).toBe("none");
     const before = await style(icon, "background-color");
-    await nav(page).getByRole("link", { name: "Termine", exact: true }).hover();
+    await nav(page).getByRole("link", { name: "Kalender", exact: true }).hover();
     await expect.poll(() => style(icon, "scale")).toBe("1.1");
     expect(await style(icon, "background-color")).not.toBe(before);
     // Maus weg: zurück in den Ausgangszustand
@@ -309,9 +309,9 @@ test.describe("Seitenleiste – Animationen", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, USERS.admin);
     await openNavGroup(nav(page), "Verein");
-    const icon = tile(page, "Termine");
+    const icon = tile(page, "Kalender");
     const before = await style(icon, "background-color");
-    await nav(page).getByRole("link", { name: "Termine", exact: true }).hover();
+    await nav(page).getByRole("link", { name: "Kalender", exact: true }).hover();
     await expect.poll(() => style(icon, "background-color")).not.toBe(before);
     expect(await style(icon, "scale")).toBe("none");
     expect(await style(icon, "translate")).toBe("none");
@@ -327,9 +327,8 @@ test.describe("Seitenleiste – Animationen", () => {
       "rgba(0, 0, 0, 0)",
     );
     await openNavGroup(nav(page), "Verein");
-    await expect(nav(page).getByRole("link", { name: "Termine", exact: true })).not.toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    await expect(
+      nav(page).getByRole("link", { name: "Kalender", exact: true }),
+    ).not.toHaveAttribute("aria-current", "page");
   });
 });

@@ -421,6 +421,7 @@ describe("Filter, Sortierung, Kennzahlen", () => {
     );
     expect(lead.members.some((m) => m.id === handballer.id)).toBe(false);
     expect(lead.events.map((e) => e.title)).toEqual(["Fußballturnier"]);
+    expect(lead.events[0]?.startsAt).toBeInstanceOf(Date); // für das Datum in der Auswahlliste
     expect(lead.groups.map((g) => g.name)).toEqual(["Jugend"]);
     expect(await getTaskFormOptions(ctx.helper)).toEqual({ members: [], events: [], groups: [] });
   });

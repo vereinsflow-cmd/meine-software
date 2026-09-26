@@ -26,6 +26,7 @@ import {
 import { TaskPriorityBadge, TaskStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatCalendarDate } from "@/lib/dates";
+import { eventOptions } from "@/lib/event-options";
 import { TASK_PRIORITY_LABEL, TASK_STATUS_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import {
@@ -108,12 +109,16 @@ export function TaskFormDialog({
             options={options.members.map((m) => ({ value: m.id, label: m.name }))}
           />
           <TextField form={form} name="dueDate" label="Fällig am" type="date" />
+          {/* Veranstaltung über die ganze Breite – in halber Breite würde das Datum der gewählten Veranstaltung abgeschnitten
+              („Fußball-Training Herren · Di., 29.09.2026“). Die Gruppe als zweite Verknüpfung ebenso, damit Priorität
+              und Status nebeneinander bleiben. */}
           <SelectField
             form={form}
             name="eventId"
             label="Veranstaltung"
             placeholder="Keine"
-            options={options.events.map((e) => ({ value: e.id, label: e.title }))}
+            options={eventOptions(options.events)}
+            className="sm:col-span-2"
           />
           <SelectField
             form={form}
@@ -121,6 +126,7 @@ export function TaskFormDialog({
             label="Gruppe"
             placeholder="Keine"
             options={options.groups.map((g) => ({ value: g.id, label: g.name }))}
+            className="sm:col-span-2"
           />
           <SelectField form={form} name="priority" label="Priorität" options={priorityOptions} />
           <SelectField form={form} name="status" label="Status" options={statusOptions} />

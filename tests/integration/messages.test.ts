@@ -311,7 +311,7 @@ describe("Wer wen erreichen darf", () => {
     expect(options).toMatchObject({
       scope: "DEPARTMENT",
       departments: [{ name: "Fußball" }],
-      events: [{ title: "Fußballturnier" }],
+      events: [{ title: "Fußballturnier", startsAt: expect.any(Date) }], // Beginn für das Datum in der Auswahl
     });
     expect(await getComposeOptions(ctx.admin)).toMatchObject({ scope: "CLUB" });
   });

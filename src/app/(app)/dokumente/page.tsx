@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { formatDate } from "@/lib/dates";
+import { eventOptions } from "@/lib/event-options";
 import { pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { formatBytes } from "@/lib/uploads";
 import {
@@ -76,10 +77,7 @@ export default async function DocumentsPage({
           canUpload ? (
             <UploadDialog
               categories={categories}
-              events={events.map((event) => ({
-                id: event.id,
-                label: `${event.title} (${formatDate(event.startsAt)})`,
-              }))}
+              events={eventOptions(events).map(({ value, label }) => ({ id: value, label }))}
               accessLevels={allowedAccessLevels(ctx)}
               maxMb={env.MAX_UPLOAD_MB}
               requireEvent={scopeOf(ctx, "documents:upload") === "DEPARTMENT"}

@@ -25,9 +25,8 @@ test.describe("Smartphone", () => {
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
     await openNavGroup(menu, "Verein");
-    // Der Menüpunkt heißt „Helferstunden“ und führt zur Seite „Helferplanung“.
-    await expect(menu.getByRole("link", { name: "Helferstunden", exact: true })).toBeVisible();
-    await menu.getByRole("link", { name: "Helferstunden", exact: true }).click();
+    await expect(menu.getByRole("link", { name: "Helferplanung", exact: true })).toBeVisible();
+    await menu.getByRole("link", { name: "Helferplanung", exact: true }).click();
     await expect(page).toHaveURL(/\/helferplanung$/);
     await expect(menu).toBeHidden(); // Menü schließt sich nach der Auswahl
     await expect(page.getByRole("heading", { level: 1, name: "Helferplanung" })).toBeVisible();
@@ -55,6 +54,23 @@ test.describe("Smartphone", () => {
   }) => {
     await login(page, USERS.helfer);
     await page.goto("/helferplanung");
+
+    // „Offene Schichten“: „Eintragen“ steht wie auf der Helferplan-Seite unter dem Besetzungsbalken, in normaler Höhe
+    // und so breit wie die Zeile – egal, ob die Schicht ein Abzeichen („Beginnt bald“) trägt.
+    const openShifts = page.getByRole("region", { name: "Offene Schichten" });
+    const row = openShifts
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("button", { name: "Eintragen" }) })
+      .first();
+    const quickSignUp = row.getByRole("button", { name: "Eintragen" });
+    await expect(quickSignUp).toBeVisible();
+    const signUpBox = (await quickSignUp.boundingBox())!;
+    const barBox = (await row.getByRole("progressbar", { name: "Besetzung" }).boundingBox())!;
+    const rowBox = (await row.boundingBox())!;
+    expect(signUpBox.height).toBeGreaterThanOrEqual(36);
+    expect(signUpBox.width).toBeGreaterThanOrEqual(rowBox.width - 1);
+    expect(signUpBox.y).toBeGreaterThan(barBox.y + barBox.height);
+
     await page
       .getByRole("link", { name: /Sommerfest 2026/ })
       .first()

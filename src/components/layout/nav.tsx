@@ -38,6 +38,7 @@ export interface NavGroup {
 
 interface NavDefinition {
   href: string;
+  /** Heißt wie die Seite selbst (Titel oben auf der Seite) und wie ihr Eintrag in der Suche (`lib/search/registry.ts`). */
   label: string;
   icon: React.ReactNode;
   /** Sichtbar, wenn die Rolle diese Berechtigung besitzt … */
@@ -62,7 +63,7 @@ const verein: NavDefinition[] = [
   },
   {
     href: "/kalender",
-    label: "Termine",
+    label: "Kalender",
     icon: <CalendarIcon className={icon} />,
     permission: "events:read",
   },
@@ -74,7 +75,7 @@ const verein: NavDefinition[] = [
   },
   {
     href: "/helferplanung",
-    label: "Helferstunden",
+    label: "Helferplanung",
     icon: <HandHeartIcon className={icon} />,
     permission: "shifts:read",
   },

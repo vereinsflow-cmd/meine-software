@@ -164,31 +164,37 @@ export default async function HelperPlanningPage() {
                 <ul className="divide-y">
                   {open.map((item) => (
                     <li key={item.shiftId} className="grid gap-2 py-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0">
+                      <div className="min-w-0">
+                        {/* Abzeichen in der Zeile des Schichtnamens, damit „Eintragen“ immer an derselben Stelle steht. */}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <Link
                             href={`/helferplanung/${item.event.id}`}
                             className="font-medium underline-offset-4 hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <p className="text-sm text-muted-foreground">
-                            {item.event.title} · {formatDateShort(item.startsAt)},{" "}
-                            {formatTimeRange(item.startsAt, item.endsAt)}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
                           <UrgencyBadge health={item.health} />
-                          {item.signup.allowed && (
-                            <QuickSignUpButton shiftId={item.shiftId} eventId={item.event.id} />
-                          )}
                         </div>
+                        <p className="text-sm text-muted-foreground">
+                          {item.event.title} · {formatDateShort(item.startsAt)},{" "}
+                          {formatTimeRange(item.startsAt, item.endsAt)}
+                        </p>
                       </div>
                       <FillBar
                         filled={item.filled}
                         required={item.requiredCount}
                         health={item.health}
                       />
+                      {/* Wie auf der Helferplan-Seite: unter dem Besetzungsbalken, am Handy so breit wie die Karte,
+                          ab 640 px schmal am rechten Rand. */}
+                      {item.signup.allowed && (
+                        <QuickSignUpButton
+                          shiftId={item.shiftId}
+                          eventId={item.event.id}
+                          size="default"
+                          className="w-full sm:w-auto sm:justify-self-end"
+                        />
+                      )}
                       {!item.signup.allowed && item.signup.reason && (
                         <p className="text-xs text-muted-foreground">{item.signup.reason}</p>
                       )}
