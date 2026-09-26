@@ -92,6 +92,20 @@ export function formatDateShort(value: DateInput | null | undefined): string {
   }).format(date);
 }
 
+/** z. B. "Di., 29.09.2026" – wie `formatDateShort`, aber mit Jahr (Auswahllisten reichen über den Jahreswechsel). */
+export function formatDateWithWeekday(value: DateInput | null | undefined): string {
+  if (value == null) return EMPTY;
+  const date = toDate(value);
+  if (!isValid(date)) return EMPTY;
+  return formatter("weekday-date", {
+    timeZone: APP_TIME_ZONE,
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
 /** "18:00 – 20:30 Uhr" bzw. mit Datum, wenn der Zeitraum über Mitternacht hinausgeht. */
 export function formatTimeRange(start: DateInput, end: DateInput): string {
   const s = toDate(start);

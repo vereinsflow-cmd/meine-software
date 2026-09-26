@@ -255,7 +255,8 @@ export async function listMyOpenTasks(ctx: TenantContext, limit = 5): Promise<Ta
 
 export interface TaskFormOptions {
   members: { id: string; name: string }[];
-  events: { id: string; title: string }[];
+  /** Mit Beginn, damit die Auswahlliste das Datum zeigen kann (wiederkehrende Termine tragen denselben Titel). */
+  events: { id: string; title: string; startsAt: Date }[];
   groups: { id: string; name: string }[];
 }
 
@@ -283,7 +284,7 @@ export async function getTaskFormOptions(ctx: TenantContext): Promise<TaskFormOp
         ...(dept ? { departmentId: { in: dept } } : {}),
       },
       orderBy: { startsAt: "asc" },
-      select: { id: true, title: true },
+      select: { id: true, title: true, startsAt: true },
       take: 200,
     }),
     ctx.db.group.findMany({

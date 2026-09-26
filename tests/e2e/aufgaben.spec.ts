@@ -249,7 +249,13 @@ test.describe("Checklisten", () => {
     await page.getByRole("button", { name: "Neue Checkliste" }).click();
     const dialog = page.getByRole("dialog", { name: "Neue Checkliste" });
     await dialog.getByLabel("Titel").fill(title);
-    await dialog.getByLabel("Veranstaltung").selectOption({ label: "Sommerfest 2026" });
+    // Die Auswahl nennt das Datum mit („Sommerfest 2026 · Sa., 10.10.2026“); den Tag legt der Seed relativ zu heute fest.
+    const eventSelect = dialog.getByLabel("Veranstaltung");
+    const sommerfest = eventSelect.locator("option", {
+      hasText: /^Sommerfest 2026 · [A-Z][a-z]\., \d{2}\.\d{2}\.\d{4}$/,
+    });
+    await expect(sommerfest).toHaveCount(1);
+    await eventSelect.selectOption((await sommerfest.getAttribute("value"))!);
     await dialog.getByRole("button", { name: "Checkliste anlegen" }).click();
     await expect(page.getByText("Checkliste angelegt.")).toBeVisible();
 
