@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2Icon, InfoIcon } from "lucide-react";
+import { CircleCheckIcon, InfoIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
@@ -47,7 +47,7 @@ export function LoginForm({
       )}
       {notice === "reset" && (
         <Alert>
-          <CheckCircle2Icon />
+          <CircleCheckIcon />
           <AlertDescription>
             Dein Passwort wurde geändert. Bitte melde dich mit dem neuen Passwort an.
           </AlertDescription>
@@ -97,7 +97,7 @@ export function ForgotPasswordForm() {
   if (sent) {
     return (
       <Alert>
-        <CheckCircle2Icon />
+        <CircleCheckIcon />
         <AlertDescription>
           Falls für diese E-Mail-Adresse ein Konto existiert, haben wir dir soeben einen Link zum
           Zurücksetzen des Passworts gesendet. Bitte prüfe auch deinen Spam-Ordner. Der Link ist 60

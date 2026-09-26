@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDaysIcon, CalendarIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventStatus, EventType } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,7 @@ export default async function EventsPage({
             )}
             <Button asChild variant="outline">
               <Link href="/kalender">
-                <CalendarIcon /> Kalender
+                <AREA_ICON.kalender /> Kalender
               </Link>
             </Button>
           </>
@@ -134,7 +135,7 @@ export default async function EventsPage({
 
       {result.items.length === 0 ? (
         <EmptyState
-          icon={<CalendarDaysIcon />}
+          icon={<AREA_ICON.veranstaltungen />}
           title={filtered ? "Keine passenden Veranstaltungen" : "Keine kommenden Veranstaltungen"}
           description={
             filtered

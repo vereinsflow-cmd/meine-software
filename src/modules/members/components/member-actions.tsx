@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArchiveIcon, ArchiveRestoreIcon, PencilIcon, Trash2Icon, Undo2Icon } from "lucide-react";
+import { ArchiveIcon, ArchiveRestoreIcon, PencilIcon, TrashIcon, Undo2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import {
@@ -76,7 +76,7 @@ export function MemberActions({
           destructive
           trigger={
             <Button variant="destructive">
-              <Trash2Icon /> Löschen
+              <TrashIcon /> Löschen
             </Button>
           }
           title="Mitglied löschen?"

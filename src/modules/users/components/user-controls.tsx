@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   BanIcon,
+  EllipsisIcon,
   MailPlusIcon,
-  MoreHorizontalIcon,
   RefreshCwIcon,
-  Trash2Icon,
+  TrashIcon,
   UserCheckIcon,
   XIcon,
 } from "lucide-react";
@@ -198,7 +198,7 @@ export function UserActions({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label={`Aktionen für ${name}`} disabled={pending}>
-          <MoreHorizontalIcon />
+          <EllipsisIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -211,7 +211,7 @@ export function UserActions({
           destructive
           trigger={
             <DropdownMenuItem variant="destructive" onSelect={(event) => event.preventDefault()}>
-              <Trash2Icon /> Aus dem Verein entfernen
+              <TrashIcon /> Aus dem Verein entfernen
             </DropdownMenuItem>
           }
           title="Zugang entfernen?"

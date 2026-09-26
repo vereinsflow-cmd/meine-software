@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DownloadIcon, FolderOpenIcon } from "lucide-react";
+import { DownloadIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -134,7 +135,7 @@ export default async function DocumentsPage({
 
       {result.items.length === 0 ? (
         <EmptyState
-          icon={<FolderOpenIcon />}
+          icon={<AREA_ICON.dokumente />}
           title={filtered ? "Keine passenden Dokumente" : "Noch keine Dokumente"}
           description={
             filtered

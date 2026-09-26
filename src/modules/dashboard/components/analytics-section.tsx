@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChartNoAxesCombinedIcon, ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ACCENT } from "@/components/shared/accent";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { cn } from "@/lib/utils";
 import type { AnalyticsData } from "@/lib/charts/types";
 import { AnalyticsPanel } from "./analytics-panel";
@@ -31,10 +33,13 @@ export function AnalyticsSection({
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span
-                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300 [&_svg]:size-5"
+                  className={cn(
+                    "flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
+                    ACCENT.blue.tile,
+                  )}
                   aria-hidden="true"
                 >
-                  <ChartNoAxesCombinedIcon />
+                  <AREA_ICON.auswertungen />
                 </span>
                 <div className="min-w-0">
                   <CardTitle id="w-auswertungen" role="heading" aria-level={2}>

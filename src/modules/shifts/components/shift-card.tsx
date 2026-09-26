@@ -6,13 +6,14 @@ import {
   InfoIcon,
   MapPinIcon,
   ShieldAlertIcon,
-  Trash2Icon,
+  TrashIcon,
   UserMinusIcon,
   XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
+import { IconButton } from "@/components/shared/icon-button";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { formatDateLong, formatDuration, formatTimeRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -137,12 +138,10 @@ export function ShiftCard({
                     </span>
                   )}
                   {shift.can.assign && !started && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <IconButton
                       className="size-6"
                       disabled={pending}
-                      aria-label={`${a.name} austragen`}
+                      label={`${a.name} austragen`}
                       onClick={() =>
                         run(
                           () =>
@@ -156,7 +155,7 @@ export function ShiftCard({
                       }
                     >
                       <XIcon />
-                    </Button>
+                    </IconButton>
                   )}
                 </li>
               ))}
@@ -216,7 +215,7 @@ export function ShiftCard({
                 destructive
                 trigger={
                   <Button variant="ghost" size="sm" className="text-destructive">
-                    <Trash2Icon /> Löschen
+                    <TrashIcon /> Löschen
                   </Button>
                 }
                 title="Schicht löschen?"

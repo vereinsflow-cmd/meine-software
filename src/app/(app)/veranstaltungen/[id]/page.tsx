@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlusIcon, ChevronLeftIcon, HandHeartIcon, MapPinIcon } from "lucide-react";
+import { CalendarPlusIcon, ChevronLeftIcon, MapPinIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,7 +123,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         )}
         <Button asChild variant="outline">
           <Link href={`/helferplanung/${id}`}>
-            <HandHeartIcon />{" "}
+            <AREA_ICON.helferplanung />{" "}
             {event.can.manageShifts ? "Helferplanung öffnen" : "Schichten ansehen"}
           </Link>
         </Button>

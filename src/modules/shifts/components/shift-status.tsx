@@ -1,9 +1,10 @@
 import {
-  AlertTriangleIcon,
-  CheckCircle2Icon,
+  BanIcon,
+  CircleCheckIcon,
   CircleDashedIcon,
-  ClockAlertIcon,
-  CircleIcon,
+  ContrastIcon,
+  TriangleAlertIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { ToneBadge, type Tone } from "@/components/shared/status-badge";
 import { FILL_LABEL, URGENCY_LABEL, type ShiftHealth } from "@/lib/shift-health";
@@ -20,15 +21,19 @@ const fillTone: Record<ShiftHealth["fill"], Tone> = {
   FULL: "success",
 };
 
+/**
+ * Symbol je Stufe, als Reihe lesbar: leerer (gestrichelter) Kreis → halb gefüllter Kreis → Kreis mit Haken. Abgesagte
+ * Schichten tragen das Verbotszeichen wie die Aktion „Absagen“ – ein leerer Kreis sähe aus wie „unbesetzt“.
+ */
+const fillIcon: Record<ShiftHealth["fill"], LucideIcon> = {
+  CANCELLED: BanIcon,
+  EMPTY: CircleDashedIcon,
+  PARTIAL: ContrastIcon,
+  FULL: CircleCheckIcon,
+};
+
 export function ShiftFillBadge({ health }: { health: ShiftHealth }) {
-  const Icon =
-    health.fill === "FULL"
-      ? CheckCircle2Icon
-      : health.fill === "CANCELLED"
-        ? CircleIcon
-        : health.fill === "EMPTY"
-          ? CircleDashedIcon
-          : ClockAlertIcon;
+  const Icon = fillIcon[health.fill];
   return (
     <ToneBadge tone={fillTone[health.fill]} className="gap-1">
       <Icon className="size-3" aria-hidden="true" />
@@ -41,7 +46,7 @@ export function UrgencyBadge({ health }: { health: ShiftHealth }) {
   if (health.urgency === "NONE") return null;
   return (
     <ToneBadge tone={health.urgency === "SOON" ? "warning" : "danger"} className="gap-1">
-      <AlertTriangleIcon className="size-3" aria-hidden="true" />
+      <TriangleAlertIcon className="size-3" aria-hidden="true" />
       {URGENCY_LABEL[health.urgency]}
     </ToneBadge>
   );

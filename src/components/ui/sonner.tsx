@@ -5,9 +5,9 @@ import { Toaster as Sonner, type ToasterProps } from "sonner";
 import {
   CircleCheckIcon,
   InfoIcon,
-  TriangleAlertIcon,
+  LoaderCircleIcon,
   OctagonXIcon,
-  Loader2Icon,
+  TriangleAlertIcon,
 } from "lucide-react";
 
 const Toaster = ({ ...props }: ToasterProps) => {
@@ -22,7 +22,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         info: <InfoIcon className="size-4" />,
         warning: <TriangleAlertIcon className="size-4" />,
         error: <OctagonXIcon className="size-4" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+        loading: <LoaderCircleIcon className="size-4 animate-spin" />,
       }}
       style={
         {

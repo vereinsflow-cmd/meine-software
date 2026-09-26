@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2Icon, UploadIcon } from "lucide-react";
+import { TrashIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -173,7 +173,7 @@ export function ClubLogoCard({ clubId, clubName, logo }: ClubLogoCardProps) {
                 destructive
                 trigger={
                   <Button type="button" variant="outline" disabled={pending}>
-                    <Trash2Icon /> Logo entfernen
+                    <TrashIcon /> Logo entfernen
                   </Button>
                 }
                 title="Logo entfernen?"

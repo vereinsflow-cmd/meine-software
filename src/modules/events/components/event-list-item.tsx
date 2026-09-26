@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { HandHeartIcon, MapPinIcon, UsersIcon } from "lucide-react";
+import { MapPinIcon, UsersIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { berlinParts, formatDateShort, formatTimeRange, MONTH_NAMES } from "@/lib/dates";
 import { EVENT_TYPE_LABEL, PARTICIPANT_STATUS_LABEL } from "@/lib/labels";
@@ -76,7 +77,7 @@ export function EventListItemView({ event }: { event: EventListItem }) {
                   openShifts > 0 && !cancelled && "font-medium text-amber-700 dark:text-amber-400",
                 )}
               >
-                <HandHeartIcon className="size-3.5" aria-hidden="true" />
+                <AREA_ICON.helferplanung className="size-3.5" aria-hidden="true" />
                 {event.shiftSummary.filled} von {event.shiftSummary.required} Helfern
                 {openShifts > 0 && !cancelled && ` – ${openShifts} fehlen`}
               </span>

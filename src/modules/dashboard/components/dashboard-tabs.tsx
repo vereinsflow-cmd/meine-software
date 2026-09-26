@@ -1,16 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  CalendarDaysIcon,
-  LayoutDashboardIcon,
-  ListChecksIcon,
-  UsersIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { cn } from "@/lib/utils";
 import { resolveSwipe, type DashboardTabId } from "../tabs";
 
@@ -21,11 +15,12 @@ export interface DashboardTab {
   content: React.ReactNode;
 }
 
-const ICON: Record<DashboardTabId, typeof UsersIcon> = {
-  uebersicht: LayoutDashboardIcon,
-  termine: CalendarDaysIcon,
-  mitglieder: UsersIcon,
-  aktivitaet: ListChecksIcon,
+/** Symbole der Reiter: die des Bereichs, dem der Reiter entspricht (wie in der Seitenleiste). */
+const ICON: Record<DashboardTabId, LucideIcon> = {
+  uebersicht: AREA_ICON.dashboard,
+  termine: AREA_ICON.veranstaltungen,
+  mitglieder: AREA_ICON.mitglieder,
+  aktivitaet: AREA_ICON.aufgaben,
 };
 
 interface Fade {

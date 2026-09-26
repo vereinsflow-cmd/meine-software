@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { CheckCircle2Icon, DownloadIcon, UploadIcon } from "lucide-react";
+import { CircleCheckIcon, DownloadIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ export function ImportWizard() {
   if (result) {
     return (
       <Alert>
-        <CheckCircle2Icon />
+        <CircleCheckIcon />
         <AlertTitle>Import abgeschlossen</AlertTitle>
         <AlertDescription>
           <p>

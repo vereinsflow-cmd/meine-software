@@ -3,11 +3,11 @@ import Link from "next/link";
 import {
   DatabaseIcon,
   DownloadIcon,
+  FileCheckIcon,
+  IdCardIcon,
   ScaleIcon,
-  ShieldUserIcon,
-  Trash2Icon,
-  UserCheckIcon,
-  UsersRoundIcon,
+  TrashIcon,
+  UserXIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,14 +150,14 @@ export default async function PrivacyPage() {
             {ctx.memberId && (
               <Button asChild variant="outline" className="w-fit">
                 <Link href={`/mitglieder/${ctx.memberId}`}>
-                  <UserCheckIcon /> Meine Mitgliedsdaten ansehen
+                  <IdCardIcon /> Meine Mitgliedsdaten ansehen
                 </Link>
               </Button>
             )}
           </div>
         </Section>
 
-        <Section id="d-einwilligungen" icon={<ShieldUserIcon />} title="Meine Einwilligungen">
+        <Section id="d-einwilligungen" icon={<FileCheckIcon />} title="Meine Einwilligungen">
           {consents ? (
             <OwnConsentPanel
               rows={consents.map((c) => ({
@@ -193,7 +193,7 @@ export default async function PrivacyPage() {
           </div>
         </Section>
 
-        <Section id="d-loeschen" icon={<Trash2Icon />} title="Konto und Daten löschen">
+        <Section id="d-loeschen" icon={<TrashIcon />} title="Konto und Daten löschen">
           <DeletionPanel
             pending={
               pending
@@ -209,7 +209,7 @@ export default async function PrivacyPage() {
         {canManage && (
           <Section
             id="d-anfragen"
-            icon={<UsersRoundIcon />}
+            icon={<UserXIcon />}
             title="Offene Löschanträge in deinem Verein"
             description="Nur für Verantwortliche des Datenschutzes. Die Löschung wird nach der Bedenkzeit automatisch ausgeführt."
           >

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarIcon, PencilIcon, PlusIcon, Trash2Icon, UserIcon, UsersIcon } from "lucide-react";
+import { CalendarIcon, PencilIcon, PlusIcon, TrashIcon, UserIcon, UsersIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -251,7 +251,7 @@ export function TaskRow({ task, options }: { task: TaskDto; options: TaskFormOpt
               destructive
               trigger={
                 <Button variant="ghost" size="sm" className="text-destructive">
-                  <Trash2Icon /> Löschen
+                  <TrashIcon /> Löschen
                 </Button>
               }
               title="Aufgabe löschen?"

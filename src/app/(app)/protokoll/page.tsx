@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HistoryIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
@@ -123,7 +123,7 @@ export default async function AuditLogPage({
 
       {result.items.length === 0 ? (
         <EmptyState
-          icon={<HistoryIcon />}
+          icon={<AREA_ICON.protokoll />}
           title={filtered ? "Keine passenden Einträge" : "Noch keine Einträge"}
           description={
             filtered ? "Passe die Filter an." : "Sobald etwas geändert wird, erscheint es hier."

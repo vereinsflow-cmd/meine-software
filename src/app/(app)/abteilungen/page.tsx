@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { NetworkIcon, UsersIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
@@ -29,7 +29,7 @@ export default async function DepartmentsPage() {
       />
       {departments.length === 0 ? (
         <EmptyState
-          icon={<NetworkIcon />}
+          icon={<AREA_ICON.abteilungen />}
           title="Noch keine Abteilungen"
           description="Lege Abteilungen an, um Mitglieder, Veranstaltungen und Verantwortlichkeiten zu gliedern."
           action={clubWide ? <DepartmentDialog /> : undefined}
@@ -60,7 +60,7 @@ export default async function DepartmentsPage() {
                 </CardHeader>
                 <CardContent className="grid gap-1.5 text-sm">
                   <p className="flex items-center gap-1.5 text-muted-foreground">
-                    <UsersIcon className="size-4" aria-hidden="true" />
+                    <AREA_ICON.mitglieder className="size-4" aria-hidden="true" />
                     {department.memberCount}{" "}
                     {department.memberCount === 1 ? "Mitglied" : "Mitglieder"}
                     {department.groupCount > 0 &&

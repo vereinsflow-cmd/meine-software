@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ListChecksIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { PlusIcon, TrashIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +15,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
+import { IconButton } from "@/components/shared/icon-button";
 import { FormError, SelectField, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatCalendarDate } from "@/lib/dates";
@@ -163,7 +165,7 @@ export function ChecklistCard({ list }: { list: ChecklistDto }) {
     <section aria-label={`Checkliste ${list.title}`} className="rounded-xl border p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-base font-semibold">
-          <ListChecksIcon className="size-4" aria-hidden="true" /> {list.title}
+          <AREA_ICON.aufgaben className="size-4" aria-hidden="true" /> {list.title}
         </h3>
         <div className="flex items-center gap-2">
           <span
@@ -176,14 +178,12 @@ export function ChecklistCard({ list }: { list: ChecklistDto }) {
             <ConfirmAction
               destructive
               trigger={
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <IconButton
                   className="size-8 text-destructive"
-                  aria-label={`Checkliste ${list.title} löschen`}
+                  label={`Checkliste ${list.title} löschen`}
                 >
-                  <Trash2Icon />
-                </Button>
+                  <TrashIcon />
+                </IconButton>
               }
               title="Checkliste löschen?"
               description={`„${list.title}“ mit allen Punkten wird gelöscht.`}
@@ -211,12 +211,10 @@ export function ChecklistCard({ list }: { list: ChecklistDto }) {
                 <ChecklistItemRow item={item} />
               </div>
               {list.canManage && (
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <IconButton
                   className="mt-1 size-7 opacity-60 hover:opacity-100 focus-visible:opacity-100"
                   disabled={pending}
-                  aria-label={`Punkt „${item.text}“ entfernen`}
+                  label={`Punkt „${item.text}“ entfernen`}
                   onClick={() =>
                     startTransition(async () => {
                       const result = await removeChecklistItemAction({ id: item.id });
@@ -226,7 +224,7 @@ export function ChecklistCard({ list }: { list: ChecklistDto }) {
                   }
                 >
                   <XIcon />
-                </Button>
+                </IconButton>
               )}
             </li>
           ))}

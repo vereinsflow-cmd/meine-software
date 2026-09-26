@@ -4,8 +4,23 @@
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | [`vereinsflow-logo-original.png`](vereinsflow-logo-original.png)                               | Das Original-Logo (1760 × 1120 Pixel, cremefarbener Hintergrund) – die Vorlage für alles Weitere |
 | [`generate-logo-paths.mjs`](generate-logo-paths.mjs)                                           | Erzeugt die Schrift-Umrisse für die Vektorfassung (siehe unten)                                  |
+| [`generate-app-icons.mjs`](generate-app-icons.mjs)                                             | Erzeugt die App-Symbole für Browser-Tab und Startbildschirm (siehe unten)                        |
 | [`src/components/shared/brand-logo.tsx`](../../src/components/shared/brand-logo.tsx)           | Die Vektorfassung als React-Komponente (`BrandLogo`), verwendet über `Brand`                     |
 | [`src/components/shared/brand-logo-paths.ts`](../../src/components/shared/brand-logo-paths.ts) | Pfaddaten von Wortmarke und Slogan (erzeugt)                                                     |
+
+## App-Symbole (Browser-Tab, Lesezeichen, Startbildschirm)
+
+Die beiden Kreise des Logos in der dunklen Farbfassung auf dunklem Marineblau (`#12253b`) – dieselbe Gestaltung wie das Favicon der Website (`website/favicon.svg`), damit man App und Website im Browser gleich erkennt. Der dunkle Grund hält das Symbol auf hellen wie dunklen Tab-Leisten sichtbar.
+
+| Datei                              | Wofür                                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| `src/app/icon.svg`                 | Browser-Tab in aktuellen Browsern (Vektor, scharf in jeder Größe)                        |
+| `src/app/favicon.ico`              | Safari, Windows, ältere Browser – 16, 32 und 48 px; in 16 px ist das Symbol etwas größer |
+| `src/app/apple-icon.png`           | Home-Bildschirm von iPhone und iPad (180 px, randlos – iOS rundet die Ecken selbst ab)   |
+| `public/app-icon-192.png`, `-512`  | Android und Chrome, über das Web-App-Manifest (`src/app/manifest.ts`)                    |
+| `public/app-icon-maskable-512.png` | Android-Startbildschirme mit runden oder tropfenförmigen Symbolen (randlos)              |
+
+Alle Dateien erzeugt `node docs/brand/generate-app-icons.mjs` (mit sharp, das Next.js mitbringt). Next.js bindet sie über die Dateinamen selbst in jede Seite ein; der Name unter dem Symbol auf dem iPhone ist „VereinsFlow“ (`src/app/layout.tsx`). Das Manifest öffnet VereinsFlow vom Startbildschirm aus bewusst im Browser (`display: "browser"`), nicht als eigenständige App ohne Adresszeile. Symbole und Manifest sind ohne Anmeldung abrufbar (`src/proxy.ts`), geprüft in `tests/e2e/app-symbol.spec.ts`.
 
 ## Wo das Logo in der Anwendung steht
 

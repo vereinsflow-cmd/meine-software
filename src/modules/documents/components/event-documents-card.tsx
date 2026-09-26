@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { DownloadIcon, PaperclipIcon } from "lucide-react";
+import { DownloadIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBytes } from "@/lib/uploads";
@@ -39,7 +40,7 @@ export async function EventDocumentsCard({
             aria-level={2}
             className="flex items-center gap-2 text-base [&_svg]:size-4"
           >
-            <PaperclipIcon aria-hidden="true" /> Dokumente
+            <AREA_ICON.dokumente aria-hidden="true" /> Dokumente
           </CardTitle>
           <CardDescription>Unterlagen zu dieser Veranstaltung.</CardDescription>
         </CardHeader>

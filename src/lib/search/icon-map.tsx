@@ -1,64 +1,37 @@
 import {
   ActivityIcon,
-  BarChart3Icon,
-  BellIcon,
-  BuildingIcon,
-  CalendarDaysIcon,
-  CalendarIcon,
-  ClockIcon,
   FileIcon,
-  FolderOpenIcon,
-  HandHeartIcon,
-  HistoryIcon,
-  LayoutDashboardIcon,
-  LifeBuoyIcon,
-  ListChecksIcon,
-  MessageSquareIcon,
-  NetworkIcon,
+  InboxIcon,
   PencilIcon,
   PlusIcon,
-  SettingsIcon,
-  ShieldCheckIcon,
-  ShieldUserIcon,
+  PrinterIcon,
   UploadIcon,
   UserIcon,
-  UserRoundIcon,
-  UsersIcon,
-  WalletIcon,
   type LucideIcon,
 } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 
-/** Bildet StaticRegistryEntry.iconKey / SearchResultItem.iconKey auf das lucide-react-Symbol ab. */
-export const ICON_MAP: Record<string, LucideIcon> = {
-  activity: ActivityIcon,
-  "bar-chart-3": BarChart3Icon,
-  bell: BellIcon,
-  building: BuildingIcon,
-  calendar: CalendarIcon,
-  "calendar-days": CalendarDaysIcon,
-  clock: ClockIcon,
-  dashboard: LayoutDashboardIcon,
-  file: FileIcon,
-  "folder-open": FolderOpenIcon,
-  "hand-heart": HandHeartIcon,
-  history: HistoryIcon,
-  "life-buoy": LifeBuoyIcon,
-  "list-checks": ListChecksIcon,
-  "message-square": MessageSquareIcon,
-  network: NetworkIcon,
-  pencil: PencilIcon,
+/**
+ * Symbole der Suchergebnisse (StaticRegistryEntry.iconKey / SearchResultItem.iconKey). Seiten tragen das Symbol ihres
+ * Bereichs – dasselbe wie in der Seitenleiste (`area-icons.ts`); Aktionen und Treffer das ihrer Tätigkeit bzw. Art.
+ */
+export const ICON_MAP = {
+  ...AREA_ICON,
+  // Aktionen (wie auf den Knöpfen der Seiten: „Neues Mitglied“, „Import“, „Bearbeiten“, „Helferplan drucken“)
   plus: PlusIcon,
-  settings: SettingsIcon,
-  "shield-check": ShieldCheckIcon,
-  "shield-user": ShieldUserIcon,
   upload: UploadIcon,
-  user: UserIcon,
-  "user-round": UserRoundIcon,
-  users: UsersIcon,
-  wallet: WalletIcon,
-};
+  pencil: PencilIcon,
+  drucken: PrinterIcon,
+  // Unterseiten und Treffer
+  aktivitaet: ActivityIcon,
+  meldungen: InboxIcon,
+  mitglied: UserIcon,
+  dokument: FileIcon,
+} as const satisfies Record<string, LucideIcon>;
 
-export function ResultIcon({ iconKey, className }: { iconKey: string; className?: string }) {
+export type SearchIconKey = keyof typeof ICON_MAP;
+
+export function ResultIcon({ iconKey, className }: { iconKey: SearchIconKey; className?: string }) {
   const Icon = ICON_MAP[iconKey] ?? FileIcon;
   return <Icon className={className} aria-hidden="true" />;
 }

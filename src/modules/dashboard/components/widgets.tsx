@@ -1,25 +1,19 @@
 import Link from "next/link";
 import {
   ArrowRightIcon,
-  BellIcon,
   BellOffIcon,
   CakeIcon,
-  CalendarCheckIcon,
-  CalendarDaysIcon,
   CircleCheckBigIcon,
-  ClockIcon,
+  FaceSlightlySmilingIcon,
   GiftIcon,
-  HandHeartIcon,
-  HistoryIcon,
-  ListChecksIcon,
   PartyPopperIcon,
-  SmileIcon,
+  TelescopeIcon,
   TriangleAlertIcon,
-  UsersIcon,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ACCENT, type Accent } from "@/components/shared/accent";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Sparkline } from "@/components/charts/sparkline";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import {
@@ -339,12 +333,12 @@ export function UpcomingEvents({ events }: { events: NonNullable<DashboardData["
     <Widget
       id="w-termine"
       title="Kommende Veranstaltungen"
-      icon={<CalendarDaysIcon />}
+      icon={<AREA_ICON.veranstaltungen />}
       accent="violet"
       more={{ href: "/kalender", label: "Zum Kalender" }}
     >
       {events.upcoming.length === 0 ? (
-        <Empty icon={<CalendarCheckIcon />} accent="violet" title="Keine Termine in Sicht">
+        <Empty icon={<TelescopeIcon />} accent="violet" title="Keine Termine in Sicht">
           Keine kommenden Veranstaltungen – neue erscheinen hier, sobald sie geplant sind.
         </Empty>
       ) : (
@@ -387,12 +381,12 @@ export function MyShifts({ shifts }: { shifts: NonNullable<DashboardData["shifts
     <Widget
       id="w-meine-schichten"
       title="Meine Einsätze"
-      icon={<HandHeartIcon />}
+      icon={<AREA_ICON.einsaetze />}
       accent="emerald"
       more={{ href: "/helferplanung", label: "Zur Helferplanung" }}
     >
       {shifts.mine.length === 0 ? (
-        <Empty icon={<SmileIcon />} accent="emerald" title="Noch keine Einsätze">
+        <Empty icon={<FaceSlightlySmilingIcon />} accent="emerald" title="Noch keine Einsätze">
           Du bist aktuell für keine Schicht eingetragen.
         </Empty>
       ) : (
@@ -426,7 +420,7 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
     <Widget
       id="w-offene-schichten"
       title="Hier werden Helfer gesucht"
-      icon={<HandHeartIcon />}
+      icon={<AREA_ICON.helferplanung />}
       accent="amber"
       more={{ href: "/helferplanung", label: "Alle offenen Schichten" }}
     >
@@ -502,7 +496,7 @@ export function MyTasks({
     <Widget
       id="w-aufgaben"
       title="Meine Aufgaben"
-      icon={<ListChecksIcon />}
+      icon={<AREA_ICON.aufgaben />}
       accent="blue"
       emphasis={urgent}
       description={
@@ -568,7 +562,7 @@ export function LatestNotifications({
     <Widget
       id="w-benachrichtigungen"
       title="Benachrichtigungen"
-      icon={<BellIcon />}
+      icon={<AREA_ICON.benachrichtigungen />}
       accent="amber"
       more={{ href: "/benachrichtigungen", label: "Alle Benachrichtigungen" }}
     >
@@ -658,12 +652,12 @@ export function RecentActivity({ entries }: { entries: NonNullable<DashboardData
     <Widget
       id="w-aktivitaeten"
       title="Letzte Aktivitäten"
-      icon={<HistoryIcon />}
+      icon={<AREA_ICON.protokoll />}
       accent="slate"
       more={{ href: "/protokoll", label: "Zum Änderungsprotokoll" }}
     >
       {entries.length === 0 ? (
-        <Empty icon={<HistoryIcon />} accent="slate" title="Noch nichts passiert">
+        <Empty icon={<AREA_ICON.protokoll />} accent="slate" title="Noch nichts passiert">
           Änderungen im Verein erscheinen hier.
         </Empty>
       ) : (
@@ -697,7 +691,7 @@ export function MembersStat({ members }: { members: NonNullable<DashboardData["m
       value={members.total}
       compare={memberCompare(members.trend) ?? undefined}
       href="/mitglieder"
-      icon={<UsersIcon />}
+      icon={<AREA_ICON.mitglieder />}
       trend={members.trend}
     />
   );
@@ -715,7 +709,7 @@ export function NextEventsStat({ events }: { events: NonNullable<DashboardData["
         }
       }
       href="/veranstaltungen"
-      icon={<CalendarDaysIcon />}
+      icon={<AREA_ICON.veranstaltungen />}
       // events.weeklyTrend blickt nach vorn (diese Woche zuerst); für die Grafik gedreht, damit wie bei den anderen
       // Karten die JÜNGSTE (= hier: diese) Woche zuletzt steht und in der Markenfarbe hervorgehoben wird.
       trend={[...events.weeklyTrend].reverse()}
@@ -731,7 +725,7 @@ export function FreeShiftsStat({ shifts }: { shifts: NonNullable<DashboardData["
       value={shifts.freeSpots}
       compare={staffingCompare(shifts.staffing.filled, shifts.staffing.required)}
       href="/helferplanung"
-      icon={<HandHeartIcon />}
+      icon={<AREA_ICON.helferplanung />}
       progress={{ value: shifts.staffing.filled, total: shifts.staffing.required }}
     />
   );
@@ -750,7 +744,7 @@ export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shift
       value={compactHours(hours.minutes)}
       compare={hoursCompare(hours.trend) ?? undefined}
       href="/helferplanung/stunden"
-      icon={<ClockIcon />}
+      icon={<AREA_ICON.helferstunden />}
       trend={hours.trend}
       trendVariant="bar"
     />

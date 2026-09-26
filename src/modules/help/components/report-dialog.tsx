@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MegaphoneIcon } from "lucide-react";
+import { MessageSquareWarningIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -47,7 +47,7 @@ export function ReportDialog({ pagePath }: { pagePath: string | null }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <MegaphoneIcon /> Problem melden
+          <MessageSquareWarningIcon /> Problem melden
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">

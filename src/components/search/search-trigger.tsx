@@ -44,7 +44,8 @@ export function SearchTrigger() {
         aria-label="Suche öffnen"
         className="sm:hidden"
       >
-        <SearchIcon />
+        {/* 20 px wie Glocke und Menü-Knopf daneben – alle Symbole der Kopfzeile gleich groß */}
+        <SearchIcon className="size-5" />
       </Button>
     </>
   );
