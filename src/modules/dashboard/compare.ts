@@ -3,7 +3,7 @@ import { formatNumber } from "@/lib/charts/geometry";
 import { inDaysLabel } from "@/lib/dates";
 
 /**
- * Kurze Vergleichsinformation unter einer Kennzahlenkarte („+3 gegenüber dem Vormonat“, „35 von 50 Schichten
+ * Kurze Vergleichsinformation unter einer Kennzahlenkarte („+3 gegenüber dem Vormonat“, „35 von 50 Plätzen
  * besetzt“ …) – reine Textbausteine mit einer Farbbedeutung wie bei Abzeichen (`ToneBadge`), aus bereits vorhandenen
  * Zahlen. Getrennt von der Darstellung (`StatCard`), damit sich die Sätze einzeln testen lassen.
  */
@@ -24,8 +24,10 @@ export function memberCompare(trend: readonly number[]): Compare | null {
 }
 
 /**
- * „+12 % gegenüber letzter Woche“ – für Helferstunden (`trend`: älteste zuerst, ein Wert je Woche). Prozente nur,
- * wenn die Vorwoche nicht 0 Stunden war (sonst wäre jeder Sprung „von 0“ formal unendlich Prozent).
+ * „+12 % gegenüber letzter Woche“ – für Helferstunden (`trend`: älteste zuerst, ein Wert je Woche, der letzte ist die
+ * laufende Woche). Prozente nur, wenn die Vorwoche nicht 0 Stunden war (sonst wäre jeder Sprung „von 0“ formal
+ * unendlich Prozent). Verglichen werden nur diese und letzte Woche – die Kennzahl darüber zählt das ganze Jahr; ein
+ * „Noch keine Stunden“ stünde deshalb im Widerspruch zu ihr, sobald früher im Jahr Stunden angefallen sind.
  */
 export function hoursCompare(trend: readonly number[]): Compare | null {
   if (trend.length < 2) return null;
@@ -34,7 +36,7 @@ export function hoursCompare(trend: readonly number[]): Compare | null {
   const diff = current - previous;
   if (diff === 0) {
     return previous === 0
-      ? { text: "Noch keine Stunden erfasst", tone: "neutral" }
+      ? { text: "Diese Woche noch keine Stunden", tone: "neutral" }
       : { text: "Unverändert gegenüber letzter Woche", tone: "neutral" };
   }
   if (previous <= 0) {
@@ -47,12 +49,19 @@ export function hoursCompare(trend: readonly number[]): Compare | null {
   };
 }
 
-/** „35 von 50 Schichten besetzt“ – dieselbe Ampelfarbe wie bei einzelnen Schichten (voll/teilweise/unbesetzt). */
+/**
+ * „35 von 50 Plätzen besetzt“ – dieselbe Ampelfarbe wie bei einzelnen Schichten (voll/teilweise/unbesetzt). Gezählt
+ * werden Helferplätze, nicht Schichten: Eine Schicht mit drei benötigten Helfern zählt dreimal, wie die Kennzahl
+ * „Freie Helferplätze“ darüber.
+ */
 export function staffingCompare(filled: number, required: number): Compare {
   if (required === 0) return { text: "Keine Schichten geplant", tone: "neutral" };
   const ratio = filled / required;
   const tone: Tone = ratio >= 1 ? "success" : ratio > 0 ? "warning" : "danger";
-  return { text: `${filled} von ${required} Schichten besetzt`, tone };
+  return {
+    text: `${filled} von ${required} ${required === 1 ? "Platz" : "Plätzen"} besetzt`,
+    tone,
+  };
 }
 
 /** „Nächster Termin in 4 Tagen“ / „… morgen“ / „… heute“; ohne kommenden Termin gibt es nichts zu vergleichen. */

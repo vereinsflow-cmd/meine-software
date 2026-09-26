@@ -114,7 +114,9 @@ export function StatCard({
           "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
       )}
     >
-      <CardContent className="grid gap-1.5 py-5">
+      {/* Spalte über die volle Kartenhöhe: Die Mini-Grafik rückt an den unteren Rand (`mt-auto`), damit sie bei allen
+          vier Karten auf einer Linie liegt – auch wenn eine Beschriftung oder ein Vergleich umbricht. */}
+      <CardContent className="flex flex-1 flex-col gap-1.5 py-5">
         <div className="flex items-start justify-between gap-3">
           <p className="pt-0.5 text-sm font-medium text-muted-foreground">{label}</p>
           <div
@@ -142,33 +144,37 @@ export function StatCard({
             hinweg. Rein schmückend (`aria-hidden` in den Komponenten selbst): Zahl, Hinweis und Vergleich nennen die
             Lage bereits vollständig als Text. */}
         {(trend || ratio !== null) && (
-          <div className="mt-1.5 flex h-8 items-center motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in">
-            {trend && trend.length > 1 ? (
-              <Sparkline values={trend} variant={trendVariant} />
-            ) : ratio !== null ? (
-              <div
-                aria-hidden="true"
-                className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
-              >
+          <div className="mt-auto pt-1.5">
+            <div className="flex h-8 items-center motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in">
+              {trend && trend.length > 1 ? (
+                <Sparkline values={trend} variant={trendVariant} />
+              ) : ratio !== null ? (
                 <div
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    PROGRESS_BAR_COLOR[tone!],
-                    "group-hover/card:brightness-110",
-                  )}
-                  style={{ width: `${ratio * 100}%` }}
-                />
-              </div>
-            ) : null}
+                  aria-hidden="true"
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                >
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      PROGRESS_BAR_COLOR[tone!],
+                      "group-hover/card:brightness-110",
+                    )}
+                    style={{ width: `${ratio * 100}%` }}
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
   return href ? (
+    // `h-full`: Der Link reicht bis zum Boden seiner Rasterzelle bzw. Karussellspalte, sonst endete die Karte (selbst
+    // `h-full`) mit ihrem Inhalt und die vier Karten wären ungleich hoch.
     <Link
       href={href}
-      className="block rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="block h-full rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {body}
     </Link>
@@ -435,27 +441,34 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
               key={shift.shiftId}
               className={cn("grid gap-2 py-3 first:pt-0 last:pb-0", LIST_ROW)}
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
+              <div className="min-w-0">
+                {/* Abzeichen („Beginnt bald“) in der Zeile des Schichtnamens – so steht „Eintragen“ unten immer an
+                    derselben Stelle, mit oder ohne Abzeichen. */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Link
                     href={`/helferplanung/${shift.event.id}`}
                     className="text-base font-semibold underline-offset-4 hover:underline"
                   >
                     {shift.title}
                   </Link>
-                  <p className="text-sm text-muted-foreground">
-                    {shift.event.title} · {formatDateShort(shift.startsAt)},{" "}
-                    {formatTimeRange(shift.startsAt, shift.endsAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
                   <UrgencyBadge health={shift.health} />
-                  {shift.signup.allowed && (
-                    <QuickSignUpButton shiftId={shift.shiftId} eventId={shift.event.id} />
-                  )}
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  {shift.event.title} · {formatDateShort(shift.startsAt)},{" "}
+                  {formatTimeRange(shift.startsAt, shift.endsAt)}
+                </p>
               </div>
               <FillBar filled={shift.filled} required={shift.requiredCount} health={shift.health} />
+              {/* Wie auf der Helferplan-Seite: unter dem Besetzungsbalken, am Handy so breit wie die Karte (gut
+                  treffbar), ab 640 px schmal am rechten Rand. */}
+              {shift.signup.allowed && (
+                <QuickSignUpButton
+                  shiftId={shift.shiftId}
+                  eventId={shift.event.id}
+                  size="default"
+                  className="w-full sm:w-auto sm:justify-self-end"
+                />
+              )}
             </li>
           ))}
         </ExpandableList>

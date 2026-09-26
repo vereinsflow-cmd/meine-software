@@ -54,6 +54,23 @@ test.describe("Smartphone", () => {
   }) => {
     await login(page, USERS.helfer);
     await page.goto("/helferplanung");
+
+    // „Offene Schichten“: „Eintragen“ steht wie auf der Helferplan-Seite unter dem Besetzungsbalken, in normaler Höhe
+    // und so breit wie die Zeile – egal, ob die Schicht ein Abzeichen („Beginnt bald“) trägt.
+    const openShifts = page.getByRole("region", { name: "Offene Schichten" });
+    const row = openShifts
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("button", { name: "Eintragen" }) })
+      .first();
+    const quickSignUp = row.getByRole("button", { name: "Eintragen" });
+    await expect(quickSignUp).toBeVisible();
+    const signUpBox = (await quickSignUp.boundingBox())!;
+    const barBox = (await row.getByRole("progressbar", { name: "Besetzung" }).boundingBox())!;
+    const rowBox = (await row.boundingBox())!;
+    expect(signUpBox.height).toBeGreaterThanOrEqual(36);
+    expect(signUpBox.width).toBeGreaterThanOrEqual(rowBox.width - 1);
+    expect(signUpBox.y).toBeGreaterThan(barBox.y + barBox.height);
+
     await page
       .getByRole("link", { name: /Sommerfest 2026/ })
       .first()

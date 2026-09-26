@@ -51,13 +51,32 @@ test.describe("Dashboard", () => {
     // Jede Kennzahlenkarte nennt einen kurzen Vergleich zur Einordnung der Zahl …
     await expect(members).toContainText(/gegenüber dem Vormonat/);
     await expect(nextEvents).toContainText(/Nächster Termin|Keine kommenden Termine/);
-    await expect(freeShifts).toContainText(/Schichten besetzt|Keine Schichten geplant/);
-    await expect(hours).toContainText(/gegenüber letzter Woche|Noch keine Stunden erfasst/);
+    await expect(freeShifts).toContainText(
+      /von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant/,
+    );
+    await expect(hours).toContainText(/gegenüber letzter Woche|Diese Woche noch keine Stunden/);
     // … und eine kleine, rein schmückende Mini-Grafik (Trendlinie/-balken oder Statusleiste), passend zur Karte.
     await expect(members.locator('[data-slot="sparkline"]')).toBeVisible();
     await expect(nextEvents.locator('[data-slot="sparkline"]')).toBeVisible();
     await expect(hours.locator('[data-slot="sparkline"]')).toBeVisible();
     await expect(freeShifts.locator('[aria-hidden="true"].rounded-full')).toBeVisible();
+    // Alle vier Karten sind gleich hoch (eine Reihe ab 1280 px), die Mini-Grafiken sitzen am unteren Kartenrand und
+    // liegen dadurch auf einer Linie. Gemessen relativ zur Karte: Das Anheben beim Überfahren verschiebt beides gemeinsam.
+    const cards = [members, nextEvents, freeShifts, hours].map((card) =>
+      card.locator('[data-slot="card"]'),
+    );
+    const heights = await Promise.all(
+      cards.map(async (card) => (await card.boundingBox())!.height),
+    );
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+    const gaps = await Promise.all(
+      [members, nextEvents, hours].map(async (card) => {
+        const box = (await card.locator('[data-slot="card"]').boundingBox())!;
+        const graph = (await card.locator('[data-slot="sparkline"]').boundingBox())!;
+        return box.y + box.height - (graph.y + graph.height);
+      }),
+    );
+    expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThanOrEqual(1);
     await expect(page.getByRole("heading", { level: 2, name: "Für dich" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Aufgaben" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Einsätze" })).toBeVisible();
