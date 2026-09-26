@@ -53,8 +53,16 @@ describe("hoursCompare (Helferstunden-Kennzahlenkarte)", () => {
     });
   });
 
-  it("0 Std. in beiden Wochen: eigener Hinweis statt „0 % gegenüber …“", () => {
-    expect(hoursCompare([0, 0])).toEqual({ text: "Noch keine Stunden erfasst", tone: "neutral" });
+  it("0 Std. in beiden Wochen: eigener Hinweis statt „0 % gegenüber …“, bezogen auf die Woche", () => {
+    // Die Kennzahl darüber zählt das ganze Jahr – „Noch keine Stunden erfasst“ widerspräche ihr (z. B. „9 Std.“).
+    expect(hoursCompare([4, 5, 0, 0])).toEqual({
+      text: "Diese Woche noch keine Stunden",
+      tone: "neutral",
+    });
+    expect(hoursCompare([0, 0])).toEqual({
+      text: "Diese Woche noch keine Stunden",
+      tone: "neutral",
+    });
   });
 
   it("unverändert (ungleich 0): eigener Satz statt „0 %“", () => {
@@ -70,22 +78,26 @@ describe("hoursCompare (Helferstunden-Kennzahlenkarte)", () => {
 });
 
 describe("staffingCompare (Freie-Helferplätze-Kennzahlenkarte)", () => {
-  it("teilweise besetzt: Ton „warning“ wie bei einzelnen Schichten", () => {
-    expect(staffingCompare(35, 50)).toEqual({
-      text: "35 von 50 Schichten besetzt",
+  it("zählt Plätze (wie die Kennzahl darüber), nicht Schichten; teilweise besetzt: Ton „warning“", () => {
+    expect(staffingCompare(9, 25)).toEqual({
+      text: "9 von 25 Plätzen besetzt",
       tone: "warning",
     });
   });
 
   it("voll besetzt: Ton „success“", () => {
     expect(staffingCompare(50, 50)).toEqual({
-      text: "50 von 50 Schichten besetzt",
+      text: "50 von 50 Plätzen besetzt",
       tone: "success",
     });
   });
 
   it("unbesetzt: Ton „danger“ (wie die Ampel einer leeren Schicht anderswo im Verein)", () => {
-    expect(staffingCompare(0, 10)).toEqual({ text: "0 von 10 Schichten besetzt", tone: "danger" });
+    expect(staffingCompare(0, 10)).toEqual({ text: "0 von 10 Plätzen besetzt", tone: "danger" });
+  });
+
+  it("ein einziger Platz: Einzahl („von 1 Platz“)", () => {
+    expect(staffingCompare(0, 1)).toEqual({ text: "0 von 1 Platz besetzt", tone: "danger" });
   });
 
   it("keine Schichten geplant: eigener, neutraler Satz statt „0 von 0“", () => {
