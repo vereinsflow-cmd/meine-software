@@ -487,12 +487,66 @@
   // Reiter („Im Detail“): Ohne JavaScript stehen die Themen untereinander. Mit JavaScript erscheint die Reiterleiste,
   // immer ein Thema ist sichtbar. Bedienung wie bei Reitern üblich: Klick, Pfeiltasten (wählen sofort), Pos1/Ende.
   // Führt ein Link auf ein Thema (#suche aus der Fußzeile), wird dessen Reiter gewählt.
+  // Der gewählte Reiter liegt auf einer weißen Fläche (.tabs::before), die beim Wechsel zum neuen Reiter gleitet und
+  // ihre Breite anpasst – Lage und Maße setzt das Skript als Variablen. Beim Wechsel gleitet das bisherige Thema kurz
+  // gegen die Laufrichtung hinaus, das gewählte kommt aus der Laufrichtung herein: erst der Text, dann das Bild mit
+  // leichtem Zoom. Dafür Web Animations statt CSS-Übergängen – so lässt sich jeder Wechsel sauber abbrechen, wenn schnell
+  // hintereinander geklickt wird. Bei reduzierter Bewegung wechselt alles sofort.
   for (const group of document.querySelectorAll("[data-tabs]")) {
     const list = group.querySelector('[role="tablist"]');
     const tabs = [...(list?.querySelectorAll('[role="tab"]') ?? [])];
     const panels = tabs.map((tab) => document.getElementById(tab.getAttribute("aria-controls") ?? ""));
     if (!list || !tabs.length || panels.some((panel) => !panel)) continue;
+    let current = -1;
+    let running = [];
+    const placePill = () => {
+      const tab = tabs[current];
+      if (!tab) return;
+      list.style.setProperty("--pill-x", `${tab.offsetLeft}px`);
+      list.style.setProperty("--pill-y", `${tab.offsetTop}px`);
+      list.style.setProperty("--pill-w", `${tab.offsetWidth}px`);
+      list.style.setProperty("--pill-h", `${tab.offsetHeight}px`);
+    };
+    // Ohne Gleiten an die neue Stelle (erste Anzeige, geänderte Fenstergröße)
+    const settlePill = () => {
+      list.classList.add("is-instant");
+      placePill();
+      list.classList.add("has-pill");
+      requestAnimationFrame(() => requestAnimationFrame(() => list.classList.remove("is-instant")));
+    };
+    const swap = (from, to, dir) => {
+      for (const animation of running) animation.cancel();
+      running = [];
+      for (const panel of panels) panel.classList.remove("is-leaving");
+      if (motion.matches) return;
+      from.classList.add("is-leaving"); // bleibt sichtbar, bis es hinausgeglitten ist
+      const out = from.animate(
+        [
+          { opacity: 1, transform: "none" },
+          { opacity: 0, transform: `translateX(${dir * -24}px)` },
+        ],
+        { duration: 170, easing: "cubic-bezier(0.4, 0, 1, 1)" },
+      );
+      out.addEventListener("finish", () => from.classList.remove("is-leaving"));
+      running.push(out);
+      const enter = (element, distance, delay, zoom) => {
+        if (!element) return;
+        running.push(
+          element.animate(
+            [
+              { opacity: 0, transform: `translateX(${dir * distance}px)${zoom ? " scale(0.97)" : ""}` },
+              { opacity: 1, transform: "none" },
+            ],
+            { duration: 600, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
+          ),
+        );
+      };
+      enter(to.querySelector(".spot-text"), 28, 160, false); // erst, wenn das bisherige fast verschwunden ist
+      enter(to.querySelector(".spot-media"), 44, 220, true);
+    };
     const select = (index, focus = false) => {
+      const previous = current;
+      current = index;
       tabs.forEach((tab, i) => {
         const on = i === index;
         tab.setAttribute("aria-selected", String(on));
@@ -500,6 +554,8 @@
         panels[i].classList.toggle("is-active", on);
         panels[i].toggleAttribute("inert", !on); // unsichtbare Themen: weder Fokus noch Vorlesen
       });
+      placePill();
+      if (previous >= 0 && previous !== index) swap(panels[previous], panels[index], index > previous ? 1 : -1);
       if (focus) tabs[index].focus();
       document.dispatchEvent(new CustomEvent("vf:tabs")); // Live-Fenster: nur das sichtbare Thema läuft
     };
@@ -524,6 +580,9 @@
       return index >= 0;
     };
     if (!fromHash()) select(0);
+    settlePill();
+    if ("ResizeObserver" in window) new ResizeObserver(settlePill).observe(list);
+    else window.addEventListener("resize", settlePill, { passive: true });
     window.addEventListener("hashchange", fromHash);
   }
 
