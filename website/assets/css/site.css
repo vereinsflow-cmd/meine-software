@@ -4137,6 +4137,15 @@ html:not(.js) .nav ul a:hover {
     animation: var(--lit0) var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
+  /* Tastatur, Touchpad und Lautsprecher erst, wenn der Deckel aufgeht: Safari sortiert die Flächen beim Drehen nach
+     ihrer Mitte, nicht exakt – die Tastatur (weiter hinten als die Mitte des Deckels) käme sonst durch den nur wenige
+     Pixel darüber liegenden, zugeklappten Deckel. */
+  .js .laptop-keys,
+  .js .laptop-pad,
+  .js .laptop-speaker {
+    animation: vf-laptop-deck-parts var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
   .js .showcase-phone .showcase-scene {
     animation: vf-phone-scene var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
@@ -5523,6 +5532,19 @@ html:not(.js) .nav ul a:hover {
 
   100% {
     scale: 0;
+  }
+}
+
+/* Oberseite des Unterteils: verborgen, solange der Deckel zu ist (bis er gut 3° offen steht, siehe vf-laptop-lid) */
+@keyframes vf-laptop-deck-parts {
+  0%,
+  53.215% {
+    visibility: hidden;
+  }
+
+  53.22%,
+  100% {
+    visibility: visible;
   }
 }
 
