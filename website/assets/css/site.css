@@ -1414,25 +1414,31 @@ html:not(.js) .nav ul a:hover {
    dreht sich zugeklappt um 180°, klappt vor dem Betrachter auf und richtet sich zur Vorderansicht auf. Beim Aufklappen
    geht der Bildschirm an (die Abdunklung über ihm blendet aus).
    Maße hängen an der Bildschirmbreite --sw (höchstens 880 px – dafür gibt es die Bilddatei in genau dieser Breite).
-   Deckel = Rand + Bildschirm (16 : 10) + Rand; das Unterteil ist so tief, wie der Deckel hoch ist (zugeklappt deckt er
-   es genau ab). Gedreht wird um die Mitte des Unterteils. Der Blickpunkt liegt auf Höhe der Deckeloberkante, wie bei
-   einem Studiofoto von leicht oben: Der Deckel steht in der Bildebene (bleibt also unverzerrt und scharf), Tastatur und
-   Touchpad liegen perspektivisch davor, die Vorderkante ist etwa 13 % breiter als der Deckel. Beim Aufklappen, schräg von oben gesehen, ist der Laptop kurz etwas
+   Deckel = Rand + Bildschirm (16 : 10) + Rand (unten breiter, das Kinn: 2,2 Ränder); das Unterteil ist so tief, wie der
+   Deckel hoch ist (zugeklappt deckt er es genau ab). Gedreht wird um die Mitte des Unterteils. Der Blickpunkt liegt 0,55
+   Deckelhöhen über der Deckeloberkante, wie bei einem Studiofoto von schräg oben: Der Deckel steht in der Bildebene
+   (bleibt also unverzerrt und scharf), Tastatur und Touchpad liegen perspektivisch davor und sind gut zu sehen, die
+   Vorderkante ist etwa 14 % breiter als der Deckel. Beim Aufklappen, schräg von oben gesehen, ist der Laptop kurz etwas
    kleiner, damit die Vorderkante im Bild bleibt. --sw, --pw: bei Änderung „sizes“ im HTML mitziehen. */
 .showcase-laptop {
-  /* Höhe in der Endlage ≈ 0,795 · --sw + 218 px (Kopfzeile, Text, Abstände); die Vorderkante ist 1,19 · --sw breit */
-  --sw: min(880px, 80vw, calc((100vh - 218px) * 1.258));
+  /* Höhe in der Endlage ≈ 0,926 · --sw + 218 px (Kopfzeile, Text, Abstände); die Vorderkante ist 1,19 · --sw breit
+     (Faktor 1,2 mit Reserve) */
+  --sw: min(880px, 80vw, calc((100vh - 218px) * 1.08));
   --b: calc(var(--sw) / 44);
   --lw: calc(var(--sw) + 2 * var(--b));
-  --lh: calc(var(--sw) / 1.6 + 2.3 * var(--b));
-  --t: calc(var(--sw) / 55);
-  --tl: calc(var(--sw) / 150);
+  --lh: calc(var(--sw) / 1.6 + 3.2 * var(--b));
+  --t: calc(var(--sw) / 36);   /* Unterteil 2,8 % der Breite (MacBook Air 2,4 %, Pro 3,2 %) */
+  --tl: calc(var(--sw) / 66);  /* Deckel 1,45 % */
+  --rr: var(--b);              /* ein Eckenradius für Deckel und Unterteil (zugeklappt ein Körper) */
+  /* Aluminiumkante um das Glas des Bildschirms, etwa 1 mm. Ganze Pixel: Browser runden Rahmenbreiten ab – mit einem
+     Bruchteil stünde das Bild um diesen Rest versetzt und würde unscharf. */
+  --rim: 2px;
 }
 
 .showcase-laptop .showcase-scene {
   perspective: 5000px;
   perspective: calc(var(--sw) * 5.68); /* bei 880 px Bildschirm 5000 px; kleiner Laptop, gleicher Blick */
-  perspective-origin: 50% 0;
+  perspective-origin: 50% calc(var(--lh) * -0.55); /* Blickpunkt über der Deckeloberkante (siehe oben) */
 }
 
 /* Von oben gesehen braucht der Laptop mehr Höhe: Text etwas näher an die Kopfzeile */
@@ -1445,6 +1451,7 @@ html:not(.js) .nav ul a:hover {
 /* Schatten auf dem Tisch: angehoben (zugeklappt, schwebend) heller und breiter, aufgesetzt dichter */
 .showcase-laptop .showcase-floor {
   width: 98%;
+  bottom: calc(var(--sw) * 0.04); /* unter der Vorderkante wie das Gerät im Schwebeflug, nicht an der Szenenunterkante */
   height: 11%;
   opacity: 0; /* aufgesetzt übernimmt der Kontaktschatten (.laptop::before) */
 }
@@ -1453,7 +1460,7 @@ html:not(.js) .nav ul a:hover {
   position: relative;
   width: var(--lw);
   height: calc(var(--lh) + var(--t));
-  margin-bottom: calc(var(--sw) * 0.1); /* Platz für das perspektivisch davor liegende Unterteil */
+  margin-bottom: calc(var(--sw) * 0.2); /* Platz für das perspektivisch davor liegende Unterteil */
   transform-style: preserve-3d;
   transform-origin: 50% var(--lh) calc(var(--lh) / 2);
 }
@@ -1474,10 +1481,11 @@ html:not(.js) .nav ul a:hover {
   left: 1.5%;
   width: 97%;
   height: calc(var(--lh) * 0.97);
-  border-radius: calc(var(--b) * 0.9);
+  border-radius: var(--rr);
   background: rgb(14 20 30 / 34%);
   box-shadow:
-    0 0 calc(var(--sw) * 0.025) calc(var(--sw) * 0.006) rgb(14 20 30 / 26%),
+    0 0 calc(var(--sw) * 0.004) calc(var(--sw) * 0.0015) rgb(14 20 30 / 42%),
+    0 0 calc(var(--sw) * 0.025) calc(var(--sw) * 0.006) rgb(14 20 30 / 24%),
     0 0 calc(var(--sw) * 0.08) calc(var(--sw) * 0.02) rgb(14 20 30 / 10%);
   transform-origin: 50% 0;
   transform: rotateX(90deg) translateY(calc(var(--lh) * 0.015));
@@ -1499,7 +1507,7 @@ html:not(.js) .nav ul a:hover {
 .laptop-screen,
 .laptop-cover {
   inset: 0;
-  border-radius: calc(var(--b) * 1.1) calc(var(--b) * 1.1) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
+  border-radius: var(--rr) var(--rr) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
@@ -1507,17 +1515,21 @@ html:not(.js) .nav ul a:hover {
 /* Vorderseite: schwarzes Glas mit schmaler, heller Aluminiumkante; das Glas fängt oben links etwas Licht. In der Endlage
    ist scale genau 1 (keine Umrechnung, der Bildschirm bleibt 1 : 1). */
 .laptop-screen {
+  /* Aluminiumkante um das Glas (--rim, siehe .showcase-laptop): nach innen gelegt, oben hell, nach unten dunkler. Bild und
+     Kamera sind um genau diese Breite zurückgesetzt – sie stehen damit an derselben Stelle wie ohne Kante. */
   scale: 1;
-  background: linear-gradient(158deg, #202227 0%, #0c0d10 28%, #07080a 100%);
+  border: var(--rim) solid transparent;
+  background:
+    linear-gradient(158deg, #202227 0%, #0c0d10 28%, #07080a 100%) padding-box,
+    linear-gradient(180deg, #f4f5f7 0%, #d3d6da 35%, #a9aeb4 100%) border-box;
   box-shadow:
-    0 0 0 1px #c3c7cc,
-    0 0 0 2px rgb(140 145 152 / 55%),
-    inset 0 0 0 1px rgb(255 255 255 / 9%);
+    0 0 0 0.5px rgb(80 86 94 / 45%),
+    inset 0 0 0 1px rgb(0 0 0 / 60%);
 }
 
-/* Kamera: dunkle Linse mit bläulichem Schimmer und kleinem Lichtpunkt */
+/* Kamera: dunkle Linse mit bläulichem Schimmer und kleinem Lichtpunkt, mittig im schwarzen Rand über dem Bild */
 .laptop-camera {
-  top: calc(var(--b) * 0.4);
+  top: calc((var(--b) - var(--rim) - var(--b) * 0.28) / 2);
   left: 50%;
   width: calc(var(--b) * 0.28);
   aspect-ratio: 1;
@@ -1529,8 +1541,8 @@ html:not(.js) .nav ul a:hover {
 }
 
 .laptop-screen picture {
-  top: var(--b);
-  left: var(--b);
+  top: calc(var(--b) - var(--rim));
+  left: calc(var(--b) - var(--rim));
   width: var(--sw);
   height: calc(var(--sw) / 1.6);
   background: var(--surface-soft);
@@ -1583,11 +1595,16 @@ html:not(.js) .nav ul a:hover {
     inset 0 2px 0 rgb(255 255 255 / 65%);
   color: #aeb4bc;
   transform: rotateY(180deg) translateZ(var(--tl));
+  /* An der Scharnierseite 2 px über die Unterkante des Deckels hinaus (das Zeichen bleibt mittig): Kurz bevor die
+     Scharnierseite beim Drehen genau von der Kante zu sehen ist (p ≈ 0,42), ist sie schmaler als ein Pixel – Safari
+     zeichnet sie dann ohne Kantenglättung als gestrichelte dunkle Linie. Der Überstand deckt diesen Streifen ab. */
+  bottom: -2px;
+  padding-bottom: 2px;
 }
 
 .laptop-cover .device-mark {
   width: 13%;
-  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 70%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 14%));
+  filter: drop-shadow(0 0.5px 0 rgb(255 255 255 / 80%)) drop-shadow(0 -0.5px 0 rgb(0 0 0 / 20%));
 }
 
 /* Lichtschein auf dem Aluminium, der beim Drehen auf- und wieder abblendet (::before), und Abdunklung, wenn der Deckel
@@ -1617,56 +1634,122 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
-/* Kanten des Deckels (oben, links, rechts), damit er beim Drehen nicht zu einem Strich wird */
+/* Kanten des Deckels (oben, links, rechts, unten), damit er beim Drehen nicht zu einem Strich wird. Die Vorderseite jeder
+   Kante (und jedes Eckstreifens) zeigt nach außen: So blendet Safari sie aus, sobald sie vom Betrachter wegzeigt – sonst
+   schimmerte sie an der abgewandten Seite gestrichelt durch die Rückseite des Deckels. */
 .laptop-edge {
   background: linear-gradient(90deg, #b9bdc3, #eceef0 50%, #b9bdc3);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
+/* Quer zur Dicke ein Verlauf mit einer dunklen Fuge an der Glasebene (dort, wo das Glas in das Aluminium übergeht): 8 % der
+   Dicke, bei der größten Breite gut 1 px. Eine feste 1-px-Fuge zeichnete Safari auf kleinen Bildschirmen (Deckel nur gut
+   4 px dick) an der schräg gesehenen Kante gestrichelt. */
 .laptop-edge-top {
   top: 0;
-  left: calc(var(--b) * 1.1);
-  width: calc(100% - 2.2 * var(--b));
+  left: var(--rr);
+  width: calc(100% - 2 * var(--rr));
   height: var(--tl);
+  background: linear-gradient(180deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
   transform-origin: 50% 0;
-  transform: rotateX(-90deg);
+  transform: rotateX(-90deg) rotateY(180deg); /* rotateY: Vorderseite nach außen (oben) */
 }
 
 .laptop-edge-l,
 .laptop-edge-r {
-  top: calc(var(--b) * 1.1);
+  top: var(--rr);
   width: var(--tl);
-  height: calc(100% - 1.1 * var(--b));
+  height: calc(100% - var(--rr));
 }
 
-/* Die oberen runden Ecken des Deckels zwischen Glas und Rückseite (die geraden Stücke bilden die Kanten) */
+/* Die oberen runden Ecken des Deckels: je vier schmale, ebene Streifen entlang der Rundung zwischen Glas und Rückseite
+   (wie vorn am Unterteil, Radius --rr, Tiefe --tl). Gebaut ist die Ecke oben links, oben rechts ist sie um 90° gedreht.
+   Streifen statt einer flachen Scheibe: schräg von der Seite gesehen ist die Ecke geschlossen. */
 .lid-c {
-  top: 1px;
-  width: calc(var(--b) * 1.1);
-  height: calc(var(--b) * 1.1);
-  background: linear-gradient(90deg, #b9bdc3, #e2e4e7 50%, #b9bdc3);
-  transform: translateZ(calc(var(--tl) / -2));
+  top: 0;
+  width: var(--rr);
+  height: var(--rr);
+  transform-style: preserve-3d;
 }
 
 .lid-tl {
-  left: 1px;
-  border-top-left-radius: 100%;
+  left: 0;
 }
 
 .lid-tr {
-  right: 1px;
-  border-top-right-radius: 100%;
+  right: 0;
+  transform: rotateZ(90deg);
+}
+
+/* Streifen: Sehne im Abstand R · cos 11,25° vom Mittelpunkt der Rundung (rechts unten im Quadrat), an jedem Ende 1 px
+   länger; rotateY(90deg) lässt ihn wie .laptop-edge-l von der Glasebene nach hinten zur Rückseite laufen, rotateX(180deg)
+   dreht seine Vorderseite nach außen (siehe .laptop-edge) */
+.lid-c i {
+  position: absolute;
+  top: calc(var(--rr) * 0.80491 - 1px);
+  left: 100%;
+  width: var(--tl);
+  height: calc(var(--rr) * 0.39018 + 2px);
+  background: linear-gradient(90deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-origin: 0 50%;
+  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.98079)) rotateY(90deg) rotateX(180deg);
+}
+
+.lid-c i:nth-child(1) {
+  --a: 11.25deg;
+}
+
+.lid-c i:nth-child(2) {
+  --a: 33.75deg;
+}
+
+.lid-c i:nth-child(3) {
+  --a: 56.25deg;
+}
+
+.lid-c i:nth-child(4) {
+  --a: 78.75deg;
 }
 
 .laptop-edge-l {
   left: 0;
+  background: linear-gradient(90deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
   transform-origin: 0 50%;
-  transform: rotateY(90deg);
+  transform: rotateY(90deg) rotateX(180deg); /* rotateX: Vorderseite nach außen (links) */
 }
 
 .laptop-edge-r {
   right: 0;
+  background: linear-gradient(270deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
   transform-origin: 100% 50%;
-  transform: rotateY(-90deg);
+  transform: rotateY(-90deg) rotateX(180deg); /* rotateX: Vorderseite nach außen (rechts) */
+}
+
+/* Unterkante des Deckels (Scharnierseite): Aluminium über die volle Breite, darin die dunkle Scharnierabdeckung, die
+   mit dem Deckel dreht. Zugeklappt schließt sie den Spalt zwischen Deckel und Rückkante des Unterteils, aufgeklappt
+   zeigt sie nach unten und ist verdeckt. Ihre Vorderseite zeigt nach außen (um die Oberkante gekippt, dann eine
+   Deckeldicke nach unten geschoben, siehe .laptop-edge) – sonst schimmerte das dunkle Band von vorn gesehen über der
+   fernen Deckelkante durch. Von hinten steht die Fläche deshalb auf dem Kopf, die Verläufe laufen von unten nach oben
+   (0deg). */
+.laptop-edge-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--tl);
+  background: linear-gradient(0deg, #e6e8eb, #b9bdc3);
+  transform-origin: 50% 0;
+  transform: translateY(var(--tl)) rotateX(-90deg);
+}
+
+.laptop-edge-bottom::before {
+  content: "";
+  position: absolute;
+  inset: 0 8%;
+  border-radius: calc(var(--tl) / 2);
+  background: linear-gradient(0deg, #5a5e65, #2a2c31 45%, #1b1d21);
 }
 
 /* Unterteil (von oben): Aluminium mit Lichtverlauf, hinten die Scharnierfuge, Lautsprecher links und rechts, die
@@ -1677,7 +1760,7 @@ html:not(.js) .nav ul a:hover {
   left: 0;
   width: 100%;
   height: var(--lh);
-  border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) calc(var(--b) * 0.9) calc(var(--b) * 0.9);
+  border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) var(--rr) var(--rr);
   background:
     var(--grain),
     radial-gradient(90% 70% at 30% 20%, rgb(255 255 255 / 45%), rgb(255 255 255 / 0%) 70%),
@@ -1685,8 +1768,11 @@ html:not(.js) .nav ul a:hover {
   box-shadow:
     inset 0 0 0 1px rgb(0 0 0 / 7%),
     inset 0 -2px 0 rgb(255 255 255 / 70%);
-  transform-origin: 50% 0;
-  transform: rotateX(90deg);
+  /* Bezugspunkt in der Mitte der Fläche statt an der Scharnierkante: Safari sortiert die Flächen nach diesem Punkt und
+     zeichnete die Oberseite sonst beim Drehen über den zugeklappten Deckel (Zeichen weg, gezackte Kanten). Die Lage ist
+     dieselbe: um die Mitte kippen, dann eine halbe Tiefe nach oben und nach vorn schieben. */
+  transform-origin: 50% 50%;
+  transform: translate3d(0, calc(var(--lh) / -2), calc(var(--lh) / 2)) rotateX(90deg);
 }
 
 /* Scharnierfuge hinten */
@@ -1707,8 +1793,9 @@ html:not(.js) .nav ul a:hover {
   height: 45%;
   border-radius: 0.5cqw;
   background:
-    linear-gradient(rgb(20 24 30 / 9%), rgb(20 24 30 / 9%)),
-    radial-gradient(circle closest-side, rgb(20 24 30 / 26%) 0 45%, rgb(20 24 30 / 0%) 75%) 0 0 / 0.3cqw 0.3cqw;
+    radial-gradient(circle closest-side, rgb(20 24 30 / 34%) 0 50%, rgb(20 24 30 / 0%) 85%) 0 0 / 0.2cqw 0.2cqw,
+    linear-gradient(rgb(20 24 30 / 13%), rgb(20 24 30 / 13%));
+  box-shadow: inset 0 0 0 0.05cqw rgb(20 24 30 / 12%);
 }
 
 .laptop-speaker-l {
@@ -1719,14 +1806,15 @@ html:not(.js) .nav ul a:hover {
   right: 3.2%;
 }
 
-/* Tastatur: 58 Viertel-Einheiten breit (Taste = 4), sechs Reihen (Funktionsreihe halb hoch); ISO-Eingabetaste über
+/* Tastatur: 58 Viertel-Einheiten breit (Taste = 4), sechs gleich hohe Reihen (auch die Funktionsreihe, wie bei aktuellen
+   Geräten); ISO-Eingabetaste über
    zwei Reihen aus zwei Teilen (oben 1, unten ¾ Taste breit) */
 .laptop-keys {
   top: 5.5%;
   left: 12.5%;
   display: grid;
   grid-template-columns: repeat(58, 1fr);
-  grid-template-rows: 0.62fr repeat(5, 1fr);
+  grid-template-rows: repeat(6, 1fr);
   gap: 0.5cqw 0.46cqw;
   width: 75%;
   height: 46%;
@@ -1781,7 +1869,7 @@ html:not(.js) .nav ul a:hover {
 }
 
 .kf {
-  font-size: 0.82cqw;
+  font-size: 0.72cqw;
 }
 
 .k-touch {
@@ -1846,18 +1934,17 @@ html:not(.js) .nav ul a:hover {
 
 /* Touchpad: Glas mit feinem Rand und Lichtverlauf */
 .laptop-pad {
-  top: 56%;
-  left: 29.5%;
-  width: 41%;
-  height: 38.5%;
-  border-radius: 1.1cqw;
+  top: 55%;
+  left: 27.5%;
+  width: 45%;
+  height: 40%;
+  border-radius: 1.3cqw;
   background:
-    radial-gradient(100% 80% at 30% 0%, rgb(255 255 255 / 50%), rgb(255 255 255 / 0%) 70%),
-    linear-gradient(180deg, #d6d9dd, #cbced3);
+    linear-gradient(180deg, rgb(255 255 255 / 35%), rgb(255 255 255 / 0%) 40%),
+    linear-gradient(180deg, #e3e6e9, #dcdfe3);
   box-shadow:
-    inset 0 0 0 0.07cqw rgb(0 0 0 / 14%),
-    inset 0 0.12cqw 0 rgb(255 255 255 / 60%),
-    0 0.05cqw 0 rgb(255 255 255 / 70%);
+    0 0 0 0.09cqw rgb(58 64 72 / 30%),
+    0 0.14cqw 0 rgb(255 255 255 / 85%);
 }
 
 /* Senkrechte Kanten des Unterteils (vorn, hinten, links, rechts): oben eine Lichtkante, zur Unterseite dunkler. Vorn,
@@ -1869,7 +1956,11 @@ html:not(.js) .nav ul a:hover {
   height: var(--t);
   background:
     var(--grain),
-    linear-gradient(180deg, #f8f9fa 0 6%, #e3e6e9 12%, #d2d5d9 45%, #adb1b7 82%, #979ba2 100%);
+    linear-gradient(180deg, #fbfcfd 0 1px, #e6e8eb calc(1px + 6%), #d2d5d9 45%, #adb1b7 82%, #8f939a 100%);
+  /* Alle vier Kanten zeigen nach außen: von innen gesehen zeichnete Safari die abgewandte rechte Seite über die Kante
+     der Oberseite (dunkle Linie in der Endlage) */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .laptop-front,
@@ -1878,28 +1969,28 @@ html:not(.js) .nav ul a:hover {
   width: 100%;
 }
 
-/* Vorderkante mit der Mulde zum Aufklappen – über den geraden Teil und je 1 px unter die Streifen der runden Ecken */
+/* Vorderkante mit der Mulde zum Aufklappen (innen dunkler, am Rand eine Lichtkante) – über den geraden Teil und je 1 px
+   unter die Streifen der runden Ecken */
 .laptop-front {
-  left: calc(var(--b) * 0.9 - 1px);
-  width: calc(100% - 1.8 * var(--b) + 2px);
+  left: calc(var(--rr) - 1px);
+  width: calc(100% - 2 * var(--rr) + 2px);
   background:
-    radial-gradient(9% 90% at 50% 0%, rgb(40 44 50 / 20%), rgb(40 44 50 / 0%) 75%),
+    radial-gradient(5% 40% at 50% 0, #9aa0a7 0 46%, #b3b8be 58%, #f3f4f6 66%, rgb(243 244 246 / 0%) 78%),
     var(--grain),
-    linear-gradient(180deg, #f8f9fa 0 6%, #e3e6e9 12%, #d2d5d9 45%, #adb1b7 82%, #979ba2 100%);
+    linear-gradient(180deg, #fbfcfd 0 1px, #e6e8eb calc(1px + 6%), #d2d5d9 45%, #adb1b7 82%, #8f939a 100%);
   transform: translateZ(var(--lh));
 }
 
-/* Rückseite mit dunkler Scharnierabdeckung */
+/* Rückseite: glattes Aluminium – die dunkle Scharnierabdeckung sitzt am Deckel (.laptop-edge-bottom) und dreht mit ihm */
 .laptop-rear {
   background:
-    linear-gradient(180deg, #6a6e74, #45484e 55%, #55585e) 50% 12% / 84% 62% no-repeat,
     var(--grain),
-    linear-gradient(180deg, #f5f6f8 0 7%, #dfe2e5 14%, var(--alu) 45%, var(--alu-lo) 100%);
+    linear-gradient(180deg, #f5f6f8 0 1px, #dfe2e5 calc(1px + 7%), var(--alu) 45%, var(--alu-lo) 100%);
   transform: rotateY(180deg);
 }
 
 .laptop-side {
-  width: calc(var(--lh) - 0.9 * var(--b) + 1px); /* bis 1 px in die runde Ecke vorn */
+  width: calc(var(--lh) - var(--rr) + 1px); /* bis 1 px in die runde Ecke vorn */
 }
 
 /* Licht auf den senkrechten Kanten: dunkle Schicht, deren Deckkraft die Animation nach der Ausrichtung zum Licht setzt
@@ -1931,9 +2022,9 @@ html:not(.js) .nav ul a:hover {
 /* Runde Ecken vorn am Unterteil: je vier schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,4 px neben
    dem Kreis), so hoch wie die Kante, im selben Verlauf und mit Licht wie die Kanten (siehe unten). Liegen in einer Ebene mit der Tastaturfläche; gebaut ist eine Ecke oben
    links (wie ein Viertelkreis in einem Quadrat), vorn links und vorn rechts ist sie um 270° bzw. 180° gedreht.
-   Streifen statt gestapelter Schichten: keine Stufen, und nur wenige, kleine Grafikebenen. */
+   Streifen statt gestapelter Schichten: keine Stufen, und nur wenige, kleine Grafikebenen. Der Eckenradius --rr kommt von
+   .showcase-laptop und ist derselbe wie oben am Deckel – zugeklappt wirken beide wie ein Körper. */
 .laptop-base {
-  --rr: calc(var(--b) * 0.9); /* Eckenradius vorn */
   top: var(--lh);
   left: 0;
   width: 100%;
@@ -1972,7 +2063,7 @@ html:not(.js) .nav ul a:hover {
   height: calc(var(--rr) * 0.39018 + 2px);
   background:
     var(--grain),
-    linear-gradient(90deg, #f8f9fa 0 6%, #e3e6e9 12%, #d2d5d9 45%, #adb1b7 82%, #979ba2 100%); /* wie die Kanten */
+    linear-gradient(90deg, #fbfcfd 0 1px, #e6e8eb calc(1px + 6%), #d2d5d9 45%, #adb1b7 82%, #8f939a 100%); /* wie die Kanten */
   transform-origin: 0 50%;
   transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.98079)) rotateY(90deg);
 }
@@ -2084,28 +2175,24 @@ html:not(.js) .nav ul a:hover {
 
 .iphone {
   --pw: min(336px, 72vw, calc((100vh - var(--header-h) - 110px) / 2.081));
-  --t: calc(var(--pw) * 0.1);
+  --t: calc(var(--pw) * 0.117); /* Gehäusedicke: 8,25 mm bei 70,6 mm Breite */
   --grain: url("../img/textur-koernung.svg");
-  /* Titan in Champagner: helle Lichtkante, warme Mitteltöne, dunklere Ränder */
-  --titan: linear-gradient(
-    90deg,
-    #9d9488 0%,
-    #e9e2d7 16%,
-    #bdb3a5 42%,
-    #998f82 58%,
-    #ddd5c9 84%,
-    #a0978a 100%
-  );
-  /* derselbe Verlauf gespiegelt: so liegt er auf der rechten Seitenfläche (sie ist andersherum gedreht) */
-  --titan-r: linear-gradient(
-    270deg,
-    #9d9488 0%,
-    #e9e2d7 16%,
-    #bdb3a5 42%,
-    #998f82 58%,
-    #ddd5c9 84%,
-    #a0978a 100%
-  );
+  --brush: url("../img/textur-buerstung.svg");
+  /* Titan in warmem Sandton (wie „Wüstentitan“): flaches, fein gebürstetes Band mit schmalen, hellen Schultern zu Glas
+     und Rückseite. Das Profil ist mit Absicht symmetrisch – so ist gleich, in welcher Richtung eine Fläche gedreht ist,
+     und an keinem Stoß zwischen Seite, Eckstreifen und Stirnfläche entsteht eine Stufe. Stirnflächen: dieselben Stufen
+     quer (siehe .iphone-cap). */
+  --titan-stops:
+    #7d7163 0%,
+    #dbcfc2 4%,
+    #f0e9e0 7%,
+    #c5b7a7 13%,
+    #b4a695 50%,
+    #c5b7a7 87%,
+    #f0e9e0 93%,
+    #dbcfc2 96%,
+    #7d7163 100%;
+  --titan: linear-gradient(90deg, var(--titan-stops));
   position: relative;
   width: var(--pw);
   aspect-ratio: 420 / 874;
@@ -2119,11 +2206,11 @@ html:not(.js) .nav ul a:hover {
    .laptop-screen. In der Endlage ist scale genau 1. */
 .iphone-front {
   scale: 1;
-  background: linear-gradient(135deg, #b1a797 0%, #756c60 13%, #8a8175 40%, #675f55 68%, #a69c8e 100%);
+  background: linear-gradient(135deg, #e2d8cb 0%, #a49685 13%, #c1b3a3 40%, #968878 68%, #dbcfc2 100%);
   box-shadow:
-    0 0 0 1px #d2c9bb,
-    inset 0 0 0 1px rgb(255 250 240 / 30%),
-    inset 0 0 0 2px rgb(40 30 20 / 40%),
+    0 0 0 1px #dfd5c8,
+    inset 0 0 0 1px rgb(255 255 255 / 40%),
+    inset 0 0 0 2px rgb(40 36 30 / 35%),
     var(--shadow-lg);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -2160,7 +2247,14 @@ html:not(.js) .nav ul a:hover {
    Seitenkanten */
 .iphone-front .phone-hw::before,
 .iphone-front .phone-hw::after {
-  background: linear-gradient(90deg, #7d7468, #c9c0b2 55%, #8a8175);
+  background: linear-gradient(90deg, #918475, #ddd1c4 55%, #9b8d7d);
+}
+
+/* Frontkamera in der Dynamic Island (nur dieses Telefon; cqw = Breite des Geräts) */
+.iphone-front .phone-island {
+  background:
+    radial-gradient(circle 1.3cqw at calc(100% - 4.4cqw) 50%, #253041 0 25%, #10141c 60%, rgb(0 0 0 / 0%) 100%),
+    #000000;
 }
 
 .iphone-rim {
@@ -2172,9 +2266,10 @@ html:not(.js) .nav ul a:hover {
 }
 
 /* Die vier runden Ecken: je sechs schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,5 px neben dem
-   Kreis), so tief wie das Gehäuse und im Titan-Verlauf der Seitenflächen. Gebaut ist die Ecke oben links (Viertelkreis
-   in einem Quadrat); die übrigen sind dieselbe Ecke, um 90°, 180° und 270° gedreht. Streifen statt gestapelter
-   Schichten: keine Stufen an der Kante, wenn man genau von der Seite schaut, und nur wenige, kleine Grafikebenen. */
+   Kreis), so tief wie das Gehäuse, nach außen gerichtet und im Titan-Verlauf der Seitenflächen. Gebaut ist die Ecke
+   oben links (Viertelkreis in einem Quadrat); die übrigen sind dieselbe Ecke, um 90°, 180° und 270° gedreht. Streifen
+   statt gestapelter Schichten: keine Stufen an der Kante, wenn man genau von der Seite schaut, und nur wenige, kleine
+   Grafikebenen. */
 .rim-c {
   position: absolute;
   width: var(--rr);
@@ -2205,18 +2300,21 @@ html:not(.js) .nav ul a:hover {
   transform: rotateZ(270deg);
 }
 
-/* Streifen: steht senkrecht auf der Vorderseite (rotateY), liegt als Sehne im Abstand R · cos 7,5° vom Mittelpunkt der
-   Rundung (rechts unten im Quadrat) und ist um ihn auf seinen Winkel gedreht; an jedem Ende 1 px länger als die Sehne:
-   Die Nachbarn überlappen, sonst schiene an den Stößen der Hintergrund durch die geglätteten Kanten */
+/* Streifen: steht senkrecht auf der Vorderseite und zeigt nach außen (rotateY um seine Vorderkante, siehe
+   .iphone-side), liegt als Sehne im Abstand R · cos 7,5° vom Mittelpunkt der Rundung (rechts unten im Quadrat, dort
+   seine rechte Kante) und ist um ihn auf seinen Winkel gedreht; an jedem Ende 1 px länger als die Sehne: Die Nachbarn
+   überlappen, sonst schiene an den Stößen der Hintergrund durch die geglätteten Kanten. */
 .rim-c i {
   position: absolute;
   top: calc(var(--rr) * 0.86947 - 1px);
-  left: 100%;
+  right: 0;
   width: var(--t);
   height: calc(var(--rr) * 0.26105 + 2px);
-  background: var(--grain), var(--titan);
-  transform-origin: 0 50%;
-  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.99144)) rotateY(90deg);
+  background: var(--brush), var(--titan);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-origin: 100% 50%;
+  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.99144)) rotateY(-90deg);
 }
 
 /* Licht: dieselbe warme, dunkle Schicht wie auf der angrenzenden Seitenfläche (gleiche Animation), zur Stirnseite hin
@@ -2226,7 +2324,7 @@ html:not(.js) .nav ul a:hover {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgb(52 40 24 / var(--w1)) 1px, rgb(52 40 24 / var(--w0)) calc(100% - 1px)); /* von Stoß zu Stoß */
+  background: linear-gradient(rgb(38 34 28 / var(--w1)) 1px, rgb(38 34 28 / var(--w0)) calc(100% - 1px)); /* von Stoß zu Stoß */
   opacity: var(--side-rest);
   pointer-events: none;
 }
@@ -2241,11 +2339,6 @@ html:not(.js) .nav ul a:hover {
 .rim-br {
   --side: vf-phone-side-r;
   --side-rest: 0.16;
-}
-
-.rim-tr i,
-.rim-br i {
-  background: var(--grain), var(--titan-r); /* passend zur rechten Seitenfläche */
 }
 
 /* Die Ecke oben links beginnt an der linken Seite (Winkel 0°); gedreht beginnt sie oben rechts und unten links an der
@@ -2310,27 +2403,31 @@ html:not(.js) .nav ul a:hover {
   --s1: 1;
 }
 
-/* Rückseite: mattes Glas in Champagner-Titan im Metallrahmen – Licht von oben links, zum Rand hin leicht gewölbt
-   (weiche Innenschattierung), am Übergang zum Rahmen eine feine Lichtkante und eine Fuge. Kameramodul oben links. */
+/* Rückseite: mattes Glas im warmen Sandton des Titans (wie „Wüstentitan“) im Metallrahmen – Licht von oben links, zum
+   Rand hin leicht gewölbt (weiche Innenschattierung), am Übergang zum Rahmen eine feine Lichtkante (2 px breit, damit
+   Safari sie nicht strichelt) und eine Fuge. Kameramodul oben links. */
 .iphone-back {
   container-type: inline-size;
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
+  overflow: hidden; /* Rückfall für Browser ohne „clip“ (Safari vor 16) */
+  overflow: clip; /* beschneidet den wandernden Glanz (::before) an der runden Kontur */
   border-radius: 15.6% / 7.5%;
   background:
     var(--grain),
-    radial-gradient(140% 90% at 18% 0%, rgb(255 255 255 / 34%), rgb(255 255 255 / 0%) 55%),
-    radial-gradient(120% 70% at 88% 100%, rgb(110 90 62 / 16%), rgb(110 90 62 / 0%) 60%),
-    linear-gradient(170deg, #e7dfd2 0%, #d9cfbe 48%, #ccc0ad 100%);
+    radial-gradient(140% 90% at 18% 0%, rgb(255 255 255 / 30%), rgb(255 255 255 / 0%) 55%),
+    radial-gradient(120% 70% at 88% 100%, rgb(60 56 50 / 14%), rgb(60 56 50 / 0%) 60%),
+    linear-gradient(170deg, #e8ded3 0%, #dacec1 48%, #cdc0b0 100%);
+  /* Kein großer Schlagschatten auf der drehenden Rückseite: Er vergrößert ihre Grafikebene, Chromium zerteilt sie dann
+     an Seiten und Eckstreifen (dunkler Keil, harte Schattenkante). Den Schatten am Boden trägt .showcase-floor. */
   box-shadow:
-    0 0 0 1px #a89e90,
-    inset 0 0 0 calc(var(--pw) * 0.014) #b8ad9e,
-    inset 0 0 0 calc(var(--pw) * 0.017) rgb(255 252 245 / 60%),
-    inset 0 0 0 calc(var(--pw) * 0.021) rgb(95 78 55 / 18%),
-    inset 0 0 calc(var(--pw) * 0.09) calc(var(--pw) * 0.012) rgb(95 78 55 / 11%),
-    var(--shadow-lg);
+    0 0 0 1px #a29483,
+    inset 0 0 0 calc(var(--pw) * 0.012) #b1a392,
+    inset 0 0 0 calc(var(--pw) * 0.012 + 2px) rgb(255 255 255 / 45%),
+    inset 0 0 0 calc(var(--pw) * 0.012 + 3.5px) rgb(40 36 30 / 16%),
+    inset 0 0 calc(var(--pw) * 0.09) calc(var(--pw) * 0.012) rgb(40 36 30 / 10%);
   color: rgb(255 252 244 / 62%);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -2343,7 +2440,8 @@ html:not(.js) .nav ul a:hover {
   filter: drop-shadow(0 1px 0 rgb(255 255 255 / 45%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 10%));
 }
 
-/* Lichtschein, der beim Drehen auf- und abblendet, und Abdunklung, wenn die Rückseite vom Licht wegzeigt */
+/* Glanz, der beim Drehen über das Glas wandert (siehe vf-phone-sheen), und Abdunklung, wenn die Rückseite vom Licht
+   wegzeigt */
 .iphone-back::before,
 .iphone-back::after {
   content: "";
@@ -2353,48 +2451,53 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
+/* Das Glanzband ist breiter als die Rückseite (links und rechts je 60 % mehr), damit es ganz hinausgleiten kann */
 .iphone-back::before {
   z-index: 2;
+  inset: 0 -60%;
+  border-radius: 0;
   background: linear-gradient(
-    110deg,
-    rgb(255 255 255 / 0%) 25%,
-    rgb(255 255 255 / 34%) 50%,
-    rgb(255 255 255 / 0%) 75%
+    105deg,
+    rgb(255 255 255 / 0%) 38%,
+    rgb(255 255 255 / 30%) 50%,
+    rgb(255 255 255 / 0%) 62%
   );
   opacity: 0;
+  translate: -60% 0; /* hier Endlage: außerhalb der beschnittenen Fläche */
 }
 
 .iphone-back::after {
   z-index: 3;
-  background: rgb(12 16 22);
+  background: rgb(38 34 28);
   opacity: 0.38;
 }
 
-/* Kameramodul: erhabenes Glas mit Schlagschatten; Objektive mit Metallring, schwarzem Rand, violett vergütetem Glas
-   und Lichtpunkt; Blitz, LiDAR und Mikrofon */
+/* Kameramodul: Plateau aus poliertem Glas im Ton der Rückseite (die Rückseite selbst ist matt) und mit ihr aus einem
+   Stück – schärferer Reflex, oben helle, unten dunkle Lichtkante, kein Schlagschatten. Objektive mit schmalem Ring im
+   Titanton, schwarzem Rand, violett vergütetem Glas und Lichtpunkt; Blitz, LiDAR und Mikrofon. */
 .iphone-camera {
   position: absolute;
   z-index: 1;
-  top: 2.6%;
-  left: 5.6%;
-  width: 42%;
+  top: 2.8%;
+  left: 5.2%;
+  width: 51%; /* Plateau ≈ 51 % der Breite, reicht knapp über die Mitte */
   aspect-ratio: 1;
-  border-radius: 25%;
+  border-radius: 24%;
   background:
     linear-gradient(
       135deg,
-      rgb(255 255 255 / 58%) 0%,
-      rgb(255 255 255 / 14%) 36%,
-      rgb(255 255 255 / 0%) 58%,
-      rgb(90 72 48 / 10%) 100%
+      rgb(255 255 255 / 55%) 0%,
+      rgb(255 255 255 / 8%) 30%,
+      rgb(255 255 255 / 0%) 55%,
+      rgb(255 255 255 / 18%) 78%,
+      rgb(255 255 255 / 0%) 90%
     ),
-    linear-gradient(170deg, #e5dbcc, #d3c7b4);
+    linear-gradient(170deg, #e1d7cb, #cec2b2);
   box-shadow:
-    0.15cqw 0.3cqw 0.4cqw rgb(60 45 25 / 24%),
-    0.6cqw 1.3cqw 2.6cqw rgb(60 45 25 / 16%),
-    inset 0 0.3cqw 0.2cqw rgb(255 255 255 / 70%),
-    inset 0 -0.3cqw 0.45cqw rgb(90 70 45 / 18%),
-    inset 0 0 0 0.15cqw rgb(120 100 75 / 24%);
+    0 0 0 1px rgb(60 56 50 / 20%),
+    inset 0 0.35cqw 0.25cqw rgb(255 255 255 / 70%),
+    inset 0 -0.35cqw 0.5cqw rgb(40 36 30 / 22%),
+    inset 0 0 0 0.15cqw rgb(60 56 50 / 25%);
 }
 
 .iphone-camera i,
@@ -2405,91 +2508,93 @@ html:not(.js) .nav ul a:hover {
 }
 
 .lens {
-  width: 41%;
+  width: 44%;
+  /* obenauf die helle Fase zwischen Glas und Ring, darunter Lichtpunkt, Glanz, Vergütung, Glas und Ring */
   background:
+    radial-gradient(
+      circle closest-side,
+      rgb(255 255 255 / 0%) 80%,
+      rgb(255 255 255 / 55%) 81.5%,
+      rgb(255 255 255 / 0%) 84%
+    ),
     radial-gradient(circle at 34% 30%, rgb(255 255 255 / 78%) 0 2.5%, rgb(255 255 255 / 0%) 6%),
     radial-gradient(60% 40% at 38% 26%, rgb(255 255 255 / 14%), rgb(255 255 255 / 0%) 70%),
     radial-gradient(circle at 62% 66%, rgb(120 90 200 / 34%) 0 5%, rgb(120 90 200 / 0%) 16%),
     radial-gradient(circle at 44% 60%, rgb(60 150 140 / 22%) 0 3%, rgb(60 150 140 / 0%) 11%),
     radial-gradient(
       circle closest-side,
-      #1d2a3e 0 12%,
-      #0b1019 22%,
-      #16202e 30%,
-      #06080c 38%,
-      #10141b 46%,
-      #020304 56%,
-      #2a2c30 58.5%,
-      #0c0d0f 62%,
-      #18191c 68.5%,
-      rgb(24 25 28 / 0%) 72.5%
+      #1d2a3e 0 13%,
+      #0b1019 24%,
+      #16202e 33%,
+      #06080c 42%,
+      #10141b 51%,
+      #020304 62%,
+      #2a2c30 64.5%,
+      #0c0d0f 68%,
+      #18191c 75.5%,
+      rgb(24 25 28 / 0%) 80%
     ),
-    conic-gradient(from 215deg, #f5f0e8, #a99f91, #ece5da, #978d80, #f5f0e8);
+    conic-gradient(from 215deg, #f6f0ea, #a19382, #eae1d6, #918475, #f6f0ea);
   box-shadow:
-    0.1cqw 0.35cqw 0.5cqw rgb(40 30 15 / 34%),
-    0.4cqw 0.9cqw 1.6cqw rgb(40 30 15 / 18%),
+    0.1cqw 0.3cqw 0.4cqw rgb(20 18 14 / 40%),
     inset 0 0 0 0.12cqw rgb(255 255 255 / 35%);
 }
 
 .lens:nth-child(1) {
-  top: 6%;
-  left: 6%;
+  top: 3.5%;
+  left: 3.5%;
 }
 
 .lens:nth-child(2) {
-  top: 53%;
-  left: 6%;
+  top: 52.5%;
+  left: 3.5%;
 }
 
 .lens:nth-child(3) {
-  top: 29.5%;
-  left: 53%;
+  top: 28%;
+  left: 52.5%;
 }
 
 .flash {
-  top: 9%;
-  left: 71%;
-  width: 17%;
+  top: 7%;
+  left: 73%;
+  width: 15%;
   background:
     radial-gradient(circle at 38% 34%, rgb(255 255 255 / 70%) 0 8%, rgb(255 255 255 / 0%) 22%),
     radial-gradient(circle closest-side, #fbf4e2 0 40%, #e2d4b6 72%, #a8997c 100%);
   box-shadow:
-    0.1cqw 0.25cqw 0.4cqw rgb(60 45 25 / 25%),
-    inset 0 0 0 0.25cqw rgb(120 100 70 / 25%);
+    0.1cqw 0.25cqw 0.4cqw rgb(40 36 30 / 25%),
+    inset 0 0 0 0.25cqw rgb(95 85 73 / 25%);
 }
 
 .lidar {
-  top: 74%;
-  left: 73%;
-  width: 14%;
+  top: 76%;
+  left: 76%;
+  width: 12%;
   background:
     radial-gradient(circle at 40% 36%, rgb(255 255 255 / 30%) 0 6%, rgb(255 255 255 / 0%) 14%),
     radial-gradient(circle closest-side, #15171b 0 58%, #3a3c40 66%, #1a1b1e 100%);
-  box-shadow: 0.1cqw 0.25cqw 0.4cqw rgb(60 45 25 / 25%);
+  box-shadow: 0.1cqw 0.25cqw 0.4cqw rgb(40 36 30 / 25%);
 }
 
 .mic {
-  top: 8%;
-  left: 56%;
-  width: 4%;
+  top: 7.5%;
+  left: 58%;
+  width: 3%;
   background: #3a3c40;
 }
 
-/* Gerade Seitenflächen (Titan) mit Antennenfugen und Tasten; unten und oben die Stirnflächen */
+/* Gerade Seitenflächen (gebürstetes Titan) mit Antennenfugen und Tasten; unten und oben die Stirnflächen */
 .iphone-side,
 .iphone-cap {
   position: absolute;
-  background:
-    linear-gradient(
-      180deg,
-      rgb(0 0 0 / 0%) 18%,
-      rgb(105 95 82 / 70%) 18% 18.6%,
-      rgb(0 0 0 / 0%) 18.6% 81.4%,
-      rgb(105 95 82 / 70%) 81.4% 82%,
-      rgb(0 0 0 / 0%) 82%
-    ),
-    var(--grain),
-    var(--titan);
+  /* Alle Rahmenflächen zeigen nach außen und sind nur von außen sichtbar: So zeichnet kein Browser die abgewandte Seite
+     durch das Gehäuse (dunkler Keil an der oberen Ecke), und es sind nur halb so viele Flächen zu sortieren. Jede
+     Fläche steht dafür außerhalb des Gehäuses und klappt um ihre Vorderkante nach hinten: Die Vorderkante liegt so
+     genau am Drehpunkt (wie bei den Eckstreifen) – mit einer Verschiebung um --t träfen sich Seiten und Streifen je
+     nach Rundung der Ebenengröße um Bruchteile eines Pixels versetzt (sichtbare Stufe am Stoß). */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* je 1 px bis in die runden Ecken hinein (unter die Streifen): keine Fuge am Übergang */
@@ -2497,6 +2602,17 @@ html:not(.js) .nav ul a:hover {
   top: calc(7.5% - 1px);
   width: var(--t);
   height: calc(85% + 2px);
+  background:
+    linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0%) 18%,
+      rgb(158 144 127 / 80%) 18% 18.6%,
+      rgb(0 0 0 / 0%) 18.6% 81.4%,
+      rgb(158 144 127 / 80%) 81.4% 82%,
+      rgb(0 0 0 / 0%) 82%
+    ),
+    var(--brush),
+    var(--titan);
 }
 
 /* Licht auf den Seitenflächen: warme, dunkle Schicht (auch über den Tasten); Deckkraft setzt die Animation (hier Endlage) */
@@ -2505,7 +2621,7 @@ html:not(.js) .nav ul a:hover {
   position: absolute;
   z-index: 1;
   inset: 0;
-  background: rgb(52 40 24);
+  background: rgb(38 34 28);
   opacity: 0.32;
   pointer-events: none;
 }
@@ -2514,16 +2630,17 @@ html:not(.js) .nav ul a:hover {
   opacity: 0.16;
 }
 
+/* Beide Seiten stehen senkrecht auf der Vorderseite und reichen eine Gehäusedicke nach hinten */
 .iphone-side-l {
-  left: 0;
-  transform-origin: 0 50%;
-  transform: rotateY(90deg);
+  right: 100%;
+  transform-origin: 100% 50%;
+  transform: rotateY(-90deg);
 }
 
 .iphone-side-r {
-  right: 0;
-  transform-origin: 100% 50%;
-  transform: rotateY(-90deg);
+  left: 100%;
+  transform-origin: 0 50%;
+  transform: rotateY(90deg);
 }
 
 .iphone-side b {
@@ -2531,10 +2648,11 @@ html:not(.js) .nav ul a:hover {
   left: 20%;
   width: 60%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #9b9185, #efe9df 45%, #c2b8aa 60%, #92887b);
+  background: linear-gradient(90deg, #958777, #f2ebe3 45%, #ccbeaf 60%, #918475);
   box-shadow:
-    0 0 0 1px rgb(70 55 35 / 22%),
-    0 1px 2px rgb(40 30 15 / 22%);
+    0 0 0 1px rgb(40 36 30 / 35%),
+    inset 0 1px 0 rgb(255 255 255 / 50%),
+    0 1px 2px rgb(20 18 14 / 25%);
 }
 
 .btn-action {
@@ -2557,23 +2675,24 @@ html:not(.js) .nav ul a:hover {
   height: 13%;
 }
 
+/* Stirnflächen: dasselbe Profil quer; ohne Bürstung, ihre Streifen lägen hier quer */
 .iphone-cap {
   left: calc(15.6% - 1px);
   width: calc(68.8% + 2px);
   height: var(--t);
-  background: var(--grain), linear-gradient(180deg, #9d9488, #e9e2d7 30%, #bdb3a5 60%, #a0978a);
+  background: linear-gradient(180deg, var(--titan-stops));
 }
 
 .iphone-cap-t {
-  top: 0;
-  transform-origin: 50% 0;
-  transform: rotateX(-90deg);
+  bottom: 100%;
+  transform-origin: 50% 100%;
+  transform: rotateX(90deg);
 }
 
 .iphone-cap-b {
-  bottom: 0;
-  transform-origin: 50% 100%;
-  transform: rotateX(90deg);
+  top: 100%;
+  transform-origin: 50% 0;
+  transform: rotateX(-90deg);
 }
 
 /* Breite Fenster: beim Telefon Text links, Gerät rechts */
@@ -2601,7 +2720,8 @@ html:not(.js) .nav ul a:hover {
 @media (max-width: 719px) {
   .showcase-laptop {
     --closed-scale: 0.76;
-    --sw: min(880px, calc((100vw - 2 * var(--gutter)) / 1.19), calc((100vh - 218px) * 1.258));
+    --rim: 1px;
+    --sw: min(880px, calc((100vw - 2 * var(--gutter)) / 1.2), calc((100vh - 218px) * 1.08));
   }
 
   .iphone {
@@ -4137,6 +4257,13 @@ html:not(.js) .nav ul a:hover {
     animation: var(--lit0) var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
+  /* Oberseite des Unterteils ganz verborgen, solange der Deckel zu ist (bis p = 0,5, siehe Generator): Safari zeichnete
+     sie je nach Version und Grafikchip sonst über den zugeklappten Deckel mit dem Zeichen. Die Scharnierkante des Deckels
+     (.laptop-edge-bottom) schließt den Blick ins Innere. */
+  .js .laptop-deck {
+    animation: vf-laptop-deck var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
   /* Tastatur, Touchpad und Lautsprecher erst, wenn der Deckel aufgeht: Safari sortiert die Flächen beim Drehen nach
      ihrer Mitte, nicht exakt – die Tastatur (weiter hinten als die Mitte des Deckels) käme sonst durch den nur wenige
      Pixel darüber liegenden, zugeklappten Deckel. */
@@ -5535,14 +5662,19 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* Oberseite des Unterteils: verborgen, solange der Deckel zu ist (bis er gut 3° offen steht, siehe vf-laptop-lid) */
 @keyframes vf-laptop-deck-parts {
-  0%,
+  0% {
+    visibility: hidden;
+  }
+
   53.215% {
     visibility: hidden;
   }
 
-  53.22%,
+  53.22% {
+    visibility: visible;
+  }
+
   100% {
     visibility: visible;
   }
@@ -6225,6 +6357,24 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+@keyframes vf-laptop-deck {
+  0% {
+    visibility: hidden;
+  }
+
+  50% {
+    visibility: hidden;
+  }
+
+  50.005% {
+    visibility: visible;
+  }
+
+  100% {
+    visibility: visible;
+  }
+}
+
 @keyframes vf-phone-body {
   0% {
     transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
@@ -6579,74 +6729,82 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-phone-sheen {
   0% {
-    opacity: 0;
+    translate: 7% 0;
+    opacity: 0.97;
   }
 
-  26% {
-    opacity: 0;
+  26.17% {
+    translate: 6.99% 0;
+    opacity: 0.97;
   }
 
-  27.6% {
+  27.675% {
+    translate: 6.33% 0;
+    opacity: 0.975;
+  }
+
+  29.215% {
+    translate: 4.57% 0;
+    opacity: 0.987;
+  }
+
+  31.04% {
+    translate: 1.2% 0;
+    opacity: 0.999;
+  }
+
+  32.925% {
+    translate: -3.63% 0;
+    opacity: 0.992;
+  }
+
+  34.335% {
+    translate: -8.04% 0;
+    opacity: 0.96;
+  }
+
+  35.665% {
+    translate: -12.78% 0;
+    opacity: 0.903;
+  }
+
+  37.61% {
+    translate: -20.61% 0;
+    opacity: 0.767;
+  }
+
+  40.095% {
+    translate: -31.94% 0;
+    opacity: 0.529;
+  }
+
+  43.02% {
+    translate: -46.75% 0;
+    opacity: 0.255;
+  }
+
+  44.245% {
+    translate: -53.31% 0;
+    opacity: 0.169;
+  }
+
+  45.47% {
+    translate: -60% 0;
+    opacity: 0.105;
+  }
+
+  48.155% {
+    translate: -60% 0;
     opacity: 0.03;
   }
 
-  29.3% {
-    opacity: 0.12;
-  }
-
-  31.255% {
-    opacity: 0.281;
-  }
-
-  35.29% {
-    opacity: 0.693;
-  }
-
-  37.03% {
-    opacity: 0.848;
-  }
-
-  38.89% {
-    opacity: 0.962;
-  }
-
-  40.575% {
-    opacity: 1;
-  }
-
-  41.59% {
-    opacity: 0.985;
-  }
-
-  42.58% {
-    opacity: 0.939;
-  }
-
-  43.545% {
-    opacity: 0.863;
-  }
-
-  44.495% {
-    opacity: 0.756;
-  }
-
-  45.435% {
-    opacity: 0.617;
-  }
-
-  46.365% {
-    opacity: 0.446;
-  }
-
-  47.29% {
-    opacity: 0.243;
-  }
-
-  48.245% {
-    opacity: 0;
+  52.005% {
+    translate: -60% 0;
+    opacity: 0.003;
   }
 
   100% {
+    translate: -60% 0;
     opacity: 0;
   }
 }
@@ -6731,54 +6889,134 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-phone-floor {
   0% {
-    scale: 0.55;
+    scale: 0.5461 0.55;
   }
 
   4.685% {
-    scale: 0.5541;
+    scale: 0.5502 0.5541;
   }
 
   6.58% {
-    scale: 0.5677;
+    scale: 0.5637 0.5677;
   }
 
   8.585% {
-    scale: 0.591;
+    scale: 0.5868 0.591;
   }
 
-  10.685% {
-    scale: 0.6235;
+  10.62% {
+    scale: 0.618 0.6223;
   }
 
-  13.01% {
-    scale: 0.6669;
+  12.865% {
+    scale: 0.6593 0.664;
   }
 
-  21.855% {
-    scale: 0.8598;
+  22.175% {
+    scale: 0.8604 0.8665;
   }
 
-  25.58% {
-    scale: 0.931;
+  26.265% {
+    scale: 0.9355 0.9421;
   }
 
-  27.6% {
-    scale: 0.9615;
+  28.165% {
+    scale: 0.9599 0.9687;
   }
 
-  29.49% {
-    scale: 0.983;
+  29.905% {
+    scale: 0.9723 0.9866;
   }
 
-  31.285% {
-    scale: 0.9958;
+  31.505% {
+    scale: 0.9727 0.9968;
   }
 
   33% {
-    scale: 1;
+    scale: 0.9614 1;
+  }
+
+  34.945% {
+    scale: 0.9317 1;
+  }
+
+  36.765% {
+    scale: 0.89 1;
+  }
+
+  38.515% {
+    scale: 0.8349 1;
+  }
+
+  40.245% {
+    scale: 0.7649 1;
+  }
+
+  41.95% {
+    scale: 0.6808 1;
+  }
+
+  43.735% {
+    scale: 0.5779 1;
+  }
+
+  45.65% {
+    scale: 0.454 1;
+  }
+
+  48.14% {
+    scale: 0.2801 1;
+  }
+
+  51.465% {
+    scale: 0.5117 1;
+  }
+
+  53.87% {
+    scale: 0.6619 1;
+  }
+
+  55.03% {
+    scale: 0.7256 1;
+  }
+
+  56.155% {
+    scale: 0.7809 1;
+  }
+
+  57.265% {
+    scale: 0.8288 1;
+  }
+
+  58.375% {
+    scale: 0.87 1;
+  }
+
+  59.495% {
+    scale: 0.9047 1;
+  }
+
+  60.64% {
+    scale: 0.9334 1;
+  }
+
+  61.815% {
+    scale: 0.9563 1;
+  }
+
+  63.05% {
+    scale: 0.974 1;
+  }
+
+  65.72% {
+    scale: 0.9945 1;
+  }
+
+  69.305% {
+    scale: 1 1;
   }
 
   100% {
-    scale: 1;
+    scale: 1 1;
   }
 }
