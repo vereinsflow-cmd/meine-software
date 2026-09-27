@@ -65,6 +65,7 @@ export const PERMISSIONS = {
 
   // Kommunikation
   "messages:read": { module: "Kommunikation", label: "Nachrichten lesen" },
+  // Reichweite: Verein = an alle Gruppen, Abteilung = an die geleiteten; OWN = nur in Gruppen, zu denen man gehört.
   "messages:send": { module: "Kommunikation", label: "Nachrichten versenden" },
 
   // Dokumente

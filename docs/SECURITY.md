@@ -35,6 +35,12 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
 - Serverseitig in **jedem** Dienst (`assertCan`); Listen werden über `scopeFilter` von vornherein eingeschränkt.
 - Abteilungsleiter verwalten nur Objekte ihrer Abteilung, Hochladende nur ihre eigenen Dokumente (Beispiel für einen echten Fund
   aus den Tests: Ein pauschales „Leitung verwalten“ hätte Abteilungsleitern erlaubt, fremde Leitungen zu entfernen – jetzt je Abteilung geprüft).
+- **Nachrichten:** `messages:send` hat jede Rolle, die Reichweite entscheidet: Verein = jede Gruppe, Abteilung = die geleiteten
+  Abteilungen und deren Veranstaltungen – jeweils auch als Ankündigung und per E-Mail. Außerdem schreibt **jede** Rolle (auch OWN:
+  Helfer, Mitglied) in Gruppen, zu denen sie selbst gehört, dort aber nur einfache Nachrichten (ohne Ankündigung und E-Mail) und
+  höchstens 30 je Stunde (Entwürfe: 100 Speichervorgänge je Stunde). Geprüft wird beim Speichern und erneut beim Senden anhand der
+  echten Zugehörigkeit (dieselbe Abfrage wie für die Empfänger). Alle gesendeten Nachrichten (Lesestatistik, Rückruf) verwaltet nur
+  der Verein; alle anderen nur ihre eigenen.
 - **Finanzen:** Beträge und offene Zahlungen nur mit `finance:read`, Rechnungen erfassen/ändern/als bezahlt markieren nur mit
   `finance:manage` (Standard: Vereinsadministrator und Vorstand). Der Dokumentendienst liefert die Rechnungsangaben nur mit dem Recht aus;
   ohne es fehlen sie ganz (nicht nur in der Oberfläche). Die Summe auf dem Dashboard zählt auch Belege höherer Zugriffsstufe, den Beleg

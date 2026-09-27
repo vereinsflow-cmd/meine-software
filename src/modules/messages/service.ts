@@ -5,8 +5,9 @@ import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import { notifyUsers } from "@/modules/notifications/service";
 import { recordAudit } from "@/server/audit/audit";
 import type { TenantDb, TenantTx } from "@/server/db/tenant";
-import { conflict, forbidden, notFound, validationFailed } from "@/server/errors";
+import { conflict, forbidden, isAppError, notFound, validationFailed } from "@/server/errors";
 import { assertCan, can, scopeOf } from "@/server/permissions/policy";
+import { assertNotRateLimited, enforceRateLimit } from "@/server/security/rate-limit";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import type { Audience, MessageInput } from "./schemas";
 
@@ -21,9 +22,14 @@ export interface AudienceInput {
  * Nachrichten und Ankündigungen an Gruppen von Mitgliedern.
  *
  * Empfänger werden beim VERSAND serverseitig aus der Zielgruppe ermittelt (nie aus Client-Angaben) und als
- * Momentaufnahme gespeichert. Erreichbar sind Mitglieder mit aktivem Benutzerkonto in diesem Verein. Wer senden darf,
- * bestimmt `messages:send`: der Verein (alle Zielgruppen) oder Abteilungsleiter (nur die eigene Abteilung bzw. deren
- * Veranstaltungen). Jede Person liest nur Nachrichten, die an sie adressiert sind. Der Text wird nie als HTML gerendert.
+ * Momentaufnahme gespeichert. Erreichbar sind Mitglieder mit aktivem Benutzerkonto in diesem Verein. Wer wohin senden
+ * darf, bestimmt `messages:send` (seit 27.09.2026 hat es jede Rolle – wie in einer WhatsApp-Gruppe):
+ * - Reichweite Verein (Vorstand, Verwaltung): alle Zielgruppen, auch als Ankündigung und per E-Mail;
+ * - Abteilung (Abteilungsleitung): ebenso, aber nur die geleiteten Abteilungen und deren Veranstaltungen;
+ * - außerdem darf JEDER in die Gruppen schreiben, zu denen er selbst gehört (alle Mitglieder, eigene Abteilungen,
+ *   zugesagte Veranstaltungen, eigene Helfereinsätze) – als einfache Nachricht, ohne Ankündigung und E-Mail, mit
+ *   Obergrenze je Stunde. Solche Nachrichten verwaltet nur ihr Verfasser (und der Verein, der alles zurückrufen kann).
+ * Jede Person liest nur Nachrichten, die an sie adressiert sind. Der Text wird nie als HTML gerendert.
  * Gesendete Nachrichten sind unveränderlich; nur Entwürfe lassen sich bearbeiten. Löschen ist "weich" (Rückruf).
  */
 type Db = TenantDb | TenantTx;
@@ -75,67 +81,30 @@ export async function authorNames(
 // Berechtigungen und Zielgruppen
 // ---------------------------------------------------------------------------------------------
 
-function sendScope(ctx: TenantContext): "CLUB" | "DEPARTMENT" {
+type SendScope = "CLUB" | "DEPARTMENT" | "OWN";
+
+function sendScope(ctx: TenantContext): SendScope {
   const scope = scopeOf(ctx, "messages:send");
-  if (scope !== "CLUB" && scope !== "DEPARTMENT") throw forbidden();
+  if (!scope) throw forbidden();
   return scope;
 }
 
-/** Prüft, dass die gewählte Zielgruppe für diesen Absender erlaubt ist, und liefert Abteilung/Veranstaltung. */
-async function checkAudience(ctx: TenantContext, db: Db, input: AudienceInput) {
-  const scope = sendScope(ctx);
-  let department: { id: string; name: string } | null = null;
-  let event: { id: string; title: string; departmentId: string | null } | null = null;
+/** Wer ALLE gesendeten Nachrichten verwaltet (sehen, Lesestatistik, zurückrufen): nur der Verein. Sonst nur die eigenen. */
+const managesAllMessages = (ctx: TenantContext) => scopeOf(ctx, "messages:send") === "CLUB";
 
-  if (input.audience === "DEPARTMENT") {
-    department = await db.department.findFirst({
-      where: { id: input.departmentId!, isActive: true },
-      select: { id: true, name: true },
-    });
-    if (!department)
-      throw validationFailed({ departmentId: ["Diese Abteilung ist nicht verfügbar."] });
-    if (scope === "DEPARTMENT" && !ctx.ledDepartmentIds.includes(department.id))
-      throw validationFailed({
-        departmentId: ["Du kannst nur an deine eigene Abteilung schreiben."],
-      });
-  } else if (input.audience === "EVENT_PARTICIPANTS" || input.audience === "EVENT_HELPERS") {
-    event = await db.event.findFirst({
-      where: { id: input.eventId!, deletedAt: null },
-      select: { id: true, title: true, departmentId: true },
-    });
-    if (!event) throw validationFailed({ eventId: ["Diese Veranstaltung ist nicht verfügbar."] });
-    if (
-      scope === "DEPARTMENT" &&
-      !(event.departmentId && ctx.ledDepartmentIds.includes(event.departmentId))
-    )
-      throw validationFailed({
-        eventId: [
-          "Du kannst nur an Teilnehmer und Helfer von Veranstaltungen deiner Abteilung schreiben.",
-        ],
-      });
-  } else if (scope === "DEPARTMENT") {
-    throw validationFailed({
-      audience: [
-        "Du kannst nur an deine Abteilung oder an Veranstaltungen deiner Abteilung schreiben.",
-      ],
-    });
-  }
-  return { department, event };
-}
-
-export interface RecipientResolution {
-  reachable: { memberId: string; userId: string }[];
-  /** Mitglieder der Zielgruppe ohne aktives Benutzerkonto (kein Konto oder gesperrt) – sie können nicht erreicht werden. */
-  unreachable: number;
-}
+/** Höchstens so viele Nachrichten je Stunde schreibt, wer nur als Mitglied einer Gruppe schreibt (gegen Massen-Nachrichten). */
+export const MEMBER_MESSAGES_PER_HOUR = 30;
+/** … und höchstens so oft speichert er Entwürfe (auch das Senden speichert zuerst) – keine unbegrenzten Datensätze. */
+export const MEMBER_DRAFT_SAVES_PER_HOUR = 100;
+const sendLimitKey = (ctx: TenantContext) => `message-send:${ctx.userId}`;
 
 const ACTIVE_STATUSES = ["ACTIVE", "HONORARY", "PASSIVE"] as const;
 
-async function resolveRecipients(
-  db: Db,
+/** Empfänger einer Zielgruppe: aktive Mitglieder (Status aktiv, Ehren- oder passives Mitglied), je nach Art eingegrenzt. */
+function audienceWhere(
   audience: Audience,
-  target: { departmentId?: string; eventId?: string },
-): Promise<RecipientResolution> {
+  target: { departmentId?: string | undefined; eventId?: string | undefined },
+): Prisma.MemberWhereInput {
   const where: Prisma.MemberWhereInput = {
     archivedAt: null,
     deletedAt: null,
@@ -152,9 +121,132 @@ async function resolveRecipients(
         shift: { eventId: target.eventId, deletedAt: null, status: { not: "CANCELLED" } },
       },
     };
+  return where;
+}
 
+/** Gehöre ich selbst (mit aktivem Konto) zu dieser Zielgruppe – bekäme ich also Nachrichten an sie? */
+async function belongsTo(ctx: TenantContext, db: Db, input: AudienceInput): Promise<boolean> {
+  const count = await db.member.count({
+    where: {
+      AND: [
+        audienceWhere(input.audience, input),
+        { userId: ctx.userId, membership: { is: { status: "ACTIVE" } } },
+      ],
+    },
+  });
+  return count > 0;
+}
+
+/**
+ * Prüft, dass die gewählte Zielgruppe für diesen Absender erlaubt ist, und liefert Abteilung/Veranstaltung.
+ * `managed`: Der Absender schreibt als Verein bzw. Leitung (darf ankündigen und E-Mails senden); sonst nur als Mitglied
+ * der Gruppe.
+ */
+async function checkAudience(ctx: TenantContext, db: Db, input: AudienceInput) {
+  const scope = sendScope(ctx);
+  let department: { id: string; name: string } | null = null;
+  let event: { id: string; title: string; departmentId: string | null } | null = null;
+
+  // Ohne Abteilung bzw. Veranstaltung keine Prüfung (sonst träfe `findFirst` irgendeine).
+  if (input.audience === "DEPARTMENT" && !input.departmentId)
+    throw validationFailed({ departmentId: ["Bitte wähle eine Abteilung."] });
+  if (
+    (input.audience === "EVENT_PARTICIPANTS" || input.audience === "EVENT_HELPERS") &&
+    !input.eventId
+  )
+    throw validationFailed({ eventId: ["Bitte wähle eine Veranstaltung."] });
+
+  if (input.audience === "DEPARTMENT") {
+    department = await db.department.findFirst({
+      where: { id: input.departmentId, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (!department)
+      throw validationFailed({ departmentId: ["Diese Abteilung ist nicht verfügbar."] });
+  } else if (input.audience === "EVENT_PARTICIPANTS" || input.audience === "EVENT_HELPERS") {
+    event = await db.event.findFirst({
+      where: { id: input.eventId, deletedAt: null },
+      select: { id: true, title: true, departmentId: true },
+    });
+    if (!event) throw validationFailed({ eventId: ["Diese Veranstaltung ist nicht verfügbar."] });
+  }
+
+  const led = (departmentId: string | null | undefined) =>
+    !!departmentId && ctx.ledDepartmentIds.includes(departmentId);
+  const managed =
+    scope === "CLUB" ||
+    (scope === "DEPARTMENT" &&
+      (department ? led(department.id) : event ? led(event.departmentId) : false));
+  if (managed) return { department, event, managed };
+
+  // Nicht als Leitung: nur in eine Gruppe, zu der man selbst gehört.
+  if (await belongsTo(ctx, db, input)) return { department, event, managed };
+  if (department)
+    throw validationFailed({
+      departmentId: [
+        scope === "DEPARTMENT"
+          ? "Du kannst nur an deine eigene Abteilung schreiben – oder an eine, zu der du gehörst."
+          : "Du kannst nur an Abteilungen schreiben, zu denen du gehörst.",
+      ],
+    });
+  if (event)
+    throw validationFailed({
+      eventId: [
+        input.audience === "EVENT_HELPERS"
+          ? "Du kannst nur an die Helfer von Veranstaltungen schreiben, bei denen du selbst eingetragen bist."
+          : "Du kannst nur an die Teilnehmer von Veranstaltungen schreiben, bei denen du zugesagt hast.",
+      ],
+    });
+  throw validationFailed({
+    audience: ["Du kannst nur an Gruppen schreiben, zu denen du gehörst."],
+  });
+}
+
+/** Ankündigung und E-Mail gibt es nur, wer als Verein bzw. Leitung schreibt. */
+function checkExtras(managed: boolean, input: { isAnnouncement: boolean; sendEmail: boolean }) {
+  if (managed || (!input.isAnnouncement && !input.sendEmail)) return;
+  throw validationFailed({
+    ...(input.isAnnouncement
+      ? { isAnnouncement: ["Ankündigungen schreiben nur Vorstand und Abteilungsleitung."] }
+      : {}),
+    ...(input.sendEmail
+      ? { sendEmail: ["Per E-Mail senden nur Vorstand und Abteilungsleitung."] }
+      : {}),
+  });
+}
+
+/**
+ * Darf ich in diese Gruppe schreiben – und auch ankündigen bzw. per E-Mail senden? Für den Chat (Eingabezeile zeigen oder
+ * nicht). Wirft nicht; der Versand prüft dieselben Regeln erneut.
+ */
+export async function postingRights(
+  ctx: TenantContext,
+  input: AudienceInput,
+): Promise<{ canPost: boolean; canAnnounce: boolean }> {
+  if (!can(ctx, "messages:send")) return { canPost: false, canAnnounce: false };
+  try {
+    const { managed } = await checkAudience(ctx, ctx.db, input);
+    return { canPost: true, canAnnounce: managed };
+  } catch (error) {
+    if (isAppError(error) && (error.code === "VALIDATION" || error.code === "FORBIDDEN"))
+      return { canPost: false, canAnnounce: false };
+    throw error;
+  }
+}
+
+export interface RecipientResolution {
+  reachable: { memberId: string; userId: string }[];
+  /** Mitglieder der Zielgruppe ohne aktives Benutzerkonto (kein Konto oder gesperrt) – sie können nicht erreicht werden. */
+  unreachable: number;
+}
+
+async function resolveRecipients(
+  db: Db,
+  audience: Audience,
+  target: { departmentId?: string; eventId?: string },
+): Promise<RecipientResolution> {
   const members = await db.member.findMany({
-    where,
+    where: audienceWhere(audience, target),
     select: { id: true, userId: true, membership: { select: { status: true } } },
     take: 5000,
   });
@@ -174,21 +266,63 @@ export async function previewRecipients(
     departmentId: input.departmentId,
     eventId: input.eventId,
   });
-  return { reachable: resolved.reachable.length, unreachable: resolved.unreachable };
+  // Wie beim Versand: Der Absender selbst ist kein Empfänger (sonst stünde hier immer einer zu viel).
+  const others = resolved.reachable.filter((r) => r.userId !== ctx.userId);
+  return { reachable: others.length, unreachable: resolved.unreachable };
 }
 
-/** Auswahllisten für das Formular – im Rahmen dessen, was der Absender erreichen darf. */
-export async function getComposeOptions(ctx: TenantContext): Promise<{
-  scope: "CLUB" | "DEPARTMENT";
-  departments: { id: string; name: string }[];
-  events: { id: string; title: string; startsAt: Date }[];
-} | null> {
+export interface ComposeOptions {
+  scope: SendScope;
+  /** Darf ich an alle Mitglieder schreiben (als Verein oder weil ich selbst Mitglied bin)? */
+  allMembers: boolean;
+  /** `managed`: als Leitung bzw. Verein – dann gibt es auch Ankündigung und E-Mail. */
+  departments: { id: string; name: string; managed: boolean }[];
+  /** `asParticipant`/`asHelper`: an die Teilnehmer bzw. Helfer dieser Veranstaltung darf ich schreiben. */
+  events: {
+    id: string;
+    title: string;
+    startsAt: Date;
+    managed: boolean;
+    asParticipant: boolean;
+    asHelper: boolean;
+  }[];
+}
+
+/**
+ * Auswahllisten für das Formular – im Rahmen dessen, was der Absender erreichen darf: der Verein alles, die Leitung ihre
+ * Abteilungen und deren Veranstaltungen, dazu jeder die eigenen Gruppen. `include`: eine Gruppe, aus deren Chat man kommt
+ * („Mit Betreff schreiben“) – sie steht auch dann in der Liste, wenn sie sonst herausfiele (z. B. eine länger
+ * zurückliegende Veranstaltung), solange man dort schreiben darf. `null`, wenn es nichts gibt, wohin ich schreiben kann.
+ */
+export async function getComposeOptions(
+  ctx: TenantContext,
+  { include }: { include?: AudienceInput } = {},
+): Promise<ComposeOptions | null> {
   const scope = scopeOf(ctx, "messages:send");
-  if (scope !== "CLUB" && scope !== "DEPARTMENT") return null;
-  const ids = scope === "DEPARTMENT" ? [...ctx.ledDepartmentIds] : null;
-  const [departments, events] = await Promise.all([
+  if (!scope) return null;
+  const club = scope === "CLUB";
+  const led = scope === "DEPARTMENT" ? [...ctx.ledDepartmentIds] : [];
+  // Meine eigenen Gruppen (als Mitglied mit aktivem Konto): Abteilungen, zugesagte Veranstaltungen, Helfereinsätze.
+  const me: Prisma.MemberWhereInput = {
+    ...audienceWhere("ALL_MEMBERS", {}),
+    userId: ctx.userId,
+    membership: { is: { status: "ACTIVE" } },
+  };
+  const accepted: Prisma.EventParticipantWhereInput = { status: "ACCEPTED", member: { is: me } };
+  const helping: Prisma.EventShiftWhereInput = {
+    deletedAt: null,
+    status: { not: "CANCELLED" },
+    assignments: { some: { status: "CONFIRMED", member: { is: me } } },
+  };
+  const [isMember, departments, events] = await Promise.all([
+    club ? Promise.resolve(true) : ctx.db.member.count({ where: me }).then((n) => n > 0),
     ctx.db.department.findMany({
-      where: { isActive: true, ...(ids ? { id: { in: ids } } : {}) },
+      where: {
+        isActive: true,
+        ...(club
+          ? {}
+          : { OR: [{ id: { in: led } }, { members: { some: { member: { is: me } } } }] }),
+      },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
       take: 200,
@@ -198,14 +332,83 @@ export async function getComposeOptions(ctx: TenantContext): Promise<{
         deletedAt: null,
         status: { in: ["PUBLISHED", "COMPLETED"] },
         endsAt: { gte: addBerlinDays(startOfBerlinDay(new Date()), -30) },
-        ...(ids ? { departmentId: { in: ids } } : {}),
+        ...(club
+          ? {}
+          : {
+              OR: [
+                { departmentId: { in: led } },
+                { participants: { some: accepted } },
+                { shifts: { some: helping } },
+              ],
+            }),
       },
       orderBy: { startsAt: "asc" },
-      select: { id: true, title: true, startsAt: true },
+      select: {
+        id: true,
+        title: true,
+        startsAt: true,
+        departmentId: true,
+        participants: { where: accepted, select: { id: true }, take: 1 },
+        shifts: { where: helping, select: { id: true }, take: 1 },
+      },
       take: 200,
     }),
   ]);
-  return { scope, departments, events };
+  const isLed = (id: string | null) => club || (!!id && led.includes(id));
+  const options: ComposeOptions = {
+    scope,
+    allMembers: isMember,
+    departments: departments.map((d) => ({ ...d, managed: isLed(d.id) })),
+    events: events.map((e) => {
+      const managed = isLed(e.departmentId);
+      return {
+        id: e.id,
+        title: e.title,
+        startsAt: e.startsAt,
+        managed,
+        asParticipant: managed || e.participants.length > 0,
+        asHelper: managed || e.shifts.length > 0,
+      };
+    }),
+  };
+  if (include) await includeTarget(ctx, options, include);
+  if (!options.allMembers && options.departments.length === 0 && options.events.length === 0)
+    return null;
+  return options;
+}
+
+/** Nimmt die Gruppe eines Chats in die Auswahl auf, falls sie fehlt und ich dort schreiben darf. */
+async function includeTarget(ctx: TenantContext, options: ComposeOptions, target: AudienceInput) {
+  if (target.audience === "ALL_MEMBERS") return;
+  const rights = await postingRights(ctx, target);
+  if (!rights.canPost) return;
+  if (target.audience === "DEPARTMENT") {
+    if (options.departments.some((d) => d.id === target.departmentId)) return;
+    const department = await ctx.db.department.findFirst({
+      where: { id: target.departmentId, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (department) options.departments.push({ ...department, managed: rights.canAnnounce });
+    return;
+  }
+  const asParticipant = target.audience === "EVENT_PARTICIPANTS";
+  const known = options.events.find((e) => e.id === target.eventId);
+  if (known) {
+    if (asParticipant) known.asParticipant = true;
+    else known.asHelper = true;
+    return;
+  }
+  const event = await ctx.db.event.findFirst({
+    where: { id: target.eventId, deletedAt: null },
+    select: { id: true, title: true, startsAt: true },
+  });
+  if (event)
+    options.events.push({
+      ...event,
+      managed: rights.canAnnounce,
+      asParticipant: rights.canAnnounce || asParticipant,
+      asHelper: rights.canAnnounce || !asParticipant,
+    });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -219,8 +422,7 @@ async function toDto(
   extra: { readCount: number | null; readByMe: boolean | null },
 ): Promise<MessageDto> {
   const manage =
-    can(ctx, "messages:send") &&
-    (scopeOf(ctx, "messages:send") === "CLUB" || row.authorUserId === ctx.userId);
+    can(ctx, "messages:send") && (managesAllMessages(ctx) || row.authorUserId === ctx.userId);
   return {
     id: row.id,
     subject: row.subject,
@@ -279,7 +481,7 @@ export async function countUnreadMessages(ctx: TenantContext): Promise<number> {
   });
 }
 
-/** Für Absender: gesendete Nachrichten bzw. Entwürfe. Verein = alle; Abteilungsleiter = die selbst verfassten. */
+/** Für Absender: gesendete Nachrichten bzw. Entwürfe. Verein = alle; alle anderen = die selbst verfassten. */
 export async function listSent(
   ctx: TenantContext,
   view: "sent" | "drafts",
@@ -289,10 +491,8 @@ export async function listSent(
   const where: Prisma.MessageWhereInput = {
     deletedAt: null,
     status: view === "drafts" ? "DRAFT" : "SENT",
-    // Entwürfe sind persönlich; gesendete Nachrichten sieht der Verein vollständig.
-    ...(view === "drafts" || scopeOf(ctx, "messages:send") === "DEPARTMENT"
-      ? { authorUserId: ctx.userId }
-      : {}),
+    // Entwürfe sind persönlich; gesendete Nachrichten sieht der Verein vollständig, alle anderen nur ihre eigenen.
+    ...(view === "drafts" || !managesAllMessages(ctx) ? { authorUserId: ctx.userId } : {}),
   };
   const [rows, total] = await Promise.all([
     ctx.db.message.findMany({
@@ -356,11 +556,10 @@ export async function getMessage(ctx: TenantContext, id: string): Promise<Messag
   }
 
   if (!can(ctx, "messages:send")) throw notFound("Die Nachricht");
-  // Verein: alle gesendeten Nachrichten plus eigene Entwürfe. Abteilungsleiter: nur die selbst verfassten.
-  const visible: Prisma.MessageWhereInput =
-    scopeOf(ctx, "messages:send") === "DEPARTMENT"
-      ? { authorUserId: ctx.userId }
-      : { OR: [{ status: "SENT" }, { authorUserId: ctx.userId }] };
+  // Verein: alle gesendeten Nachrichten plus eigene Entwürfe. Alle anderen: nur die selbst verfassten.
+  const visible: Prisma.MessageWhereInput = managesAllMessages(ctx)
+    ? { OR: [{ status: "SENT" }, { authorUserId: ctx.userId }] }
+    : { authorUserId: ctx.userId };
   const row = await ctx.db.message.findFirst({
     where: { AND: [{ id, deletedAt: null }, visible] },
     include,
@@ -393,7 +592,13 @@ export async function saveDraft(
   input: MessageInput,
   id?: string,
 ): Promise<{ id: string }> {
-  const { department, event } = await checkAudience(ctx, ctx.db, input);
+  const { department, event, managed } = await checkAudience(ctx, ctx.db, input);
+  checkExtras(managed, input);
+  if (!managed) {
+    // Schon an der Obergrenze? Dann gar nicht erst speichern (sonst bliebe bei jedem Versuch ein Entwurf liegen).
+    await assertNotRateLimited(sendLimitKey(ctx), MEMBER_MESSAGES_PER_HOUR);
+    await enforceRateLimit(`message-draft:${ctx.userId}`, MEMBER_DRAFT_SAVES_PER_HOUR, 3600);
+  }
   if (id) await loadOwnDraft(ctx, id);
   const data = {
     subject: input.subject,
@@ -421,12 +626,15 @@ export async function sendDraft(
 ): Promise<{ recipients: number; unreachable: number }> {
   const draft = await loadOwnDraft(ctx, id);
   const audience = draft.audience;
-  // Zielgruppe und Reichweite erneut prüfen – Rechte oder Veranstaltung können sich seit dem Entwurf geändert haben.
-  await checkAudience(ctx, ctx.db, {
+  // Zielgruppe und Reichweite erneut prüfen – Rechte, Gruppe oder Veranstaltung können sich seit dem Entwurf geändert haben.
+  const { managed } = await checkAudience(ctx, ctx.db, {
     audience,
     departmentId: draft.departmentId ?? undefined,
     eventId: draft.eventId ?? undefined,
   });
+  checkExtras(managed, draft);
+  // Wer nur als Mitglied der Gruppe schreibt, hat eine Obergrenze je Stunde (Vorstand und Leitung nicht).
+  if (!managed) await enforceRateLimit(sendLimitKey(ctx), MEMBER_MESSAGES_PER_HOUR, 3600);
 
   return ctx.db.$transaction(async (tx) => {
     // Bedingtes Update: Nur EIN paralleler Versand gewinnt.
@@ -445,7 +653,9 @@ export async function sendDraft(
     if (recipients.length === 0)
       throw validationFailed({
         audience: [
-          "Diese Zielgruppe enthält niemanden, der erreicht werden kann (kein aktives Benutzerkonto).",
+          resolved.reachable.length > 0
+            ? "Außer dir hat in dieser Gruppe niemand ein aktives Benutzerkonto – die Nachricht würde niemanden erreichen."
+            : "Diese Zielgruppe enthält niemanden, der erreicht werden kann (kein aktives Benutzerkonto).",
         ],
       });
 
@@ -488,7 +698,7 @@ export async function deleteMessage(ctx: TenantContext, id: string): Promise<voi
     where: {
       id,
       deletedAt: null,
-      ...(scopeOf(ctx, "messages:send") === "DEPARTMENT" ? { authorUserId: ctx.userId } : {}),
+      ...(managesAllMessages(ctx) ? {} : { authorUserId: ctx.userId }),
     },
   });
   if (!row) throw notFound("Die Nachricht");
@@ -501,6 +711,14 @@ export async function deleteMessage(ctx: TenantContext, id: string): Promise<voi
       summary: `Nachricht „${row.subject}“ ${row.status === "DRAFT" ? "(Entwurf) " : ""}gelöscht`,
     });
   });
+}
+
+/**
+ * Verwirft einen gerade erst angelegten, nie gesendeten Entwurf (Senden direkt aus Chat oder Formular ist gescheitert – der
+ * Text steht dort noch). Endgültig, ohne Protokoll: Er hatte nie Empfänger.
+ */
+export async function discardDraft(ctx: TenantContext, id: string): Promise<void> {
+  await ctx.db.message.deleteMany({ where: { id, status: "DRAFT", authorUserId: ctx.userId } });
 }
 
 /** Werte für das Formular beim Bearbeiten eines Entwurfs. */

@@ -58,9 +58,13 @@ export function ComposeForm({
   draftId: string | null;
   defaults: MessageFormInput;
   options: {
-    scope: "CLUB" | "DEPARTMENT";
-    departments: { id: string; name: string }[];
-    events: EventChoice[];
+    scope: "CLUB" | "DEPARTMENT" | "OWN";
+    /** An alle Mitglieder schreiben (als Verein oder als Mitglied)? */
+    allMembers: boolean;
+    /** `managed`: als Verein bzw. Leitung – nur dann gibt es Ankündigung und E-Mail. */
+    departments: { id: string; name: string; managed: boolean }[];
+    /** `asParticipant`/`asHelper`: an die Teilnehmer bzw. Helfer dieser Veranstaltung darf ich schreiben. */
+    events: (EventChoice & { managed: boolean; asParticipant: boolean; asHelper: boolean })[];
   };
 }) {
   const router = useRouter();
@@ -79,10 +83,25 @@ export function ComposeForm({
   } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // Ankündigung und E-Mail nur, wer hier als Verein bzw. Leitung schreibt – alle anderen schreiben einfache Nachrichten.
+  const announceAllowed = (target: {
+    audience: Audience;
+    departmentId?: string;
+    eventId?: string;
+  }) =>
+    options.scope === "CLUB" ||
+    (target.audience === "DEPARTMENT" &&
+      !!options.departments.find((d) => d.id === target.departmentId)?.managed) ||
+    ((target.audience === "EVENT_PARTICIPANTS" || target.audience === "EVENT_HELPERS") &&
+      !!options.events.find((e) => e.id === target.eventId)?.managed);
+
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: messageFormSchema,
     defaultValues: defaults,
-    action: async (values): Promise<ActionResult<SubmitResult>> => {
+    action: async (input): Promise<ActionResult<SubmitResult>> => {
+      const values = announceAllowed(input)
+        ? input
+        : { ...input, isAnnouncement: false, sendEmail: false };
       if (mode.current === "draft") {
         const saved = await saveDraftAction(draftId, values);
         return saved.ok
@@ -144,9 +163,19 @@ export function ComposeForm({
     };
   }, [audience, departmentId, eventId, targetReady, targetKey]);
 
+  // Nur Zielgruppen, die ich erreichen darf (als Mitglied: alle Mitglieder, meine Abteilungen, meine Veranstaltungen).
   const audienceOptions = (Object.keys(AUDIENCE_LABEL) as Audience[])
-    .filter((value) => options.scope === "CLUB" || value !== "ALL_MEMBERS")
+    .filter((value) =>
+      value === "ALL_MEMBERS"
+        ? options.allMembers
+        : value === "DEPARTMENT"
+          ? options.departments.length > 0
+          : value === "EVENT_HELPERS"
+            ? options.events.some((e) => e.asHelper)
+            : options.events.some((e) => e.asParticipant),
+    )
     .map((value) => ({ value, label: AUDIENCE_LABEL[value] }));
+  const extrasAllowed = announceAllowed({ audience, departmentId, eventId });
   const body = form.watch("body") ?? "";
 
   return (
@@ -176,7 +205,11 @@ export function ComposeForm({
             name="eventId"
             label="Veranstaltung"
             placeholder="Bitte wählen"
-            options={eventOptions(options.events)}
+            options={eventOptions(
+              options.events.filter((e) =>
+                audience === "EVENT_HELPERS" ? e.asHelper : e.asParticipant,
+              ),
+            )}
             required
           />
         )}
@@ -207,20 +240,27 @@ export function ComposeForm({
             {body.length} / 5000
           </p>
         </div>
-        <div className="grid gap-3">
-          <CheckboxField
-            form={form}
-            name="isAnnouncement"
-            label="Als Ankündigung kennzeichnen"
-            hint="Ankündigungen werden in der Benachrichtigung besonders benannt."
-          />
-          <CheckboxField
-            form={form}
-            name="sendEmail"
-            label="Zusätzlich per E-Mail senden"
-            hint="Nur an Personen, die E-Mail-Benachrichtigungen nicht abgeschaltet haben."
-          />
-        </div>
+        {extrasAllowed ? (
+          <div className="grid gap-3">
+            <CheckboxField
+              form={form}
+              name="isAnnouncement"
+              label="Als Ankündigung kennzeichnen"
+              hint="Ankündigungen werden in der Benachrichtigung besonders benannt."
+            />
+            <CheckboxField
+              form={form}
+              name="sendEmail"
+              label="Zusätzlich per E-Mail senden"
+              hint="Nur an Personen, die E-Mail-Benachrichtigungen nicht abgeschaltet haben."
+            />
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Alle in der Gruppe sehen deine Nachricht im Chat und bekommen eine Benachrichtigung.
+            Ankündigungen und E-Mails verschicken Vorstand und Abteilungsleitung.
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <Button

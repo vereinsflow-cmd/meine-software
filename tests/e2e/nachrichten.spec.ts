@@ -20,13 +20,13 @@ async function openChat(page: Page, title: string): Promise<void> {
 }
 
 test.describe("Nachrichten – Empfänger", () => {
-  test("Chatliste zeigt Ungelesenes; der Chat zeigt Sprechblasen, markiert als gelesen, Schreiben nur für Berechtigte", async ({
+  test("Chatliste zeigt Ungelesenes; der Chat zeigt Sprechblasen, markiert als gelesen, auch Mitglieder können schreiben", async ({
     page,
   }) => {
     await login(page, USERS.mitglied);
     await open(page, "/nachrichten");
     await expect(page.getByRole("heading", { level: 1, name: "Nachrichten" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Neue Nachricht" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Neue Nachricht" })).toBeVisible(); // jeder darf schreiben
 
     const entry = chatList(page).getByRole("link", { name: /^Alle Mitglieder/ });
     await expect(entry).toContainText("Willkommen bei VereinsFlow!"); // Vorschau: der Betreff
@@ -39,22 +39,14 @@ test.describe("Nachrichten – Empfänger", () => {
     await expect(welcome).toContainText("Liebe Mitglieder,");
     await expect(welcome.getByRole("button")).toHaveCount(0); // Empfänger dürfen nicht zurückrufen
     await expect(welcome).not.toContainText("gelesen"); // keine Lesestatistik für Empfänger
-    await expect(
-      page.getByText("Nur Vorstand und Abteilungsleitung können hier schreiben."),
-    ).toBeVisible();
-    await expect(page.getByRole("textbox", { name: /^Nachricht an/ })).toHaveCount(0);
+    // Maria gehört zu „Alle Mitglieder“ – also schreibt sie hier mit (wie in einer WhatsApp-Gruppe).
+    await expect(page.getByRole("textbox", { name: "Nachricht an Alle Mitglieder" })).toBeVisible();
+    await expect(page.getByText(/deshalb kannst du hier nicht schreiben/)).toHaveCount(0);
 
     // Geöffnet = gelesen
     await expect(chatList(page).getByRole("link", { name: /^Alle Mitglieder/ })).not.toContainText(
       /ungelesen/,
     );
-  });
-
-  test("Helfer und Mitglieder dürfen keine Nachrichten schreiben", async ({ page }) => {
-    await login(page, USERS.helfer);
-    await open(page, "/nachrichten/neu");
-    await expect(page.getByText("Kein Zugriff")).toBeVisible();
-    await expect(page.getByLabel("Betreff")).toHaveCount(0);
   });
 
   test("Nachrichten anderer Vereine und fremde IDs sind nicht erreichbar; Entwürfe stehen nicht im Chat", async ({
@@ -95,6 +87,9 @@ test.describe("Nachrichten – Schreiben", () => {
 
     const input = page.getByRole("textbox", { name: "Nachricht an Alle Mitglieder" });
     await expect(page.getByRole("button", { name: "Senden" })).toBeDisabled(); // leer geht nichts
+    // Vorstand und Verwaltung dürfen hier auch ankündigen und per E-Mail senden.
+    await expect(page.getByRole("checkbox", { name: "Als Ankündigung" })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Auch per E-Mail" })).toBeVisible();
     await input.fill(`${text}\nWer kann ab 10 Uhr helfen?`);
     await page.getByRole("button", { name: "Senden" }).click();
     const confirm = page.getByRole("alertdialog", { name: "Nachricht senden?" });
@@ -232,27 +227,135 @@ test.describe("Nachrichten – Schreiben", () => {
     await expect(page.getByRole("link", { name: new RegExp(subject) })).toHaveCount(0);
   });
 
-  test("Abteilungsleiterin: keine Nachricht an alle, nur an die eigene Abteilung", async ({
+  test("Abteilungsleiterin: an die eigene Abteilung auch mit Ankündigung und E-Mail, an alle nur als einfache Nachricht", async ({
     page,
   }) => {
     await login(page, USERS.abteilung);
+    // Im Chat „Alle Mitglieder“ schreibt sie mit – als Mitglied, also ohne Ankündigung und E-Mail.
     await open(page, "/nachrichten?chat=alle");
-    await expect(
-      page.getByText("In diesem Chat schreiben nur Vorstand und Verwaltung."),
-    ).toBeVisible();
-    await expect(page.getByRole("textbox", { name: /^Nachricht an/ })).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "Nachricht an Alle Mitglieder" })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Als Ankündigung" })).toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: "Auch per E-Mail" })).toHaveCount(0);
 
     await open(page, "/nachrichten/neu");
     const audience = page.getByLabel(/^An wen\?/);
     await expect(audience.locator("option")).toHaveText([
+      "Alle Mitglieder",
       "Eine Abteilung",
       "Zugesagte Teilnehmer einer Veranstaltung",
       "Eingetragene Helfer einer Veranstaltung",
     ]);
+    // Vorausgewählt: die eigene Abteilung – dort als Leitung, also mit Ankündigung und E-Mail.
+    await expect(audience.locator("option:checked")).toHaveText("Eine Abteilung");
     await expect(page.getByLabel(/^Abteilung/).locator("option")).toHaveText([
       "Bitte wählen",
       "Fußball",
     ]);
     await expect(page.getByRole("status").filter({ hasText: /Erreicht \d+ Person/ })).toBeVisible();
+    await expect(page.getByLabel("Als Ankündigung kennzeichnen")).toBeVisible();
+    await expect(page.getByLabel("Zusätzlich per E-Mail senden")).toBeVisible();
+
+    await audience.selectOption({ label: "Alle Mitglieder" });
+    await expect(page.getByLabel("Als Ankündigung kennzeichnen")).toHaveCount(0);
+    await expect(page.getByLabel("Zusätzlich per E-Mail senden")).toHaveCount(0);
+    await expect(
+      page.getByText("Ankündigungen und E-Mails verschicken Vorstand und Abteilungsleitung."),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Nachrichten – Mitglieder schreiben", () => {
+  test("Mitglied schreibt im Chat „Alle Mitglieder“: ohne Ankündigung und E-Mail, grüne Blase; der Vorstand sieht den Namen und ruft zurück", async ({
+    page,
+    browser,
+  }) => {
+    const text = uniqueSubject("Kuchen fürs Sommerfest");
+    await login(page, USERS.mitglied);
+    await open(page, "/nachrichten");
+    await openChat(page, "Alle Mitglieder");
+    await expect(page.getByText(/^Erreicht \d+ Personen$/)).toBeVisible();
+
+    // Nur einfache Nachrichten: Ankündigung und E-Mail gibt es für Mitglieder nicht.
+    const input = page.getByRole("textbox", { name: "Nachricht an Alle Mitglieder" });
+    await expect(input).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Als Ankündigung" })).toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: "Auch per E-Mail" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Mit Betreff schreiben" })).toBeVisible();
+
+    await input.fill(`${text}\nIch bringe zwei Bleche Streuselkuchen mit.`);
+    await page.getByRole("button", { name: "Senden" }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Nachricht senden?" });
+    await expect(confirm).toContainText(/an \d+ Personen im Chat „Alle Mitglieder“/);
+    await expect(confirm).not.toContainText("per E-Mail");
+    await confirm.getByRole("button", { name: "Senden" }).click();
+    await expect(page.getByText(/Nachricht an \d+ Personen gesendet\./)).toBeVisible();
+    await expect(input).toHaveValue("");
+
+    // Eigene Nachricht: rechts in Grün, ohne „Ankündigung“, mit Lesestatistik und eigenem Zurückrufen.
+    const mine = page.getByRole("article", { name: `Nachricht von dir: ${text}` });
+    await expect(mine).toContainText("Ich bringe zwei Bleche Streuselkuchen mit.");
+    await expect(mine).not.toContainText("Ankündigung");
+    await expect(mine).toHaveCSS("background-color", "rgb(217, 253, 211)"); // #d9fdd3 (WhatsApp-Grün)
+    await expect(mine).toContainText(/0 von \d+ gelesen/);
+    await expect(page.getByRole("button", { name: `Aktionen für „${text}“` })).toBeVisible();
+
+    // Der Vorstand sieht die Nachricht links mit Marias Namen – und darf sie (als Verein) zurückrufen.
+    const board = await browser.newContext();
+    const bernd = await board.newPage();
+    await login(bernd, USERS.vorstand);
+    await open(bernd, "/nachrichten?chat=alle");
+    const hers = bernd.getByRole("article", { name: `Nachricht von Maria Mitglied: ${text}` });
+    await expect(hers).toContainText("Maria Mitglied"); // Name über der Blase
+    await expect(hers).toContainText("Ich bringe zwei Bleche Streuselkuchen mit.");
+
+    // Geöffnet = gelesen – das sieht Maria an ihrer Nachricht.
+    await page.reload();
+    await expect(page.getByRole("article", { name: `Nachricht von dir: ${text}` })).toContainText(
+      /1 von \d+ gelesen/,
+    );
+
+    await bernd.getByRole("button", { name: `Aktionen für „${text}“` }).click();
+    await bernd.getByRole("menuitem", { name: "Zurückrufen" }).click();
+    await bernd.getByRole("alertdialog").getByRole("button", { name: "Zurückrufen" }).click();
+    await expect(bernd.getByText("Nachricht zurückgerufen.")).toBeVisible();
+    await expect(bernd.getByRole("article", { name: new RegExp(text) })).toHaveCount(0);
+    await board.close();
+
+    await page.reload();
+    await expect(page.getByRole("article", { name: new RegExp(text) })).toHaveCount(0);
+  });
+
+  test("Mitglied: „Neue Nachricht“ bietet nur die eigenen Gruppen – Ankündigung und E-Mail nur für Vorstand und Leitung", async ({
+    page,
+  }) => {
+    await login(page, USERS.mitglied);
+    await open(page, "/nachrichten");
+    await page.getByRole("link", { name: "Neue Nachricht" }).first().click();
+    await expect(page.getByRole("heading", { level: 1, name: "Neue Nachricht" })).toBeVisible();
+    await expect(page.getByText(/an eine deiner Gruppen/)).toBeVisible();
+    await page.waitForLoadState("networkidle");
+
+    const audience = page.getByLabel(/^An wen\?/);
+    await expect(audience.locator("option:checked")).toHaveText("Alle Mitglieder");
+    await expect(
+      page.getByText("Ankündigungen und E-Mails verschicken Vorstand und Abteilungsleitung."),
+    ).toBeVisible();
+    await expect(page.getByLabel("Als Ankündigung kennzeichnen")).toHaveCount(0);
+    await expect(page.getByLabel("Zusätzlich per E-Mail senden")).toHaveCount(0);
+
+    // Abteilungen: nur ihre eigene (Tischtennis) – nicht Fußball, Handball oder Jugendarbeit.
+    await audience.selectOption({ label: "Eine Abteilung" });
+    await expect(page.getByLabel(/^Abteilung/).locator("option")).toHaveText([
+      "Bitte wählen",
+      "Tischtennis",
+    ]);
+
+    // Veranstaltungen: nur die, bei denen sie zugesagt hat oder als Helferin eingetragen ist.
+    await audience.selectOption({ label: "Zugesagte Teilnehmer einer Veranstaltung" });
+    const event = page.getByLabel(/^Veranstaltung/);
+    await expect(event.locator("option", { hasText: "Sommerfest 2026" })).toHaveCount(1);
+    for (const other of ["Fußball-Training Herren", "Vorstandssitzung", "Arbeitseinsatz"])
+      await expect(event.locator("option", { hasText: other })).toHaveCount(0);
+    await expect(page.getByLabel("Als Ankündigung kennzeichnen")).toHaveCount(0);
   });
 });

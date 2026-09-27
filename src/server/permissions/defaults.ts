@@ -116,6 +116,8 @@ export const SYSTEM_ROLES: readonly RoleDefinition[] = [
       "tasks:manage": DEPARTMENT,
       "tasks:update": OWN,
       "messages:read": OWN,
+      // Die geleiteten Abteilungen und deren Veranstaltungen (auch mit Ankündigung und E-Mail) – dazu wie jeder die
+      // Gruppen, zu denen man selbst gehört.
       "messages:send": DEPARTMENT,
       "documents:read": CLUB,
       "documents:upload": DEPARTMENT,
@@ -139,6 +141,8 @@ export const SYSTEM_ROLES: readonly RoleDefinition[] = [
       "tasks:read": OWN,
       "tasks:update": OWN,
       "messages:read": OWN,
+      // Schreiben wie in einer WhatsApp-Gruppe: nur in Gruppen, zu denen man gehört – ohne Ankündigung und E-Mail.
+      "messages:send": OWN,
       "documents:read": CLUB,
     },
   },
@@ -158,6 +162,7 @@ export const SYSTEM_ROLES: readonly RoleDefinition[] = [
       "shifts:read": CLUB,
       "shifts:signup": CLUB,
       "messages:read": OWN,
+      "messages:send": OWN, // wie beim Helfer: nur in die eigenen Gruppen
       "documents:read": CLUB,
     },
   },

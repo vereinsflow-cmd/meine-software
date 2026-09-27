@@ -245,7 +245,7 @@ export const FAQ: readonly FaqSection[] = [
   {
     id: "nachrichten",
     title: "Nachrichten",
-    description: "Mitteilungen und Ankündigungen deines Vereins lesen.",
+    description: "Mitteilungen deines Vereins lesen und selbst schreiben.",
     requires: "messages:read",
     items: [
       {
@@ -253,10 +253,22 @@ export const FAQ: readonly FaqSection[] = [
         question: "Wo lese ich Nachrichten meines Vereins?",
         answer: [
           "Unter „Nachrichten“ – aufgebaut wie WhatsApp: Jede Gruppe hat ihren eigenen Chat (alle Mitglieder, deine Abteilung, die Helfer oder Teilnehmer einer Veranstaltung). Die grüne Zahl zeigt, wie viele Nachrichten du noch nicht gelesen hast; sobald du den Chat öffnest, gelten sie als gelesen.",
-          "Schreiben dürfen in den Chats nur Vorstand und Abteilungsleitung. Wichtige Nachrichten bekommst du zusätzlich als Benachrichtigung.",
+          "Schreiben kannst du in jedem Chat einer Gruppe, zu der du gehörst – wie in einer WhatsApp-Gruppe. Neue Nachrichten bekommst du zusätzlich als Benachrichtigung.",
         ],
         link: { href: "/nachrichten", label: "Zu den Nachrichten" },
         keywords: "mitteilung ankündigung rundmail posteingang chat whatsapp gruppe",
+      },
+      {
+        id: "nachricht-senden",
+        question: "Wie schreibe ich eine Nachricht?",
+        steps: [
+          "Öffne „Nachrichten“ und den Chat der Gruppe, schreibe unten deine Nachricht und tippe auf den grünen Pfeil – nach einer kurzen Rückfrage ist sie verschickt.",
+          "Für eine Gruppe ohne Chat oder mit eigenem Betreff: Klicke auf „Neue Nachricht“, wähle unter „An wen?“ die Zielgruppe, schreibe Betreff und Text und klicke auf „Jetzt senden …“.",
+          "Zurückrufen: Tippe in deiner Nachricht oben rechts auf den kleinen Pfeil und wähle „Zurückrufen“.",
+        ],
+        tip: "Schreiben kannst du in jede Gruppe, zu der du gehörst: alle Mitglieder, deine Abteilungen und die Veranstaltungen, bei denen du zugesagt hast oder als Helfer eingetragen bist. Vorstand und Abteilungsleitung schreiben auch an andere Gruppen und können eine Nachricht als Ankündigung oder zusätzlich per E-Mail senden. Die Häkchen an deiner Nachricht zeigen, wie viele sie schon gelesen haben (blau = alle). Eine gesendete Nachricht lässt sich nicht mehr ändern, aber zurückrufen. Der Text ist reiner Text – Formatierungen werden nicht dargestellt.",
+        link: { href: "/nachrichten/neu", label: "Neue Nachricht" },
+        keywords: "rundmail ankündigung mitteilung schreiben email versenden antworten chat gruppe",
       },
     ],
   },
@@ -394,7 +406,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "rollen",
         question: "Welche Rollen gibt es und was dürfen sie?",
         answer: [
-          "Vereinsadministrator: alles im Verein. Vorstandsmitglied: Mitglieder, Veranstaltungen, Helferplanung, Aufgaben, Nachrichten, Dokumente und die offenen Zahlungen (Rechnungen). Abteilungsleiter: dasselbe (ohne die offenen Zahlungen), aber nur für die eigene Abteilung. Helfer und Mitglied: Veranstaltungen ansehen, zu- und absagen, sich in Schichten eintragen, Nachrichten lesen.",
+          "Vereinsadministrator: alles im Verein. Vorstandsmitglied: Mitglieder, Veranstaltungen, Helferplanung, Aufgaben, Nachrichten, Dokumente und die offenen Zahlungen (Rechnungen). Abteilungsleiter: dasselbe (ohne die offenen Zahlungen), aber nur für die eigene Abteilung. Helfer und Mitglied: Veranstaltungen ansehen, zu- und absagen, sich in Schichten eintragen, Nachrichten lesen und in den eigenen Gruppen schreiben.",
           "Die Rolle jeder Person steht unter „Benutzer und Rollen“. Der letzte Vereinsadministrator kann nicht entfernt oder herabgestuft werden.",
         ],
         keywords: "rechte berechtigung zugriff admin vorstand",
@@ -474,23 +486,12 @@ export const FAQ: readonly FaqSection[] = [
     ],
   },
   {
-    id: "verwaltung-nachrichten",
-    title: "Für Vorstand: Nachrichten und Dokumente",
-    description: "Mitteilungen senden und Unterlagen bereitstellen.",
-    requires: "messages:send",
+    id: "verwaltung-dokumente",
+    title: "Für Vorstand: Dokumente",
+    description: "Unterlagen bereitstellen.",
+    // Nachrichten schreibt inzwischen jeder (Anleitung unter „Nachrichten“); Dokumente hochladen nur Vorstand und Leitung.
+    requires: "documents:upload",
     items: [
-      {
-        id: "nachricht-senden",
-        question: "Wie sende ich eine Nachricht an alle oder eine Gruppe?",
-        steps: [
-          "Öffne „Nachrichten“ und den Chat der Gruppe, schreibe unten deine Nachricht und tippe auf den grünen Pfeil – nach einer kurzen Rückfrage ist sie verschickt.",
-          "Für eine Gruppe ohne Chat oder mit eigenem Betreff: Klicke auf „Neue Nachricht“, wähle unter „An wen?“ die Zielgruppe, schreibe Betreff und Text und klicke auf „Jetzt senden …“.",
-          "Zurückrufen: Tippe in deiner Nachricht oben rechts auf den kleinen Pfeil und wähle „Zurückrufen“.",
-        ],
-        tip: "Die Häkchen an deiner Nachricht zeigen, wie viele sie schon gelesen haben (blau = alle). Im Chat wird die erste Zeile zum Betreff. Eine gesendete Nachricht lässt sich nicht mehr ändern, aber zurückrufen. Mit „Als Entwurf speichern“ machst du später weiter. Der Text ist reiner Text – Formatierungen werden nicht dargestellt.",
-        link: { href: "/nachrichten/neu", label: "Neue Nachricht" },
-        keywords: "rundmail ankündigung mitteilung schreiben email versenden",
-      },
       {
         id: "dokument-hochladen",
         question: "Wie stelle ich ein Dokument bereit?",

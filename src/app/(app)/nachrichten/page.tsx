@@ -90,7 +90,7 @@ export default async function MessagesPage({
               title="Noch keine Nachrichten"
               description={
                 canSend
-                  ? "Schreibe die erste Nachricht an Mitglieder, eine Abteilung oder die Helfer einer Veranstaltung."
+                  ? "Mit „Neue Nachricht“ schreibst du die erste – an alle Mitglieder oder eine deiner Gruppen."
                   : "Sobald dein Verein dir etwas mitteilt, erscheint es hier."
               }
               className="m-4 border-none"
@@ -105,7 +105,7 @@ export default async function MessagesPage({
           className={cn("min-h-0 min-w-0 flex-1 flex-col", chatOpen ? "flex" : "hidden md:flex")}
         >
           {chat ? (
-            <ChatThread chat={chat} canSendAnywhere={canSend} />
+            <ChatThread chat={chat} />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-[#efeae2] p-6 text-center dark:bg-[#0b141a]">
               {chatOpen ? (

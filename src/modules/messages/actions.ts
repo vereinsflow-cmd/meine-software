@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
 import { audienceSchema, idSchema, messageFormSchema } from "./schemas";
-import { deleteMessage, previewRecipients, saveDraft, sendDraft } from "./service";
+import { deleteMessage, discardDraft, previewRecipients, saveDraft, sendDraft } from "./service";
 
 const refresh = () => {
   revalidatePath("/nachrichten");
@@ -28,7 +28,11 @@ export async function saveDraftAction(
   }, "message-draft");
 }
 
-/** Speichert (falls nötig) und sendet in einem Schritt. Bei Fehlern im Versand bleibt der Entwurf erhalten. */
+/**
+ * Speichert (falls nötig) und sendet in einem Schritt. Scheitert der Versand, bleibt ein schon vorhandener Entwurf
+ * erhalten; ein eben erst dafür angelegter wird verworfen (der Text steht ja noch im Chat bzw. Formular) – sonst läge
+ * bei jedem Versuch ein weiterer Entwurf herum.
+ */
 export async function sendMessageAction(
   id: string | null,
   input: unknown,
@@ -36,8 +40,12 @@ export async function sendMessageAction(
   return runAction(async () => {
     const data = parseInput(messageFormSchema, input);
     const ctx = await requireTenantContext();
-    const saved = await saveDraft(ctx, data, id ? parseInput(idSchema, { id }).id : undefined);
-    const sent = await sendDraft(ctx, saved.id);
+    const draftId = id ? parseInput(idSchema, { id }).id : undefined;
+    const saved = await saveDraft(ctx, data, draftId);
+    const sent = await sendDraft(ctx, saved.id).catch(async (error: unknown) => {
+      if (!draftId) await discardDraft(ctx, saved.id);
+      throw error;
+    });
     refresh();
     return { id: saved.id, ...sent };
   }, "message-send");

@@ -13,19 +13,12 @@ import { ChatStream } from "./chat-stream";
 /**
  * Ein geöffneter Chat wie bei WhatsApp: oben Bild und Name, darunter der Verlauf auf dem typischen hellen (bzw. dunklen)
  * Hintergrund – eigene Nachrichten rechts in Grün, die anderer links in Weiß, mit Name, Uhrzeit und Datumstrennern.
- * Unten schreibt, wer hier schreiben darf; alle anderen sehen den Hinweis, wer hier schreibt (wie in WhatsApp-Gruppen,
- * in denen nur Admins senden).
+ * Unten schreibt jeder, der zur Gruppe gehört (wie in einer WhatsApp-Gruppe); Vorstand und Leitung auch in fremde.
  *
  * Farben: die von WhatsApp, die Grautöne für Uhrzeit und Häkchen etwas dunkler – so erreichen sie auch auf Grün das
  * nötige Kontrastverhältnis (4,5 : 1).
  */
-export function ChatThread({
-  chat,
-  canSendAnywhere,
-}: {
-  chat: ChatDetail;
-  canSendAnywhere: boolean;
-}) {
+export function ChatThread({ chat }: { chat: ChatDetail }) {
   const messages = withRuns(
     chat.messages.map((message) => ({
       ...message,
@@ -101,12 +94,17 @@ export function ChatThread({
       </ChatStream>
 
       {chat.canPost ? (
-        <ChatComposer target={chat.target} title={chat.title} reach={chat.reach} />
+        <ChatComposer
+          target={chat.target}
+          title={chat.title}
+          reach={chat.reach}
+          canAnnounce={chat.canAnnounce}
+        />
       ) : (
         <p className="border-t bg-card px-4 py-3 text-center text-sm text-muted-foreground">
-          {canSendAnywhere
-            ? "In diesem Chat schreiben nur Vorstand und Verwaltung."
-            : "Nur Vorstand und Abteilungsleitung können hier schreiben."}
+          {chat.postBlocked === "gone"
+            ? "Diese Gruppe gibt es nicht mehr – hier kann niemand mehr schreiben."
+            : "Du gehörst nicht (mehr) zu dieser Gruppe – deshalb kannst du hier nicht schreiben."}
         </p>
       )}
     </>

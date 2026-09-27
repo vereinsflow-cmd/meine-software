@@ -1,13 +1,14 @@
 import "server-only";
 import { calendarDateToInputValue } from "@/lib/dates";
+import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { prisma } from "@/server/db/client";
 
 /**
  * Datenexport für die betroffene Person (Auskunft und Datenübertragbarkeit, Art. 15 und 20 DSGVO).
  *
  * Ausgegeben werden AUSSCHLIESSLICH die Daten der anfragenden Person: ihr Konto, ihre Mitgliedschaften samt
- * Stammdaten, Einwilligungen, Anmeldungen, Schichten, Aufgaben, Benachrichtigungen, Kalender-Abos (ohne Geheimnisse) und
- * Sitzungen (ohne Token). Angaben über andere Personen (Mitanmeldungen, andere Helfer, Namen in Protokolltexten) sind
+ * Stammdaten, Einwilligungen, Anmeldungen, Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
+ * Kalender-Abos (ohne Geheimnisse) und Sitzungen (ohne Token). Angaben über andere Personen (Mitanmeldungen, andere Helfer, Namen in Protokolltexten) sind
  * bewusst NICHT enthalten. Passwort-Hash, Zwei-Faktor-Geheimnis und Token verlassen den Server nie.
  * Das Format ist gut lesbares JSON mit deutschen Schlüsseln.
  */
@@ -91,7 +92,7 @@ export async function buildUserDataExport(
     },
   });
 
-  const [notifications, feedTokens, sessions, audit, received, uploads, tickets] =
+  const [notifications, feedTokens, sessions, audit, received, uploads, tickets, written] =
     await Promise.all([
       prisma.notification.findMany({
         where: { userId },
@@ -148,6 +149,21 @@ export async function buildUserDataExport(
           description: true,
           status: true,
           response: true,
+          createdAt: true,
+        },
+      }),
+      // Selbst geschriebene Nachrichten (seit jeder in seinen Gruppen schreiben kann) samt Entwürfen.
+      prisma.message.findMany({
+        where: { authorUserId: userId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: LIMIT,
+        select: {
+          clubId: true,
+          subject: true,
+          body: true,
+          audience: true,
+          status: true,
+          sentAt: true,
           createdAt: true,
         },
       }),
@@ -239,6 +255,14 @@ export async function buildUserDataExport(
         typ: d.mimeType,
         groesseBytes: d.sizeBytes,
         am: iso(d.createdAt),
+      })),
+      geschriebeneNachrichten: inClub(written, membership.clubId).map((m) => ({
+        betreff: m.subject,
+        text: m.body,
+        an: AUDIENCE_LABEL[m.audience],
+        status: m.status === "SENT" ? "gesendet" : "Entwurf",
+        gesendetAm: iso(m.sentAt),
+        angelegtAm: iso(m.createdAt),
       })),
       supportMeldungen: inClub(tickets, membership.clubId).map((t) => ({
         art: t.category,
