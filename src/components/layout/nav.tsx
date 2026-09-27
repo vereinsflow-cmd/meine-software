@@ -84,6 +84,13 @@ const organisation: NavDefinition[] = [
     area: "dokumente",
     permission: "documents:read",
   },
+  // Seit 27.09.2026 hier statt unter „Einstellungen“ (auf Wunsch) – Finanzen sind Vereinsarbeit, keine Einstellung.
+  {
+    href: "/finanzen",
+    label: "Finanzen",
+    area: "finanzen",
+    permission: "club:update",
+  },
 ];
 
 const kommunikation: NavDefinition[] = [
@@ -107,12 +114,6 @@ const einstellungen: NavDefinition[] = [
     href: "/einstellungen",
     label: "Vereinseinstellungen",
     area: "einstellungen",
-    permission: "club:update",
-  },
-  {
-    href: "/finanzen",
-    label: "Finanzen",
-    area: "finanzen",
     permission: "club:update",
   },
   {
