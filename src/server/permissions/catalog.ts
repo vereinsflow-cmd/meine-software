@@ -71,6 +71,13 @@ export const PERMISSIONS = {
   "documents:read": { module: "Dokumente", label: "Dokumente ansehen und herunterladen" },
   "documents:upload": { module: "Dokumente", label: "Dokumente hochladen" },
   "documents:manage": { module: "Dokumente", label: "Dokumente verwalten und löschen" },
+
+  // Finanzen (erster Baustein: Rechnungen und offene Zahlungen)
+  "finance:read": { module: "Finanzen", label: "Offene Zahlungen und Rechnungen ansehen" },
+  "finance:manage": {
+    module: "Finanzen",
+    label: "Rechnungen erfassen und als bezahlt markieren",
+  },
 } as const satisfies Record<string, { module: string; label: string }>;
 
 export type PermissionKey = keyof typeof PERMISSIONS;

@@ -80,6 +80,10 @@ export const CONSENT_TYPE_LABEL: Record<ConsentType, string> = {
 
 /** Feldnamen der Mitgliedsdaten für Protokoll und Fehlermeldungen. */
 export const MEMBER_FIELD_LABEL: Record<string, string> = {
+  // Rechnungen (Änderungsprotokoll „Rechnung geändert“)
+  betrag: "Betrag",
+  faellig: "Fällig am",
+  zahlungsstand: "Zahlungsstand",
   memberNumber: "Mitgliedsnummer",
   firstName: "Vorname",
   lastName: "Nachname",

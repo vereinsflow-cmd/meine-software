@@ -179,6 +179,12 @@ enum DocumentAccess {
   ADMIN
 }
 
+/// Zahlungsstand einer Rechnung: offen (muss noch bezahlt werden) oder bezahlt.
+enum InvoiceStatus {
+  OPEN
+  PAID
+}
+
 enum SupportCategory {
   PROBLEM
   QUESTION
@@ -329,6 +335,7 @@ model Club {
   checklists     Checklist[]
   messages       Message[]
   documents      Document[]
+  invoices       Invoice[]
   folders        DocumentFolder[]
   invitations    Invitation[]
   sessions       Session[]
@@ -925,16 +932,46 @@ model Document {
   createdAt    DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime       @updatedAt @db.Timestamptz(3)
 
-  club   Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  folder DocumentFolder? @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
-  event  Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
-  member Member?         @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
-  task   Task?           @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
+  club    Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  folder  DocumentFolder? @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
+  event   Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  member  Member?         @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  task    Task?           @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
+  /// Ist das Dokument eine Rechnung, stehen Betrag und Zahlungsstand hier.
+  invoice Invoice?
 
   @@unique([clubId, id])
   @@index([clubId, folderId])
   @@index([clubId, eventId])
   @@index([clubId, memberId])
+}
+
+/// Rechnung, die der Verein bezahlen muss. Der Beleg ist ein Dokument (1:1); die Rechnung trägt Betrag, Fälligkeit
+/// und Zahlungsstand. Offen = Status OPEN, solange das Dokument weder gelöscht noch archiviert ist. Sehen und
+/// bearbeiten dürfen nur Berechtigte (`finance:read` / `finance:manage`) – unabhängig davon, wer das Dokument sieht.
+model Invoice {
+  id          String        @id @default(uuid(7))
+  clubId      String
+  documentId  String
+  /// Rechnungsdatum (Kalendertag in Berlin) – beim Hochladen der Tag des Hochladens.
+  invoiceDate DateTime      @db.Date
+  /// Betrag in ganzen Cent (nie Fließkommazahlen). Pflicht, solange die Rechnung offen ist.
+  amountCents Int?
+  dueDate     DateTime?     @db.Date
+  status      InvoiceStatus @default(OPEN)
+  /// Wann als bezahlt markiert (leer, wenn schon beim Hochladen „muss nicht mehr bezahlt werden“ gewählt wurde).
+  paidAt      DateTime?     @db.Timestamptz(3)
+  paidById    String?
+  createdById String?
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(3)
+
+  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [clubId, documentId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@unique([clubId, documentId])
+  @@index([clubId, status, dueDate])
 }
 
 // ----------------------------------------------------------------------------

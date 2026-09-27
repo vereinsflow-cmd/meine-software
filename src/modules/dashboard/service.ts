@@ -4,6 +4,7 @@ import { buildBuckets, buildUpcomingWeeks } from "@/lib/charts/time-buckets";
 import { berlinParts, daysUntil } from "@/lib/dates";
 import { listRecentActivity, type AuditEntryDto } from "@/modules/audit/service";
 import { eventVisibilityWhere, listEvents, type EventListItem } from "@/modules/events/service";
+import { getOpenPayments, type OpenPayments } from "@/modules/finance/service";
 import {
   canSeeBirthdays,
   listUpcomingBirthdays,
@@ -79,6 +80,8 @@ export interface DashboardData {
   birthdays: UpcomingBirthday[] | null;
   /** Letzte Ereignisse im Verein – nur für Rollen mit Zugriff auf das Änderungsprotokoll. */
   activity: AuditEntryDto[] | null;
+  /** Offene Zahlungen (Rechnungen) – nur für Rollen mit `finance:read` (Vereinsadministrator, Vorstand). */
+  payments: OpenPayments | null;
 }
 
 const FIRST_PAGE = { page: 1, pageSize: 5, skip: 0 } as const;
@@ -190,18 +193,20 @@ export async function getDashboard(
   ctx: TenantContext,
   now: Date = new Date(),
 ): Promise<DashboardData> {
-  const [members, events, shifts, tasks, unread, latest, birthdays, activity] = await Promise.all([
-    loadMembers(ctx, now),
-    loadEvents(ctx, now),
-    loadShifts(ctx, now),
-    loadTasks(ctx),
-    countUnread(ctx),
-    listNotifications(ctx, { request: FIRST_PAGE }),
-    canSeeBirthdays(ctx)
-      ? listUpcomingBirthdays(ctx, { now, days: 14, limit: 6 })
-      : Promise.resolve(null),
-    can(ctx, "audit:read") ? listRecentActivity(ctx, 6) : Promise.resolve(null),
-  ]);
+  const [members, events, shifts, tasks, unread, latest, birthdays, activity, payments] =
+    await Promise.all([
+      loadMembers(ctx, now),
+      loadEvents(ctx, now),
+      loadShifts(ctx, now),
+      loadTasks(ctx),
+      countUnread(ctx),
+      listNotifications(ctx, { request: FIRST_PAGE }),
+      canSeeBirthdays(ctx)
+        ? listUpcomingBirthdays(ctx, { now, days: 14, limit: 6 })
+        : Promise.resolve(null),
+      can(ctx, "audit:read") ? listRecentActivity(ctx, 6) : Promise.resolve(null),
+      can(ctx, "finance:read") ? getOpenPayments(ctx, { limit: 6 }) : Promise.resolve(null),
+    ]);
   return {
     members,
     events,
@@ -210,5 +215,6 @@ export async function getDashboard(
     notifications: { unread, latest: latest.items },
     birthdays,
     activity,
+    payments,
   };
 }

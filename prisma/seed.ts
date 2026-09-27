@@ -12,6 +12,7 @@ import type { Prisma } from "../src/generated/prisma/client";
 import {
   addBerlinDays,
   berlinWeekday,
+  formatCalendarDate,
   parseBerlinDateTime,
   parseCalendarDate,
   toDateInputValue,
@@ -21,6 +22,7 @@ import { hashPassword } from "../src/server/auth/password";
 import { prisma } from "../src/server/db/client";
 import { isDatabaseUnreachable } from "../src/server/db/unreachable";
 import { provisionClub } from "../src/server/platform/provision";
+import { saveFile } from "../src/server/storage/files";
 
 if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED !== "1") {
   throw new Error("Seed-Daten dürfen nicht in Produktion eingespielt werden.");
@@ -731,6 +733,54 @@ async function main() {
       doneAt: position === 1 ? now : null,
     })),
   });
+
+  // ---------------------------------------------------------------------------------------------
+  // Rechnungen (offene Zahlungen): eine bald fällige, eine überfällige, eine bezahlte. Die Belege liegen wie echte
+  // Uploads im Speicher (STORAGE_DIR), damit „Herunterladen“ funktioniert; erfasst hat sie der Kassenwart.
+  // ---------------------------------------------------------------------------------------------
+  const receipt = (text: string) =>
+    new TextEncoder().encode(
+      `%PDF-1.4\n% ${text}\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n`,
+    );
+  const calendarDayIn = (days: number) =>
+    parseCalendarDate(toDateInputValue(addBerlinDays(today, days)))!;
+  const demoInvoices = [
+    { daysAgo: 12, text: "Getränkehandel Sommerfest", cents: 34_950, dueIn: 14, paid: false },
+    { daysAgo: 30, text: "Hallenmiete September", cents: 120_000, dueIn: -3, paid: false },
+    { daysAgo: 45, text: "Pokale Jugendturnier", cents: 8_990, dueIn: null, paid: true },
+  ] as const;
+  for (const demo of demoInvoices) {
+    const invoiceDate = calendarDayIn(-demo.daysAgo);
+    const bytes = receipt(demo.text);
+    const stored = await saveFile(club.id, bytes);
+    const document = await prisma.document.create({
+      data: {
+        clubId: club.id,
+        name: `Rechnung vom ${formatCalendarDate(invoiceDate)}.pdf`,
+        storageKey: stored.storageKey,
+        sha256: stored.sha256,
+        mimeType: "application/pdf",
+        sizeBytes: bytes.length,
+        category: "Rechnungen",
+        access: "BOARD",
+        uploadedById: accounts.vorstand!.userId,
+        createdAt: at(addBerlinDays(today, -demo.daysAgo), "10:00"),
+      },
+    });
+    await prisma.invoice.create({
+      data: {
+        clubId: club.id,
+        documentId: document.id,
+        invoiceDate,
+        amountCents: demo.cents,
+        dueDate: demo.dueIn === null ? null : calendarDayIn(demo.dueIn),
+        status: demo.paid ? "PAID" : "OPEN",
+        paidAt: demo.paid ? at(addBerlinDays(today, -40), "18:00") : null,
+        paidById: demo.paid ? accounts.vorstand!.userId : null,
+        createdById: accounts.vorstand!.userId,
+      },
+    });
+  }
 
   // ---------------------------------------------------------------------------------------------
   // Nachrichten und Benachrichtigungen

@@ -18,9 +18,10 @@ import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
-import { formatDate } from "@/lib/dates";
+import { calendarDateToInputValue, formatDate, todayCalendarDate } from "@/lib/dates";
 import { eventOptions } from "@/lib/event-options";
-import { pageRequest, param, type RawSearchParams } from "@/lib/search-params";
+import { centsToInput } from "@/lib/money";
+import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { formatBytes } from "@/lib/uploads";
 import {
   DeleteDocumentButton,
@@ -35,6 +36,9 @@ import {
   listDocuments,
   listUploadEvents,
 } from "@/modules/documents/service";
+import { InvoiceBadge } from "@/modules/finance/components/invoice-badge";
+import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
+import { invoiceBaseName } from "@/modules/finance/invoice-format";
 import { env } from "@/server/env";
 import { can, scopeOf } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -60,13 +64,25 @@ export default async function DocumentsPage({
   const category = param(params, "kategorie");
   const eventId = param(params, "veranstaltung");
   const canUpload = can(ctx, "documents:upload");
+  // Rechnungen: Betrag und Zahlungsstand sehen nur Berechtigte; erfassen und als bezahlt markieren, wer sie verwaltet.
+  const financeRead = can(ctx, "finance:read");
+  const financeManage = can(ctx, "finance:manage");
+  const invoices = financeRead
+    ? enumParam(params, "rechnungen", ["offen", "alle"] as const)
+    : undefined;
   const [result, categories, usage, events] = await Promise.all([
-    listDocuments(ctx, { q, category, eventId, request: pageRequest(params, 15) }),
+    listDocuments(ctx, {
+      q,
+      category,
+      eventId,
+      invoices: invoices === "offen" ? "open" : invoices === "alle" ? "all" : undefined,
+      request: pageRequest(params, 15),
+    }),
     listCategories(ctx),
     getStorageUsage(ctx),
     canUpload ? listUploadEvents(ctx) : Promise.resolve([]),
   ]);
-  const filtered = Boolean(q || category || eventId);
+  const filtered = Boolean(q || category || eventId || invoices);
   const usedPercent = Math.min(100, Math.round((usage.usedBytes / usage.quotaBytes) * 100));
 
   return (
@@ -83,6 +99,7 @@ export default async function DocumentsPage({
               maxMb={env.MAX_UPLOAD_MB}
               requireEvent={scopeOf(ctx, "documents:upload") === "DEPARTMENT"}
               defaultEventId={eventId}
+              invoiceName={financeManage ? invoiceBaseName(todayCalendarDate()) : null}
             />
           ) : undefined
         }
@@ -93,7 +110,11 @@ export default async function DocumentsPage({
         method="get"
         action="/dokumente"
         role="search"
-        className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_auto]"
+        className={
+          financeRead
+            ? "mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto]"
+            : "mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_auto]"
+        }
       >
         {eventId && <input type="hidden" name="veranstaltung" value={eventId} />}
         <Input
@@ -115,6 +136,17 @@ export default async function DocumentsPage({
             </option>
           ))}
         </NativeSelect>
+        {financeRead && (
+          <NativeSelect
+            name="rechnungen"
+            defaultValue={invoices ?? ""}
+            aria-label="Nach Rechnungen filtern"
+          >
+            <option value="">Alle Dokumente</option>
+            <option value="alle">Nur Rechnungen</option>
+            <option value="offen">Nur offene Rechnungen</option>
+          </NativeSelect>
+        )}
         <div className="flex gap-2">
           <Button type="submit">Filtern</Button>
           {filtered && (
@@ -174,6 +206,11 @@ export default async function DocumentsPage({
                         <DownloadIcon className="size-3.5 shrink-0" aria-hidden="true" />
                         <span className="break-words">{document.name}</span>
                       </a>
+                      {document.invoice && (
+                        <span className="mt-1 block">
+                          <InvoiceBadge invoice={document.invoice} />
+                        </span>
+                      )}
                       {document.event && (
                         <span className="block text-xs text-muted-foreground">
                           Zu:{" "}
@@ -216,7 +253,14 @@ export default async function DocumentsPage({
                     </TableCell>
                     <TableCell>
                       {document.can.manage && (
-                        <div className="flex justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1">
+                          {financeManage && document.invoice?.status === "OPEN" && (
+                            <MarkPaidButton
+                              invoiceId={document.invoice.id}
+                              name={document.name}
+                              compact
+                            />
+                          )}
                           <EditDocumentDialog
                             id={document.id}
                             accessLevels={allowedAccessLevels(ctx)}
@@ -224,6 +268,16 @@ export default async function DocumentsPage({
                               name: document.name,
                               category: document.category ?? "",
                               access: document.access,
+                              // Rechnungsangaben nur für Berechtigte – sonst fehlt der Teil im Formular ganz.
+                              ...(financeManage && document.invoice
+                                ? {
+                                    invoice: {
+                                      status: document.invoice.status,
+                                      amount: centsToInput(document.invoice.amountCents),
+                                      dueDate: calendarDateToInputValue(document.invoice.dueDate),
+                                    },
+                                  }
+                                : {}),
                             }}
                           />
                           <DeleteDocumentButton id={document.id} name={document.name} />

@@ -60,6 +60,7 @@ export const MODEL_SCOPE = {
   MessageRecipient: "tenant",
   DocumentFolder: "tenant",
   Document: "tenant",
+  Invoice: "tenant",
   SupportTicket: "tenant",
   CalendarFeedToken: "tenant",
   AuditLog: "tenant",

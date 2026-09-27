@@ -20,6 +20,7 @@ import {
   MyShifts,
   MyTasks,
   NextEventsStat,
+  OpenPayments,
   OpenShifts,
   RecentActivity,
   StaffingWarnings,
@@ -45,7 +46,7 @@ export default async function DashboardPage({
 }) {
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
   const data = await getDashboard(ctx);
-  const { members, events, shifts, tasks, notifications, birthdays, activity } = data;
+  const { members, events, shifts, tasks, notifications, birthdays, activity, payments } = data;
 
   // Einmal berechnen, von mehreren Reitern verwendet. Das `catch` verhindert eine „unbehandelte Ablehnung“, falls kein
   // Reiter die Daten abholt; die Reiter selbst bekommen einen Fehler weiterhin zu sehen.
@@ -70,6 +71,15 @@ export default async function DashboardPage({
         {shifts && <FreeShiftsStat shifts={shifts} />}
         {shifts && <HelperHours hours={shifts.hours} />}
       </KpiCarousel>
+
+      {/* Offene Zahlungen nur für Berechtigte (Vereinsadministrator, Vorstand) – vor „Für dich“, weil Fristen drängen. */}
+      {payments && (
+        <Group id="g-finanzen" title="Finanzen">
+          <CardGrid>
+            <OpenPayments payments={payments} />
+          </CardGrid>
+        </Group>
+      )}
 
       <Group id="g-fuer-dich" title="Für dich">
         <CardGrid>

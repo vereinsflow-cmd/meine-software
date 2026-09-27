@@ -5,12 +5,12 @@ Web-Rahmen getrennt sind (siehe [ARCHITECTURE.md](ARCHITECTURE.md#erweiterbarkei
 
 ## Zuerst empfohlen
 
-| Vorhaben                            | Warum                                                                        | Schon vorbereitet                                                                |
-| ----------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Zwei-Faktor-Anmeldung (TOTP)**    | Erhöht den Schutz von Administrator-Konten deutlich                          | Felder `totpSecretEnc`, `totpEnabledAt`; Profil-Abschnitt; Datenexport kennt sie |
-| **Öffentliche Veranstaltungsseite** | „Öffentlich“-Veranstaltungen sollen auf der Vereins-Webseite verlinkbar sein | `Event.visibility = PUBLIC`; Kalender-Export je Termin                           |
-| **Virenscan für Uploads**           | Vereine nehmen Dateien von Dritten an (Bewerbungen, Formulare)               | `registerUploadScanner(...)` in `src/server/storage/scan.ts`                     |
-| **Finanzen** (siehe unten)          | Beiträge und Kasse sind der nächste große Verwaltungsaufwand                 | Nav-Eintrag, Platzhalterseite, Rechte- und Protokoll-Grundlagen                  |
+| Vorhaben                            | Warum                                                                        | Schon vorbereitet                                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Zwei-Faktor-Anmeldung (TOTP)**    | Erhöht den Schutz von Administrator-Konten deutlich                          | Felder `totpSecretEnc`, `totpEnabledAt`; Profil-Abschnitt; Datenexport kennt sie                                   |
+| **Öffentliche Veranstaltungsseite** | „Öffentlich“-Veranstaltungen sollen auf der Vereins-Webseite verlinkbar sein | `Event.visibility = PUBLIC`; Kalender-Export je Termin                                                             |
+| **Virenscan für Uploads**           | Vereine nehmen Dateien von Dritten an (Bewerbungen, Formulare)               | `registerUploadScanner(...)` in `src/server/storage/scan.ts`                                                       |
+| **Finanzen** (siehe unten)          | Beiträge und Kasse sind der nächste große Verwaltungsaufwand                 | Rechte `finance:read`/`finance:manage`, Rechnungen mit offenen Zahlungen (27.09.2026), Protokollbereich „Finanzen“ |
 
 ## Weitere Vorhaben
 
@@ -32,8 +32,11 @@ Web-Rahmen getrennt sind (siehe [ARCHITECTURE.md](ARCHITECTURE.md#erweiterbarkei
 
 ## Finanzen – Entwurf
 
-Ziel: Mitgliedsbeiträge, Kassenbuch und Spendenbescheinigungen, mandantenfähig und revisionssicher. **Noch nicht umgesetzt**; dieser Entwurf hält
-die Entscheidungen fest, damit die Vorbereitung (Rechte, Datenmodell) später nicht neu erfunden wird.
+Ziel: Mitgliedsbeiträge, Kassenbuch und Spendenbescheinigungen, mandantenfähig und revisionssicher. **Umgesetzt ist bisher nur der erste
+Baustein:** Eingangsrechnungen (Modell `Invoice` zu einem Dokument) mit Betrag, Fälligkeit und „bezahlt“, dazu die Dashboard-Karte „Offene
+Zahlungen“ (siehe [DESIGN.md](DESIGN.md#rechnungen-und-offene-zahlungen)). Der Rest dieses Entwurfs hält die Entscheidungen fest, damit sie später
+nicht neu erfunden werden. Rechnungen sind dabei ausdrücklich **keine** Buchungen: Sie lassen sich ändern und auf „wieder offen“ setzen; das
+Kassenbuch mit Stornoregel und Abschlusssperre kommt erst mit Schritt 4 und kann bezahlte Rechnungen als Belege übernehmen.
 
 ### Grundregeln
 
@@ -64,7 +67,8 @@ Beitragslauf wird ein Job (`fees`) unter Job-Sperre und mit Idempotenz-Schlüsse
 
 ### Umsetzungsschritte
 
-1. Rechte, Modelle, Migration (Trigger für Abschlusssperre und Stornoregel), `MODEL_SCOPE`, Audit-Labels.
+1. Rechte, Modelle, Migration (Trigger für Abschlusssperre und Stornoregel), `MODEL_SCOPE`, Audit-Labels. **Teilweise erledigt:** Rechte
+   `finance:read`/`finance:manage`, Rechnungen, Protokollbereich; offen sind `finance:export` und die Buchungsmodelle.
 2. Beitragsarten und Zuordnung; Beitragslauf mit Vorschau (wie beim CSV-Import: erst zeigen, dann ausführen).
 3. Zahlungseingang erfassen und zuordnen; offene Posten; Erinnerungsschreiben (Vorlage, per Nachricht/E-Mail).
 4. Kassenbuch mit Belegen (vorhandene Dokumentenablage, neue Zugriffsstufe „Nur Finanzen“).
@@ -74,7 +78,7 @@ Beitragslauf wird ein Job (`fees`) unter Job-Sperre und mit Idempotenz-Schlüsse
 
 ## Bekannte Grenzen (Stand heute)
 
-- Kein Finanzmodul, keine Zwei-Faktor-Anmeldung, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
+- Finanzen nur als Rechnungen mit offenen Zahlungen (keine Beiträge, kein Kassenbuch), keine Zwei-Faktor-Anmeldung, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
 - Das Docker-Image ist nicht in einer Docker-Umgebung gestartet worden (siehe [OPERATIONS.md](OPERATIONS.md)).
 - Die Oberfläche ist nur Deutsch; Zeiten stets in `Europe/Berlin` (auch für Vereine in anderen Zeitzonen).
 - Die Barrierefreiheit ist beim Bau berücksichtigt (Beschriftungen, Tastatur, Fokus, Fehlertexte, Farbe nie als einziger Hinweis) und wird automatisch mit axe

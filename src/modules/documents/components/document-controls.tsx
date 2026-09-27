@@ -28,7 +28,9 @@ import {
   clientFileError,
   formatBytes,
 } from "@/lib/uploads";
+import { parseEuroToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { AMOUNT_HINT, INVOICE_STATUSES, INVOICE_STATUS_LABEL } from "@/modules/finance/schemas";
 import { deleteDocumentAction, updateDocumentAction } from "../actions";
 import {
   ACCESS_LABEL,
@@ -39,7 +41,7 @@ import {
 
 const ACCEPT = ALLOWED_TYPES.map((type) => `.${type.ext}`).join(",");
 /** Angaben, die für alle Dateien gelten und eine eigene Fehlerzeile haben. */
-const SHARED_FIELDS = ["category", "access", "eventId"] as const;
+const SHARED_FIELDS = ["category", "access", "eventId", "amount", "dueDate"] as const;
 
 interface ChosenFile {
   key: number;
@@ -94,6 +96,7 @@ export function UploadDialog({
   maxMb,
   requireEvent,
   defaultEventId,
+  invoiceName = null,
 }: {
   categories: string[];
   events: { id: string; label: string }[];
@@ -102,6 +105,11 @@ export function UploadDialog({
   requireEvent: boolean;
   /** Ist die Liste auf eine Veranstaltung eingegrenzt, gehören neue Dokumente gleich zu ihr. */
   defaultEventId?: string;
+  /**
+   * Name, den eine heute hochgeladene Rechnung bekommt („Rechnung vom 27.09.2026“) – nur für Berechtigte
+   * (`finance:manage`); sonst `null`, und die Rechnungs-Angaben fehlen im Fenster.
+   */
+  invoiceName?: string | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -112,9 +120,26 @@ export function UploadDialog({
   const [formError, setFormError] = useState<string | null>(null);
   const nextKey = useRef(0);
   const categoryRef = useRef<HTMLInputElement>(null);
+  // Rechnung: Der Name entsteht auf dem Server; Rechnungen sind zunächst „Nur Vorstand“ (Beträge, Kontodaten).
+  const [isInvoice, setIsInvoice] = useState(false);
+  const [paymentDue, setPaymentDue] = useState(true);
+  const [access, setAccess] = useState<AccessLevel>("ALL_MEMBERS");
+  // Hat das Häkchen „Rechnung“ die Zugriffsstufe angehoben? Dann nimmt es sie beim Abwählen wieder zurück.
+  const [accessRaised, setAccessRaised] = useState(false);
 
   const presetEvent = events.some((event) => event.id === defaultEventId) ? defaultEventId : "";
   const ready = files.filter((entry) => !entry.error);
+
+  /** Alles zurück auf Anfang – beim Schließen von Hand und nach dem erfolgreichen Hochladen. */
+  function reset() {
+    setFiles([]);
+    setErrors({});
+    setFormError(null);
+    setIsInvoice(false);
+    setPaymentDue(true);
+    setAccess("ALL_MEMBERS");
+    setAccessRaised(false);
+  }
 
   function choose(list: File[]) {
     if (pending) return;
@@ -139,9 +164,20 @@ export function UploadDialog({
     if (files.length === 0) next.file = "Bitte wähle eine Datei aus.";
     if (requireEvent && !fields.get("eventId"))
       next.eventId = "Bitte wähle eine Veranstaltung deiner Abteilung.";
+    if (isInvoice && paymentDue) {
+      const amount = String(fields.get("amount") ?? "").trim();
+      const cents = amount ? parseEuroToCents(amount) : null;
+      if (!amount) next.amount = "Bitte gib den Betrag ein.";
+      else if (cents === null || cents <= 0)
+        next.amount = `Bitte gib einen gültigen Betrag ein (${AMOUNT_HINT}).`;
+    }
     setErrors(next);
-    setFormError(null);
-    if (Object.keys(next).length > 0 || ready.length === 0) return;
+    // Jede Rechnung hat ihren eigenen Betrag – mehrere Dateien auf einmal würden alle denselben bekommen.
+    const oneInvoice = !isInvoice || ready.length <= 1;
+    setFormError(
+      oneInvoice ? null : "Rechnungen lädst du bitte einzeln hoch – jede mit ihrem eigenen Betrag.",
+    );
+    if (Object.keys(next).length > 0 || ready.length === 0 || !oneInvoice) return;
 
     startTransition(async () => {
       const uploaded = new Set<number>();
@@ -169,15 +205,23 @@ export function UploadDialog({
       setProgress(null);
       if (uploaded.size > 0) {
         toast.success(
-          uploaded.size === 1 ? "Dokument hochgeladen." : `${uploaded.size} Dokumente hochgeladen.`,
+          isInvoice
+            ? paymentDue
+              ? "Rechnung hochgeladen – sie steht jetzt bei den offenen Zahlungen."
+              : "Rechnung hochgeladen."
+            : uploaded.size === 1
+              ? "Dokument hochgeladen."
+              : `${uploaded.size} Dokumente hochgeladen.`,
         );
         router.refresh();
       }
       const remaining = files
         .filter((entry) => !uploaded.has(entry.key))
         .map((entry) => ({ ...entry, error: failed.get(entry.key) ?? entry.error }));
-      setFiles(remaining);
-      if (remaining.length === 0) setOpen(false);
+      if (remaining.length === 0) {
+        reset(); // sonst wäre das nächste Dokument wieder als Rechnung angekreuzt
+        setOpen(false);
+      } else setFiles(remaining);
     });
   }
 
@@ -193,11 +237,7 @@ export function UploadDialog({
         onOpenChange={(next) => {
           if (pending) return; // erst fertig hochladen
           setOpen(next);
-          if (!next) {
-            setFiles([]);
-            setErrors({});
-            setFormError(null);
-          }
+          if (!next) reset();
         }}
       >
         <DialogTrigger asChild>
@@ -317,6 +357,104 @@ export function UploadDialog({
                   </p>
                 )}
               </div>
+              {invoiceName && (
+                <fieldset className="grid gap-3 rounded-lg border p-3">
+                  <legend className="sr-only">Rechnung</legend>
+                  <label className="flex items-start gap-2.5 text-sm">
+                    <input
+                      type="checkbox"
+                      name="isInvoice"
+                      checked={isInvoice}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setIsInvoice(checked);
+                        // Rechnungen enthalten Beträge und oft Kontodaten: zunächst nur für den Vorstand – aber nur
+                        // statt „Alle Mitglieder“, eine engere Wahl („Nur Verwaltung“) bleibt stehen.
+                        if (checked && access === "ALL_MEMBERS" && accessLevels.includes("BOARD")) {
+                          setAccess("BOARD");
+                          setAccessRaised(true);
+                        } else if (!checked && accessRaised) {
+                          if (access === "BOARD") setAccess("ALL_MEMBERS");
+                          setAccessRaised(false);
+                        }
+                        setErrors({});
+                        setFormError(null);
+                      }}
+                      className="mt-0.5 size-4 shrink-0 accent-primary"
+                    />
+                    <span>
+                      <span className="font-medium">Das ist eine Rechnung</span>
+                      <span className="block text-muted-foreground">
+                        Sie heißt dann automatisch „{invoiceName}“.
+                      </span>
+                    </span>
+                  </label>
+                  {isInvoice && (
+                    <>
+                      <label className="flex items-center gap-2.5 text-sm">
+                        <input
+                          type="checkbox"
+                          name="paymentDue"
+                          checked={paymentDue}
+                          onChange={(event) => setPaymentDue(event.target.checked)}
+                          className="size-4 shrink-0 accent-primary"
+                        />
+                        <span className="font-medium">Muss noch bezahlt werden</span>
+                      </label>
+                      {paymentDue ? (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="grid content-start gap-1.5">
+                            <Label htmlFor="upload-betrag">
+                              Betrag in €{" "}
+                              <span aria-hidden="true" className="text-destructive">
+                                *
+                              </span>
+                            </Label>
+                            <Input
+                              id="upload-betrag"
+                              name="amount"
+                              inputMode="decimal"
+                              autoComplete="off"
+                              placeholder={AMOUNT_HINT}
+                              aria-required="true"
+                              aria-invalid={errors.amount ? true : undefined}
+                              aria-describedby={errors.amount ? "upload-betrag-fehler" : undefined}
+                            />
+                            {errors.amount && (
+                              <p
+                                id="upload-betrag-fehler"
+                                role="alert"
+                                className="text-sm text-destructive"
+                              >
+                                {errors.amount}
+                              </p>
+                            )}
+                          </div>
+                          <div className="grid content-start gap-1.5">
+                            <Label htmlFor="upload-faellig">Fällig am</Label>
+                            <Input
+                              id="upload-faellig"
+                              name="dueDate"
+                              type="date"
+                              aria-invalid={errors.dueDate ? true : undefined}
+                            />
+                            {errors.dueDate && (
+                              <p role="alert" className="text-sm text-destructive">
+                                {errors.dueDate}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Die Rechnung wird als bezahlt abgelegt und erscheint nicht bei den offenen
+                          Zahlungen.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </fieldset>
+              )}
               <div className="grid gap-1.5">
                 <Label htmlFor="upload-kategorie">Kategorie</Label>
                 <Input
@@ -341,7 +479,15 @@ export function UploadDialog({
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="upload-zugriff">Wer darf es sehen?</Label>
-                <NativeSelect id="upload-zugriff" name="access" defaultValue="ALL_MEMBERS">
+                <NativeSelect
+                  id="upload-zugriff"
+                  name="access"
+                  value={access}
+                  onChange={(event) => {
+                    setAccess(event.target.value as AccessLevel);
+                    setAccessRaised(false); // selbst gewählt – bleibt, auch wenn „Rechnung“ abgewählt wird
+                  }}
+                >
                   {accessLevels.map((level) => (
                     <option key={level} value={level}>
                       {ACCESS_LABEL[level]}
@@ -421,8 +567,17 @@ export function EditDocumentDialog({
       router.refresh();
     },
   });
+  const invoiceStatus = form.watch("invoice.status");
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        // Beim Öffnen den aktuellen Stand übernehmen: „Bezahlt“ in derselben Zeile ändert die Rechnung, ohne dass das
+        // Formular es mitbekommt – sonst würde Speichern sie wieder öffnen.
+        if (next) form.reset(defaults);
+        setOpen(next);
+      }}
+    >
       <DialogTrigger asChild>
         <IconButton className="size-8" label={`${defaults.name} bearbeiten`}>
           <PencilIcon />
@@ -446,6 +601,31 @@ export function EditDocumentDialog({
             label="Wer darf es sehen?"
             options={accessLevels.map((level) => ({ value: level, label: ACCESS_LABEL[level] }))}
           />
+          {/* Rechnung: nur für Berechtigte (`finance:manage`) – sonst fehlt der Teil in den Startwerten. */}
+          {defaults.invoice && (
+            <fieldset className="grid gap-4 rounded-lg border p-3 sm:grid-cols-2">
+              <legend className="px-1 text-sm font-medium">Rechnung</legend>
+              <SelectField
+                form={form}
+                name="invoice.status"
+                label="Zahlungsstand"
+                options={INVOICE_STATUSES.map((status) => ({
+                  value: status,
+                  label: INVOICE_STATUS_LABEL[status],
+                }))}
+                className="sm:col-span-2"
+              />
+              <TextField
+                form={form}
+                name="invoice.amount"
+                label="Betrag in €"
+                inputMode="decimal"
+                placeholder={AMOUNT_HINT}
+                required={invoiceStatus === "OPEN"}
+              />
+              <TextField form={form} name="invoice.dueDate" label="Fällig am" type="date" />
+            </fieldset>
+          )}
           <SubmitButton pending={isPending}>Speichern</SubmitButton>
         </form>
       </DialogContent>

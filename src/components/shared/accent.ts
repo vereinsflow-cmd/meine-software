@@ -15,6 +15,7 @@ export const ACCENT = {
   amber: { tile: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300" },
   rose: { tile: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300" },
   slate: { tile: "bg-slate-100 text-slate-700 dark:bg-slate-400/15 dark:text-slate-300" },
+  teal: { tile: "bg-teal-100 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300" },
 } as const;
 
 export type Accent = keyof typeof ACCENT;
