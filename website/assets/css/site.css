@@ -3872,6 +3872,108 @@ html:not(.js) .nav ul a:hover {
   margin-top: 34px;
 }
 
+/* Benachrichtigung zum Start: E-Mail-Formular im Abschlussbereich (Anmeldung mit Bestätigung, newsletter.php) */
+.notify {
+  max-width: 46rem;
+  margin: clamp(36px, 5vw, 56px) auto 0;
+  padding-top: clamp(28px, 4vw, 40px);
+  border-top: 1px solid var(--line);
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}
+
+.notify h3 {
+  font-size: 1.15rem;
+}
+
+.cta .notify p {
+  margin-top: 10px;
+  font-size: 1rem;
+}
+
+.notify-form {
+  margin-top: 22px;
+  text-align: left;
+}
+
+.notify-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.notify-field {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.cta .notify-field small {
+  display: inline;
+  max-width: none;
+  margin: 0;
+  color: var(--muted);
+  font-size: inherit;
+  font-weight: 500;
+}
+
+.notify-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: max(1rem, 16px); /* unter 16 px vergrößert Safari auf dem iPhone die Seite beim Antippen */
+  font-weight: 400;
+}
+
+.notify-field input::placeholder {
+  color: #8a97a8;
+}
+
+.notify-field input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Fangfeld gegen Spam: aus dem Bild geschoben (nicht display: none – das erkennen manche Programme) */
+.notify-trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.cta .notify-note {
+  max-width: none;
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 719px) {
+  .notify-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notify-form .btn {
+    width: 100%;
+  }
+}
+
+/* Seiten von newsletter.php (Bestätigen, Abmelden, Ergebnis) im Stil der Fehlerseite */
+.notify-page .lead {
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
 .cta .mail-line {
   margin-top: 22px;
   font-size: 1rem;

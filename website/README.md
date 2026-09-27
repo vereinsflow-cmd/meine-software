@@ -2,7 +2,8 @@
 
 Werbeseite für VereinsFlow: eine Startseite (`index.html`) mit Impressum, Datenschutzerklärung und Fehlerseite. Reines HTML und
 CSS, ein kleines Skript (Menü, Einblenden beim Scrollen, aktiver Abschnitt), **keine Cookies, keine Bibliotheken, keine Webfonts,
-nichts von fremden Servern**. Die Seite ist bewusst immer weiß (auch bei dunkel eingestelltem Gerät); die Bilder sind echte Aufnahmen der Anwendung
+nichts von fremden Servern**. Einzige Ausnahme vom rein Statischen: die Anmeldung „Beim Start benachrichtigen“ (`newsletter.php`,
+braucht PHP – siehe „Benachrichtigung zum Start“). Die Seite ist bewusst immer weiß (auch bei dunkel eingestelltem Gerät); die Bilder sind echte Aufnahmen der Anwendung
 (Demo-Daten).
 
 Die Website liegt als Ordner `website/` im VereinsFlow-Repository, neben der Anwendung im Hauptordner. Beide haben getrennte
@@ -76,7 +77,7 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 
 ## Veröffentlichen
 
-Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `Vorschau-starten.command`) ist eine fertige statische Website und läuft bei jedem Anbieter, der Dateien ausliefert:
+Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `Vorschau-starten.command`) ist eine fertige statische Website und läuft bei jedem Anbieter, der Dateien ausliefert – bis auf die Anmeldung „Beim Start benachrichtigen“: Sie braucht PHP (bei IONOS vorhanden). Auf Netlify, Cloudflare Pages oder GitHub Pages läuft kein PHP; dort den Abschnitt `#benachrichtigen` samt Knopf und Links aus `index.html` entfernen.
 
 - **Netlify** oder **Cloudflare Pages**: Ordner `website/` hochladen oder das Repository verbinden (Basisverzeichnis und
   Ausgabeordner `website`, kein Build-Befehl); `_headers` wird automatisch gelesen. Beide unterstützen auch private Repositories.
@@ -101,7 +102,7 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
     root /var/www/vereinsflow-website;
     index index.html;
     error_page 404 /404.html;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
     add_header X-Content-Type-Options nosniff always;
     add_header Referrer-Policy strict-origin-when-cross-origin always;
   }
@@ -141,11 +142,52 @@ Hinweise zu den Aufnahmen:
 - Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo. Parallel laufende E2E-Tests der Anwendung nicht
   stören: Aufnahme und Tests belasten denselben Rechner.
 
+## Benachrichtigung zum Start (`newsletter.php`)
+
+Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start und bei wichtigen Neuigkeiten anmelden
+(Double-Opt-in: Bestätigungs-E-Mail, erst der Klick auf „Anmeldung bestätigen“ trägt ein). Alles steckt in `newsletter.php`
+(PHP ab 7.4, keine Datenbank); Einzelheiten und alle Grenzwerte stehen im Kopfkommentar der Datei.
+
+- **Daten:** außerhalb von `/public` im Ordner `/vereinsflow-daten` des Webspace (legt das Skript beim ersten Aufruf selbst an,
+  über das Internet nicht abrufbar). Die Liste für den Versand ist `anmeldungen-bestaetigt.csv` (Excel, mit Spalte
+  „Abmeldelink“) – im Webspace Explorer herunterladen. **`schluessel.txt` nie löschen:** Ohne ihn funktionieren die Abmeldelinks
+  in bereits verschickten E-Mails nicht mehr; das Skript bricht dann bewusst mit einer Fehlerseite ab. Den ganzen Ordner
+  `/vereinsflow-daten` mitsichern und bei einem Umzug mitnehmen. ZIP-Paket, Entpack-Helfer und SFTP-Upload berühren ihn nicht.
+- **Hinweis ans Team:** Je bestätigter Anmeldung geht eine kurze E-Mail an `kontakt@vereins-flow.com` – bewusst ohne Adresse,
+  nur mit der Gesamtzahl.
+- **Aufräumen:** Unbestätigte Anmeldungen (7 Tage) und Abmeldungen (Nachweis 3 Jahre) werden bei jedem Aufruf des Skripts
+  gelöscht. Bietet der IONOS-Tarif Cronjobs, zusätzlich täglich `php …/public/newsletter.php aufraeumen` ausführen lassen.
+- **Nach dem Hochladen testen:** einmal mit einer eigenen Adresse anmelden, bestätigen, abmelden. Kommt die E-Mail nicht an,
+  bei IONOS prüfen, ob für die Domain SPF eingerichtet ist (DNS-Eintrag mit `include:_spf-eu.ionos.com`).
+- **Launch-Mail oder Neuigkeiten verschicken:** Jede E-Mail **einzeln** an jeden Empfänger (Serienbrief), nie mehrere Adressen
+  in An/CC/BCC. Zum Beispiel Thunderbird mit dem Konto `kontakt@vereins-flow.com` und dem Add-on „Mail Merge“: die CSV als
+  Quelle, im Text der Platzhalter `{{Abmeldelink}}` für den persönlichen Link, bei vielen Empfängern in Portionen. Jede E-Mail
+  braucht den Abmeldelink und diesen Fuß (Pflichtangaben):
+
+  ```
+  --
+  VereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker
+  Oberschlesienstraße 6a · 45711 Datteln · kontakt@vereins-flow.com
+  Impressum: https://vereins-flow.com/impressum.html
+  Datenschutz: https://vereins-flow.com/datenschutz.html#benachrichtigung
+  Abmelden: {{Abmeldelink}}
+  ```
+
+  Heruntergeladene Kopien der CSV nach dem Versand wieder löschen.
+- **Einwilligungstext** (Fassung `formular-2026-09-27`, wird je Anmeldung mitgespeichert – bei einer Änderung am Formular
+  `VF_EINWILLIGUNG` in `newsletter.php` hochzählen und den neuen Wortlaut hier ergänzen):
+  „Mit dem Absenden willigen Sie ein, dass die VereinsFlow GbR Ihnen E-Mails zum Start und zu wichtigen Neuigkeiten von
+  VereinsFlow schickt – selten, höchstens etwa einmal im Monat. Sie bekommen zuerst eine E-Mail mit einem Bestätigungslink.
+  Abmelden können Sie sich jederzeit über den Link in jeder E-Mail. Mehr in der Datenschutzerklärung.“
+- **Lokale Vorschau:** `tools/serve.mjs` führt kein PHP aus; ein Absenden zeigt dort nur einen Hinweis. Getestet wurde das
+  Skript mit PHP als WebAssembly (`@php-wasm/node`, PHP 7.4 und 8.3).
+
 ## Entscheidungen, die sich leicht ändern lassen
 
 - **Ansprache:** „Sie“ (die Anwendung selbst duzt). Texte stehen direkt in den HTML-Dateien.
 - **Handlungsaufforderung:** „Demo anfragen“ per E-Mail – die Plattform ist geschlossen, neue Vereine richtet der Betreiber ein
-  (siehe `/registrieren` der Anwendung). Ein Kontaktformular gibt es bewusst nicht (würde einen Dienst und Datenschutzhinweise erfordern).
+  (siehe `/registrieren` der Anwendung). Ein Kontaktformular gibt es bewusst nicht; das einzige Formular ist die Anmeldung
+  „Beim Start benachrichtigen“ (siehe unten).
 - **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Poppins)
   liegt als Vektorgrafik vor.
 - **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen in deren Hauptfarbe (`--accent`), das Logo-Blau
