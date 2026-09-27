@@ -16,6 +16,7 @@ import {
   parseAnchor,
   parseView,
   shiftAnchor,
+  suggestedDay,
   viewTitle,
 } from "@/lib/calendar-grid";
 import { berlinParts, formatDateTime, startOfBerlinDay, toDateInputValue } from "@/lib/dates";
@@ -24,8 +25,10 @@ import { buildQuery, enumParam, param, type RawSearchParams } from "@/lib/search
 import { cn } from "@/lib/utils";
 import { Agenda, MonthGrid, WeekColumns } from "@/modules/calendar/components/calendar-views";
 import { FeedDialog } from "@/modules/calendar/components/feed-dialog";
+import { DayDoubleClick, NewEventButton } from "@/modules/calendar/components/quick-event";
 import { getFeedStatus } from "@/modules/calendar/feed";
 import { listCalendarDepartments, listCalendarEntries } from "@/modules/calendar/service";
+import { eventDepartmentChoices } from "@/modules/events/service";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 
@@ -67,6 +70,52 @@ export default async function CalendarPage({
   const next = shiftAnchor(view, anchor, 1);
   const cell = { byDay, todayKey, hrefForDay };
   const noun = { monat: "Monat", liste: "Monat", woche: "Woche", tag: "Tag" }[view];
+  // „Neuer Termin“ (Doppelklick auf einen Tag oder Knopf im Kopf) nur für alle, die Veranstaltungen anlegen dürfen.
+  const quick = can(ctx, "events:create") ? eventDepartmentChoices(ctx, departments) : null;
+
+  const calendar = (
+    <>
+      {view === "monat" && (
+        <>
+          <MonthGrid days={range.days} month={berlinParts(anchor).month} {...cell} />
+          <Agenda
+            days={range.days.filter((day) => berlinParts(day).month === berlinParts(anchor).month)}
+            className="md:hidden"
+            {...cell}
+            emptyHint="In diesem Monat gibt es keine Termine, die zu den gewählten Filtern passen."
+          />
+        </>
+      )}
+      {view === "woche" && (
+        <>
+          <WeekColumns days={range.days} {...cell} />
+          <Agenda
+            days={range.days}
+            className="md:hidden"
+            {...cell}
+            emptyHint="In dieser Woche gibt es keine Termine, die zu den gewählten Filtern passen."
+          />
+        </>
+      )}
+      {view === "tag" && (
+        // Auch der leere Tag (Hinweis „Keine Termine“) lässt sich doppelt anklicken.
+        <div data-date={toDateInputValue(anchor)}>
+          <Agenda
+            days={range.days}
+            {...cell}
+            emptyHint="An diesem Tag gibt es keine Termine, die zu den gewählten Filtern passen."
+          />
+        </div>
+      )}
+      {view === "liste" && (
+        <Agenda
+          days={range.days}
+          {...cell}
+          emptyHint="In diesem Monat gibt es keine Termine, die zu den gewählten Filtern passen."
+        />
+      )}
+    </>
+  );
 
   return (
     <>
@@ -75,6 +124,7 @@ export default async function CalendarPage({
         description="Alle Termine des Vereins und deine Helferschichten."
         actions={
           <>
+            {quick && <NewEventButton date={suggestedDay(range, todayKey)} options={quick} />}
             <FeedDialog
               active={feed.active}
               createdLabel={feed.createdAt ? formatDateTime(feed.createdAt) : null}
@@ -201,47 +251,22 @@ export default async function CalendarPage({
         </p>
       )}
 
-      {view === "monat" && (
-        <>
-          <MonthGrid days={range.days} month={berlinParts(anchor).month} {...cell} />
-          <Agenda
-            days={range.days.filter((day) => berlinParts(day).month === berlinParts(anchor).month)}
-            className="md:hidden"
-            {...cell}
-            emptyHint="In diesem Monat gibt es keine Termine, die zu den gewählten Filtern passen."
-          />
-        </>
-      )}
-      {view === "woche" && (
-        <>
-          <WeekColumns days={range.days} {...cell} />
-          <Agenda
-            days={range.days}
-            className="md:hidden"
-            {...cell}
-            emptyHint="In dieser Woche gibt es keine Termine, die zu den gewählten Filtern passen."
-          />
-        </>
-      )}
-      {view === "tag" && (
-        <Agenda
-          days={range.days}
-          {...cell}
-          emptyHint="An diesem Tag gibt es keine Termine, die zu den gewählten Filtern passen."
-        />
-      )}
-      {view === "liste" && (
-        <Agenda
-          days={range.days}
-          {...cell}
-          emptyHint="In diesem Monat gibt es keine Termine, die zu den gewählten Filtern passen."
-        />
-      )}
+      {quick ? <DayDoubleClick options={quick}>{calendar}</DayDoubleClick> : calendar}
 
       <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <AREA_ICON.veranstaltungen className="size-3.5" aria-hidden="true" /> {entries.length}{" "}
-        {entries.length === 1 ? "Eintrag" : "Einträge"} im sichtbaren Zeitraum. Zeiten in Ortszeit
-        (Europe/Berlin).
+        <AREA_ICON.veranstaltungen className="size-3.5" aria-hidden="true" />
+        {/* Ein Textblock: Der Hinweis läuft im selben Satz weiter, statt als zweite Spalte daneben zu stehen. */}
+        <span>
+          {entries.length} {entries.length === 1 ? "Eintrag" : "Einträge"} im sichtbaren Zeitraum.
+          Zeiten in Ortszeit (Europe/Berlin).
+          {/* Auf dem Smartphone tippt man nicht doppelt – dort führt der Knopf „Neuer Termin“ zum Fenster. */}
+          {quick && (
+            <span className="hidden md:inline">
+              {" "}
+              Doppelklick auf einen Tag legt dort einen neuen Termin an.
+            </span>
+          )}
+        </span>
       </p>
     </>
   );

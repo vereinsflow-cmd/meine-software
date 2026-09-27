@@ -383,13 +383,26 @@ export async function getEventFormOptions(ctx: TenantContext) {
         })
       : Promise.resolve([]),
   ]);
+  return {
+    ...eventDepartmentChoices(ctx, departments),
+    members: members.map((m) => ({ id: m.id, name: `${m.lastName}, ${m.firstName}` })),
+  };
+}
+
+/**
+ * Abteilungsauswahl beim Anlegen (auch vom Kalender für „Neuer Termin“ genutzt): Wer nur abteilungsweit anlegen darf,
+ * muss eine Abteilung wählen und kann nur die eigenen wählen.
+ */
+export function eventDepartmentChoices(
+  ctx: TenantContext,
+  departments: readonly { id: string; name: string }[],
+) {
   const scope = scopeOf(ctx, "events:create");
   return {
     departments: departments.map((d) => ({
       ...d,
       selectable: scope === "CLUB" || ctx.ledDepartmentIds.includes(d.id),
     })),
-    members: members.map((m) => ({ id: m.id, name: `${m.lastName}, ${m.firstName}` })),
     departmentRequired: scope === "DEPARTMENT",
   };
 }

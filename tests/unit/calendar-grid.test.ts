@@ -6,6 +6,7 @@ import {
   parseAnchor,
   parseView,
   shiftAnchor,
+  suggestedDay,
   viewTitle,
 } from "@/lib/calendar-grid";
 import { parseBerlinDateTime, toDateInputValue } from "@/lib/dates";
@@ -103,6 +104,22 @@ describe("Blättern", () => {
     expect(toDateInputValue(shiftAnchor("woche", at("2026-10-22"), -1))).toBe("2026-10-15");
     expect(toDateInputValue(shiftAnchor("tag", at("2026-10-25"), 1))).toBe("2026-10-26");
     expect(toDateInputValue(shiftAnchor("tag", at("2026-03-29"), -1))).toBe("2026-03-28");
+  });
+});
+
+describe("Vorgeschlagener Tag für „Neuer Termin“", () => {
+  it("heute, wenn heute im gezeigten Zeitraum liegt", () => {
+    expect(suggestedDay(calendarRange("monat", at("2026-09-01")), "2026-09-26")).toBe("2026-09-26");
+    expect(suggestedDay(calendarRange("liste", at("2026-09-01")), "2026-09-26")).toBe("2026-09-26");
+    expect(suggestedDay(calendarRange("woche", at("2026-09-21")), "2026-09-26")).toBe("2026-09-26");
+    expect(suggestedDay(calendarRange("tag", at("2026-09-26")), "2026-09-26")).toBe("2026-09-26");
+  });
+
+  it("sonst der Bezugstag – auch wenn heute nur in den angeschnittenen Nachbarwochen der Monatsansicht steht", () => {
+    // Die Oktoberansicht beginnt am Montag, 28. September: der 30. September ist sichtbar, gehört aber zum Vormonat.
+    expect(suggestedDay(calendarRange("monat", at("2026-10-01")), "2026-09-30")).toBe("2026-10-01");
+    expect(suggestedDay(calendarRange("woche", at("2026-10-07")), "2026-09-26")).toBe("2026-10-07");
+    expect(suggestedDay(calendarRange("tag", at("2026-12-24")), "2026-09-26")).toBe("2026-12-24");
   });
 });
 

@@ -152,6 +152,29 @@ test.describe("Smartphone", () => {
     await expect(dialog.getByRole("button", { name: "Hochladen", exact: true })).toBeInViewport();
   });
 
+  test("„Neuer Termin“ im Kalender: Knopf erreichbar, das Fenster passt auf den Bildschirm", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await page.goto("/kalender?ansicht=monat&datum=2031-03-01");
+    await page.waitForLoadState("networkidle");
+    const dialog = page.getByRole("dialog", { name: "Neuer Termin" });
+    // Ein Tipp vor der Hydration geht verloren – dann erneut.
+    await expect(async () => {
+      await page.getByRole("button", { name: "Neuer Termin" }).click();
+      await expect(dialog).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    await expect(dialog.getByLabel("Beginn – Datum")).toHaveValue("2031-03-01");
+    const box = (await dialog.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1); // scrollt innen statt über den Rand
+    const save = dialog.getByRole("button", { name: "Als Entwurf speichern" });
+    await save.scrollIntoViewIfNeeded();
+    await expect(save).toBeInViewport();
+  });
+
   test("Abo-Dialog passt auf den Bildschirm", async ({ page }) => {
     await login(page, USERS.helfer);
     await page.goto("/kalender");

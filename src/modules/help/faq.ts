@@ -417,6 +417,18 @@ export const FAQ: readonly FaqSection[] = [
         link: { href: "/veranstaltungen/neu", label: "Neue Veranstaltung" },
         keywords: "termin erstellen event planen absagen kopieren serie",
       },
+      {
+        id: "termin-im-kalender",
+        question: "Wie trage ich direkt im Kalender einen Termin ein?",
+        steps: [
+          "Öffne den „Kalender“ und doppelklicke auf den gewünschten Tag – oder klicke oben auf „Neuer Termin“.",
+          "Trage Titel, Zeit und Ort ein und klicke auf „Als Entwurf speichern“. Der Termin steht sofort am Tag im Kalender, zunächst als Entwurf.",
+          "Klicke den Termin an und wähle „Veröffentlichen“, damit ihn alle Mitglieder sehen.",
+        ],
+        tip: "Auf dem Smartphone nimmst du den Knopf „Neuer Termin“. Beschreibung, Anmeldung und Ansprechpartner ergänzt du auf der Seite des Termins mit „Bearbeiten“.",
+        link: { href: "/kalender", label: "Zum Kalender" },
+        keywords: "doppelklick schnell eintragen termin anlegen neuer termin datum",
+      },
     ],
   },
   {
