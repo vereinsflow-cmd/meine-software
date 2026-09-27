@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FilePenLineIcon, InboxIcon, PlusIcon, SendIcon } from "lucide-react";
+import { ChevronLeftIcon, FilePenLineIcon, PlusIcon } from "lucide-react";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
@@ -8,33 +9,23 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { formatDateTime } from "@/lib/dates";
-import { enumParam, pageRequest, type RawSearchParams } from "@/lib/search-params";
+import { intParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
-import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
-import {
-  countUnreadMessages,
-  listInbox,
-  listSent,
-  type MessageDto,
-} from "@/modules/messages/service";
+import { countDrafts, getChat, listChats } from "@/modules/messages/chats";
+import { ChatList } from "@/modules/messages/components/chat-list";
+import { ChatThread } from "@/modules/messages/components/chat-thread";
+import { listSent } from "@/modules/messages/service";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
+import type { TenantContext } from "@/server/tenancy/context-core";
 
 export const metadata: Metadata = { title: "Nachrichten" };
 
-const VIEWS = ["eingang", "gesendet", "entwuerfe"] as const;
-
-function audienceText(message: MessageDto): string {
-  if (message.audience === "DEPARTMENT" && message.department)
-    return `Abteilung ${message.department.name}`;
-  if (
-    message.event &&
-    (message.audience === "EVENT_PARTICIPANTS" || message.audience === "EVENT_HELPERS")
-  )
-    return `${message.audience === "EVENT_HELPERS" ? "Helfer" : "Teilnehmer"}: ${message.event.title}`;
-  return AUDIENCE_LABEL[message.audience];
-}
-
+/**
+ * Nachrichten wie bei WhatsApp: links die Chats (je Zielgruppe einer), rechts der geöffnete Chat mit seinen Sprechblasen.
+ * Am Smartphone steht immer nur eines von beiden da – die Liste, oder der Chat mit einem Pfeil zurück. Die Seite füllt die
+ * Höhe des Bildschirms; es scrollen die Liste und der Verlauf, nicht die Seite.
+ */
 export default async function MessagesPage({
   searchParams,
 }: {
@@ -45,40 +36,25 @@ export default async function MessagesPage({
   if (!can(ctx, "messages:read")) return <NoAccess what="die Nachrichten" />;
 
   const canSend = can(ctx, "messages:send");
-  const requested = enumParam(params, "ansicht", VIEWS) ?? "eingang";
-  const view = !canSend && requested !== "eingang" ? "eingang" : requested;
-  const request = pageRequest(params, 15);
+  if (canSend && param(params, "ansicht") === "entwuerfe")
+    return <Drafts ctx={ctx} params={params} />;
 
-  const [result, unread] = await Promise.all([
-    view === "eingang"
-      ? listInbox(ctx, request)
-      : listSent(ctx, view === "gesendet" ? "sent" : "drafts", request),
-    countUnreadMessages(ctx),
-  ]);
-
-  const tabs: { key: (typeof VIEWS)[number]; label: string; icon: React.ReactNode }[] = [
-    {
-      key: "eingang",
-      label: unread > 0 ? `Posteingang (${unread})` : "Posteingang",
-      icon: <InboxIcon className="size-4" />,
-    },
-    ...(canSend
-      ? [
-          { key: "gesendet" as const, label: "Gesendet", icon: <SendIcon className="size-4" /> },
-          {
-            key: "entwuerfe" as const,
-            label: "Entwürfe",
-            icon: <FilePenLineIcon className="size-4" />,
-          },
-        ]
-      : []),
-  ];
+  const key = param(params, "chat");
+  // Erst den Chat öffnen (das markiert seine Nachrichten als gelesen), dann die Liste – so stimmen ihre Zähler.
+  const chat = key
+    ? await getChat(ctx, key, { limit: intParam(params, "anzahl", 50, 50, 1000) })
+    : null;
+  const [chats, drafts] = await Promise.all([listChats(ctx), countDrafts(ctx)]);
+  const chatOpen = key !== undefined;
 
   return (
-    <>
+    <div className="flex h-[calc(100dvh-var(--app-header-height)-2rem)] min-h-[28rem] flex-col sm:h-[calc(100dvh-var(--app-header-height)-3rem)] xl:h-[calc(100dvh-var(--app-header-height)-4rem)]">
+      {/* Am Smartphone füllt der geöffnete Chat den Bildschirm (wie in der App) – die Überschrift bleibt für Screenreader. */}
+      {chatOpen && <h1 className="sr-only md:hidden">Nachrichten</h1>}
       <PageHeader
+        className={cn("mb-4", chatOpen && "hidden md:flex")}
         title="Nachrichten"
-        description="Mitteilungen und Ankündigungen deines Vereins."
+        description="Mitteilungen und Ankündigungen deines Vereins – ein Chat je Gruppe."
         actions={
           canSend ? (
             <Button asChild>
@@ -90,120 +66,129 @@ export default async function MessagesPage({
         }
       />
 
-      {tabs.length > 1 && (
-        <nav aria-label="Ansicht wählen" className="mb-4 inline-flex rounded-lg bg-muted p-0.5">
-          {tabs.map((tab) => (
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+        <aside
+          aria-label="Chatliste"
+          className={cn(
+            "min-h-0 w-full flex-col border-r md:flex md:w-80 lg:w-96",
+            chatOpen ? "hidden" : "flex",
+          )}
+        >
+          {drafts > 0 && (
             <Link
-              key={tab.key}
-              href={tab.key === "eingang" ? "/nachrichten" : `/nachrichten?ansicht=${tab.key}`}
-              aria-current={tab.key === view ? "page" : undefined}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
-                tab.key === view
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              href="/nachrichten?ansicht=entwuerfe"
+              className="flex items-center gap-2 border-b px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent/60 hover:text-foreground"
             >
-              {tab.icon} {tab.label}
+              <FilePenLineIcon className="size-4" aria-hidden="true" />
+              Entwürfe
+              <span className="ml-auto tabular-nums">{drafts}</span>
             </Link>
-          ))}
-        </nav>
-      )}
+          )}
+          {chats.length === 0 ? (
+            <EmptyState
+              icon={<AREA_ICON.nachrichten />}
+              title="Noch keine Nachrichten"
+              description={
+                canSend
+                  ? "Schreibe die erste Nachricht an Mitglieder, eine Abteilung oder die Helfer einer Veranstaltung."
+                  : "Sobald dein Verein dir etwas mitteilt, erscheint es hier."
+              }
+              className="m-4 border-none"
+            />
+          ) : (
+            <ChatList chats={chats} activeKey={chat?.key} />
+          )}
+        </aside>
 
+        <section
+          aria-label={chat ? `Chat ${chat.title}` : "Chat"}
+          className={cn("min-h-0 min-w-0 flex-1 flex-col", chatOpen ? "flex" : "hidden md:flex")}
+        >
+          {chat ? (
+            <ChatThread chat={chat} canSendAnywhere={canSend} />
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-[#efeae2] p-6 text-center dark:bg-[#0b141a]">
+              {chatOpen ? (
+                <>
+                  <p className="font-medium">Diesen Chat gibt es nicht (mehr).</p>
+                  <Link href="/nachrichten" className="text-sm underline underline-offset-4">
+                    Zu den Chats
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <span className="flex size-16 items-center justify-center rounded-full bg-card text-muted-foreground shadow-sm">
+                    <AREA_ICON.nachrichten className="size-7" aria-hidden="true" />
+                  </span>
+                  <p className="font-medium">Wähle links einen Chat aus.</p>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    Jede Gruppe hat ihren eigenen Chat – alle Mitglieder, jede Abteilung und die
+                    Helfer und Teilnehmer jeder Veranstaltung.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+/** Entwürfe (nur für Absender): angefangene Nachrichten, die noch nicht gesendet sind. */
+async function Drafts({ ctx, params }: { ctx: TenantContext; params: RawSearchParams }) {
+  const result = await listSent(ctx, "drafts", pageRequest(params, 15));
+  return (
+    <>
+      <p className="mb-3">
+        <Link
+          href="/nachrichten"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Nachrichten
+        </Link>
+      </p>
+      <PageHeader
+        title="Entwürfe"
+        description="Angefangene Nachrichten – noch nicht gesendet."
+        actions={
+          <Button asChild>
+            <Link href="/nachrichten/neu">
+              <PlusIcon /> Neue Nachricht
+            </Link>
+          </Button>
+        }
+      />
       {result.items.length === 0 ? (
         <EmptyState
-          icon={<InboxIcon />}
-          title={
-            view === "eingang"
-              ? "Keine Nachrichten"
-              : view === "gesendet"
-                ? "Noch nichts gesendet"
-                : "Keine Entwürfe"
-          }
-          description={
-            view === "eingang"
-              ? "Sobald dein Verein dir etwas mitteilt, erscheint es hier."
-              : "Schreibe eine neue Nachricht an Mitglieder, eine Abteilung oder die Helfer einer Veranstaltung."
-          }
-          action={
-            canSend && view !== "eingang" ? (
-              <Button asChild>
-                <Link href="/nachrichten/neu">Nachricht schreiben</Link>
-              </Button>
-            ) : undefined
-          }
+          icon={<FilePenLineIcon />}
+          title="Keine Entwürfe"
+          description="Speichere eine Nachricht als Entwurf, um später weiterzuschreiben."
         />
       ) : (
         <>
-          <ul
-            className="grid gap-2"
-            aria-label={
-              view === "eingang"
-                ? "Posteingang"
-                : view === "gesendet"
-                  ? "Gesendete Nachrichten"
-                  : "Entwürfe"
-            }
-          >
-            {result.items.map((message) => {
-              const unreadMessage = view === "eingang" && message.readByMe === false;
-              const href =
-                view === "entwuerfe"
-                  ? `/nachrichten/neu?entwurf=${message.id}`
-                  : `/nachrichten/${message.id}`;
-              return (
-                <li key={message.id}>
-                  <Link
-                    href={href}
-                    className={cn(
-                      "block rounded-xl border p-4 transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                      unreadMessage && "border-primary/40 bg-primary/5",
-                    )}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="flex min-w-0 flex-wrap items-center gap-2">
-                        {unreadMessage && (
-                          <span
-                            className="size-2 shrink-0 rounded-full bg-primary"
-                            aria-hidden="true"
-                          />
-                        )}
-                        {unreadMessage && <span className="sr-only">Ungelesen: </span>}
-                        <span
-                          className={cn(
-                            "truncate",
-                            unreadMessage ? "font-semibold" : "font-medium",
-                          )}
-                        >
-                          {message.subject}
-                        </span>
-                        {message.isAnnouncement && <ToneBadge tone="info">Ankündigung</ToneBadge>}
-                        {view === "entwuerfe" && <ToneBadge tone="neutral">Entwurf</ToneBadge>}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {message.sentAt
-                          ? `${formatDateTime(message.sentAt)} Uhr`
-                          : `angelegt ${formatDateTime(message.createdAt)} Uhr`}
-                      </span>
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-sm whitespace-pre-line text-muted-foreground">
-                      {message.body}
-                    </p>
-                    <p className="mt-1.5 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-                      {view === "eingang" && message.author && <span>Von {message.author}</span>}
-                      <span>{audienceText(message)}</span>
-                      {view === "gesendet" && (
-                        <span>
-                          {message.recipientCount}{" "}
-                          {message.recipientCount === 1 ? "Empfänger" : "Empfänger"} ·{" "}
-                          {message.readCount ?? 0} gelesen
-                        </span>
-                      )}
-                    </p>
-                  </Link>
-                </li>
-              );
-            })}
+          <ul className="grid gap-2" aria-label="Entwürfe">
+            {result.items.map((message) => (
+              <li key={message.id}>
+                <Link
+                  href={`/nachrichten/neu?entwurf=${message.id}`}
+                  className="block rounded-xl border bg-card p-4 transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <span className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-medium">{message.subject}</span>
+                      <ToneBadge tone="neutral">Entwurf</ToneBadge>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      angelegt {formatDateTime(message.createdAt)} Uhr
+                    </span>
+                  </span>
+                  <span className="mt-1 line-clamp-2 block text-sm whitespace-pre-line text-muted-foreground">
+                    {message.body}
+                  </span>
+                </Link>
+              </li>
+            ))}
           </ul>
           <Pagination basePath="/nachrichten" searchParams={params} {...result} />
         </>
