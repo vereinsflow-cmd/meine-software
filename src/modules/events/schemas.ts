@@ -148,6 +148,37 @@ export const eventFormSchema = z
 export type EventFormInput = z.input<typeof eventFormSchema>;
 export type EventInput = z.output<typeof eventFormSchema>;
 
+/** Startwerte einer neuen Veranstaltung am Tag `date` (JJJJ-MM-TT): abends 18–20 Uhr, intern, einmalig. */
+export function newEventFormDefaults(date: string): EventFormInput {
+  return {
+    title: "",
+    description: "",
+    type: "EVENT",
+    visibility: "INTERNAL",
+    startDate: date,
+    startTime: "18:00",
+    endDate: date,
+    endTime: "20:00",
+    allDay: false,
+    locationName: "",
+    address: "",
+    contactMemberId: "",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
+    targetAudience: "",
+    departmentId: "",
+    maxParticipants: undefined,
+    registrationRequired: false,
+    registrationDeadlineDate: "",
+    registrationDeadlineTime: "",
+    waitlistEnabled: false,
+    internalNotes: "",
+    repeat: "none",
+    repeatCount: undefined,
+  };
+}
+
 function normalizeTime(
   date: string,
   time: string,

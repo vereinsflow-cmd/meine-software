@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { USERS, login } from "./helpers";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { USERS, login, open } from "./helpers";
 
 /** Datum (JJJJ-MM-TT) in Europe/Berlin, `offset` Tage ab heute. Die Seed-Daten sind relativ zu "heute" angelegt. */
 function berlinDate(offset: number): string {
@@ -177,6 +177,115 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
     await expect(page.getByRole("link", { name: /Fußball-Training/ })).toHaveCount(0);
     await page.goto(`/kalender?ansicht=liste&datum=${festDay()}`);
     await expect(page.getByRole("link", { name: /Sommerfest 2026/ })).toHaveCount(0);
+  });
+});
+
+// Die Tests nutzen März 2031: So weit in der Zukunft liegen keine Demo-Termine.
+test.describe("Kalender – neuer Termin per Doppelklick", () => {
+  const dialogOf = (page: Page) => page.getByRole("dialog", { name: "Neuer Termin" });
+
+  /** Doppelklickt, bis das Fenster offen ist: Vor der Hydration geht ein Doppelklick verloren. */
+  async function openByDoubleClick(page: Page, target: Locator): Promise<void> {
+    await expect(async () => {
+      await target.dblclick();
+      await expect(dialogOf(page)).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+  }
+
+  test("Monat: Doppelklick auf einen Tag öffnet „Neuer Termin“ mit diesem Datum; gespeichert steht der Entwurf am Tag", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/kalender?ansicht=monat&datum=2031-03-01");
+    await expect(
+      page.getByText("Doppelklick auf einen Tag legt dort einen neuen Termin an."),
+    ).toBeVisible();
+
+    const cell = page.locator('td[data-date="2031-03-12"]');
+    await openByDoubleClick(page, cell);
+    const dialog = dialogOf(page);
+    await expect(dialog.getByLabel("Beginn – Datum")).toHaveValue("2031-03-12");
+    await expect(dialog.getByLabel("Ende – Datum")).toHaveValue("2031-03-12");
+    await expect(dialog.getByLabel("Titel")).toBeFocused(); // gleich lostippen
+    expect(await page.evaluate(() => String(window.getSelection()))).toBe(""); // kein markiertes Wort
+
+    await dialog.getByLabel("Titel").fill("Arbeitseinsatz Vereinsheim");
+    await dialog.getByLabel(/^Art/).selectOption("WORK_ASSIGNMENT"); // Beschriftung „Art *“ (Pflichtfeld)
+    await dialog.getByLabel("Beginn – Uhrzeit").fill("09:00");
+    await dialog.getByLabel("Ende – Uhrzeit").fill("13:00");
+    await dialog.getByRole("button", { name: "Als Entwurf speichern" }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText("Termin als Entwurf angelegt.")).toBeVisible();
+    const chip = cell.getByRole("link", { name: /Arbeitseinsatz Vereinsheim/ });
+    await expect(chip).toContainText("09:00");
+    await expect(chip).toContainText("(Entwurf)"); // Mitglieder sehen ihn erst nach dem Veröffentlichen
+  });
+
+  test("Woche und Tag: Doppelklick auf eine Tagesspalte oder den leeren Tag; Abbrechen speichert nichts", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/kalender?ansicht=woche&datum=2031-03-19");
+    await openByDoubleClick(page, page.locator('section[data-date="2031-03-20"]'));
+    await expect(dialogOf(page).getByLabel("Beginn – Datum")).toHaveValue("2031-03-20");
+    await dialogOf(page).getByLabel("Titel").fill("Wird nicht gespeichert");
+    await dialogOf(page).getByRole("button", { name: "Abbrechen" }).click();
+    await expect(dialogOf(page)).toBeHidden();
+
+    await open(page, "/kalender?ansicht=tag&datum=2031-03-20");
+    await openByDoubleClick(
+      page,
+      page.getByRole("main").getByText("An diesem Tag gibt es keine Termine"),
+    );
+    await expect(dialogOf(page).getByLabel("Beginn – Datum")).toHaveValue("2031-03-20");
+    await expect(dialogOf(page).getByLabel("Titel")).toHaveValue(""); // frisches Formular
+    await page.keyboard.press("Escape");
+    await expect(dialogOf(page)).toBeHidden();
+    await expect(
+      page.getByRole("main").getByText("An diesem Tag gibt es keine Termine"),
+    ).toBeVisible();
+  });
+
+  test("Knopf „Neuer Termin“ (auch per Tastatur): gezeigter Tag vorbelegt, das Ende wandert mit dem Beginn", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/kalender?ansicht=tag&datum=2031-03-20");
+    const button = page.getByRole("button", { name: "Neuer Termin" });
+    await expect(async () => {
+      await button.focus();
+      await page.keyboard.press("Enter");
+      await expect(dialogOf(page)).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    const dialog = dialogOf(page);
+    await expect(dialog.getByLabel("Beginn – Datum")).toHaveValue("2031-03-20");
+
+    await dialog.getByLabel("Beginn – Datum").fill("2031-03-24");
+    await expect(dialog.getByLabel("Ende – Datum")).toHaveValue("2031-03-24");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused(); // der Fokus kehrt zum Knopf zurück
+  });
+
+  test("Abteilungsleiterin: ihre Abteilung ist vorausgewählt", async ({ page }) => {
+    await login(page, USERS.abteilung);
+    await open(page, "/kalender?ansicht=monat&datum=2031-03-01");
+    await openByDoubleClick(page, page.locator('td[data-date="2031-03-12"]'));
+    const department = dialogOf(page).getByLabel("Abteilung");
+    await expect(department.locator("option:checked")).toHaveText("Fußball");
+  });
+
+  test("Ohne Recht zum Anlegen: kein Knopf, kein Hinweis, Doppelklick öffnet nichts", async ({
+    page,
+  }) => {
+    await login(page, USERS.mitglied);
+    await open(page, "/kalender?ansicht=monat&datum=2031-03-01");
+    await expect(page.getByRole("heading", { level: 1, name: "Kalender" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Neuer Termin" })).toHaveCount(0);
+    await expect(page.getByText("Doppelklick auf einen Tag")).toHaveCount(0);
+    await page.locator('td[data-date="2031-03-12"]').dblclick();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 });
 

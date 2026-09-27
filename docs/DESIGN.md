@@ -119,6 +119,16 @@ Der Helferplan (Helferplanung) lässt sich zum Aushängen ausdrucken: `(app)/hel
 - **Schwarz-Weiß-tauglich:** Rahmen und Text in Schwarz/Grau (`border-black`, `print:text-black`), keine Statusfarben; Bildschirmfarben (`text-muted-foreground` u. a.) sind für sich schon kontrastreich genug (axe-geprüft) und werden beim Drucken zusätzlich auf Schwarz gezwungen.
 - Geprüft (`tests/e2e/helferplan-drucken.spec.ts`, `.mobil.spec.ts`): Sichtbarkeit des Buttons, Filter (Veranstaltungen/Zeitraum/nur offene Schichten), „Noch nicht besetzt“, Hoch-/Querformat (tatsächliches `@page`-CSS), `print:hidden` unter `page.emulateMedia({media:"print"})`, keine Kontaktdaten/Bedienelemente im Ausdruck, leere Auswahl, axe hell/dunkel, Smartphone- und Tablet-Breite. Die tatsächliche Papierform (A4 Hoch-/Querformat) wurde einmalig zusätzlich an einer echten, mit Playwright erzeugten PDF-Datei nachgewiesen (`page.pdf()`, `/MediaBox` in der Datei).
 
+## Neuer Termin im Kalender
+
+Doppelklick auf einen Tag im Kalender öffnet das Fenster „Neuer Termin“ mit diesem Datum (`modules/calendar/components/quick-event.tsx`, reine Hilfsfunktionen in `modules/calendar/quick-event.ts`, eingeführt am 26.09.2026).
+
+- **Überall, wo ein Tag steht:** Monats- und Wochentabelle, Tagesansicht (auch der leere Tag) und die Tagesköpfe der Liste. Links darin – Tageszahl, Termine, „+ N weitere“ – behalten ihre Wirkung; der Doppelklick markiert keinen Text.
+- **Ohne Maus derselbe Weg:** Der Knopf „Neuer Termin“ im Seitenkopf (Hauptaktion, Markenfarbe) öffnet dasselbe Fenster für den gezeigten Tag – heute, wenn heute im Zeitraum liegt, sonst den Bezugstag (`suggestedDay` in `src/lib/calendar-grid.ts`). So erreichen es Tastatur und Smartphone, wo man nicht doppelt tippt. Ein Hinweis unter dem Kalender (ab Tablet-Breite) verrät den Doppelklick.
+- **Nur das Nötigste:** Titel, Art, Abteilung, ganztägig, Beginn und Ende, Ort, Wiederholung. Gespeichert wird wie im großen Formular als **Entwurf** – veröffentlicht wird bewusst erst auf der Seite des Termins (dort gehen die Benachrichtigungen raus). Man bleibt im Kalender, der Entwurf steht sofort am Tag; die Erfolgsmeldung bietet „Öffnen“ an. Verschiebt man den Beginn, wandert das Ende mit (`followStartDate`). Wer nur eine Abteilung leitet, hat sie vorausgewählt.
+- **Nur mit Recht zum Anlegen** („Veranstaltungen erstellen“): Sonst gibt es weder Knopf noch Hinweis, und der Doppelklick tut nichts.
+- **Technik:** Die Kalenderansichten bleiben Server-Komponenten. Jeder Tag trägt `data-date="JJJJ-MM-TT"`; eine schmale Client-Hülle (`DayDoubleClick`) hört auf den Doppelklick und liest das Datum aus. Geprüft in `tests/e2e/kalender.spec.ts` (Monat, Woche, Tag, Knopf per Tastatur, Abteilungsleitung, Mitglied ohne Recht) und `smartphone.mobil.spec.ts` (Fenster passt auf den Bildschirm).
+
 ## Ansichten prüfen
 
 ```bash

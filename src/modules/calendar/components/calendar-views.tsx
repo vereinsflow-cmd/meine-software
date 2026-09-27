@@ -21,6 +21,8 @@ import type { CalendarEntry } from "../service";
  * Darstellung der Kalenderansichten. Reine Server-Komponenten: Blättern, Ansicht und Filter laufen über Links und ein
  * GET-Formular – die Seite funktioniert ohne JavaScript und ist per Tastatur und Screenreader bedienbar.
  * Bedeutung steckt nie nur in der Farbe: Art, "abgesagt" und "Entwurf" stehen zusätzlich als Text da.
+ * Jeder Tag trägt `data-date` (JJJJ-MM-TT): Daran erkennt `DayDoubleClick` (quick-event.tsx), welcher Tag doppelt
+ * angeklickt wurde, und öffnet dort „Neuer Termin“.
  */
 const TYPE_STYLE: Record<EventType, string> = {
   EVENT: "border-l-blue-500 bg-blue-50 dark:bg-blue-950/40",
@@ -126,6 +128,7 @@ export function MonthGrid({
                 return (
                   <td
                     key={key}
+                    data-date={key}
                     aria-current={isToday ? "date" : undefined}
                     className={cn(
                       "h-32 border-t border-l p-1 align-top first:border-l-0",
@@ -188,6 +191,7 @@ export function WeekColumns({
         return (
           <section
             key={key}
+            data-date={key}
             aria-label={formatDateLong(day)}
             aria-current={isToday ? "date" : undefined}
             className={cn(
@@ -298,7 +302,7 @@ export function Agenda({
       {filled.map((day) => {
         const key = toDateInputValue(day);
         return (
-          <li key={key} aria-current={key === todayKey ? "date" : undefined}>
+          <li key={key} data-date={key} aria-current={key === todayKey ? "date" : undefined}>
             <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <Link href={hrefForDay(day)} className="hover:underline">
                 {formatDateLong(day)}

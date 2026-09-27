@@ -91,6 +91,21 @@ export function calendarRange(view: CalendarView, anchor: Date): CalendarRange {
   return { view, anchor: day, from, to, days: daysBetween(from, to) };
 }
 
+/**
+ * Vorgeschlagener Tag (JJJJ-MM-TT) für „Neuer Termin“: heute, wenn heute im gezeigten Zeitraum liegt – in der
+ * Monatsansicht zählen die angeschnittenen Tage der Nachbarmonate nicht mit –, sonst der Bezugstag.
+ */
+export function suggestedDay(range: CalendarRange, todayKey: string): string {
+  const month = berlinParts(range.anchor).month;
+  const shown =
+    range.view === "monat"
+      ? range.days.filter((day) => berlinParts(day).month === month)
+      : range.days;
+  return shown.some((day) => toDateInputValue(day) === todayKey)
+    ? todayKey
+    : toDateInputValue(range.anchor);
+}
+
 /** Bezugstag nach dem Blättern: Monat/Liste = erster des Vor-/Folgemonats, Woche = ±7 Tage, Tag = ±1 Tag. */
 export function shiftAnchor(view: CalendarView, anchor: Date, direction: -1 | 1): Date {
   const day = startOfBerlinDay(anchor);

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { toDateInputValue } from "@/lib/dates";
 import { addBerlinDays } from "@/lib/dates";
 import { EventForm } from "@/modules/events/components/event-form";
+import { newEventFormDefaults } from "@/modules/events/schemas";
 import { getEventFormOptions } from "@/modules/events/service";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -27,33 +28,7 @@ export default async function NewEventPage() {
         departments={options.departments}
         members={options.members}
         departmentRequired={options.departmentRequired}
-        defaultValues={{
-          title: "",
-          description: "",
-          type: "EVENT",
-          visibility: "INTERNAL",
-          startDate: nextWeek,
-          startTime: "18:00",
-          endDate: nextWeek,
-          endTime: "20:00",
-          allDay: false,
-          locationName: "",
-          address: "",
-          contactMemberId: "",
-          contactName: "",
-          contactEmail: "",
-          contactPhone: "",
-          targetAudience: "",
-          departmentId: "",
-          maxParticipants: undefined,
-          registrationRequired: false,
-          registrationDeadlineDate: "",
-          registrationDeadlineTime: "",
-          waitlistEnabled: false,
-          internalNotes: "",
-          repeat: "none",
-          repeatCount: undefined,
-        }}
+        defaultValues={newEventFormDefaults(nextWeek)}
       />
     </>
   );
