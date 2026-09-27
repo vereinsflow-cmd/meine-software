@@ -153,10 +153,14 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   „Abmeldelink“) – im Webspace Explorer herunterladen. **`schluessel.txt` nie löschen:** Ohne ihn funktionieren die Abmeldelinks
   in bereits verschickten E-Mails nicht mehr; das Skript bricht dann bewusst mit einer Fehlerseite ab. Den ganzen Ordner
   `/vereinsflow-daten` mitsichern und bei einem Umzug mitnehmen. ZIP-Paket, Entpack-Helfer und SFTP-Upload berühren ihn nicht.
+- **Bestätigungs-E-Mail:** gestaltet (HTML) und zusätzlich als reiner Text für Programme ohne HTML; Texte in
+  `vf_mail_bestaetigen` und `vf_mail_bestaetigen_html`. Das Logo darin ist `assets/img/logo-mail.png` (erzeugt von
+  `tools/make-logo-assets.mjs`) und wird von der Website geladen – die Datei nicht umbenennen oder löschen, sonst fehlt es auch in
+  bereits verschickten E-Mails. Die Mail enthält bewusst nichts aus dem Formular (auch nicht den Vereinsnamen).
 - **Hinweis ans Team:** Je bestätigter Anmeldung geht eine kurze E-Mail an `kontakt@vereins-flow.com` – bewusst ohne Adresse,
   nur mit der Gesamtzahl.
 - **Aufräumen:** Unbestätigte Anmeldungen (7 Tage) und Abmeldungen (Nachweis 3 Jahre) werden bei jedem Aufruf des Skripts
-  gelöscht. Bietet der IONOS-Tarif Cronjobs, zusätzlich täglich `php …/public/newsletter.php aufraeumen` ausführen lassen.
+  gelöscht; eine unbestätigte Anmeldung, die abgemeldet wird, sofort. Bietet der IONOS-Tarif Cronjobs, zusätzlich täglich `php …/public/newsletter.php aufraeumen` ausführen lassen.
 - **Nach dem Hochladen testen:** einmal mit einer eigenen Adresse anmelden, bestätigen, abmelden. Kommt die E-Mail nicht an,
   bei IONOS prüfen, ob für die Domain SPF eingerichtet ist (DNS-Eintrag mit `include:_spf-eu.ionos.com`).
 - **Launch-Mail oder Neuigkeiten verschicken:** Jede E-Mail **einzeln** an jeden Empfänger (Serienbrief), nie mehrere Adressen

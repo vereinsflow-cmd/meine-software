@@ -83,6 +83,17 @@ await write(path.join(brand, "logo-stacked-dark.svg"), stacked(palettes.dark));
 await sharp(Buffer.from(stacked(palettes.light)), { density: 144 }).resize({ width: 1200 }).png().toFile(path.join(brand, "logo-stacked.png"));
 await write(path.join(root, "favicon.svg"), favicon);
 
+// Für E-Mails (newsletter.php): PNG, weil Gmail und Outlook kein SVG anzeigen; dreifache Auflösung für 190 × 29 px. Das Logo liegt
+// auf einer weißen Pille mit transparenten Ecken: Färbt ein E-Mail-Programm im dunklen Modus den Hintergrund um, bleibt die Schrift
+// lesbar und das Logo wirkt wie ein Abzeichen statt wie ein abgeschnittenes Rechteck (der linke Kreis bildet das runde Ende).
+const mailLogo = await sharp(Buffer.from(horizontal(palettes.light)), { density: 144 }).resize({ width: 540 }).flatten({ background: "#ffffff" }).png().toBuffer();
+const { width: mailW, height: mailH } = await sharp(mailLogo).metadata();
+const pille = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${mailW + 30}" height="${mailH}"><rect width="${mailW + 30}" height="${mailH}" rx="${mailH / 2}" fill="#fff"/></svg>`);
+await sharp({ create: { width: mailW + 30, height: mailH, channels: 4, background: "#ffffff" } })
+  .composite([{ input: mailLogo, left: 0, top: 0 }, { input: pille, blend: "dest-in" }])
+  .png()
+  .toFile(path.join(img, "logo-mail.png"));
+
 await sharp(Buffer.from(touchIcon)).resize(180, 180).png().toFile(path.join(root, "apple-touch-icon.png"));
 
 // favicon.ico: ein ICO-Container mit einem eingebetteten 48-px-PNG (Browser und Crawler, die /favicon.ico anfragen)
@@ -99,4 +110,4 @@ header.writeUInt32LE(png.length, 14); // Größe der Bilddaten
 header.writeUInt32LE(22, 18); // Offset der Bilddaten
 await fs.writeFile(path.join(root, "favicon.ico"), Buffer.concat([header, png]));
 
-console.log("Logo- und Favicon-Dateien geschrieben: assets/img/logo(.svg|-dark.svg), assets/brand/*, favicon.svg/.ico, apple-touch-icon.png");
+console.log("Logo- und Favicon-Dateien geschrieben: assets/img/logo(.svg|-dark.svg|-mail.png), assets/brand/*, favicon.svg/.ico, apple-touch-icon.png");
