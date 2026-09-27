@@ -79,6 +79,15 @@ describe("Berechtigungskatalog und Standardrollen", () => {
     expect(grants["members:read_private"]).toBe("DEPARTMENT");
   });
 
+  it("Finanzen (offene Zahlungen, Rechnungen) nur für Vereinsadministrator und Vorstand", () => {
+    for (const key of ["finance:read", "finance:manage"] as const) {
+      expect(getSystemRole("CLUB_ADMIN")?.permissions[key]).toBe("CLUB");
+      expect(getSystemRole("BOARD")?.permissions[key]).toBe("CLUB");
+      for (const roleKey of ["DEPARTMENT_LEAD", "HELPER", "MEMBER"])
+        expect(getSystemRole(roleKey)?.permissions[key], `${roleKey} → ${key}`).toBeUndefined();
+    }
+  });
+
   it("nur der Vereinsadministrator darf Benutzer, Einstellungen, Audit-Log und Löschungen verwalten", () => {
     for (const role of SYSTEM_ROLES.filter((r) => r.key !== "CLUB_ADMIN")) {
       for (const key of [

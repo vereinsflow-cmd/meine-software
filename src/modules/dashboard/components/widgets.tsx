@@ -29,12 +29,15 @@ import {
   formatCalendarDate,
   formatDateShort,
   formatDateTime,
+  formatEuroFromCents,
   formatTimeRange,
   inDaysLabel,
 } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { URGENCY_LABEL } from "@/lib/shift-health";
 import { cn } from "@/lib/utils";
+import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
+import { dueText } from "@/modules/finance/invoice-format";
 import { QuickSignUpButton } from "@/modules/shifts/components/quick-actions";
 import { FillBar, UrgencyBadge } from "@/modules/shifts/components/shift-status";
 import { hoursCompare, memberCompare, nextEventCompare, staffingCompare } from "../compare";
@@ -466,6 +469,122 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
             </li>
           ))}
         </ExpandableList>
+      )}
+    </Widget>
+  );
+}
+
+type OpenInvoiceRow = NonNullable<DashboardData["payments"]>["items"][number];
+
+/**
+ * Offene Zahlungen (nur für Rollen mit `finance:read`): oben die Summe, darunter die offenen Rechnungen – überfällige
+ * rötlich, heute/morgen fällige bernsteinfarben, der Grund steht immer auch als Text da. „Bezahlt“ (nur mit
+ * `finance:manage`) markiert eine Rechnung als bezahlt; die Meldung bietet „Rückgängig“ an.
+ */
+export function OpenPayments({ payments }: { payments: NonNullable<DashboardData["payments"]> }) {
+  const soon = (invoice: OpenInvoiceRow) =>
+    !invoice.overdue && invoice.dueInDays !== null && invoice.dueInDays <= 1;
+  return (
+    <Widget
+      id="w-offene-zahlungen"
+      title="Offene Zahlungen"
+      icon={<AREA_ICON.finanzen />}
+      accent="teal"
+      emphasis={payments.overdueCount > 0}
+      description="Rechnungen, die der Verein noch bezahlen muss"
+      more={
+        payments.count > 0
+          ? { href: "/dokumente?rechnungen=offen", label: "Alle offenen Rechnungen" }
+          : undefined
+      }
+    >
+      {payments.count === 0 ? (
+        <Empty icon={<CircleCheckBigIcon />} accent="teal" title="Alles bezahlt">
+          Es gibt keine offenen Rechnungen.
+        </Empty>
+      ) : (
+        <>
+          <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-3xl leading-tight font-bold tabular-nums">
+              {formatEuroFromCents(payments.totalCents)}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              offen in {payments.count} {payments.count === 1 ? "Rechnung" : "Rechnungen"}
+            </span>
+            {payments.overdueCount > 0 && (
+              <span className="text-sm font-semibold text-red-700 dark:text-red-300">
+                {payments.overdueCount} überfällig
+              </span>
+            )}
+          </p>
+          <ExpandableList
+            className="grid gap-2.5"
+            initial={3}
+            itemNoun={payments.items.length === 4 ? "weitere Rechnung" : "weitere Rechnungen"}
+          >
+            {payments.items.map((invoice) => {
+              const due = dueText(invoice.dueInDays);
+              return (
+                <li
+                  key={invoice.id}
+                  className={cn(
+                    "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border p-3",
+                    invoice.overdue
+                      ? "border-red-300 bg-red-50 dark:border-red-400/30 dark:bg-red-400/10"
+                      : soon(invoice)
+                        ? "border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10"
+                        : "bg-muted/40",
+                  )}
+                >
+                  <div className="min-w-0">
+                    {invoice.canOpen ? (
+                      <a
+                        href={`/api/dokumente/${invoice.documentId}/download`}
+                        className="font-semibold break-words underline-offset-4 hover:underline"
+                      >
+                        {invoice.name}
+                      </a>
+                    ) : (
+                      <span className="font-semibold break-words">{invoice.name}</span>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground tabular-nums">
+                        {invoice.amountCents !== null
+                          ? formatEuroFromCents(invoice.amountCents)
+                          : "Betrag fehlt"}
+                      </span>
+                      {invoice.dueDate && (
+                        <span
+                          className={cn(
+                            invoice.overdue && "font-semibold text-red-700 dark:text-red-300",
+                            soon(invoice) && "font-semibold text-amber-700 dark:text-amber-400",
+                          )}
+                        >
+                          {" "}
+                          · Fällig: {formatCalendarDate(invoice.dueDate)}
+                          {due ? ` – ${due}` : ""}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {payments.canManage && (
+                    <MarkPaidButton
+                      invoiceId={invoice.id}
+                      name={invoice.name}
+                      className="w-full sm:w-auto"
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ExpandableList>
+          {payments.count > payments.items.length && (
+            <p className="text-sm text-muted-foreground">
+              Hier stehen die {payments.items.length} dringendsten von {payments.count} – die
+              übrigen findest du unter „Alle offenen Rechnungen“.
+            </p>
+          )}
+        </>
       )}
     </Widget>
   );

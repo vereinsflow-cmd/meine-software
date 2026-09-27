@@ -6,7 +6,11 @@ import { requireTenantContext } from "@/server/tenancy/context";
 import { documentFormSchema, idSchema } from "./schemas";
 import { deleteDocument, updateDocument } from "./service";
 
-const refresh = () => revalidatePath("/dokumente");
+// Rechnungen stehen auch auf dem Dashboard („Offene Zahlungen“).
+const refresh = () => {
+  revalidatePath("/dokumente");
+  revalidatePath("/dashboard");
+};
 
 export async function updateDocumentAction(id: string, input: unknown): Promise<ActionResult> {
   return runAction(async () => {

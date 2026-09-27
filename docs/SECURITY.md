@@ -35,6 +35,10 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
 - Serverseitig in **jedem** Dienst (`assertCan`); Listen werden über `scopeFilter` von vornherein eingeschränkt.
 - Abteilungsleiter verwalten nur Objekte ihrer Abteilung, Hochladende nur ihre eigenen Dokumente (Beispiel für einen echten Fund
   aus den Tests: Ein pauschales „Leitung verwalten“ hätte Abteilungsleitern erlaubt, fremde Leitungen zu entfernen – jetzt je Abteilung geprüft).
+- **Finanzen:** Beträge und offene Zahlungen nur mit `finance:read`, Rechnungen erfassen/ändern/als bezahlt markieren nur mit
+  `finance:manage` (Standard: Vereinsadministrator und Vorstand). Der Dokumentendienst liefert die Rechnungsangaben nur mit dem Recht aus;
+  ohne es fehlen sie ganz (nicht nur in der Oberfläche). Die Summe auf dem Dashboard zählt auch Belege höherer Zugriffsstufe, den Beleg
+  öffnen kann trotzdem nur, wer das Dokument sehen darf.
 - Der **letzte Vereinsadministrator** kann weder entfernt noch herabgestuft werden; der **letzte Plattform-Administrator** kann sich
   nicht löschen.
 

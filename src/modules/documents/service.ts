@@ -1,16 +1,19 @@
 import type { Prisma } from "@/generated/prisma/client";
-import type { DocumentAccess } from "@/generated/prisma/enums";
+import type { DocumentAccess, InvoiceStatus } from "@/generated/prisma/enums";
+import { formatEuroFromCents, parseCalendarDate, todayCalendarDate } from "@/lib/dates";
+import { parseEuroToCents } from "@/lib/money";
 import { checkUpload, extensionOf, sanitizeFileName } from "@/lib/uploads";
 import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import { recordAudit } from "@/server/audit/audit";
 import type { TenantDb } from "@/server/db/tenant";
 import { env } from "@/server/env";
-import { forbidden, notFound, validationFailed } from "@/server/errors";
+import { badRequest, forbidden, notFound, validationFailed } from "@/server/errors";
 import { assertCan, can, scopeOf } from "@/server/permissions/policy";
 import { enforceRateLimit } from "@/server/security/rate-limit";
 import { deleteFile, openFile, saveFile } from "@/server/storage/files";
 import { scanUpload } from "@/server/storage/scan";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
+import { invoiceBaseName, nextInvoiceName } from "@/modules/finance/invoice-format";
 import type { DocumentInput } from "./schemas";
 
 /**
@@ -24,6 +27,10 @@ import type { DocumentInput } from "./schemas";
  * Uploads: Positivliste, Inhaltsprüfung, Größen- und Speicherkontingent, Rate-Limit, Scanner-Erweiterungspunkt. Die Datei
  * liegt unter einem zufälligen Schlüssel außerhalb von `public/`; Downloads laufen immer über die geprüfte Route.
  * Gelöschte Dokumente bleiben 30 Tage im Papierkorb-Zustand (Datei und Datensatz), dann räumt der Aufbewahrungsjob auf.
+ *
+ * Rechnungen: Ein Dokument kann eine Rechnung sein (`Invoice`, 1:1). Erfassen und ändern darf das nur, wer
+ * `finance:manage` hat; Betrag und Zahlungsstand sieht nur, wer `finance:read` hat – alle anderen sehen ein gewöhnliches
+ * Dokument. Rechnungen heißen nach dem Tag des Hochladens („Rechnung vom 27.09.2026.pdf“, am selben Tag „(2)“ …).
  */
 export interface DocumentDto {
   id: string;
@@ -35,11 +42,27 @@ export interface DocumentDto {
   uploader: string | null;
   createdAt: Date;
   event: { id: string; title: string; startsAt: Date } | null;
+  /** Nur für Berechtigte (`finance:read`), sonst immer `null`. */
+  invoice: DocumentInvoice | null;
   can: { manage: boolean };
+}
+
+export interface DocumentInvoice {
+  id: string;
+  status: InvoiceStatus;
+  amountCents: number | null;
+  /** Kalendertage (`@db.Date`, UTC-Mitternacht). */
+  invoiceDate: Date;
+  dueDate: Date | null;
+  /** Tage bis zur Fälligkeit (0 = heute, negativ = überschritten); `null` ohne Fälligkeit. */
+  dueInDays: number | null;
+  overdue: boolean;
+  paidAt: Date | null;
 }
 
 const include = {
   event: { select: { id: true, title: true, startsAt: true } },
+  invoice: true,
 } satisfies Prisma.DocumentInclude;
 type DocumentRow = Prisma.DocumentGetPayload<{ include: typeof include }>;
 
@@ -85,6 +108,8 @@ async function toDtos(ctx: TenantContext, rows: DocumentRow[]): Promise<Document
       })
     : [];
   const names = new Map(people.map((p) => [p.userId, `${p.user.firstName} ${p.user.lastName}`]));
+  const finance = can(ctx, "finance:read");
+  const today = todayCalendarDate();
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
@@ -95,14 +120,45 @@ async function toDtos(ctx: TenantContext, rows: DocumentRow[]): Promise<Document
     uploader: row.uploadedById ? (names.get(row.uploadedById) ?? null) : null,
     createdAt: row.createdAt,
     event: row.event,
+    invoice: finance && row.invoice ? invoiceDto(row.invoice, today) : null,
     can: { manage: canManageDocument(ctx, row) },
   }));
+}
+
+/** Rechnungsangaben für die Anzeige (auch vom Finanzmodul für das Dashboard verwendet). */
+export function invoiceDto(
+  invoice: {
+    id: string;
+    status: InvoiceStatus;
+    amountCents: number | null;
+    invoiceDate: Date;
+    dueDate: Date | null;
+    paidAt: Date | null;
+  },
+  today: Date,
+): DocumentInvoice {
+  const dueInDays =
+    invoice.dueDate === null
+      ? null
+      : Math.round((invoice.dueDate.getTime() - today.getTime()) / 86_400_000);
+  return {
+    id: invoice.id,
+    status: invoice.status,
+    amountCents: invoice.amountCents,
+    invoiceDate: invoice.invoiceDate,
+    dueDate: invoice.dueDate,
+    dueInDays,
+    overdue: invoice.status === "OPEN" && dueInDays !== null && dueInDays < 0,
+    paidAt: invoice.paidAt,
+  };
 }
 
 export interface DocumentQuery {
   q?: string;
   category?: string;
   eventId?: string;
+  /** Nur Rechnungen („alle“) bzw. nur offene – wirkt nur für Berechtigte (`finance:read`). */
+  invoices?: "open" | "all";
   request: PageRequest;
 }
 
@@ -116,6 +172,11 @@ export async function listDocuments(
       visibleWhere(ctx),
       query.category ? { category: query.category } : {},
       query.eventId ? { eventId: query.eventId } : {},
+      query.invoices && can(ctx, "finance:read")
+        ? query.invoices === "open"
+          ? { invoice: { is: { status: "OPEN" } } }
+          : { invoice: { isNot: null } }
+        : {},
       searchWhere(query.q ?? ""),
     ],
   };
@@ -199,6 +260,12 @@ export interface UploadInput {
   access: DocumentAccess;
   category?: string | undefined;
   eventId?: string | undefined;
+  /** Rechnung: offen (mit Betrag, optional Fälligkeit als „JJJJ-MM-TT“) oder schon bezahlt. */
+  invoice?: {
+    status: InvoiceStatus;
+    amountCents: number | null;
+    dueDate?: string | undefined;
+  } | null;
 }
 
 export async function uploadDocument(
@@ -206,6 +273,8 @@ export async function uploadDocument(
   input: UploadInput,
 ): Promise<{ id: string }> {
   assertCan(ctx, "documents:upload");
+  // Rechnungen erfasst nur, wer die Finanzen verwaltet – geprüft vor allem anderen, auch vor dem Speichern der Datei.
+  if (input.invoice) assertCan(ctx, "finance:manage");
   await enforceRateLimit(`document-upload:${ctx.userId}`, 30, 3600);
 
   const maxBytes = env.MAX_UPLOAD_MB * 1024 * 1024;
@@ -249,13 +318,32 @@ export async function uploadDocument(
       file: [scan.reason ?? "Die Datei wurde aus Sicherheitsgründen abgelehnt."],
     });
 
+  const invoice = input.invoice ?? null;
+  const invoiceDate = todayCalendarDate();
+  if (invoice?.status === "OPEN" && !invoice.amountCents)
+    throw validationFailed({ amount: ["Bitte gib den Betrag ein."] });
+
   const stored = await saveFile(ctx.clubId, input.bytes);
   try {
     return await ctx.db.$transaction(async (tx) => {
+      // Rechnungen heißen nach dem Tag; gezählt wird über alle nicht gelöschten Dokumente, gleich wer sie sehen darf.
+      let name = check.safeName;
+      if (invoice) {
+        const base = invoiceBaseName(invoiceDate);
+        const taken = await tx.document.findMany({
+          where: { deletedAt: null, name: { startsWith: base } },
+          select: { name: true },
+        });
+        name = nextInvoiceName(
+          base,
+          check.type.ext,
+          taken.map((entry) => entry.name),
+        );
+      }
       const document = await tx.document.create({
         data: {
           clubId: ctx.clubId,
-          name: check.safeName,
+          name,
           storageKey: stored.storageKey,
           mimeType: check.type.mime, // aus der Positivliste, nicht vom Browser
           sizeBytes: input.bytes.length,
@@ -272,6 +360,28 @@ export async function uploadDocument(
         entityId: document.id,
         summary: `Dokument „${document.name}“ hochgeladen`,
       });
+      if (invoice) {
+        const created = await tx.invoice.create({
+          data: {
+            clubId: ctx.clubId,
+            documentId: document.id,
+            invoiceDate,
+            amountCents: invoice.amountCents,
+            dueDate: invoice.dueDate ? parseCalendarDate(invoice.dueDate) : null,
+            status: invoice.status,
+            createdById: ctx.userId,
+          },
+        });
+        await recordAudit(tx, auditActor(ctx), {
+          action: "finance.invoice_created",
+          entityType: "Invoice",
+          entityId: created.id,
+          summary:
+            invoice.status === "OPEN" && invoice.amountCents
+              ? `Rechnung „${document.name}“ erfasst – offen: ${formatEuroFromCents(invoice.amountCents)}`
+              : `Rechnung „${document.name}“ erfasst (bereits bezahlt)`,
+        });
+      }
       return { id: document.id };
     });
   } catch (error) {
@@ -317,6 +427,11 @@ export async function updateDocument(
   const row = await loadVisible(ctx, id);
   if (!canManageDocument(ctx, row)) throw forbidden();
   assertAccessAllowed(ctx, input.access);
+  // Rechnungsangaben ändert nur, wer die Finanzen verwaltet – und nur an einer Rechnung.
+  if (input.invoice) {
+    assertCan(ctx, "finance:manage");
+    if (!row.invoice) throw badRequest("Dieses Dokument ist keine Rechnung.");
+  }
   // Die Endung bestimmt den Typ – umbenennen darf sie nicht ändern (sonst passen Name und Inhalt nicht mehr zusammen).
   const ext = extensionOf(row.name);
   let name = sanitizeFileName(input.name);
@@ -340,6 +455,50 @@ export async function updateDocument(
           : {}),
       },
     });
+    if (input.invoice && row.invoice) {
+      const before = row.invoice;
+      const after = {
+        status: input.invoice.status,
+        amountCents: input.invoice.amount ? parseEuroToCents(input.invoice.amount) : null,
+      };
+      const dueDate = input.invoice.dueDate ? parseCalendarDate(input.invoice.dueDate) : null;
+      const paid = after.status === "PAID";
+      await tx.invoice.update({
+        where: { id: before.id },
+        data: {
+          amountCents: after.amountCents,
+          dueDate,
+          status: after.status,
+          // Bezahlt-Vermerk: beim Wechsel auf „bezahlt“ jetzt und von mir; zurück auf „offen“ wieder leer.
+          ...(paid && before.status !== "PAID" ? { paidAt: new Date(), paidById: ctx.userId } : {}),
+          ...(!paid ? { paidAt: null, paidById: null } : {}),
+        },
+      });
+      const euro = (cents: number | null) => (cents === null ? null : formatEuroFromCents(cents));
+      const day = (value: Date | null) => value?.toISOString().slice(0, 10) ?? null;
+      await recordAudit(tx, auditActor(ctx), {
+        action: "finance.invoice_updated",
+        entityType: "Invoice",
+        entityId: before.id,
+        summary: `Rechnung „${name}“ geändert`,
+        changes: {
+          ...(before.amountCents !== after.amountCents
+            ? { betrag: { from: euro(before.amountCents), to: euro(after.amountCents) } }
+            : {}),
+          ...(day(before.dueDate) !== day(dueDate)
+            ? { faellig: { from: day(before.dueDate), to: day(dueDate) } }
+            : {}),
+          ...(before.status !== after.status
+            ? {
+                zahlungsstand: {
+                  from: before.status === "PAID" ? "bezahlt" : "offen",
+                  to: after.status === "PAID" ? "bezahlt" : "offen",
+                },
+              }
+            : {}),
+        },
+      });
+    }
   });
 }
 

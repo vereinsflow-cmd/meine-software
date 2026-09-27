@@ -22,7 +22,9 @@ export async function applyMigrations(client: pg.Client): Promise<void> {
 export async function insertPermissionCatalog(client: pg.Client): Promise<void> {
   for (const key of PERMISSION_KEYS) {
     await client.query(
-      `INSERT INTO "Permission" ("key", "module", "description") VALUES ($1, $2, $3)`,
+      // Migrationen legen neue Berechtigungen selbst an (damit bestehende Vereine sie bekommen) – dann nur angleichen.
+      `INSERT INTO "Permission" ("key", "module", "description") VALUES ($1, $2, $3)
+       ON CONFLICT ("key") DO UPDATE SET "module" = EXCLUDED."module", "description" = EXCLUDED."description"`,
       [key, PERMISSIONS[key].module, PERMISSIONS[key].label],
     );
   }

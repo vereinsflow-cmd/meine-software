@@ -78,6 +78,9 @@ export const SYSTEM_ROLES: readonly RoleDefinition[] = [
       "documents:read": CLUB,
       "documents:upload": CLUB,
       "documents:manage": CLUB,
+      // Der Kassenwart ist in der Regel Vorstandsmitglied: offene Rechnungen sehen und als bezahlt markieren.
+      "finance:read": CLUB,
+      "finance:manage": CLUB,
     },
   },
   {

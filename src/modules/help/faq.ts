@@ -394,7 +394,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "rollen",
         question: "Welche Rollen gibt es und was dürfen sie?",
         answer: [
-          "Vereinsadministrator: alles im Verein. Vorstandsmitglied: Mitglieder, Veranstaltungen, Helferplanung, Aufgaben, Nachrichten und Dokumente. Abteilungsleiter: dasselbe, aber nur für die eigene Abteilung. Helfer und Mitglied: Veranstaltungen ansehen, zu- und absagen, sich in Schichten eintragen, Nachrichten lesen.",
+          "Vereinsadministrator: alles im Verein. Vorstandsmitglied: Mitglieder, Veranstaltungen, Helferplanung, Aufgaben, Nachrichten, Dokumente und die offenen Zahlungen (Rechnungen). Abteilungsleiter: dasselbe (ohne die offenen Zahlungen), aber nur für die eigene Abteilung. Helfer und Mitglied: Veranstaltungen ansehen, zu- und absagen, sich in Schichten eintragen, Nachrichten lesen.",
           "Die Rolle jeder Person steht unter „Benutzer und Rollen“. Der letzte Vereinsadministrator kann nicht entfernt oder herabgestuft werden.",
         ],
         keywords: "rechte berechtigung zugriff admin vorstand",
@@ -502,6 +502,36 @@ export const FAQ: readonly FaqSection[] = [
         tip: "Erlaubt sind PDF, Bilder, Word-, Excel- und PowerPoint-Dateien, OpenDocument, TXT und CSV bis zur eingestellten Größe (Standard 10 MB). Ausführbare Dateien werden abgelehnt. Abteilungsleiter laden Dokumente zu einer Veranstaltung ihrer Abteilung hoch.",
         link: { href: "/dokumente", label: "Zu den Dokumenten" },
         keywords: "upload datei pdf satzung freigeben zugriff ziehen ablegen drag drop mehrere",
+      },
+    ],
+  },
+  {
+    id: "verwaltung-finanzen",
+    title: "Für Vorstand: Rechnungen und offene Zahlungen",
+    description: "Rechnungen ablegen, offene Beträge im Blick behalten, als bezahlt markieren.",
+    requires: "finance:read",
+    items: [
+      {
+        id: "rechnung-erfassen",
+        question: "Wie lege ich eine Rechnung ab, die noch bezahlt werden muss?",
+        steps: [
+          "Öffne „Dokumente“ und ziehe die Rechnung auf die Seite – oder klicke auf „Dokument hochladen“ und wähle sie aus.",
+          "Hake „Das ist eine Rechnung“ an. Sie heißt dann automatisch nach dem heutigen Tag, z. B. „Rechnung vom 27.09.2026“.",
+          "Lass „Muss noch bezahlt werden“ angehakt, trage den Betrag ein (z. B. 149,90) und, wenn bekannt, das Fälligkeitsdatum. Klicke auf „Hochladen“.",
+        ],
+        tip: "Rechnungen sind zunächst „Nur Vorstand“. Ist eine Rechnung schon bezahlt, nimm den Haken bei „Muss noch bezahlt werden“ heraus – dann wird sie nur abgelegt. Rechnungen lädst du einzeln hoch, damit jede ihren eigenen Betrag bekommt.",
+        link: { href: "/dokumente", label: "Zu den Dokumenten" },
+        keywords: "rechnung beleg quittung kosten betrag zahlung kassenwart",
+      },
+      {
+        id: "offene-zahlungen",
+        question: "Wo sehe ich, wie viel Geld noch offen ist?",
+        answer: [
+          "Auf dem Dashboard unter „Finanzen“: Die Karte „Offene Zahlungen“ zeigt die Summe aller offenen Rechnungen und die dringendsten einzeln – überfällige rot, bald fällige gelb. Ist eine Rechnung bezahlt, klicke daneben auf „Bezahlt“; ein Klick auf „Rückgängig“ in der Meldung macht das rückgängig.",
+          "Alle Rechnungen findest du unter „Dokumente“ mit dem Filter „Nur Rechnungen“, die noch zu bezahlenden mit „Nur offene Rechnungen“. Betrag, Fälligkeit und Zahlungsstand änderst du dort mit dem Stift („Dokument bearbeiten“).",
+        ],
+        link: { href: "/dashboard", label: "Zum Dashboard" },
+        keywords: "offene posten schulden ausgaben kasse finanzen überfällig bezahlt",
       },
     ],
   },

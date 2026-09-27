@@ -45,6 +45,7 @@ erDiagram
     Message ||--o{ MessageRecipient : "geht an"
     User ||--o{ Notification : erhaelt
     Event |o--o{ Document : "Unterlagen"
+    Document ||--o| Invoice : "ist Rechnung"
     Club ||--o{ AuditLog : protokolliert
 ```
 
@@ -92,16 +93,17 @@ erDiagram
 
 ### Aufgaben, Nachrichten, Dokumente, Kalender
 
-| Modell                        | Zweck                                                                                                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Task`                        | Aufgabe: Zuständige/r, Fälligkeit, Priorität, Status, Bezug zu Veranstaltung                                                                                 |
-| `Checklist`, `ChecklistItem`  | Checkliste mit abhakbaren Punkten, optional einer Veranstaltung zugeordnet                                                                                   |
-| `Message`, `MessageRecipient` | Nachricht (Entwurf/gesendet, Zielgruppe, Ankündigung) und ihre Empfänger mit Lesezeitpunkt                                                                   |
-| `Notification`                | Benachrichtigung je Benutzer; E-Mail-Status als Warteschlange; `dedupeKey` gegen Doppelungen; Link nur auf interne Pfade (CHECK)                             |
-| `Document`                    | Dokument-Metadaten: Name, Kategorie, Typ, Größe, SHA-256, Zugriffsstufe, Bezug (höchstens **ein** Bezugsobjekt, per CHECK); die Datei liegt im Dateispeicher |
-| `DocumentFolder`              | Ordner – im Modell vorbereitet, die Oberfläche nutzt derzeit Kategorien                                                                                      |
-| `SupportTicket`               | Meldung an die Vereinsverwaltung (Hilfe & Support): Art, Überschrift, Text, Seite, gekürztes Gerät, Status, Antwort; `createdById` ohne Fremdschlüssel       |
-| `CalendarFeedToken`           | Persönlicher Kalender-Abo-Link (nur Hash gespeichert, widerrufbar)                                                                                           |
+| Modell                        | Zweck                                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Task`                        | Aufgabe: Zuständige/r, Fälligkeit, Priorität, Status, Bezug zu Veranstaltung                                                                                       |
+| `Checklist`, `ChecklistItem`  | Checkliste mit abhakbaren Punkten, optional einer Veranstaltung zugeordnet                                                                                         |
+| `Message`, `MessageRecipient` | Nachricht (Entwurf/gesendet, Zielgruppe, Ankündigung) und ihre Empfänger mit Lesezeitpunkt                                                                         |
+| `Notification`                | Benachrichtigung je Benutzer; E-Mail-Status als Warteschlange; `dedupeKey` gegen Doppelungen; Link nur auf interne Pfade (CHECK)                                   |
+| `Document`                    | Dokument-Metadaten: Name, Kategorie, Typ, Größe, SHA-256, Zugriffsstufe, Bezug (höchstens **ein** Bezugsobjekt, per CHECK); die Datei liegt im Dateispeicher       |
+| `DocumentFolder`              | Ordner – im Modell vorbereitet, die Oberfläche nutzt derzeit Kategorien                                                                                            |
+| `Invoice`                     | Rechnung zu genau einem Dokument (Beleg): Rechnungstag, Betrag in Cent, Fälligkeit (Kalendertage), Status offen/bezahlt, bezahlt am/von; entfällt mit dem Dokument |
+| `SupportTicket`               | Meldung an die Vereinsverwaltung (Hilfe & Support): Art, Überschrift, Text, Seite, gekürztes Gerät, Status, Antwort; `createdById` ohne Fremdschlüssel             |
+| `CalendarFeedToken`           | Persönlicher Kalender-Abo-Link (nur Hash gespeichert, widerrufbar)                                                                                                 |
 
 ### Protokoll
 
@@ -111,19 +113,21 @@ erDiagram
 
 ## Datenbank-Prüfregeln (Auszug)
 
-| Regel                                                                 | Umsetzung                                                            |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-` | CHECK                                                                |
-| Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)          | CHECK                                                                |
-| Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440  | CHECK                                                                |
-| Nie mehr Helfer als benötigt                                          | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)       |
-| Keine überlappenden Schichten je Mitglied                             | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied) |
-| Teilnehmerlimit                                                       | Trigger `event_participant_capacity_guard`                           |
-| Änderungsprotokoll unveränderlich                                     | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)  |
-| Höchstens eine offene Einladung je E-Mail und Verein                  | Teil-Unique-Index                                                    |
-| Benachrichtigungs-Links nur intern (kein Open-Redirect)               | CHECK                                                                |
-| Dokument gehört zu höchstens einem Bezugsobjekt                       | CHECK                                                                |
-| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB  | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
+| Regel                                                                    | Umsetzung                                                            |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-`    | CHECK                                                                |
+| Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)             | CHECK                                                                |
+| Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440     | CHECK                                                                |
+| Nie mehr Helfer als benötigt                                             | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)       |
+| Keine überlappenden Schichten je Mitglied                                | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied) |
+| Teilnehmerlimit                                                          | Trigger `event_participant_capacity_guard`                           |
+| Änderungsprotokoll unveränderlich                                        | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)  |
+| Höchstens eine offene Einladung je E-Mail und Verein                     | Teil-Unique-Index                                                    |
+| Benachrichtigungs-Links nur intern (kein Open-Redirect)                  | CHECK                                                                |
+| Dokument gehört zu höchstens einem Bezugsobjekt                          | CHECK                                                                |
+| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB     | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
+| Rechnung: Betrag 1 Cent – 10 Mio. €; offene Rechnung immer mit Betrag    | CHECK (`Invoice_amount_chk`, `Invoice_open_amount_chk`)              |
+| Rechnung: „bezahlt am/von“ nur bei bezahlten; höchstens eine je Dokument | CHECK (`Invoice_paid_chk`), Unique (`clubId`, `documentId`)          |
 
 Ein Test gleicht die Einstufung aller Modelle (`MODEL_SCOPE`) mit den echten Datenbankspalten ab – ein Modell mit `clubId`, das
 nicht als mandantenbezogen geführt wird, fällt sofort auf.

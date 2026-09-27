@@ -8,7 +8,8 @@ import { validationFailed } from "@/server/errors";
 import { requireTenantContext } from "@/server/tenancy/context";
 
 /**
- * Dokument hochladen (multipart/form-data: `file`, `access`, optional `category` und `eventId`).
+ * Dokument hochladen (multipart/form-data: `file`, `access`, optional `category` und `eventId`; Rechnungen zusätzlich
+ * `isInvoice`, `paymentDue`, `amount` und `dueDate`).
  *
  * Schutz: Anmeldung und Berechtigung werden VOR dem Lesen des Inhalts geprüft; die Herkunft des Aufrufs wird geprüft
  * (`apiHandler`, gegen CSRF); die angekündigte Größe wird abgelehnt, bevor der Inhalt gelesen wird. Dateityp, Größe,
@@ -41,6 +42,10 @@ export const POST = apiHandler(async (request: NextRequest) => {
     category: form.get("category") ?? undefined,
     access: form.get("access") ?? "ALL_MEMBERS",
     eventId: form.get("eventId") ?? undefined,
+    isInvoice: form.get("isInvoice") ?? undefined,
+    paymentDue: form.get("paymentDue") ?? undefined,
+    amount: form.get("amount") ?? undefined,
+    dueDate: form.get("dueDate") ?? undefined,
   });
 
   const bytes = new Uint8Array(await file.arrayBuffer());

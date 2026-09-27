@@ -66,8 +66,10 @@ Der Aufbewahrungsjob (`retention`) läuft mit den **Fristen des jeweiligen Verei
 | Abgelaufene oder lange inaktive Sitzungen, Rate-Limit-Zähler, benutzte/abgelaufene Reset-Token | mit Ablauf (Token: nach 7 Tagen)    | fest                 | gelöscht                     |
 | Widerrufene Kalender-Abo-Links                                                                 | 30 Tage                             | fest                 | gelöscht                     |
 
-Gesetzliche Aufbewahrungspflichten (z. B. steuerrechtlich für Beitragsbelege, sobald das Finanzmodul kommt) gehen vor und sind
-vom Verein zu beachten. Die Vorgaben oben sind **Voreinstellungen**, keine Rechtsempfehlung – der Verein legt sie fest.
+Gesetzliche Aufbewahrungspflichten (z. B. steuerrechtlich für Rechnungen und Beitragsbelege, i. d. R. 10 Jahre) gehen vor und sind
+vom Verein zu beachten: Rechnungen sind Dokumente und landen beim Löschen wie diese im Papierkorb (nach 30 Tagen entfernt) – der Verein
+sollte sie deshalb archivieren statt löschen. Löscht jemand sein Konto, bleiben die Rechnungen des Vereins erhalten; nur die Verweise
+„erfasst von“ und „bezahlt markiert von“ werden gelöst. Die Vorgaben oben sind **Voreinstellungen**, keine Rechtsempfehlung – der Verein legt sie fest.
 
 ## Cookie-Konzept
 

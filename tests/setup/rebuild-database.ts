@@ -37,6 +37,8 @@ export async function rebuildDatabase(name: string, storageDir?: string): Promis
       DATABASE_URL: databaseUrlFor(name),
       SEED_PASSWORD: process.env.SEED_PASSWORD ?? "Vereinsflow-Demo-2026!",
       NODE_ENV: "test",
+      // Die Belege der Demo-Rechnungen gehören in den Speicher des Testservers, nicht in den echten.
+      ...(storageDir ? { STORAGE_DIR: storageDir } : {}),
     },
   });
 }
