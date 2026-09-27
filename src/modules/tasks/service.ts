@@ -88,6 +88,8 @@ export interface TaskDto {
   priority: TaskPriority;
   /** Kalendertag (UTC-Mitternacht, `@db.Date`-Konvention). */
   dueDate: Date | null;
+  /** Tage von heute bis zur Frist (0 = heute, negativ = überschritten); `null` ohne Frist. */
+  dueInDays: number | null;
   overdue: boolean;
   completedAt: Date | null;
   assignee: { id: string; name: string } | null;
@@ -107,6 +109,10 @@ function toDto(ctx: TenantContext, task: TaskRow, today = todayCalendarDate()): 
     status: task.status,
     priority: task.priority,
     dueDate: task.dueDate,
+    dueInDays:
+      task.dueDate === null
+        ? null
+        : Math.round((task.dueDate.getTime() - today.getTime()) / 86_400_000),
     overdue:
       task.status !== "DONE" && task.dueDate !== null && task.dueDate.getTime() < today.getTime(),
     completedAt: task.completedAt,
@@ -223,6 +229,14 @@ export async function getTaskStats(ctx: TenantContext): Promise<TaskStats> {
       : Promise.resolve(0),
   ]);
   return { open, overdue, mineOpen };
+}
+
+/** Offene Aufgaben, um die sich noch niemand kümmert (Reiter „Nicht zugewiesen“ der Aufgabenseite). */
+export async function countUnassignedOpen(ctx: TenantContext): Promise<number> {
+  assertCan(ctx, "tasks:read");
+  return ctx.db.task.count({
+    where: { AND: [visibilityWhere(ctx), { status: { not: "DONE" }, assigneeMemberId: null }] },
+  });
 }
 
 /** Anzahl der sichtbaren Aufgaben je Status (für die Auswertungen auf dem Dashboard). */

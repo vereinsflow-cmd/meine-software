@@ -139,6 +139,16 @@ Dateien lassen sich aus dem Dateimanager direkt auf die Seite „Dokumente“ zi
 - **Auf eine Veranstaltung eingegrenzt** (`/dokumente?veranstaltung=…`, z. B. über die Karte „Dokumente“ der Veranstaltung): Neue Dokumente gehören vorausgewählt zu ihr und erscheinen damit in der eingegrenzten Liste.
 - Geprüft in `tests/e2e/dokumente.spec.ts` („Ziehen und Ablegen“: nachgestellte Drag-Ereignisse mit echten Dateien).
 
+## Aufgaben übersichtlich
+
+Überarbeitet am 27.09.2026, weil die Seite unübersichtlich wirkte: Der Status stand auf jeder Karte doppelt (Abzeichen und Auswahlfeld), jede Karte hatte einen roten Knopf „Löschen“, die Filterleiste bestand aus sechs teils abgeschnittenen Feldern, und bei 1024 px waren die Karten schmal und hoch (`(app)/aufgaben/page.tsx`, `modules/tasks/components/task-controls.tsx`, reine Hilfsfunktionen in `modules/tasks/list-view.ts`).
+
+- **Reiter statt Auswahlfeldern:** „Offen“, „Mir zugewiesen“, „Nicht zugewiesen“, „Überfällig“, „Erledigt“, „Alle“ – mit Anzahl, ein Klick, sofort wirksam, im Stil der übrigen Umschalter (Kalender). Wer nur eigene Aufgaben sieht, bekommt die beiden Reiter zur Zuständigkeit nicht. Die URL-Parameter sind die bisherigen (`ansicht`, `zustaendig`, `ueberfaellig`) – alte Links wie „Aufgaben zu dieser Veranstaltung“ (`ansicht=alle`) gelten weiter. Suche und Priorität bleiben als schlanke Zeile; „Filtern“ ist ein umrandeter Nebenknopf, damit neben „Neue Aufgabe“ nur ein blauer Knopf steht. Eine auf eine Veranstaltung eingegrenzte Liste sagt das jetzt („Es werden nur Aufgaben zu … angezeigt“).
+- **Gruppen nach Frist:** Überfällig (rot), Nächste 7 Tage, Später, Ohne Datum – im Reiter „Alle“ zuletzt Erledigt. Das folgt der Sortierung des Dienstes (Frist aufsteigend, ohne Frist zuletzt). Neben dem Datum steht ein Hinweis in Worten („in 3 Tagen“, „morgen“, „seit 2 Tagen überfällig“; `dueHint`), heute und morgen in Bernstein, Überfälliges in Rot.
+- **Schlanke Karten:** Links ein Kästchen zum Abhaken – die Meldung bietet „Rückgängig“ an. Rechts „Bearbeiten“ (Stift) und ⋯ mit dem Status (Offen, In Bearbeitung, Blockiert, Erledigt) und „Löschen“, abgesetzt und rot, erst nach Rückfrage. Die zuständige Person ohne Verwaltungsrecht bekommt Kästchen und ⋯ mit dem Status. Priorität und Status stehen nur als Abzeichen da, wenn sie etwas sagen („Hoch“, „Dringend“, „In Bearbeitung“, „Blockiert“) – „Normal“ und „Offen“ sind der Regelfall. Die Veranstaltung steht mit ihrem Symbol statt mit dem Vorsatz „Veranstaltung:“.
+- **Checklisten** bleiben unter den Aufgaben, durch eine Linie und einen Satz Erklärung abgesetzt.
+- Geprüft in `tests/e2e/aufgaben.spec.ts` (Reiter, Gruppen, Abhaken mit Rückgängig, Löschen über ⋯, Status durch die zuständige Person, eingegrenzte Liste) und `tests/unit/task-list-view.test.ts`.
+
 ## Ansichten prüfen
 
 ```bash
