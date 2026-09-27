@@ -7,7 +7,7 @@ test.describe("Finanzen (Platzhalter)", () => {
   }) => {
     await login(page, USERS.admin);
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
-    await openNavGroup(nav, "Einstellungen");
+    await openNavGroup(nav, "Organisation"); // neben Aufgaben und Dokumente, nicht mehr unter „Einstellungen“
     await nav.getByRole("link", { name: "Finanzen" }).click();
     await expect(page).toHaveURL(/\/finanzen$/);
     await expect(page.getByRole("heading", { level: 1, name: "Finanzen" })).toBeVisible();
