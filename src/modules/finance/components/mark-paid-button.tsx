@@ -5,7 +5,15 @@ import { useRouter } from "next/navigation";
 import { CheckIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { setInvoiceStatusAction } from "../actions";
+
+/**
+ * Grün wie „bezahlt“ (auf Wunsch, 27.09.2026) – die einzige Ausnahme von „Blau ist die Aktionsfarbe“. Weiße Schrift auf
+ * Emerald 700 (5,5 : 1) bzw. dunkle Schrift auf Emerald 500 im dunklen Modus, beides über 4,5 : 1.
+ */
+const PAID_BUTTON =
+  "bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/40 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400";
 
 /**
  * „Bezahlt“ – markiert eine offene Rechnung als bezahlt. Kein Rückfrage-Dialog: Die Meldung bietet „Rückgängig“ an,
@@ -50,12 +58,11 @@ export function MarkPaidButton({
   return (
     <Button
       type="button"
-      variant="outline"
       size="sm"
       disabled={pending}
       onClick={mark}
       aria-label={`„${name}“ als bezahlt markieren`}
-      className={className}
+      className={cn(PAID_BUTTON, className)}
     >
       <CheckIcon />
       <span className={compact ? "hidden md:inline" : undefined}>
