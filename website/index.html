@@ -25,9 +25,9 @@
   <meta property="og:image:alt" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
   <meta name="twitter:card" content="summary_large_image">
 
-  <script src="assets/js/frueh.js?v=20260927"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=20260927">
-  <script src="assets/js/site.js?v=20260927" defer></script>
+  <script src="assets/js/frueh.js?v=20260927-2"></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=20260927-2">
+  <script src="assets/js/site.js?v=20260927-2" defer></script>
 
   <script type="application/ld+json">
   {
@@ -132,7 +132,7 @@
         <p class="lead intro intro-3">VereinsFlow bündelt Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten in einer Anwendung&nbsp;– damit Vorstand, Abteilungen und Helfer mit demselben Stand arbeiten.</p>
         <div class="hero-actions intro intro-4">
           <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-          <a class="btn btn-secondary btn-lg" href="#funktionen">Funktionen ansehen</a>
+          <a class="btn btn-secondary btn-lg" href="#benachrichtigen">Beim Start benachrichtigen</a>
         </div>
         <ul class="hero-points intro intro-5">
           <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Zugang nur per Einladung</li>
@@ -763,7 +763,7 @@
         </details>
         <details>
           <summary>Wie lässt sich VereinsFlow ausprobieren?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
-          <div class="answer"><p>Am besten in einer persönlichen Demo. Eine kurze E&#8209;Mail genügt – wir melden uns und zeigen VereinsFlow anhand der Fragen Ihres Vereins.</p></div>
+          <div class="answer"><p>Am besten in einer persönlichen Demo. Eine kurze E&#8209;Mail genügt – wir melden uns und zeigen VereinsFlow anhand der Fragen Ihres Vereins. Oder lassen Sie sich <a href="#benachrichtigen">zum Start benachrichtigen</a>.</p></div>
         </details>
       </div>
     </div>
@@ -779,6 +779,29 @@
           <a class="btn btn-primary btn-lg" href="mailto:kontakt@vereins-flow.com?subject=Demo-Anfrage%20VereinsFlow&amp;body=Guten%20Tag%2C%0D%0A%0D%0Awir%20interessieren%20uns%20f%C3%BCr%20VereinsFlow.%0D%0A%0D%0AVerein%3A%20%0D%0AAnsprechperson%3A%20%0D%0ACa.%20Mitglieder%3A%20%0D%0AWunschtermin%3A%20%0D%0A"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>Demo per E&#8209;Mail anfragen</a>
         </div>
         <p class="mail-line">Oder direkt schreiben an <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a></p>
+        <!-- Benachrichtigung zum Start: Anmeldung mit Bestätigung per E-Mail (Double-Opt-in, newsletter.php) -->
+        <div class="notify" id="benachrichtigen">
+          <h3>Beim Start benachrichtigt werden</h3>
+          <p>Noch nicht bereit für eine Demo? Tragen Sie Ihre E&#8209;Mail-Adresse ein – wir melden uns zum Start von VereinsFlow und bei wichtigen Neuigkeiten.</p>
+          <form class="notify-form" action="/newsletter.php" method="post">
+            <input type="hidden" name="aktion" value="anmelden">
+            <!-- Einwilligungstext, Fassung „formular-2026-09-27“ (newsletter.php speichert sie mit; bei Änderung dort und im README mitziehen) -->
+            <p class="notify-note" id="benachrichtigen-einwilligung">Mit dem Absenden willigen Sie ein, dass die VereinsFlow GbR Ihnen E&#8209;Mails zum Start und zu wichtigen Neuigkeiten von VereinsFlow schickt – selten, höchstens etwa einmal im Monat. Sie bekommen zuerst eine E&#8209;Mail mit einem Bestätigungslink. Abmelden können Sie sich jederzeit über den Link in jeder E&#8209;Mail. Mehr in der <a href="datenschutz.html#benachrichtigung">Datenschutzerklärung</a>.</p>
+            <div class="notify-fields">
+              <label class="notify-field">
+                <span>E&#8209;Mail-Adresse</span>
+                <input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="vorname@verein.de" aria-describedby="benachrichtigen-einwilligung">
+              </label>
+              <label class="notify-field">
+                <span>Verein <small>(freiwillig)</small></span>
+                <input type="text" name="verein" maxlength="120" autocomplete="organization" placeholder="TSV Musterstadt">
+              </label>
+              <button class="btn btn-primary" type="submit">Benachrichtigen</button>
+            </div>
+            <!-- Fangfeld gegen Spam: für Menschen unsichtbar, Programme füllen es oft aus; Passwortmanager sollen es auslassen -->
+            <p class="notify-trap" aria-hidden="true"><label>Dieses Feld bitte nicht ausfüllen <input type="text" name="vf_feld" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other"></label></p>
+          </form>
+        </div>
         <h3 class="cta-steps-title" id="ablauf">In drei Schritten startklar</h3>
         <ol class="cta-steps">
           <li><span class="cta-step-no" aria-hidden="true">1</span><span><strong>Verein einrichten.</strong> Neue Vereine werden von uns eingerichtet. Danach übernimmt der Vereinsadministrator: Einstellungen, Abteilungen und Benutzer.</span></li>
@@ -817,6 +840,7 @@
           <li><a href="#ablauf">Ablauf</a></li>
           <li><a href="#faq">Häufige Fragen</a></li>
           <li><a href="#kontakt">Demo anfragen</a></li>
+          <li><a href="#benachrichtigen">Zum Start benachrichtigen</a></li>
         </ul>
       </div>
       <div>

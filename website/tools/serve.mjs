@@ -55,6 +55,12 @@ const server = http.createServer((request, response) => {
   let file = path.join(root, pathname);
   let status = 200;
 
+  // PHP läuft nur auf dem Webspace – hier nicht den Quelltext ausliefern, sondern einen Hinweis zeigen
+  if (pathname.endsWith(".php")) {
+    response.writeHead(501, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+    return response.end("PHP läuft nur auf dem Webspace (IONOS). In der lokalen Vorschau lässt sich das Formular nicht absenden.\n");
+  }
+
   const inside = file.startsWith(root + path.sep) || file === root;
   if (!inside || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     file = path.join(root, "404.html");
