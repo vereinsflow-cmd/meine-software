@@ -14,7 +14,8 @@
 //   anmeldungen-bestaetigt.csv    die bestätigten Adressen mit persönlichem Abmeldelink (für den Versand, Excel)
 //   schluessel.txt                geheimer Schlüssel für die Abmeldelinks – NIE löschen, beim Umzug mitnehmen
 //   .sperre                       Dateisperre gegen gleichzeitiges Schreiben
-// Unbestätigte Anmeldungen werden nach VF_FRIST_TAGE Tagen gelöscht, Abmeldungen (nur noch als Nachweis) nach
+// Unbestätigte Anmeldungen werden nach VF_FRIST_TAGE Tagen gelöscht (oder sofort, wenn sie abgemeldet werden; war die
+// Adresse früher schon einmal bestätigt, bleibt deren Nachweis), Abmeldungen (nur noch als Nachweis) nach
 // VF_NACHWEIS_JAHRE Jahren. Aufgeräumt wird bei jedem Aufruf dieses Skripts und, falls eingerichtet, per Cronjob:
 //   php newsletter.php aufraeumen
 //
@@ -24,8 +25,9 @@
 // insgesamt, höchstens VF_MAX_OFFEN offene Anmeldungen, Formulare nur von der eigenen Website (Origin/Sec-Fetch-Site),
 // ein unsichtbares Fangfeld. Nach außen verrät keine Antwort, ob eine Adresse schon eingetragen ist.
 //
-// Läuft ab PHP 7.4. Keine Datenbank, keine Bibliotheken. Ausgaben sind reines HTML mit dem Stylesheet der Website (die
-// Content-Security-Policy verbietet Inline-Stile und -Skripte).
+// Läuft ab PHP 7.4. Keine Datenbank, keine Bibliotheken. Seiten sind reines HTML mit dem Stylesheet der Website (die
+// Content-Security-Policy verbietet Inline-Stile und -Skripte). Die Bestätigungs-E-Mail ist dagegen HTML mit Stilen direkt
+// an den Elementen (E-Mail-Programme laden keine Stylesheets) und zusätzlich reiner Text.
 
 declare(strict_types=1);
 
@@ -46,10 +48,11 @@ const VF_MAX_GESAMT = 40;
 const VF_MAX_OFFEN = 500;
 const VF_ERNEUT_NACH = 900; // frühestens nach 15 Minuten eine weitere Bestätigungs-E-Mail an dieselbe Adresse
 const VF_MAX_DATEI = 2000000; // Byte; darüber keine neuen Anmeldungen mehr (Bestätigen und Abmelden gehen weiter)
-const VF_FUSS = "-- \nVereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker\n"
-    . "Oberschlesienstraße 6a · 45711 Datteln · kontakt@vereins-flow.com\n"
-    . "Impressum: https://vereins-flow.com/impressum.html\n"
-    . "Datenschutz: https://vereins-flow.com/datenschutz.html#benachrichtigung\n";
+const VF_ANBIETER = 'VereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker';
+const VF_ANSCHRIFT = 'Oberschlesienstraße 6a · 45711 Datteln';
+const VF_FUSS = "-- \n" . VF_ANBIETER . "\n" . VF_ANSCHRIFT . ' · ' . VF_ABSENDER . "\n"
+    . 'Impressum: ' . VF_BASIS_URL . "/impressum.html\n"
+    . 'Datenschutz: ' . VF_BASIS_URL . "/datenschutz.html#benachrichtigung\n";
 
 // ---------- Ausgabe ----------
 
@@ -192,8 +195,8 @@ function vf_schreiben(string $datei, string $inhalt): void
 }
 
 /**
- * Liest die Anmeldungen unter einer Dateisperre (höchstens etwa 4 Sekunden warten), lässt $aendern sie verändern, räumt
- * auf und schreibt sie nur zurück, wenn sich etwas geändert hat. Eine vorhandene, aber unlesbare Datei wird nie
+ * Liest die Anmeldungen unter einer Dateisperre (höchstens etwa 4 Sekunden warten), räumt auf (abgelaufene Einträge gibt es
+ * für $aendern also nicht mehr), lässt $aendern sie verändern und schreibt sie nur zurück, wenn sich etwas geändert hat. Eine vorhandene, aber unlesbare Datei wird nie
  * überschrieben (lieber ein Fehler als verlorene Anmeldungen).
  */
 function vf_mit_daten(callable $aendern)
@@ -227,8 +230,8 @@ function vf_mit_daten(callable $aendern)
             $daten = $gelesen + ['versuche' => [], 'versand' => []];
         }
         $schluessel = vf_schluessel($ordner);
-        $ergebnis = $aendern($daten, $schluessel);
         vf_aufraeumen($daten);
+        $ergebnis = $aendern($daten, $schluessel);
 
         $json = json_encode($daten, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
@@ -253,7 +256,9 @@ function vf_aufraeumen(array &$daten): void
         $offenAbgelaufen = $eintrag['status'] === 'offen' && $eintrag['angelegt_ts'] < $jetzt - VF_FRIST_TAGE * 86400;
         $nachweisAbgelaufen = $eintrag['status'] === 'abgemeldet'
             && ($eintrag['abgemeldet_ts'] ?? 0) < $jetzt - VF_NACHWEIS_JAHRE * 365 * 86400;
-        if ($offenAbgelaufen || $nachweisAbgelaufen) {
+        if ($offenAbgelaufen) {
+            vf_offen_entfernen($daten, (string) $email);
+        } elseif ($nachweisAbgelaufen) {
             unset($daten['eintraege'][$email]);
         }
     }
@@ -267,6 +272,38 @@ function vf_aufraeumen(array &$daten): void
             }
         }
     }
+}
+
+/** Entfernt eine unbestätigte Anmeldung (abgelaufen oder abgemeldet). War die Adresse früher schon einmal bestätigt und
+ *  abgemeldet, kommt der damalige Stand zurück – der Nachweis der früheren Einwilligung bleibt so seine volle Frist
+ *  erhalten, von der unbestätigten Neuanmeldung (Zeit, IP-Adresse, Verein) bleibt nichts. */
+function vf_offen_entfernen(array &$daten, string $email): void
+{
+    $frueher = $daten['eintraege'][$email]['frueher'] ?? [];
+    if (!$frueher) {
+        unset($daten['eintraege'][$email]);
+        return;
+    }
+    $alt = $frueher[0];
+    $wieder = [
+        'email' => $email,
+        'verein' => '',
+        'status' => 'abgemeldet',
+        'tokens' => [],
+        'einwilligung' => $alt['einwilligung'] ?? '',
+        'angelegt' => $alt['angelegt'] ?? '',
+        'angelegt_ts' => (int) strtotime($alt['angelegt'] ?? ''),
+        'angelegt_ip' => $alt['angelegt_ip'] ?? '',
+        'gesendet_ts' => 0,
+        'bestaetigt' => $alt['bestaetigt'] ?? '',
+        'bestaetigt_ip' => $alt['bestaetigt_ip'] ?? '',
+        'abgemeldet' => $alt['abgemeldet'] ?? vf_zeit(time()),
+        'abgemeldet_ts' => (int) (strtotime($alt['abgemeldet'] ?? '') ?: time()),
+    ];
+    if (count($frueher) > 1) {
+        $wieder['frueher'] = array_slice($frueher, 1);
+    }
+    $daten['eintraege'][$email] = $wieder;
 }
 
 function vf_juenger(array $zeiten, int $grenze): array
@@ -374,43 +411,190 @@ function vf_betreff(string $betreff): string
     return '=?UTF-8?B?' . base64_encode($betreff) . '?='; // Betreffe hier sind kurz genug für ein einzelnes Wort
 }
 
-function vf_mail(string $an, string $betreff, string $text): bool
+/** Inhalt der E-Mail: nur Text oder – mit $html – Text und HTML als Alternativen (Programme ohne HTML zeigen den Text).
+ *  Beide quoted-printable, also Zeilen mit höchstens 76 Zeichen, Zeilenenden CRLF. Liefert [Kopfzeilen, Inhalt]. */
+function vf_mime(string $text, ?string $html): array
 {
+    $kodiert = function (string $inhalt): string {
+        return quoted_printable_encode(str_replace(["\r\n", "\n"], ["\n", "\r\n"], $inhalt));
+    };
+    if ($html === null) {
+        return [['Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: quoted-printable'], $kodiert($text)];
+    }
+    $grenze = 'vf-' . bin2hex(random_bytes(12));
+    $teil = function (string $typ, string $inhalt) use ($grenze, $kodiert): string {
+        return '--' . $grenze . "\r\nContent-Type: " . $typ . "; charset=UTF-8\r\n"
+            . "Content-Transfer-Encoding: quoted-printable\r\n\r\n" . $kodiert($inhalt) . "\r\n";
+    };
+    return [
+        ['Content-Type: multipart/alternative; boundary="' . $grenze . '"'],
+        $teil('text/plain', $text) . $teil('text/html', $html) . '--' . $grenze . "--\r\n",
+    ];
+}
+
+function vf_mail(string $an, string $betreff, string $text, ?string $html = null): bool
+{
+    [$inhaltskopf, $nachricht] = vf_mime($text, $html);
+    $kopf = implode("\r\n", array_merge([
+        'From: ' . VF_ABSENDER_NAME . ' <' . VF_ABSENDER . '>',
+        'Reply-To: ' . VF_ABSENDER,
+        // Date und Message-ID selbst setzen: Nicht jeder Versandweg ergänzt sie, und Gmail lehnt Mails ohne Message-ID ab
+        'Date: ' . gmdate(DATE_RFC2822),
+        'Message-ID: <' . bin2hex(random_bytes(16)) . '@' . substr((string) strrchr(VF_ABSENDER, '@'), 1) . '>',
+        'MIME-Version: 1.0',
+    ], $inhaltskopf, ['Auto-Submitted: auto-generated']));
     // Nur für Tests auf dem eigenen Rechner: E-Mails in eine Datei schreiben statt zu verschicken
     $testdatei = getenv('VF_NEWSLETTER_MAILTEST');
     if ($testdatei) {
-        return file_put_contents($testdatei, json_encode(['an' => $an, 'betreff' => $betreff, 'text' => $text],
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX) !== false;
+        $eintrag = ['an' => $an, 'betreff' => $betreff, 'text' => $text, 'html' => $html, 'kopf' => $kopf,
+            'nachricht' => $nachricht];
+        return file_put_contents($testdatei, json_encode($eintrag, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+            FILE_APPEND | LOCK_EX) !== false;
     }
-    $kopf = implode("\r\n", [
-        'From: ' . VF_ABSENDER_NAME . ' <' . VF_ABSENDER . '>',
-        'Reply-To: ' . VF_ABSENDER,
-        'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: quoted-printable',
-        'Auto-Submitted: auto-generated',
-    ]);
-    $text = quoted_printable_encode(str_replace("\n", "\r\n", $text));
     // Mit Absenderadresse der eigenen Domain für Rückläufer und SPF (-f); nur ein Versuch, damit nichts doppelt ankommt
-    $ok = @mail($an, vf_betreff($betreff), $text, $kopf, '-f' . VF_ABSENDER);
+    $ok = @mail($an, vf_betreff($betreff), $nachricht, $kopf, '-f' . VF_ABSENDER);
     if (!$ok) {
         error_log('VereinsFlow newsletter.php: mail() fehlgeschlagen');
     }
     return $ok;
 }
 
-function vf_mail_bestaetigen(string $email, string $token, string $abmeldelink): bool
+/** Ablauf des Bestätigungslinks in deutscher Zeit, z. B. „04.10.2026 um 16:39 Uhr“. */
+function vf_frist_text(int $ts): string
 {
+    $zeit = (new DateTimeImmutable('@' . $ts))->setTimezone(new DateTimeZone('Europe/Berlin'));
+    return $zeit->format('d.m.Y') . ' um ' . $zeit->format('H:i') . ' Uhr';
+}
+
+/** Bestätigungs-E-Mail. Enthält bewusst nichts, was im Formular eingegeben wurde (auch nicht den Vereinsnamen) – sonst
+ *  ließen sich über das Formular E-Mails mit fremdem Text an beliebige Adressen schicken. */
+function vf_mail_bestaetigen(string $email, string $token, string $abmeldelink, int $gueltigBis): bool
+{
+    $link = VF_BASIS_URL . '/newsletter.php?bestaetigen=' . $token;
+    $frist = vf_frist_text($gueltigBis);
     $text = "Guten Tag,\n\n"
-        . "Sie haben sich auf vereins-flow.com angemeldet, um zum Start von VereinsFlow und bei wichtigen Neuigkeiten "
-        . "eine E-Mail zu bekommen.\n\n"
-        . "Bitte bestätigen Sie Ihre Anmeldung über diesen Link:\n"
-        . VF_BASIS_URL . '/newsletter.php?bestaetigen=' . $token . "\n\n"
-        . "Erst nach der Bestätigung nehmen wir Sie in die Liste auf. Waren Sie das nicht, ignorieren Sie diese E-Mail "
-        . 'einfach – ohne Bestätigung löschen wir Ihre Angaben nach ' . VF_FRIST_TAGE . " Tagen automatisch.\n\n"
-        . "Abmelden können Sie sich jederzeit über diesen Link:\n" . $abmeldelink . "\n\n"
+        . "vielen Dank für Ihr Interesse an VereinsFlow! Sie haben sich auf vereins-flow.com eingetragen, um zum Start "
+        . "und bei wichtigen Neuigkeiten eine E-Mail von uns zu bekommen.\n\n"
+        . "Bitte bestätigen Sie Ihre Anmeldung über diesen Link:\n" . $link . "\n\n"
+        . 'Der Link ist bis zum ' . $frist . ' gültig. Erst nach Ihrer Bestätigung nehmen wir Sie in die Liste auf.'
+        . "\n\n"
+        . "Was Sie erwartet:\n"
+        . "- eine E-Mail, sobald VereinsFlow startet\n"
+        . "- wichtige Neuigkeiten – selten, höchstens etwa einmal im Monat\n"
+        . "- Abmelden jederzeit über den Link in jeder E-Mail\n\n"
+        . 'Sie haben sich nicht angemeldet? Dann ignorieren Sie diese E-Mail einfach – ohne Bestätigung löschen wir Ihre '
+        . 'Angaben nach ' . VF_FRIST_TAGE . " Tagen automatisch.\n\n"
+        . "Abmelden:\n" . $abmeldelink . "\n\n"
         . "Viele Grüße\nIhr VereinsFlow-Team\n\n" . VF_FUSS;
-    return vf_mail($email, 'Bitte bestätigen: Anmeldung bei VereinsFlow', $text);
+    return vf_mail($email, 'Bitte bestätigen Sie Ihre Anmeldung bei VereinsFlow', $text,
+        vf_mail_bestaetigen_html($link, $abmeldelink, $frist));
+}
+
+/** Gestaltete Fassung der Bestätigungs-E-Mail. E-Mail-Programme verstehen nur einen Teil von HTML und CSS: deshalb Tabellen
+ *  statt Flexbox, Stile direkt an den Elementen, das Logo als PNG (Gmail und Outlook zeigen kein SVG), Sonderregeln für
+ *  Outlook unter Windows ([if mso]). Ohne Bilder bleibt alles lesbar (Alternativtext statt Logo). */
+function vf_mail_bestaetigen_html(string $link, string $abmeldelink, string $frist): string
+{
+    $vorlage = <<<'HTML'
+<!DOCTYPE html>
+<html lang="de" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Bitte bestätigen Sie Ihre Anmeldung</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<style>body, table, td, p, a, h1 { font-family: 'Segoe UI', Arial, sans-serif !important; }</style>
+<![endif]-->
+<style>
+  :root { color-scheme: light; supported-color-schemes: light; }
+  body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important;
+    font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+  @media only screen and (max-width: 600px) {
+    .vf-aussen { padding: 16px 8px !important; }
+    .vf-karte { padding: 28px 22px 26px !important; }
+    .vf-titel { font-size: 22px !important; }
+    .vf-knopf { width: 100% !important; }
+    .vf-knopf a { display: block !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#f2f5f9;">
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Nur noch ein Schritt – dann sagen wir Ihnen Bescheid, sobald VereinsFlow startet.{{fuellung}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f5f9;">
+<tr>
+<td class="vf-aussen" align="center" style="padding:36px 16px;">
+<!--[if mso]><table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td><![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+<tr>
+<td class="vf-karte" style="background-color:#ffffff;border:1px solid #e1e7ef;border-radius:16px;padding:36px 40px 34px;font-family:{{schrift}};font-size:16px;line-height:1.6;color:#354559;">
+<a href="{{start}}" style="text-decoration:none;"><img src="{{logo}}" width="190" height="29" alt="VereinsFlow" style="display:block;width:190px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;font-family:{{schrift}};font-size:22px;font-weight:700;line-height:29px;color:#1c4a7a;"></a>
+<h1 class="vf-titel" style="margin:30px 0 14px;font-family:{{schrift}};font-size:24px;line-height:1.3;font-weight:700;color:#0e1a2b;">Bitte bestätigen Sie Ihre Anmeldung</h1>
+<p style="margin:0 0 14px;">Guten Tag,</p>
+<p style="margin:0 0 26px;">vielen Dank für Ihr Interesse an VereinsFlow! Sie haben sich auf <a href="{{start}}" target="_blank" style="color:#0555b7;text-decoration:none;white-space:nowrap;">vereins-flow.com</a> eingetragen, um zum Start und bei wichtigen Neuigkeiten eine <span style="white-space:nowrap;">E-Mail</span> von uns zu bekommen. Dafür brauchen wir noch Ihre Bestätigung:</p>
+<table role="presentation" class="vf-knopf" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center" bgcolor="#0555b7" style="background-color:#0555b7;border-radius:999px;mso-padding-alt:14px 32px;">
+<a href="{{link}}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:{{schrift}};font-size:16px;font-weight:700;line-height:20px;color:#ffffff;text-decoration:none;border-radius:999px;">Anmeldung bestätigen</a>
+</td>
+</tr>
+</table>
+<p style="margin:14px 0 28px;font-size:14px;line-height:1.5;color:#5a6a7e;">Der Link ist bis zum {{frist}} gültig. Erst nach Ihrer Bestätigung nehmen wir Sie in die Liste auf.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td bgcolor="#edf3fc" style="background-color:#edf3fc;border-radius:12px;padding:18px 22px;font-family:{{schrift}};font-size:15px;line-height:1.5;color:#354559;">
+<p style="margin:0 0 8px;font-weight:700;color:#0e1a2b;">Was Sie erwartet</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr><td valign="top" style="padding:3px 10px 3px 0;font-family:{{schrift}};font-size:15px;line-height:1.5;font-weight:700;color:#0555b7;">&#10003;</td><td style="padding:3px 0;font-family:{{schrift}};font-size:15px;line-height:1.5;color:#354559;">Eine <span style="white-space:nowrap;">E-Mail</span>, sobald VereinsFlow startet</td></tr>
+<tr><td valign="top" style="padding:3px 10px 3px 0;font-family:{{schrift}};font-size:15px;line-height:1.5;font-weight:700;color:#0555b7;">&#10003;</td><td style="padding:3px 0;font-family:{{schrift}};font-size:15px;line-height:1.5;color:#354559;">Wichtige Neuigkeiten – selten, höchstens etwa einmal im Monat</td></tr>
+<tr><td valign="top" style="padding:3px 10px 3px 0;font-family:{{schrift}};font-size:15px;line-height:1.5;font-weight:700;color:#0555b7;">&#10003;</td><td style="padding:3px 0;font-family:{{schrift}};font-size:15px;line-height:1.5;color:#354559;">Abmelden jederzeit über den Link in jeder <span style="white-space:nowrap;">E-Mail</span></td></tr>
+</table>
+</td>
+</tr>
+</table>
+<p style="margin:28px 0 28px;">Viele Grüße<br>Ihr VereinsFlow-Team</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="border-top:1px solid #e1e7ef;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+</table>
+<p style="margin:18px 0 0;font-size:13px;line-height:1.55;color:#5a6a7e;">Funktioniert der Knopf nicht? Dann kopieren Sie diesen Link in die Adresszeile Ihres Browsers:<br><a href="{{link}}" target="_blank" style="color:#0555b7;word-break:break-all;">{{link}}</a></p>
+<p style="margin:12px 0 0;font-size:13px;line-height:1.55;color:#5a6a7e;">Sie haben sich nicht angemeldet? Dann ignorieren Sie diese <span style="white-space:nowrap;">E-Mail</span> einfach – ohne Bestätigung löschen wir Ihre Angaben nach {{tage}} Tagen automatisch.</p>
+</td>
+</tr>
+<tr>
+<td align="center" style="padding:22px 16px 0;font-family:{{schrift}};font-size:12px;line-height:1.6;color:#5a6a7e;">
+<p style="margin:0 0 6px;">{{anbieter}}<br>{{anschrift}} · <a href="mailto:{{absender}}" style="color:#5a6a7e;">{{absender}}</a></p>
+<p style="margin:0;"><a href="{{impressum}}" target="_blank" style="color:#5a6a7e;">Impressum</a> &nbsp;·&nbsp; <a href="{{datenschutz}}" target="_blank" style="color:#5a6a7e;">Datenschutz</a> &nbsp;·&nbsp; <a href="{{abmelden}}" target="_blank" style="color:#5a6a7e;">Abmelden</a></p>
+</td>
+</tr>
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td>
+</tr>
+</table>
+</body>
+</html>
+HTML;
+    return strtr($vorlage, [
+        '{{schrift}}' => "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+        // Füllzeichen nach dem Vorschautext, damit die Vorschau im Posteingang nicht mit dem Seitentext weiterläuft
+        '{{fuellung}}' => str_repeat('&#8199;&#65279;&#847;', 40),
+        '{{start}}' => vf_h(VF_BASIS_URL . '/'),
+        '{{logo}}' => vf_h(VF_BASIS_URL . '/assets/img/logo-mail.png'),
+        '{{link}}' => vf_h($link),
+        '{{frist}}' => vf_h($frist),
+        '{{tage}}' => (string) VF_FRIST_TAGE,
+        '{{anbieter}}' => vf_h(VF_ANBIETER),
+        '{{anschrift}}' => vf_h(VF_ANSCHRIFT),
+        '{{absender}}' => vf_h(VF_ABSENDER),
+        '{{impressum}}' => vf_h(VF_BASIS_URL . '/impressum.html'),
+        '{{datenschutz}}' => vf_h(VF_BASIS_URL . '/datenschutz.html#benachrichtigung'),
+        '{{abmelden}}' => vf_h($abmeldelink),
+    ]);
 }
 
 /** Kurze Nachricht ans Team – bewusst ohne Adresse und Verein, damit nach einer Abmeldung keine Kopie im Postfach liegt. */
@@ -527,7 +711,8 @@ function vf_anmelden(): void
         $daten['versand'][$postfach] = $versand;
         $gesamt[] = $jetzt;
         $daten['versuche']['*'] = $gesamt;
-        return ['token' => $token, 'abmeldelink' => vf_abmelde_link($email, $schluessel), 'vorher' => $vorhanden];
+        return ['token' => $token, 'abmeldelink' => vf_abmelde_link($email, $schluessel), 'vorher' => $vorhanden,
+            'gueltig_bis' => $eintrag['angelegt_ts'] + VF_FRIST_TAGE * 86400];
     });
 
     if ($ergebnis === 'zu-viele' || $ergebnis === 'voll') {
@@ -540,8 +725,9 @@ function vf_anmelden(): void
         vf_weiter('gesendet');
     }
     try {
-        $verschickt = vf_mail_bestaetigen($email, $ergebnis['token'], $ergebnis['abmeldelink']);
+        $verschickt = vf_mail_bestaetigen($email, $ergebnis['token'], $ergebnis['abmeldelink'], $ergebnis['gueltig_bis']);
     } catch (Throwable $fehler) {
+        error_log('VereinsFlow newsletter.php: Bestätigungs-E-Mail nicht erzeugt: ' . $fehler->getMessage());
         $verschickt = false;
     }
     if (!$verschickt) {
@@ -601,12 +787,17 @@ function vf_bestaetigen(string $token): void
 }
 
 /** Abmelden: Die Adresse bekommt keine E-Mails mehr. Aufbewahrt werden nur noch Adresse, Zeiten und IP-Adressen als
- *  Nachweis der früheren Einwilligung (VF_NACHWEIS_JAHRE Jahre); Vereinsname und Links werden gelöscht. */
+ *  Nachweis der früheren Einwilligung (VF_NACHWEIS_JAHRE Jahre); Vereinsname und Links werden gelöscht. Eine noch nicht
+ *  bestätigte Anmeldung wird ganz entfernt (vf_offen_entfernen). */
 function vf_abmelden(string $token): void
 {
     $getroffen = vf_mit_daten(function (array &$daten, string $schluessel) use ($token) {
         foreach ($daten['eintraege'] as $email => $eintrag) {
             if ($eintrag['status'] !== 'abgemeldet' && hash_equals(vf_abmelde_token((string) $email, $schluessel), $token)) {
+                if ($eintrag['status'] === 'offen') {
+                    vf_offen_entfernen($daten, (string) $email); // nie bestätigt: keine Einwilligung nachzuweisen
+                    return true;
+                }
                 $daten['eintraege'][$email] = array_merge($eintrag, [
                     'status' => 'abgemeldet',
                     'verein' => '',
