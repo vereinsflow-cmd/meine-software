@@ -9,7 +9,7 @@ import {
   showSubject,
   type ChatTarget,
 } from "./chat-format";
-import { authorNames, previewRecipients } from "./service";
+import { authorNames, postingRights, previewRecipients } from "./service";
 
 /**
  * Nachrichten als Chats (wie WhatsApp): Jede Zielgruppe ist ein Chat, darin stehen die gesendeten Nachrichten in zeitlicher
@@ -41,21 +41,12 @@ const targetOf = (row: Row): ChatTarget => ({
   eventId: row.eventId,
 });
 
-/** Verein: alle gesendeten Nachrichten verwalten; Abteilungsleiter: die selbst verfassten (wie „Gesendet“ bisher). */
+/** Verein: alle gesendeten Nachrichten verwalten; alle anderen, die schreiben: die selbst verfassten (wie „Gesendet“ bisher). */
 function managesAll(ctx: TenantContext): boolean {
   return can(ctx, "messages:send") && scopeOf(ctx, "messages:send") === "CLUB";
 }
 function manages(ctx: TenantContext, row: { authorUserId: string | null }): boolean {
   return managesAll(ctx) || (can(ctx, "messages:send") && row.authorUserId === ctx.userId);
-}
-
-/** Darf ich in diesen Chat schreiben? Dieselben Regeln wie beim Versand (der Server prüft beim Senden erneut). */
-function canPostTo(ctx: TenantContext, target: ChatTarget, eventDepartmentId: string | null) {
-  const scope = scopeOf(ctx, "messages:send");
-  if (scope === "CLUB") return true;
-  if (scope !== "DEPARTMENT" || target.audience === "ALL_MEMBERS") return false;
-  if (target.audience === "DEPARTMENT") return ctx.ledDepartmentIds.includes(target.departmentId!);
-  return eventDepartmentId !== null && ctx.ledDepartmentIds.includes(eventDepartmentId);
 }
 
 export interface ChatSummary {
@@ -146,6 +137,10 @@ export interface ChatDetail {
   /** Datum der Veranstaltung (Helfer-/Teilnehmer-Chats). */
   eventStartsAt: Date | null;
   canPost: boolean;
+  /** Darf ich hier auch ankündigen und per E-Mail senden (als Verein bzw. Leitung)? Sonst nur einfache Nachrichten. */
+  canAnnounce: boolean;
+  /** Warum ich hier nicht schreibe: Die Gruppe gibt es nicht mehr, oder ich gehöre nicht (mehr) dazu. */
+  postBlocked: "gone" | "notMember" | null;
   /** Wie viele Personen eine neue Nachricht erreicht (nur wenn ich hier schreiben darf). */
   reach: number | null;
   messages: ChatBubble[];
@@ -212,7 +207,16 @@ export async function getChat(
     }),
     targetInfo(ctx, target),
   ]);
-  const canPost = info !== undefined && canPostTo(ctx, target, info.departmentId);
+  // Dieselben Regeln wie beim Versand: als Verein bzw. Leitung – oder weil ich selbst zu dieser Gruppe gehöre.
+  const rights =
+    info === undefined
+      ? { canPost: false, canAnnounce: false }
+      : await postingRights(ctx, {
+          audience: target.audience,
+          departmentId: target.departmentId ?? undefined,
+          eventId: target.eventId ?? undefined,
+        });
+  const canPost = rights.canPost;
   if (rows.length === 0 && !canPost) return null;
 
   const page = rows.slice(0, limit).reverse();
@@ -268,6 +272,8 @@ export async function getChat(
     }),
     eventStartsAt: info?.startsAt ?? newest?.event?.startsAt ?? null,
     canPost,
+    canAnnounce: rights.canAnnounce,
+    postBlocked: canPost ? null : info === undefined ? "gone" : "notMember",
     reach,
     hasOlder: rows.length > limit,
     messages: page.map((row) => ({

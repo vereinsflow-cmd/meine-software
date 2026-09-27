@@ -46,7 +46,6 @@ describe("Berechtigungskatalog und Standardrollen", () => {
       "events:update",
       "shifts:manage",
       "shifts:assign",
-      "messages:send",
       "documents:upload",
       "audit:read",
     ] as const;
@@ -56,6 +55,13 @@ describe("Berechtigungskatalog und Standardrollen", () => {
         expect(grants[key], `${roleKey} darf ${key} nicht besitzen`).toBeUndefined();
       }
     }
+  });
+
+  it("Jeder darf Nachrichten schreiben – Helfer und Mitglieder aber nur in die eigenen Gruppen (OWN)", () => {
+    for (const roleKey of ["HELPER", "MEMBER"])
+      expect(getSystemRole(roleKey)?.permissions["messages:send"]).toBe("OWN");
+    expect(getSystemRole("DEPARTMENT_LEAD")?.permissions["messages:send"]).toBe("DEPARTMENT");
+    expect(getSystemRole("BOARD")?.permissions["messages:send"]).toBe("CLUB");
   });
 
   it("Mitglieder sehen Personendaten nur über OWN (also nur die eigenen)", () => {

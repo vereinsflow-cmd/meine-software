@@ -256,6 +256,13 @@ export async function executeDeletionRequest(
         where: { respondedById: user.id },
         data: { respondedById: null },
       });
+      // Eigene Nachrichten: Entwürfe verschwinden; gesendete bleiben für die Empfänger lesbar wie in einer WhatsApp-Gruppe
+      // (Absender dann „Früheres Mitglied“), der Verweis auf das Konto wird gelöst. Wer das nicht will, ruft vorher zurück.
+      await tx.message.deleteMany({ where: { authorUserId: user.id, status: "DRAFT" } });
+      await tx.message.updateMany({
+        where: { authorUserId: user.id },
+        data: { authorUserId: null },
+      });
       // Rechnungen gehören dem Verein (Aufbewahrungspflichten) und bleiben; nur die Verweise auf das Konto werden gelöst.
       await tx.invoice.updateMany({ where: { createdById: user.id }, data: { createdById: null } });
       await tx.invoice.updateMany({ where: { paidById: user.id }, data: { paidById: null } });

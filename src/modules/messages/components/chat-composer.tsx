@@ -22,16 +22,19 @@ import { chatKeyOf, subjectFromBody, type ChatTarget } from "../chat-format";
  * Eingabezeile unten im Chat (wie bei WhatsApp): Text schreiben, rundem Knopf senden. Einen eigenen Betreff gibt es hier
  * nicht – er entsteht aus der ersten Zeile (`subjectFromBody`); wer ihn selbst wählen will, nimmt „Mit Betreff
  * schreiben“. Weil die Nachricht viele Personen erreicht und sich nur zurückrufen lässt, fragt der Knopf einmal nach.
+ * „Als Ankündigung“ und „Auch per E-Mail“ gibt es nur für Vorstand und Leitung (`canAnnounce`).
  * Die Eingabetaste macht eine neue Zeile; Strg/⌘ + Eingabe sendet.
  */
 export function ChatComposer({
   target,
   title,
   reach,
+  canAnnounce,
 }: {
   target: ChatTarget;
   title: string;
   reach: number | null;
+  canAnnounce: boolean;
 }) {
   const router = useRouter();
   const id = useId();
@@ -59,8 +62,8 @@ export function ChatComposer({
         audience: target.audience,
         departmentId: target.departmentId ?? "",
         eventId: target.eventId ?? "",
-        isAnnouncement: announcement,
-        sendEmail: email,
+        isAnnouncement: canAnnounce && announcement,
+        sendEmail: canAnnounce && email,
       });
       setConfirmOpen(false);
       if (!result.ok) {
@@ -130,24 +133,28 @@ export function ChatComposer({
         </Button>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 px-2 text-xs text-muted-foreground">
-        <label className="inline-flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={announcement}
-            onChange={(event) => setAnnouncement(event.target.checked)}
-            className="size-3.5 accent-primary"
-          />
-          Als Ankündigung
-        </label>
-        <label className="inline-flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={email}
-            onChange={(event) => setEmail(event.target.checked)}
-            className="size-3.5 accent-primary"
-          />
-          Auch per E-Mail
-        </label>
+        {canAnnounce && (
+          <>
+            <label className="inline-flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={announcement}
+                onChange={(event) => setAnnouncement(event.target.checked)}
+                className="size-3.5 accent-primary"
+              />
+              Als Ankündigung
+            </label>
+            <label className="inline-flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={email}
+                onChange={(event) => setEmail(event.target.checked)}
+                className="size-3.5 accent-primary"
+              />
+              Auch per E-Mail
+            </label>
+          </>
+        )}
         <Link
           href={`/nachrichten/neu?an=${chatKeyOf(target)}`}
           className="ml-auto underline-offset-4 hover:text-foreground hover:underline"
@@ -161,8 +168,9 @@ export function ChatComposer({
           <AlertDialogHeader>
             <AlertDialogTitle>Nachricht senden?</AlertDialogTitle>
             <AlertDialogDescription>
-              Sie geht an {people} im Chat „{title}“{email ? " – zusätzlich per E-Mail" : ""}.
-              Gesendet lässt sie sich nicht mehr ändern, nur zurückrufen.
+              Sie geht an {people} im Chat „{title}“
+              {canAnnounce && email ? " – zusätzlich per E-Mail" : ""}. Gesendet lässt sie sich
+              nicht mehr ändern, nur zurückrufen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
