@@ -5,12 +5,34 @@ import { USERS, login, open } from "./helpers";
 const uniqueTitle = (prefix: string) => `${prefix} ${Date.now() % 100000}`;
 
 test.describe("Aufgaben – Verwaltung", () => {
-  test("Liste zeigt offene Aufgaben mit Status, Priorität und Frist; Erledigtes ist über die Ansicht erreichbar", async ({
+  test("Liste zeigt offene Aufgaben nach Frist gruppiert mit Status, Priorität und Frist; Erledigtes über den Reiter", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     await open(page, "/aufgaben");
     await expect(page.getByRole("heading", { level: 1, name: "Aufgaben" })).toBeVisible();
+
+    // Reiter statt Auswahlfeldern: „Offen“ ist gewählt und nennt die Anzahl.
+    const tabs = page.getByRole("navigation", { name: "Aufgaben anzeigen" });
+    await expect(tabs.getByRole("link", { name: /^Offen \d+$/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    for (const name of ["Mir zugewiesen", "Nicht zugewiesen", "Überfällig", "Erledigt", "Alle"])
+      await expect(tabs.getByRole("link", { name: new RegExp(`^${name}`) })).toBeVisible();
+
+    // Gruppen nach Frist: mit Datum in den nächsten Tagen, ohne Datum zuletzt.
+    const soon = page.getByRole("region", { name: /^Nächste 7 Tage/ });
+    const undated = page.getByRole("region", { name: /^Ohne Datum/ });
+    await expect(
+      soon.getByRole("listitem", { name: "Aufgabe Genehmigung beim Ordnungsamt einreichen" }),
+    ).toBeVisible();
+    await expect(
+      undated.getByRole("listitem", { name: "Aufgabe Mitgliedsbeiträge für 2027 planen" }),
+    ).toBeVisible();
+    await expect(
+      soon.getByText(/Fällig: \d{2}\.\d{2}\.\d{4} · in \d+ Tagen/).first(),
+    ).toBeVisible();
 
     const ordnungsamt = page.getByRole("listitem", {
       name: "Aufgabe Genehmigung beim Ordnungsamt einreichen",
@@ -35,12 +57,19 @@ test.describe("Aufgaben – Verwaltung", () => {
       page.getByRole("listitem", { name: "Aufgabe Bierzeltgarnituren mieten" }),
     ).toContainText("Intern: Wartet auf Rückmeldung"); // Notizen sehen Verwalter
 
+    // „Normal“ und „Offen“ sind der Regelfall und stehen nicht eigens da; gelöscht wird über ⋯ statt über einen roten Knopf.
+    const beitraege = page.getByRole("listitem", {
+      name: "Aufgabe Mitgliedsbeiträge für 2027 planen",
+    });
+    await expect(beitraege.getByText("Normal", { exact: true })).toHaveCount(0);
+    await expect(beitraege.getByText("Offen", { exact: true })).toHaveCount(0);
+    await expect(beitraege.getByRole("button", { name: "Löschen" })).toHaveCount(0);
+
     // Erledigtes ist in der Standardansicht ausgeblendet …
     await expect(
       page.getByRole("listitem", { name: "Aufgabe Plakate drucken und aufhängen" }),
     ).toHaveCount(0);
-    await page.getByLabel("Ansicht wählen").selectOption("erledigt");
-    await page.getByRole("button", { name: "Filtern" }).click();
+    await tabs.getByRole("link", { name: "Erledigt" }).click();
     await expect(page).toHaveURL(/ansicht=erledigt/);
     await expect(
       page.getByRole("listitem", { name: "Aufgabe Plakate drucken und aufhängen" }),
@@ -90,9 +119,15 @@ test.describe("Aufgaben – Verwaltung", () => {
     await hans.goto("/benachrichtigungen");
     await expect(hans.getByText(`Neue Aufgabe: ${title}`)).toBeVisible();
 
-    // … und darf den Status selbst ändern.
+    // … und darf den Status selbst ändern (über ⋯). Er sieht nur seine Aufgaben – also keine Reiter für andere.
     await open(hans, "/aufgaben");
-    await hans.getByLabel(`Status von ${title}`).selectOption("IN_PROGRESS");
+    await expect(
+      hans.getByRole("navigation", { name: "Aufgaben anzeigen" }).getByRole("link", {
+        name: /zugewiesen/,
+      }),
+    ).toHaveCount(0);
+    await hans.getByRole("button", { name: `Status von „${title}“ ändern` }).click();
+    await hans.getByRole("menuitemradio", { name: "In Bearbeitung" }).click();
     await expect(
       hans
         .getByRole("listitem", { name: `Aufgabe ${title}` })
@@ -115,30 +150,43 @@ test.describe("Aufgaben – Verwaltung", () => {
     const renamed = page.getByRole("listitem", { name: `Aufgabe ${title} (geändert)` });
     await expect(renamed).toBeVisible();
 
-    // Status auf "Erledigt": verschwindet aus den offenen Aufgaben
-    await renamed.getByLabel(`Status von ${title} (geändert)`).selectOption("DONE");
+    // Abhaken: verschwindet aus den offenen Aufgaben – „Rückgängig“ holt sie zurück.
+    const check = (name: string) =>
+      page.getByRole("checkbox", { name: `„${name}“ als erledigt abhaken` });
+    await check(`${title} (geändert)`).click();
+    await expect(page.getByText(`„${title} (geändert)“ ist erledigt.`)).toBeVisible();
+    await expect(renamed).toHaveCount(0);
+    await page.getByRole("button", { name: "Rückgängig" }).click();
+    await expect(renamed).toBeVisible();
+    await check(`${title} (geändert)`).click();
     await expect(renamed).toHaveCount(0);
 
-    // Löschen (in der Ansicht "Alle")
+    // Löschen (im Reiter „Alle“) über ⋯ – die Karte hat keinen roten Knopf.
     await page.goto("/aufgaben?ansicht=alle");
     const done = page.getByRole("listitem", { name: `Aufgabe ${title} (geändert)` });
     await expect(done).toBeVisible();
-    await done.getByRole("button", { name: "Löschen" }).click();
+    await expect(
+      done.getByRole("checkbox", { name: `„${title} (geändert)“ wieder öffnen` }),
+    ).toBeChecked();
+    await done.getByRole("button", { name: `Weitere Aktionen für „${title} (geändert)“` }).click();
+    await page.getByRole("menuitem", { name: "Löschen" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click();
     await expect(page.getByText("Aufgabe gelöscht.")).toBeVisible();
     await expect(done).toHaveCount(0);
   });
 
-  test("Filter: Zuständigkeit 'Mir zugewiesen', Priorität und Suche", async ({ page }) => {
+  test("Reiter „Mir zugewiesen“, Priorität und Suche – die Suche bleibt beim Reiterwechsel erhalten", async ({
+    page,
+  }) => {
     await login(page, USERS.admin);
     await open(page, "/aufgaben");
-    await page.getByLabel("Nach Zuständigkeit filtern").selectOption("me");
-    await page.getByRole("button", { name: "Filtern" }).click();
+    const tabs = page.getByRole("navigation", { name: "Aufgaben anzeigen" });
+    await tabs.getByRole("link", { name: /^Mir zugewiesen/ }).click();
     await expect(page).toHaveURL(/zustaendig=me/);
     await expect(page.getByRole("listitem", { name: "Aufgabe Helfer einteilen" })).toBeVisible(); // Anna
     await expect(page.getByRole("listitem", { name: "Aufgabe Getränke bestellen" })).toHaveCount(0); // Claudia
 
-    await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await tabs.getByRole("link", { name: /^Offen/ }).click();
     await expect(page).toHaveURL(/\/aufgaben$/);
     // Über die Rolle suchen: Solange die neue Seite nachlädt, liegt kurz noch eine unsichtbare Kopie des Filters im Dokument.
     await page.getByRole("combobox", { name: "Nach Priorität filtern" }).selectOption("URGENT");
@@ -154,6 +202,12 @@ test.describe("Aufgaben – Verwaltung", () => {
       page.getByRole("listitem", { name: "Aufgabe Mitgliedsbeiträge für 2027 planen" }),
     ).toBeVisible();
     await expect(page.getByRole("listitem", { name: /^Aufgabe / })).toHaveCount(1);
+
+    // Reiterwechsel behält die Suche: Bernd kümmert sich um die Beiträge, „Nicht zugewiesen“ bleibt leer.
+    await tabs.getByRole("link", { name: /^Nicht zugewiesen/ }).click();
+    await expect(page).toHaveURL(/zustaendig=none/);
+    await expect(page).toHaveURL(/q=beitr/);
+    await expect(page.getByRole("heading", { name: "Keine passenden Aufgaben" })).toBeVisible();
   });
 });
 
@@ -239,6 +293,21 @@ test.describe("Checklisten", () => {
     await expect(
       card.getByRole("link", { name: "Aufgaben zu dieser Veranstaltung" }),
     ).toHaveAttribute("href", /\/aufgaben\?veranstaltung=[0-9a-f-]{36}&ansicht=alle/);
+
+    // Die Aufgabenseite sagt, dass sie eingegrenzt ist, und zeigt den Reiter „Alle“.
+    await card.getByRole("link", { name: "Aufgaben zu dieser Veranstaltung" }).click();
+    await expect(
+      page.getByText("Es werden nur Aufgaben zu „Sommerfest 2026“ angezeigt."),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("navigation", { name: "Aufgaben anzeigen" })
+        .getByRole("link", { name: "Alle" }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("listitem", { name: "Aufgabe Getränke bestellen" })).toBeVisible();
+    await expect(
+      page.getByRole("listitem", { name: "Aufgabe Mitgliedsbeiträge für 2027 planen" }),
+    ).toHaveCount(0); // gehört zu keiner Veranstaltung
   });
 
   test("Neue Checkliste anlegen und löschen; auch in der Aufgabenübersicht sichtbar", async ({

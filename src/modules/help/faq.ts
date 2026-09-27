@@ -234,10 +234,11 @@ export const FAQ: readonly FaqSection[] = [
         id: "aufgaben-erledigen",
         question: "Wo sehe ich meine Aufgaben und wie melde ich Erledigtes?",
         answer: [
-          "Unter „Aufgaben“ stehen deine Aufgaben mit Frist und Priorität. Den Status änderst du direkt in der Zeile, z. B. auf „In Bearbeitung“ oder „Erledigt“. Erledigtes ist über die Ansicht weiterhin erreichbar.",
+          "Unter „Aufgaben“ stehen deine Aufgaben, geordnet nach Frist: überfällig, in den nächsten 7 Tagen, später und ohne Datum. Oben wählst du, welche du sehen willst – z. B. „Mir zugewiesen“, „Überfällig“ oder „Erledigt“.",
+          "Erledigtes hakst du mit dem Kästchen vor der Aufgabe ab; ein Klick auf „Rückgängig“ in der Meldung macht es rückgängig. Andere Status wie „In Bearbeitung“ oder „Blockiert“ findest du hinter den drei Punkten (⋯) an der Aufgabe.",
         ],
         link: { href: "/aufgaben", label: "Zu den Aufgaben" },
-        keywords: "to-do checkliste fällig frist",
+        keywords: "to-do checkliste fällig frist abhaken erledigt status überfällig",
       },
     ],
   },

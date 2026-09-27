@@ -3,9 +3,19 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarIcon, PencilIcon, PlusIcon, TrashIcon, UserIcon, UsersIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  EllipsisIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-react";
 import { toast } from "sonner";
+import type { TaskStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +24,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AREA_ICON } from "@/components/shared/area-icons";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import {
   FormError,
@@ -23,7 +43,9 @@ import {
   TextField,
   TextareaField,
 } from "@/components/shared/form-fields";
-import { TaskPriorityBadge, TaskStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import { IconButton } from "@/components/shared/icon-button";
+import { useMoreActions } from "@/components/shared/more-actions";
+import { TaskPriorityBadge, TaskStatusBadge } from "@/components/shared/status-badge";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatCalendarDate } from "@/lib/dates";
 import { eventOptions } from "@/lib/event-options";
@@ -35,24 +57,35 @@ import {
   setTaskStatusAction,
   updateTaskAction,
 } from "../actions";
-import { TASK_PRIORITIES, TASK_STATUSES, taskFormSchema, type TaskFormInput } from "../schemas";
+import { dueHint } from "../list-view";
+import { TASK_PRIORITIES, taskFormSchema, type TaskFormInput } from "../schemas";
 import type { TaskDto, TaskFormOptions } from "../service";
 
 const priorityOptions = TASK_PRIORITIES.map((value) => ({
   value,
   label: TASK_PRIORITY_LABEL[value],
 }));
-const statusOptions = TASK_STATUSES.map((value) => ({ value, label: TASK_STATUS_LABEL[value] }));
+/** Status in der Reihenfolge des Arbeitsablaufs – „Erledigt“ zuletzt. */
+const STATUS_ORDER = [
+  "OPEN",
+  "IN_PROGRESS",
+  "BLOCKED",
+  "DONE",
+] as const satisfies readonly TaskStatus[];
+const statusOptions = STATUS_ORDER.map((value) => ({ value, label: TASK_STATUS_LABEL[value] }));
 
 /** Dialog zum Anlegen und Bearbeiten einer Aufgabe. Die Auswahllisten kennen nur, was der Benutzer verwalten darf. */
 export function TaskFormDialog({
   taskId,
   defaults,
   options,
+  trigger,
 }: {
   taskId?: string;
   defaults: TaskFormInput;
   options: TaskFormOptions;
+  /** Eigener Auslöser (z. B. ein Symbolknopf auf der Karte) statt „Bearbeiten“ bzw. „Neue Aufgabe“. */
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -71,15 +104,16 @@ export function TaskFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {taskId ? (
-          <Button variant="ghost" size="sm">
-            <PencilIcon /> Bearbeiten
-          </Button>
-        ) : (
-          <Button>
-            <PlusIcon /> Neue Aufgabe
-          </Button>
-        )}
+        {trigger ??
+          (taskId ? (
+            <Button variant="ghost" size="sm">
+              <PencilIcon /> Bearbeiten
+            </Button>
+          ) : (
+            <Button>
+              <PlusIcon /> Neue Aufgabe
+            </Button>
+          ))}
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
@@ -149,15 +183,40 @@ export function TaskFormDialog({
   );
 }
 
-/** Eine Aufgabe in der Liste: Angaben, Status ändern, bearbeiten, löschen. */
+/** Priorität und Status stehen nur da, wenn sie etwas sagen – „Normal“ und „Offen“ sind der Regelfall. */
+const NOTABLE_PRIORITIES = new Set(["HIGH", "URGENT"]);
+const NOTABLE_STATUSES = new Set(["IN_PROGRESS", "BLOCKED"]);
+
+/**
+ * Eine Aufgabe in der Liste. Links das Kästchen zum Abhaken (die Meldung bietet „Rückgängig“ an), rechts „Bearbeiten“
+ * und ⋯ mit dem Status und „Löschen“ – kein roter Knopf auf jeder Karte. Wer nur den Status ändern darf (die zuständige
+ * Person), bekommt Kästchen und ⋯ mit dem Status.
+ */
 export function TaskRow({ task, options }: { task: TaskDto; options: TaskFormOptions }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Die Rückfrage „Löschen“ liegt außerhalb des Menüs; danach kehrt der Fokus zum ⋯-Knopf zurück.
+  const { triggerRef, show, dialog } = useMoreActions<"delete">();
   const done = task.status === "DONE";
+  const hint = dueHint(task.dueInDays, done);
+  const dueSoon = !done && !task.overdue && task.dueInDays !== null && task.dueInDays <= 1;
 
-  function changeStatus(status: string) {
+  function changeStatus(status: TaskStatus) {
+    if (status === task.status) return;
+    const previous = task.status;
     startTransition(async () => {
       const result = await setTaskStatusAction({ id: task.id, status });
+      if (!result.ok) toast.error(result.error.message);
+      else if (status === "DONE")
+        toast.success(`„${task.title}“ ist erledigt.`, {
+          action: { label: "Rückgängig", onClick: () => restore(previous) },
+        });
+      router.refresh();
+    });
+  }
+
+  function restore(status: TaskStatus) {
+    void setTaskStatusAction({ id: task.id, status }).then((result) => {
       if (!result.ok) toast.error(result.error.message);
       router.refresh();
     });
@@ -167,28 +226,128 @@ export function TaskRow({ task, options }: { task: TaskDto; options: TaskFormOpt
     <li
       aria-label={`Aufgabe ${task.title}`}
       className={cn(
-        "grid gap-3 rounded-xl border p-4 md:grid-cols-[minmax(0,1fr)_auto]",
+        "flex items-start gap-3 rounded-xl border bg-card p-4",
         task.overdue && "border-red-300 dark:border-red-900",
-        done && "bg-muted/30",
+        done && "bg-muted/40",
       )}
     >
-      <div className="grid content-start gap-1.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3
-            className={cn("text-base font-semibold", done && "text-muted-foreground line-through")}
-          >
-            {task.title}
-          </h3>
-          <TaskPriorityBadge priority={task.priority} />
-          <TaskStatusBadge status={task.status} />
-          {task.overdue && <ToneBadge tone="danger">Überfällig</ToneBadge>}
+      {task.can.setStatus ? (
+        <Checkbox
+          checked={done}
+          disabled={pending}
+          aria-label={
+            done ? `„${task.title}“ wieder öffnen` : `„${task.title}“ als erledigt abhaken`
+          }
+          className="mt-1 size-5 [&_svg]:size-4"
+          onCheckedChange={(checked) => changeStatus(checked === true ? "DONE" : "OPEN")}
+        />
+      ) : (
+        <span aria-hidden="true" className="size-5 shrink-0" />
+      )}
+
+      <div className="grid min-w-0 flex-1 content-start gap-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <h3
+              className={cn(
+                "text-base font-semibold break-words",
+                done && "text-muted-foreground line-through",
+              )}
+            >
+              {task.title}
+            </h3>
+            {NOTABLE_PRIORITIES.has(task.priority) && (
+              <TaskPriorityBadge priority={task.priority} />
+            )}
+            {NOTABLE_STATUSES.has(task.status) && <TaskStatusBadge status={task.status} />}
+          </div>
+          <div className="-mt-1 -mr-1 flex shrink-0 items-center">
+            {task.can.edit && (
+              <TaskFormDialog
+                taskId={task.id}
+                options={options}
+                trigger={
+                  <IconButton label="Bearbeiten" className="size-8">
+                    <PencilIcon />
+                  </IconButton>
+                }
+                defaults={{
+                  title: task.title,
+                  description: task.description ?? "",
+                  assigneeMemberId: task.assignee?.id ?? "",
+                  eventId: task.event?.id ?? "",
+                  groupId: task.group?.id ?? "",
+                  dueDate: task.dueDate ? task.dueDate.toISOString().slice(0, 10) : "",
+                  priority: task.priority,
+                  status: task.status,
+                  notes: task.notes ?? "",
+                }}
+              />
+            )}
+            {task.can.setStatus && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    ref={triggerRef}
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    disabled={pending}
+                    aria-label={
+                      task.can.edit
+                        ? `Weitere Aktionen für „${task.title}“`
+                        : `Status von „${task.title}“ ändern`
+                    }
+                  >
+                    <EllipsisIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" collisionPadding={16} className="min-w-48">
+                  <DropdownMenuLabel>Status</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={task.status}
+                    onValueChange={(value) => changeStatus(value as TaskStatus)}
+                  >
+                    {STATUS_ORDER.map((status) => (
+                      <DropdownMenuRadioItem key={status} value={status} className="py-1.5">
+                        {TASK_STATUS_LABEL[status]}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                  {task.can.edit && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        className="py-1.5"
+                        onSelect={() => show("delete")}
+                      >
+                        <TrashIcon /> Löschen
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
-        {task.description && <p className="text-sm whitespace-pre-wrap">{task.description}</p>}
+
+        {task.description && (
+          <p className="text-sm whitespace-pre-wrap text-muted-foreground">{task.description}</p>
+        )}
+
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
           {task.dueDate && (
-            <span className="inline-flex items-center gap-1">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1",
+                task.overdue && "font-medium text-destructive",
+                dueSoon && "font-medium text-amber-700 dark:text-amber-400",
+              )}
+            >
               <CalendarIcon className="size-3.5" aria-hidden="true" /> Fällig:{" "}
               {formatCalendarDate(task.dueDate)}
+              {hint && ` · ${hint}`}
             </span>
           )}
           <span className="inline-flex items-center gap-1">
@@ -198,72 +357,39 @@ export function TaskRow({ task, options }: { task: TaskDto; options: TaskFormOpt
           {task.event && (
             <Link
               href={`/veranstaltungen/${task.event.id}`}
-              className="underline-offset-4 hover:text-foreground hover:underline"
+              className="inline-flex items-center gap-1 underline-offset-4 hover:text-foreground hover:underline"
             >
-              Veranstaltung: {task.event.title}
+              <AREA_ICON.veranstaltungen className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">Veranstaltung: </span>
+              {task.event.title}
             </Link>
           )}
           {task.group && (
             <span className="inline-flex items-center gap-1">
-              <UsersIcon className="size-3.5" aria-hidden="true" /> {task.group.name}
+              <UsersIcon className="size-3.5" aria-hidden="true" />
+              <span className="sr-only">Gruppe: </span>
+              {task.group.name}
             </span>
           )}
         </div>
+
         {task.notes && (
           <p className="rounded-md bg-muted px-2.5 py-1.5 text-sm">Intern: {task.notes}</p>
         )}
       </div>
 
-      <div className="flex flex-wrap items-start gap-2 md:justify-end">
-        {task.can.setStatus && (
-          <NativeSelect
-            aria-label={`Status von ${task.title}`}
-            value={task.status}
-            disabled={pending}
-            onChange={(event) => changeStatus(event.target.value)}
-            className="w-40"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </NativeSelect>
-        )}
-        {task.can.edit && (
-          <>
-            <TaskFormDialog
-              taskId={task.id}
-              options={options}
-              defaults={{
-                title: task.title,
-                description: task.description ?? "",
-                assigneeMemberId: task.assignee?.id ?? "",
-                eventId: task.event?.id ?? "",
-                groupId: task.group?.id ?? "",
-                dueDate: task.dueDate ? task.dueDate.toISOString().slice(0, 10) : "",
-                priority: task.priority,
-                status: task.status,
-                notes: task.notes ?? "",
-              }}
-            />
-            <ConfirmAction
-              destructive
-              trigger={
-                <Button variant="ghost" size="sm" className="text-destructive">
-                  <TrashIcon /> Löschen
-                </Button>
-              }
-              title="Aufgabe löschen?"
-              description={`„${task.title}“ wird gelöscht.`}
-              confirmLabel="Löschen"
-              action={() => deleteTaskAction({ id: task.id })}
-              successMessage="Aufgabe gelöscht."
-              onSuccess={() => router.refresh()}
-            />
-          </>
-        )}
-      </div>
+      {task.can.edit && (
+        <ConfirmAction
+          destructive
+          {...dialog("delete")}
+          title="Aufgabe löschen?"
+          description={`„${task.title}“ wird gelöscht.`}
+          confirmLabel="Löschen"
+          action={() => deleteTaskAction({ id: task.id })}
+          successMessage="Aufgabe gelöscht."
+          onSuccess={() => router.refresh()}
+        />
+      )}
     </li>
   );
 }
