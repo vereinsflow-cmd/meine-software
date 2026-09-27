@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Sidebar groups={groups} />
 
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden [@media(max-height:820px)]:h-14">
+          <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">
             <MobileNav
               groups={groups}
               clubName={ctx.club.name}

@@ -4,6 +4,7 @@ import { ChevronLeftIcon } from "lucide-react";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { param, type RawSearchParams } from "@/lib/search-params";
+import { parseChatKey } from "@/modules/messages/chat-format";
 import { ComposeForm } from "@/modules/messages/components/compose-form";
 import { emptyMessage } from "@/modules/messages/schemas";
 import { getComposeOptions, getDraftForEdit } from "@/modules/messages/service";
@@ -31,6 +32,9 @@ export default async function ComposePage({
         throw error;
       })
     : null;
+  // Aus einem Chat kommend („Mit Betreff schreiben“): dessen Gruppe vorauswählen. Erlaubt ist sie nur, wenn man dort
+  // schreiben darf – das prüft der Server beim Senden ohnehin.
+  const chatTarget = parseChatKey(param(params, "an"));
   const defaults = draft
     ? {
         ...emptyMessage(),
@@ -38,10 +42,16 @@ export default async function ComposePage({
         departmentId: draft.departmentId ?? "",
         eventId: draft.eventId ?? "",
       }
-    : emptyMessage({
-        audience: options.scope === "CLUB" ? "ALL_MEMBERS" : "DEPARTMENT",
-        departmentId: options.scope === "DEPARTMENT" ? (options.departments[0]?.id ?? "") : "",
-      });
+    : chatTarget
+      ? emptyMessage({
+          audience: chatTarget.audience,
+          departmentId: chatTarget.departmentId ?? "",
+          eventId: chatTarget.eventId ?? "",
+        })
+      : emptyMessage({
+          audience: options.scope === "CLUB" ? "ALL_MEMBERS" : "DEPARTMENT",
+          departmentId: options.scope === "DEPARTMENT" ? (options.departments[0]?.id ?? "") : "",
+        });
 
   return (
     <>

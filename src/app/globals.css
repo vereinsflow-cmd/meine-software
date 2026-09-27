@@ -143,11 +143,20 @@
   --club-logo-bg: oklch(1 0 0);
   /* Breite der festen Seitenleiste (ab `lg`); die Provider-Komponente überschreibt diesen Wert inline, wenn eingeklappt. */
   --sidebar-w: 17rem;
+  /* Höhe der Kopfzeile (und des Seitenleisten-Kopfs); auf niedrigen Bildschirmen etwas flacher. Die Nachrichten-Seite
+     rechnet damit ihre volle Höhe aus. */
+  --app-header-height: 4rem;
 }
 
 @media (width >= 80rem) {
   :root {
     --sidebar-w: 18.5rem;
+  }
+}
+
+@media (max-height: 820px) {
+  :root {
+    --app-header-height: 3.5rem;
   }
 }
 

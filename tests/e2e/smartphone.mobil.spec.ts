@@ -104,6 +104,7 @@ test.describe("Smartphone", () => {
     paths.push(
       "/aufgaben",
       "/nachrichten",
+      "/nachrichten?chat=alle",
       "/nachrichten/neu",
       "/dokumente",
       "/hilfe",

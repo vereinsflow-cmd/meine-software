@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ChevronLeftIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { formatDateTime } from "@/lib/dates";
+import { chatKeyOf } from "@/modules/messages/chat-format";
 import { DeleteMessageButton } from "@/modules/messages/components/message-actions";
 import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { getMessage } from "@/modules/messages/service";
@@ -26,6 +27,16 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
     throw error;
   });
   if (!message) notFound();
+  // Gesendetes steht im Chat seiner Gruppe (Links aus Benachrichtigungen führen dorthin, an die Nachricht); diese Seite
+  // zeigt nur noch Entwürfe.
+  if (message.status === "SENT")
+    redirect(
+      `/nachrichten?chat=${chatKeyOf({
+        audience: message.audience,
+        departmentId: message.department?.id ?? null,
+        eventId: message.event?.id ?? null,
+      })}#nachricht-${message.id}`,
+    );
 
   const target =
     message.audience === "DEPARTMENT" && message.department
@@ -60,7 +71,7 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
               id={message.id}
               subject={message.subject}
               draft={message.status === "DRAFT"}
-              redirectTo="/nachrichten"
+              redirectTo="/nachrichten?ansicht=entwuerfe"
             />
           ) : undefined
         }
@@ -77,13 +88,6 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
           An: {target}
           {message.sendEmail && " · zusätzlich per E-Mail"}
         </p>
-        {message.readCount !== null && message.status === "SENT" && (
-          <p className="text-sm" role="status">
-            <strong className="tabular-nums">{message.readCount}</strong> von{" "}
-            <span className="tabular-nums">{message.recipientCount}</span> Empfängern haben die
-            Nachricht geöffnet.
-          </p>
-        )}
       </div>
     </>
   );

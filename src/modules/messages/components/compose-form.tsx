@@ -25,6 +25,7 @@ import { useActionForm } from "@/hooks/use-action-form";
 import type { ActionResult } from "@/lib/action-result";
 import { eventOptions, type EventChoice } from "@/lib/event-options";
 import { previewRecipientsAction, saveDraftAction, sendMessageAction } from "../actions";
+import { chatKeyOf } from "../chat-format";
 import {
   AUDIENCE_LABEL,
   messageFormSchema,
@@ -100,7 +101,15 @@ export function ComposeForm({
         toast.success(
           `Nachricht an ${data.recipients} ${data.recipients === 1 ? "Person" : "Personen"} gesendet.`,
         );
-        router.push(`/nachrichten/${data.id}`);
+        // In den Chat der Gruppe – dort steht die Nachricht jetzt als grüne Blase.
+        const values = form.getValues();
+        router.push(
+          `/nachrichten?chat=${chatKeyOf({
+            audience: values.audience,
+            departmentId: values.departmentId || null,
+            eventId: values.eventId || null,
+          })}#nachricht-${data.id}`,
+        );
       }
       router.refresh();
     },

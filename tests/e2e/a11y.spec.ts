@@ -21,6 +21,7 @@ const adminPages = [
   "/kalender?ansicht=liste",
   "/aufgaben",
   "/nachrichten",
+  "/nachrichten?chat=alle", // geöffneter Chat: Sprechblasen, Eingabezeile
   "/nachrichten/neu",
   "/dokumente",
   "/abteilungen",
@@ -114,6 +115,7 @@ test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung",
     "/veranstaltungen",
     "/hilfe",
     "/datenschutz",
+    "/nachrichten?chat=alle", // Sprechblasen in den dunklen WhatsApp-Farben
     "/einstellungen", // Vereinslogo-Karte mit Anfangsbuchstaben auf dunklem Grund
   ]) {
     test(`dunkel: ${path}`, async ({ page }) => {

@@ -55,7 +55,8 @@ const include = {
 } satisfies Prisma.MessageInclude;
 type MessageRow = Prisma.MessageGetPayload<{ include: typeof include }>;
 
-async function authorNames(
+/** Namen der Verfasser (Vor- und Nachname) für die Anzeige. */
+export async function authorNames(
   ctx: TenantContext,
   rows: { authorUserId: string | null }[],
 ): Promise<Map<string, string>> {

@@ -16,7 +16,7 @@ export function Sidebar({ groups }: { groups: NavGroup[] }) {
     <aside className="sticky top-0 hidden h-dvh flex-col overflow-hidden border-r bg-sidebar lg:flex print:hidden">
       <div
         className={cn(
-          "flex h-16 shrink-0 items-center border-b [@media(max-height:820px)]:h-14",
+          "flex h-(--app-header-height) shrink-0 items-center border-b",
           collapsed ? "justify-center px-2" : "px-5",
         )}
       >

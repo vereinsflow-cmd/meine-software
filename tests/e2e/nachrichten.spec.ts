@@ -1,36 +1,52 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { USERS, login, open } from "./helpers";
 
+/** Nachrichten als Chats (wie WhatsApp): links die Chats je Zielgruppe, rechts der Verlauf mit Sprechblasen. */
 const uniqueSubject = (prefix: string) => `${prefix} ${Date.now() % 100000}`;
 
+const chatList = (page: Page) => page.getByRole("list", { name: "Chats" });
+const bubble = (page: Page, subject: string | RegExp) =>
+  page.getByRole("article", {
+    name: typeof subject === "string" ? new RegExp(`: ${subject}$`) : subject,
+  });
+
+/** Öffnet einen Chat über die Liste und wartet, bis sein Verlauf da ist. */
+async function openChat(page: Page, title: string): Promise<void> {
+  await chatList(page)
+    .getByRole("link", { name: new RegExp(`^${title}`) })
+    .click();
+  await expect(page).toHaveURL(/[?&]chat=/);
+  await expect(page.getByRole("heading", { level: 2, name: title })).toBeVisible();
+}
+
 test.describe("Nachrichten – Empfänger", () => {
-  test("Posteingang zeigt die Willkommensnachricht; Ungelesenes ist markiert und wird beim Öffnen gelesen", async ({
+  test("Chatliste zeigt Ungelesenes; der Chat zeigt Sprechblasen, markiert als gelesen, Schreiben nur für Berechtigte", async ({
     page,
   }) => {
     await login(page, USERS.mitglied);
     await open(page, "/nachrichten");
     await expect(page.getByRole("heading", { level: 1, name: "Nachrichten" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Neue Nachricht/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Neue Nachricht" })).toHaveCount(0);
-    await expect(page.getByRole("navigation", { name: "Ansicht wählen" })).toHaveCount(0); // keine Reiter ohne Sende-Recht
 
-    const message = page.getByRole("link", { name: /Willkommen bei VereinsFlow!/ });
-    await expect(message).toContainText("Ungelesen");
-    await expect(message).toContainText("Ankündigung");
-    await expect(message).toContainText("Von Anna Admin");
+    const entry = chatList(page).getByRole("link", { name: /^Alle Mitglieder/ });
+    await expect(entry).toContainText("Willkommen bei VereinsFlow!"); // Vorschau: der Betreff
+    await expect(entry).toContainText(/ungelesene Nachricht/);
 
-    await message.click();
+    await openChat(page, "Alle Mitglieder");
+    const welcome = bubble(page, "Willkommen bei VereinsFlow!");
+    await expect(welcome).toContainText("Anna Admin"); // Name über der Blase, wie in Gruppen
+    await expect(welcome).toContainText("Ankündigung");
+    await expect(welcome).toContainText("Liebe Mitglieder,");
+    await expect(welcome.getByRole("button")).toHaveCount(0); // Empfänger dürfen nicht zurückrufen
+    await expect(welcome).not.toContainText("gelesen"); // keine Lesestatistik für Empfänger
     await expect(
-      page.getByRole("heading", { level: 1, name: "Willkommen bei VereinsFlow!" }),
+      page.getByText("Nur Vorstand und Abteilungsleitung können hier schreiben."),
     ).toBeVisible();
-    await expect(page.getByText("Liebe Mitglieder,")).toBeVisible();
-    await expect(page.getByText(/Von Anna Admin/)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Zurückrufen/ })).toHaveCount(0); // Empfänger dürfen nicht zurückrufen
-    await expect(page.getByText(/Empfängern haben die Nachricht geöffnet/)).toHaveCount(0); // keine Statistik für Empfänger
+    await expect(page.getByRole("textbox", { name: /^Nachricht an/ })).toHaveCount(0);
 
-    await page.getByRole("link", { name: "Nachrichten" }).first().click();
-    await expect(page.getByRole("link", { name: /Willkommen bei VereinsFlow!/ })).not.toContainText(
-      "Ungelesen",
+    // Geöffnet = gelesen
+    await expect(chatList(page).getByRole("link", { name: /^Alle Mitglieder/ })).not.toContainText(
+      /ungelesen/,
     );
   });
 
@@ -41,34 +57,81 @@ test.describe("Nachrichten – Empfänger", () => {
     await expect(page.getByLabel("Betreff")).toHaveCount(0);
   });
 
-  test("Nachrichten anderer Vereine und fremde IDs sind nicht erreichbar", async ({
+  test("Nachrichten anderer Vereine und fremde IDs sind nicht erreichbar; Entwürfe stehen nicht im Chat", async ({
     page,
     browser,
   }) => {
     await login(page, USERS.admin);
-    await open(page, "/nachrichten");
-    const href = await page
-      .getByRole("link", { name: /Erinnerung: Helfer für das Sommerfest gesucht/ })
-      .count(); // (Entwurf – nur unter "Entwürfe")
-    expect(href).toBe(0);
-    await open(page, "/nachrichten?ansicht=gesendet");
-    const url = await page
-      .getByRole("link", { name: /Willkommen bei VereinsFlow!/ })
-      .getAttribute("href");
-    expect(url).toMatch(/^\/nachrichten\/[0-9a-f-]{36}$/);
+    await open(page, "/nachrichten?chat=alle");
+    await expect(bubble(page, "Willkommen bei VereinsFlow!")).toBeVisible();
+    await expect(bubble(page, /Erinnerung: Helfer für das Sommerfest gesucht/)).toHaveCount(0); // Entwurf
+    await expect(page.getByRole("link", { name: /^Entwürfe/ })).toBeVisible();
+    const id = (await bubble(page, "Willkommen bei VereinsFlow!").getAttribute("id"))!.replace(
+      "nachricht-",
+      "",
+    );
+    expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
     const other = await browser.newContext();
     const otherPage = await other.newPage();
     await login(otherPage, USERS.otherAdmin);
-    await otherPage.goto(url!);
+    await otherPage.goto(`/nachrichten/${id}`);
     await expect(otherPage.getByText("Nicht gefunden")).toBeVisible();
+    await otherPage.goto("/nachrichten?chat=alle");
     await expect(otherPage.getByText("Liebe Mitglieder")).toHaveCount(0);
     await other.close();
   });
 });
 
-test.describe("Nachrichten – Verfassen und Senden", () => {
-  test("Validierung, Empfänger-Vorschau, Sicherheitsabfrage, Versand, Lesestatistik und Rückruf", async ({
+test.describe("Nachrichten – Schreiben", () => {
+  test("Im Chat schreiben: Rückfrage, grüne Blase rechts, beim Empfänger links mit Namen; Zurückrufen", async ({
+    page,
+    browser,
+  }) => {
+    const text = uniqueSubject("Arbeitseinsatz am Samstag");
+    await login(page, USERS.admin);
+    await open(page, "/nachrichten?chat=alle");
+    await expect(page.getByText(/^Erreicht \d+ Personen$/)).toBeVisible();
+
+    const input = page.getByRole("textbox", { name: "Nachricht an Alle Mitglieder" });
+    await expect(page.getByRole("button", { name: "Senden" })).toBeDisabled(); // leer geht nichts
+    await input.fill(`${text}\nWer kann ab 10 Uhr helfen?`);
+    await page.getByRole("button", { name: "Senden" }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Nachricht senden?" });
+    await expect(confirm).toContainText(/an \d+ Personen im Chat „Alle Mitglieder“/);
+    await confirm.getByRole("button", { name: "Senden" }).click();
+    await expect(page.getByText(/Nachricht an \d+ Personen gesendet\./)).toBeVisible();
+    await expect(input).toHaveValue("");
+
+    // Die erste Zeile wird zum Betreff – in der Blase steht der Text nur einmal.
+    const mine = page.getByRole("article", { name: `Nachricht von dir: ${text}` });
+    await expect(mine).toContainText("Wer kann ab 10 Uhr helfen?");
+    await expect(mine).toContainText(/0 von \d+ gelesen/);
+
+    const marias = await browser.newContext();
+    const maria = await marias.newPage();
+    await login(maria, USERS.mitglied);
+    await open(maria, "/nachrichten?chat=alle");
+    await expect(
+      maria.getByRole("article", { name: `Nachricht von Anna Admin: ${text}` }),
+    ).toContainText("Wer kann ab 10 Uhr helfen?");
+
+    await page.reload();
+    await expect(page.getByRole("article", { name: `Nachricht von dir: ${text}` })).toContainText(
+      /1 von \d+ gelesen/,
+    );
+    await page.getByRole("button", { name: `Aktionen für „${text}“` }).click();
+    await page.getByRole("menuitem", { name: "Zurückrufen" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Zurückrufen" }).click();
+    await expect(page.getByText("Nachricht zurückgerufen.")).toBeVisible();
+    await expect(page.getByRole("article", { name: `Nachricht von dir: ${text}` })).toHaveCount(0);
+
+    await maria.reload();
+    await expect(maria.getByRole("article", { name: new RegExp(text) })).toHaveCount(0);
+    await marias.close();
+  });
+
+  test("Ausführlich mit Betreff: Validierung, Vorschau, Sicherheitsabfrage, Versand in den Chat, Benachrichtigung", async ({
     page,
     browser,
   }) => {
@@ -79,12 +142,9 @@ test.describe("Nachrichten – Verfassen und Senden", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Neue Nachricht" })).toBeVisible();
     await page.waitForLoadState("networkidle");
 
-    // Vorschau der Zielgruppe (alle Mitglieder mit aktivem Konto außer dem Absender)
     await expect(
       page.getByRole("status").filter({ hasText: /Erreicht \d+ Personen/ }),
     ).toBeVisible();
-
-    // Ohne Betreff und Text wird nichts gesendet
     await page.getByRole("button", { name: /Jetzt senden/ }).click();
     await expect(page.getByText("Bitte gib einen Betreff ein.")).toBeVisible();
     await expect(page.getByText("Bitte schreibe eine Nachricht.")).toBeVisible();
@@ -102,50 +162,40 @@ test.describe("Nachrichten – Verfassen und Senden", () => {
       .fill("Hallo zusammen!\n<img src=x onerror=alert('xss')>\nBis bald");
     await page.getByLabel("Als Ankündigung kennzeichnen").check();
     await page.getByRole("button", { name: /Jetzt senden/ }).click();
-
     const confirm = page.getByRole("alertdialog", { name: "Nachricht jetzt senden?" });
     await expect(confirm).toContainText(subject);
     await expect(confirm).toContainText(/geht an \d+ Personen/);
     await confirm.getByRole("button", { name: "Senden" }).click();
     await expect(page.getByText(/Nachricht an \d+ Personen gesendet\./)).toBeVisible();
-    await expect(page).toHaveURL(/\/nachrichten\/[0-9a-f-]{36}$/);
-    await expect(page.getByRole("heading", { level: 1, name: subject })).toBeVisible();
-    await expect(page.getByText("<img src=x onerror=alert('xss')>")).toBeVisible(); // als Text, nicht als Bild
-    await expect(page.locator("img[src='x']")).toHaveCount(0);
-    await expect(
-      page.getByText(/^0 von \d+ Empfängern haben die Nachricht geöffnet/),
-    ).toBeVisible();
-    expect(dialogs).toEqual([]);
-    const messageUrl = page.url();
 
-    // Maria wird benachrichtigt, findet die Nachricht ungelesen im Posteingang und öffnet sie.
+    // Weiter im Chat der Gruppe, an der neuen Nachricht.
+    await expect(page).toHaveURL(/\/nachrichten\?chat=alle#nachricht-[0-9a-f-]{36}$/);
+    const sent = page.getByRole("article", { name: `Nachricht von dir: ${subject}` });
+    await expect(sent).toContainText(subject); // eigener Betreff steht fett über dem Text
+    await expect(sent).toContainText("Ankündigung");
+    await expect(sent.getByText("<img src=x onerror=alert('xss')>")).toBeVisible();
+    await expect(page.locator("img[src='x']")).toHaveCount(0);
+    expect(dialogs).toEqual([]);
+    const id = new URL(page.url()).hash.replace("#nachricht-", "");
+
+    // Maria: Benachrichtigung → der Link führt in den Chat, an die Nachricht.
     const marias = await browser.newContext();
     const maria = await marias.newPage();
     await login(maria, USERS.mitglied);
     await open(maria, "/benachrichtigungen");
     await expect(maria.getByText(`Ankündigung: ${subject}`)).toBeVisible();
-    await open(maria, "/nachrichten");
-    await expect(maria.getByRole("link", { name: new RegExp(subject) })).toContainText("Ungelesen");
-    await maria.goto(messageUrl);
-    await expect(maria.getByRole("heading", { level: 1, name: subject })).toBeVisible();
-
-    // Die Statistik des Absenders zählt jetzt einen Leser – ohne Namen. Im Hauptbereich suchen: Direkt nach dem Neuladen
-    // liegt kurz eine unsichtbare Kopie der gestreamten Seite außerhalb davon, die sonst als zweiter Treffer zählt.
-    await page.reload();
+    await maria.goto(`/nachrichten/${id}`);
+    await expect(maria).toHaveURL(new RegExp(`chat=alle#nachricht-${id}$`));
     await expect(
-      page.getByRole("main").getByText(/^1 von \d+ Empfängern haben die Nachricht geöffnet/),
+      maria.getByRole("article", { name: `Nachricht von Anna Admin: ${subject}` }),
     ).toBeVisible();
+    await marias.close();
 
-    // Rückruf: verschwindet bei Maria
-    await page.getByRole("button", { name: "Zurückrufen" }).click();
+    // Aufräumen: zurückrufen
+    await page.getByRole("button", { name: `Aktionen für „${subject}“` }).click();
+    await page.getByRole("menuitem", { name: "Zurückrufen" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Zurückrufen" }).click();
     await expect(page.getByText("Nachricht zurückgerufen.")).toBeVisible();
-    await expect(page).toHaveURL(/\/nachrichten$/);
-    await open(maria, "/nachrichten");
-    await expect(maria.getByRole("link", { name: new RegExp(subject) })).toHaveCount(0);
-    await maria.goto(messageUrl);
-    await expect(maria.getByText("Nicht gefunden")).toBeVisible();
-    await marias.close();
   });
 
   test("Entwurf speichern, wieder öffnen, ändern und verwerfen", async ({ page }) => {
@@ -170,8 +220,7 @@ test.describe("Nachrichten – Verfassen und Senden", () => {
       page.getByRole("link", { name: new RegExp(`${subject} \\(überarbeitet\\)`) }),
     ).toBeVisible();
 
-    // Verwerfen (auf der Detailseite des Entwurfs ist der Verfasser berechtigt)
-    await page.goto("/nachrichten?ansicht=entwuerfe");
+    // Verwerfen (auf der Seite des Entwurfs)
     await page.getByRole("link", { name: new RegExp(`${subject} \\(überarbeitet\\)`) }).click();
     await expect(page).toHaveURL(/\/nachrichten\/neu\?entwurf=/);
     const id = new URL(page.url()).searchParams.get("entwurf")!;
@@ -179,7 +228,7 @@ test.describe("Nachrichten – Verfassen und Senden", () => {
     await page.getByRole("button", { name: "Entwurf verwerfen" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Verwerfen" }).click();
     await expect(page.getByText("Entwurf verworfen.")).toBeVisible();
-    await page.goto("/nachrichten?ansicht=entwuerfe");
+    await expect(page).toHaveURL(/ansicht=entwuerfe/);
     await expect(page.getByRole("link", { name: new RegExp(subject) })).toHaveCount(0);
   });
 
@@ -187,6 +236,12 @@ test.describe("Nachrichten – Verfassen und Senden", () => {
     page,
   }) => {
     await login(page, USERS.abteilung);
+    await open(page, "/nachrichten?chat=alle");
+    await expect(
+      page.getByText("In diesem Chat schreiben nur Vorstand und Verwaltung."),
+    ).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /^Nachricht an/ })).toHaveCount(0);
+
     await open(page, "/nachrichten/neu");
     const audience = page.getByLabel(/^An wen\?/);
     await expect(audience.locator("option")).toHaveText([
