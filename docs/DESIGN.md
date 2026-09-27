@@ -129,6 +129,16 @@ Doppelklick auf einen Tag im Kalender öffnet das Fenster „Neuer Termin“ mit
 - **Nur mit Recht zum Anlegen** („Veranstaltungen erstellen“): Sonst gibt es weder Knopf noch Hinweis, und der Doppelklick tut nichts.
 - **Technik:** Die Kalenderansichten bleiben Server-Komponenten. Jeder Tag trägt `data-date="JJJJ-MM-TT"`; eine schmale Client-Hülle (`DayDoubleClick`) hört auf den Doppelklick und liest das Datum aus. Geprüft in `tests/e2e/kalender.spec.ts` (Monat, Woche, Tag, Knopf per Tastatur, Abteilungsleitung, Mitglied ohne Recht) und `smartphone.mobil.spec.ts` (Fenster passt auf den Bildschirm).
 
+## Dokumente per Ziehen und Ablegen
+
+Dateien lassen sich aus dem Dateimanager direkt auf die Seite „Dokumente“ ziehen (eingeführt am 27.09.2026; Bausteine in `src/components/shared/file-drop.tsx`, Fenster in `modules/documents/components/document-controls.tsx`).
+
+- **Überall auf der Seite:** Schweben Dateien über dem Fenster, erscheint ein Hinweis über der ganzen Seite („Dateien hier ablegen“); beim Loslassen öffnet sich „Dokument hochladen“ mit den Dateien, der Fokus steht gleich bei „Kategorie“. Hochgeladen wird erst nach dem Klick – „Wer darf es sehen?“ soll man bewusst wählen, ein Vorstandsdokument darf nicht aus Versehen bei allen landen. Ohne diese Annahme öffnete der Browser eine danebengefallene Datei selbst und verließe die Anwendung.
+- **Im Fenster** ersetzt eine gestrichelte Ablagefläche das Dateifeld: Klick, Tippen oder Tastatur öffnen die Auswahl, beim Darüberziehen färbt sie sich und sagt „Dateien hier ablegen“. Auf dem Smartphone heißt sie „Dateien auswählen“.
+- **Mehrere Dateien auf einmal:** Jede steht mit Größe in einer Liste und lässt sich einzeln entfernen; eine neue Auswahl ersetzt die bisherige (wie ein normales Dateifeld). Die Vorprüfung (leer, zu groß, Dateityp – `clientFileError` in `src/lib/uploads.ts`) markiert Unpassendes sofort. „N Dateien hochladen“ lädt die übrigen nacheinander hoch (eine Anfrage je Datei, gleiche Angaben für alle). Was klappt, verschwindet aus der Liste; was übrig bleibt, nennt den Grund. Fehler, die jede weitere Datei genauso träfen (Angaben, Berechtigung, Verbindung, zu viele Uploads), brechen ab. Während des Hochladens bleibt das Fenster offen („Wird hochgeladen … (2 von 3)“).
+- **Auf eine Veranstaltung eingegrenzt** (`/dokumente?veranstaltung=…`, z. B. über die Karte „Dokumente“ der Veranstaltung): Neue Dokumente gehören vorausgewählt zu ihr und erscheinen damit in der eingegrenzten Liste.
+- Geprüft in `tests/e2e/dokumente.spec.ts` („Ziehen und Ablegen“: nachgestellte Drag-Ereignisse mit echten Dateien).
+
 ## Ansichten prüfen
 
 ```bash

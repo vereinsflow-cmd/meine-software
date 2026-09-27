@@ -117,6 +117,22 @@ function isPlainText(bytes: Uint8Array): boolean {
   return control / Math.max(1, sample.length) < 0.01;
 }
 
+/**
+ * Vorprüfung im Browser (leer, Größe, Endung) für eine schnelle Rückmeldung – nur Bequemlichkeit, verbindlich prüft der
+ * Server den Inhalt (`checkUpload`). Liefert die Fehlermeldung oder `null`.
+ */
+export function clientFileError(
+  file: { name: string; size: number },
+  maxMb: number,
+): string | null {
+  if (file.size === 0) return "Die Datei ist leer.";
+  if (file.size > maxMb * 1024 * 1024)
+    return `Die Datei ist zu groß (höchstens ${maxMb} MB, deine hat ${formatBytes(file.size)}).`;
+  if (!ALLOWED_TYPES.some((type) => type.ext === extensionOf(file.name)))
+    return `Dieser Dateityp ist nicht erlaubt. Erlaubt sind: ${ALLOWED_EXTENSIONS_TEXT}.`;
+  return null;
+}
+
 export type FileCheck =
   { ok: true; type: AllowedType; safeName: string } | { ok: false; reason: string };
 

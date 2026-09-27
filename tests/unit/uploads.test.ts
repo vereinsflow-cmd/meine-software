@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALLOWED_TYPES,
   checkUpload,
+  clientFileError,
   contentDisposition,
   extensionOf,
   formatBytes,
@@ -210,5 +211,26 @@ describe("Größenangabe", () => {
     expect(formatBytes(1536)).toBe("1,5 KB");
     expect(formatBytes(10 * 1024 * 1024)).toBe("10 MB");
     expect(formatBytes(5 * 1024 * 1024 * 1024)).toBe("5 GB");
+  });
+});
+
+describe("Vorprüfung im Browser (vor dem Hochladen, z. B. nach dem Ablegen)", () => {
+  const MB = 1024 * 1024;
+
+  it("lässt erlaubte Dateien bis zur Höchstgröße durch – die Endung zählt unabhängig von Groß-/Kleinschreibung", () => {
+    expect(clientFileError({ name: "Protokoll.pdf", size: 1200 }, 10)).toBeNull();
+    expect(clientFileError({ name: "FOTO.JPG", size: 10 * MB }, 10)).toBeNull();
+  });
+
+  it("nennt den Grund: leer, zu groß (mit tatsächlicher Größe) oder nicht erlaubter Typ", () => {
+    expect(clientFileError({ name: "leer.pdf", size: 0 }, 10)).toBe("Die Datei ist leer.");
+    expect(clientFileError({ name: "gross.pdf", size: 11 * MB }, 10)).toBe(
+      "Die Datei ist zu groß (höchstens 10 MB, deine hat 11 MB).",
+    );
+    expect(clientFileError({ name: "knapp.pdf", size: 10 * MB + 1 }, 10)).toMatch(
+      /^Die Datei ist zu groß/,
+    );
+    for (const name of ["makro.docm", "programm.exe", "seite.html", "ohne-endung"])
+      expect(clientFileError({ name, size: 10 }, 10)).toMatch(/^Dieser Dateityp ist nicht erlaubt/);
   });
 });

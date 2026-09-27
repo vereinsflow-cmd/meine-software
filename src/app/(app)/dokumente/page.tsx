@@ -82,6 +82,7 @@ export default async function DocumentsPage({
               accessLevels={allowedAccessLevels(ctx)}
               maxMb={env.MAX_UPLOAD_MB}
               requireEvent={scopeOf(ctx, "documents:upload") === "DEPARTMENT"}
+              defaultEventId={eventId}
             />
           ) : undefined
         }
@@ -141,7 +142,7 @@ export default async function DocumentsPage({
             filtered
               ? "Passe die Suche oder den Filter an."
               : canUpload
-                ? "Lade das erste Dokument hoch – z. B. die Satzung."
+                ? "Lade das erste Dokument hoch – z. B. die Satzung. Du kannst Dateien auch einfach hierher ziehen."
                 : "Sobald dein Verein Dokumente bereitstellt, findest du sie hier."
           }
         />
@@ -239,10 +240,17 @@ export default async function DocumentsPage({
       )}
 
       {canUpload && (
-        <p className="mt-6 text-sm text-muted-foreground" role="status">
-          Speicherplatz: {formatBytes(usage.usedBytes)} von {formatBytes(usage.quotaBytes)} belegt (
-          {usedPercent} %).
-        </p>
+        <>
+          <p className="mt-6 text-sm text-muted-foreground" role="status">
+            Speicherplatz: {formatBytes(usage.usedBytes)} von {formatBytes(usage.quotaBytes)} belegt
+            ({usedPercent} %).
+          </p>
+          {/* Auf dem Smartphone zieht man keine Dateien – dort genügt der Knopf. */}
+          <p className="mt-1 hidden text-sm text-muted-foreground md:block">
+            Tipp: Du kannst Dateien auch einfach auf diese Seite ziehen, um sie hochzuladen – auch
+            mehrere auf einmal.
+          </p>
+        </>
       )}
     </>
   );
