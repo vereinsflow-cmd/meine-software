@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRightIcon } from "lucide-react";
@@ -66,6 +66,7 @@ export function SidebarNav({
   variant?: "sidebar" | "sheet";
 }) {
   const pathname = usePathname();
+  const navId = useId();
   const sheet = variant === "sheet";
   const [openGroup, setOpenGroup] = useState<string | null>(() =>
     activeCollapsibleGroup(groups, pathname),
@@ -135,6 +136,10 @@ export function SidebarNav({
 
         if (group.collapsible && group.label) {
           const open = openGroup === group.label;
+          // Zugeklappt verschwinden die Zähler der Einträge (offene Aufgaben, Ungelesenes) mit ihnen – dann zeigt die
+          // Gruppe deren Summe. Der Name der Gruppe bleibt dabei „Organisation“; die Zahl steht in der Beschreibung.
+          const pending = open ? 0 : group.items.reduce((sum, item) => sum + (item.badge ?? 0), 0);
+          const pendingId = `${navId}-offen-${groupIndex}`;
           return (
             <Collapsible
               key={group.label}
@@ -144,6 +149,7 @@ export function SidebarNav({
               <CollapsibleTrigger asChild>
                 <button
                   type="button"
+                  aria-describedby={pending > 0 ? pendingId : undefined}
                   className={cn(
                     "group/trigger flex w-full items-center justify-between rounded-lg px-3.5 font-semibold transition-colors duration-150 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring",
                     // Im ausklappenden Menü ein richtiger Knopf: 44 px hoch, normale Schrift in Textfarbe.
@@ -153,14 +159,29 @@ export function SidebarNav({
                   )}
                 >
                   <span>{group.label}</span>
-                  <ChevronRightIcon
-                    className={cn(
-                      "shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90",
-                      sheet ? "size-5 text-muted-foreground" : "size-3.5",
+                  <span className="flex items-center gap-2">
+                    {pending > 0 && (
+                      <span
+                        aria-hidden="true"
+                        className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-xs leading-none font-semibold tracking-normal text-primary-foreground normal-case"
+                      >
+                        {pending > 99 ? "99+" : pending}
+                      </span>
                     )}
-                  />
+                    <ChevronRightIcon
+                      className={cn(
+                        "shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90",
+                        sheet ? "size-5 text-muted-foreground" : "size-3.5",
+                      )}
+                    />
+                  </span>
                 </button>
               </CollapsibleTrigger>
+              {pending > 0 && (
+                <span id={pendingId} className="sr-only">
+                  {pending} offen
+                </span>
+              )}
               <CollapsibleContent>
                 <div className={cn("grid", sheet ? "gap-1 pt-1" : "gap-0.5 pt-0.5")}>{items}</div>
               </CollapsibleContent>
