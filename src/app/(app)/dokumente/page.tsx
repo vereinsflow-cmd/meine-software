@@ -14,7 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
+import {
+  FILTER_FORM,
+  FILTER_SEARCH,
+  FILTER_SELECT,
+  FilterFields,
+  FilterToggle,
+} from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -25,6 +31,7 @@ import { eventOptions } from "@/lib/event-options";
 import { centsToInput } from "@/lib/money";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { formatBytes } from "@/lib/uploads";
+import { cn } from "@/lib/utils";
 import {
   DeleteDocumentButton,
   EditDocumentDialog,
@@ -112,11 +119,7 @@ export default async function DocumentsPage({
         method="get"
         action="/dokumente"
         role="search"
-        className={
-          financeRead
-            ? "mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto]"
-            : "mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_auto]"
-        }
+        className={cn("mb-4", FILTER_FORM)}
       >
         {eventId && <input type="hidden" name="veranstaltung" value={eventId} />}
         <Input
@@ -125,10 +128,12 @@ export default async function DocumentsPage({
           defaultValue={q}
           placeholder="Dokument oder Kategorie suchen …"
           aria-label="Dokumente durchsuchen"
+          className={FILTER_SEARCH}
         />
         <FilterToggle id="dokumente-filter" active={[category, invoices].filter(Boolean).length} />
         <FilterFields id="dokumente-filter">
           <NativeSelect
+            className={FILTER_SELECT}
             name="kategorie"
             defaultValue={category ?? ""}
             aria-label="Nach Kategorie filtern"
@@ -142,6 +147,7 @@ export default async function DocumentsPage({
           </NativeSelect>
           {financeRead && (
             <NativeSelect
+              className={FILTER_SELECT}
               name="rechnungen"
               defaultValue={invoices ?? ""}
               aria-label="Nach Rechnungen filtern"
@@ -183,6 +189,13 @@ export default async function DocumentsPage({
               : canUpload
                 ? "Lade das erste Dokument hoch – z. B. die Satzung. Du kannst Dateien auch einfach hierher ziehen."
                 : "Sobald dein Verein Dokumente bereitstellt, findest du sie hier."
+          }
+          action={
+            filtered ? (
+              <Button asChild>
+                <Link href="/dokumente">Filter zurücksetzen</Link>
+              </Button>
+            ) : undefined
           }
         />
       ) : (

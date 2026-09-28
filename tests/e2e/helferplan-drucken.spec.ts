@@ -108,11 +108,11 @@ test.describe("Helferplan drucken", () => {
   }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    await expect(page.getByRole("link", { name: "Zurücksetzen" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Zurücksetzen", exact: true })).toHaveCount(0);
     await page.getByRole("checkbox", { name: "Nur freie Plätze" }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
     await expect(page).toHaveURL(/nurOffen=1/);
-    await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await page.getByRole("link", { name: "Zurücksetzen", exact: true }).click();
     await expect(page).toHaveURL(/\/helferplanung\/drucken$/);
     await expect(page.getByRole("checkbox", { name: "Nur freie Plätze" })).not.toBeChecked();
   });

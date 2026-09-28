@@ -103,6 +103,7 @@ Alle Symbole kommen aus `lucide-react` (Strichzeichnungen, überall die Standard
 - **Ein blauer Knopf je Seite:** Gefüllt in der Markenfarbe ist nur die Hauptaktion der Seite (z. B. „Neues Mitglied“) und in Listen die Anmelde-Aktion („Eintragen“). Alles andere ist umrandet – auch „Filtern“ in allen Filterleisten (28.09.2026).
 - **Beispiele:** „Helferplan drucken“ auf der Helferplanung ist umrandet (die Seite dient dem Eintragen), ebenso „Weiter: …“ unter den Dashboard-Reitern (sieht jetzt aus wie „Zurück“).
 - **Helferplanung** (28.09.2026): Der Hinweis auf dringende, unbesetzte Schichten ist bernsteinfarben wie auf dem Dashboard (kein Fehler, „dringend“ steht im Text). Die beiden Karten oben strecken sich nicht mehr auf gleiche Höhe; leer zeigen sie das kompakte Feld mit Symbol (`CompactEmpty`, `src/components/shared/compact-empty.tsx`, dasselbe wie auf dem Dashboard). „Offene Schichten“ zeigt zuerst drei, der Rest ist aufklappbar – so rückt der Überblick je Veranstaltung nach oben.
+- **Filterleisten am Computer** (`FILTER_FORM`, `FILTER_SEARCH`, `FILTER_SELECT` im selben Baustein): Auswahlfelder fest 10 rem breit – nichts wird abgeschnitten („Alle Abteilungen“), nichts streckt sich. Die Suche steht über den Feldern und erst ab 1400 px mit in der Zeile (Veranstaltungen mit vier Feldern: immer darüber); was nicht passt, bricht um.
 - **Filterleisten am Handy** (`FilterToggle`/`FilterFields` in `src/components/shared/filter-toggle.tsx`, seit 28.09.2026): Unter 640 px stehen nur das Suchfeld und der Knopf „Filter“ (mit der Zahl aktiver Filter als blauer Kreis); ein Tipp klappt die Auswahlfelder und „Filtern“ darunter auf. Ab 640 px gehören sie wie gewohnt zur Zeile. Reines CSS (unsichtbares Kästchen ohne Namen, seine Beschriftung ist der Knopf) – das klappt auch vor dem Laden der Skripte. Im Einsatz auf Mitglieder, Veranstaltungen, Dokumente, Änderungsprotokoll und Kalender; die Aufgaben haben schon eine schlanke Zeile mit Reitern. Geprüft in `tests/e2e/smartphone.mobil.spec.ts` (auch mit axe).
 - **Protokoll:** Suche zuerst wie auf den übrigen Listen; die Felder behalten dort ihre Überschriften (Datumsfelder brauchen sie).
 - **Kalender:** Die Auswahlfelder stehen ohne Überschrift in einer Zeile („Alle Arten“ / „Alle Abteilungen“ sagen es schon; die Namen „Art“ und „Abteilung“ bleiben für Screenreader). Tageskästchen im Monat mindestens 6,5 rem hoch (vorher 8 rem; sie wachsen mit ihren Terminen), vergangene Tage mit blasserer Tageszahl.
@@ -118,6 +119,11 @@ Alle Symbole kommen aus `lucide-react` (Strichzeichnungen, überall die Standard
 - **Suche (Strg+K / Lupe):** Am Handy oben statt mittig, damit die Treffer über der Tastatur bleiben, mit Knopf „Abbrechen“ (dort gibt es keine Escape-Taste).
 - **Tippflächen:** Der Text eines Checklisten-Punkts beschriftet sein Kästchen (ein Tipp auf den Text hakt ab); das „ד zum Austragen eines Helfers hat 32 px Trefferfläche, die Meldung bietet „Rückgängig“; „Entfernen“ steht 12 px neben der Statusauswahl der Teilnehmer; in der Hilfe öffnet die ganze Fragezeile.
 - **Blättern unter den Dashboard-Reitern:** Unter 640 px untereinander über die volle Breite, „Weiter“ oben.
+
+## Leere Ergebnisse und Fehlerseiten
+
+- **Leeres Suchergebnis** nennt den Begriff („Keine Mitglieder zu „zzzz“ gefunden“) und bietet einen nächsten Schritt: in der Mitgliederliste „Im Archiv suchen“ (dieselbe Suche im Archiv – Ausgetretene stehen dort) und „Suche zurücksetzen“; im Protokoll und bei den Dokumenten „Filter zurücksetzen“ (seit 28.09.2026).
+- **Seite nicht gefunden** (`src/app/not-found.tsx`, ohne Menü): VereinsFlow-Logo über der Karte, Browser-Reiter „Seite nicht gefunden · VereinsFlow“. Ein unbekanntes oder fremdes Mitglied zeigt „Mitglied nicht gefunden“ mit „Zur Mitgliederliste“ (`(app)/mitglieder/[id]/not-found.tsx`).
 
 ## Seitenleiste
 

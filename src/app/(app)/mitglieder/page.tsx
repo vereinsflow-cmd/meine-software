@@ -15,7 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
-import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
+import {
+  FILTER_FORM,
+  FILTER_SEARCH,
+  FILTER_SELECT,
+  FilterFields,
+  FilterToggle,
+} from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -24,6 +30,7 @@ import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
 import { formatCalendarDate } from "@/lib/dates";
 import { MEMBER_STATUS_LABEL } from "@/lib/labels";
+import { cn } from "@/lib/utils";
 import {
   buildQuery,
   enumParam,
@@ -74,6 +81,8 @@ export default async function MembersPage({
 
   const showContact = result.items.some((m) => m.email || m.phone);
   const filtered = Boolean(q || status || departmentId || view !== "active");
+  // Nichts gefunden in der aktiven Liste? Ausgetretene stehen im Archiv – dorthin führt ein Knopf mit derselben Suche.
+  const offerArchive = Boolean(q) && view === "active" && canArchive;
   const headProps = {
     basePath: "/mitglieder",
     searchParams: params,
@@ -125,7 +134,7 @@ export default async function MembersPage({
         method="get"
         action="/mitglieder"
         role="search"
-        className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto_auto]"
+        className={cn("mb-4", FILTER_FORM)}
       >
         <Input
           type="search"
@@ -133,13 +142,19 @@ export default async function MembersPage({
           defaultValue={q}
           placeholder="Name, Nummer oder E-Mail suchen …"
           aria-label="Mitglieder durchsuchen"
+          className={FILTER_SEARCH}
         />
         <FilterToggle
           id="mitglieder-filter"
           active={[status, departmentId, view !== "active"].filter(Boolean).length}
         />
         <FilterFields id="mitglieder-filter">
-          <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Nach Status filtern">
+          <NativeSelect
+            name="status"
+            defaultValue={status ?? ""}
+            aria-label="Nach Status filtern"
+            className={FILTER_SELECT}
+          >
             <option value="">Alle Status</option>
             {Object.values(MemberStatus).map((value) => (
               <option key={value} value={value}>
@@ -151,6 +166,7 @@ export default async function MembersPage({
             name="abteilung"
             defaultValue={departmentId ?? ""}
             aria-label="Nach Abteilung filtern"
+            className={FILTER_SELECT}
           >
             <option value="">Alle Abteilungen</option>
             {departments.map((department) => (
@@ -159,14 +175,17 @@ export default async function MembersPage({
               </option>
             ))}
           </NativeSelect>
-          {canArchive ? (
-            <NativeSelect name="ansicht" defaultValue={ansicht} aria-label="Ansicht wählen">
+          {canArchive && (
+            <NativeSelect
+              name="ansicht"
+              defaultValue={ansicht}
+              aria-label="Ansicht wählen"
+              className={FILTER_SELECT}
+            >
               <option value="aktiv">Aktive Liste</option>
               <option value="archiv">Archiv</option>
               {canDelete && <option value="papierkorb">Papierkorb</option>}
             </NativeSelect>
-          ) : (
-            <span />
           )}
           <div className="flex gap-2">
             <Button type="submit" variant="outline">
@@ -186,14 +205,35 @@ export default async function MembersPage({
       {result.items.length === 0 ? (
         <EmptyState
           icon={<AREA_ICON.mitglieder />}
-          title={filtered ? "Keine passenden Mitglieder" : "Noch keine Mitglieder"}
+          title={
+            q
+              ? `Keine Mitglieder zu „${q}“ gefunden`
+              : filtered
+                ? "Keine passenden Mitglieder"
+                : "Noch keine Mitglieder"
+          }
           description={
-            filtered
-              ? "Passe die Suche oder die Filter an."
-              : "Lege das erste Mitglied an oder importiere eine vorhandene Mitgliederliste als CSV-Datei."
+            offerArchive
+              ? "Ausgetretene Mitglieder stehen im Archiv. Oder passe die Suche und die Filter an."
+              : filtered
+                ? "Passe die Suche oder die Filter an."
+                : "Lege das erste Mitglied an oder importiere eine vorhandene Mitgliederliste als CSV-Datei."
           }
           action={
-            !filtered && can(ctx, "members:create") ? (
+            filtered ? (
+              <div className="flex flex-wrap justify-center gap-2">
+                {offerArchive && (
+                  <Button asChild>
+                    <Link href={`/mitglieder${buildQuery({ q, ansicht: "archiv" }, {})}`}>
+                      Im Archiv suchen
+                    </Link>
+                  </Button>
+                )}
+                <Button asChild variant={offerArchive ? "outline" : "default"}>
+                  <Link href="/mitglieder">{q ? "Suche zurücksetzen" : "Filter zurücksetzen"}</Link>
+                </Button>
+              </div>
+            ) : can(ctx, "members:create") ? (
               <Button asChild>
                 <Link href="/mitglieder/neu">Mitglied anlegen</Link>
               </Button>

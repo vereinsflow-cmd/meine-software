@@ -7,12 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { EmptyState } from "@/components/shared/empty-state";
-import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
+import {
+  FILTER_FORM,
+  FILTER_SEARCH_ROW,
+  FILTER_SELECT,
+  FilterFields,
+  FilterToggle,
+} from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { EVENT_STATUS_LABEL, EVENT_TYPE_LABEL } from "@/lib/labels";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
+import { cn } from "@/lib/utils";
 import { EventListItemView } from "@/modules/events/components/event-list-item";
 import { getEventFormOptions, listEvents } from "@/modules/events/service";
 import { can } from "@/server/permissions/policy";
@@ -80,7 +87,7 @@ export default async function EventsPage({
         method="get"
         action="/veranstaltungen"
         role="search"
-        className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr_1fr_auto]"
+        className={cn("mb-4", FILTER_FORM)}
       >
         <Input
           type="search"
@@ -88,18 +95,29 @@ export default async function EventsPage({
           defaultValue={q}
           placeholder="Titel oder Ort suchen …"
           aria-label="Veranstaltungen durchsuchen"
+          className={FILTER_SEARCH_ROW}
         />
         <FilterToggle
           id="veranstaltungen-filter"
           active={[zeitraum !== "kommend", type, departmentId, status].filter(Boolean).length}
         />
         <FilterFields id="veranstaltungen-filter">
-          <NativeSelect name="zeitraum" defaultValue={zeitraum} aria-label="Zeitraum">
+          <NativeSelect
+            className={FILTER_SELECT}
+            name="zeitraum"
+            defaultValue={zeitraum}
+            aria-label="Zeitraum"
+          >
             <option value="kommend">Kommende</option>
             <option value="vergangen">Vergangene</option>
             <option value="alle">Alle</option>
           </NativeSelect>
-          <NativeSelect name="art" defaultValue={type ?? ""} aria-label="Nach Art filtern">
+          <NativeSelect
+            className={FILTER_SELECT}
+            name="art"
+            defaultValue={type ?? ""}
+            aria-label="Nach Art filtern"
+          >
             <option value="">Alle Arten</option>
             {Object.values(EventType).map((value) => (
               <option key={value} value={value}>
@@ -108,6 +126,7 @@ export default async function EventsPage({
             ))}
           </NativeSelect>
           <NativeSelect
+            className={FILTER_SELECT}
             name="abteilung"
             defaultValue={departmentId ?? ""}
             aria-label="Nach Abteilung filtern"
@@ -119,7 +138,12 @@ export default async function EventsPage({
               </option>
             ))}
           </NativeSelect>
-          <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Nach Status filtern">
+          <NativeSelect
+            className={FILTER_SELECT}
+            name="status"
+            defaultValue={status ?? ""}
+            aria-label="Nach Status filtern"
+          >
             <option value="">Alle Status</option>
             {Object.values(EventStatus)
               .filter((s) => s !== "ARCHIVED" || canSeeArchive)
