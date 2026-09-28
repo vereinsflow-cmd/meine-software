@@ -74,7 +74,16 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
     dialog.getByText(`Sie heißt dann automatisch „Rechnung vom ${berlinDay(0)}“.`),
   ).toBeVisible();
   await expect(dialog.getByLabel(/^Wer darf es sehen/)).toHaveValue("BOARD"); // Rechnungen: zunächst „Nur Vorstand“
-  await expect(dialog.getByRole("checkbox", { name: "Muss noch bezahlt werden" })).toBeChecked();
+  // Zwei Antworten statt eines Häkchens: Ein Klick auf die schon gewählte Antwort wählt sie nicht ab (mit dem
+  // vorab angehakten Kästchen landete eine Rechnung so versehentlich ohne Betrag als bezahlt).
+  const due = dialog.getByRole("radio", { name: "Muss noch bezahlt werden" });
+  await expect(due).toBeChecked();
+  await due.click();
+  await expect(due).toBeChecked();
+  await dialog.getByRole("radio", { name: "Ist schon bezahlt" }).check();
+  await expect(dialog.getByLabel(/^Betrag/)).toHaveCount(0);
+  await expect(dialog.getByText(/wird als bezahlt abgelegt/)).toBeVisible();
+  await due.check();
 
   // Ohne Betrag geht es nicht.
   await dialog.getByRole("button", { name: "Hochladen", exact: true }).click();
