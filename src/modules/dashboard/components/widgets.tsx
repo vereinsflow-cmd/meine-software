@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ACCENT, type Accent } from "@/components/shared/accent";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Sparkline } from "@/components/charts/sparkline";
+import { CompactEmpty as Empty } from "@/components/shared/compact-empty";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import {
   TaskPriorityBadge,
@@ -240,40 +241,6 @@ function Widget({
         </CardContent>
       </Card>
     </section>
-  );
-}
-
-/**
- * Leerer Bereich: freundlich statt wie ein Fehler – Symbol im Farbton des Bereichs, kurze Überschrift, ein Satz dazu.
- * (Kein gestrichelter Rahmen; „nichts zu tun“ ist meist eine gute Nachricht.)
- */
-function Empty({
-  icon,
-  accent,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  accent: Accent;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-xl bg-muted/50 px-4 py-4">
-      <span
-        className={cn(
-          "flex size-11 shrink-0 items-center justify-center rounded-full [&_svg]:size-5",
-          ACCENT[accent].tile,
-        )}
-        aria-hidden="true"
-      >
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-base font-semibold">{title}</p>
-        <p className="text-sm text-muted-foreground">{children}</p>
-      </div>
-    </div>
   );
 }
 
