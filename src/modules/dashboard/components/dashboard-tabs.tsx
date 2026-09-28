@@ -218,13 +218,16 @@ export function DashboardTabs({
             aria-label="Bereiche des Dashboards"
             className="relative w-max gap-1 p-0 group-data-horizontal/tabs:h-12"
           >
+            {/* `transition-colors` statt `transition-all`: Die fette Schrift des gewählten Reiters darf nicht einblenden. Sonst wächst
+                der Reiter erst nach dem Hereinholen – die Leiste bliebe ein paar Pixel vor dem Ende stehen, und der Verlauf am
+                rechten Rand bliebe sichtbar (besonders bei Schriften mit festen Schnitten, z. B. unter Linux). */}
             {tabs.map((tab) => {
               const Icon = ICON[tab.id];
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="h-full flex-none gap-2 rounded-none px-3.5 text-base font-medium text-muted-foreground after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-primary dark:data-active:text-primary"
+                  className="h-full flex-none gap-2 rounded-none px-3.5 text-base font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-primary dark:data-active:text-primary"
                 >
                   <Icon className="hidden xl:block" aria-hidden="true" />
                   {tab.label}
