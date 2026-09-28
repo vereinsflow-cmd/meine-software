@@ -222,6 +222,32 @@ test.describe("Kalender – neuer Termin per Doppelklick", () => {
     await expect(chip).toContainText("(Entwurf)"); // Mitglieder sehen ihn erst nach dem Veröffentlichen
   });
 
+  test("„Gleich veröffentlichen“: Vorgabe aus; angekreuzt steht der Termin sofort ohne „(Entwurf)“ am Tag", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/kalender?ansicht=monat&datum=2031-03-01");
+    const cell = page.locator('td[data-date="2031-03-13"]');
+    await openByDoubleClick(page, cell);
+    const dialog = dialogOf(page);
+    const publish = dialog.getByRole("checkbox", { name: "Gleich veröffentlichen" });
+    await expect(publish).not.toBeChecked(); // Mitglieder werden benachrichtigt – nur mit Absicht
+    await expect(dialog.getByText("Mitglieder sehen den Termin sofort")).toBeVisible();
+
+    await dialog.getByLabel("Titel").fill("Frühjahrsputz");
+    await dialog.getByLabel("Beginn – Uhrzeit").fill("10:00");
+    await dialog.getByLabel("Ende – Uhrzeit").fill("12:00");
+    await publish.check();
+    await expect(dialog.getByRole("button", { name: "Als Entwurf speichern" })).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Veröffentlichen", exact: true }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText("Termin veröffentlicht.")).toBeVisible();
+    const chip = cell.getByRole("link", { name: /Frühjahrsputz/ });
+    await expect(chip).toContainText("10:00");
+    await expect(chip).not.toContainText("(Entwurf)");
+  });
+
   test("Woche und Tag: Doppelklick auf eine Tagesspalte oder den leeren Tag; Abbrechen speichert nichts", async ({
     page,
   }) => {

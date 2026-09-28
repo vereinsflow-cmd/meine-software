@@ -213,6 +213,9 @@ export function normalizeEventTimes(input: EventInput): NormalizedEventTimes | n
 }
 
 export const idSchema = z.object({ id: z.string().min(1).max(64) });
+
+/** Zusatz beim Anlegen: „Gleich veröffentlichen“ (Fenster „Neuer Termin“ im Kalender). Fehlt er, entsteht ein Entwurf. */
+export const createEventOptionsSchema = z.object({ publish: z.boolean().optional() }).optional();
 export const cancelEventSchema = z.object({
   id: z.string().min(1).max(64),
   reason: z
