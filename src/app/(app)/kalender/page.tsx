@@ -4,8 +4,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventType } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import {
@@ -189,13 +189,18 @@ export default async function CalendarPage({
         action="/kalender"
         role="search"
         aria-label="Kalender filtern"
-        className="mb-5 flex flex-wrap items-end gap-3"
+        className="mb-5 flex flex-wrap items-center gap-2 sm:gap-3"
       >
         <input type="hidden" name="ansicht" value={view} />
         <input type="hidden" name="datum" value={toDateInputValue(anchor)} />
-        <div className="grid gap-1.5">
-          <Label htmlFor="kal-art">Art</Label>
-          <NativeSelect id="kal-art" name="art" defaultValue={type ?? ""} className="w-44">
+        <FilterToggle
+          id="kalender-filter"
+          active={[type, departmentId, mine].filter(Boolean).length}
+        />
+        {/* Ohne sichtbare Überschrift über den Feldern: „Alle Arten“ / „Alle Abteilungen“ sagen es schon; der Name der Felder
+            bleibt „Art“ und „Abteilung“ (für Screenreader). Das spart eine Zeile über dem Kalender. */}
+        <FilterFields id="kalender-filter" className="w-full">
+          <NativeSelect name="art" defaultValue={type ?? ""} aria-label="Art" className="sm:w-44">
             <option value="">Alle Arten</option>
             {Object.values(EventType).map((value) => (
               <option key={value} value={value}>
@@ -203,14 +208,11 @@ export default async function CalendarPage({
               </option>
             ))}
           </NativeSelect>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="kal-abteilung">Abteilung</Label>
           <NativeSelect
-            id="kal-abteilung"
             name="abteilung"
             defaultValue={departmentId ?? ""}
-            className="w-48"
+            aria-label="Abteilung"
+            className="sm:w-48"
           >
             <option value="">Alle Abteilungen</option>
             {departments.map((d) => (
@@ -219,29 +221,33 @@ export default async function CalendarPage({
               </option>
             ))}
           </NativeSelect>
-        </div>
-        {ctx.memberId && (
-          <label className="flex h-9 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="meine"
-              value="1"
-              defaultChecked={mine}
-              className="size-4"
-            />{" "}
-            Nur meine Termine
-          </label>
-        )}
-        <Button type="submit">Filtern</Button>
-        {filtered && (
-          <Button asChild variant="ghost">
-            <Link
-              href={`/kalender${buildQuery({ ansicht: view, datum: toDateInputValue(anchor) }, {})}`}
-            >
-              Zurücksetzen
-            </Link>
-          </Button>
-        )}
+          {ctx.memberId && (
+            <label className="flex h-9 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="meine"
+                value="1"
+                defaultChecked={mine}
+                className="size-4"
+              />{" "}
+              Nur meine Termine
+            </label>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" variant="outline">
+              Filtern
+            </Button>
+            {filtered && (
+              <Button asChild variant="ghost">
+                <Link
+                  href={`/kalender${buildQuery({ ansicht: view, datum: toDateInputValue(anchor) }, {})}`}
+                >
+                  Zurücksetzen
+                </Link>
+              </Button>
+            )}
+          </div>
+        </FilterFields>
       </form>
 
       {truncated && (

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { EmptyState } from "@/components/shared/empty-state";
+import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -79,7 +80,7 @@ export default async function EventsPage({
         method="get"
         action="/veranstaltungen"
         role="search"
-        className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr_1fr_auto]"
+        className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_1fr_1fr_auto]"
       >
         <Input
           type="search"
@@ -88,49 +89,57 @@ export default async function EventsPage({
           placeholder="Titel oder Ort suchen …"
           aria-label="Veranstaltungen durchsuchen"
         />
-        <NativeSelect name="zeitraum" defaultValue={zeitraum} aria-label="Zeitraum">
-          <option value="kommend">Kommende</option>
-          <option value="vergangen">Vergangene</option>
-          <option value="alle">Alle</option>
-        </NativeSelect>
-        <NativeSelect name="art" defaultValue={type ?? ""} aria-label="Nach Art filtern">
-          <option value="">Alle Arten</option>
-          {Object.values(EventType).map((value) => (
-            <option key={value} value={value}>
-              {EVENT_TYPE_LABEL[value]}
-            </option>
-          ))}
-        </NativeSelect>
-        <NativeSelect
-          name="abteilung"
-          defaultValue={departmentId ?? ""}
-          aria-label="Nach Abteilung filtern"
-        >
-          <option value="">Alle Abteilungen</option>
-          {options.departments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </NativeSelect>
-        <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Nach Status filtern">
-          <option value="">Alle Status</option>
-          {Object.values(EventStatus)
-            .filter((s) => s !== "ARCHIVED" || canSeeArchive)
-            .map((value) => (
+        <FilterToggle
+          id="veranstaltungen-filter"
+          active={[zeitraum !== "kommend", type, departmentId, status].filter(Boolean).length}
+        />
+        <FilterFields id="veranstaltungen-filter">
+          <NativeSelect name="zeitraum" defaultValue={zeitraum} aria-label="Zeitraum">
+            <option value="kommend">Kommende</option>
+            <option value="vergangen">Vergangene</option>
+            <option value="alle">Alle</option>
+          </NativeSelect>
+          <NativeSelect name="art" defaultValue={type ?? ""} aria-label="Nach Art filtern">
+            <option value="">Alle Arten</option>
+            {Object.values(EventType).map((value) => (
               <option key={value} value={value}>
-                {EVENT_STATUS_LABEL[value]}
+                {EVENT_TYPE_LABEL[value]}
               </option>
             ))}
-        </NativeSelect>
-        <div className="flex gap-2">
-          <Button type="submit">Filtern</Button>
-          {filtered && (
-            <Button asChild variant="ghost">
-              <Link href="/veranstaltungen">Zurücksetzen</Link>
+          </NativeSelect>
+          <NativeSelect
+            name="abteilung"
+            defaultValue={departmentId ?? ""}
+            aria-label="Nach Abteilung filtern"
+          >
+            <option value="">Alle Abteilungen</option>
+            {options.departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Nach Status filtern">
+            <option value="">Alle Status</option>
+            {Object.values(EventStatus)
+              .filter((s) => s !== "ARCHIVED" || canSeeArchive)
+              .map((value) => (
+                <option key={value} value={value}>
+                  {EVENT_STATUS_LABEL[value]}
+                </option>
+              ))}
+          </NativeSelect>
+          <div className="flex gap-2">
+            <Button type="submit" variant="outline">
+              Filtern
             </Button>
-          )}
-        </div>
+            {filtered && (
+              <Button asChild variant="ghost">
+                <Link href="/veranstaltungen">Zurücksetzen</Link>
+              </Button>
+            )}
+          </div>
+        </FilterFields>
       </form>
 
       {result.items.length === 0 ? (

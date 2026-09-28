@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -123,7 +124,7 @@ export default async function MembersPage({
         method="get"
         action="/mitglieder"
         role="search"
-        className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto_auto]"
+        className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto_auto]"
       >
         <Input
           type="search"
@@ -132,43 +133,51 @@ export default async function MembersPage({
           placeholder="Name, Nummer oder E-Mail suchen …"
           aria-label="Mitglieder durchsuchen"
         />
-        <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Nach Status filtern">
-          <option value="">Alle Status</option>
-          {Object.values(MemberStatus).map((value) => (
-            <option key={value} value={value}>
-              {MEMBER_STATUS_LABEL[value]}
-            </option>
-          ))}
-        </NativeSelect>
-        <NativeSelect
-          name="abteilung"
-          defaultValue={departmentId ?? ""}
-          aria-label="Nach Abteilung filtern"
-        >
-          <option value="">Alle Abteilungen</option>
-          {departments.map((department) => (
-            <option key={department.id} value={department.id}>
-              {department.name}
-            </option>
-          ))}
-        </NativeSelect>
-        {canArchive ? (
-          <NativeSelect name="ansicht" defaultValue={ansicht} aria-label="Ansicht wählen">
-            <option value="aktiv">Aktive Liste</option>
-            <option value="archiv">Archiv</option>
-            {canDelete && <option value="papierkorb">Papierkorb</option>}
+        <FilterToggle
+          id="mitglieder-filter"
+          active={[status, departmentId, view !== "active"].filter(Boolean).length}
+        />
+        <FilterFields id="mitglieder-filter">
+          <NativeSelect name="status" defaultValue={status ?? ""} aria-label="Nach Status filtern">
+            <option value="">Alle Status</option>
+            {Object.values(MemberStatus).map((value) => (
+              <option key={value} value={value}>
+                {MEMBER_STATUS_LABEL[value]}
+              </option>
+            ))}
           </NativeSelect>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <Button type="submit">Filtern</Button>
-          {filtered && (
-            <Button asChild variant="ghost">
-              <Link href="/mitglieder">Zurücksetzen</Link>
-            </Button>
+          <NativeSelect
+            name="abteilung"
+            defaultValue={departmentId ?? ""}
+            aria-label="Nach Abteilung filtern"
+          >
+            <option value="">Alle Abteilungen</option>
+            {departments.map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </NativeSelect>
+          {canArchive ? (
+            <NativeSelect name="ansicht" defaultValue={ansicht} aria-label="Ansicht wählen">
+              <option value="aktiv">Aktive Liste</option>
+              <option value="archiv">Archiv</option>
+              {canDelete && <option value="papierkorb">Papierkorb</option>}
+            </NativeSelect>
+          ) : (
+            <span />
           )}
-        </div>
+          <div className="flex gap-2">
+            <Button type="submit" variant="outline">
+              Filtern
+            </Button>
+            {filtered && (
+              <Button asChild variant="ghost">
+                <Link href="/mitglieder">Zurücksetzen</Link>
+              </Button>
+            )}
+          </div>
+        </FilterFields>
         <input type="hidden" name="sort" value={sort} />
         <input type="hidden" name="dir" value={dir} />
       </form>

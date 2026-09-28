@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
@@ -112,8 +113,8 @@ export default async function DocumentsPage({
         role="search"
         className={
           financeRead
-            ? "mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto]"
-            : "mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_auto]"
+            ? "mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_1fr_auto]"
+            : "mb-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_1fr_auto]"
         }
       >
         {eventId && <input type="hidden" name="veranstaltung" value={eventId} />}
@@ -124,37 +125,42 @@ export default async function DocumentsPage({
           placeholder="Dokument oder Kategorie suchen …"
           aria-label="Dokumente durchsuchen"
         />
-        <NativeSelect
-          name="kategorie"
-          defaultValue={category ?? ""}
-          aria-label="Nach Kategorie filtern"
-        >
-          <option value="">Alle Kategorien</option>
-          {categories.map((entry) => (
-            <option key={entry} value={entry}>
-              {entry}
-            </option>
-          ))}
-        </NativeSelect>
-        {financeRead && (
+        <FilterToggle id="dokumente-filter" active={[category, invoices].filter(Boolean).length} />
+        <FilterFields id="dokumente-filter">
           <NativeSelect
-            name="rechnungen"
-            defaultValue={invoices ?? ""}
-            aria-label="Nach Rechnungen filtern"
+            name="kategorie"
+            defaultValue={category ?? ""}
+            aria-label="Nach Kategorie filtern"
           >
-            <option value="">Alle Dokumente</option>
-            <option value="alle">Nur Rechnungen</option>
-            <option value="offen">Nur offene Rechnungen</option>
+            <option value="">Alle Kategorien</option>
+            {categories.map((entry) => (
+              <option key={entry} value={entry}>
+                {entry}
+              </option>
+            ))}
           </NativeSelect>
-        )}
-        <div className="flex gap-2">
-          <Button type="submit">Filtern</Button>
-          {filtered && (
-            <Button asChild variant="ghost">
-              <Link href="/dokumente">Zurücksetzen</Link>
-            </Button>
+          {financeRead && (
+            <NativeSelect
+              name="rechnungen"
+              defaultValue={invoices ?? ""}
+              aria-label="Nach Rechnungen filtern"
+            >
+              <option value="">Alle Dokumente</option>
+              <option value="alle">Nur Rechnungen</option>
+              <option value="offen">Nur offene Rechnungen</option>
+            </NativeSelect>
           )}
-        </div>
+          <div className="flex gap-2">
+            <Button type="submit" variant="outline">
+              Filtern
+            </Button>
+            {filtered && (
+              <Button asChild variant="ghost">
+                <Link href="/dokumente">Zurücksetzen</Link>
+              </Button>
+            )}
+          </div>
+        </FilterFields>
       </form>
 
       {eventId && (

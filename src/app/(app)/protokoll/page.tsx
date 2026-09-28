@@ -15,6 +15,7 @@ import {
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { AUDIT_MODULES, auditActionLabel, formatAuditChanges } from "@/lib/audit-labels";
@@ -75,50 +76,58 @@ export default async function AuditLogPage({
         action="/protokoll"
         role="search"
         aria-label="Protokoll filtern"
-        className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]"
+        className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         <div className="grid gap-1.5">
-          <Label htmlFor="pr-bereich">Bereich</Label>
-          <NativeSelect id="pr-bereich" name="bereich" defaultValue={area ?? ""}>
-            <option value="">Alle Bereiche</option>
-            {AUDIT_MODULES.map((m) => (
-              <option key={m.key} value={m.key}>
-                {m.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="pr-person">Person</Label>
-          <NativeSelect id="pr-person" name="person" defaultValue={actorUserId ?? ""}>
-            <option value="">Alle Personen</option>
-            {actors.map((a) => (
-              <option key={a.userId} value={a.userId}>
-                {a.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="pr-von">Von</Label>
-          <Input id="pr-von" type="date" name="von" defaultValue={param(params, "von") ?? ""} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="pr-bis">Bis</Label>
-          <Input id="pr-bis" type="date" name="bis" defaultValue={param(params, "bis") ?? ""} />
-        </div>
-        <div className="grid gap-1.5 sm:col-span-2 lg:col-span-4">
           <Label htmlFor="pr-q">Suche in der Beschreibung</Label>
           <Input id="pr-q" type="search" name="q" defaultValue={q} placeholder="z. B. Sommerfest" />
         </div>
-        <div className="flex items-end gap-2">
-          <Button type="submit">Filtern</Button>
-          {filtered && (
-            <Button asChild variant="ghost">
-              <Link href="/protokoll">Zurücksetzen</Link>
+        <FilterToggle
+          id="protokoll-filter"
+          active={[area, actorUserId, from, toDay].filter(Boolean).length}
+        />
+        <FilterFields id="protokoll-filter" className="gap-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="pr-bereich">Bereich</Label>
+            <NativeSelect id="pr-bereich" name="bereich" defaultValue={area ?? ""}>
+              <option value="">Alle Bereiche</option>
+              {AUDIT_MODULES.map((m) => (
+                <option key={m.key} value={m.key}>
+                  {m.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pr-person">Person</Label>
+            <NativeSelect id="pr-person" name="person" defaultValue={actorUserId ?? ""}>
+              <option value="">Alle Personen</option>
+              {actors.map((a) => (
+                <option key={a.userId} value={a.userId}>
+                  {a.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pr-von">Von</Label>
+            <Input id="pr-von" type="date" name="von" defaultValue={param(params, "von") ?? ""} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pr-bis">Bis</Label>
+            <Input id="pr-bis" type="date" name="bis" defaultValue={param(params, "bis") ?? ""} />
+          </div>
+          <div className="flex items-end gap-2">
+            <Button type="submit" variant="outline">
+              Filtern
             </Button>
-          )}
-        </div>
+            {filtered && (
+              <Button asChild variant="ghost">
+                <Link href="/protokoll">Zurücksetzen</Link>
+              </Button>
+            )}
+          </div>
+        </FilterFields>
       </form>
 
       {result.items.length === 0 ? (
