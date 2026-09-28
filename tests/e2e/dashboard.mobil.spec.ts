@@ -55,6 +55,11 @@ test.describe("Dashboard-Reiter – mobil", () => {
     });
     await expect(page.getByRole("region", { name: "Auswertungen" })).toBeVisible();
     await expect(page).toHaveURL(/\/dashboard\?tab=aktivitaet$/);
+    // Erst prüfen, wenn in der Leiste nichts mehr gleitet oder einblendet: Ein Zwischenstand sähe richtig aus, obwohl die
+    // Leiste am Ende ein paar Pixel vor dem Rand stehen bleibt (so geschehen, als die fette Schrift noch einblendete).
+    await expect
+      .poll(() => tabBar(page).evaluate((list) => list.getAnimations({ subtree: true }).length))
+      .toBe(0);
     await expect(scroller).toHaveAttribute("data-fade", "start"); // am Ende: Verlauf nur noch links
     // …und zurück: Jetzt ist wieder der erste Reiter sichtbar
     await select(page, "Übersicht");
