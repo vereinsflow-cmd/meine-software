@@ -237,6 +237,73 @@ describe("Anlegen, Ändern und Lebenszyklus", () => {
     expect(series[0]!.id).toBe(id);
   });
 
+  it("„Gleich veröffentlichen“: sofort sichtbar und protokolliert – eine Serie benachrichtigt nur einmal", async () => {
+    const { ctx, people } = await setup();
+    const single = await createEvent(ctx.board, form({ title: "Grillfest" }), { publish: true });
+    const detail = await getEvent(ctx.member, single.id); // Mitglieder sehen ihn sofort
+    expect(detail.status).toBe("PUBLISHED");
+    expect(detail.publishedAt).not.toBeNull();
+    const actions = (
+      await prisma.auditLog.findMany({
+        where: { entityId: single.id },
+        orderBy: { createdAt: "asc" },
+      })
+    ).map((a) => a.action);
+    expect(actions).toEqual(["event.created", "event.published"]);
+
+    const series = await createEvent(
+      ctx.board,
+      form({ title: "Training", repeat: "weekly", repeatCount: 4 }),
+      { publish: true },
+    );
+    expect(series.count).toBe(4);
+    const rows = await prisma.event.findMany({
+      where: { clubId: ctx.board.clubId, title: "Training" },
+    });
+    expect(rows.every((e) => e.status === "PUBLISHED" && e.publishedAt !== null)).toBe(true);
+    // Je Mitglied eine Benachrichtigung für den Termin und eine für die ganze Serie – nicht eine je Serientermin.
+    expect(
+      (await notificationsFor(people.member.user.id)).map((n) => [n.title, n.linkUrl]),
+    ).toEqual([
+      ["Neue Veranstaltung: Grillfest", `/veranstaltungen/${single.id}`],
+      ["Neue Terminserie: Training (4 Termine)", `/veranstaltungen/${series.id}`],
+    ]);
+    expect(await notificationsFor(people.board.user.id)).toHaveLength(0); // nicht an sich selbst
+  });
+
+  it("„Gleich veröffentlichen“ braucht das Recht dazu – ohne wird gar nichts angelegt", async () => {
+    const { ctx, fussball, people } = await setup();
+    await prisma.memberDepartment.create({
+      data: {
+        clubId: ctx.admin.clubId,
+        memberId: people.helper.member.id,
+        departmentId: fussball.id,
+      },
+    });
+    // Abteilungsleiter: in der eigenen Abteilung; benachrichtigt werden nur deren Mitglieder
+    const own = await createEvent(
+      ctx.lead,
+      form({ title: "Heimspiel", departmentId: fussball.id }),
+      { publish: true },
+    );
+    expect((await getEvent(ctx.member, own.id)).status).toBe("PUBLISHED");
+    expect((await notificationsFor(people.helper.user.id)).map((n) => n.title)).toEqual([
+      "Neue Veranstaltung: Heimspiel",
+    ]);
+    expect(await notificationsFor(people.member.user.id)).toHaveLength(0);
+
+    const withoutPublish = {
+      ...ctx.board,
+      permissions: new Map([...ctx.board.permissions].filter(([key]) => key !== "events:publish")),
+    };
+    await expect(
+      createEvent(withoutPublish, form({ title: "Ohne Recht" }), { publish: true }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(await prisma.event.count({ where: { title: "Ohne Recht" } })).toBe(0);
+    const draft = await createEvent(withoutPublish, form({ title: "Ohne Recht" }));
+    expect((await getEvent(ctx.board, draft.id)).status).toBe("DRAFT"); // als Entwurf geht es weiter
+  });
+
   it("Änderungen an Zeit/Ort benachrichtigen Teilnehmer und Helfer – interne Notizen nicht", async () => {
     const { ctx, club, people } = await setup();
     const { id } = await createEvent(ctx.board, form());

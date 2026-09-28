@@ -70,8 +70,11 @@ export default async function CalendarPage({
   const next = shiftAnchor(view, anchor, 1);
   const cell = { byDay, todayKey, hrefForDay };
   const noun = { monat: "Monat", liste: "Monat", woche: "Woche", tag: "Tag" }[view];
-  // „Neuer Termin“ (Doppelklick auf einen Tag oder Knopf im Kopf) nur für alle, die Veranstaltungen anlegen dürfen.
-  const quick = can(ctx, "events:create") ? eventDepartmentChoices(ctx, departments) : null;
+  // „Neuer Termin“ (Doppelklick auf einen Tag oder Knopf im Kopf) nur für alle, die Veranstaltungen anlegen dürfen;
+  // „Gleich veröffentlichen“ nur mit dem Recht dazu (für welche Abteilung, prüft der Server beim Speichern).
+  const quick = can(ctx, "events:create")
+    ? { ...eventDepartmentChoices(ctx, departments), canPublish: can(ctx, "events:publish") }
+    : null;
 
   const calendar = (
     <>

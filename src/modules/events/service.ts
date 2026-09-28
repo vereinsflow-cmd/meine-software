@@ -529,9 +529,15 @@ function eventData(input: EventInput, times: NonNullable<ReturnType<typeof norma
 // Anlegen und Ändern
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * Legt eine Veranstaltung an – bei Wiederholung eine Serie – als Entwurf. Mit `publish` („Gleich veröffentlichen“ im
+ * Kalender) ist sie sofort veröffentlicht: dasselbe Recht wie der Knopf auf ihrer Seite, für die gewählte Abteilung. Eine
+ * Serie meldet sich dann **einmal** bei den Mitgliedern, nicht mit einer Benachrichtigung je Termin.
+ */
 export async function createEvent(
   ctx: TenantContext,
   input: EventInput,
+  options: { publish?: boolean } = {},
 ): Promise<{ id: string; count: number }> {
   assertCan(ctx, "events:create");
   if (
@@ -540,6 +546,9 @@ export async function createEvent(
   ) {
     throw validationFailed({ departmentId: ["Bitte wähle eine Abteilung, die du leitest."] });
   }
+  const publish = options.publish === true;
+  const audience = { departmentId: input.departmentId ?? null };
+  if (publish) assertCan(ctx, "events:publish", resourceOf(audience));
   const times = normalizeEventTimes(input);
   if (!times) throw validationFailed({ startDate: ["Bitte prüfe Datum und Uhrzeit."] });
   await assertRefs(ctx.db, input);
@@ -558,6 +567,8 @@ export async function createEvent(
     ? times.startsAt.getTime() - times.registrationDeadline.getTime()
     : null;
 
+  const publishedAt = publish ? new Date() : null;
+
   return ctx.db.$transaction(async (tx) => {
     const ids: string[] = [];
     for (const occurrence of occurrences) {
@@ -572,22 +583,43 @@ export async function createEvent(
             deadlineOffset === null
               ? null
               : new Date(occurrence.startsAt.getTime() - deadlineOffset),
-          status: "DRAFT",
+          status: publish ? "PUBLISHED" : "DRAFT",
+          publishedAt,
           createdById: ctx.userId,
         },
       });
       ids.push(created.id);
     }
+    const first = ids[0]!;
+    const series = ids.length > 1;
     await recordAudit(tx, auditActor(ctx), {
       action: "event.created",
       entityType: "Event",
-      entityId: ids[0],
-      summary:
-        occurrences.length > 1
-          ? `Terminserie „${input.title}“ mit ${occurrences.length} Terminen angelegt`
-          : `Veranstaltung „${input.title}“ angelegt`,
+      entityId: first,
+      summary: series
+        ? `Terminserie „${input.title}“ mit ${ids.length} Terminen angelegt`
+        : `Veranstaltung „${input.title}“ angelegt`,
     });
-    return { id: ids[0]!, count: ids.length };
+    if (publish) {
+      await recordAudit(tx, auditActor(ctx), {
+        action: "event.published",
+        entityType: "Event",
+        entityId: first,
+        summary: series
+          ? `Terminserie „${input.title}“ mit ${ids.length} Terminen veröffentlicht`
+          : `Veranstaltung „${input.title}“ veröffentlicht`,
+      });
+      await notifyUsers(tx, ctx.clubId, {
+        userIds: (await audienceUserIds(tx, audience)).filter((userId) => userId !== ctx.userId),
+        type: "EVENT_PUBLISHED",
+        title: series
+          ? `Neue Terminserie: ${input.title} (${ids.length} Termine)`
+          : `Neue Veranstaltung: ${input.title}`,
+        linkUrl: eventLink(first),
+        dedupeKey: () => `event-published:${first}`,
+      });
+    }
+    return { id: first, count: ids.length };
   });
 }
 

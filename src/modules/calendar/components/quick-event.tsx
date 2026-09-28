@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogClose,
@@ -38,6 +39,7 @@ import {
  * „Neuer Termin“ direkt im Kalender: ein kurzes Formular mit dem Nötigsten, gespeichert wie im großen Formular als
  * Entwurf. Geöffnet wird es per Doppelklick auf einen Tag (`DayDoubleClick`) oder – für Tastatur und Touch – über den
  * Knopf im Seitenkopf (`NewEventButton`). Nach dem Speichern bleibt man im Kalender; der neue Termin erscheint am Tag.
+ * Wer veröffentlichen darf, kann „Gleich veröffentlichen“ ankreuzen (Vorgabe: aus, denn Mitglieder werden benachrichtigt).
  */
 function QuickEventForm({
   date,
@@ -49,16 +51,18 @@ function QuickEventForm({
   onDone: () => void;
 }) {
   const router = useRouter();
+  const publishId = useId();
+  const [publish, setPublish] = useState(false);
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: eventFormSchema,
     defaultValues: quickEventDefaults(date, options),
-    action: createEventAction,
+    action: (values) => createEventAction(values, { publish }),
     onSuccess: ({ id, count }) => {
       onDone();
-      toast.success(
-        count > 1 ? `${count} Termine als Entwurf angelegt.` : "Termin als Entwurf angelegt.",
-        { action: { label: "Öffnen", onClick: () => router.push(`/veranstaltungen/${id}`) } },
-      );
+      const what = count > 1 ? `${count} Termine` : "Termin";
+      toast.success(publish ? `${what} veröffentlicht.` : `${what} als Entwurf angelegt.`, {
+        action: { label: "Öffnen", onClick: () => router.push(`/veranstaltungen/${id}`) },
+      });
       router.refresh();
     },
   });
@@ -141,13 +145,37 @@ function QuickEventForm({
           hint={`Insgesamt, höchstens ${MAX_SERIES_OCCURRENCES}.`}
         />
       )}
+      {options.canPublish && (
+        <div className="grid content-start gap-1 sm:col-span-2">
+          <div className="flex items-start gap-2.5">
+            <input
+              id={publishId}
+              type="checkbox"
+              checked={publish}
+              onChange={(event) => setPublish(event.target.checked)}
+              aria-describedby={`${publishId}-hint`}
+              className="mt-1 size-4 shrink-0 rounded accent-primary"
+            />
+            <Label htmlFor={publishId} className="leading-snug font-normal">
+              Gleich veröffentlichen
+            </Label>
+          </div>
+          <p id={`${publishId}-hint`} className="pl-6.5 text-sm text-muted-foreground">
+            {repeat === "none"
+              ? "Mitglieder sehen den Termin sofort und werden benachrichtigt."
+              : "Mitglieder sehen alle Termine der Serie sofort und bekommen eine Benachrichtigung."}
+          </p>
+        </div>
+      )}
       <DialogFooter className="sm:col-span-2">
         <DialogClose asChild>
           <Button type="button" variant="outline">
             Abbrechen
           </Button>
         </DialogClose>
-        <SubmitButton pending={isPending}>Als Entwurf speichern</SubmitButton>
+        <SubmitButton pending={isPending}>
+          {publish ? "Veröffentlichen" : "Als Entwurf speichern"}
+        </SubmitButton>
       </DialogFooter>
     </form>
   );
@@ -173,9 +201,10 @@ function QuickEventDialog({
         <DialogHeader>
           <DialogTitle>Neuer Termin</DialogTitle>
           <DialogDescription>
-            Der Termin wird als Entwurf gespeichert und ist erst nach dem Veröffentlichen für
-            Mitglieder sichtbar. Weitere Angaben wie Beschreibung oder Anmeldung ergänzt du auf der
-            Seite des Termins.
+            {options.canPublish
+              ? "Der Termin wird als Entwurf gespeichert – oder gleich veröffentlicht, wenn du das unten ankreuzt."
+              : "Der Termin wird als Entwurf gespeichert und ist erst nach dem Veröffentlichen für Mitglieder sichtbar."}{" "}
+            Weitere Angaben wie Beschreibung oder Anmeldung ergänzt du auf der Seite des Termins.
           </DialogDescription>
         </DialogHeader>
         <QuickEventForm

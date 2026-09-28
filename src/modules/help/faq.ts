@@ -439,7 +439,7 @@ export const FAQ: readonly FaqSection[] = [
           "Trage Titel, Zeit und Ort ein und klicke auf „Als Entwurf speichern“. Der Termin steht sofort am Tag im Kalender, zunächst als Entwurf.",
           "Klicke den Termin an und wähle „Veröffentlichen“, damit ihn alle Mitglieder sehen.",
         ],
-        tip: "Auf dem Smartphone nimmst du den Knopf „Neuer Termin“. Beschreibung, Anmeldung und Ansprechpartner ergänzt du auf der Seite des Termins mit „Bearbeiten“.",
+        tip: "Schneller geht es mit dem Häkchen „Gleich veröffentlichen“ im Fenster: Dann sehen die Mitglieder den Termin sofort und werden benachrichtigt – bei einer Serie nur einmal. Auf dem Smartphone nimmst du den Knopf „Neuer Termin“. Beschreibung, Anmeldung und Ansprechpartner ergänzt du auf der Seite des Termins mit „Bearbeiten“.",
         link: { href: "/kalender", label: "Zum Kalender" },
         keywords: "doppelklick schnell eintragen termin anlegen neuer termin datum",
       },

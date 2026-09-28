@@ -6,6 +6,7 @@ import { requireTenantContext } from "@/server/tenancy/context";
 import { removeParticipant, respondToEvent, setParticipantStatus } from "./participants";
 import {
   cancelEventSchema,
+  createEventOptionsSchema,
   duplicateSchema,
   eventFormSchema,
   idSchema,
@@ -35,11 +36,13 @@ const refresh = (id?: string) => {
 
 export async function createEventAction(
   input: unknown,
+  options?: unknown,
 ): Promise<ActionResult<{ id: string; count: number }>> {
   return runAction(async () => {
     const result = await createEvent(
       await requireTenantContext(),
       parseInput(eventFormSchema, input),
+      parseInput(createEventOptionsSchema, options),
     );
     refresh();
     return result;

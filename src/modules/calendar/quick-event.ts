@@ -13,6 +13,8 @@ export const isDateKey = (value: string | undefined): value is string =>
 export interface QuickEventOptions {
   departments: { id: string; name: string; selectable?: boolean }[];
   departmentRequired: boolean;
+  /** Darf gleich veröffentlichen (Recht `events:publish`) – dann gibt es das Häkchen „Gleich veröffentlichen“. */
+  canPublish?: boolean;
 }
 
 /** Startwerte am gewählten Tag. Wer genau eine Abteilung leitet und wählen muss, bekommt sie vorausgewählt. */
