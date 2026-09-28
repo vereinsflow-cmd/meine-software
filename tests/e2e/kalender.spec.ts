@@ -250,6 +250,43 @@ test.describe("Kalender – neuer Termin per Doppelklick", () => {
     await expect(chip).not.toContainText("(Entwurf)");
   });
 
+  test("Serie als Entwurf anlegen, dann auf der Termin-Seite alle Termine auf einmal veröffentlichen", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/kalender?ansicht=monat&datum=2031-04-01");
+    await openByDoubleClick(page, page.locator('td[data-date="2031-04-02"]'));
+    const dialog = dialogOf(page);
+    await dialog.getByLabel("Titel").fill("Lauftreff");
+    await dialog.getByLabel("Beginn – Uhrzeit").fill("18:00");
+    await dialog.getByLabel("Ende – Uhrzeit").fill("19:00");
+    await dialog.getByLabel("Wiederholung").selectOption("weekly");
+    await dialog.getByLabel("Anzahl der Termine").fill("3");
+    await dialog.getByRole("button", { name: "Als Entwurf speichern" }).click();
+    await expect(page.getByText("3 Termine als Entwurf angelegt.")).toBeVisible();
+
+    await page
+      .locator('td[data-date="2031-04-02"]')
+      .getByRole("link", { name: /Lauftreff/ })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Lauftreff" })).toBeVisible();
+    await page.getByRole("button", { name: "Veröffentlichen" }).click();
+    const confirm = page.getByRole("alertdialog");
+    const all = confirm.getByRole("checkbox", {
+      name: /Alle 3 Termine dieser Serie veröffentlichen/,
+    });
+    await expect(all).toBeChecked(); // Vorgabe: die ganze Serie
+    await confirm.getByRole("button", { name: "3 Termine veröffentlichen" }).click();
+    await expect(page.getByText("Termine der Serie veröffentlicht.")).toBeVisible();
+
+    await open(page, "/kalender?ansicht=monat&datum=2031-04-01");
+    for (const day of ["2031-04-02", "2031-04-09", "2031-04-16"]) {
+      const chip = page.locator(`td[data-date="${day}"]`).getByRole("link", { name: /Lauftreff/ });
+      await expect(chip).toBeVisible();
+      await expect(chip).not.toContainText("(Entwurf)");
+    }
+  });
+
   test("Woche und Tag: Doppelklick auf eine Tagesspalte oder den leeren Tag; Abbrechen speichert nichts", async ({
     page,
   }) => {

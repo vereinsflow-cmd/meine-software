@@ -21,6 +21,7 @@ import {
   deleteEvent,
   duplicateEvent,
   publishEvent,
+  publishSeries,
   restoreEvent,
   updateEvent,
 } from "./service";
@@ -72,6 +73,18 @@ function statusAction(
 }
 
 export const publishEventAction = statusAction("event-publish", publishEvent);
+
+/** Alle Entwürfe der Serie des Termins veröffentlichen (eine Benachrichtigung für die ganze Serie). */
+export async function publishSeriesAction(
+  input: unknown,
+): Promise<ActionResult<{ count: number }>> {
+  return runAction(async () => {
+    const { id } = parseInput(idSchema, input);
+    const result = await publishSeries(await requireTenantContext(), id);
+    refresh(id);
+    return result;
+  }, "event-publish-series");
+}
 export const completeEventAction = statusAction("event-complete", completeEvent);
 export const archiveEventAction = statusAction("event-archive", archiveEvent);
 export const restoreEventAction = statusAction("event-restore", restoreEvent);

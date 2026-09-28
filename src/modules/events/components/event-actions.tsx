@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -37,6 +38,7 @@ import {
   deleteEventAction,
   duplicateEventAction,
   publishEventAction,
+  publishSeriesAction,
   restoreEventAction,
 } from "../actions";
 import { availableEventActions, type EventActionRights } from "../available-actions";
@@ -143,13 +145,19 @@ export function EventActions({
   title,
   status,
   can,
+  seriesDrafts = 0,
 }: {
   id: string;
   title: string;
   status: EventStatus;
   can: EventActionRights;
+  /** Entwürfe der Terminserie samt diesem Termin – ab 2 bietet „Veröffentlichen“ die ganze Serie an. */
+  seriesDrafts?: number;
 }) {
   const router = useRouter();
+  const series = seriesDrafts > 1;
+  const [wholeSeries, setWholeSeries] = useState(true);
+  const publishAll = series && wholeSeries;
   const refresh = () => router.refresh();
   const more = useMoreActions<MenuDialog>();
   const show = availableEventActions(status, can);
@@ -174,11 +182,33 @@ export function EventActions({
           }
           title="Veranstaltung veröffentlichen?"
           description="Sie wird für alle Mitglieder sichtbar und Mitglieder werden benachrichtigt. Anmeldungen sind danach möglich."
-          confirmLabel="Veröffentlichen"
-          action={() => publishEventAction({ id })}
-          successMessage="Veranstaltung veröffentlicht."
+          confirmLabel={publishAll ? `${seriesDrafts} Termine veröffentlichen` : "Veröffentlichen"}
+          action={() => (publishAll ? publishSeriesAction({ id }) : publishEventAction({ id }))}
+          successMessage={
+            publishAll ? "Termine der Serie veröffentlicht." : "Veranstaltung veröffentlicht."
+          }
           onSuccess={refresh}
-        />
+        >
+          {/* Serie: alle Entwürfe auf einmal statt Termin für Termin – mit einer Benachrichtigung für die ganze Serie. */}
+          {series && (
+            <label className="flex items-start gap-2.5 text-sm">
+              <input
+                type="checkbox"
+                checked={wholeSeries}
+                onChange={(event) => setWholeSeries(event.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-primary"
+              />
+              <span>
+                <span className="font-medium">
+                  Alle {seriesDrafts} Termine dieser Serie veröffentlichen
+                </span>
+                <span className="block text-muted-foreground">
+                  Mitglieder bekommen dafür nur eine Benachrichtigung.
+                </span>
+              </span>
+            </label>
+          )}
+        </ConfirmAction>
       )}
       {(routine || dangerous) && (
         <MoreActions triggerRef={more.triggerRef}>

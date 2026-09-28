@@ -609,14 +609,11 @@ export async function createEvent(
           ? `Terminserie „${input.title}“ mit ${ids.length} Terminen veröffentlicht`
           : `Veranstaltung „${input.title}“ veröffentlicht`,
       });
-      await notifyUsers(tx, ctx.clubId, {
-        userIds: (await audienceUserIds(tx, audience)).filter((userId) => userId !== ctx.userId),
-        type: "EVENT_PUBLISHED",
-        title: series
-          ? `Neue Terminserie: ${input.title} (${ids.length} Termine)`
-          : `Neue Veranstaltung: ${input.title}`,
-        linkUrl: eventLink(first),
-        dedupeKey: () => `event-published:${first}`,
+      await announcePublished(tx, ctx, {
+        title: input.title,
+        departmentId: audience.departmentId,
+        firstId: first,
+        count: ids.length,
       });
     }
     return { id: first, count: ids.length };
@@ -699,13 +696,79 @@ export async function publishEvent(ctx: TenantContext, id: string): Promise<void
       entityId: id,
       summary: `Veranstaltung „${event.title}“ veröffentlicht`,
     });
-    await notifyUsers(tx, ctx.clubId, {
-      userIds: (await audienceUserIds(tx, event)).filter((userId) => userId !== ctx.userId),
-      type: "EVENT_PUBLISHED",
-      title: `Neue Veranstaltung: ${event.title}`,
-      linkUrl: eventLink(id),
-      dedupeKey: () => `event-published:${id}`,
+    await announcePublished(tx, ctx, {
+      title: event.title,
+      departmentId: event.departmentId,
+      firstId: id,
+      count: 1,
     });
+  });
+}
+
+/** Zahl der Entwürfe einer Terminserie (für „Alle N Termine dieser Serie veröffentlichen“ auf der Seite eines Termins). */
+export async function countSeriesDrafts(ctx: TenantContext, seriesId: string): Promise<number> {
+  return dbOf(ctx).event.count({ where: { seriesId, status: "DRAFT", deletedAt: null } });
+}
+
+/**
+ * Veröffentlicht vom Termin `id` aus alle Entwürfe seiner Serie auf einmal – in einer Transaktion und mit **einer**
+ * Benachrichtigung für die ganze Serie (sonst eine je Termin). Termine, die der Benutzer nicht veröffentlichen darf (etwa
+ * nachträglich einer fremden Abteilung zugeordnet), bleiben Entwürfe. Ohne Serie wie `publishEvent`.
+ */
+export async function publishSeries(ctx: TenantContext, id: string): Promise<{ count: number }> {
+  const event = await loadForAction(ctx, id, "events:publish");
+  if (event.status !== "DRAFT") throw badRequest("Nur Entwürfe lassen sich veröffentlichen.");
+  if (!event.seriesId) {
+    await publishEvent(ctx, id);
+    return { count: 1 };
+  }
+  const drafts = (
+    await dbOf(ctx).event.findMany({
+      where: { seriesId: event.seriesId, status: "DRAFT", deletedAt: null },
+      orderBy: { startsAt: "asc" },
+      select: { id: true, departmentId: true },
+    })
+  ).filter((row) => can(ctx, "events:publish", resourceOf(row)));
+  const ids = drafts.map((row) => row.id);
+  return ctx.db.$transaction(async (tx) => {
+    const { count } = await tx.event.updateMany({
+      where: { id: { in: ids }, status: "DRAFT" },
+      data: { status: "PUBLISHED", publishedAt: new Date() },
+    });
+    if (count === 0) throw badRequest("Diese Termine sind schon veröffentlicht."); // gleichzeitig veröffentlicht
+    await recordAudit(tx, auditActor(ctx), {
+      action: "event.published",
+      entityType: "Event",
+      entityId: id,
+      summary: `Terminserie „${event.title}“: ${count} ${count === 1 ? "Termin" : "Termine"} veröffentlicht`,
+    });
+    await announcePublished(tx, ctx, {
+      title: event.title,
+      departmentId: event.departmentId,
+      firstId: ids[0] ?? id,
+      count,
+    });
+    return { count };
+  });
+}
+
+/** Meldet veröffentlichte Termine den Mitgliedern (Abteilung bzw. Verein) – eine Serie einmal, nicht je Termin. */
+async function announcePublished(
+  tx: TenantTx,
+  ctx: TenantContext,
+  input: { title: string; departmentId: string | null; firstId: string; count: number },
+): Promise<void> {
+  await notifyUsers(tx, ctx.clubId, {
+    userIds: (await audienceUserIds(tx, { departmentId: input.departmentId })).filter(
+      (userId) => userId !== ctx.userId,
+    ),
+    type: "EVENT_PUBLISHED",
+    title:
+      input.count > 1
+        ? `Neue Terminserie: ${input.title} (${input.count} Termine)`
+        : `Neue Veranstaltung: ${input.title}`,
+    linkUrl: eventLink(input.firstId),
+    dedupeKey: () => `event-published:${input.firstId}`,
   });
 }
 
