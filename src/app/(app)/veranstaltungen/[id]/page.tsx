@@ -18,7 +18,7 @@ import { EventActions } from "@/modules/events/components/event-actions";
 import { ParticipantsPanel } from "@/modules/events/components/participants-panel";
 import { RsvpPanel } from "@/modules/events/components/rsvp-panel";
 import { listParticipantCandidates, listParticipants } from "@/modules/events/participants";
-import { getEvent } from "@/modules/events/service";
+import { countSeriesDrafts, getEvent } from "@/modules/events/service";
 import { EventTasksCard } from "@/modules/tasks/components/event-tasks-card";
 import { isAppError } from "@/server/errors";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -133,6 +133,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     </Card>
   );
 
+  // Entwurf einer Terminserie: „Veröffentlichen“ bietet an, alle Entwürfe der Serie auf einmal zu veröffentlichen.
+  const seriesDrafts =
+    event.status === "DRAFT" && event.seriesId && event.can.publish
+      ? await countSeriesDrafts(ctx, event.seriesId)
+      : 0;
+
   return (
     <>
       <BackLink href="/veranstaltungen">Alle Veranstaltungen</BackLink>
@@ -146,7 +152,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             {event.visibility === "PUBLIC" && <ToneBadge tone="info">Öffentlich</ToneBadge>}
           </span>
         }
-        actions={<EventActions id={id} title={event.title} status={event.status} can={event.can} />}
+        actions={
+          <EventActions
+            id={id}
+            title={event.title}
+            status={event.status}
+            can={event.can}
+            seriesDrafts={seriesDrafts}
+          />
+        }
       />
 
       {event.status === "CANCELLED" && (

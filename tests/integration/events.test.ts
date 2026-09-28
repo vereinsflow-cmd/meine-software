@@ -23,6 +23,7 @@ import {
   archiveEvent,
   cancelEvent,
   completeEvent,
+  countSeriesDrafts,
   createEvent,
   deleteEvent,
   duplicateEvent,
@@ -30,6 +31,7 @@ import {
   getEventForEdit,
   listEvents,
   publishEvent,
+  publishSeries,
   restoreEvent,
   updateEvent,
   type EventListQuery,
@@ -269,6 +271,36 @@ describe("Anlegen, Ändern und Lebenszyklus", () => {
       ["Neue Terminserie: Training (4 Termine)", `/veranstaltungen/${series.id}`],
     ]);
     expect(await notificationsFor(people.board.user.id)).toHaveLength(0); // nicht an sich selbst
+  });
+
+  it("Serie auf einmal veröffentlichen: alle Entwürfe, eine Benachrichtigung – Veröffentlichtes bleibt unberührt", async () => {
+    const { ctx, people } = await setup();
+    await createEvent(ctx.board, form({ title: "Training", repeat: "weekly", repeatCount: 4 }));
+    const rows = await prisma.event.findMany({
+      where: { clubId: ctx.board.clubId, title: "Training" },
+      orderBy: { startsAt: "asc" },
+    });
+    await publishEvent(ctx.board, rows[1]!.id); // einer ist schon einzeln veröffentlicht
+    const before = (await notificationsFor(people.member.user.id)).length;
+    expect(await countSeriesDrafts(ctx.board, rows[0]!.seriesId!)).toBe(3);
+
+    expect(await publishSeries(ctx.board, rows[2]!.id)).toEqual({ count: 3 });
+    const after = await prisma.event.findMany({ where: { id: { in: rows.map((r) => r.id) } } });
+    expect(after.every((e) => e.status === "PUBLISHED" && e.publishedAt !== null)).toBe(true);
+    const notes = await notificationsFor(people.member.user.id);
+    expect(notes).toHaveLength(before + 1); // eine für die ganze Serie, nicht drei
+    expect(notes.at(-1)).toMatchObject({
+      title: "Neue Terminserie: Training (3 Termine)",
+      linkUrl: `/veranstaltungen/${rows[0]!.id}`, // der früheste Entwurf
+    });
+    await expect(publishSeries(ctx.board, rows[0]!.id)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+
+    // Ohne Serie: wie ein einzelnes Veröffentlichen
+    const single = await createEvent(ctx.board, form({ title: "Einzeln" }));
+    expect(await publishSeries(ctx.board, single.id)).toEqual({ count: 1 });
+    expect((await getEvent(ctx.board, single.id)).status).toBe("PUBLISHED");
   });
 
   it("„Gleich veröffentlichen“ braucht das Recht dazu – ohne wird gar nichts angelegt", async () => {

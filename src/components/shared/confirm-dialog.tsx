@@ -34,6 +34,7 @@ export function ConfirmAction({
   action,
   successMessage,
   onSuccess,
+  children,
 }: {
   trigger?: React.ReactNode;
   open?: boolean;
@@ -46,6 +47,8 @@ export function ConfirmAction({
   action: () => Promise<ActionResult<unknown>>;
   successMessage?: string;
   onSuccess?: () => void;
+  /** Zusätzliche Wahl im Fenster, z. B. „Alle Termine dieser Serie veröffentlichen“. */
+  children?: React.ReactNode;
 }) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = openProp ?? ownOpen;
@@ -60,6 +63,7 @@ export function ConfirmAction({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Abbrechen</AlertDialogCancel>
           <Button
