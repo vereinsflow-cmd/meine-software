@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { SortableHead } from "@/components/shared/sort-link";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import { TableCard } from "@/components/shared/table-card";
 import { formatCalendarDate } from "@/lib/dates";
 import { MEMBER_STATUS_LABEL } from "@/lib/labels";
 import {
@@ -201,7 +202,7 @@ export default async function MembersPage({
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border">
+          <TableCard>
             <Table>
               <caption className="sr-only">Mitgliederliste</caption>
               <TableHeader>
@@ -226,19 +227,22 @@ export default async function MembersPage({
               </TableHeader>
               <TableBody>
                 {result.items.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
+                  // Die ganze Zeile ist antippbar: Der Namenslink legt eine unsichtbare Fläche über die Zeile (`after:`).
+                  <TableRow key={member.id} className="relative">
+                    {/* Umbruch erlaubt: Am Handy passt die Tabelle sonst nicht in den Kasten und wackelt seitlich. */}
+                    <TableCell className="whitespace-normal">
                       <Link
                         href={`/mitglieder/${member.id}`}
-                        className="font-medium underline-offset-4 hover:underline"
+                        className="font-medium underline-offset-4 after:absolute after:inset-0 hover:underline"
                       >
                         {member.lastName}, {member.firstName}
                       </Link>
                       {member.clubFunction && (
                         <p className="text-xs text-muted-foreground">{member.clubFunction}</p>
                       )}
+                      {/* Immer in einer eigenen Zeile unter dem Namen – nicht mal daneben, mal darunter. */}
                       {member.hasAccount && (
-                        <ToneBadge tone="info" className="mt-1">
+                        <ToneBadge tone="info" className="mt-1 flex w-fit">
                           Benutzerkonto
                         </ToneBadge>
                       )}
@@ -271,7 +275,7 @@ export default async function MembersPage({
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
           <Pagination basePath="/mitglieder" searchParams={params} {...result} />
         </>
       )}

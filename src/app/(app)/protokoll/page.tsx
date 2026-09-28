@@ -18,6 +18,7 @@ import { NoAccess } from "@/components/shared/no-access";
 import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
+import { TableCard } from "@/components/shared/table-card";
 import { AUDIT_MODULES, auditActionLabel, formatAuditChanges } from "@/lib/audit-labels";
 import { formatDateTime, parseBerlinDateTime, addBerlinDays } from "@/lib/dates";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
@@ -140,7 +141,7 @@ export default async function AuditLogPage({
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border">
+          <TableCard>
             <Table>
               <caption className="sr-only">Änderungsprotokoll, neueste Einträge zuerst</caption>
               <TableHeader>
@@ -196,7 +197,7 @@ export default async function AuditLogPage({
                 })}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
           <Pagination basePath="/protokoll" searchParams={params} {...result} />
         </>
       )}

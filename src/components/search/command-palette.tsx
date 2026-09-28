@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
   CommandEmpty,
@@ -8,6 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { DialogClose } from "@/components/ui/dialog";
 import { ResultIcon } from "@/lib/search/icon-map";
 import { useCommandPalette } from "./search-provider";
 
@@ -19,12 +21,26 @@ export function CommandPalette() {
   const hasResults = groups.some((group) => group.items.length > 0);
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen} shouldFilter={false} loop>
+    // Am Handy oben statt mittig: So bleiben die Treffer über der eingeblendeten Tastatur sichtbar.
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      shouldFilter={false}
+      loop
+      className="max-sm:top-4 max-sm:translate-y-0"
+    >
       <CommandInput
         value={query}
         onValueChange={setQuery}
         placeholder="Suchen … (z. B. „Mitglied hinzufügen“)"
         aria-label="Suchen"
+        trailing={
+          <DialogClose asChild>
+            <Button variant="ghost" size="sm" className="-mr-2 shrink-0 sm:hidden">
+              Abbrechen
+            </Button>
+          </DialogClose>
+        }
       />
       {isSearchingEntities && trimmedQuery.length >= 2 && (
         <p

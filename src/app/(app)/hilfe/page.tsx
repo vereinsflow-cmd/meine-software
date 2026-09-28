@@ -12,6 +12,7 @@ import {
   type SupportStatusKey,
 } from "@/lib/support";
 import { param, type RawSearchParams } from "@/lib/search-params";
+import { phoneHref } from "@/lib/phone";
 import { ContactsDialog } from "@/modules/help/components/contacts-dialog";
 import { FaqList } from "@/modules/help/components/faq-list";
 import { ReportDialog } from "@/modules/help/components/report-dialog";
@@ -27,8 +28,6 @@ const statusTone: Record<SupportStatusKey, Tone> = {
   IN_PROGRESS: "warning",
   DONE: "success",
 };
-
-const phoneHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 
 export default async function HelpPage({
   searchParams,

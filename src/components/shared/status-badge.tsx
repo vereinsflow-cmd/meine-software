@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
  */
 const tone = {
   neutral: "bg-muted text-muted-foreground",
+  /** Abgeschlossen, aber kein Fehler (z. B. „Ausgetreten“): nur umrandet – so unterscheidet es sich von „Passiv“. */
+  ended: "bg-transparent text-muted-foreground ring-1 ring-foreground/25 ring-inset",
   success: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
   info: "bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200",
   warning: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
@@ -41,7 +43,7 @@ export function ToneBadge({
 const memberTone: Record<MemberStatus, Tone> = {
   ACTIVE: "success",
   PASSIVE: "neutral",
-  LEFT: "neutral",
+  LEFT: "ended",
   HONORARY: "info",
   BLOCKED: "danger",
 };

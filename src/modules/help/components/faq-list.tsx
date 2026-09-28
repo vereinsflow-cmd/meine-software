@@ -118,9 +118,10 @@ export function FaqList({ sections }: { sections: FaqSection[] }) {
                   id={`faq-${item.id}`}
                   // Bei aktiver Suche sind die Treffer aufgeklappt.
                   open={words.length > 0 ? true : undefined}
-                  className="group scroll-mt-20 px-4 py-3"
+                  className="group scroll-mt-20"
                 >
-                  <summary className="cursor-pointer list-none rounded-md text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                  {/* Innenabstand an der Fragezeile statt am Kasten: So öffnet ein Tipp auf die ganze Zeile. */}
+                  <summary className="cursor-pointer list-none rounded-md px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                     <span className="flex items-start justify-between gap-3">
                       <span>{item.question}</span>
                       <span
@@ -131,7 +132,7 @@ export function FaqList({ sections }: { sections: FaqSection[] }) {
                       </span>
                     </span>
                   </summary>
-                  <div className="mt-3 grid gap-3 text-sm">
+                  <div className="grid gap-3 px-4 pb-3 text-sm">
                     {item.answer?.map((paragraph) => (
                       <p key={paragraph}>{paragraph}</p>
                     ))}

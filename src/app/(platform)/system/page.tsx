@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { TableCard } from "@/components/shared/table-card";
 import { formatDate } from "@/lib/dates";
 import {
   ClubStatusButton,
@@ -63,7 +64,7 @@ export default async function SystemPage() {
         ))}
       </section>
 
-      <div className="overflow-x-auto rounded-xl border">
+      <TableCard>
         <Table>
           <caption className="sr-only">Vereine der Plattform</caption>
           <TableHeader>
@@ -117,7 +118,7 @@ export default async function SystemPage() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </TableCard>
     </>
   );
 }

@@ -114,7 +114,8 @@ export function ParticipantsPanel({
                 </p>
               </div>
               {editable ? (
-                <div className="flex items-center gap-1">
+                // 12 px Abstand: „Entfernen“ lag 4 px neben der Statusauswahl – leicht verklickt.
+                <div className="flex items-center gap-3">
                   <NativeSelect
                     aria-label={`Status von ${row.name}`}
                     value={row.status}

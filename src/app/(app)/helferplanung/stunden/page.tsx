@@ -15,6 +15,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { TableCard } from "@/components/shared/table-card";
 import { berlinParts, formatDuration } from "@/lib/dates";
 import { intParam, type RawSearchParams } from "@/lib/search-params";
 import { getHoursOverview } from "@/modules/shifts/service";
@@ -78,7 +79,7 @@ export default async function HoursPage({
           description="Nach einer Veranstaltung erfassen Veranstalter die tatsächlich geleisteten Helferstunden. Sie erscheinen dann hier."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border">
+        <TableCard>
           <Table>
             <caption className="sr-only">Helferstunden {year}</caption>
             <TableHeader>
@@ -109,7 +110,7 @@ export default async function HoursPage({
               </TableRow>
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       )}
     </>
   );

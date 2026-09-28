@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { ToneBadge, type Tone } from "@/components/shared/status-badge";
 import { FormError } from "@/components/shared/form-fields";
+import { TableCard } from "@/components/shared/table-card";
 import { executeImportAction, previewImportAction } from "../actions";
 import type { ImportPreview } from "../import";
 
@@ -148,7 +149,7 @@ export function ImportWizard() {
             )}
           </div>
 
-          <div className="overflow-x-auto rounded-xl border">
+          <TableCard>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -175,7 +176,7 @@ export function ImportWizard() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
           {preview.rows.length <
             preview.counts.ok + preview.counts.duplicate + preview.counts.error && (
             <p className="text-sm text-muted-foreground">

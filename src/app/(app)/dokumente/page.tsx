@@ -19,6 +19,7 @@ import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { TableCard } from "@/components/shared/table-card";
 import { calendarDateToInputValue, formatDate, todayCalendarDate } from "@/lib/dates";
 import { eventOptions } from "@/lib/event-options";
 import { centsToInput } from "@/lib/money";
@@ -186,7 +187,7 @@ export default async function DocumentsPage({
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border">
+          <TableCard>
             <Table>
               <caption className="sr-only">Dokumente, neueste zuerst</caption>
               <TableHeader>
@@ -294,7 +295,7 @@ export default async function DocumentsPage({
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
           <Pagination basePath="/dokumente" searchParams={params} {...result} />
         </>
       )}

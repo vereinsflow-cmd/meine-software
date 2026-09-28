@@ -11,6 +11,7 @@ import { EventStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { PageHeader } from "@/components/shared/page-header";
 import { formatDateLong, formatDateTime, formatTimeRange } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
+import { phoneHref } from "@/lib/phone";
 import { EventDocumentsCard } from "@/modules/documents/components/event-documents-card";
 import { EventActions } from "@/modules/events/components/event-actions";
 import { ParticipantsPanel } from "@/modules/events/components/participants-panel";
@@ -217,7 +218,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                           </a>
                         )}
                         {event.contact.phone && (
-                          <span className="block text-muted-foreground">{event.contact.phone}</span>
+                          <a
+                            className="block text-primary underline-offset-4 hover:underline"
+                            href={phoneHref(event.contact.phone)}
+                          >
+                            {event.contact.phone}
+                          </a>
                         )}
                       </span>
                     ),
