@@ -131,6 +131,15 @@ describe("Hochladen als Rechnung (Formularangaben)", () => {
       amountCents: null,
       dueDate: undefined,
     });
+    // Die Auswahl im Fenster schickt „true“ (offen) oder „false“ (schon bezahlt).
+    expect(
+      uploadMetaSchema.parse({ ...base, isInvoice: "on", paymentDue: "false", amount: "12" })
+        .invoice,
+    ).toEqual({ status: "PAID", amountCents: null, dueDate: undefined });
+    expect(
+      uploadMetaSchema.parse({ ...base, isInvoice: "on", paymentDue: "true", amount: "12" })
+        .invoice,
+    ).toEqual({ status: "OPEN", amountCents: 1200, dueDate: undefined });
   });
 
   it("Bearbeiten: offen nur mit Betrag, bezahlt auch ohne", () => {

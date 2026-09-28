@@ -85,7 +85,12 @@ test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", 
     await login(page, USERS.admin);
     await open(page, "/dokumente");
     await page.getByRole("button", { name: "Dokument hochladen" }).click();
-    await expect(page.getByRole("dialog", { name: "Dokument hochladen" })).toBeVisible();
+    const dialog = page.getByRole("dialog", { name: "Dokument hochladen" });
+    await expect(dialog).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+    // Mit den Rechnungs-Angaben (Auswahl „Muss noch bezahlt werden“ / „Ist schon bezahlt“, Betrag, Fälligkeit)
+    await dialog.getByRole("checkbox", { name: /Das ist eine Rechnung/ }).check();
+    await expect(dialog.getByRole("radio", { name: "Muss noch bezahlt werden" })).toBeChecked();
     expect(await violations(page)).toEqual([]);
   });
 });

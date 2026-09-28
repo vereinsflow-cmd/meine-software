@@ -42,6 +42,11 @@ import {
 const ACCEPT = ALLOWED_TYPES.map((type) => `.${type.ext}`).join(",");
 /** Angaben, die für alle Dateien gelten und eine eigene Fehlerzeile haben. */
 const SHARED_FIELDS = ["category", "access", "eventId", "amount", "dueDate"] as const;
+/** Die beiden Antworten zum Zahlungsstand einer hochgeladenen Rechnung. */
+const PAYMENT_CHOICES = [
+  { due: true, label: "Muss noch bezahlt werden" },
+  { due: false, label: "Ist schon bezahlt" },
+] as const;
 
 interface ChosenFile {
   key: number;
@@ -208,7 +213,7 @@ export function UploadDialog({
           isInvoice
             ? paymentDue
               ? "Rechnung hochgeladen – sie steht jetzt bei den offenen Zahlungen."
-              : "Rechnung hochgeladen."
+              : "Rechnung hochgeladen – als schon bezahlt abgelegt."
             : uploaded.size === 1
               ? "Dokument hochgeladen."
               : `${uploaded.size} Dokumente hochgeladen.`,
@@ -391,16 +396,28 @@ export function UploadDialog({
                   </label>
                   {isInvoice && (
                     <>
-                      <label className="flex items-center gap-2.5 text-sm">
-                        <input
-                          type="checkbox"
-                          name="paymentDue"
-                          checked={paymentDue}
-                          onChange={(event) => setPaymentDue(event.target.checked)}
-                          className="size-4 shrink-0 accent-primary"
-                        />
-                        <span className="font-medium">Muss noch bezahlt werden</span>
-                      </label>
+                      {/* Zwei Antworten statt eines vorab angehakten Kästchens: Ein Klick auf die gewünschte Antwort wählt sie
+                          immer aus. Das Kästchen ließ sich versehentlich abwählen – die Rechnung landete dann ohne Betrag als
+                          bezahlt. Der Server liest `paymentDue` wie bisher („true“ = offen, „false“ = bezahlt). */}
+                      <fieldset className="grid gap-2 sm:grid-cols-2">
+                        <legend className="sr-only">Ist die Rechnung schon bezahlt?</legend>
+                        {PAYMENT_CHOICES.map((choice) => (
+                          <label
+                            key={choice.label}
+                            className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md border px-3 py-2 text-sm font-medium has-checked:border-primary has-checked:bg-primary/5"
+                          >
+                            <input
+                              type="radio"
+                              name="paymentDue"
+                              value={String(choice.due)}
+                              checked={paymentDue === choice.due}
+                              onChange={() => setPaymentDue(choice.due)}
+                              className="size-4 shrink-0 accent-primary"
+                            />
+                            {choice.label}
+                          </label>
+                        ))}
+                      </fieldset>
                       {paymentDue ? (
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div className="grid content-start gap-1.5">

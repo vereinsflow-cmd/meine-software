@@ -518,9 +518,9 @@ export const FAQ: readonly FaqSection[] = [
         steps: [
           "Öffne „Dokumente“ und ziehe die Rechnung auf die Seite – oder klicke auf „Dokument hochladen“ und wähle sie aus.",
           "Hake „Das ist eine Rechnung“ an. Sie heißt dann automatisch nach dem heutigen Tag, z. B. „Rechnung vom 27.09.2026“.",
-          "Lass „Muss noch bezahlt werden“ angehakt, trage den Betrag ein (z. B. 149,90) und, wenn bekannt, das Fälligkeitsdatum. Klicke auf „Hochladen“.",
+          "„Muss noch bezahlt werden“ ist schon ausgewählt: Trage den Betrag ein (z. B. 149,90) und, wenn bekannt, das Fälligkeitsdatum. Klicke auf „Hochladen“.",
         ],
-        tip: "Rechnungen sind zunächst „Nur Vorstand“. Ist eine Rechnung schon bezahlt, nimm den Haken bei „Muss noch bezahlt werden“ heraus – dann wird sie nur abgelegt. Rechnungen lädst du einzeln hoch, damit jede ihren eigenen Betrag bekommt.",
+        tip: "Rechnungen sind zunächst „Nur Vorstand“. Ist eine Rechnung schon bezahlt, wähle „Ist schon bezahlt“ – dann wird sie nur abgelegt. Rechnungen lädst du einzeln hoch, damit jede ihren eigenen Betrag bekommt.",
         link: { href: "/dokumente", label: "Zu den Dokumenten" },
         keywords: "rechnung beleg quittung kosten betrag zahlung kassenwart",
       },
