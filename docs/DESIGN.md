@@ -108,6 +108,10 @@ Alle Symbole kommen aus `lucide-react` (Strichzeichnungen, überall die Standard
 - **Protokoll:** Suche zuerst wie auf den übrigen Listen; die Felder behalten dort ihre Überschriften (Datumsfelder brauchen sie).
 - **Kalender:** Die Auswahlfelder stehen ohne Überschrift in einer Zeile („Alle Arten“ / „Alle Abteilungen“ sagen es schon; die Namen „Art“ und „Abteilung“ bleiben für Screenreader). Tageskästchen im Monat mindestens 6,5 rem hoch (vorher 8 rem; sie wachsen mit ihren Terminen), vergangene Tage mit blasserer Tageszahl.
 
+## Formulare vor dem Laden der Skripte
+
+Die gemeinsamen Feldbausteine (`TextField`, `TextareaField`, `SelectField`, `CheckboxField` in `src/components/shared/form-fields.tsx`) geben den gespeicherten Startwert aus den `defaultValues` des Formulars als `defaultValue`/`defaultChecked` mit (Passwörter nie). So kommen Bearbeiten-Formulare schon mit den Werten vom Server; vorher waren sie im ersten Bild leer, bis React Hook Form sie nach dem Laden der Skripte einsetzte (28.09.2026, geprüft in `tests/e2e/formularfelder.spec.ts` am rohen HTML).
+
 ## Tabellen
 
 - **Wie Karten** (`TableCard`, `src/components/shared/table-card.tsx`, seit 28.09.2026): Kartenfläche, feiner Rand (`ring-1`), leichter Schatten – statt direkt auf dem grauen Seitengrund. Die Kopfzeile hat einen leichten Hintergrund (`bg-muted/50`) und gedämpfte Schrift, damit sie nicht wie eine normale Zeile aussieht (`src/components/ui/table.tsx`).
@@ -136,6 +140,8 @@ Alle Symbole kommen aus `lucide-react` (Strichzeichnungen, überall die Standard
 ## Seitenleiste
 
 Breite 17 rem (ab 1280 px 18,5 rem, das sind bei 1280 px rund 326 px). Kopf (Logo) fest, Navigation scrollt, die Gruppe „Persönlich“ (Profil, Datenschutz, Hilfe & Support) bleibt unten angeheftet. Zwischen den Gruppen (ohne Titel, „Verwaltung“, „Persönlich“) steht mehr Luft als zwischen den Einträgen einer Gruppe (`gap-7` zwischen Gruppen, `gap-0.5` innerhalb – 22.09.2026 von `gap-5` erhöht, damit die Gruppen klarer auseinanderstehen). Bei Bildschirmen unter 820 px Höhe werden Abstände enger (`[@media(max-height:820px)]`, Gruppen dann `gap-4`), damit die komplette Navigation des Administrators schon bei 720 px ohne Scrollen sichtbar ist. „Finanzen“ steht seit 27.09.2026 unter „Organisation“ (nach Aufgaben und Dokumente), nicht mehr unter „Einstellungen“. Die aktive Seite ist gefüllt hervorgehoben, alle Symbole aus `lucide-react` in derselben Größe und Strichstärke (`size-5`, siehe `components/layout/nav.tsx`). `tests/e2e/logo.spec.ts` prüft, dass Logo, Verwaltungspunkte und Hilfe-Link ohne Scrollen sichtbar sind.
+
+**Eingeklappte Seitenleiste** (28.09.2026): Die Gruppe „Persönlich“ (Profil, Datenschutz, Hilfe) bleibt wie ausgeklappt unten angeheftet; Kacheln 2,5 rem, halbe Gruppenabstände, Zähler in 13-px-Schrift. Passen nicht alle Symbole (17 bei 1440 × 900), scrollt die Leiste und holt das Symbol der aktuellen Seite oberhalb der angehefteten Gruppe ins Bild. Geprüft in `tests/e2e/seitenleiste.spec.ts`.
 
 **Zähler an zugeklappten Gruppen** (28.09.2026): Die Gruppen klappen wie ein Akkordeon, mit ihnen verschwinden die Zähler ihrer Einträge (offene Aufgaben, ungelesene Benachrichtigungen). Zugeklappt zeigt die Gruppe deshalb die Summe als blauen Kreis vor dem Pfeil („ORGANISATION ② ›“); aufgeklappt steht der Zähler wieder am Eintrag. Für Screenreader hängt „2 offen“ als Beschreibung am Knopf – der Name bleibt „Organisation“. Geprüft in `tests/e2e/seitenleiste.spec.ts`.
 

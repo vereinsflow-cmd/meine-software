@@ -131,3 +131,27 @@ test.describe("Formularfelder", () => {
     });
   }
 });
+
+test.describe("Formulare vor dem Laden der Skripte", () => {
+  test("Bearbeiten-Formulare kommen schon mit den gespeicherten Werten vom Server", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/mitglieder?q=Becker");
+    const href = await page.getByRole("link", { name: /Becker, Elias/ }).getAttribute("href");
+    // Das rohe HTML (ohne dass React Hook Form im Browser läuft): Die Felder enthalten schon die gespeicherten Werte –
+    // vorher waren sie im ersten Bild leer, und am langsamen Handy wirkte es, als seien die Daten weg.
+    const html = await (await page.request.get(`${href}/bearbeiten`)).text();
+    const input = (name: string) =>
+      html.match(new RegExp(`<input[^>]*name="${name}"[^>]*>`))?.[0] ?? "";
+    expect(input("firstName")).toContain('value="Elias"');
+    expect(input("lastName")).toContain('value="Becker"');
+    // Auswahlfeld: die gespeicherte Option ist schon gewählt
+    expect(html).toMatch(
+      /<select[^>]*name="status"[^>]*>[\s\S]*?<option value="ACTIVE" selected=""/,
+    );
+
+    const settings = await (await page.request.get("/einstellungen")).text();
+    expect(settings.match(/<input[^>]*name="name"[^>]*>/)?.[0]).toContain('value="TSV Musterstadt');
+  });
+});

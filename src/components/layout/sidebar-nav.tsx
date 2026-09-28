@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRightIcon } from "lucide-react";
@@ -67,6 +67,7 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const navId = useId();
+  const railRef = useRef<HTMLElement>(null);
   const sheet = variant === "sheet";
   const [openGroup, setOpenGroup] = useState<string | null>(() =>
     activeCollapsibleGroup(groups, pathname),
@@ -81,15 +82,34 @@ export function SidebarNav({
     if (active) setOpenGroup(active);
   }
 
+  // Eingeklappt passen nicht immer alle Symbole: das der aktuellen Seite ins Bild holen – oberhalb der unten angehefteten
+  // Gruppe (`scroll-mb-40` an den Kacheln hält es davon frei).
+  useEffect(() => {
+    if (!collapsedRail) return;
+    railRef.current
+      ?.querySelector<HTMLElement>('[aria-current="page"]:not([data-pinned] *)')
+      ?.scrollIntoView({ block: "nearest" });
+  }, [collapsedRail, pathname]);
+
   if (collapsedRail) {
+    // Wie ausgeklappt bleibt die letzte Gruppe („Persönlich“: Profil, Datenschutz, Hilfe) unten angeheftet – sonst rutschte
+    // sie bei 17 Symbolen unter den Bildrand. Etwas kleinere Kacheln und halbe Gruppenabstände lassen mehr Platz.
     return (
-      <nav aria-label="Hauptnavigation" className="flex flex-1 flex-col items-center gap-1">
+      <nav
+        ref={railRef}
+        aria-label="Hauptnavigation"
+        className="flex flex-1 flex-col items-center gap-1"
+      >
         {groups.map((group, groupIndex) => (
           <div
             key={group.label ?? groupIndex}
+            data-pinned={groupIndex === groups.length - 1 && groupIndex > 0 ? "" : undefined}
             className={cn(
               "flex flex-col items-center gap-1",
-              groupIndex > 0 && "mt-2 border-t pt-2",
+              groupIndex > 0 && "mt-1 border-t pt-1",
+              groupIndex === groups.length - 1 &&
+                groupIndex > 0 &&
+                "sticky bottom-0 z-10 -mx-3 mt-auto self-stretch bg-sidebar px-3 pt-2 pb-2",
             )}
           >
             {group.items.map((item) => (
@@ -294,7 +314,7 @@ function RailItem({ item, active }: { item: NavItem; active: boolean }) {
           aria-current={active ? "page" : undefined}
           aria-label={item.badge ? `${item.label} (${item.badge})` : item.label}
           className={cn(
-            "relative grid size-11 shrink-0 place-items-center rounded-lg transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+            "relative grid size-10 shrink-0 scroll-mb-40 place-items-center rounded-lg transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
             active
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -304,7 +324,7 @@ function RailItem({ item, active }: { item: NavItem; active: boolean }) {
           {!!item.badge && (
             <span
               aria-hidden="true"
-              className="absolute top-0.5 right-0.5 grid size-4 place-items-center rounded-full bg-primary text-[10px] leading-none font-semibold text-primary-foreground ring-2 ring-sidebar"
+              className="absolute -top-0.5 -right-0.5 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-primary px-1 text-xs leading-none font-semibold text-primary-foreground ring-2 ring-sidebar"
             >
               {item.badge > 9 ? "9+" : item.badge}
             </span>
