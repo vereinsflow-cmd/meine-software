@@ -17,7 +17,13 @@ import { IconButton } from "@/components/shared/icon-button";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { formatDateLong, formatDuration, formatTimeRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { deleteShiftAction, signOutAction, signUpAction, unassignMemberAction } from "../actions";
+import {
+  assignMemberAction,
+  deleteShiftAction,
+  signOutAction,
+  signUpAction,
+  unassignMemberAction,
+} from "../actions";
 import type { ShiftFormInput } from "../schemas";
 import type { ShiftDto } from "../service";
 import { AssignDialog, HoursDialog, ShiftFormDialog } from "./shift-dialogs";
@@ -43,14 +49,20 @@ export function ShiftCard({
   const cancelled = shift.status === "CANCELLED";
   const planned = Math.round((shift.endsAt.getTime() - shift.startsAt.getTime()) / 60_000);
 
-  function run(
-    action: () => Promise<{ ok: boolean; error?: { message: string } }>,
-    success: string,
-  ) {
+  type Run = () => Promise<{ ok: boolean; error?: { message: string } }>;
+
+  /** Führt die Aktion aus und meldet das Ergebnis; mit `undo` bietet die Meldung „Rückgängig“ an. */
+  function run(action: Run, success: string, undo?: { action: Run; success: string }) {
     startTransition(async () => {
       const result = await action();
       if (!result.ok) toast.error(result.error?.message ?? "Aktion fehlgeschlagen.");
-      else toast.success(success);
+      else
+        toast.success(success, {
+          action: undo && {
+            label: "Rückgängig",
+            onClick: () => run(undo.action, undo.success),
+          },
+        });
       router.refresh();
     });
   }
@@ -138,8 +150,9 @@ export function ShiftCard({
                     </span>
                   )}
                   {shift.can.assign && !started && (
+                    // Trefferfläche 32 px (die Zeilen liegen dicht), ohne dass der Namens-Chip höher wird; verklickt? „Rückgängig“.
                     <IconButton
-                      className="size-6"
+                      className="-my-1 size-8"
                       disabled={pending}
                       label={`${a.name} austragen`}
                       onClick={() =>
@@ -150,7 +163,16 @@ export function ShiftCard({
                               memberId: a.memberId,
                               eventId,
                             }),
-                          "Helfer ausgetragen.",
+                          `${a.name} ausgetragen.`,
+                          {
+                            action: () =>
+                              assignMemberAction({
+                                shiftId: shift.id,
+                                memberId: a.memberId,
+                                eventId,
+                              }),
+                            success: `${a.name} ist wieder eingetragen.`,
+                          },
                         )
                       }
                     >

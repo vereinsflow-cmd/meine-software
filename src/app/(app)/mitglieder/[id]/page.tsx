@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { formatCalendarDate, formatDateTime } from "@/lib/dates";
 import { CONSENT_TYPE_LABEL, MEMBER_FIELD_LABEL } from "@/lib/labels";
+import { phoneHref } from "@/lib/phone";
 import { ConsentPanel } from "@/modules/members/components/consent-panel";
 import { MemberActions } from "@/modules/members/components/member-actions";
 import { getMember, getMemberHistory } from "@/modules/members/service";
@@ -119,7 +120,18 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
                         </a>
                       ) : null,
                     },
-                    { label: "Telefon", value: member.phone },
+                    {
+                      label: "Telefon",
+                      // Antippen ruft am Handy an.
+                      value: member.phone ? (
+                        <a
+                          className="text-primary underline-offset-4 hover:underline"
+                          href={phoneHref(member.phone)}
+                        >
+                          {member.phone}
+                        </a>
+                      ) : null,
+                    },
                     { label: "Straße", value: member.contact.street },
                     {
                       label: "PLZ und Ort",

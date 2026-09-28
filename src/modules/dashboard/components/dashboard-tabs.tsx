@@ -273,31 +273,34 @@ export function DashboardTabs({
 
         {/* Blättern am Ende des Bereichs: wie Folien – ohne wieder nach oben scrollen zu müssen. „Weiter“ ist wie „Zurück“
             umrandet: Blau bleibt der Hauptaktion eines Bereichs vorbehalten (z. B. „Eintragen“). */}
+        {/* Am Handy untereinander über die volle Breite, „Weiter“ oben – nebeneinander wurde „Weiter“ rechts abgeschnitten. */}
         <nav
           aria-label="Bereich wechseln"
-          className="mt-10 flex items-center justify-between gap-3 border-t pt-6"
+          className="mt-10 flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between"
         >
           {previous ? (
             <Button
               variant="outline"
               onClick={() => go(previous.id)}
               aria-label={`Zurück: ${previous.label}`}
+              className="w-full sm:w-auto"
             >
               <ArrowLeftIcon aria-hidden="true" /> {previous.label}
             </Button>
           ) : (
-            <span />
+            <span className="max-sm:hidden" />
           )}
           {next ? (
             <Button
               variant="outline"
               onClick={() => go(next.id)}
               aria-label={`Weiter: ${next.label}`}
+              className="w-full sm:w-auto"
             >
               {next.label} <ArrowRightIcon aria-hidden="true" />
             </Button>
           ) : (
-            <span />
+            <span className="max-sm:hidden" />
           )}
         </nav>
       </div>

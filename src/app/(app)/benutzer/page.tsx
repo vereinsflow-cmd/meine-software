@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { TableCard } from "@/components/shared/table-card";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { PERMISSION_SCOPE_LABEL } from "@/lib/labels";
 import { enumParam, type RawSearchParams } from "@/lib/search-params";
@@ -98,7 +99,7 @@ export default async function UsersPage({
       </nav>
 
       {tab === "benutzer" && (
-        <div className="overflow-x-auto rounded-xl border">
+        <TableCard>
           <Table>
             <caption className="sr-only">Benutzer des Vereins</caption>
             <TableHeader>
@@ -165,7 +166,7 @@ export default async function UsersPage({
               ))}
             </TableBody>
           </Table>
-        </div>
+        </TableCard>
       )}
 
       {tab === "einladungen" &&
@@ -175,7 +176,7 @@ export default async function UsersPage({
             description="Eingeladene Personen erscheinen hier, bis sie ihr Konto angelegt haben."
           />
         ) : (
-          <div className="overflow-x-auto rounded-xl border">
+          <TableCard>
             <Table>
               <caption className="sr-only">Offene Einladungen</caption>
               <TableHeader>
@@ -213,7 +214,7 @@ export default async function UsersPage({
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </TableCard>
         ))}
 
       {tab === "rollen" && (

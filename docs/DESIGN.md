@@ -107,6 +107,18 @@ Alle Symbole kommen aus `lucide-react` (Strichzeichnungen, überall die Standard
 - **Protokoll:** Suche zuerst wie auf den übrigen Listen; die Felder behalten dort ihre Überschriften (Datumsfelder brauchen sie).
 - **Kalender:** Die Auswahlfelder stehen ohne Überschrift in einer Zeile („Alle Arten“ / „Alle Abteilungen“ sagen es schon; die Namen „Art“ und „Abteilung“ bleiben für Screenreader). Tageskästchen im Monat mindestens 6,5 rem hoch (vorher 8 rem; sie wachsen mit ihren Terminen), vergangene Tage mit blasserer Tageszahl.
 
+## Tabellen
+
+- **Wie Karten** (`TableCard`, `src/components/shared/table-card.tsx`, seit 28.09.2026): Kartenfläche, feiner Rand (`ring-1`), leichter Schatten – statt direkt auf dem grauen Seitengrund. Die Kopfzeile hat einen leichten Hintergrund (`bg-muted/50`) und gedämpfte Schrift, damit sie nicht wie eine normale Zeile aussieht (`src/components/ui/table.tsx`).
+- **Mitgliederliste:** Die ganze Zeile ist antippbar (der Namenslink legt eine unsichtbare Fläche über die Zeile). Namen dürfen umbrechen, so passt die Tabelle auch am Handy in ihren Kasten. „Benutzerkonto“ steht immer in einer eigenen Zeile unter dem Namen. „Ausgetreten“ ist nur umrandet (Ton `ended`), „Passiv“ grau gefüllt – vorher sahen beide gleich aus.
+
+## Handy-Grundlagen
+
+- **Anrufen per Tipp:** Telefonnummern sind `tel:`-Links (`phoneHref` in `src/lib/phone.ts`; „(0)“ nach der Ländervorwahl fällt weg) – beim Mitglied, beim Ansprechpartner einer Veranstaltung und in der Hilfe.
+- **Suche (Strg+K / Lupe):** Am Handy oben statt mittig, damit die Treffer über der Tastatur bleiben, mit Knopf „Abbrechen“ (dort gibt es keine Escape-Taste).
+- **Tippflächen:** Der Text eines Checklisten-Punkts beschriftet sein Kästchen (ein Tipp auf den Text hakt ab); das „ד zum Austragen eines Helfers hat 32 px Trefferfläche, die Meldung bietet „Rückgängig“; „Entfernen“ steht 12 px neben der Statusauswahl der Teilnehmer; in der Hilfe öffnet die ganze Fragezeile.
+- **Blättern unter den Dashboard-Reitern:** Unter 640 px untereinander über die volle Breite, „Weiter“ oben.
+
 ## Seitenleiste
 
 Breite 17 rem (ab 1280 px 18,5 rem, das sind bei 1280 px rund 326 px). Kopf (Logo) fest, Navigation scrollt, die Gruppe „Persönlich“ (Profil, Datenschutz, Hilfe & Support) bleibt unten angeheftet. Zwischen den Gruppen (ohne Titel, „Verwaltung“, „Persönlich“) steht mehr Luft als zwischen den Einträgen einer Gruppe (`gap-7` zwischen Gruppen, `gap-0.5` innerhalb – 22.09.2026 von `gap-5` erhöht, damit die Gruppen klarer auseinanderstehen). Bei Bildschirmen unter 820 px Höhe werden Abstände enger (`[@media(max-height:820px)]`, Gruppen dann `gap-4`), damit die komplette Navigation des Administrators schon bei 720 px ohne Scrollen sichtbar ist. „Finanzen“ steht seit 27.09.2026 unter „Organisation“ (nach Aufgaben und Dokumente), nicht mehr unter „Einstellungen“. Die aktive Seite ist gefüllt hervorgehoben, alle Symbole aus `lucide-react` in derselben Größe und Strichstärke (`size-5`, siehe `components/layout/nav.tsx`). `tests/e2e/logo.spec.ts` prüft, dass Logo, Verwaltungspunkte und Hilfe-Link ohne Scrollen sichtbar sind.

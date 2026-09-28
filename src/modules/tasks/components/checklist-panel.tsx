@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon, TrashIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -126,9 +126,11 @@ function AddItemForm({ checklistId }: { checklistId: string }) {
 function ChecklistItemRow({ item }: { item: ChecklistDto["items"][number] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const id = useId();
   return (
     <div className="flex items-start gap-3 py-2">
       <Checkbox
+        id={id}
         checked={item.isDone}
         disabled={!item.canToggle || pending}
         aria-label={item.text}
@@ -142,9 +144,17 @@ function ChecklistItemRow({ item }: { item: ChecklistDto["items"][number] }) {
         }
       />
       <div className="min-w-0 flex-1">
-        <p className={cn("text-sm", item.isDone && "text-muted-foreground line-through")}>
+        {/* Der Text beschriftet das Kästchen: Ein Tipp darauf hakt ab – man muss nicht das kleine Kästchen treffen. */}
+        <label
+          htmlFor={id}
+          className={cn(
+            "block text-sm",
+            item.canToggle && !pending && "cursor-pointer",
+            item.isDone && "text-muted-foreground line-through",
+          )}
+        >
           {item.text}
-        </p>
+        </label>
         {(item.assignee || item.dueDate) && (
           <p className="text-xs text-muted-foreground">
             {item.assignee?.name}
