@@ -123,14 +123,14 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
 
     // Nach „Zurücksetzen“ erst warten, bis die Seite ohne Filter da ist: Das Formular wird dabei neu aufgebaut, eine
     // vorher getroffene Auswahl ginge verloren und „Filtern“ schickte ein leeres Formular ab.
-    await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await page.getByRole("link", { name: "Zurücksetzen", exact: true }).click();
     await expect(page).not.toHaveURL(/art=/);
     await page.getByRole("combobox", { name: "Art", exact: true }).selectOption("MEETING");
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page).toHaveURL(/art=MEETING/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible();
 
-    await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await page.getByRole("link", { name: "Zurücksetzen", exact: true }).click();
     await expect(page).not.toHaveURL(/art=/);
     await page.getByRole("combobox", { name: "Abteilung" }).selectOption({ label: "Fußball" });
     await page.getByRole("button", { name: "Filtern" }).click();

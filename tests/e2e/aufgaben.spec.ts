@@ -194,7 +194,7 @@ test.describe("Aufgaben – Verwaltung", () => {
     await expect(page.getByRole("listitem", { name: "Aufgabe Getränke bestellen" })).toBeVisible();
     await expect(page.getByRole("listitem", { name: "Aufgabe Helfer einteilen" })).toHaveCount(0);
 
-    await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await page.getByRole("link", { name: "Zurücksetzen", exact: true }).click();
     await expect(page).toHaveURL(/\/aufgaben$/);
     await page.getByRole("searchbox", { name: "Aufgaben durchsuchen" }).fill("beiträge");
     await page.getByRole("button", { name: "Filtern" }).click();

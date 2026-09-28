@@ -19,12 +19,31 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
     await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Mitglied, Maria/ })).toHaveCount(0);
 
-    await page.getByRole("link", { name: "Zurücksetzen" }).click();
+    await page.getByRole("link", { name: "Zurücksetzen", exact: true }).click();
     await expect(page).toHaveURL(/\/mitglieder$/);
     await page.getByLabel("Nach Status filtern").selectOption("HONORARY");
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page.getByRole("table").getByText("Ehrenmitglied")).toBeVisible();
     await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toHaveCount(0);
+  });
+
+  test("Leere Suche nennt den Begriff und führt ins Archiv; ein unbekanntes Mitglied führt zur Liste", async ({
+    page,
+  }) => {
+    await page.goto("/mitglieder?q=zzzz");
+    await expect(
+      page.getByRole("heading", { name: "Keine Mitglieder zu „zzzz“ gefunden" }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Im Archiv suchen" }).click();
+    await expect(page).toHaveURL(/\/mitglieder\?q=zzzz&ansicht=archiv$/);
+    // Im Archiv gibt es keinen zweiten Archiv-Knopf, nur „Suche zurücksetzen“
+    await expect(page.getByRole("link", { name: "Suche zurücksetzen" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Im Archiv suchen" })).toHaveCount(0);
+
+    await page.goto("/mitglieder/00000000-0000-7000-8000-000000000000");
+    await expect(page.getByRole("heading", { name: "Mitglied nicht gefunden" })).toBeVisible();
+    await page.getByRole("link", { name: "Zur Mitgliederliste" }).click();
+    await expect(page).toHaveURL(/\/mitglieder$/);
   });
 
   test("Mitglied anlegen, ansehen, bearbeiten, archivieren, löschen", async ({ page }) => {

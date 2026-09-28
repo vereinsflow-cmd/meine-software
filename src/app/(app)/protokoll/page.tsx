@@ -138,6 +138,13 @@ export default async function AuditLogPage({
           description={
             filtered ? "Passe die Filter an." : "Sobald etwas geändert wird, erscheint es hier."
           }
+          action={
+            filtered ? (
+              <Button asChild>
+                <Link href="/protokoll">Filter zurücksetzen</Link>
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         <>
