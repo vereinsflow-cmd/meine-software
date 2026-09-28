@@ -118,11 +118,14 @@ export function TextField<T extends FieldValues>({
   autoComplete,
   placeholder,
   inputMode,
+  inputClassName,
 }: BaseProps<T> & {
   type?: "text" | "email" | "password" | "tel" | "date" | "time" | "number" | "url";
   autoComplete?: string;
   placeholder?: string;
   inputMode?: "text" | "numeric" | "decimal" | "tel" | "email" | "url";
+  /** Nur für das Eingabefeld, z. B. `sm:max-w-48` für kurze Werte (PLZ, Monate) – die Beschriftung bleibt so breit wie nötig. */
+  inputClassName?: string;
 }) {
   const id = useId();
   const error = errorOf(form, name);
@@ -138,6 +141,7 @@ export function TextField<T extends FieldValues>({
       <Input
         id={id}
         type={type}
+        className={inputClassName}
         autoComplete={autoComplete}
         placeholder={placeholder}
         inputMode={inputMode}

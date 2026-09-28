@@ -133,6 +133,7 @@ Die gemeinsamen Feldbausteine (`TextField`, `TextareaField`, `SelectField`, `Che
 
 - **Zurück-Link** (`BackLink`, `src/components/shared/back-link.tsx`): „‹ Ziel“ klein über dem Titel, auf allen Detail- und jetzt auch Formularseiten („Neues Mitglied“, „Neue Veranstaltung“ → „Alle …“; beim Bearbeiten zurück zum Datensatz, z. B. „‹ Elias Becker“). Er nennt immer das Ziel.
 - **Breiten:** Listen bis 96 rem (Seitenrahmen), Formulare höchstens 56 rem (`max-w-4xl` an Mitglied-, Veranstaltungs- und Vereinseinstellungs-Formular, wie Profil und Datenschutz) – sonst wurde ein einzelnes Feld bei 1920 px über 1400 px breit.
+- **Kurze Felder** (PLZ, Monate, Tage, Anzahl) höchstens 12 rem breit – nur das Eingabefeld (`inputClassName="sm:max-w-48"` an `TextField`), die Beschriftung bleibt lesbar. Die Vereinseinstellungen sind samt Logo-Karte 56 rem breit.
 - **Kopfknöpfe:** Die Hauptaktion (blau) steht immer zuerst, links bzw. am Handy oben – jetzt auch auf Dashboard und Hilfe.
 - **Umschaltleisten** (`src/components/ui/segment-styles.ts`, eine Quelle für `SegmentedControl` und Leisten aus Links): graue Leiste mit feinem Rand, der gewählte Eintrag hell als Kachel in Kartenfarbe mit Schatten, dunkel `bg-secondary`. Im Einsatz: Kalender-Ansicht, Benachrichtigungen, Meldungen, Aufgaben, Diagramm-Umschalter. Vorher war der gewählte Eintrag hell kaum von der Leiste zu unterscheiden (Kontrast 1,01 : 1).
 - **Reiter** (Bereiche einer Seite): wie auf dem Dashboard – 3 px Strich, der gewählte fett in der Markenfarbe; so jetzt auch bei „Benutzer und Rollen“.

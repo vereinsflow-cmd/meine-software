@@ -153,6 +153,7 @@ export function EventForm({
                   type="number"
                   inputMode="numeric"
                   hint="Insgesamt inklusive erstem Termin, höchstens 52."
+                  inputClassName="sm:max-w-48"
                 />
               )}
             </>
@@ -208,6 +209,7 @@ export function EventForm({
             type="number"
             inputMode="numeric"
             hint="Leer lassen für unbegrenzt."
+            inputClassName="sm:max-w-48"
           />
           <CheckboxField
             form={form}

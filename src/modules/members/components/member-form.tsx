@@ -262,6 +262,7 @@ export function MemberForm({
               label="PLZ"
               inputMode="numeric"
               required={isCreate}
+              inputClassName="sm:max-w-48"
             />
             <TextField form={form} name="city" label="Ort" required={isCreate} />
             <SelectField

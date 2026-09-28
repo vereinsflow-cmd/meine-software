@@ -45,7 +45,13 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
             label="Straße und Hausnummer"
             className="sm:col-span-2"
           />
-          <TextField form={form} name="postalCode" label="PLZ" inputMode="numeric" />
+          <TextField
+            form={form}
+            name="postalCode"
+            label="PLZ"
+            inputMode="numeric"
+            inputClassName="sm:max-w-48"
+          />
           <TextField form={form} name="city" label="Ort" />
           <TextField
             form={form}
@@ -83,6 +89,7 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
             type="number"
             inputMode="numeric"
             hint="Danach werden ihre Daten anonymisiert. 0 = nie automatisch."
+            inputClassName="sm:max-w-48"
           />
           <TextField
             form={form}
@@ -91,6 +98,7 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
             type="number"
             inputMode="numeric"
             hint="Gelöschte Mitglieder bleiben so lange wiederherstellbar."
+            inputClassName="sm:max-w-48"
           />
           <TextField
             form={form}
@@ -99,6 +107,7 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
             type="number"
             inputMode="numeric"
             hint="Danach werden alte Protokolleinträge gelöscht."
+            inputClassName="sm:max-w-48"
           />
         </CardContent>
       </Card>

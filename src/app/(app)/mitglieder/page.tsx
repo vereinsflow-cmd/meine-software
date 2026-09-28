@@ -129,6 +129,7 @@ export default async function MembersPage({
         }
       />
 
+      {/* Filterleiste: Aufbau (Handy: Suche + „Filter“, Computer: umbrechende Zeile) siehe filter-toggle.tsx. */}
       <form
         key={JSON.stringify(params)}
         method="get"
