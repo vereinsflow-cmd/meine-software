@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChevronLeftIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { BackLink } from "@/components/shared/back-link";
 import { MEMBER_STATUS_LABEL } from "@/lib/labels";
 import { getMemberStats } from "@/modules/members/service";
 import { can } from "@/server/permissions/policy";
@@ -44,14 +43,7 @@ export default async function MemberStatsPage() {
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/mitglieder"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Alle Mitglieder
-        </Link>
-      </p>
+      <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader
         title="Mitgliederstatistik"
         description={`${stats.total} Mitglieder (ohne archivierte)`}

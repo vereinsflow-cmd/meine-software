@@ -47,6 +47,8 @@ export default async function HelpPage({
         description="Ansprechpartner, eine Anleitung zu den häufigsten Fragen und die Möglichkeit, ein Problem zu melden."
         actions={
           <>
+            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten. */}
+            <ReportDialog pagePath={from} />
             {overview.canManage && (
               <Button asChild variant="outline">
                 <Link href="/hilfe/meldungen">
@@ -55,7 +57,6 @@ export default async function HelpPage({
                 </Link>
               </Button>
             )}
-            <ReportDialog pagePath={from} />
           </>
         }
       />

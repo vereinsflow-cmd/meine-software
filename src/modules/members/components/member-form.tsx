@@ -156,7 +156,7 @@ export function MemberForm({
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-6">
+    <form onSubmit={onSubmit} noValidate className="grid max-w-4xl gap-6">
       <FormError message={formError} />
 
       <Card>

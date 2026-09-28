@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlusIcon, ChevronLeftIcon, MapPinIcon } from "lucide-react";
+import { CalendarPlusIcon, MapPinIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DescriptionList } from "@/components/shared/description-list";
 import { EventStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { PageHeader } from "@/components/shared/page-header";
+import { BackLink } from "@/components/shared/back-link";
 import { formatDateLong, formatDateTime, formatTimeRange } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { phoneHref } from "@/lib/phone";
@@ -134,14 +135,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/veranstaltungen"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Alle Veranstaltungen
-        </Link>
-      </p>
+      <BackLink href="/veranstaltungen">Alle Veranstaltungen</BackLink>
       <PageHeader
         title={event.title}
         description={

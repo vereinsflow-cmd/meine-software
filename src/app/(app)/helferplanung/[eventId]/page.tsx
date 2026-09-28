@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCheckIcon, ChevronLeftIcon, DownloadIcon, PrinterIcon } from "lucide-react";
+import { CheckCheckIcon, DownloadIcon, PrinterIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { BackLink } from "@/components/shared/back-link";
 import { formatDateLong, formatTimeRange, toDateInputValue, toTimeInputValue } from "@/lib/dates";
 import { ShiftCard } from "@/modules/shifts/components/shift-card";
 import { ShiftFormDialog } from "@/modules/shifts/components/shift-dialogs";
@@ -56,14 +57,9 @@ export default async function EventShiftsPage({
 
   return (
     <>
-      <p className="mb-3 print:hidden">
-        <Link
-          href="/helferplanung"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Helferplanung
-        </Link>
-      </p>
+      <BackLink href="/helferplanung" className="print:hidden">
+        Helferplanung
+      </BackLink>
       <PageHeader
         title={`Helferplan: ${plan.event.title}`}
         description={

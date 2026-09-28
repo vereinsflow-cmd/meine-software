@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeftIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { BackLink } from "@/components/shared/back-link";
 import { formatDateTime } from "@/lib/dates";
 import { chatKeyOf } from "@/modules/messages/chat-format";
 import { DeleteMessageButton } from "@/modules/messages/components/message-actions";
@@ -47,14 +46,7 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/nachrichten"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Nachrichten
-        </Link>
-      </p>
+      <BackLink href="/nachrichten">Nachrichten</BackLink>
       <PageHeader
         title={message.subject}
         description={

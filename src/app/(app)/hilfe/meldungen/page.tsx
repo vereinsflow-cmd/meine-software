@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeftIcon, InboxIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { InboxIcon } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge, type Tone } from "@/components/shared/status-badge";
+import { BackLink } from "@/components/shared/back-link";
 import { formatDateTime } from "@/lib/dates";
 import { pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { SUPPORT_CATEGORY_LABEL, SUPPORT_STATUS_LABEL, type SupportStatusKey } from "@/lib/support";
@@ -15,6 +15,7 @@ import { listTickets } from "@/modules/help/service";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 import { cn } from "@/lib/utils";
+import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 
 export const metadata: Metadata = { title: "Eingegangene Meldungen" };
 
@@ -44,19 +45,13 @@ export default async function TicketsPage({
 
   return (
     <>
-      <div className="mb-4">
-        <Button asChild variant="ghost" size="sm" className="-ml-2">
-          <Link href="/hilfe">
-            <ChevronLeftIcon /> Hilfe & Support
-          </Link>
-        </Button>
-      </div>
+      <BackLink href="/hilfe">Hilfe & Support</BackLink>
       <PageHeader
         title="Eingegangene Meldungen"
         description="Probleme, Fragen und Vorschläge aus deinem Verein. Setze den Status und antworte – die meldende Person wird benachrichtigt."
       />
 
-      <nav aria-label="Ansicht wählen" className="mb-4 inline-flex rounded-lg bg-muted p-1">
+      <nav aria-label="Ansicht wählen" className={cn("mb-4", SEGMENT_BAR)}>
         {VIEWS.map((entry) => (
           <Link
             key={entry.key}
@@ -64,12 +59,7 @@ export default async function TicketsPage({
               entry.key === "offen" ? "/hilfe/meldungen" : `/hilfe/meldungen?ansicht=${entry.key}`
             }
             aria-current={entry.key === view.key ? "page" : undefined}
-            className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium",
-              entry.key === view.key
-                ? "bg-background shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            className={segmentItem(entry.key === view.key)}
           >
             {entry.label}
           </Link>
