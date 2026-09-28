@@ -36,4 +36,22 @@ test.describe("Seitenleiste", () => {
       nav.getByRole("button", { name: "Verein", exact: true }),
     ).not.toHaveAccessibleDescription(/offen/);
   });
+  test("Eingeklappt: Profil, Datenschutz und Hilfe bleiben unten sichtbar, die aktuelle Seite steht darüber im Bild", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 }); // 17 Symbole passen hier nicht ganz – die Leiste scrollt
+    await login(page, USERS.admin);
+    await open(page, "/benutzer");
+    await page.getByRole("button", { name: "Seitenleiste einklappen" }).click();
+    await expect(page.getByRole("button", { name: "Seitenleiste ausklappen" })).toBeVisible();
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    for (const name of ["Mein Profil", "Datenschutz", "Hilfe & Support"]) {
+      await expect(nav.getByRole("link", { name, exact: true })).toBeInViewport({ ratio: 1 });
+    }
+    // Die aktuelle Seite („Benutzer und Rollen“) liegt nicht unter der angehefteten Gruppe verborgen.
+    const active = (await nav.locator('[aria-current="page"]').boundingBox())!;
+    const pinned = (await nav.locator("[data-pinned]").boundingBox())!;
+    expect(active.y).toBeGreaterThanOrEqual(0);
+    expect(active.y + active.height).toBeLessThanOrEqual(pinned.y + 1);
+  });
 });

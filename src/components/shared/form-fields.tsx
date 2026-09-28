@@ -40,6 +40,27 @@ function errorOf<T extends FieldValues>(form: AnyForm<T>, name: Path<T>): string
   return (current as FieldError | undefined)?.message;
 }
 
+/**
+ * Startwert eines Felds aus den `defaultValues` des Formulars. Er geht als `defaultValue` ans Feld: So schickt der Server
+ * die Seite schon mit den gespeicherten Werten – sonst waren Bearbeiten-Formulare im ersten Bild leer, bis React Hook Form
+ * nach dem Laden der Skripte die Werte einsetzte (am langsamen Handy wirkte das, als seien die Daten weg).
+ */
+function initialOf<T extends FieldValues>(form: AnyForm<T>, name: Path<T>): unknown {
+  let current: unknown = form.formState.defaultValues;
+  for (const part of name.split(".")) {
+    if (current && typeof current === "object")
+      current = (current as Record<string, unknown>)[part];
+    else return undefined;
+  }
+  return current;
+}
+
+/** Startwert als Text für Eingabe-, Text- und Auswahlfelder (Zahlen werden zu Text; sonst kein Startwert). */
+function initialText<T extends FieldValues>(form: AnyForm<T>, name: Path<T>): string | undefined {
+  const value = initialOf(form, name);
+  return typeof value === "string" || typeof value === "number" ? String(value) : undefined;
+}
+
 function FieldShell({
   id,
   label,
@@ -124,6 +145,7 @@ export function TextField<T extends FieldValues>({
         aria-invalid={error ? true : undefined}
         aria-required={required}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        defaultValue={type === "password" ? undefined : initialText(form, name)}
         {...form.register(name, {
           setValueAs: type === "number" ? (v) => (v === "" ? undefined : Number(v)) : undefined,
         })}
@@ -159,6 +181,7 @@ export function TextareaField<T extends FieldValues>({
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        defaultValue={initialText(form, name)}
         {...form.register(name)}
       />
     </FieldShell>
@@ -199,6 +222,7 @@ export function SelectField<T extends FieldValues>({
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        defaultValue={initialText(form, name)}
         {...form.register(name)}
       >
         {placeholder !== undefined && <option value="">{placeholder}</option>}
@@ -232,6 +256,7 @@ export function CheckboxField<T extends FieldValues>({
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
           className="mt-1 size-4 shrink-0 rounded accent-primary"
+          defaultChecked={initialOf(form, name) === true}
           {...form.register(name)}
         />
         <Label htmlFor={id} className="leading-snug font-normal">
