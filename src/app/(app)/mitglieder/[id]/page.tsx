@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeftIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DescriptionList } from "@/components/shared/description-list";
 import { PageHeader } from "@/components/shared/page-header";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import { BackLink } from "@/components/shared/back-link";
 import { formatCalendarDate, formatDateTime } from "@/lib/dates";
 import { CONSENT_TYPE_LABEL, MEMBER_FIELD_LABEL } from "@/lib/labels";
 import { phoneHref } from "@/lib/phone";
@@ -45,14 +44,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/mitglieder"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Alle Mitglieder
-        </Link>
-      </p>
+      <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader
         title={name}
         description={

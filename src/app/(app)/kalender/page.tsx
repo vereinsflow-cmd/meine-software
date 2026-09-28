@@ -5,6 +5,7 @@ import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventType } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
@@ -22,7 +23,6 @@ import {
 import { berlinParts, formatDateTime, startOfBerlinDay, toDateInputValue } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { buildQuery, enumParam, param, type RawSearchParams } from "@/lib/search-params";
-import { cn } from "@/lib/utils";
 import { Agenda, MonthGrid, WeekColumns } from "@/modules/calendar/components/calendar-views";
 import { FeedDialog } from "@/modules/calendar/components/feed-dialog";
 import { DayDoubleClick, NewEventButton } from "@/modules/calendar/components/quick-event";
@@ -164,18 +164,13 @@ export default async function CalendarPage({
           </h2>
         </div>
 
-        <nav aria-label="Ansicht wählen" className="inline-flex rounded-lg bg-muted p-0.5">
+        <nav aria-label="Ansicht wählen" className={SEGMENT_BAR}>
           {CALENDAR_VIEWS.map((option) => (
             <Link
               key={option}
               href={dateHref(option, anchor)}
               aria-current={option === view ? "page" : undefined}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium",
-                option === view
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              className={segmentItem(option === view)}
             >
               {VIEW_LABEL[option]}
             </Link>

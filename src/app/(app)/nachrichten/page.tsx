@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeftIcon, FilePenLineIcon, PlusIcon } from "lucide-react";
+import { FilePenLineIcon, PlusIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -8,6 +8,7 @@ import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { BackLink } from "@/components/shared/back-link";
 import { formatDateTime } from "@/lib/dates";
 import { intParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
@@ -140,14 +141,7 @@ async function Drafts({ ctx, params }: { ctx: TenantContext; params: RawSearchPa
   const result = await listSent(ctx, "drafts", pageRequest(params, 15));
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/nachrichten"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Nachrichten
-        </Link>
-      </p>
+      <BackLink href="/nachrichten">Nachrichten</BackLink>
       <PageHeader
         title="Entwürfe"
         description="Angefangene Nachrichten – noch nicht gesendet."

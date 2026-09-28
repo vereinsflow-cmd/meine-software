@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
@@ -143,10 +144,7 @@ export default async function TasksPage({
       />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <nav
-          aria-label="Aufgaben anzeigen"
-          className="inline-flex flex-wrap gap-1 rounded-lg bg-muted p-1"
-        >
+        <nav aria-label="Aufgaben anzeigen" className={SEGMENT_BAR}>
           {tabs.map((entry) => {
             const count = counts[entry];
             const current = entry === tab;
@@ -155,12 +153,7 @@ export default async function TasksPage({
                 key={entry}
                 href={tabHref(entry)}
                 aria-current={current ? "page" : undefined}
-                className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  current
-                    ? "bg-card text-foreground shadow-sm dark:bg-secondary"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+                className={segmentItem(current)}
               >
                 {TASK_TAB_LABEL[entry]}
                 {count !== undefined && (

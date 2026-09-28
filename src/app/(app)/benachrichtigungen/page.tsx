@@ -11,12 +11,9 @@ import { countUnread, listNotifications } from "@/modules/notifications/service"
 import { pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
 import { requirePageContext } from "@/server/tenancy/context";
+import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 
 export const metadata: Metadata = { title: "Benachrichtigungen" };
-
-const FILTER_TAB =
-  "inline-flex items-center rounded-md px-4 py-1.5 font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
-const FILTER_TAB_ACTIVE = "bg-card text-foreground shadow-sm hover:text-foreground";
 
 export default async function NotificationsPage({
   searchParams,
@@ -38,22 +35,18 @@ export default async function NotificationsPage({
         description={unread > 0 ? `${unread} ungelesen` : "Alles gelesen."}
         actions={<MarkAllReadButton disabled={unread === 0} />}
       />
-      <div
-        className="mb-6 inline-flex gap-1 rounded-lg bg-muted p-1 text-sm"
-        role="group"
-        aria-label="Filter"
-      >
+      <div className={cn("mb-6", SEGMENT_BAR)} role="group" aria-label="Filter">
         <a
           href="/benachrichtigungen"
           aria-current={!unreadOnly ? "true" : undefined}
-          className={cn(FILTER_TAB, !unreadOnly && FILTER_TAB_ACTIVE)}
+          className={segmentItem(!unreadOnly)}
         >
           Alle
         </a>
         <a
           href="/benachrichtigungen?filter=ungelesen"
           aria-current={unreadOnly ? "true" : undefined}
-          className={cn(FILTER_TAB, unreadOnly && FILTER_TAB_ACTIVE)}
+          className={segmentItem(unreadOnly)}
         >
           Nur ungelesene
           {unread > 0 && (

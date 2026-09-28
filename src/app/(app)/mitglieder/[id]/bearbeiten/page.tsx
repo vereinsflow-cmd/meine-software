@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
 import { isAppError } from "@/server/errors";
 import { MemberForm } from "@/modules/members/components/member-form";
@@ -25,6 +26,9 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
 
   return (
     <>
+      <BackLink href={`/mitglieder/${id}`}>
+        {values.firstName} {values.lastName}
+      </BackLink>
       <PageHeader
         title={`${values.firstName} ${values.lastName} bearbeiten`}
         description="Felder mit * sind Pflichtfelder."

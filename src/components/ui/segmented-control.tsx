@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ToggleGroup } from "radix-ui";
 import { cn } from "@/lib/utils";
+import { SEGMENT_BAR } from "./segment-styles";
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -38,7 +39,7 @@ export function SegmentedControl<T extends string>({
         if (next) onValueChange(next as T); // leerer Wert = Klick auf die schon gewählte Option: ignorieren
       }}
       aria-label={label}
-      className={cn("inline-flex flex-wrap gap-1 rounded-lg bg-muted p-1", className)}
+      className={cn(SEGMENT_BAR, className)}
     >
       {options.map((option) => (
         <ToggleGroup.Item

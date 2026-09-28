@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChevronLeftIcon } from "lucide-react";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { BackLink } from "@/components/shared/back-link";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { parseChatKey, type ChatTarget } from "@/modules/messages/chat-format";
 import { ComposeForm } from "@/modules/messages/components/compose-form";
@@ -64,14 +63,7 @@ export default async function ComposePage({
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/nachrichten"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Nachrichten
-        </Link>
-      </p>
+      <BackLink href="/nachrichten">Nachrichten</BackLink>
       <PageHeader
         title={draft ? "Entwurf bearbeiten" : "Neue Nachricht"}
         description={

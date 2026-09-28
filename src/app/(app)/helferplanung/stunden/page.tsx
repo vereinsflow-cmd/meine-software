@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChevronLeftIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -16,6 +14,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { TableCard } from "@/components/shared/table-card";
+import { BackLink } from "@/components/shared/back-link";
 import { berlinParts, formatDuration } from "@/lib/dates";
 import { intParam, type RawSearchParams } from "@/lib/search-params";
 import { getHoursOverview } from "@/modules/shifts/service";
@@ -40,14 +39,7 @@ export default async function HoursPage({
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/helferplanung"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Helferplanung
-        </Link>
-      </p>
+      <BackLink href="/helferplanung">Helferplanung</BackLink>
       <PageHeader
         title="Helferstunden"
         description={

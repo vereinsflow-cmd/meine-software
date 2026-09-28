@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
 import { EventForm } from "@/modules/events/components/event-form";
 import { getEventForEdit, getEventFormOptions } from "@/modules/events/service";
@@ -22,6 +23,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
 
   return (
     <>
+      <BackLink href={`/veranstaltungen/${id}`}>{values.title}</BackLink>
       <PageHeader
         title={`${values.title} bearbeiten`}
         description="Bei Änderungen an Zeit oder Ort werden Teilnehmer und Helfer benachrichtigt."

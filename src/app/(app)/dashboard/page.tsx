@@ -166,17 +166,18 @@ export default async function DashboardPage({
         description={ctx.roleName}
         actions={
           <>
-            {can(ctx, "members:create") && (
-              <Button asChild variant="outline">
-                <Link href="/mitglieder/neu">
-                  <PlusIcon /> Neues Mitglied
-                </Link>
-              </Button>
-            )}
+            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten. */}
             {can(ctx, "events:create") && (
               <Button asChild>
                 <Link href="/veranstaltungen/neu">
                   <PlusIcon /> Neue Veranstaltung
+                </Link>
+              </Button>
+            )}
+            {can(ctx, "members:create") && (
+              <Button asChild variant="outline">
+                <Link href="/mitglieder/neu">
+                  <PlusIcon /> Neues Mitglied
                 </Link>
               </Button>
             )}

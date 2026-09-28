@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NoAccess } from "@/components/shared/no-access";
+import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
 import { toDateInputValue } from "@/lib/dates";
 import { addBerlinDays } from "@/lib/dates";
@@ -19,6 +20,7 @@ export default async function NewEventPage() {
 
   return (
     <>
+      <BackLink href="/veranstaltungen">Alle Veranstaltungen</BackLink>
       <PageHeader
         title="Neue Veranstaltung"
         description="Die Veranstaltung wird zunächst als Entwurf gespeichert und ist erst nach dem Veröffentlichen für Mitglieder sichtbar."

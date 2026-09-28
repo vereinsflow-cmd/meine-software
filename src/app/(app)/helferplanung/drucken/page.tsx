@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeftIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { PrintButton } from "@/components/shared/print-button";
+import { BackLink } from "@/components/shared/back-link";
 import {
   addBerlinDays,
   formatDate,
@@ -174,14 +174,7 @@ export default async function PrintShiftPlanPage({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="print:hidden">
-        <p className="mb-3">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeftIcon className="size-4" aria-hidden="true" /> {backLabel}
-          </Link>
-        </p>
+        <BackLink href={backHref}>{backLabel}</BackLink>
         <PageHeader
           title="Helferplan drucken"
           description="Wähle Veranstaltungen oder einen Zeitraum – der Ausdruck ist zum Aushängen gedacht und enthält nur Namen, keine Kontaktdaten."

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeftIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { BackLink } from "@/components/shared/back-link";
 import {
   AddDepartmentMemberControls,
   DepartmentActions,
@@ -39,14 +39,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <p className="mb-3">
-        <Link
-          href="/abteilungen"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeftIcon className="size-4" aria-hidden="true" /> Alle Abteilungen
-        </Link>
-      </p>
+      <BackLink href="/abteilungen">Alle Abteilungen</BackLink>
       <PageHeader
         title={department.name}
         description={

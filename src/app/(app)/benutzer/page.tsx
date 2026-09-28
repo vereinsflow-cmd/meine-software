@@ -81,11 +81,12 @@ export default async function UsersPage({
             key={t.id}
             href={`/benutzer?tab=${t.id}`}
             aria-current={tab === t.id ? "page" : undefined}
+            // Wie die Reiter des Dashboards: 3 px Strich, der gewählte Reiter fett in der Markenfarbe.
             className={cn(
-              "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
+              "-mb-px border-b-[3px] px-3.5 py-2.5 text-base",
               tab === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground",
+                ? "border-primary font-semibold text-primary"
+                : "border-transparent font-medium text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}
