@@ -109,12 +109,14 @@ test.describe("Kalender – Ansichten", () => {
 });
 
 test.describe("Kalender – Filter und Sichtbarkeit", () => {
+  // Die Felder über ihre Rolle suchen: Beim Laden steht die Seite kurz ein zweites Mal im unsichtbaren Streaming-Puffer von
+  // React (`<div hidden id="S:0">`); `getByLabel` fände dann zwei Felder, `getByRole` nur das sichtbare.
   test("Filter nach Art und Abteilung", async ({ page }) => {
     await login(page, USERS.admin);
     await page.goto(`/kalender?ansicht=liste&datum=${berlinDate(5)}`);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible();
 
-    await page.getByLabel("Art", { exact: true }).selectOption("TRAINING");
+    await page.getByRole("combobox", { name: "Art", exact: true }).selectOption("TRAINING");
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page).toHaveURL(/art=TRAINING/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toHaveCount(0);
@@ -123,14 +125,14 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
     // vorher getroffene Auswahl ginge verloren und „Filtern“ schickte ein leeres Formular ab.
     await page.getByRole("link", { name: "Zurücksetzen" }).click();
     await expect(page).not.toHaveURL(/art=/);
-    await page.getByLabel("Art", { exact: true }).selectOption("MEETING");
+    await page.getByRole("combobox", { name: "Art", exact: true }).selectOption("MEETING");
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page).toHaveURL(/art=MEETING/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible();
 
     await page.getByRole("link", { name: "Zurücksetzen" }).click();
     await expect(page).not.toHaveURL(/art=/);
-    await page.getByLabel("Abteilung").selectOption({ label: "Fußball" });
+    await page.getByRole("combobox", { name: "Abteilung" }).selectOption({ label: "Fußball" });
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page).toHaveURL(/abteilung=/);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toHaveCount(0); // vereinsweit, nicht Fußball

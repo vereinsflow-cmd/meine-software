@@ -125,13 +125,16 @@ export function MonthGrid({
                 const parts = berlinParts(day);
                 const inMonth = parts.month === month;
                 const isToday = key === cell.todayKey;
+                const past = key < cell.todayKey; // JJJJ-MM-TT: Textvergleich = zeitliche Reihenfolge
                 return (
+                  // Mindesthöhe statt fester Höhe (Tabellenzellen wachsen mit ihren Terminen): So passen mehr Wochen auf den
+                  // ersten Bildschirm, und die Termine am Monatsende stehen nicht mehr unter dem Rand.
                   <td
                     key={key}
                     data-date={key}
                     aria-current={isToday ? "date" : undefined}
                     className={cn(
-                      "h-32 border-t border-l p-1 align-top first:border-l-0",
+                      "h-26 border-t border-l p-1 align-top first:border-l-0",
                       !inMonth && "bg-muted/30",
                     )}
                   >
@@ -141,7 +144,7 @@ export function MonthGrid({
                         aria-label={`${formatDateLong(day)} öffnen`}
                         className={cn(
                           "inline-flex size-6 items-center justify-center rounded-full text-xs hover:bg-accent",
-                          !inMonth && "text-muted-foreground",
+                          (!inMonth || past) && "text-muted-foreground",
                           isToday &&
                             "bg-primary font-semibold text-primary-foreground hover:bg-primary",
                         )}

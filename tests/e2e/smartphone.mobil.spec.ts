@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
-import { USERS, login, openNavGroup } from "./helpers";
+import { violations } from "./axe";
+import { USERS, login, open, openNavGroup } from "./helpers";
 
 /**
  * Smartphone-Ansicht (Pixel 7, 412 px breit). Läuft nur im Projekt "mobil": `npx playwright test --project=mobil`.
@@ -186,5 +187,28 @@ test.describe("Smartphone", () => {
     const viewport = page.viewportSize()!;
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + 1);
+  });
+  test("Filter: am Handy nur Suche und Knopf „Filter“ – ein Tipp klappt die Felder auf; aktive Filter zählen mit", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/mitglieder");
+    const toggle = page.getByRole("checkbox", { name: /^Filter/ });
+    const status = page.getByRole("combobox", { name: "Nach Status filtern" });
+    await expect(page.getByRole("searchbox", { name: "Mitglieder durchsuchen" })).toBeVisible();
+    await expect(status).toBeHidden(); // zugeklappt: die Liste beginnt direkt unter der Suche
+    expect(await violations(page)).toEqual([]);
+
+    await page.locator("label", { hasText: /^Filter/ }).click();
+    await expect(toggle).toBeChecked();
+    await expect(status).toBeVisible();
+    await status.selectOption("PASSIVE");
+    await page.getByRole("button", { name: "Filtern" }).click();
+    await expect(page).toHaveURL(/status=PASSIVE/);
+    // Nach dem Laden wieder zugeklappt, der Knopf nennt die Zahl der aktiven Filter
+    await expect(page.locator("label", { hasText: /^Filter/ })).toContainText("1");
+    await expect(page.getByRole("combobox", { name: "Nach Status filtern" })).toBeHidden();
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+    expect(await violations(page)).toEqual([]);
   });
 });
