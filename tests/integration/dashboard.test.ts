@@ -276,8 +276,10 @@ describe("Dashboard: Inhalte je Rolle", () => {
         joinedAt: new Date(Date.now() - 40 * DAY), // innerhalb der Trendlinie beigetreten
       },
     });
+    // Die Schicht beginnt jetzt – das liegt immer in der laufenden Woche. „Gestern“ wäre montags schon die Vorwoche
+    // (dann schlug der Test jeden Montag fehl).
     const event = await createEvent(club.id, { title: "Fest", startsAt: inDays(-1) });
-    const shift = await createShift(club.id, event.id, { title: "Aufbau", startsAt: inDays(-1) });
+    const shift = await createShift(club.id, event.id, { title: "Aufbau", startsAt: new Date() });
     await prisma.shiftAssignment.create({
       data: {
         clubId: club.id,
