@@ -17,7 +17,8 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title="Vereinseinstellungen" description={`Kürzel: ${settings.slug}`} />
-      <div className="grid gap-6">
+      {/* Höchstens 56 rem wie alle Formulare – auch die Logo-Karte, damit beide Karten gleich breit sind. */}
+      <div className="grid max-w-4xl gap-6">
         {/* Eigenes Formular für das Logo (Datei-Upload), getrennt von den übrigen Vereinsdaten */}
         <ClubLogoCard clubId={ctx.clubId} clubName={settings.name} logo={settings.logo} />
         <ClubSettingsForm
