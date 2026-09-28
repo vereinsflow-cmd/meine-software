@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PrinterIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  FaceSlightlySmilingIcon,
+  PartyPopperIcon,
+  PrinterIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
+import { ExpandableList } from "@/components/shared/expandable-list";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
@@ -46,7 +53,8 @@ export default async function HelperPlanningPage() {
                 <AREA_ICON.helferstunden /> Helferstunden
               </Link>
             </Button>
-            <Button asChild>
+            {/* Umrandet: Die Seite dient dem Eintragen – „Eintragen“ ist hier die Hauptaktion, Drucken Nebensache. */}
+            <Button asChild variant="outline">
               <Link href="/helferplanung/drucken">
                 <PrinterIcon /> Helferplan drucken
               </Link>
@@ -56,7 +64,8 @@ export default async function HelperPlanningPage() {
       />
 
       {canManage && warnings.length > 0 && (
-        <Alert variant="destructive" className="mb-6">
+        // Bernstein wie auf dem Dashboard: ein Hinweis, der zum Handeln auffordert – kein Fehler. „Dringend“ steht im Text.
+        <Alert variant="warning" className="mb-6">
           <TriangleAlertIcon />
           <AlertTitle>Dringend: Schichten sind nicht besetzt</AlertTitle>
           <AlertDescription>
@@ -79,9 +88,11 @@ export default async function HelperPlanningPage() {
         </Alert>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Karten nicht auf gleiche Höhe strecken (`items-start`): Eine leere Karte „Meine Einsätze“ war sonst so hoch wie
+          die Liste daneben, und der Überblick darunter rutschte weit unter den Bildrand. */}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <section aria-labelledby="meine-einsaetze">
-          <Card className="h-full">
+          <Card>
             <CardHeader>
               <CardTitle
                 id="meine-einsaetze"
@@ -95,9 +106,13 @@ export default async function HelperPlanningPage() {
             </CardHeader>
             <CardContent>
               {mine.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <CompactEmpty
+                  icon={<FaceSlightlySmilingIcon />}
+                  accent="emerald"
+                  title="Noch keine Einsätze"
+                >
                   Du bist aktuell für keine Schicht eingetragen.
-                </p>
+                </CompactEmpty>
               ) : (
                 <ul className="divide-y">
                   {mine.map((a) => (
@@ -138,7 +153,7 @@ export default async function HelperPlanningPage() {
         </section>
 
         <section aria-labelledby="offene-schichten">
-          <Card className="h-full">
+          <Card>
             <CardHeader>
               <CardTitle
                 id="offene-schichten"
@@ -152,11 +167,21 @@ export default async function HelperPlanningPage() {
             </CardHeader>
             <CardContent>
               {open.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <CompactEmpty
+                  icon={<PartyPopperIcon />}
+                  accent="emerald"
+                  title="Alle Schichten besetzt"
+                >
                   Im Moment sind alle Schichten besetzt. Danke!
-                </p>
+                </CompactEmpty>
               ) : (
-                <ul className="divide-y">
+                // Zuerst drei, der Rest aufklappbar (wie auf dem Dashboard) – sonst schiebt eine lange Liste den Überblick je
+                // Veranstaltung weit nach unten.
+                <ExpandableList
+                  className="divide-y"
+                  initial={3}
+                  itemNoun="weitere offene Schichten"
+                >
                   {open.map((item) => (
                     <li key={item.shiftId} className="grid gap-2 py-3">
                       <div className="min-w-0">
@@ -195,7 +220,7 @@ export default async function HelperPlanningPage() {
                       )}
                     </li>
                   ))}
-                </ul>
+                </ExpandableList>
               )}
             </CardContent>
           </Card>

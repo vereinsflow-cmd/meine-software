@@ -271,7 +271,8 @@ export function DashboardTabs({
           </TabsContent>
         ))}
 
-        {/* Blättern am Ende des Bereichs: wie Folien – ohne wieder nach oben scrollen zu müssen. */}
+        {/* Blättern am Ende des Bereichs: wie Folien – ohne wieder nach oben scrollen zu müssen. „Weiter“ ist wie „Zurück“
+            umrandet: Blau bleibt der Hauptaktion eines Bereichs vorbehalten (z. B. „Eintragen“). */}
         <nav
           aria-label="Bereich wechseln"
           className="mt-10 flex items-center justify-between gap-3 border-t pt-6"
@@ -288,7 +289,11 @@ export function DashboardTabs({
             <span />
           )}
           {next ? (
-            <Button onClick={() => go(next.id)} aria-label={`Weiter: ${next.label}`}>
+            <Button
+              variant="outline"
+              onClick={() => go(next.id)}
+              aria-label={`Weiter: ${next.label}`}
+            >
               {next.label} <ArrowRightIcon aria-hidden="true" />
             </Button>
           ) : (
