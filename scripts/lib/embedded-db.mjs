@@ -2,7 +2,8 @@
  * Gemeinsame Bausteine für die eingebettete PostgreSQL (ohne Docker) – genutzt von `dev-db.mjs` (nur die Datenbank)
  * und `dev-start.mjs` (alles auf einmal).
  *
- * Die Datenbankdateien liegen in `.local/pgdata` relativ zum Ordner, in dem der Befehl läuft (dem Projektordner).
+ * Die Datenbankdateien liegen in `.local/pgdata` relativ zum Ordner, in dem der Befehl läuft (dem Projektordner) – die
+ * leere Version („VereinsFlow leer starten“) hat ihre eigenen in `.local/pgdata-leer`.
  */
 import EmbeddedPostgres from "embedded-postgres";
 import { existsSync } from "node:fs";
@@ -29,8 +30,7 @@ export function isPortOpen(port, timeoutMs = 1500) {
  * Startet die eingebettete Datenbank (legt sie beim allerersten Mal an) und sorgt dafür, dass die Datenbank `dbName`
  * existiert. `fresh` ist true, wenn die Datenbankdateien gerade neu angelegt wurden (also noch leer sind).
  */
-export async function startEmbeddedDatabase({ port, dbName }) {
-  const dir = dataDir();
+export async function startEmbeddedDatabase({ port, dbName, dir = dataDir() }) {
   const pg = new EmbeddedPostgres({
     databaseDir: dir,
     user: "vereinsflow",

@@ -270,18 +270,17 @@ export function CheckboxField<T extends FieldValues>({
           {...form.register(name)}
         />
         <Label htmlFor={id} className="leading-snug font-normal">
-          {required ? (
-            // Eine Hülle, damit Stern und Beschriftung im Flex-Container der Beschriftung eine Zeile bilden.
-            <span>
-              {label}
+          {/* Eine Hülle, damit Text, Links und Stern im Flex-Container der Beschriftung als ein Satz umbrechen
+              (sonst stünde z. B. „Ich habe die | Datenschutzerklärung | zur Kenntnis genommen“ in drei Spalten). */}
+          <span>
+            {label}
+            {required && (
               <span aria-hidden="true" className="text-destructive">
                 {" "}
                 *
               </span>
-            </span>
-          ) : (
-            label
-          )}
+            )}
+          </span>
         </Label>
       </div>
       {hint && !error && (

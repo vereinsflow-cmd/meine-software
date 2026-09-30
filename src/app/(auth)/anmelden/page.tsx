@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/shared/auth-card";
 import { LoginForm } from "@/modules/auth/components/auth-forms";
 import { getCurrentSession } from "@/server/auth/session";
+import { isFirstRunOpen } from "@/server/platform/first-run";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = { title: "Anmelden" };
@@ -17,6 +18,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   // Bereits angemeldet? Dann direkt weiter (die Prüfung der Sitzung erfolgt hier auf dem Server).
   const session = await getCurrentSession();
   if (session) redirect(safeRedirectPath(next));
+  // Leere Version, noch kein Konto: zuerst Verein und Administrator anlegen.
+  if (await isFirstRunOpen()) redirect("/einrichten");
 
   const notice = first(params.expired) ? "expired" : first(params.reset) ? "reset" : null;
 

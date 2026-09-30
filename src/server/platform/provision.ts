@@ -75,6 +75,8 @@ export interface ProvisionClubInput {
   name: string;
   slug: string;
   timezone?: string;
+  /** Verein gilt schon als eingerichtet (Demo-Daten) – sonst führt der Assistent „Verein einrichten“ durch den Start. */
+  setupCompleted?: boolean;
   contactEmail?: string | null;
 }
 
@@ -85,17 +87,24 @@ export interface ProvisionClubInput {
 export async function provisionClub(
   input: ProvisionClubInput,
 ): Promise<{ club: Club; roleIds: Record<string, string> }> {
-  return prisma.$transaction(async (tx) => {
-    await syncPermissionCatalog(tx);
-    const club = await tx.club.create({
-      data: {
-        name: input.name,
-        slug: input.slug,
-        timezone: input.timezone ?? "Europe/Berlin",
-        contactEmail: input.contactEmail ?? null,
-      },
-    });
-    const roleIds = await createSystemRoles(tx, club.id);
-    return { club, roleIds };
+  return prisma.$transaction((tx) => provisionClubIn(tx, input));
+}
+
+/** Wie `provisionClub`, aber innerhalb einer schon laufenden Transaktion (z. B. zusammen mit dem ersten Konto). */
+export async function provisionClubIn(
+  tx: Db,
+  input: ProvisionClubInput,
+): Promise<{ club: Club; roleIds: Record<string, string> }> {
+  await syncPermissionCatalog(tx);
+  const club = await tx.club.create({
+    data: {
+      name: input.name,
+      slug: input.slug,
+      timezone: input.timezone ?? "Europe/Berlin",
+      setupCompletedAt: input.setupCompleted ? new Date() : null,
+      contactEmail: input.contactEmail ?? null,
+    },
   });
+  const roleIds = await createSystemRoles(tx, club.id);
+  return { club, roleIds };
 }

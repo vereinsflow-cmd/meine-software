@@ -52,6 +52,7 @@ next-env.d.ts
 /.local
 /storage
 .next-e2e
+.next-leer
 
 # persönliche Werkzeug-Einstellungen (nicht teilen)
 .claude/settings.local.json

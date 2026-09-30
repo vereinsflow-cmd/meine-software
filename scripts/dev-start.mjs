@@ -14,6 +14,12 @@
  *   npm run dev:all              alles starten
  *   npm run dev:all -- --open    … und danach den Browser öffnen
  *   npm run dev:all -- --seed    … und die Demo-Daten (nochmals) einspielen, falls sie fehlen
+ *   npm run dev:all -- --leer    die LEERE Version, wie sie ein neuer Verein bekommt (siehe unten)
+ *
+ * Leere Version (`--leer`, Doppelklick auf `Start-VereinsFlow-leer.command`): ohne Demo-Daten, mit eigener Datenbank
+ * (`.local/pgdata-leer`, Port 5433), eigenen Dateien und eigenem Build-Ordner auf Port 3001 – sie läuft neben der
+ * Vorschau, ohne sie zu berühren. Beim ersten Öffnen legt man Verein und Administrator-Konto an (/einrichten), danach
+ * führt der Assistent „Verein einrichten“ Schritt für Schritt durch den Start.
  *
  * Beenden mit Strg+C: Anwendung UND die von diesem Skript gestartete Datenbank werden sauber gestoppt.
  * Unter Windows genügt ein Doppelklick auf `Start-VereinsFlow.cmd`, auf dem Mac auf `Start-VereinsFlow.command`.
@@ -27,10 +33,26 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(root); // die Datenbankdateien werden relativ zum Projektordner gesucht
 
 const args = new Set(process.argv.slice(2));
-const dbPort = Number(process.env.PGPORT ?? 5432);
+const leer = args.has("--leer");
+const dbPort = leer ? 5433 : Number(process.env.PGPORT ?? 5432);
 const dbName = process.env.PGDATABASE ?? "vereinsflow";
-const appPort = Number(process.env.PORT ?? 3000);
+const appPort = leer ? 3001 : Number(process.env.PORT ?? 3000);
 const appUrl = `http://localhost:${appPort}`;
+
+if (leer) {
+  // Gilt für alle Programme, die dieses Skript startet (Prisma, Next.js). Werte aus `.env` überschreiben sie nicht.
+  const leerDatabaseUrl = `postgresql://vereinsflow:vereinsflow@localhost:${dbPort}/${dbName}`;
+  Object.assign(process.env, {
+    DATABASE_URL: leerDatabaseUrl,
+    MIGRATION_DATABASE_URL: leerDatabaseUrl, // sonst liefen Migrationen ggf. gegen die Datenbank der Vorschau
+    APP_URL: appUrl,
+    NEXT_DIST_DIR: ".next-leer",
+    STORAGE_DIR: "./.local/leer-storage",
+    FIRST_RUN_SETUP: "true",
+    // Der Browser trennt Cookies nicht nach Port – mit gleichem Namen würde jede Anmeldung die andere Version abmelden.
+    SESSION_COOKIE_NAME: "vf_session_leer",
+  });
+}
 
 const prismaCli = path.join(root, "node_modules", "prisma", "build", "index.js");
 const nextCli = path.join(root, "node_modules", "next", "dist", "bin", "next");
@@ -103,7 +125,11 @@ async function openBrowserWhenReady() {
 }
 
 async function main() {
-  console.log("\n=== VereinsFlow: lokaler Start ===\n");
+  console.log(
+    leer
+      ? "\n=== VereinsFlow: leere Version (für einen neuen Verein) ===\n"
+      : "\n=== VereinsFlow: lokaler Start ===\n",
+  );
 
   // 0. Läuft die Anwendung schon, genügt der Browser.
   if (await isPortOpen(appPort)) {
@@ -122,7 +148,11 @@ async function main() {
     console.log(`✔ Datenbank läuft bereits auf Port ${dbPort} – wird mitbenutzt.`);
   } else {
     console.log("Datenbank wird gestartet (beim allerersten Mal dauert das etwas länger) …");
-    database = await startEmbeddedDatabase({ port: dbPort, dbName });
+    database = await startEmbeddedDatabase({
+      port: dbPort,
+      dbName,
+      ...(leer && { dir: path.resolve(".local", "pgdata-leer") }),
+    });
     console.log(`✔ Datenbank bereit (localhost:${dbPort}).`);
   }
 
@@ -139,7 +169,7 @@ async function main() {
   console.log("✔ Tabellen sind aktuell.");
 
   // 3. Demo-Daten (das Skript ist idempotent: sind sie schon da, meldet es das nur)
-  if (database?.fresh || args.has("--seed")) {
+  if (!leer && (database?.fresh || args.has("--seed"))) {
     console.log("\nDemo-Daten einspielen …");
     if ((await run(prismaCli, ["db", "seed"])) !== 0) {
       console.error("✘ Die Demo-Daten konnten nicht eingespielt werden (siehe Meldung oben).");

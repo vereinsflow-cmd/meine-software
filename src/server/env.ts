@@ -13,6 +13,8 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.url().default("http://localhost:3000"),
   TRUST_PROXY: boolean,
+  /** Nur für die leere lokale Version („VereinsFlow leer starten“): Ersteinrichtung unter /einrichten, solange es kein Konto gibt. */
+  FIRST_RUN_SETUP: boolean,
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL fehlt"),
 
@@ -65,6 +67,12 @@ export function parseEnv(source: Record<string, string | undefined> = process.en
     if (!env.APP_URL.startsWith("https://")) {
       problems.push(
         "APP_URL muss in Produktion mit https:// beginnen (verschlüsselte Übertragung).",
+      );
+    }
+    if (env.FIRST_RUN_SETUP) {
+      // Wer zuerst kommt, würde sonst den Server übernehmen – im Betrieb legt die Plattformverwaltung Vereine an.
+      problems.push(
+        "FIRST_RUN_SETUP ist nur für die lokale leere Version gedacht und darf in Produktion nicht gesetzt sein.",
       );
     }
     if (env.MAIL_TRANSPORT !== "smtp") {
