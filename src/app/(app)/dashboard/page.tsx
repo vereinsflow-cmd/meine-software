@@ -1,13 +1,18 @@
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PlusIcon } from "lucide-react";
+import { EyeOffIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { PageHeader } from "@/components/shared/page-header";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
+import {
+  CustomizeDashboard,
+  type CustomizeTab,
+} from "@/modules/dashboard/components/customize-dashboard";
 import { DashboardTabs, type DashboardTab } from "@/modules/dashboard/components/dashboard-tabs";
 import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
 import { CardGrid, Group } from "@/modules/dashboard/components/layout";
@@ -27,8 +32,21 @@ import {
   StatCard,
   UpcomingEvents,
 } from "@/modules/dashboard/components/widgets";
+import {
+  GROUP_TITLE,
+  arrangeBlocks,
+  blockLabel,
+  orderedBlocks,
+  segmentBlocks,
+} from "@/modules/dashboard/layout-prefs";
+import { getDashboardLayout } from "@/modules/dashboard/layout-service";
 import { getDashboard } from "@/modules/dashboard/service";
-import { DASHBOARD_TABS, availableTabs, resolveTab } from "@/modules/dashboard/tabs";
+import {
+  DASHBOARD_TABS,
+  availableTabs,
+  resolveTab,
+  type DashboardTabId,
+} from "@/modules/dashboard/tabs";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 
@@ -38,6 +56,9 @@ export const metadata: Metadata = { title: "Dashboard" };
  * Das Dashboard in vier Reitern (Aufteilung und Begründung: `modules/dashboard/tabs.ts`). Die Seite bleibt EINE Seite – der
  * Reiterwechsel geschieht im Browser (`DashboardTabs`), die Seitenleiste zeigt weiter nur „Dashboard“. Der Server berechnet
  * wie bisher nur, was die Rolle sehen darf; Reiter ohne Inhalt gibt es nicht. Die Diagramme laden per `Suspense` nach.
+ *
+ * Jede Person kann ihr Dashboard selbst einstellen („Anpassen“): Karten je Reiter ein- und ausblenden und umsortieren
+ * (`modules/dashboard/layout-prefs.ts`, gespeichert je Person und Verein). Ohne eigene Einstellung gilt die Standard-Ansicht.
  */
 export default async function DashboardPage({
   searchParams,
@@ -45,7 +66,7 @@ export default async function DashboardPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
-  const data = await getDashboard(ctx);
+  const [data, layout] = await Promise.all([getDashboard(ctx), getDashboardLayout(ctx)]);
   const { members, events, shifts, tasks, notifications, birthdays, activity, payments } = data;
 
   // Einmal berechnen, von mehreren Reitern verwendet. Das `catch` verhindert eine „unbehandelte Ablehnung“, falls kein
@@ -53,110 +74,131 @@ export default async function DashboardPage({
   const analytics = getAnalytics(ctx);
   analytics.catch(() => undefined);
 
-  const overview = (
-    <div className="grid gap-10">
-      <KpiCarousel>
-        {members ? (
-          <MembersStat members={members} />
-        ) : (
-          <StatCard
-            label="Ungelesen"
-            value={notifications.unread}
-            hint={notifications.unread === 1 ? "Benachrichtigung" : "Benachrichtigungen"}
-            href="/benachrichtigungen"
-            icon={<AREA_ICON.benachrichtigungen />}
-          />
-        )}
-        {events && <NextEventsStat events={events} />}
-        {shifts && <FreeShiftsStat shifts={shifts} />}
-        {shifts && <HelperHours hours={shifts.hours} />}
-      </KpiCarousel>
-
-      {/* Offene Zahlungen nur für Berechtigte (Vereinsadministrator, Vorstand) – vor „Für dich“, weil Fristen drängen. */}
-      {payments && (
-        <Group id="g-finanzen" title="Finanzen">
-          <CardGrid>
-            <OpenPayments payments={payments} />
-          </CardGrid>
-        </Group>
-      )}
-
-      <Group id="g-fuer-dich" title="Für dich">
-        <CardGrid>
-          {tasks && <MyTasks tasks={tasks} organizer={can(ctx, "tasks:manage")} />}
-          {shifts && <MyShifts shifts={shifts} />}
-          <LatestNotifications notifications={notifications} />
-        </CardGrid>
-      </Group>
-    </div>
-  );
-
-  const appointments = (
-    <div className="grid gap-10">
-      <Group id="g-anstehend" title="Anstehend">
-        <CardGrid>
-          {events && <UpcomingEvents events={events} />}
-          {shifts && <OpenShifts shifts={shifts} />}
-        </CardGrid>
-      </Group>
-      <Suspense fallback={<AnalyticsSkeleton />}>
-        <Analytics
-          data={analytics}
-          topics={["events", "hours"]}
-          description="Veranstaltungen und Helferstunden im Zeitverlauf"
-        />
-      </Suspense>
-    </div>
-  );
-
-  const membersTab = (
-    <div className="grid gap-10">
-      {birthdays && (
-        <Group id="g-geburtstage" title="Anstehend">
-          <CardGrid>
-            <Birthdays birthdays={birthdays} />
-          </CardGrid>
-        </Group>
-      )}
-      {members && (
+  // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
+  const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
+    uebersicht: {
+      kennzahlen: (
+        <KpiCarousel>
+          {members ? (
+            <MembersStat members={members} />
+          ) : (
+            <StatCard
+              label="Ungelesen"
+              value={notifications.unread}
+              hint={notifications.unread === 1 ? "Benachrichtigung" : "Benachrichtigungen"}
+              href="/benachrichtigungen"
+              icon={<AREA_ICON.benachrichtigungen />}
+            />
+          )}
+          {events && <NextEventsStat events={events} />}
+          {shifts && <FreeShiftsStat shifts={shifts} />}
+          {shifts && <HelperHours hours={shifts.hours} />}
+        </KpiCarousel>
+      ),
+      // Offene Zahlungen nur für Berechtigte (Vereinsadministrator, Vorstand) – vor „Für dich“, weil Fristen drängen.
+      ...(payments ? { zahlungen: <OpenPayments payments={payments} /> } : {}),
+      ...(tasks
+        ? { aufgaben: <MyTasks tasks={tasks} organizer={can(ctx, "tasks:manage")} /> }
+        : {}),
+      ...(shifts ? { einsaetze: <MyShifts shifts={shifts} /> } : {}),
+      benachrichtigungen: <LatestNotifications notifications={notifications} />,
+    },
+    termine: {
+      ...(events ? { veranstaltungen: <UpcomingEvents events={events} /> } : {}),
+      ...(shifts ? { schichten: <OpenShifts shifts={shifts} /> } : {}),
+      auswertungen: (
         <Suspense fallback={<AnalyticsSkeleton />}>
           <Analytics
             data={analytics}
-            topics={["members"]}
-            description="Verteilung und Entwicklung der Mitglieder"
+            topics={["events", "hours"]}
+            description="Veranstaltungen und Helferstunden im Zeitverlauf"
           />
         </Suspense>
-      )}
-    </div>
-  );
-
-  const work = (
-    <div className="grid gap-10">
-      {activity && (
-        <Group id="g-aktivitaet" title="Aktivität">
-          <CardGrid>
-            <RecentActivity entries={activity} />
-          </CardGrid>
-        </Group>
-      )}
-      {tasks && (
-        <Suspense fallback={<AnalyticsSkeleton />}>
-          <Analytics data={analytics} topics={["tasks"]} description="Aufgaben nach Status" />
-        </Suspense>
-      )}
-    </div>
-  );
-
-  const content = {
-    uebersicht: overview,
-    termine: appointments,
-    mitglieder: membersTab,
-    aktivitaet: work,
+      ),
+    },
+    mitglieder: {
+      ...(birthdays ? { geburtstage: <Birthdays birthdays={birthdays} /> } : {}),
+      ...(members
+        ? {
+            auswertungen: (
+              <Suspense fallback={<AnalyticsSkeleton />}>
+                <Analytics
+                  data={analytics}
+                  topics={["members"]}
+                  description="Verteilung und Entwicklung der Mitglieder"
+                />
+              </Suspense>
+            ),
+          }
+        : {}),
+    },
+    aktivitaet: {
+      ...(activity ? { aktivitaet: <RecentActivity entries={activity} /> } : {}),
+      ...(tasks
+        ? {
+            auswertungen: (
+              <Suspense fallback={<AnalyticsSkeleton />}>
+                <Analytics data={analytics} topics={["tasks"]} description="Aufgaben nach Status" />
+              </Suspense>
+            ),
+          }
+        : {}),
+    },
   };
+
+  /** Inhalt eines Reiters: Karten in eigener Reihenfolge; Karten derselben Gruppe unter einer Überschrift. */
+  function tabContent(tab: DashboardTabId) {
+    const available = blocks[tab];
+    const { shown } = arrangeBlocks(tab, Object.keys(available), layout?.tabs[tab]);
+    if (shown.length === 0) {
+      return (
+        <CompactEmpty icon={<EyeOffIcon />} accent="slate" title="Alle Karten ausgeblendet">
+          Über „Anpassen“ oben blendest du Karten dieses Bereichs wieder ein.
+        </CompactEmpty>
+      );
+    }
+    const seen = new Set<string>();
+    return (
+      <div className="grid gap-10">
+        {segmentBlocks(tab, shown).map((segment, index) => {
+          if (segment.kind === "single") {
+            return <Fragment key={segment.id}>{available[segment.id]}</Fragment>;
+          }
+          // Die erste Gruppe behält ihre bekannte Kennung (z. B. „g-fuer-dich“); kommt sie ein zweites Mal vor, eine eigene.
+          const id = seen.has(segment.group) ? `g-${segment.group}-${index}` : `g-${segment.group}`;
+          seen.add(segment.group);
+          return (
+            <Group key={`${segment.group}-${index}`} id={id} title={GROUP_TITLE[segment.group]}>
+              <CardGrid>
+                {segment.ids.map((blockId) => (
+                  <Fragment key={blockId}>{available[blockId]}</Fragment>
+                ))}
+              </CardGrid>
+            </Group>
+          );
+        })}
+      </div>
+    );
+  }
+
   const available = availableTabs(data);
-  const tabs: DashboardTab[] = DASHBOARD_TABS.filter((tab) => available.includes(tab.id)).map(
-    (tab) => ({ ...tab, content: content[tab.id] }),
-  );
+  const shownTabs = DASHBOARD_TABS.filter((tab) => available.includes(tab.id));
+  const tabs: DashboardTab[] = shownTabs.map((tab) => ({ ...tab, content: tabContent(tab.id) }));
+
+  // Für das Fenster „Anpassen“: je Reiter die erlaubten Karten in der aktuellen Reihenfolge, mit Sichtbarkeit.
+  const customize: CustomizeTab[] = shownTabs.map((tab) => {
+    const prefs = layout?.tabs[tab.id];
+    const hidden = new Set(prefs?.hidden ?? []);
+    return {
+      id: tab.id,
+      label: tab.label,
+      blocks: orderedBlocks(tab.id, Object.keys(blocks[tab.id]), prefs).map((id) => ({
+        id,
+        label: blockLabel(tab.id, id),
+        visible: !hidden.has(id),
+      })),
+    };
+  });
 
   return (
     <>
@@ -188,6 +230,7 @@ export default async function DashboardPage({
                 </Link>
               </Button>
             )}
+            <CustomizeDashboard tabs={customize} />
           </>
         }
       />

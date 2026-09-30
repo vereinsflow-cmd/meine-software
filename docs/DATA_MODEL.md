@@ -69,7 +69,7 @@ erDiagram
 | `Club`           | Der Mandant: Name, Kennung (`slug`), Status, Einstellungen (JSON, u. a. Aufbewahrungsfristen), Kontaktdaten, Vereinslogo (`logo*`: Speicherschlüssel, Typ, Größe, Prüfsumme, Zeitpunkt) |
 | `Role`           | Rolle eines Vereins (Standardrollen und – vorbereitet – eigene)                                                                                                                         |
 | `RolePermission` | Recht einer Rolle **mit Reichweite** (`CLUB`, `DEPARTMENT`, `OWN`)                                                                                                                      |
-| `ClubMembership` | Verbindet Benutzer, Verein und Rolle; Status (aktiv/gesperrt)                                                                                                                           |
+| `ClubMembership` | Verbindet Benutzer, Verein und Rolle; Status (aktiv/gesperrt); eigene Anordnung des Dashboards (`dashboardLayout`, JSON, leer = Standard)                                               |
 | `Invitation`     | Einladung per Link (Token als Hash), höchstens eine offene je E-Mail und Verein                                                                                                         |
 
 ### Mitglieder

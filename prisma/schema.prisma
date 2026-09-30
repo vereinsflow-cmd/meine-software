@@ -377,14 +377,16 @@ model RolePermission {
 
 /// Zugehörigkeit eines Benutzers zu einem Verein (ein Benutzer kann mehreren Vereinen angehören).
 model ClubMembership {
-  id        String           @id @default(uuid(7))
-  clubId    String
-  userId    String
-  roleId    String
-  status    MembershipStatus @default(ACTIVE)
-  joinedAt  DateTime         @default(now()) @db.Timestamptz(3)
-  createdAt DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime         @updatedAt @db.Timestamptz(3)
+  id              String           @id @default(uuid(7))
+  clubId          String
+  userId          String
+  roleId          String
+  status          MembershipStatus @default(ACTIVE)
+  joinedAt        DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
+  /// Eigene Anordnung des Dashboards (Karten je Reiter: Reihenfolge, ausgeblendet); leer = Standard der Rolle.
+  dashboardLayout Json?
 
   club   Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)

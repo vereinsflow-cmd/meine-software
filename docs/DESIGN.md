@@ -15,6 +15,8 @@ Kurzfassung der Gestaltungsentscheidungen, damit neue Seiten zum Rest passen. Di
 
 Ruhe vor Vollständigkeit: Zuerst kommt, was man braucht, der Rest ist einen Klick entfernt.
 
+- **Selbst einstellbar** (seit 30.09.2026, `modules/dashboard/layout-prefs.ts`, `components/customize-dashboard.tsx`): Knopf „Anpassen“ im Kopf öffnet „Dashboard anpassen“ – je Reiter jede Karte ein- oder ausblenden (Kästchen) und mit „nach oben“/„nach unten“ verschieben (auch per Tastatur, Screenreader hört die neue Stelle). Gespeichert je Person und Verein (`ClubMembership.dashboardLayout`), also auf allen Geräten gleich; „Standard wiederherstellen“ führt zur Ansicht der Rolle zurück. Welche Karten es gibt, entscheidet weiter die Rolle; neue Karten (etwa nach einem neuen Recht) erscheinen am Ende. Aufeinanderfolgende Karten derselben Gruppe stehen unter einer Überschrift („Für dich“); ohne eigene Einstellung sieht alles aus wie zuvor. Ist ein Reiter leer, steht dort „Alle Karten ausgeblendet“. Geprüft in `tests/e2e/dashboard-anpassen.spec.ts`, `tests/integration/dashboard-layout.test.ts`, `tests/unit/dashboard-layout.test.ts`.
+
 - **Vier Reiter statt einer langen Seite** (`modules/dashboard/tabs.ts`, `components/dashboard-tabs.tsx`): Die Aufteilung folgt den vorhandenen Inhalten und den Bereichen der Anwendung.
 
   | Reiter                   | Inhalt                                                                                              | Warum dort                                                                                                                       |
