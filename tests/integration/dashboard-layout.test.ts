@@ -54,3 +54,17 @@ describe("Dashboard selbst einstellen (gespeichert je Person und Verein)", () =>
     expect(await getDashboardLayout(ctx)).toBeNull();
   });
 });
+
+describe("Erste Schritte (Dashboard)", () => {
+  it("nur für den Vereinsadministrator; verschwindet nicht von allein, solange etwas offen ist", async () => {
+    const { getOnboarding } = await import("@/modules/dashboard/onboarding");
+    const club = await createClub("Startverein");
+    const admin = await addUserToClub(club, "CLUB_ADMIN");
+    const member = await addUserToClub(club, "MEMBER");
+    const steps = await getOnboarding(await contextFor(admin.user.id, club.id));
+    expect(steps?.map((s) => s.id)).toContain("logo");
+    expect(steps?.find((s) => s.id === "vorstand")?.done).toBe(true); // zwei aktive Konten
+    expect(steps?.find((s) => s.id === "termin")?.done).toBe(false);
+    expect(await getOnboarding(await contextFor(member.user.id, club.id))).toBeNull();
+  });
+});

@@ -20,6 +20,7 @@ export interface DashboardBlock {
 /** Alle Karten je Reiter in der Standard-Reihenfolge – so sieht das Dashboard ohne eigene Einstellung aus. */
 export const DASHBOARD_BLOCKS: Record<DashboardTabId, readonly DashboardBlock[]> = {
   uebersicht: [
+    { id: "erste-schritte", label: "Erste Schritte" },
     { id: "kennzahlen", label: "Kennzahlen" },
     { id: "zahlungen", label: "Offene Zahlungen", group: "finanzen" },
     { id: "aufgaben", label: "Meine Aufgaben", group: "fuer-dich" },

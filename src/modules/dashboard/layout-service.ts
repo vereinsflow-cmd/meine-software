@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import type { TenantContext } from "@/server/tenancy/context-core";
 import { parseDashboardLayout, type DashboardLayout } from "./layout-prefs";
+import type { DashboardTabId } from "./tabs";
 
 /** Eigene Anordnung des Dashboards (je Person und Verein); `null` = Standard-Ansicht der Rolle. */
 export async function getDashboardLayout(ctx: TenantContext): Promise<DashboardLayout | null> {
@@ -9,6 +10,21 @@ export async function getDashboardLayout(ctx: TenantContext): Promise<DashboardL
     select: { dashboardLayout: true },
   });
   return parseDashboardLayout(row?.dashboardLayout ?? null);
+}
+
+/** Blendet eine Karte in der eigenen Einstellung aus (z. B. „Erste Schritte“ per Knopf auf der Karte). */
+export async function hideDashboardBlock(
+  ctx: TenantContext,
+  tab: DashboardTabId,
+  block: string,
+): Promise<void> {
+  const layout = (await getDashboardLayout(ctx)) ?? { v: 1, tabs: {} };
+  const prefs = layout.tabs[tab] ?? { order: [], hidden: [] };
+  const next = parseDashboardLayout({
+    ...layout,
+    tabs: { ...layout.tabs, [tab]: { ...prefs, hidden: [...prefs.hidden, block] } },
+  });
+  await saveDashboardLayout(ctx, next);
 }
 
 /**
