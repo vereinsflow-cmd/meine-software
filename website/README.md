@@ -139,6 +139,12 @@ Hinweise zu den Aufnahmen:
 - Die Telefonbilder gibt es genau in den Breiten, in denen sie auf der Seite stehen (je Pixeldichte eine Datei), damit der
   Browser sie Pixel für Pixel zeichnet und die kleine Schrift scharf bleibt. Wer die Größe eines Handys in `site.css` ändert,
   gleicht die Breiten im Skript (`PHONE.widths` bzw. `widths` am Bild) und `srcset`/`sizes` im HTML an.
+- Nach neuen Aufnahmen zwei Dinge nachziehen: (1) Die Bildfolgen melden `Positionen:` (wo Knöpfe und Felder liegen) – diese
+  Werte in `LIVE_SCENES` in `assets/js/site.js` übernehmen, sonst klickt der Mauszeiger daneben, wenn sich die Oberfläche
+  verschoben hat (danach `site.js?v=` erhöhen). (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
+  Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst noch die alten.
+- Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
+  `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`
 - Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo. Parallel laufende E2E-Tests der Anwendung nicht
   stören: Aufnahme und Tests belasten denselben Rechner.
 
