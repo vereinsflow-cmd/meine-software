@@ -85,7 +85,7 @@ export default async function DashboardPage({
   // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
   const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
     uebersicht: {
-      // Nur für den Vereinsadministrator, solange noch etwas offen ist.
+      // „Erste Schritte“ nur für den Vereinsadministrator, solange noch etwas offen ist.
       ...(onboarding ? { "erste-schritte": <OnboardingCard steps={onboarding} /> } : {}),
       kennzahlen: (
         <KpiCarousel>
