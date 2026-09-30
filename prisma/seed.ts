@@ -82,6 +82,7 @@ async function main() {
   // Verein 1: TSV Musterstadt (Hauptdemo)
   // ---------------------------------------------------------------------------------------------
   const { club, roleIds } = await provisionClub({
+    setupCompleted: true,
     name: "TSV Musterstadt 1898 e.V.",
     slug: DEMO_SLUG,
     contactEmail: "info@tsv-musterstadt.example",
@@ -882,6 +883,7 @@ async function main() {
   // Verein 2: zeigt die Mandantentrennung (eigene Daten, kein Zugriff auf Verein 1)
   // ---------------------------------------------------------------------------------------------
   const other = await provisionClub({
+    setupCompleted: true,
     name: "Anderer Verein e.V.",
     slug: OTHER_SLUG,
     contactEmail: "kontakt@anderer-verein.example",

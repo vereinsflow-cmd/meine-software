@@ -19,6 +19,8 @@ const PUBLIC_PATHS = [
   "/passwort-zuruecksetzen",
   "/impressum",
   "/datenschutzerklaerung",
+  // Ersteinrichtung der leeren lokalen Version – die Seite selbst prüft, ob sie noch offen ist (sonst → Anmeldung).
+  "/einrichten",
 ];
 // „/beitreten/<Schlüssel>“: Antrag „Mitglied werden“ über den QR-Code des Vereins – gerade für Menschen ohne Konto.
 const PUBLIC_PREFIXES = ["/einladung/", "/beitreten/"];

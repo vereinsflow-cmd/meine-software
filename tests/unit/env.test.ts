@@ -60,6 +60,8 @@ describe("Konfiguration (parseEnv)", () => {
       expect(() => parseEnv({ ...production, APP_URL: "http://verein.example" })).toThrow(/https/);
       expect(() => parseEnv({ ...production, MAIL_TRANSPORT: "file" })).toThrow(/MAIL_TRANSPORT/);
       expect(() => parseEnv({ ...production, MAIL_TRANSPORT: "log" })).toThrow(/MAIL_TRANSPORT/);
+      // Die Ersteinrichtung der leeren Version („wer zuerst kommt“) gibt es nur lokal
+      expect(() => parseEnv({ ...production, FIRST_RUN_SETUP: "true" })).toThrow(/FIRST_RUN_SETUP/);
     });
   });
 });

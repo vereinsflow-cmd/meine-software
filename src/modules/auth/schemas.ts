@@ -5,14 +5,14 @@ import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/password-policy"
  * Eingabe-Schemas der Anmelde-Seiten. Sie werden im Browser (Sofort-Feedback) UND auf dem Server
  * (verbindliche Prüfung) verwendet. Die detaillierten Passwortregeln prüft der Server.
  */
-const email = z
+export const emailSchema = z
   .string()
   .trim()
   .min(1, "Bitte gib deine E-Mail-Adresse ein.")
   .max(254, "Die E-Mail-Adresse ist zu lang.")
   .pipe(z.email("Bitte gib eine gültige E-Mail-Adresse ein."));
 
-const newPassword = z
+export const newPasswordSchema = z
   .string()
   .min(
     PASSWORD_MIN_LENGTH,
@@ -31,7 +31,7 @@ export const personName = (label: string) =>
     .max(100, `${label[0]?.toUpperCase()}${label.slice(1)} ist zu lang.`);
 
 export const loginSchema = z.object({
-  email,
+  email: emailSchema,
   password: z
     .string()
     .min(1, "Bitte gib dein Passwort ein.")
@@ -40,13 +40,13 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.input<typeof loginSchema>;
 
-export const forgotPasswordSchema = z.object({ email });
+export const forgotPasswordSchema = z.object({ email: emailSchema });
 export type ForgotPasswordInput = z.input<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(10).max(200),
-    password: newPassword,
+    password: newPasswordSchema,
     passwordRepeat: z.string(),
   })
   .refine((data) => data.password === data.passwordRepeat, {
@@ -60,7 +60,7 @@ export const acceptInvitationSchema = z
     token: z.string().min(10).max(200),
     firstName: personName("deinen Vornamen"),
     lastName: personName("deinen Nachnamen"),
-    password: newPassword,
+    password: newPasswordSchema,
     passwordRepeat: z.string(),
     acceptTerms: z
       .boolean()
@@ -80,7 +80,7 @@ export const acceptExistingInvitationSchema = z.object({ token: z.string().min(1
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Bitte gib dein aktuelles Passwort ein."),
-    newPassword,
+    newPassword: newPasswordSchema,
     newPasswordRepeat: z.string(),
   })
   .refine((data) => data.newPassword === data.newPasswordRepeat, {

@@ -574,6 +574,18 @@ export const FAQ: readonly FaqSection[] = [
     requires: "club:update",
     items: [
       {
+        id: "verein-einrichten",
+        question: "Wie richte ich unseren Verein Schritt für Schritt ein?",
+        steps: [
+          "Öffne „Verein einrichten“ – bei einem neuen Verein über den Hinweis „Einrichtung fortsetzen“ oben auf jeder Seite, sonst über „Vereinseinstellungen“ → „Einrichtungs-Assistent“.",
+          "Gehe die sechs Schritte durch: Vereinsdaten, Logo, Abteilungen, Mitglieder, Vorstand & Zugänge und Abschluss. Mit „Weiter“ und „Zurück“ wechselst du; erledigte Schritte bekommen einen Haken.",
+          "Zum Schluss klickst du auf „Einrichtung abschließen“ – dann verschwindet der Hinweis.",
+        ],
+        tip: "Jeder Schritt lässt sich überspringen und später nachholen. Was du auf den normalen Seiten anlegst (z. B. einen Mitglieder-Import), zählt im Assistenten genauso.",
+        link: { href: "/einrichtung", label: "Zum Assistenten" },
+        keywords: "assistent einrichtung neu start anfang schritt wizard",
+      },
+      {
         id: "einstellungen",
         question: "Wo ändere ich Vereinsdaten und Aufbewahrungsfristen?",
         answer: [

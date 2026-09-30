@@ -11,6 +11,8 @@ import { SearchProvider } from "@/components/search/search-provider";
 import { SearchTrigger } from "@/components/search/search-trigger";
 import { clubLogoUrl } from "@/lib/club-logo";
 import { countUnread } from "@/modules/notifications/service";
+import { SetupBanner } from "@/modules/setup/components/setup-banner";
+import { isSetupPending } from "@/modules/setup/service";
 import { getStaticSearchEntries } from "@/modules/search/service";
 import { getTaskStats } from "@/modules/tasks/service";
 import { env } from "@/server/env";
@@ -24,10 +26,12 @@ import { listUserClubs } from "@/server/tenancy/clubs";
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requirePageContext();
-  const [clubs, unread, taskStats] = await Promise.all([
+  const [clubs, unread, taskStats, setupPending] = await Promise.all([
     listUserClubs(ctx.userId),
     countUnread(ctx),
     can(ctx, "tasks:read") ? getTaskStats(ctx) : Promise.resolve(null),
+    // Ohne Hinweis weiter, falls der laufende Server die neue Spalte noch nicht kennt (erst nach einem Neustart).
+    isSetupPending(ctx).catch(() => false),
   ]);
   const groups = getNavigation(ctx, {
     isPlatformAdmin: ctx.user.isPlatformAdmin,
@@ -61,6 +65,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </div>
           </header>
           <main id="inhalt" className="mx-auto w-full max-w-[96rem] flex-1 p-4 sm:p-6 xl:p-8">
+            {setupPending && <SetupBanner />}
             {children}
           </main>
         </div>

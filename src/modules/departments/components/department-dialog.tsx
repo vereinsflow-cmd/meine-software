@@ -38,10 +38,12 @@ function DepartmentForm({
   id,
   defaults,
   onDone,
+  stayOnPage = false,
 }: {
   id?: string;
   defaults: DepartmentFormInput;
   onDone: () => void;
+  stayOnPage?: boolean;
 }) {
   const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
@@ -51,7 +53,7 @@ function DepartmentForm({
     successMessage: id ? "Abteilung gespeichert." : "Abteilung angelegt.",
     onSuccess: (data) => {
       onDone();
-      if (!id && data && typeof data === "object" && "id" in data)
+      if (!id && !stayOnPage && data && typeof data === "object" && "id" in data)
         router.push(`/abteilungen/${(data as { id: string }).id}`);
       else router.refresh();
     },
@@ -76,8 +78,11 @@ function DepartmentForm({
 
 export function DepartmentDialog({
   department,
+  stayOnPage,
 }: {
   department?: { id: string; name: string; description: string | null; color: string | null };
+  /** Nach dem Anlegen auf der Seite bleiben (Assistent „Verein einrichten“) statt zur neuen Abteilung zu wechseln. */
+  stayOnPage?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -109,6 +114,7 @@ export function DepartmentDialog({
             color: department?.color ?? "",
           }}
           onDone={() => setOpen(false)}
+          stayOnPage={stayOnPage}
         />
       </DialogContent>
     </Dialog>

@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { RocketIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { ClubLogoCard } from "@/modules/clubs/components/logo-card";
@@ -16,7 +19,17 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Vereinseinstellungen" description={`Kürzel: ${settings.slug}`} />
+      <PageHeader
+        title="Vereinseinstellungen"
+        description={`Kürzel: ${settings.slug}`}
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/einrichtung">
+              <RocketIcon /> Einrichtungs-Assistent
+            </Link>
+          </Button>
+        }
+      />
       {/* Höchstens 56 rem wie alle Formulare – auch die Logo-Karte, damit beide Karten gleich breit sind. */}
       <div className="grid max-w-4xl gap-6">
         {/* Eigenes Formular für das Logo (Datei-Upload), getrennt von den übrigen Vereinsdaten */}
