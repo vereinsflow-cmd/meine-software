@@ -98,8 +98,17 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
   await expect(dialog).toHaveCount(0);
 
   // Das nächste Dokument ist wieder ein ganz normales: kein Häkchen „Rechnung“, Zugriff wieder „Alle Mitglieder“.
-  await page.getByRole("button", { name: "Dokument hochladen" }).click();
-  await expect(dialog.getByRole("checkbox", { name: /Das ist eine Rechnung/ })).not.toBeChecked();
+  // Nach dem Hochladen lädt die Seite ihre Liste neu – ein Klick mitten hinein kann verloren gehen (in der CI geschehen),
+  // darum erst abwarten und notfalls noch einmal öffnen.
+  await page.waitForLoadState("networkidle");
+  const invoiceCheckbox = dialog.getByRole("checkbox", { name: /Das ist eine Rechnung/ });
+  await expect(async () => {
+    if (!(await dialog.isVisible())) {
+      await page.getByRole("button", { name: "Dokument hochladen" }).click({ timeout: 2000 });
+    }
+    await expect(invoiceCheckbox).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await expect(invoiceCheckbox).not.toBeChecked();
   await expect(dialog.getByLabel(/^Wer darf es sehen/)).toHaveValue("ALL_MEMBERS");
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
