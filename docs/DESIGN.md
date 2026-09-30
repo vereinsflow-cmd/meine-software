@@ -124,10 +124,20 @@ Die gemeinsamen Feldbausteine (`TextField`, `TextareaField`, `SelectField`, `Che
 - **Tippflächen:** Der Text eines Checklisten-Punkts beschriftet sein Kästchen (ein Tipp auf den Text hakt ab); das „ד zum Austragen eines Helfers hat 32 px Trefferfläche, die Meldung bietet „Rückgängig“; „Entfernen“ steht 12 px neben der Statusauswahl der Teilnehmer; in der Hilfe öffnet die ganze Fragezeile.
 - **Blättern unter den Dashboard-Reitern:** Unter 640 px untereinander über die volle Breite, „Weiter“ oben.
 
+## App-Ansicht und sichere Bereiche
+
+VereinsFlow lässt sich als App öffnen: als Android-App (Trusted Web Activity, lädt dieselbe Adresse) und auf dem iPhone über „Zum Home-Bildschirm“ (seit 29.09.2026). Das Manifest (`src/app/manifest.ts`) steht dafür auf `display: "standalone"` – eigenes Fenster ohne Adresszeile, Start über `/` (leitet angemeldet zum Dashboard, sonst zur Anmeldung). Einen Zurück-Knopf des Browsers braucht es dort nicht: Detail- und Formularseiten haben ihren **Zurück-Link** (siehe „Seitenrahmen“), Android die Zurück-Geste. Im normalen Browser-Tab sieht und verhält sich alles wie vorher; die Hilfe `detectAppMode` (`src/lib/app-mode.ts`) erkennt die App-Ansicht für spätere Anpassungen, ändert aber noch nichts.
+
+- **Sichere Bereiche:** `viewport-fit=cover` (`src/app/layout.tsx`) lässt die Seite bis an den Rand reichen; was nicht unter Statusleiste, Kamera-Aussparung oder Home-Indikator liegen darf, rückt um `--safe-top/-right/-bottom/-left` ein (`globals.css`, aus `env(safe-area-inset-*)`). Im Browser und am Desktop sind die Werte 0 – deshalb kein sichtbarer Unterschied.
+- **Wo:** Die Kopfzeile reicht mit ihrer Fläche unter die Statusleiste, ihr Inhalt beginnt darunter (`--app-header-offset` = Kopfzeile + oberer Bereich; darunter kleben die Dashboard-Reiter, damit rechnet die Nachrichten-Seite ihre Höhe). Unten hält der Seitenrahmen den Home-Indikator frei, seitlich (Handy quer) der `body` den Rand unter der Aussparung – in der Farbe des Seitengrunds, wie es der Browser ohne `cover` zeigt. Das Menü (Sheet) rückt seinen Inhalt je nach anliegender Seite ein, sein Schließen-Knopf mit; Dialoge stehen mittig **im sicheren Bereich** und werden nie höher als dieser; die Suche am Handy beginnt unter der Statusleiste; Meldungen (Toaster) halten Sonners Abstand (24 px, am Handy 16 px) plus sicheren Bereich. Anmelde-, Rechts-, System- und „Nicht gefunden“-Seiten rücken oben und unten ein.
+- **Offline-Seite** (`public/offline.html`): erscheint in der App statt der Fehlerseite des Browsers, wenn eine Seite ohne Netz nicht lädt. Aufbau wie „Seite nicht gefunden“ – Logo, Karte mit WLAN-aus-Symbol, „Keine Verbindung“, Hinweis, dass Vereinsdaten aus Datenschutzgründen nicht auf dem Gerät liegen, Knopf „Erneut versuchen“ (lädt dieselbe Adresse, ohne Skript). Stile, Logo und Symbol stehen in der Datei selbst (hell und dunkel nach Systemeinstellung), damit sie ganz ohne Netz funktioniert.
+- Geprüft in `tests/e2e/app-ansicht.mobil.spec.ts` (Chromium bildet Statusleiste und Home-Indikator nach: Kopfzeile, Menü, Suche, Dialog, Meldung, Höhe der Nachrichten-Seite; ohne sichere Bereiche unverändert 64 px Kopfzeile) und `tests/e2e/app-ansicht.spec.ts` (Offline-Seite, auch mit axe).
+
 ## Leere Ergebnisse und Fehlerseiten
 
 - **Leeres Suchergebnis** nennt den Begriff („Keine Mitglieder zu „zzzz“ gefunden“) und bietet einen nächsten Schritt: in der Mitgliederliste „Im Archiv suchen“ (dieselbe Suche im Archiv – Ausgetretene stehen dort) und „Suche zurücksetzen“; im Protokoll und bei den Dokumenten „Filter zurücksetzen“ (seit 28.09.2026).
 - **Seite nicht gefunden** (`src/app/not-found.tsx`, ohne Menü): VereinsFlow-Logo über der Karte, Browser-Reiter „Seite nicht gefunden · VereinsFlow“. Ein unbekanntes oder fremdes Mitglied zeigt „Mitglied nicht gefunden“ mit „Zur Mitgliederliste“ (`(app)/mitglieder/[id]/not-found.tsx`).
+- **Anmelde- und Rechtsseiten** (ohne Menü): Fußzeile mit „Impressum“, „Datenschutz“ bzw. „Datenschutzerklärung“ und „Konto löschen“ (seit 30.09.2026) – auf schmalen Bildschirmen umbrechend statt überlaufend. „Konto löschen“ (`(legal)/konto-loeschen`) ist aufgebaut wie die Rechtstexte: nummerierte Abschnitte, Schritte als Liste mit den Beschriftungen der Anwendung („Konto löschen …“, „Löschung beantragen“), App und Entwickler oben als Wertepaare (`DescriptionList`).
 
 ## Seitenrahmen, Umschalter, Reiter
 
@@ -215,6 +225,16 @@ Eingeführt am 27.09.2026 als erster Baustein der Finanzen: „Nur berechtigte M
 - **Texte:** „fällig in N Tagen“, „heute fällig“, „morgen fällig“, „seit gestern überfällig“, „seit N Tagen überfällig“ (`dueText`), Tage immer am Berliner Kalendertag gezählt.
 - **Protokoll:** „Rechnung erfasst“, „Rechnung geändert“ (Betrag, Fälligkeit, Zahlungsstand als Änderungsdetails), „Rechnung als bezahlt markiert“, „Rechnung wieder offen“ – eigener Bereich „Finanzen“ im Änderungsprotokoll.
 - Geprüft in `tests/unit/invoices.test.ts` (Beträge, Namen, Texte, Eingaben), `tests/integration/invoices.test.ts` (Rechte, Mandantentrennung, Summen, Namensfolge, Protokoll) und `tests/e2e/rechnungen.spec.ts` (Karte je Rolle, Hochladen bis „Bezahlt“ und „Rückgängig“, Filter, Bearbeiten). Die Demo-Daten enthalten drei Rechnungen (zwei offen, eine davon überfällig; eine bezahlt).
+
+## Push-Benachrichtigungen im Profil
+
+Im Profil, Abschnitt „Benachrichtigungen“, steht unter dem E-Mail-Schalter **„Push-Benachrichtigungen auf diesem Gerät“**
+(`PushNotificationsSwitch`, `src/modules/profile/components/profile-forms.tsx`). Jedes Gerät entscheidet selbst; ein Klick auf den Schalter ist
+der einzige Weg, die Erlaubnisabfrage des Browsers auszulösen (nie beim Laden der Seite). Der Zustand steht als Text unter dem Schalter
+(`role="status"`, per `aria-describedby` mit dem Schalter verbunden, Schalter bei allem außer „aus“/„an“ deaktiviert):
+„Nicht unterstützt“, „Auf dem iPhone und iPad zuerst zum Home-Bildschirm hinzufügen“, „Im Browser blockiert – in den Einstellungen erlauben“,
+„Aus“, „An“; ist Push auf dem Server nicht eingerichtet, sagt das der Text. Erfolg und Fehler melden Toasts. Der Hinweistext nennt, dass die Meldung
+nie Namen oder Nachrichtentext enthält. Geprüft in `tests/e2e/push.spec.ts` (Zustände, Einschalten mit erteilter Erlaubnis, Ausschalten).
 
 ## Ansichten prüfen
 

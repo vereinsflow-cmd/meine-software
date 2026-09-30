@@ -124,7 +124,8 @@ Es gibt bewusst **keinen** dauerhaft laufenden Worker. Ein Cron-Aufruf (alle 15 
 | `reminders` | Erinnerungen 24 Stunden vor Schichten und Veranstaltungen (einmalig je Person, idempotent)                        |
 | `privacy`   | Fällige Löschanträge nach Ablauf der Bedenkzeit ausführen                                                         |
 | `mail`      | E-Mail-Warteschlange abarbeiten, Wiederholung nach Fehlern                                                        |
-| `cleanup`   | Abgelaufene Sitzungen, Rate-Limit-Zähler, Token, alte Benachrichtigungen und widerrufene Kalender-Links entfernen |
+| `push`      | Push-Warteschlange abarbeiten (Web Push, VAPID), erloschene Abos löschen, Wiederholung bei 429/5xx bis 2 Stunden  |
+| `cleanup`   | Abgelaufene Sitzungen, Rate-Limit-Zähler, Token, alte Benachrichtigungen, widerrufene Kalender-Links und tote Push-Geräte entfernen |
 | `retention` | Aufbewahrungsfristen anwenden (Papierkorb, Ausgetretene, Änderungsprotokoll, gelöschte Dokumente)                 |
 
 Jeder Job läuft unter einer **Datenbank-Sperre** (`withJobLock`): Startet Cron versehentlich zweimal oder laufen zwei Instanzen,
@@ -158,6 +159,15 @@ Mail-Transport ungleich `smtp`. `next build` benötigt keine Konfiguration – d
 
 - **Neuer Fachbereich:** `src/modules/<name>/` mit `service.ts`, `actions.ts`, `schemas.ts`, `components/`; Rechte im Katalog ergänzen;
   Modelle im Schema mit Eintrag in `MODEL_SCOPE`; Aktionen in `audit-labels.ts` benennen.
-- **Finanzen, Push, mobile Apps:** Fachdienste kennen weder Next.js noch HTML; ein zukünftiger API-Zugang (z. B. für eine App) ruft
+- **App für Android und iPhone:** Die App ist die Web-Anwendung selbst (Trusted Web Activity bzw. Home-Bildschirm) – dieselben Seiten,
+  derselbe Kontext, keine eigene Schnittstelle. Dazu gehören Manifest (`src/app/manifest.ts`), Service Worker (`public/sw.js`, registriert
+  von `components/layout/service-worker.tsx`), Offline-Seite (`public/offline.html`), Digital Asset Links
+  (`app/.well-known/assetlinks.json/route.ts` mit `src/server/asset-links.ts`), die App-Erkennung `src/lib/app-mode.ts` und die für den
+  Play Store verlangte öffentliche Anleitung zur Kontolöschung (`app/(legal)/konto-loeschen/page.tsx`, beschreibt
+  `src/server/privacy/deletion.ts`). Push ist ein weiterer Versandkanal von `Notification` (nicht ein zweites System): `notifyUsers` merkt `pushStatus = PENDING` vor, wenn die Person
+  ein Gerät angemeldet hat; der Job `push` (`server/jobs/push-queue.ts`, Versand über `server/push/web-push.ts`) sendet an alle Geräte der Person, der
+  Inhalt entsteht erst dort aus dem Typ (`modules/notifications/push-payload.ts`, keine Personendaten). Abos (`PushSubscription`, `server/push/subscriptions.ts`, Anmelden und
+  Abmelden unter `app/api/push/`, Browser-Seite `lib/push-client.ts`) zeigt der Service Worker (Abschnitt dafür am Ende von `sw.js`) an.
+- **Finanzen, native Apps:** Fachdienste kennen weder Next.js noch HTML; ein zukünftiger API-Zugang (z. B. für eine native App) ruft
   dieselben Dienste mit demselben Kontext auf. Einzelheiten: [ROADMAP.md](ROADMAP.md).
 - **Virenscan:** `registerUploadScanner(...)` in `src/server/storage/scan.ts`.

@@ -11,9 +11,11 @@ import {
   ChangePasswordForm,
   EmailNotificationsSwitch,
   ProfileNameForm,
+  PushNotificationsSwitch,
   SessionList,
 } from "@/modules/profile/components/profile-forms";
 import { getCurrentSession } from "@/server/auth/session";
+import { getPublicPushKey } from "@/server/push/web-push";
 import { getOwnAccount, listOwnSessions } from "@/server/auth/profile";
 import { listUserClubs } from "@/server/tenancy/clubs";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -120,7 +122,10 @@ export default async function ProfilePage() {
           icon={<AREA_ICON.benachrichtigungen />}
           title="Benachrichtigungen"
         >
-          <EmailNotificationsSwitch enabled={account.emailNotifications} />
+          <div className="grid gap-5">
+            <EmailNotificationsSwitch enabled={account.emailNotifications} />
+            <PushNotificationsSwitch publicKey={getPublicPushKey()} />
+          </div>
         </Section>
 
         <Section

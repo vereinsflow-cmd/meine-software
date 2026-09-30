@@ -13,8 +13,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const hasClub = (await getTenantContext()) !== null;
 
   return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background px-4 sm:px-6">
+    // Sichere Bereiche der App-Ansicht (Statusleiste, Home-Indikator) wie im Vereinsbereich; im Browser 0.
+    <div className="min-h-dvh pb-(--safe-bottom)">
+      <header className="sticky top-0 z-30 flex h-[calc(3.5rem+var(--safe-top))] items-center gap-3 border-b bg-background px-4 pt-(--safe-top) sm:px-6">
         <Brand href="/system" />
         <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
           Systemadministration

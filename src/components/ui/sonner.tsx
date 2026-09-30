@@ -10,6 +10,19 @@ import {
   TriangleAlertIcon,
 } from "lucide-react";
 
+/**
+ * Abstand der Meldungen zum Bildschirmrand: der Sonner-Standard (24 px, am Handy 16 px) plus der sichere Bereich der
+ * App-Ansicht (Statusleiste, Kamera-Aussparung, Home-Indikator – siehe `--safe-*` in globals.css; im Browser 0).
+ */
+function edgeOffset(base: string) {
+  return {
+    top: `calc(${base} + var(--safe-top))`,
+    right: `calc(${base} + var(--safe-right))`,
+    bottom: `calc(${base} + var(--safe-bottom))`,
+    left: `calc(${base} + var(--safe-left))`,
+  };
+}
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
 
@@ -37,6 +50,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
           toast: "cn-toast",
         },
       }}
+      offset={edgeOffset("24px")}
+      mobileOffset={edgeOffset("16px")}
       {...props}
     />
   );

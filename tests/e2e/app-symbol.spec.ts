@@ -14,12 +14,14 @@ test.describe("App-Symbol", () => {
     await expect(head.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveCount(1);
     await expect(head.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("sizes", "180x180");
     await expect(head.locator('link[rel="manifest"]')).toHaveCount(1);
-    // Name unter dem Symbol auf iPhone/iPad – ohne den Vollbild-App-Modus einzuschalten.
+    // Name unter dem Symbol auf iPhone/iPad. Die App-Ansicht schaltet allein das Manifest ein (`display: "standalone"`) –
+    // keine zweite, ältere Angabe daneben, die ihm widersprechen könnte.
     await expect(head.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute(
       "content",
       "VereinsFlow",
     );
     await expect(head.locator('meta[name="mobile-web-app-capable"]')).toHaveCount(0);
+    await expect(head.locator('meta[name="apple-mobile-web-app-capable"]')).toHaveCount(0);
   });
 
   test("Symbole und Manifest sind ohne Anmeldung abrufbar", async ({ request }) => {
@@ -41,12 +43,16 @@ test.describe("App-Symbol", () => {
     const manifest = await get("/manifest.webmanifest");
     expect(manifest.status()).toBe(200);
     const data = (await manifest.json()) as {
+      id: string;
       name: string;
       display: string;
+      start_url: string;
+      scope: string;
       icons: { src: string; purpose: string }[];
     };
     expect(data.name).toBe("VereinsFlow");
-    expect(data.display).toBe("browser");
+    // Eigenes App-Fenster (Android-App, Home-Bildschirm); Start über „/“, das je nach Anmeldung weiterleitet.
+    expect(data).toMatchObject({ display: "standalone", id: "/", start_url: "/", scope: "/" });
     expect(data.icons.map((icon) => icon.purpose)).toEqual(["any", "any", "maskable"]);
     for (const icon of data.icons) {
       const response = await get(icon.src);

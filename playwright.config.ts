@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { generateKeyPairSync } from "node:crypto";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -11,6 +12,24 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const PORT = 3100;
 const channel = process.env.PLAYWRIGHT_CHANNEL || undefined;
+
+/**
+ * Web-Push-Schlüsselpaar nur für diesen Testlauf, bei jedem Laden neu erzeugt – ein privater Schlüssel gehört nicht ins
+ * Repository, auch kein Testschlüssel. Format wie `npx web-push generate-vapid-keys`: öffentlicher Schlüssel als unkomprimierter
+ * P-256-Punkt (0x04 ‖ x ‖ y), privater Schlüssel als d, beides base64url.
+ */
+function testVapidKeys(): { publicKey: string; privateKey: string } {
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const pub = publicKey.export({ format: "jwk" });
+  const priv = privateKey.export({ format: "jwk" });
+  const point = Buffer.concat([
+    Buffer.from([4]),
+    Buffer.from(pub.x!, "base64url"),
+    Buffer.from(pub.y!, "base64url"),
+  ]);
+  return { publicKey: point.toString("base64url"), privateKey: priv.d! };
+}
+const vapid = testVapidKeys();
 export const E2E_DATABASE = "vf_e2e";
 const E2E_STORAGE_DIR = "./.local/e2e-storage";
 
@@ -64,6 +83,16 @@ export default defineConfig({
       NEXT_DIST_DIR: ".next-e2e",
       NEXT_TELEMETRY_DISABLED: "1",
       SESSION_IDLE_MINUTES: "60",
+      // Beispiel-Fingerabdruck (kein echter Schlüssel), damit tests/e2e/app-ansicht.spec.ts assetlinks.json mit Inhalt prüft.
+      ANDROID_APP_CERT_SHA256: Array.from({ length: 32 }, () => "E2").join(":"),
+      // Support-Adresse des Betreibers (Beispiel, .test ist nie zustellbar): erscheint unter „Hilfe & Support“ und auf der
+      // öffentlichen Seite „Konto löschen“ (geprüft in tests/e2e/konto-loeschen.spec.ts).
+      SUPPORT_EMAIL: "support@vereinsflow.test",
+      // Web-Push-Schlüsselpaar dieses Testlaufs (siehe testVapidKeys): schaltet den Schalter
+      // „Push-Benachrichtigungen auf diesem Gerät“ im Profil frei (geprüft in tests/e2e/push.spec.ts).
+      VAPID_PUBLIC_KEY: vapid.publicKey,
+      VAPID_PRIVATE_KEY: vapid.privateKey,
+      VAPID_SUBJECT: "mailto:support@vereinsflow.test",
     },
   },
 });

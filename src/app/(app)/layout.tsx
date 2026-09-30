@@ -44,8 +44,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Kopf fest, Navigation scrollt; die letzte Gruppe („Persönlich“ mit Hilfe & Support) bleibt unten immer sichtbar. */}
         <Sidebar groups={groups} />
 
-        <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">
+        {/* App-Ansicht: Die Kopfzeile reicht bis unter die Statusleiste (`--safe-top`), ihr Inhalt beginnt darunter; unten hält der
+            Rahmen den Home-Indikator frei (`--safe-bottom`). Im Browser sind beide 0 (siehe globals.css). */}
+        <div className="flex min-w-0 flex-col pb-(--safe-bottom)">
+          <header className="sticky top-0 z-30 flex h-(--app-header-offset) items-center gap-2 border-b bg-card/95 px-3 pt-(--safe-top) backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">
             <MobileNav
               groups={groups}
               clubName={ctx.club.name}

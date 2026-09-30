@@ -135,6 +135,14 @@ enum EmailStatus {
   FAILED
 }
 
+/// Zustellung einer Benachrichtigung als Push (wie EmailStatus): NONE = kein Push vorgesehen.
+enum PushStatus {
+  NONE
+  PENDING
+  SENT
+  FAILED
+}
+
 enum MessageStatus {
   DRAFT
   SCHEDULED
@@ -229,6 +237,7 @@ model User {
   memberships        ClubMembership[]
   sessions           Session[]
   verificationTokens VerificationToken[]
+  pushSubscriptions  PushSubscription[]
 
   @@index([deletedAt])
 }
@@ -251,6 +260,29 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+/// Web-Push-Abo eines Geräts (Browser oder installierte App) für einen Benutzer. Der Endpunkt ist eine geheime Adresse beim
+/// Push-Dienst des Browser-Herstellers: Wer sie kennt, kann Push-Nachrichten an das Gerät senden – deshalb nie protokollieren
+/// und nie an andere ausliefern.
+model PushSubscription {
+  id            String    @id @default(uuid(7))
+  userId        String
+  endpoint      String    @unique
+  /// Öffentlicher Schlüssel des Geräts (base64url) – dient der Verschlüsselung der Nachricht.
+  p256dh        String
+  /// Geheimnis des Abos (base64url).
+  auth          String
+  /// Kurze Gerätebeschreibung aus dem User-Agent (z. B. "Chrome auf Android") – nur damit Personen ihre Geräte wiedererkennen.
+  deviceLabel   String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  lastSuccessAt DateTime? @db.Timestamptz(3)
+  /// Fehlgeschlagene Zustellversuche seit dem letzten Erfolg.
+  failureCount  Int       @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -796,6 +828,10 @@ model Notification {
   dedupeKey   String?
   emailStatus EmailStatus      @default(NONE)
   emailSentAt DateTime?        @db.Timestamptz(3)
+  /// Push-Benachrichtigung (nur wenn die Person mindestens ein Gerät angemeldet hat); der Inhalt wird beim Versand aus
+  /// `type` und `linkUrl` gebildet – nie aus Titel oder Text.
+  pushStatus  PushStatus       @default(NONE)
+  pushSentAt  DateTime?        @db.Timestamptz(3)
   createdAt   DateTime         @default(now()) @db.Timestamptz(3)
 
   membership ClubMembership @relation(fields: [clubId, userId], references: [clubId, userId], onDelete: Cascade)
@@ -803,6 +839,7 @@ model Notification {
   @@unique([userId, dedupeKey])
   @@index([clubId, userId, readAt, createdAt])
   @@index([emailStatus, createdAt])
+  @@index([pushStatus, createdAt])
 }
 
 model Message {

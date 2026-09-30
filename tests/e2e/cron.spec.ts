@@ -46,6 +46,7 @@ test.describe("Cron-Endpunkt /api/cron/run", () => {
       "reminders",
       "privacy",
       "mail",
+      "push",
       "cleanup",
       "retention",
     ]);

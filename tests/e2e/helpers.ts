@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD ?? "Vereinsflow-Demo-2026!";
@@ -45,6 +45,18 @@ export async function chooseTab(page: Page, name: string): Promise<void> {
   await expect(async () => {
     await tab.click();
     await expect(tab).toHaveAttribute("aria-selected", "true", { timeout: 1500 });
+  }).toPass({ timeout: 15_000 });
+}
+
+/**
+ * Folgt einem Link und prüft, dass die Zieladresse erreicht ist. Im Entwicklungsserver geht ein Seitenwechsel gelegentlich
+ * verloren – etwa wenn der Browser gerade die Verbindung für die Live-Aktualisierung neu aufbaut. Dann wird der Klick wiederholt
+ * (nur solange die Adresse noch nicht stimmt), wie bei `chooseTab`.
+ */
+export async function followLink(page: Page, link: Locator, url: RegExp): Promise<void> {
+  await expect(async () => {
+    if (!url.test(page.url())) await link.click({ timeout: 2_000 });
+    await expect(page).toHaveURL(url, { timeout: 3_000 });
   }).toPass({ timeout: 15_000 });
 }
 

@@ -12,25 +12,26 @@ barrierefrei gebaut.
 
 ## Funktionsumfang
 
-| Bereich                            | Stand       | Kern                                                                                                                                                                                  |
-| ---------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Anmeldung, Konto, Einladungen      | fertig      | Sitzungen mit Inaktivitäts- und Höchstdauer, Passwort-Reset, Einladungen per Link, Rate-Limits, Profil und Sitzungsübersicht                                                          |
-| **Vereinslogo**                    | fertig      | Eigenes Logo je Verein neben dem Namen (Kopfzeile, Vereinswechsler, Menü, Profil, gedruckter Helferplan); PNG/JPEG/WebP bis 1 MB, Inhalts- und Größenprüfung, sonst Anfangsbuchstaben |
-| Mandanten, Rollen, Rechte          | fertig      | Superadministrator (Plattform) sowie Vereinsadmin, Vorstand, Abteilungsleiter, Helfer, Mitglied; Rechte mit Reichweite Verein / Abteilung / nur eigene Daten                          |
-| Mitglieder                         | fertig      | Anlegen, Bearbeiten, Archivieren, Papierkorb, Suche/Filter/Sortierung, CSV-Import mit Vorschau, CSV-Export, Statistik, Notizen, Einwilligungen, Änderungshistorie                     |
-| Abteilungen und Gruppen            | fertig      | Abteilungen, Gruppen, Leiter, Zuordnung von Mitgliedern                                                                                                                               |
-| Veranstaltungen                    | fertig      | Status-Ablauf, Anmeldung mit Limit und Warteliste, Duplizieren, Serientermine, Absage mit Benachrichtigung                                                                            |
-| **Helferschichten**                | fertig      | Überbuchungs- und Doppelbelegungsschutz (Datenbank-Sperren), Mindestalter, Zuweisung durch Veranstalter, Stundenerfassung, Ampel-Zustände, Druckansicht, CSV-Export, Erinnerungen     |
-| Aufgaben und Checklisten           | fertig      | Aufgaben mit Zuständigen, Fälligkeit, Priorität, Status; Checklisten je Veranstaltung                                                                                                 |
-| Kalender                           | fertig      | Monat, Woche, Tag, Liste; iCal-Export je Termin und persönlicher Kalender-Abo-Link (widerrufbar)                                                                                      |
-| Nachrichten und Benachrichtigungen | fertig      | Nachrichten an Verein, Abteilung, Teilnehmer oder Helfer; Entwürfe, Ankündigungen, Rückruf, Lesestatistik; Benachrichtigungscenter, E-Mail mit Warteschlange                          |
-| Dokumente                          | fertig      | Sicherer Upload (Positivliste, Inhaltsprüfung), Zugriffsstufen, Speicherkontingent, Download nur über geprüfte Route                                                                  |
-| **Hilfe & Support**                | fertig      | Ansprechpartner des Vereins, Meldeformular für Fehler, Fragen und Vorschläge (mit Antwort und Status), durchsuchbare Bedienungsanleitung passend zur Rolle                            |
-| Dashboard                          | fertig      | Rollenabhängige Kacheln (Mitglieder, Termine, freie Schichten, Aufgaben, Geburtstage, Benachrichtigungen)                                                                             |
-| Änderungsprotokoll                 | fertig      | Unveränderlich (Datenbank-Trigger), filterbar; sensible Werte nur als „geändert“                                                                                                      |
-| Datenschutz (DSGVO)                | fertig      | Datenexport, Löschantrag mit Bedenkzeit, Einwilligungen, Anonymisierung, Aufbewahrungsfristen je Verein                                                                               |
-| **Finanzen**                       | Platzhalter | Seite mit Roadmap – bewusst ohne Funktionen. Plan und Datenmodell: [docs/ROADMAP.md](docs/ROADMAP.md)                                                                                 |
-| Zwei-Faktor-Anmeldung (TOTP)       | geplant     | Datenfelder sind vorbereitet, die Anmeldung damit fehlt noch                                                                                                                          |
+| Bereich                            | Stand       | Kern                                                                                                                                                                                                                                                                  |
+| ---------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anmeldung, Konto, Einladungen      | fertig      | Sitzungen mit Inaktivitäts- und Höchstdauer, Passwort-Reset, Einladungen per Link, Rate-Limits, Profil und Sitzungsübersicht                                                                                                                                          |
+| **Vereinslogo**                    | fertig      | Eigenes Logo je Verein neben dem Namen (Kopfzeile, Vereinswechsler, Menü, Profil, gedruckter Helferplan); PNG/JPEG/WebP bis 1 MB, Inhalts- und Größenprüfung, sonst Anfangsbuchstaben                                                                                 |
+| Mandanten, Rollen, Rechte          | fertig      | Superadministrator (Plattform) sowie Vereinsadmin, Vorstand, Abteilungsleiter, Helfer, Mitglied; Rechte mit Reichweite Verein / Abteilung / nur eigene Daten                                                                                                          |
+| Mitglieder                         | fertig      | Anlegen, Bearbeiten, Archivieren, Papierkorb, Suche/Filter/Sortierung, CSV-Import mit Vorschau, CSV-Export, Statistik, Notizen, Einwilligungen, Änderungshistorie                                                                                                     |
+| Abteilungen und Gruppen            | fertig      | Abteilungen, Gruppen, Leiter, Zuordnung von Mitgliedern                                                                                                                                                                                                               |
+| Veranstaltungen                    | fertig      | Status-Ablauf, Anmeldung mit Limit und Warteliste, Duplizieren, Serientermine, Absage mit Benachrichtigung                                                                                                                                                            |
+| **Helferschichten**                | fertig      | Überbuchungs- und Doppelbelegungsschutz (Datenbank-Sperren), Mindestalter, Zuweisung durch Veranstalter, Stundenerfassung, Ampel-Zustände, Druckansicht, CSV-Export, Erinnerungen                                                                                     |
+| Aufgaben und Checklisten           | fertig      | Aufgaben mit Zuständigen, Fälligkeit, Priorität, Status; Checklisten je Veranstaltung                                                                                                                                                                                 |
+| Kalender                           | fertig      | Monat, Woche, Tag, Liste; iCal-Export je Termin und persönlicher Kalender-Abo-Link (widerrufbar)                                                                                                                                                                      |
+| Nachrichten und Benachrichtigungen | fertig      | Nachrichten an Verein, Abteilung, Teilnehmer oder Helfer; Entwürfe, Ankündigungen, Rückruf, Lesestatistik; Benachrichtigungscenter, E-Mail mit Warteschlange, Push aufs Gerät                                                                                                          |
+| Dokumente                          | fertig      | Sicherer Upload (Positivliste, Inhaltsprüfung), Zugriffsstufen, Speicherkontingent, Download nur über geprüfte Route                                                                                                                                                  |
+| **Hilfe & Support**                | fertig      | Ansprechpartner des Vereins, Meldeformular für Fehler, Fragen und Vorschläge (mit Antwort und Status), durchsuchbare Bedienungsanleitung passend zur Rolle                                                                                                            |
+| Dashboard                          | fertig      | Rollenabhängige Kacheln (Mitglieder, Termine, freie Schichten, Aufgaben, Geburtstage, Benachrichtigungen)                                                                                                                                                             |
+| Änderungsprotokoll                 | fertig      | Unveränderlich (Datenbank-Trigger), filterbar; sensible Werte nur als „geändert“                                                                                                                                                                                      |
+| Datenschutz (DSGVO)                | fertig      | Datenexport, Löschantrag mit Bedenkzeit, Einwilligungen, Anonymisierung, Aufbewahrungsfristen je Verein; öffentliche Anleitung „Konto löschen“ (`/konto-loeschen`, ohne Anmeldung – für Google Play)                                                                  |
+| **App für Android und iPhone**     | in Arbeit   | Installierbar mit eigenem App-Fenster (Manifest `standalone`), sichere Bereiche für Kamera-Aussparung und Home-Indikator, Offline-Seite per Service Worker (speichert keine Daten), Digital Asset Links für die Android-App, **Push-Benachrichtigungen** (Web Push, je Gerät im Profil einschaltbar; ohne Namen und Inhalte). Android-App als Projekt in [`android/`](android/README.md) (Trusted Web Activity, API 36), Veröffentlichung im Play Store und iPhone-Hülle folgen |
+| **Finanzen**                       | Platzhalter | Seite mit Roadmap – bewusst ohne Funktionen. Plan und Datenmodell: [docs/ROADMAP.md](docs/ROADMAP.md)                                                                                                                                                                 |
+| Zwei-Faktor-Anmeldung (TOTP)       | geplant     | Datenfelder sind vorbereitet, die Anmeldung damit fehlt noch                                                                                                                                                                                                          |
 
 ## Technik im Überblick
 
@@ -220,7 +221,7 @@ Architekturtest sowie eine ESLint-Regel erzwingen sie.
 - [Datenschutz (DSGVO)](docs/PRIVACY.md) – Datenarten, Fristen, Betroffenenrechte, Cookie-Konzept
 - [Betrieb](docs/OPERATIONS.md) – Produktion, Docker, Cron, Datensicherung, Reverse-Proxy
 - [Oberfläche und Gestaltung](docs/DESIGN.md) – Größen, Farben, Hervorhebungen, Seitenleiste, Ansichten prüfen
-- [Roadmap](docs/ROADMAP.md) – Finanzen, Zwei-Faktor, Push, mobile Apps, weitere Ideen
+- [Roadmap](docs/ROADMAP.md) – Finanzen, Zwei-Faktor, App für Android und iPhone mit Push, weitere Ideen
 - [Architekturentscheidungen](docs/adr/README.md)
 - [Werbe-Website](website/README.md) – Vorschau, Prüfung und Veröffentlichung der Startseite
 
@@ -237,8 +238,19 @@ Diese Punkte sind bekannt und bewusst offen – sie stehen nicht „still“ in 
   Erweiterungspunkt `registerUploadScanner` (`src/server/storage/scan.ts`) ist vorbereitet; ohne Scanner warnt der Server einmalig im Protokoll.
 - **Docker-Image** – Dockerfile und Compose-Datei für den Betrieb sind vorhanden, wurden aber in der Entwicklungsumgebung
   (ohne Docker) nicht gestartet. Bitte vor dem Produktiveinsatz einmal testen.
-- **Push-Benachrichtigungen und mobile Apps** – nicht enthalten; die Anwendung ist so aufgebaut, dass sie sich anbinden
-  lassen (siehe Roadmap).
+- **App und Push-Benachrichtigungen** – VereinsFlow lässt sich als App installieren (Android: „App installieren“, iPhone: „Zum
+  Home-Bildschirm“), zeigt ohne Netz eine Offline-Seite und schickt auf Wunsch **Push-Benachrichtigungen** (Web Push mit VAPID, kein
+  Firebase): Sie sind je Gerät im Profil einschaltbar, enthalten nie Namen oder Nachrichtentext (nur „Neue Nachricht“ und den Link) und
+  laufen erst, wenn der Betreiber `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` und `VAPID_SUBJECT` gesetzt hat. Auf dem iPhone geht Push nur für
+  die Web-App auf dem Home-Bildschirm (ab iOS 16.4). Die Android-App im Play Store (Trusted Web Activity) und eine App-Store-Hülle fürs
+  iPhone stehen noch aus. Ohne Verbindung zeigt die App bewusst keine Daten (nichts wird auf dem Gerät gespeichert). Plan:
+  [docs/ROADMAP.md](docs/ROADMAP.md), Betrieb: [docs/OPERATIONS.md](docs/OPERATIONS.md#app-ansicht-android-app-und-iphone) und
+  [Push](docs/OPERATIONS.md#push-benachrichtigungen).
+- **Konto löschen ohne Anmeldung** – Die öffentliche Seite `/konto-loeschen` erklärt die Löschung in App und Browser. Wer sich nicht
+  mehr anmelden kann (oder nur „Kein aktiver Verein“ sieht), kann sie nicht selbst auslösen: Der Verein entzieht dann den Zugang und
+  löscht die Mitgliedsdaten, das Konto selbst bleibt aber bestehen. Für solche Anfragen nennt die Seite die Support-Adresse
+  (`SUPPORT_EMAIL`, falls gesetzt); ein Werkzeug, mit dem der Betreiber das Konto daraufhin löscht, fehlt noch
+  (siehe [docs/PRIVACY.md](docs/PRIVACY.md#kontolöschung)).
 - **Rechtstexte** – Impressum und Datenschutzerklärung sind Platzhalter und müssen vom Verein ausgefüllt werden.
 
 ## Lizenz

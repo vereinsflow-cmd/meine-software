@@ -36,6 +36,7 @@ export const MODEL_SCOPE = {
   VerificationToken: "global",
   RateLimitBucket: "global",
   DeletionRequest: "global",
+  PushSubscription: "global",
   Permission: "catalog",
   Club: "club",
   Role: "tenant",

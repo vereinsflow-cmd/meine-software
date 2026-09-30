@@ -21,13 +21,14 @@ export function CommandPalette() {
   const hasResults = groups.some((group) => group.items.length > 0);
 
   return (
-    // Am Handy oben statt mittig: So bleiben die Treffer über der eingeblendeten Tastatur sichtbar.
+    // Am Handy oben statt mittig: So bleiben die Treffer über der eingeblendeten Tastatur sichtbar (in der App-Ansicht unter der
+    // Statusleiste, `--safe-top`).
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
       shouldFilter={false}
       loop
-      className="max-sm:top-4 max-sm:translate-y-0"
+      className="max-sm:top-[calc(1rem+var(--safe-top))] max-sm:translate-y-0"
     >
       <CommandInput
         value={query}

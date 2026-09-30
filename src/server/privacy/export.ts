@@ -28,6 +28,7 @@ export interface UserDataExport {
   konto: Record<string, unknown>;
   vereine: Record<string, unknown>[];
   sitzungen: Record<string, unknown>[];
+  pushGeraete: Record<string, unknown>[];
   protokoll: { hinweis: string; eintraege: Record<string, unknown>[] };
 }
 
@@ -90,6 +91,13 @@ export async function buildUserDataExport(
         },
       },
     },
+  });
+
+  // Push-Geräte: nur Bezeichnung und Zeitpunkte – Adresse und Schlüssel sind Geheimnisse und gehören nicht in eine Datei.
+  const pushDevices = await prisma.pushSubscription.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: { deviceLabel: true, createdAt: true, lastSuccessAt: true },
   });
 
   const [notifications, feedTokens, sessions, audit, received, uploads, tickets, written] =
@@ -300,6 +308,11 @@ export async function buildUserDataExport(
       gueltigBis: iso(s.expiresAt),
       geraet: s.userAgent,
       ipAdresseGekuerzt: s.ipPrefix,
+    })),
+    pushGeraete: pushDevices.map((d) => ({
+      geraet: d.deviceLabel,
+      eingeschaltetAm: iso(d.createdAt),
+      letzteZustellung: iso(d.lastSuccessAt),
     })),
     protokoll: {
       hinweis:

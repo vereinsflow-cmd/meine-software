@@ -4,6 +4,7 @@ import { purgeStaleData } from "./cleanup";
 import { completePastEvents } from "./events";
 import { withJobLock } from "./lock";
 import { sendPendingEmails } from "./mail-queue";
+import { sendPendingPushes } from "./push-queue";
 import { processDueDeletionRequests } from "@/server/privacy/deletion";
 import { sendEventReminders, sendShiftReminders } from "./reminders";
 import { applyRetention } from "./retention";
@@ -13,14 +14,15 @@ import { applyRetention } from "./retention";
  *   - Kommandozeile:  npm run jobs:run            (z. B. per Cron, Aufgabenplanung oder Container-Scheduler)
  *   - HTTP:           GET/POST /api/cron/run      (Header "Authorization: Bearer <CRON_SECRET>")
  *
- * Reihenfolge: erst abschließen und erinnern, dann E-Mails versenden (damit frische Erinnerungen im selben Lauf
- * hinausgehen), zuletzt aufräumen. Ein fehlgeschlagener Job stoppt die übrigen nicht.
+ * Reihenfolge: erst abschließen und erinnern, dann E-Mails und Push-Benachrichtigungen versenden (damit frische Erinnerungen
+ * im selben Lauf hinausgehen), zuletzt aufräumen. Ein fehlgeschlagener Job stoppt die übrigen nicht.
  */
 export const JOB_NAMES = [
   "events",
   "reminders",
   "privacy",
   "mail",
+  "push",
   "cleanup",
   "retention",
 ] as const;
@@ -35,6 +37,7 @@ const JOBS: Record<JobName, (now: Date) => Promise<Record<string, number>>> = {
   // Fällige Löschanträge (nach der Bedenkzeit) – vor dem E-Mail-Versand, damit Bestätigungen im selben Lauf hinausgehen.
   privacy: async (now) => ({ ...(await processDueDeletionRequests(now)) }),
   mail: async (now) => ({ ...(await sendPendingEmails({ now })) }),
+  push: async (now) => ({ ...(await sendPendingPushes({ now })) }),
   cleanup: async (now) => ({ ...(await purgeStaleData(now)) }),
   retention: async (now) => ({ ...(await applyRetention(now)) }),
 };

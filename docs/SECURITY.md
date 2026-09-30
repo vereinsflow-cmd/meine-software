@@ -67,13 +67,45 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
   `apiHandler` → `assertSameOrigin` (Origin bzw. `Sec-Fetch-Site`). Getestet, u. a. Upload mit fremdem `Origin` → 403.
 - **XSS:** Inhalte werden über React escaped; es gibt kein `dangerouslySetInnerHTML`. Nachrichten und Notizen sind **reiner Text**
   (getestet: `<img onerror>` erscheint als Text). Zusätzlich setzt `src/proxy.ts` je Anfrage eine **Content-Security-Policy mit Nonce**
-  (`script-src 'self' 'nonce-…' 'strict-dynamic'`, `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`, in Produktion
-  `upgrade-insecure-requests`). **Inline-Stile sind erlaubt** (`style-src 'self' 'unsafe-inline'`): Bibliotheken für Meldungen und Dialoge fügen
+  (`script-src 'self' 'nonce-…' 'strict-dynamic'`, `worker-src 'self'`, `manifest-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`,
+  `form-action 'self'`, in Produktion `upgrade-insecure-requests`). `worker-src 'self'` ist nötig, weil der Service Worker sonst unter
+  `script-src` fiele, wo `'strict-dynamic'` das `'self'` aufhebt – es erlaubt nur Worker von der eigenen Adresse. **Inline-Stile sind erlaubt** (`style-src 'self' 'unsafe-inline'`): Bibliotheken für Meldungen und Dialoge fügen
   ihre Stile zur Laufzeit ein und können keinen Nonce tragen (mit strengem `style-src` blieben Meldungen ungestaltet und Dialoge ohne Scroll-Sperre
   – aufgefallen erst im Produktions-Rauchtest). Die eigentliche XSS-Grenze, `script-src`, bleibt streng: kein `unsafe-inline`, kein `unsafe-eval`
   (getestet gegen den Produktions-Build, `tests/prod-smoke`).
 - **Weitere Header:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` (Kamera, Mikrofon,
   Standort aus), `Cross-Origin-Opener-Policy: same-origin`, in Produktion HSTS (2 Jahre, `includeSubDomains`, `preload`).
+- **Service Worker und App-Ansicht** (`public/sw.js`): nur von der eigenen Adresse, Bereich `/`, registriert nur im Produktions-Build.
+  Er beantwortet ausschließlich GET-Seitenaufrufe der eigenen Adresse (nicht `/api/…`) – immer über das Netz, ohne Netz mit der
+  statischen Offline-Seite – und legt **nichts außer dieser Seite** ab: keine angemeldeten Seiten, keine Antworten der Schnittstellen,
+  keine Daten (geprüft in `tests/unit/service-worker.test.ts` und im Browser, auch gegen den Produktions-Build). Weiterleitungen und
+  Fehlerantworten reicht er unverändert durch; Server Actions, Formulare, Downloads und alle anderen Anfragen fasst er nicht an.
+  Navigation Preload bleibt bewusst aus: Damit lüde der Browser `/api/…`-Aufrufe, die der Service Worker nicht beantwortet, ein zweites
+  Mal – Mitglieder- und Datenexport stünden doppelt im Protokoll und verbrauchten doppelt ihr Rate-Limit. Neue
+  Fassungen übernehmen sofort (`Cache-Control: no-cache`, `updateViaCache: "none"`). Öffentlich ohne Anmeldung sind nur `/sw.js`,
+  `/offline.html` und `/.well-known/assetlinks.json` (Paketname und Zertifikats-Fingerabdrücke der Android-App – öffentliche Angaben).
+- **Push-Benachrichtigungen (Web Push)** (`src/app/api/push/`, `src/server/jobs/push-queue.ts`, `src/server/push/web-push.ts`):
+  - _Herkunft und Anmeldung:_ Anmelden, Abmelden und Abfragen laufen durch `apiHandler` (Herkunftsprüfung/CSRF), verlangen eine gültige Sitzung, sind
+    je Person rate-limitiert und validieren mit Zod. Die Benutzer-ID kommt aus der Sitzung, nie aus der Anfrage; das Abo ist über den Endpunkt eindeutig
+    (idempotent), höchstens zehn Geräte je Person.
+  - _SSRF-Schutz:_ Der Server ruft die Adresse eines Abos selbst auf. Deshalb werden nur `https://`-Adressen der Push-Dienste der Browser-Hersteller
+    angenommen (Google/FCM, Mozilla, Apple, Microsoft), ohne Zugangsdaten und ohne fremden Port; die Datenbank prüft zusätzlich `https://`
+    (CHECK). Getestet in `tests/unit/push-schemas.test.ts`.
+  - _Geheimnis Endpunkt:_ Die Adresse erlaubt jedem, dem Gerät Meldungen zu schicken. Sie wird nie protokolliert (Fehler des Push-Pakets werden auf den
+    Statuscode reduziert, bevor sie weitergereicht werden), nie in einer URL übertragen und nur an das Gerät zurückgegeben, das sie selbst
+    mitgeschickt hat (die Abfrage „ist dieses Gerät an“ antwortet nur ja/nein); weder Datenexport noch Oberfläche zeigen sie. Der private VAPID-Schlüssel
+    bleibt im Server (`getPublicPushKey()` liefert nur den öffentlichen).
+  - _Inhalt:_ keine Namen, Personendaten oder Texte – nur ein fester Satz je Art der Benachrichtigung und der interne Link (Test
+    `tests/unit/push-payload.test.ts` prüft, dass Titel und Text der Benachrichtigung nie in die Nachricht gelangen). Das Ziel der Meldung ist immer die eigene
+    Adresse (`APP_URL`); der Service Worker öffnet nur Adressen der eigenen Herkunft.
+  - _Versand:_ dieselben Prüfungen wie bei E-Mail (gesperrte/gelöschte Personen, beendete Mitgliedschaft, Verein nicht aktiv), zusätzlich nichts für bereits Gelesenes.
+    Push-Dienst meldet 404/410: Abo wird gelöscht. Abmelden von VereinsFlow entfernt das Gerät als Empfänger (geteilte Geräte). Ein neuer Träger desselben
+    Endpunkts (gemeinsam genutztes Gerät) übernimmt das Abo – niemand bekommt Meldungen einer anderen Person.
+- **Öffentliche Seiten** (`PUBLIC_PATHS` in `src/proxy.ts`): Anmeldung, Registrierung, Passwort vergessen/zurücksetzen, Impressum,
+  Datenschutzerklärung und die Anleitung zur Kontolöschung `/konto-loeschen` (Google Play verlangt sie ohne Anmeldung), dazu Einladungslinks
+  unter `/einladung/`. Die Liste gilt exakt – Unterpfade und ähnlich lautende Adressen führen zur Anmeldung (getestet in
+  `tests/unit/proxy.test.ts`). `/konto-loeschen` enthält nur allgemeinen Text, die öffentliche Adresse der Installation und – falls gesetzt –
+  die Support-Adresse des Betreibers (`SUPPORT_EMAIL`), keine Vereins- oder Personendaten, und bekommt dieselbe CSP mit Nonce wie jede Seite.
 - **SQL-Einschleusung:** Alle Abfragen laufen über Prisma (parametrisiert). Wo Roh-SQL nötig ist (Advisory-Locks, Aufbewahrung,
   Anonymisierung), sind Werte gebunden (`$queryRaw`/`$executeRaw` mit Template-Literal). Der Tenant-Client sperrt `…Unsafe`-Varianten.
 - **Open-Redirect:** Rücksprungziele nach der Anmeldung und Benachrichtigungs-Links sind nur interne Pfade (Prüfung in der Anwendung
@@ -113,7 +145,7 @@ Umsetzung: `src/lib/uploads.ts`, `src/server/storage/`, `src/modules/documents/s
 
 Zähler liegen in PostgreSQL (`RateLimitBucket`), also gemeinsam für alle Server-Instanzen und ohne Zusatzdienst. Begrenzt sind:
 Anmeldung (je Konto und IP), Passwort-Reset (anfordern und einlösen), Passwortwechsel, Einladungen, Datei-Upload, Vereinslogo (20 je Person und Stunde), Datenexport,
-Löschantrag, Support-Meldungen (10 je Person und Stunde), Kalender-Feed und der Cron-Endpunkt. **Hinter einem Reverse-Proxy** muss `TRUST_PROXY=true` gesetzt sein, sonst sehen alle
+Löschantrag, Support-Meldungen (10 je Person und Stunde), Push-Geräte anmelden (20), abmelden (60) und abfragen (120, je Person und Stunde), Kalender-Feed und der Cron-Endpunkt. **Hinter einem Reverse-Proxy** muss `TRUST_PROXY=true` gesetzt sein, sonst sehen alle
 Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selbst setzt und Fremdwerte überschreibt.
 
 ## Protokoll und Nachvollziehbarkeit
@@ -148,6 +180,7 @@ Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selb
 ## Nicht abgedeckt (bewusst benannt)
 
 - Kein Virenscan der Uploads (Erweiterungspunkt vorhanden).
+- Push: Der Push-Dienst des Browser-Herstellers sieht Zeit und Empfängergerät jeder Meldung (nicht den Inhalt, der ohnehin nur ein allgemeiner Satz ist); die Meldung steht auf dem Sperrbildschirm, wenn das Gerät so eingestellt ist. Wer das nicht will, schaltet Push im Profil aus.
 - Keine Zwei-Faktor-Anmeldung (vorbereitet).
 - Keine Datenbank-Zeilensicherheit (Row-Level-Security) als vierte Schicht – siehe [ADR-0002](adr/0002-mandantentrennung.md); die drei vorhandenen Schichten sind getestet.
 - Keine automatische Verschlüsselung der Dateiablage; empfohlen ist ein verschlüsselter Datenträger auf dem Server.

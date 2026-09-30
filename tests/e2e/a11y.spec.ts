@@ -4,7 +4,13 @@ import { USERS, login, open } from "./helpers";
 
 /** Barrierefreiheit (axe, WCAG 2.1 A/AA) aller Seiten – Einzelheiten und Grenzen der Prüfung stehen in `axe.ts`. */
 
-const publicPages = ["/anmelden", "/passwort-vergessen", "/impressum", "/datenschutzerklaerung"];
+const publicPages = [
+  "/anmelden",
+  "/passwort-vergessen",
+  "/impressum",
+  "/datenschutzerklaerung",
+  "/konto-loeschen",
+];
 
 const adminPages = [
   "/dashboard",
@@ -122,6 +128,7 @@ test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung",
     "/datenschutz",
     "/nachrichten?chat=alle", // Sprechblasen in den dunklen WhatsApp-Farben
     "/einstellungen", // Vereinslogo-Karte mit Anfangsbuchstaben auf dunklem Grund
+    "/konto-loeschen", // öffentliche Anleitung (Rahmen der Rechtstexte), hier angemeldet geöffnet
   ]) {
     test(`dunkel: ${path}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: "dark" });

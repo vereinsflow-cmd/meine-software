@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PlaceholderNotice } from "@/components/shared/legal-notice";
 
 export const metadata: Metadata = { title: "Datenschutzerklärung" };
@@ -50,11 +51,19 @@ export default function PrivacyPolicyPage() {
             Grundlage Ihrer freiwilligen, jederzeit widerrufbaren Einwilligung (Art. 6 Abs. 1 lit. a
             DSGVO).
           </li>
+          <li>
+            <strong>Push-Geräte</strong> (Adresse und Schlüssel des Push-Abos, Gerätebezeichnung wie
+            „Chrome auf Android“, Zeitpunkt der letzten erfolgreichen Zustellung): nur wenn Sie
+            Push-Benachrichtigungen auf einem Gerät selbst einschalten (Art. 6 Abs. 1 lit. a DSGVO,
+            § 25 Abs. 1 TDDDG); Näheres unter Punkt 3.
+          </li>
         </ul>
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-medium">3. Cookies und lokale Speicherung</h2>
+        <h2 className="text-lg font-medium">
+          3. Cookies, lokale Speicherung und Push-Benachrichtigungen
+        </h2>
         <p>
           VereinsFlow setzt ausschließlich ein{" "}
           <strong>technisch notwendiges Sitzungs-Cookie</strong> ein (<code>__Host-vf_session</code>
@@ -64,6 +73,22 @@ export default function PrivacyPolicyPage() {
           werden keine Analyse- oder Marketing-Dienste eingebunden und keine Inhalte von
           Drittanbietern nachgeladen. Eine Einwilligungsabfrage („Cookie-Banner“) ist daher nicht
           erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG).
+        </p>
+        <p>
+          <strong>Push-Benachrichtigungen</strong> sind freiwillig und standardmäßig aus. Wenn Sie
+          sie unter „Profil → Benachrichtigungen“ auf einem Gerät einschalten und Ihr Browser dies
+          erlaubt, speichern wir für dieses Gerät ein Push-Abo (eine geheime Adresse beim
+          Push-Dienst des Browser-Herstellers, zwei Schlüssel und eine Gerätebezeichnung). Die
+          Meldungen laufen über den Push-Dienst des Herstellers Ihres Browsers – bei Chrome und
+          anderen Android-Browsern über Google, bei Safari und auf dem iPhone über Apple, bei
+          Firefox über Mozilla – und sind auf dem Weg dorthin Ende-zu-Ende verschlüsselt. Sie
+          enthalten bewusst keine Namen, keine Personendaten und keinen Nachrichtentext, sondern nur
+          einen allgemeinen Hinweis wie „Neue Nachricht“ und den Link zur passenden Seite in
+          VereinsFlow. Der Hersteller erfährt, dass und wann eine Meldung an Ihr Gerät zugestellt
+          wird, nicht aber deren Inhalt. Sie können Push jederzeit im Profil auf dem jeweiligen
+          Gerät ausschalten; dann wird das Push-Abo bei uns gelöscht. Es wird außerdem gelöscht,
+          wenn Sie sich abmelden, Ihr Konto gelöscht wird oder das Gerät dauerhaft nicht mehr
+          erreichbar ist (nach spätestens 30 Tagen erfolgloser Zustellung).
         </p>
       </section>
 
@@ -86,6 +111,14 @@ export default function PrivacyPolicyPage() {
           (Art. 21 DSGVO). Einen Export Ihrer Daten und die Beantragung der Löschung Ihres Kontos
           finden Sie nach der Anmeldung unter „Datenschutz“. Außerdem können Sie sich bei einer
           Datenschutz-Aufsichtsbehörde beschweren [zuständige Behörde eintragen].
+        </p>
+        <p>
+          Wie Sie Ihr Konto Schritt für Schritt löschen, welche Daten dabei gelöscht werden und
+          welche aus welchem Grund erhalten bleiben, erklärt die Seite{" "}
+          <Link href="/konto-loeschen" className="text-primary underline underline-offset-4">
+            Konto löschen
+          </Link>
+          .
         </p>
       </section>
 

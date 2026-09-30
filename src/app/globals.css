@@ -146,6 +146,16 @@
   /* Höhe der Kopfzeile (und des Seitenleisten-Kopfs); auf niedrigen Bildschirmen etwas flacher. Die Nachrichten-Seite
      rechnet damit ihre volle Höhe aus. */
   --app-header-height: 4rem;
+  /* Sichere Bereiche in der App-Ansicht (Android-App, Home-Bildschirm; `viewport-fit=cover` in layout.tsx): Abstand zu
+     Kamera-Aussparung, Statusleiste und Home-Indikator. Im normalen Browser und am Desktop 0 – dort ändert sich nichts.
+     Links und rechts rückt der ganze Seiteninhalt ein (`body`), oben die Kopfzeilen, unten der Seitenrahmen; was mit fester
+     Position über der Seite liegt (Dialoge, Sheets, Meldungen, Suche), berücksichtigt sie selbst. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  /* Gesamthöhe der festen Kopfzeile samt sicherem Bereich darüber – darunter bleiben z. B. die Dashboard-Reiter stehen. */
+  --app-header-offset: calc(var(--app-header-height) + var(--safe-top));
 }
 
 @media (width >= 80rem) {
@@ -227,6 +237,10 @@
   body {
     @apply bg-background text-foreground antialiased;
     text-rendering: optimizeLegibility;
+    /* Seitlich (Smartphone quer in der App-Ansicht) bleibt der Rand unter der Kamera-Aussparung frei – in der Farbe des
+       Seitengrunds, genau wie der Browser es ohne `viewport-fit=cover` zeigt. Oben und unten regeln das die Rahmen selbst. */
+    padding-right: var(--safe-right);
+    padding-left: var(--safe-left);
   }
   /* Überschriften brechen ausgewogen um (kein einzelnes Wort in der letzten Zeile). */
   h1,

@@ -194,16 +194,26 @@ export default async function PrivacyPage() {
         </Section>
 
         <Section id="d-loeschen" icon={<TrashIcon />} title="Konto und Daten löschen">
-          <DeletionPanel
-            pending={
-              pending
-                ? {
-                    requestedAt: pending.requestedAt.toISOString(),
-                    scheduledFor: pending.scheduledFor.toISOString(),
-                  }
-                : null
-            }
-          />
+          <div className="grid gap-3">
+            <DeletionPanel
+              pending={
+                pending
+                  ? {
+                      requestedAt: pending.requestedAt.toISOString(),
+                      scheduledFor: pending.scheduledFor.toISOString(),
+                    }
+                  : null
+              }
+            />
+            {/* Öffentliche Anleitung (auch ohne Anmeldung, für Google Play) – dort steht, was genau gelöscht wird und was bleibt. */}
+            <p className="text-sm text-muted-foreground">
+              Was genau gelöscht wird und was aus welchem Grund erhalten bleibt, erklärt die Seite{" "}
+              <Link href="/konto-loeschen" className="text-primary underline underline-offset-4">
+                Konto löschen
+              </Link>
+              .
+            </p>
+          </div>
         </Section>
 
         {canManage && (

@@ -49,7 +49,7 @@ export default async function MessagesPage({
   const chatOpen = key !== undefined;
 
   return (
-    <div className="flex h-[calc(100dvh-var(--app-header-height)-2rem)] min-h-[28rem] flex-col sm:h-[calc(100dvh-var(--app-header-height)-3rem)] xl:h-[calc(100dvh-var(--app-header-height)-4rem)]">
+    <div className="flex h-[calc(100dvh-var(--app-header-offset)-var(--safe-bottom)-2rem)] min-h-[28rem] flex-col sm:h-[calc(100dvh-var(--app-header-offset)-var(--safe-bottom)-3rem)] xl:h-[calc(100dvh-var(--app-header-offset)-var(--safe-bottom)-4rem)]">
       {/* Am Smartphone füllt der geöffnete Chat den Bildschirm (wie in der App) – die Überschrift bleibt für Screenreader. */}
       {chatOpen && <h1 className="sr-only md:hidden">Nachrichten</h1>}
       <PageHeader

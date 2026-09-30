@@ -116,10 +116,11 @@ export default async function HelpPage({
               {(overview.clubContact.email || overview.clubContact.phone) && (
                 <p className="mt-2">
                   Allgemeiner Kontakt des Vereins:{" "}
+                  {/* Links im Fließtext immer unterstrichen – die Farbe allein genügt nicht (axe: link-in-text-block). */}
                   {overview.clubContact.email && (
                     <a
                       href={`mailto:${overview.clubContact.email}`}
-                      className="text-primary underline-offset-4 hover:underline"
+                      className="text-primary underline underline-offset-4"
                     >
                       {overview.clubContact.email}
                     </a>
@@ -128,7 +129,7 @@ export default async function HelpPage({
                   {overview.clubContact.phone && (
                     <a
                       href={phoneHref(overview.clubContact.phone)}
-                      className="text-primary underline-offset-4 hover:underline"
+                      className="text-primary underline underline-offset-4"
                     >
                       {overview.clubContact.phone}
                     </a>
@@ -143,7 +144,7 @@ export default async function HelpPage({
               Technische Fragen zur Anwendung selbst, die dein Verein nicht klären kann:{" "}
               <a
                 href={`mailto:${overview.platformSupportEmail}`}
-                className="text-primary underline-offset-4 hover:underline"
+                className="break-words text-primary underline underline-offset-4"
               >
                 {overview.platformSupportEmail}
               </a>

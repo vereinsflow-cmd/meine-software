@@ -83,6 +83,18 @@ export const FAQ: readonly FaqSection[] = [
         keywords: "name adresse e-mail mail benachrichtigung ausschalten",
       },
       {
+        id: "push-benachrichtigungen",
+        question:
+          "Wie bekomme ich Benachrichtigungen aufs Handy, auch wenn VereinsFlow geschlossen ist?",
+        steps: [
+          "Öffne „Mein Profil“ auf dem Gerät, auf dem du die Meldungen sehen willst.",
+          "Schalte im Abschnitt „Benachrichtigungen“ „Push-Benachrichtigungen auf diesem Gerät“ ein und erlaube Benachrichtigungen, wenn dein Browser fragt.",
+        ],
+        tip: "Der Schalter gilt nur für dieses Gerät. Auf dem iPhone und iPad geht das nur, wenn du VereinsFlow zuerst zum Home-Bildschirm hinzugefügt hast („Teilen“ → „Zum Home-Bildschirm“). Die Meldung nennt nie Namen oder Nachrichtentext, nur einen allgemeinen Hinweis; Einzelheiten siehst du in VereinsFlow. Steht dort, Push sei auf diesem Server nicht eingerichtet, hat der Betreiber es noch nicht aktiviert.",
+        link: { href: "/profil", label: "Zu „Mein Profil“" },
+        keywords: "push handy smartphone meldung mitteilung benachrichtigung app iphone android",
+      },
+      {
         id: "abmelden",
         question: "Wie melde ich mich ab?",
         steps: ["Klicke oben rechts auf deinen Namen.", "Wähle „Abmelden“."],

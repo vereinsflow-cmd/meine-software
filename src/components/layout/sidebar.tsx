@@ -13,10 +13,11 @@ export function Sidebar({ groups }: { groups: NavGroup[] }) {
   const { collapsed, toggle } = useSidebarCollapse();
 
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col overflow-hidden border-r bg-sidebar lg:flex print:hidden">
+    <aside className="sticky top-0 hidden h-dvh flex-col overflow-hidden border-r bg-sidebar pb-(--safe-bottom) lg:flex print:hidden">
+      {/* Kopf so hoch wie die Kopfzeile daneben, samt sicherem Bereich oben (App-Ansicht, sonst 0) */}
       <div
         className={cn(
-          "flex h-(--app-header-height) shrink-0 items-center border-b",
+          "flex h-(--app-header-offset) shrink-0 items-center border-b pt-(--safe-top)",
           collapsed ? "justify-center px-2" : "px-5",
         )}
       >

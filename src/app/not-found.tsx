@@ -12,7 +12,7 @@ export default function NotFound() {
   return (
     <main
       id="inhalt"
-      className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-8 p-6"
+      className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-8 p-6 pt-[calc(1.5rem+var(--safe-top))] pb-[calc(1.5rem+var(--safe-bottom))]"
     >
       <Link href="/" aria-label="VereinsFlow – zur Startseite" className="rounded-md">
         <BrandLogo decorative className="w-48" />

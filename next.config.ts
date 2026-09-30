@@ -46,7 +46,12 @@ const nextConfig: NextConfig = {
   // Eine Schwärzung einzelner Felder bietet Next.js nicht an, daher ganz abgeschaltet.
   logging: { serverFunctions: false },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Service Worker (public/sw.js): Der Browser fragt bei jedem Aufruf nach, ob es eine neue Fassung gibt (`no-cache` =
+      // nur nach Rückfrage beim Server verwenden) – so erreicht eine Änderung alle Geräte mit dem nächsten Seitenaufruf.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+    ];
   },
 };
 

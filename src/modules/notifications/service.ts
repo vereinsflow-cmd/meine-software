@@ -2,10 +2,11 @@ import type { NotificationType } from "@/generated/prisma/enums";
 import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import type { TenantDb, TenantTx } from "@/server/db/tenant";
 import { notFound } from "@/server/errors";
+import { flushPushesAfterResponse } from "@/server/jobs/push-queue";
 import type { TenantContext } from "@/server/tenancy/context-core";
 
 /**
- * Benachrichtigungen (In-App, optional zusätzlich per E-Mail).
+ * Benachrichtigungen (In-App, optional zusätzlich per E-Mail und – wenn die Person Geräte angemeldet hat – als Push).
  * Jeder Benutzer sieht und ändert ausschließlich seine EIGENEN Benachrichtigungen – das ergibt sich aus
  * dem Filter `userId = ctx.userId` und ist keine Frage einer Rolle.
  */
@@ -97,6 +98,12 @@ export interface NotifyInput {
   dedupeKey?: (userId: string) => string;
   /** Zusätzlich per E-Mail senden (nur an Benutzer, die E-Mail-Benachrichtigungen nicht abgeschaltet haben). */
   email?: boolean;
+  /**
+   * Zusätzlich als Push auf den angemeldeten Geräten der Person (Standard: ja). Die Benachrichtigung bleibt die einzige Quelle –
+   * Push ist ein weiterer Versandweg, kein zweites System; der Inhalt der Meldung entsteht erst beim Versand aus dem Typ
+   * (keine Namen, kein Text, siehe push-payload.ts). Nur `false`, wenn eine Meldung nie auf einem Sperrbildschirm erscheinen soll.
+   */
+  push?: boolean;
 }
 
 /**
@@ -115,7 +122,15 @@ export async function notifyUsers(
     where: { userId: { in: userIds }, status: "ACTIVE" },
     select: {
       userId: true,
-      user: { select: { emailNotifications: true, disabledAt: true, deletedAt: true } },
+      user: {
+        select: {
+          emailNotifications: true,
+          disabledAt: true,
+          deletedAt: true,
+          // Nur ob es ein Gerät gibt (Endpunkte werden hier nie gelesen).
+          pushSubscriptions: { select: { id: true }, take: 1 },
+        },
+      },
     },
   });
 
@@ -131,9 +146,16 @@ export async function notifyUsers(
       dedupeKey: input.dedupeKey?.(r.userId) ?? null,
       emailStatus:
         input.email && r.user.emailNotifications ? ("PENDING" as const) : ("NONE" as const),
+      pushStatus:
+        input.push !== false && r.user.pushSubscriptions.length > 0
+          ? ("PENDING" as const)
+          : ("NONE" as const),
     }));
   if (rows.length === 0) return 0;
 
   const result = await db.notification.createMany({ data: rows, skipDuplicates: true });
+  if (result.count > 0 && rows.some((row) => row.pushStatus === "PENDING")) {
+    flushPushesAfterResponse();
+  }
   return result.count;
 }

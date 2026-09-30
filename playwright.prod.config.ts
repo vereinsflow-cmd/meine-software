@@ -61,6 +61,9 @@ export default defineConfig({
       CRON_SECRET: randomBytes(24).toString("base64url"),
       STORAGE_DIR: "./.local/prod-smoke-storage",
       NEXT_TELEMETRY_DISABLED: "1",
+      // Bewusst ohne Support-Adresse (unabhängig von .env): Der Rauchtest prüft, dass „Konto löschen“ dann ohne Support-Link
+      // auskommt; die Variante mit Adresse prüfen die E2E-Tests (playwright.config.ts).
+      SUPPORT_EMAIL: "",
     },
   },
 });

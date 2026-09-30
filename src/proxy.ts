@@ -19,6 +19,15 @@ const PUBLIC_PATHS = [
   "/passwort-zuruecksetzen",
   "/impressum",
   "/datenschutzerklaerung",
+  // Anleitung zur Kontolöschung: Google Play verlangt sie ohne Anmeldung (ihre Adresse steht in der Play Console). Reiner Text
+  // ohne Vereins- oder Personendaten.
+  "/konto-loeschen",
+  // App-Ansicht: Der Service Worker wird schon auf der Anmeldeseite registriert (eine Weiterleitung ließe die Registrierung
+  // scheitern), die Offline-Seite lädt er bei der Installation ohne Anmeldung vor, und Android prüft die Verknüpfung mit der
+  // App ebenfalls ohne Cookie. Alle drei enthalten keine Vereins- oder Personendaten.
+  "/sw.js",
+  "/offline.html",
+  "/.well-known/assetlinks.json",
 ];
 const PUBLIC_PREFIXES = ["/einladung/"];
 
@@ -43,6 +52,11 @@ function buildCsp(nonce: string): string {
     "img-src 'self' blob: data:",
     "font-src 'self'",
     "connect-src 'self'",
+    // Service Worker (public/sw.js) nur von der eigenen Adresse. Ohne diese Angabe gälte für ihn script-src – und dort hebt
+    // 'strict-dynamic' das 'self' auf, der Browser würde die Registrierung blockieren. Das Manifest ebenfalls nur von hier
+    // (sonst über default-src 'self' abgedeckt, hier ausdrücklich, damit es nicht an default-src hängt).
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { LogOutIcon, MoonIcon, MonitorIcon, SunIcon } from "lucide-react";
@@ -16,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { forgetDevicePush } from "@/lib/push-client";
 import { logoutAction } from "@/modules/auth/actions";
 
 export function UserMenu({
@@ -28,6 +30,16 @@ export function UserMenu({
   roleName: string;
 }) {
   const { theme, setTheme } = useTheme();
+  const [, startTransition] = useTransition();
+
+  // Erst dieses Gerät als Push-Empfänger entfernen (solange die Sitzung noch gilt), dann abmelden: Auf einem geteilten Gerät
+  // erscheinen so nach dem Abmelden keine Meldungen der bisherigen Person mehr.
+  function signOut() {
+    startTransition(async () => {
+      await forgetDevicePush();
+      await logoutAction();
+    });
+  }
   const initials = name
     .split(/\s+/)
     .map((part) => part[0])
@@ -83,13 +95,9 @@ export function UserMenu({
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <form action={logoutAction}>
-          <DropdownMenuItem asChild variant="destructive">
-            <button type="submit" className="w-full">
-              <LogOutIcon /> Abmelden
-            </button>
-          </DropdownMenuItem>
-        </form>
+        <DropdownMenuItem variant="destructive" onSelect={signOut}>
+          <LogOutIcon /> Abmelden
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

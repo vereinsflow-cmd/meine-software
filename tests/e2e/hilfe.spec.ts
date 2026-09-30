@@ -37,6 +37,11 @@ test.describe("Hilfe & Support – Mitglied", () => {
       "href",
       "tel:01234567890",
     );
+    // Technischer Support des Betreibers (SUPPORT_EMAIL, im E2E-Server gesetzt – siehe playwright.config.ts)
+    await expect(contacts.getByRole("link", { name: "support@vereinsflow.test" })).toHaveAttribute(
+      "href",
+      "mailto:support@vereinsflow.test",
+    );
 
     // Nur für die Verwaltung
     await expect(page.getByRole("button", { name: "Ansprechpartner bearbeiten" })).toHaveCount(0);

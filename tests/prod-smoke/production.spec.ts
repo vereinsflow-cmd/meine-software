@@ -160,6 +160,70 @@ test.describe("Produktions-Build", () => {
     expect(await page.evaluate(() => document.cookie)).not.toContain("vf_session");
   });
 
+  test("App-Ansicht: Service Worker registriert sich von selbst, legt nur die Offline-Seite ab, ohne Verstöße", async ({
+    page,
+    request,
+  }) => {
+    const sw = await request.get("/sw.js", { maxRedirects: 0 });
+    expect(sw.status()).toBe(200);
+    expect(sw.headers()["content-type"]).toMatch(/^application\/javascript/);
+    expect(sw.headers()["cache-control"]).toBe("no-cache"); // auch im Produktionsbetrieb nicht überschrieben
+    const links = await request.get("/.well-known/assetlinks.json", { maxRedirects: 0 });
+    expect(links.status()).toBe(200);
+    expect(links.headers()["content-type"]).toMatch(/^application\/json/);
+    expect(await links.json()).toEqual([]); // kein Fingerabdruck konfiguriert → keine App verknüpft
+
+    const findings = await watch(page);
+    await page.goto("/anmelden");
+    const scriptUrl = await page.evaluate(
+      async () => (await navigator.serviceWorker.ready).active?.scriptURL,
+    );
+    expect(scriptUrl).toMatch(/\/sw\.js$/);
+
+    await login(page, USERS.admin);
+    await page.goto("/mitglieder");
+    await expect(page.getByRole("heading", { level: 1, name: "Mitglieder" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const cached = await page.evaluate(async () => {
+      const paths: string[] = [];
+      for (const name of await caches.keys()) {
+        for (const entry of await (await caches.open(name)).keys()) {
+          paths.push(new URL(entry.url).pathname);
+        }
+      }
+      return paths;
+    });
+    expect(cached).toEqual(["/offline.html"]);
+    await collectCsp(page, findings);
+    expect(findings.csp, "Verstöße gegen die Content-Security-Policy").toEqual([]);
+    expect(findings.errors, "Skriptfehler / Konsolenfehler").toEqual([]);
+    expect(findings.failed, "fehlgeschlagene Anfragen").toEqual([]);
+  });
+
+  test("Öffentliche Seite „Konto löschen“: ohne Anmeldung, zur Laufzeit gerendert, ohne Verstöße", async ({
+    page,
+    request,
+  }) => {
+    // Ohne Weiterleitung zur Anmeldung – so ruft auch Google Play die Adresse aus der Play Console auf.
+    const response = await request.get("/konto-loeschen", { maxRedirects: 0 });
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-security-policy"]).toMatch(/'nonce-[^']+' 'strict-dynamic'/);
+
+    const findings = await watch(page);
+    await page.goto("/konto-loeschen");
+    await expect(page.getByRole("heading", { level: 1, name: "Konto löschen" })).toBeVisible();
+    const main = page.getByRole("main");
+    // Die Adresse kommt aus APP_URL – zur Laufzeit gelesen, nicht beim Build festgeschrieben.
+    await expect(main).toContainText(`(localhost:${new URL(page.url()).port})`);
+    // Ohne SUPPORT_EMAIL (hier bewusst leer) bleibt nur der Weg über den Verein, kein Support-Link.
+    await expect(main.locator('a[href^="mailto:"]')).toHaveCount(0);
+    await page.waitForLoadState("networkidle");
+    await collectCsp(page, findings);
+    expect(findings.csp, "Verstöße gegen die Content-Security-Policy").toEqual([]);
+    expect(findings.errors, "Skriptfehler / Konsolenfehler").toEqual([]);
+    expect(findings.failed, "fehlgeschlagene Anfragen").toEqual([]);
+  });
+
   test("Fehlerseiten und Schnittstellen verraten nichts über den Aufbau", async ({
     page,
     request,

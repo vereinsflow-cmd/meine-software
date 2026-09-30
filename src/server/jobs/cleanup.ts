@@ -8,8 +8,10 @@ import { purgeExpiredRateLimits } from "@/server/security/rate-limit";
  *  - abgelaufene oder lange inaktive Sitzungen (inaktive sind ohnehin ungültig),
  *  - abgelaufene Zähler des Rate-Limits,
  *  - benutzte oder abgelaufene Bestätigungs-/Reset-Token (nach 7 Tagen),
- *  - gelesene Benachrichtigungen nach 90 Tagen, ungelesene nach 180 Tagen (ausstehende E-Mails bleiben erhalten),
- *  - widerrufene Kalender-Abo-Links nach 30 Tagen.
+ *  - gelesene Benachrichtigungen nach 90 Tagen, ungelesene nach 180 Tagen (ausstehende E-Mails und Push-Meldungen bleiben erhalten),
+ *  - widerrufene Kalender-Abo-Links nach 30 Tagen,
+ *  - Push-Geräte, bei denen die Zustellung fehlschlägt und die seit 30 Tagen keine Meldung mehr erhalten haben (nach der
+ *    Anmeldung zählt deren Zeitpunkt): Das Gerät ist vermutlich nicht mehr erreichbar (Browser-Daten gelöscht, App entfernt).
  */
 const DAY = 86_400_000;
 
@@ -19,6 +21,7 @@ export interface CleanupResult {
   verificationTokens: number;
   notifications: number;
   feedTokens: number;
+  pushSubscriptions: number;
 }
 
 export async function purgeStaleData(now: Date = new Date()): Promise<CleanupResult> {
@@ -35,6 +38,7 @@ export async function purgeStaleData(now: Date = new Date()): Promise<CleanupRes
   const notifications = await prisma.notification.deleteMany({
     where: {
       emailStatus: { not: "PENDING" },
+      pushStatus: { not: "PENDING" },
       OR: [
         { readAt: { lt: new Date(now.getTime() - 90 * DAY) } },
         { readAt: null, createdAt: { lt: new Date(now.getTime() - 180 * DAY) } },
@@ -44,6 +48,16 @@ export async function purgeStaleData(now: Date = new Date()): Promise<CleanupRes
   const feedTokens = await prisma.calendarFeedToken.deleteMany({
     where: { revokedAt: { lt: new Date(now.getTime() - 30 * DAY) } },
   });
+  const pushCutoff = new Date(now.getTime() - 30 * DAY);
+  const pushSubscriptions = await prisma.pushSubscription.deleteMany({
+    where: {
+      failureCount: { gt: 0 },
+      OR: [
+        { lastSuccessAt: { lt: pushCutoff } },
+        { lastSuccessAt: null, createdAt: { lt: pushCutoff } },
+      ],
+    },
+  });
 
   return {
     sessions: sessions.count,
@@ -51,5 +65,6 @@ export async function purgeStaleData(now: Date = new Date()): Promise<CleanupRes
     verificationTokens: verificationTokens.count,
     notifications: notifications.count,
     feedTokens: feedTokens.count,
+    pushSubscriptions: pushSubscriptions.count,
   };
 }
