@@ -75,6 +75,7 @@ export async function anonymizeMemberData(
   await tx.groupMember.deleteMany({ where: { clubId, memberId } });
   await tx.consent.deleteMany({ where: { clubId, memberId } });
   await tx.invitation.deleteMany({ where: { clubId, memberId } }); // enthalten die E-Mail-Adresse
+  await tx.membershipApplication.deleteMany({ where: { clubId, memberId } }); // Antrag mit Kontaktdaten und Nachricht
   await tx.eventParticipant.updateMany({ where: { clubId, memberId }, data: { note: null } });
   await tx.shiftAssignment.updateMany({ where: { clubId, memberId }, data: { note: null } });
   await tx.messageRecipient.updateMany({ where: { clubId, memberId }, data: { userId: null } });

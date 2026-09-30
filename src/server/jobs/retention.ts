@@ -1,5 +1,9 @@
 import "server-only";
 import { readRetention } from "@/lib/club-settings";
+import {
+  APPLICATION_DECIDED_RETENTION_DAYS,
+  APPLICATION_PENDING_RETENTION_DAYS,
+} from "@/lib/membership-application";
 import { SUPPORT_RETENTION_MONTHS } from "@/lib/support";
 import { DOCUMENT_TRASH_DAYS } from "@/lib/uploads";
 import { prisma } from "@/server/db/client";
@@ -12,6 +16,7 @@ import { deleteFile } from "@/server/storage/files";
  *  - Papierkorb: Mitglieder, die länger als `trashDays` im Papierkorb liegen, werden anonymisiert.
  *  - Ausgetretene Mitglieder: nach `leftMembersMonths` (0 = nie automatisch) anonymisiert.
  *  - Änderungsprotokoll: Einträge älter als `auditMonths` werden gelöscht (nur die Aufbewahrungsroutine darf das).
+ *  - Feste Fristen ohne Einstellung: gelöschte Dokumente, erledigte Support-Meldungen, Beitrittsanträge.
  *
  * Jede Anonymisierung läuft in einer eigenen Transaktion und hinterlässt einen Protokolleintrag (ohne Namen).
  */
@@ -26,6 +31,32 @@ export interface RetentionResult {
   documentsPurged: number;
   /** Gelöschte erledigte Support-Meldungen. */
   ticketsPurged: number;
+  /** Gelöschte Beitrittsanträge (entschiedene nach 30, offene nach 180 Tagen). */
+  applicationsPurged: number;
+}
+
+/**
+ * Löscht Beitrittsanträge (Mitglied werden per QR-Code): entschiedene {@link APPLICATION_DECIDED_RETENTION_DAYS} Tage nach
+ * der Entscheidung, nie entschiedene {@link APPLICATION_PENDING_RETENTION_DAYS} Tage nach dem Eingang. Ein Antrag enthält
+ * Personendaten von jemandem, der (noch) kein Mitglied ist; angenommene Personen stehen danach im Mitgliedsdatensatz, für
+ * die Nachvollziehbarkeit bleibt das Änderungsprotokoll (ohne Namen der Abgelehnten).
+ */
+export async function purgeOldApplications(now: Date = new Date()): Promise<number> {
+  const result = await prisma.membershipApplication.deleteMany({
+    where: {
+      OR: [
+        {
+          status: { not: "PENDING" },
+          decidedAt: { lt: new Date(now.getTime() - APPLICATION_DECIDED_RETENTION_DAYS * DAY) },
+        },
+        {
+          status: "PENDING",
+          createdAt: { lt: new Date(now.getTime() - APPLICATION_PENDING_RETENTION_DAYS * DAY) },
+        },
+      ],
+    },
+  });
+  return result.count;
 }
 
 /**
@@ -105,6 +136,7 @@ export async function applyRetention(now: Date = new Date()): Promise<RetentionR
     auditDeleted: 0,
     documentsPurged: 0,
     ticketsPurged: 0,
+    applicationsPurged: 0,
   };
   const clubs = await prisma.club.findMany({ select: { id: true, settings: true } });
 
@@ -159,5 +191,6 @@ export async function applyRetention(now: Date = new Date()): Promise<RetentionR
   }
   result.documentsPurged = await purgeDeletedDocuments(now);
   result.ticketsPurged = await purgeOldTickets(now);
+  result.applicationsPurged = await purgeOldApplications(now);
   return result;
 }

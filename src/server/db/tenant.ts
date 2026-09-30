@@ -48,6 +48,7 @@ export const MODEL_SCOPE = {
   Group: "tenant",
   GroupMember: "tenant",
   Consent: "tenant",
+  MembershipApplication: "tenant",
   Event: "tenant",
   EventParticipant: "tenant",
   EventShift: "tenant",
@@ -287,3 +288,16 @@ export type TenantDb = Omit<
 
 /** Transaktions-Client (gleiche Methoden wie TenantDb, ohne Transaktions-/Verbindungsfunktionen). */
 export type TenantTx = Parameters<Parameters<TenantDb["$transaction"]>[0]>[0];
+
+/**
+ * Sperre bis zum Ende der Transaktion für einen fachlichen Schlüssel eines Vereins (Advisory-Lock der Datenbank). Für
+ * Prüfungen, die kein Unique-Index absichern kann – etwa „gibt es im Verein schon ein Mitglied mit dieser E-Mail?“ (die
+ * Adresse ist bei Mitgliedern bewusst nicht eindeutig): Unter READ COMMITTED sähe eine zweite, gleichzeitige Transaktion
+ * das noch nicht festgeschriebene Ergebnis der ersten nicht. Mit derselben Sperre wartet sie und prüft danach gegen den
+ * festgeschriebenen Stand. Rohes SQL bleibt im Mandanten-Client sonst gesperrt (siehe `TenantDb`); hier ist es auf diese
+ * eine Anweisung mit gebundenem Wert begrenzt und liest oder ändert keine Vereinsdaten. Der Verein gehört zum Schlüssel,
+ * damit sich Vereine nie gegenseitig ausbremsen.
+ */
+export async function lockUntilCommit(tx: TenantTx, clubId: string, key: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${clubId}:${key}`}))`;
+}

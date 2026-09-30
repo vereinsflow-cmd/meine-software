@@ -43,3 +43,14 @@ export function buildPrintPageStyle(options: {
   @bottom-right { content: "Seite " counter(page) " von " counter(pages); font-size: 8pt; color: #666666; }
 }`;
 }
+
+/**
+ * `@page`-Regel für einen einseitigen Aushang (z. B. „Mitglied werden“ mit QR-Code): A4 hoch mit gleichmäßigem Rand und
+ * bewusst OHNE eigene Kopf- und Fußzeile – ein Aushang am Schwarzen Brett braucht weder Seitenzahl noch Druckdatum.
+ */
+export function buildPosterPageStyle(): string {
+  return `@page {
+  size: A4 portrait;
+  margin: 16mm;
+}`;
+}

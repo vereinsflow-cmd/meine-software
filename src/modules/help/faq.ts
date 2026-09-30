@@ -29,6 +29,11 @@ export interface FaqSection {
   description: string;
   /** Nur sichtbar, wenn der Benutzer diese Berechtigung hat (irgendeine Reichweite). */
   requires?: PermissionKey;
+  /**
+   * Nur mit Reichweite „ganzer Verein“ für `requires` – z. B. Beitrittsanträge: Die entscheiden Vereinsadministrator und
+   * Vorstand, nicht die Abteilungsleitung (die Mitglieder nur für ihre Abteilung anlegen darf).
+   */
+  clubWide?: boolean;
   items: FaqItem[];
 }
 
@@ -385,6 +390,32 @@ export const FAQ: readonly FaqSection[] = [
     ],
   },
   {
+    id: "verwaltung-beitritt",
+    title: "Für Vorstand: Beitritt per QR-Code",
+    description: "Neue Mitglieder über einen Aushang gewinnen – mit Antrag und Bestätigung.",
+    requires: "members:create",
+    clubWide: true,
+    items: [
+      {
+        id: "beitritt-qr-code",
+        question: "Wie können neue Mitglieder per QR-Code beitreten?",
+        answer: [
+          "Mit einem QR-Code – zum Beispiel auf einem Aushang im Vereinsheim – stellen Interessierte am Handy einen Antrag. Du entscheidest, wer Mitglied wird.",
+        ],
+        steps: [
+          "Öffne „Mitglieder“ und klicke auf „Anträge“.",
+          "Klicke in der Karte „QR-Code zum Beitritt“ auf „QR-Code einrichten“ und danach auf „Aushang drucken“. Häng das Blatt im Verein auf oder teile den Link („Kopieren“).",
+          "Wer den Code scannt, füllt am Handy einen kurzen Antrag aus. Du bekommst dazu eine Benachrichtigung.",
+          "Prüfe den Antrag unter „Offene Anträge“ und klicke auf „Annehmen“ oder „Ablehnen“.",
+        ],
+        tip: "Erst beim Annehmen wird die Person als Mitglied angelegt und bekommt eine Einladung per E-Mail (Rolle „Mitglied“) – vorher hat sie keinen Zugang, Chats, Termine und Dokumente bleiben geschützt. Beim Ablehnen bekommt sie keine E-Mail. Ist die Einladung abgelaufen, schick sie unter „Zuletzt entschieden“ mit „Einladung erneut senden“ noch einmal. „Neuen Code erzeugen“ macht den alten QR-Code ungültig (gedruckte Aushänge ersetzen), „Beitritt schließen“ stoppt neue Anträge. Entschiedene Anträge werden nach 30 Tagen gelöscht, offene nach 180 Tagen.",
+        link: { href: "/mitglieder/antraege", label: "Zu den Beitrittsanträgen" },
+        keywords:
+          "qr code aushang beitritt antrag mitgliedsantrag aufnahme neu werben scannen einladung erneut",
+      },
+    ],
+  },
+  {
     id: "verwaltung-benutzer",
     title: "Für Verwaltung: Benutzer und Rollen",
     description: "Personen einladen und Rechte verstehen.",
@@ -596,7 +627,12 @@ export const FAQ: readonly FaqSection[] = [
   },
 ];
 
-/** Die Abschnitte, die für den Benutzer passen (nach Berechtigung), ohne leere. */
-export function visibleFaq(can: (key: PermissionKey) => boolean): FaqSection[] {
-  return FAQ.filter((section) => !section.requires || can(section.requires));
+/**
+ * Die Abschnitte, die für den Benutzer passen (nach Berechtigung), ohne leere. `can(key, clubWide)` beantwortet, ob der
+ * Benutzer das Recht hat – mit `clubWide` nur in der Reichweite „ganzer Verein“.
+ */
+export function visibleFaq(can: (key: PermissionKey, clubWide: boolean) => boolean): FaqSection[] {
+  return FAQ.filter(
+    (section) => !section.requires || can(section.requires, section.clubWide === true),
+  );
 }

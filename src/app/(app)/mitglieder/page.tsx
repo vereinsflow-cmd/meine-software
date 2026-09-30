@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DownloadIcon, PlusIcon, UploadIcon } from "lucide-react";
+import { DownloadIcon, InboxIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { MemberStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ import {
   type RawSearchParams,
 } from "@/lib/search-params";
 import { listDepartmentOptions, listMembers } from "@/modules/members/service";
+import { countPendingApplications } from "@/modules/membership-applications/service";
 import { MEMBER_SORT_FIELDS, type MemberView } from "@/modules/members/types";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -74,9 +75,10 @@ export default async function MembersPage({
   const status = enumParam(params, "status", Object.values(MemberStatus));
   const departmentId = param(params, "abteilung");
 
-  const [result, departments] = await Promise.all([
+  const [result, departments, pendingApplications] = await Promise.all([
     listMembers(ctx, { q, status, departmentId, view, sort, dir, request: pageRequest(params) }),
     listDepartmentOptions(ctx, "members:update"),
+    countPendingApplications(ctx), // `null` ohne Recht – dann gibt es den Knopf „Anträge“ nicht
   ]);
 
   const showContact = result.items.some((m) => m.email || m.phone);
@@ -101,6 +103,13 @@ export default async function MembersPage({
               <Button asChild>
                 <Link href="/mitglieder/neu">
                   <PlusIcon /> Neues Mitglied
+                </Link>
+              </Button>
+            )}
+            {pendingApplications !== null && (
+              <Button asChild variant="outline">
+                <Link href="/mitglieder/antraege">
+                  <InboxIcon /> Anträge{pendingApplications > 0 ? ` (${pendingApplications})` : ""}
                 </Link>
               </Button>
             )}

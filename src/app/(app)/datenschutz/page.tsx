@@ -15,6 +15,10 @@ import { DescriptionList } from "@/components/shared/description-list";
 import { PageHeader } from "@/components/shared/page-header";
 import { formatDateTime } from "@/lib/dates";
 import { SUPPORT_RETENTION_MONTHS } from "@/lib/support";
+import {
+  APPLICATION_DECIDED_RETENTION_DAYS,
+  APPLICATION_PENDING_RETENTION_DAYS,
+} from "@/lib/membership-application";
 import { getClubPrivacyInfo } from "@/modules/clubs/service";
 import { getOwnConsents } from "@/modules/privacy/consents";
 import { DeletionPanel, OwnConsentPanel } from "@/modules/privacy/components/privacy-panels";
@@ -131,6 +135,12 @@ export default async function PrivacyPage() {
                 <strong>Meldungen:</strong> Anliegen, die du über „Hilfe & Support“ an die
                 Vereinsverwaltung schickst, samt Antwort. Erledigte Meldungen werden nach{" "}
                 {SUPPORT_RETENTION_MONTHS} Monaten gelöscht.
+              </li>
+              <li>
+                <strong>Beitrittsantrag:</strong> Bist du über den QR-Code deines Vereins
+                beigetreten, die Angaben aus deinem Antrag. Er wird{" "}
+                {APPLICATION_DECIDED_RETENTION_DAYS} Tage nach der Entscheidung gelöscht (nie
+                entschiedene Anträge nach {APPLICATION_PENDING_RETENTION_DAYS} Tagen).
               </li>
             </ul>
             <ul className="list-disc pl-5 text-sm text-muted-foreground">

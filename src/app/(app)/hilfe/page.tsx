@@ -18,7 +18,7 @@ import { FaqList } from "@/modules/help/components/faq-list";
 import { ReportDialog } from "@/modules/help/components/report-dialog";
 import { visibleFaq } from "@/modules/help/faq";
 import { getHelpOverview, listMyTickets } from "@/modules/help/service";
-import { can } from "@/server/permissions/policy";
+import { can, scopeOf } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Hilfe & Support" };
@@ -38,7 +38,9 @@ export default async function HelpPage({
   const ctx = await requirePageContext();
   const [overview, tickets] = await Promise.all([getHelpOverview(ctx), listMyTickets(ctx)]);
   const from = internalPathOrNull(param(params, "von"));
-  const sections = visibleFaq((key) => can(ctx, key));
+  const sections = visibleFaq((key, clubWide) =>
+    clubWide ? scopeOf(ctx, key) === "CLUB" : can(ctx, key),
+  );
 
   return (
     <>

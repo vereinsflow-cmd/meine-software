@@ -12,6 +12,8 @@ const adminPages = [
   "/mitglieder/neu",
   "/mitglieder/statistik",
   "/mitglieder/import",
+  "/mitglieder/antraege",
+  "/mitglieder/antraege/aushang",
   "/veranstaltungen",
   "/veranstaltungen/neu",
   "/helferplanung",

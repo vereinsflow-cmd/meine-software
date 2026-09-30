@@ -398,4 +398,57 @@ describe("CHECK-Constraints", () => {
       prisma.invitation.create({ data: { ...base, tokenHash: unique("h3") } }),
     ).resolves.toBeDefined();
   });
+
+  it("Beitritt per QR-Code: Link im erwarteten Format, Anträge mit stimmigem Stand und begrenzten Texten", async () => {
+    const club = await createClub();
+    const token = "A".repeat(43);
+    await expect(
+      prisma.club.update({
+        where: { id: club.id },
+        data: { joinToken: "zu-kurz", joinTokenCreatedAt: new Date() },
+      }),
+    ).rejects.toThrow();
+    await expect(
+      prisma.club.update({ where: { id: club.id }, data: { joinToken: token } }), // ohne Zeitpunkt
+    ).rejects.toThrow();
+    await expect(
+      prisma.club.update({
+        where: { id: club.id },
+        data: { joinToken: token, joinTokenCreatedAt: new Date() },
+      }),
+    ).resolves.toBeDefined();
+
+    const member = await createMember(club.id);
+    const base = {
+      clubId: club.id,
+      firstName: "Bea",
+      lastName: "Beitritt",
+      email: "bea@example.test",
+      consentAt: new Date(),
+      consentTextVersion: "beitrittsantrag-2026-09",
+    };
+    const rejects = [
+      { ...base, email: "Bea@Example.test" }, // nicht klein geschrieben
+      { ...base, consentTextVersion: " " }, // Einwilligung ohne Fassung des Texts
+      { ...base, consentTextVersion: "x".repeat(65) },
+      { ...base, email: "ohne-at" },
+      { ...base, firstName: "  " },
+      { ...base, lastName: "x".repeat(81) },
+      { ...base, message: "m".repeat(1001) },
+      { ...base, decidedAt: new Date() }, // offen, aber entschieden?
+      { ...base, status: "REJECTED" as const }, // entschieden ohne Zeitpunkt
+      { ...base, status: "REJECTED" as const, decidedAt: new Date(), memberId: member.id },
+      { ...base, decidedById: "jemand" }, // Entscheider ohne Entscheidung
+    ];
+    for (const data of rejects)
+      await expect(
+        prisma.membershipApplication.create({ data }),
+        JSON.stringify(data),
+      ).rejects.toThrow();
+    await expect(
+      prisma.membershipApplication.create({
+        data: { ...base, status: "ACCEPTED", decidedAt: new Date(), memberId: member.id },
+      }),
+    ).resolves.toBeDefined();
+  });
 });

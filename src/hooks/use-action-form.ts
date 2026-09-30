@@ -73,7 +73,13 @@ export function useActionForm<
           let placed = false;
           for (const [path, messages] of Object.entries(fieldErrors ?? {})) {
             if (path === "_form") continue;
-            form.setError(path as Path<Input>, { type: "server", message: messages.join(" ") });
+            // Zum ersten betroffenen Feld springen – wie bei Fehlern aus der Prüfung im Browser. Sonst bliebe ein Fehler weiter
+            // oben (am Handy außerhalb des Bildschirms) unbemerkt und der Knopf schiene nichts zu tun.
+            form.setError(
+              path as Path<Input>,
+              { type: "server", message: messages.join(" ") },
+              { shouldFocus: !placed },
+            );
             placed = true;
           }
           // Ist ein Feld betroffen, zeigen wir zusätzlich die allgemeine Meldung; sonst ist sie die einzige.

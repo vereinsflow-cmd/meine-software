@@ -3,7 +3,7 @@ import { buildIcs } from "@/modules/calendar/ics";
 import { getFeedIcsEntries } from "@/modules/calendar/service";
 import { apiHandler } from "@/server/api";
 import { env } from "@/server/env";
-import { enforceRateLimit } from "@/server/security/rate-limit";
+import { enforceRateLimit, rateLimitIp } from "@/server/security/rate-limit";
 import { getRequestMeta } from "@/server/security/request";
 import { resolveFeedToken } from "@/server/tenancy/feed-token";
 
@@ -18,7 +18,7 @@ export const GET = apiHandler(
   async (_request: NextRequest, context: { params: Promise<{ token: string }> }) => {
     const { token: raw } = await context.params;
     const { ip } = await getRequestMeta();
-    await enforceRateLimit(`calendar-feed:${ip}`, 120, 3600);
+    await enforceRateLimit(`calendar-feed:${rateLimitIp(ip)}`, 120, 3600);
 
     const ctx = await resolveFeedToken(raw.replace(/\.ics$/i, ""));
     if (!ctx) return notFound();

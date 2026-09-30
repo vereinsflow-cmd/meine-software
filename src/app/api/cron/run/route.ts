@@ -3,7 +3,7 @@ import { jsonError, jsonOk } from "@/server/api";
 import { forbidden, unauthenticated } from "@/server/errors";
 import { env } from "@/server/env";
 import { JOB_NAMES, isJobName, runJobs, type JobName } from "@/server/jobs/runner";
-import { enforceRateLimit } from "@/server/security/rate-limit";
+import { enforceRateLimit, rateLimitIp } from "@/server/security/rate-limit";
 import { getRequestMeta } from "@/server/security/request";
 import { safeEqual } from "@/server/security/tokens";
 
@@ -19,7 +19,7 @@ import { safeEqual } from "@/server/security/tokens";
 async function handle(request: NextRequest): Promise<Response> {
   try {
     const { ip } = await getRequestMeta();
-    await enforceRateLimit(`cron:${ip}`, 60, 3600);
+    await enforceRateLimit(`cron:${rateLimitIp(ip)}`, 60, 3600);
 
     const header = request.headers.get("authorization") ?? "";
     const token = header.startsWith("Bearer ") ? header.slice(7) : "";

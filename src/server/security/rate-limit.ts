@@ -1,4 +1,5 @@
 import "server-only";
+import { isIP } from "node:net";
 import { prisma } from "@/server/db/client";
 import { rateLimited } from "@/server/errors";
 import { hashToken } from "./tokens";
@@ -91,6 +92,42 @@ export async function resetRateLimit(key: string): Promise<void> {
 /** Schlüsselbestandteil aus einer E-Mail-Adresse: gehasht, damit keine Adressen im Zähler stehen. */
 export function rateLimitSubject(value: string): string {
   return hashToken(value.trim().toLowerCase()).slice(0, 32);
+}
+
+/** Die acht 16-Bit-Blöcke einer IPv6-Adresse, ausgeschrieben und ohne führende Nullen (`::` aufgelöst, IPv4-Ende umgerechnet). */
+function ipv6Blocks(ip: string): string[] {
+  let address = ip.toLowerCase();
+  const zone = address.indexOf("%"); // Zonen-Angabe wie in „fe80::1%eth0“ gehört nicht zur Adresse
+  if (zone >= 0) address = address.slice(0, zone);
+  const embedded = /(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(address);
+  if (embedded) {
+    const [a, b, c, d] = embedded.slice(1).map(Number) as [number, number, number, number];
+    address = `${address.slice(0, embedded.index)}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+  }
+  const [head = "", tail] = address.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const blocks =
+    tail === undefined
+      ? left
+      : [...left, ...Array<string>(8 - left.length - right.length).fill("0"), ...right];
+  return blocks.map((block) => parseInt(block, 16).toString(16));
+}
+
+/**
+ * Bezugsgröße für IP-Rate-Limits: IPv4 als ganze Adresse, IPv6 nur das /64-Netz. Ein IPv6-Anschluss bekommt fast immer ein
+ * ganzes /64 und kann darin seine Adresse beliebig wechseln – je Einzeladresse gezählt, griffe eine Grenze wie „5 Anträge je
+ * IP und Stunde“ praktisch nicht. Das /64 entspricht damit ungefähr einem IPv4-Anschluss hinter einem Router. IPv4-Adressen
+ * in IPv6-Schreibweise (`::ffff:203.0.113.7`) zählen als IPv4. Alles andere (z. B. „unknown“) bleibt unverändert.
+ */
+export function rateLimitIp(ip: string): string {
+  if (isIP(ip) !== 6) return ip;
+  const blocks = ipv6Blocks(ip);
+  if (blocks.slice(0, 5).every((block) => block === "0") && blocks[5] === "ffff") {
+    const [high, low] = [parseInt(blocks[6]!, 16), parseInt(blocks[7]!, 16)];
+    return `${high >> 8}.${high & 255}.${low >> 8}.${low & 255}`;
+  }
+  return `${blocks.slice(0, 4).join(":")}::/64`;
 }
 
 /** Löscht abgelaufene Zähler (Aufräum-Job). */

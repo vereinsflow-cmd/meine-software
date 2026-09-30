@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
 import { expect, type Page } from "@playwright/test";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
@@ -84,4 +86,43 @@ export async function logout(page: Page): Promise<void> {
   await page.getByRole("button", { name: /Benutzermenü/ }).click();
   await page.getByRole("menuitem", { name: "Abmelden" }).click();
   await expect(page).toHaveURL(/\/anmelden/);
+}
+
+/**
+ * Öffnet „Beitrittsanträge“ als berechtigte Person, richtet den QR-Code ein, falls noch keiner besteht, und liefert den
+ * öffentlichen Link. Ein vorhandener Link (z. B. aus einem anderen Test) bleibt – so ist die Reihenfolge der Tests egal.
+ */
+export async function setUpJoinLink(page: Page): Promise<string> {
+  await open(page, "/mitglieder/antraege");
+  const setup = page.getByRole("button", { name: "QR-Code einrichten" });
+  if (await setup.isVisible()) await setup.click();
+  const link = page.getByLabel("Link zum Antragsformular");
+  await expect(link).toBeVisible();
+  return link.inputValue();
+}
+
+export interface OutboxMail {
+  to: string;
+  subject: string;
+  text: string;
+  sentAt: string;
+}
+
+/**
+ * E-Mails an eine Adresse aus dem Postausgang der E2E-Umgebung (`MAIL_TRANSPORT=file` schreibt jede Mail als JSON nach
+ * `.local/outbox/`). Der Ordner wird nicht geleert – eindeutige Adressen je Test halten die Treffer auseinander.
+ */
+export function outboxMailsTo(address: string): OutboxMail[] {
+  const dir = path.resolve(".local", "outbox");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => {
+      try {
+        return JSON.parse(readFileSync(path.join(dir, name), "utf8")) as OutboxMail;
+      } catch {
+        return null; // wird gerade geschrieben
+      }
+    })
+    .filter((mail): mail is OutboxMail => mail !== null && mail.to === address);
 }

@@ -256,6 +256,12 @@ export async function deleteDepartment(ctx: TenantContext, id: string): Promise<
     );
   }
   await ctx.db.$transaction(async (tx) => {
+    // Beitrittsanträge nennen die Abteilung nur als Wunsch – sie verhindern das Löschen nicht, das Feld wird geleert.
+    // (Der zusammengesetzte Fremdschlüssel kann das nicht selbst: „SET NULL“ würde auch die clubId leeren.)
+    await tx.membershipApplication.updateMany({
+      where: { departmentId: id },
+      data: { departmentId: null },
+    });
     await tx.department.delete({ where: { id } });
     await recordAudit(tx, auditActor(ctx), {
       action: "department.deleted",

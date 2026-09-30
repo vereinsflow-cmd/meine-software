@@ -20,7 +20,8 @@ const PUBLIC_PATHS = [
   "/impressum",
   "/datenschutzerklaerung",
 ];
-const PUBLIC_PREFIXES = ["/einladung/"];
+// „/beitreten/<Schlüssel>“: Antrag „Mitglied werden“ über den QR-Code des Vereins – gerade für Menschen ohne Konto.
+const PUBLIC_PREFIXES = ["/einladung/", "/beitreten/"];
 
 function isPublic(pathname: string): boolean {
   return (

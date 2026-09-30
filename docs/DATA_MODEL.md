@@ -31,6 +31,9 @@ erDiagram
     Member ||--o{ GroupMember : ""
     Group ||--o{ GroupMember : ""
     Member ||--o{ Consent : erteilt
+    Club ||--o{ MembershipApplication : "Beitritt per QR-Code"
+    MembershipApplication }o--o| Member : "angenommen als"
+    Department |o--o{ MembershipApplication : "gewuenscht"
     Club ||--o{ Event : veranstaltet
     Department |o--o{ Event : "gehoert zu"
     Event ||--o{ EventParticipant : "Zu- und Absagen"
@@ -64,23 +67,24 @@ erDiagram
 
 ### Verein, Rollen, Benutzer
 
-| Modell           | Zweck                                                                                                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Club`           | Der Mandant: Name, Kennung (`slug`), Status, Einstellungen (JSON, u. a. Aufbewahrungsfristen), Kontaktdaten, Vereinslogo (`logo*`: Speicherschlüssel, Typ, Größe, Prüfsumme, Zeitpunkt) |
-| `Role`           | Rolle eines Vereins (Standardrollen und – vorbereitet – eigene)                                                                                                                         |
-| `RolePermission` | Recht einer Rolle **mit Reichweite** (`CLUB`, `DEPARTMENT`, `OWN`)                                                                                                                      |
-| `ClubMembership` | Verbindet Benutzer, Verein und Rolle; Status (aktiv/gesperrt); eigene Anordnung des Dashboards (`dashboardLayout`, JSON, leer = Standard)                                               |
-| `Invitation`     | Einladung per Link (Token als Hash), höchstens eine offene je E-Mail und Verein                                                                                                         |
+| Modell           | Zweck                                                                                                                                                                                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Club`           | Der Mandant: Name, Kennung (`slug`), Status, Einstellungen (JSON, u. a. Aufbewahrungsfristen), Kontaktdaten, Vereinslogo (`logo*`: Speicherschlüssel, Typ, Größe, Prüfsumme, Zeitpunkt), Beitrittslink (`joinToken`, `joinTokenCreatedAt`; leer = Beitritt geschlossen) |
+| `Role`           | Rolle eines Vereins (Standardrollen und – vorbereitet – eigene)                                                                                                                                                                                                         |
+| `RolePermission` | Recht einer Rolle **mit Reichweite** (`CLUB`, `DEPARTMENT`, `OWN`)                                                                                                                                                                                                      |
+| `ClubMembership` | Verbindet Benutzer, Verein und Rolle; Status (aktiv/gesperrt); eigene Anordnung des Dashboards (`dashboardLayout`, JSON, leer = Standard)                                                                                                                               |
+| `Invitation`     | Einladung per Link (Token als Hash), höchstens eine offene je E-Mail und Verein                                                                                                                                                                                         |
 
 ### Mitglieder
 
-| Modell                 | Zweck                                                                                                                                                                                   |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Member`               | Stammdaten (Name, Kontakt, Adresse, Geburtsdatum, Status, Ein-/Austritt, interne Notizen, Funktion im Verein); optional mit `User` verknüpft; `archivedAt`, `deletedAt`, `anonymizedAt` |
-| `Department`           | Abteilung (Farbe, Beschreibung)                                                                                                                                                         |
-| `MemberDepartment`     | Zugehörigkeit eines Mitglieds zu einer Abteilung, mit Kennzeichen „Leitung“                                                                                                             |
-| `Group`, `GroupMember` | Gruppen innerhalb einer Abteilung (z. B. Mannschaften)                                                                                                                                  |
-| `Consent`              | Einwilligung als **Ereignisfolge** (erteilt/widerrufen, Zeitpunkt, Quelle, wer) – nie überschrieben                                                                                     |
+| Modell                  | Zweck                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Member`                | Stammdaten (Name, Kontakt, Adresse, Geburtsdatum, Status, Ein-/Austritt, interne Notizen, Funktion im Verein); optional mit `User` verknüpft; `archivedAt`, `deletedAt`, `anonymizedAt`                                                                                                                                                                                                                                                                                                |
+| `Department`            | Abteilung (Farbe, Beschreibung)                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `MemberDepartment`      | Zugehörigkeit eines Mitglieds zu einer Abteilung, mit Kennzeichen „Leitung“                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `Group`, `GroupMember`  | Gruppen innerhalb einer Abteilung (z. B. Mannschaften)                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `Consent`               | Einwilligung als **Ereignisfolge** (erteilt/widerrufen, Zeitpunkt, Quelle, wer) – nie überschrieben                                                                                                                                                                                                                                                                                                                                                                                    |
+| `MembershipApplication` | Beitrittsantrag über den QR-Code (ohne Konto): Name, E-Mail, Telefon, Geburtsdatum, gewünschte Abteilung, Nachricht, Zeitpunkt und Textfassung der Einwilligung (`consentAt`, `consentTextVersion` – nur für die Bearbeitung des Antrags, wird beim Annehmen nicht ans Mitglied übertragen), Stand (offen/angenommen/abgelehnt), entschieden am/von (`decidedById` ohne Fremdschlüssel), angelegtes Mitglied, gekürzte IP. Entschiedene werden nach 30, offene nach 180 Tagen gelöscht |
 
 ### Veranstaltungen und Helfer
 
@@ -113,21 +117,31 @@ erDiagram
 
 ## Datenbank-Prüfregeln (Auszug)
 
-| Regel                                                                    | Umsetzung                                                            |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-`    | CHECK                                                                |
-| Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)             | CHECK                                                                |
-| Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440     | CHECK                                                                |
-| Nie mehr Helfer als benötigt                                             | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)       |
-| Keine überlappenden Schichten je Mitglied                                | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied) |
-| Teilnehmerlimit                                                          | Trigger `event_participant_capacity_guard`                           |
-| Änderungsprotokoll unveränderlich                                        | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)  |
-| Höchstens eine offene Einladung je E-Mail und Verein                     | Teil-Unique-Index                                                    |
-| Benachrichtigungs-Links nur intern (kein Open-Redirect)                  | CHECK                                                                |
-| Dokument gehört zu höchstens einem Bezugsobjekt                          | CHECK                                                                |
-| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB     | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
-| Rechnung: Betrag 1 Cent – 10 Mio. €; offene Rechnung immer mit Betrag    | CHECK (`Invoice_amount_chk`, `Invoice_open_amount_chk`)              |
-| Rechnung: „bezahlt am/von“ nur bei bezahlten; höchstens eine je Dokument | CHECK (`Invoice_paid_chk`), Unique (`clubId`, `documentId`)          |
+| Regel                                                                                   | Umsetzung                                                            |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-`                   | CHECK                                                                |
+| Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)                            | CHECK                                                                |
+| Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440                    | CHECK                                                                |
+| Nie mehr Helfer als benötigt                                                            | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)       |
+| Keine überlappenden Schichten je Mitglied                                               | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied) |
+| Teilnehmerlimit                                                                         | Trigger `event_participant_capacity_guard`                           |
+| Änderungsprotokoll unveränderlich                                                       | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)  |
+| Höchstens eine offene Einladung je E-Mail und Verein                                    | Teil-Unique-Index                                                    |
+| Benachrichtigungs-Links nur intern (kein Open-Redirect)                                 | CHECK                                                                |
+| Dokument gehört zu höchstens einem Bezugsobjekt                                         | CHECK                                                                |
+| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB                    | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
+| Rechnung: Betrag 1 Cent – 10 Mio. €; offene Rechnung immer mit Betrag                   | CHECK (`Invoice_amount_chk`, `Invoice_open_amount_chk`)              |
+| Rechnung: „bezahlt am/von“ nur bei bezahlten; höchstens eine je Dokument                | CHECK (`Invoice_paid_chk`), Unique (`clubId`, `documentId`)          |
+| Beitrittslink: 43 Zeichen base64url, immer mit Zeitpunkt; eindeutig                     | CHECK (`Club_join_token_chk`), Unique (`joinToken`)                  |
+| Beitrittsantrag: Namen 1–80 Zeichen, E-Mail klein geschrieben, Nachricht ≤ 1000 Zeichen | CHECK (`MembershipApplication_name_chk`, `_email_chk`, `_text_chk`)  |
+| Beitrittsantrag: offen ⇔ nicht entschieden; Mitglied nur bei „angenommen“               | CHECK (`MembershipApplication_decision_chk`)                         |
+| Beitrittsantrag: Fassung des Einwilligungstexts nie leer, höchstens 64 Zeichen          | CHECK (`MembershipApplication_consent_version_chk`)                  |
+
+Die gewünschte Abteilung eines Beitrittsantrags ist ein zusammengesetzter Fremdschlüssel mit `RESTRICT` (wie alle optionalen
+Verweise): Beim Löschen der Abteilung leert der Dienst das Feld vorher (`deleteDepartment`), ein Antrag verhindert das Löschen nie.
+Die E-Mail-Adresse ist bei Mitgliedern bewusst nicht eindeutig (Familien teilen Adressen); beim Annehmen eines Antrags verhindert
+deshalb eine Transaktionssperre je Verein und Adresse (`lockUntilCommit`), dass zwei gleichzeitig angenommene Anträge derselben Person
+zwei Mitglieder anlegen.
 
 Ein Test gleicht die Einstufung aller Modelle (`MODEL_SCOPE`) mit den echten Datenbankspalten ab – ein Modell mit `clubId`, das
 nicht als mandantenbezogen geführt wird, fällt sofort auf.

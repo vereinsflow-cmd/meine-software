@@ -8,20 +8,21 @@ Installation).
 
 ## Schutzziele und Bedrohungen
 
-| Bedrohung                                                    | Gegenmaßnahme                                                                                                             | Abschnitt                                       |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Ein Verein sieht oder ändert Daten eines anderen (IDOR)      | Kontext aus der Sitzung, gefilterter Datenbank-Client, zusammengesetzte Fremdschlüssel; „nicht gefunden“ statt „verboten“ | [Mandanten](#mandantentrennung)                 |
-| Rechteausweitung innerhalb eines Vereins                     | Rechte mit Reichweite, Prüfung immer im Dienst, Rollen serverseitig                                                       | [Rechte](#rechte)                               |
-| Passwort erraten / Konto übernehmen                          | Argon2id, Passwortregeln, Rate-Limits je Konto und IP, konstante Antwortzeit, keine Konto-Aufzählung                      | [Anmeldung](#anmeldung-und-sitzungen)           |
-| Sitzung stehlen oder fixieren                                | Zufallstoken, nur Hash gespeichert, `HttpOnly`/`Secure`/`__Host-`, Inaktivitäts- und Höchstdauer                          | [Anmeldung](#anmeldung-und-sitzungen)           |
-| Fremde Seite löst Aktionen im Namen des Benutzers aus (CSRF) | `SameSite=Lax`, Herkunftsprüfung, Server Actions mit eingebautem Schutz                                                   | [Web](#webangriffe)                             |
-| Skripteinschleusung (XSS)                                    | React-Escaping, keine `innerHTML`-Nutzung, CSP mit Nonce, Nachrichten nur als Text                                        | [Web](#webangriffe)                             |
-| SQL-Einschleusung                                            | Nur Prisma mit Parametern; Roh-SQL nur mit gebundenen Werten; unsichere Varianten im Tenant-Client gesperrt               | [Web](#webangriffe)                             |
-| Schädliche oder getarnte Uploads                             | Positivliste, Inhaltsprüfung, zufälliger Speicherort, Download nur als Anhang mit `nosniff` und `sandbox`                 | [Uploads](#uploads)                             |
-| Missbrauch durch Massenanfragen                              | Rate-Limits (Anmeldung, Reset, Einladung, Upload, Export, Support-Meldung, Cron, Kalender-Feed)                           | [Rate-Limits](#rate-limits)                     |
-| Manipulation des Protokolls                                  | Datenbank-Trigger: Änderungsprotokoll ist unveränderlich                                                                  | [Protokoll](#protokoll-und-nachvollziehbarkeit) |
-| Unsichere Konfiguration in Produktion                        | Start verweigert bei Platzhalter-Geheimnissen, `http://` oder Mail-Transport ≠ `smtp`                                     | [Betrieb](#konfiguration-und-geheimnisse)       |
-| Datenabfluss über Logs                                       | Keine Personendaten, Passwörter oder Token in Logs; IP nur gekürzt gespeichert                                            | [Logs](#logs-und-fehler)                        |
+| Bedrohung                                                    | Gegenmaßnahme                                                                                                             | Abschnitt                                           |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Ein Verein sieht oder ändert Daten eines anderen (IDOR)      | Kontext aus der Sitzung, gefilterter Datenbank-Client, zusammengesetzte Fremdschlüssel; „nicht gefunden“ statt „verboten“ | [Mandanten](#mandantentrennung)                     |
+| Rechteausweitung innerhalb eines Vereins                     | Rechte mit Reichweite, Prüfung immer im Dienst, Rollen serverseitig                                                       | [Rechte](#rechte)                                   |
+| Passwort erraten / Konto übernehmen                          | Argon2id, Passwortregeln, Rate-Limits je Konto und IP, konstante Antwortzeit, keine Konto-Aufzählung                      | [Anmeldung](#anmeldung-und-sitzungen)               |
+| Sitzung stehlen oder fixieren                                | Zufallstoken, nur Hash gespeichert, `HttpOnly`/`Secure`/`__Host-`, Inaktivitäts- und Höchstdauer                          | [Anmeldung](#anmeldung-und-sitzungen)               |
+| Fremde Seite löst Aktionen im Namen des Benutzers aus (CSRF) | `SameSite=Lax`, Herkunftsprüfung, Server Actions mit eingebautem Schutz                                                   | [Web](#webangriffe)                                 |
+| Skripteinschleusung (XSS)                                    | React-Escaping, keine `innerHTML`-Nutzung, CSP mit Nonce, Nachrichten nur als Text                                        | [Web](#webangriffe)                                 |
+| SQL-Einschleusung                                            | Nur Prisma mit Parametern; Roh-SQL nur mit gebundenen Werten; unsichere Varianten im Tenant-Client gesperrt               | [Web](#webangriffe)                                 |
+| Schädliche oder getarnte Uploads                             | Positivliste, Inhaltsprüfung, zufälliger Speicherort, Download nur als Anhang mit `nosniff` und `sandbox`                 | [Uploads](#uploads)                                 |
+| Missbrauch durch Massenanfragen                              | Rate-Limits (Anmeldung, Reset, Einladung, Upload, Export, Support-Meldung, Beitrittsantrag, Cron, Kalender-Feed)          | [Rate-Limits](#rate-limits)                         |
+| Zugang über den öffentlichen Beitrittslink (QR-Code)         | Link ist kein Zugangsschlüssel; Zugang erst nach Bestätigung durch den Vorstand; Honigtopf, Rate-Limits, erneuerbar       | [Beitritt](#öffentliches-beitrittsformular-qr-code) |
+| Manipulation des Protokolls                                  | Datenbank-Trigger: Änderungsprotokoll ist unveränderlich                                                                  | [Protokoll](#protokoll-und-nachvollziehbarkeit)     |
+| Unsichere Konfiguration in Produktion                        | Start verweigert bei Platzhalter-Geheimnissen, `http://` oder Mail-Transport ≠ `smtp`                                     | [Betrieb](#konfiguration-und-geheimnisse)           |
+| Datenabfluss über Logs                                       | Keine Personendaten, Passwörter oder Token in Logs; IP nur gekürzt gespeichert                                            | [Logs](#logs-und-fehler)                            |
 
 ## Mandantentrennung
 
@@ -47,6 +48,44 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
   öffnen kann trotzdem nur, wer das Dokument sehen darf.
 - Der **letzte Vereinsadministrator** kann weder entfernt noch herabgestuft werden; der **letzte Plattform-Administrator** kann sich
   nicht löschen.
+
+## Öffentliches Beitrittsformular (QR-Code)
+
+„Mitglied werden per QR-Code“ ist die einzige Stelle, an der Fremde ohne Konto etwas in einen Verein schreiben
+(`src/modules/membership-applications`, Seite `(auth)/beitreten/[token]`, im Proxy freigegeben).
+
+- **Der Link ist kein Zugangsschlüssel.** Wer ihn kennt, sieht nur Vereinsname, Logo und die Namen der aktiven Abteilungen und kann
+  einen Antrag einreichen – nichts lesen, nichts ändern. Deshalb steht der Schlüssel (32 Zufallsbytes, base64url) bewusst **im Klartext**
+  am Verein (`Club.joinToken`) statt als Hash: Er muss für Nachdrucke des Aushangs wieder anzeigbar sein. Aufgelöst wird er nur für
+  aktive Vereine (`src/server/tenancy/join-token.ts`, Formatprüfung vor dem Datenbankzugriff); jeder Fehler sieht gleich aus („Dieser
+  Link ist nicht (mehr) gültig …“, ohne Vereinsangaben).
+- **Zugang erst nach Bestätigung.** Ein Antrag legt weder Konto noch Mitglied an. Erst wenn jemand mit `members:create` in der
+  Reichweite **Verein** (Vereinsadministrator, Vorstand) annimmt, entsteht das Mitglied und über den vorhandenen Einladungsweg
+  (`issueInvitation`) eine Einladung mit der festen Rolle „Mitglied“ – der niedrigsten, damit das Annehmen keine Rechte über ein
+  normales Mitglied hinaus vergibt. Abteilungsleitungen entscheiden keine Anträge. Das Annehmen ist atomar (bedingter Übergang
+  „offen → angenommen“ in der Transaktion): Zwei gleichzeitige Klicks legen nur ein Mitglied an. Gibt es die E-Mail-Adresse im Verein
+  schon – als Mitglied (auch im Archiv), mit Zugang oder mit einer **offenen Einladung** –, wird nichts angelegt: `issueInvitation`
+  zöge eine vorhandene Einladung sonst still zurück, womöglich eine mit höherer Rolle, und der Vorstand widerriefe damit Einladungen,
+  was er sonst nicht darf. Die Prüfung läuft unter einer **Sperre je Verein und Adresse** (`lockUntilCommit`, Advisory-Lock bis zum
+  Ende der Transaktion): Werden zwei Anträge derselben Person gleichzeitig angenommen, wartet die zweite Transaktion und bekommt die
+  Dubletten-Meldung. Die Antragskarte zeigt solche Hindernisse schon vorab an.
+- **Einladung erneut senden** (angenommener Antrag, Mitglied ohne Konto): dieselbe Regel wie das Annehmen, Rolle fest „Mitglied“, an
+  die aktuelle Adresse des Mitglieds; ersetzt nur die eigene Einladung dieses Mitglieds, nie eine fremde. So braucht der Vorstand
+  kein `users:invite`, wenn die Einladung nicht verschickt werden konnte oder nach 7 Tagen abgelaufen ist.
+- **Erneuern und schließen.** „Neuen Code erzeugen“ ersetzt den Schlüssel sofort – alte Aushänge und bereits geöffnete Formulare
+  werden abgewiesen. „Beitritt schließen“ leert ihn; offene Anträge bleiben.
+- **Missbrauch:** Zod-Prüfung aller Felder (Längen wie die Datenbank-CHECKs), Einwilligung Pflicht, gewünschte Abteilung nur aus
+  diesem Verein. **Honigtopf**-Feld `website` (unsichtbar, nicht fokussierbar): ausgefüllt → vorgetäuschter Erfolg, nichts gespeichert.
+  **Rate-Limits:** 5 Anträge je Anschluss und Stunde (IPv4-Adresse bzw. IPv6-/64-Netz; zählt auch Roboter im Honigtopf), 30 je
+  Verein und Tag (Fehleingaben zählen nicht) – jeweils mit eigener Meldung samt Wartezeit statt „Bitte warte einen Moment“.
+- **Server Action ohne Anmeldung:** Next.js prüft `Origin` gegen den Host; die Action nimmt nur den Schlüssel und die Formularfelder
+  und vertraut keinem Vereinsbezug aus dem Browser. Die Seite ist `noindex` und sendet keinen Referrer.
+- **Logo ohne Anmeldung:** eigene Route `/api/beitreten/<Schlüssel>/logo` (nur mit gültigem Link, sonst 404), sonst ausgeliefert wie das
+  Mitglieder-Logo (`nosniff`, `sandbox`-CSP, `same-origin`, 120 Abrufe je IP und Stunde).
+- **QR-Code** als SVG-Pfad aus der Matrix des Pakets `qrcode` – kein eingeschleustes Markup (`dangerouslySetInnerHTML`), kein Bild von
+  einem fremden Dienst.
+- **Protokoll:** Eingang (Akteur „System“, gekürzte IP), Annehmen, Ablehnen, Einrichten/Erneuern/Schließen des Links – ohne den Schlüssel
+  und bei Eingang und Ablehnung ohne Namen. Geprüft in `tests/integration/membership-applications.test.ts` und `tests/e2e/beitritt.spec.ts`.
 
 ## Anmeldung und Sitzungen
 
@@ -113,7 +152,10 @@ Umsetzung: `src/lib/uploads.ts`, `src/server/storage/`, `src/modules/documents/s
 
 Zähler liegen in PostgreSQL (`RateLimitBucket`), also gemeinsam für alle Server-Instanzen und ohne Zusatzdienst. Begrenzt sind:
 Anmeldung (je Konto und IP), Passwort-Reset (anfordern und einlösen), Passwortwechsel, Einladungen, Datei-Upload, Vereinslogo (20 je Person und Stunde), Datenexport,
-Löschantrag, Support-Meldungen (10 je Person und Stunde), Kalender-Feed und der Cron-Endpunkt. **Hinter einem Reverse-Proxy** muss `TRUST_PROXY=true` gesetzt sein, sonst sehen alle
+Löschantrag, Support-Meldungen (10 je Person und Stunde), Beitrittsanträge (5 je IP und Stunde, 30 je Verein und Tag), das Logo der
+Beitrittsseite (120 je IP und Stunde), Kalender-Feed und der Cron-Endpunkt. **IP-Grenzen zählen je Anschluss** (`rateLimitIp`): IPv4 als ganze
+Adresse, IPv6 als /64-Netz – ein IPv6-Anschluss hat meist ein ganzes /64 und könnte seine Adresse darin für jeden Versuch wechseln.
+**Hinter einem Reverse-Proxy** muss `TRUST_PROXY=true` gesetzt sein, sonst sehen alle
 Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selbst setzt und Fremdwerte überschreibt.
 
 ## Protokoll und Nachvollziehbarkeit

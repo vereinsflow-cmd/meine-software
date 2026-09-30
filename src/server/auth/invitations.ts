@@ -8,7 +8,7 @@ import { env } from "@/server/env";
 import { conflict, forbidden, notFound, validationFailed } from "@/server/errors";
 import { sendMailDeferred } from "@/server/mail";
 import { invitationEmail } from "@/server/mail/templates";
-import { enforceRateLimit } from "@/server/security/rate-limit";
+import { enforceRateLimit, rateLimitIp } from "@/server/security/rate-limit";
 import { generateToken, hashToken } from "@/server/security/tokens";
 import { hashPassword } from "./password";
 import { normalizeEmail, type ClientMeta } from "./service";
@@ -214,7 +214,8 @@ export async function acceptInvitationAsNewUser(
   input: AcceptNewUserInput,
   meta: ClientMeta,
 ): Promise<{ userId: string; clubId: string }> {
-  if (meta.ip !== "unknown") await enforceRateLimit(`invite:ip:${meta.ip}`, 20, 60 * 60);
+  if (meta.ip !== "unknown")
+    await enforceRateLimit(`invite:ip:${rateLimitIp(meta.ip)}`, 20, 60 * 60);
 
   const invitation = await findValidInvitation(input.token);
   if (!invitation) throw invalidInvitation();
