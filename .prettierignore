@@ -14,3 +14,7 @@ next-env.d.ts
 tsconfig.json
 # Die Werbe-Website ist eine eigenständige statische Seite mit eigenen Werkzeugen (siehe website/README.md).
 website
+# Build-Ausgaben der Android-App (nur lokal, stehen in android/.gitignore)
+android/build
+android/app/build
+android/.gradle

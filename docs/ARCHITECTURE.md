@@ -118,15 +118,15 @@ Zeitpunkt bleiben als Nachweis.
 Es gibt bewusst **keinen** dauerhaft laufenden Worker. Ein Cron-Aufruf (alle 15 Minuten) startet die Jobs
 (`npm run jobs:run` oder `POST /api/cron/run` – auch `GET` – mit `Authorization: Bearer <CRON_SECRET>`):
 
-| Job         | Aufgabe                                                                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `events`    | Vergangene Veranstaltungen automatisch abschließen                                                                |
-| `reminders` | Erinnerungen 24 Stunden vor Schichten und Veranstaltungen (einmalig je Person, idempotent)                        |
-| `privacy`   | Fällige Löschanträge nach Ablauf der Bedenkzeit ausführen                                                         |
-| `mail`      | E-Mail-Warteschlange abarbeiten, Wiederholung nach Fehlern                                                        |
-| `push`      | Push-Warteschlange abarbeiten (Web Push, VAPID), erloschene Abos löschen, Wiederholung bei 429/5xx bis 2 Stunden  |
+| Job         | Aufgabe                                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `events`    | Vergangene Veranstaltungen automatisch abschließen                                                                                  |
+| `reminders` | Erinnerungen 24 Stunden vor Schichten und Veranstaltungen (einmalig je Person, idempotent)                                          |
+| `privacy`   | Fällige Löschanträge nach Ablauf der Bedenkzeit ausführen                                                                           |
+| `mail`      | E-Mail-Warteschlange abarbeiten, Wiederholung nach Fehlern                                                                          |
+| `push`      | Push-Warteschlange abarbeiten (Web Push, VAPID), erloschene Abos löschen, Wiederholung bei 429/5xx bis 2 Stunden                    |
 | `cleanup`   | Abgelaufene Sitzungen, Rate-Limit-Zähler, Token, alte Benachrichtigungen, widerrufene Kalender-Links und tote Push-Geräte entfernen |
-| `retention` | Aufbewahrungsfristen anwenden (Papierkorb, Ausgetretene, Änderungsprotokoll, gelöschte Dokumente)                 |
+| `retention` | Aufbewahrungsfristen anwenden (Papierkorb, Ausgetretene, Änderungsprotokoll, gelöschte Dokumente)                                   |
 
 Jeder Job läuft unter einer **Datenbank-Sperre** (`withJobLock`): Startet Cron versehentlich zweimal oder laufen zwei Instanzen,
 arbeitet nur eine. Alle Jobs sind **idempotent** (bedingte Updates, `dedupeKey`, `reminderSentAt`) – ein doppelter Lauf richtet nichts an.

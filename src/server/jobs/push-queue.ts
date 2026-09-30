@@ -1,6 +1,10 @@
 import "server-only";
 import { after } from "next/server";
-import { buildPushPayload, pushUrgency, PUSH_TTL_SECONDS } from "@/modules/notifications/push-payload";
+import {
+  buildPushPayload,
+  pushUrgency,
+  PUSH_TTL_SECONDS,
+} from "@/modules/notifications/push-payload";
 import { prisma } from "@/server/db/client";
 import { env } from "@/server/env";
 import { logUnexpectedError } from "@/server/log";
@@ -144,7 +148,10 @@ export async function sendPendingPushes(
       // Alle Geräte waren erloschen und wurden entfernt – niemand mehr, dem zuzustellen wäre.
       await mark(row.id, "NONE");
       result.skipped += 1;
-    } else if (transient > 0 && now.getTime() - row.createdAt.getTime() <= PUSH_RETRY_HOURS * 3_600_000) {
+    } else if (
+      transient > 0 &&
+      now.getTime() - row.createdAt.getTime() <= PUSH_RETRY_HOURS * 3_600_000
+    ) {
       result.retry += 1;
     } else {
       await mark(row.id, "FAILED");

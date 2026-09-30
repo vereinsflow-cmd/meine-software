@@ -103,7 +103,10 @@ const PUSH_ICON = "/app-icon-192.png";
 /** Einfarbiges Symbol für die Statusleiste von Android (nur die Deckkraft zählt); erzeugt von docs/brand/generate-app-icons.mjs. */
 const PUSH_BADGE = "/push-badge.png";
 const NOTIFICATIONS_PATH = "/benachrichtigungen";
-const FALLBACK_PUSH = { title: "Neue Benachrichtigung", body: "Öffne VereinsFlow, um sie zu lesen." };
+const FALLBACK_PUSH = {
+  title: "Neue Benachrichtigung",
+  body: "Öffne VereinsFlow, um sie zu lesen.",
+};
 
 /** Nur Adressen der eigenen Herkunft; alles andere (fremde Server, kaputte Werte) führt zum Benachrichtigungscenter. */
 function ownUrl(value) {
@@ -123,7 +126,12 @@ function readPush(event) {
   let notification = null;
   try {
     const data = event.data ? event.data.json() : null;
-    if (data && data.web_push === 8030 && data.notification && typeof data.notification === "object") {
+    if (
+      data &&
+      data.web_push === 8030 &&
+      data.notification &&
+      typeof data.notification === "object"
+    ) {
       notification = data.notification;
     }
   } catch {
