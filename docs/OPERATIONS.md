@@ -2,10 +2,9 @@
 
 Anleitung, um VereinsFlow produktiv zu betreiben. Für die lokale Entwicklung genügt der [Schnellstart in der README](../README.md#schnellstart).
 
-> **Wichtig vorab:** Das Docker-Image und `docker-compose.prod.yml` sind sorgfältig gebaut, wurden aber in der Entwicklungsumgebung
-> (ohne Docker) **nicht gestartet**. Bitte führe vor dem Produktiveinsatz einmal die Schritte unter [Erste Inbetriebnahme](#erste-inbetriebnahme)
-> auf einem Testserver aus. Der Produktions-Build und der Produktionsstart selbst (`next build`, `next start` mit sicherer Konfiguration) sind
-> getestet.
+> **Stand der Prüfung:** Das Docker-Image und `docker-compose.prod.yml` wurden lokal mit Docker gestartet und geprüft (Migrationen,
+> erster Plattform-Administrator, Anmeldung, Sicherung und Wiederherstellung). Auf einem echten Server mit HTTPS laufen sie zum ersten Mal
+> am Server-Tag – die Anleitung mit fertigen Skripten steht in [deploy/README.md](../deploy/README.md).
 
 ## Bausteine
 
@@ -25,31 +24,34 @@ Cron (alle 15 Minuten) ──► POST /api/cron/run
 
 Alle Einstellungen sind Umgebungsvariablen (Vorlage: [`.env.example`](../.env.example), Produktion: [`.env.production.example`](../.env.production.example)).
 
-| Variable                  | Pflicht                              | Bedeutung                                                                                                                                                                                     |
-| ------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APP_URL`                 | ja                                   | Öffentliche Adresse, **muss mit `https://` beginnen** (Links in Mails, Herkunftsprüfung)                                                                                                      |
-| `DATABASE_URL`            | ja                                   | PostgreSQL-Verbindung der Anwendung                                                                                                                                                           |
-| `MIGRATION_DATABASE_URL`  | nein                                 | Getrennte Verbindung für Migrationen (z. B. Besitzer-Rolle), sonst `DATABASE_URL`                                                                                                             |
-| `APP_SECRET`              | ja                                   | Zufällig, mindestens 32 Zeichen – `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`                                                                            |
-| `CRON_SECRET`             | ja                                   | Zufällig, mindestens 16 Zeichen – schützt den Cron-Endpunkt                                                                                                                                   |
-| `MAIL_TRANSPORT`          | ja                                   | In Produktion **`smtp`** (`log`/`file` sind nur für Entwicklung und Tests und lassen den Start scheitern)                                                                                     |
-| `MAIL_FROM`, `SMTP_*`     | bei `smtp`                           | Absender und Zugang des Mailservers                                                                                                                                                           |
-| `TRUST_PROXY`             | bei Proxy                            | `true`, wenn ein vertrauenswürdiger Reverse-Proxy `X-Forwarded-For` setzt (sonst zählt das Rate-Limit falsch)                                                                                 |
-| `SESSION_IDLE_MINUTES`    | nein (60)                            | Abmeldung nach Inaktivität                                                                                                                                                                    |
-| `SESSION_MAX_DAYS`        | nein (14)                            | Höchstdauer einer Sitzung                                                                                                                                                                     |
-| `STORAGE_DIR`             | nein                                 | Dateiablage, **außerhalb** von `public/`; im Container `/data/storage`                                                                                                                        |
-| `MAX_UPLOAD_MB`           | nein (10)                            | Größe je Datei                                                                                                                                                                                |
-| `CLUB_STORAGE_QUOTA_MB`   | nein (1024)                          | Speicherplatz für Dokumente je Verein                                                                                                                                                         |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | nein (für Push alle drei) | Web-Push: Schlüsselpaar mit `npx web-push generate-vapid-keys` erzeugen, Absender `mailto:adresse@beispiel.de` oder `https://…`. Ohne alle drei ist Push abgeschaltet (kein Fehler); nur ein Teil davon lässt den Start scheitern. Siehe [Push-Benachrichtigungen](#push-benachrichtigungen) |
-| `SUPPORT_EMAIL`           | nein (für die Android-App empfohlen) | Technischer Support des Betreibers: erscheint unter „Hilfe & Support“ (für Fragen, die der Verein nicht klären kann) und auf `/konto-loeschen` als Anlaufstelle für Löschanfragen ohne Zugang |
-| `ANDROID_APP_PACKAGE`     | nein (`com.vereinsflow.app`)         | Paketname der Android-App für `/.well-known/assetlinks.json` (siehe [App-Ansicht](#app-ansicht-android-app-und-iphone))                                                                       |
-| `ANDROID_APP_CERT_SHA256` | für die Android-App                  | SHA-256-Fingerabdrücke des Signaturzertifikats, kommagetrennt (`AB:12:…`, 32 Paare); leer = keine App verknüpft                                                                               |
+| Variable                                                 | Pflicht                              | Bedeutung                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                                | ja                                   | Öffentliche Adresse, **muss mit `https://` beginnen** (Links in Mails, Herkunftsprüfung)                                                                                                                                                                                                     |
+| `DATABASE_URL`                                           | ja                                   | PostgreSQL-Verbindung der Anwendung                                                                                                                                                                                                                                                          |
+| `MIGRATION_DATABASE_URL`                                 | nein                                 | Getrennte Verbindung für Migrationen (z. B. Besitzer-Rolle), sonst `DATABASE_URL`                                                                                                                                                                                                            |
+| `APP_SECRET`                                             | ja                                   | Zufällig, mindestens 32 Zeichen – `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`                                                                                                                                                                           |
+| `CRON_SECRET`                                            | ja                                   | Zufällig, mindestens 16 Zeichen – schützt den Cron-Endpunkt                                                                                                                                                                                                                                  |
+| `MAIL_TRANSPORT`                                         | ja                                   | In Produktion **`smtp`** (`log`/`file` sind nur für Entwicklung und Tests und lassen den Start scheitern)                                                                                                                                                                                    |
+| `MAIL_FROM`, `SMTP_*`                                    | bei `smtp`                           | Absender und Zugang des Mailservers                                                                                                                                                                                                                                                          |
+| `TRUST_PROXY`                                            | bei Proxy                            | `true`, wenn ein vertrauenswürdiger Reverse-Proxy `X-Forwarded-For` setzt (sonst zählt das Rate-Limit falsch)                                                                                                                                                                                |
+| `SESSION_IDLE_MINUTES`                                   | nein (60)                            | Abmeldung nach Inaktivität                                                                                                                                                                                                                                                                   |
+| `SESSION_MAX_DAYS`                                       | nein (14)                            | Höchstdauer einer Sitzung                                                                                                                                                                                                                                                                    |
+| `STORAGE_DIR`                                            | nein                                 | Dateiablage, **außerhalb** von `public/`; im Container `/data/storage`                                                                                                                                                                                                                       |
+| `MAX_UPLOAD_MB`                                          | nein (10)                            | Größe je Datei                                                                                                                                                                                                                                                                               |
+| `CLUB_STORAGE_QUOTA_MB`                                  | nein (1024)                          | Speicherplatz für Dokumente je Verein                                                                                                                                                                                                                                                        |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | nein (für Push alle drei)            | Web-Push: Schlüsselpaar mit `npx web-push generate-vapid-keys` erzeugen, Absender `mailto:adresse@beispiel.de` oder `https://…`. Ohne alle drei ist Push abgeschaltet (kein Fehler); nur ein Teil davon lässt den Start scheitern. Siehe [Push-Benachrichtigungen](#push-benachrichtigungen) |
+| `SUPPORT_EMAIL`                                          | nein (für die Android-App empfohlen) | Technischer Support des Betreibers: erscheint unter „Hilfe & Support“ (für Fragen, die der Verein nicht klären kann) und auf `/konto-loeschen` als Anlaufstelle für Löschanfragen ohne Zugang                                                                                                |
+| `ANDROID_APP_PACKAGE`                                    | nein (`com.vereinsflow.app`)         | Paketname der Android-App für `/.well-known/assetlinks.json` (siehe [App-Ansicht](#app-ansicht-android-app-und-iphone))                                                                                                                                                                      |
+| `ANDROID_APP_CERT_SHA256`                                | für die Android-App                  | SHA-256-Fingerabdrücke des Signaturzertifikats, kommagetrennt (`AB:12:…`, 32 Paare); leer = keine App verknüpft                                                                                                                                                                              |
 
 **Der Server startet nicht**, wenn `APP_SECRET`/`CRON_SECRET` noch Platzhalter (`dev-only`, `change-me`) enthalten, `APP_URL` kein `https://` hat
 oder `MAIL_TRANSPORT` nicht `smtp` ist – ebenso bei einem ungültigen Paketnamen oder Fingerabdruck (die Meldung nennt dann nur die Position
 des Eintrags, nicht den Wert). Die Meldung im Protokoll nennt jeden Fehler. `SEED_PASSWORD` gehört **nicht** in die Produktion.
 
 ## Erste Inbetriebnahme
+
+**Eigener Server (IONOS VPS):** Schritt für Schritt mit Einrichtungs-, Sicherungs- und Update-Skript in [deploy/README.md](../deploy/README.md).
+Die Schritte hier beschreiben dasselbe allgemein für jeden Server mit Docker.
 
 Mit Docker Compose (empfohlen):
 
@@ -136,7 +138,7 @@ anderen Pfad) und unverändert durch den Reverse-Proxy:
 | Adresse                        | Zweck                                                                   | Antwort                                             |
 | ------------------------------ | ----------------------------------------------------------------------- | --------------------------------------------------- |
 | `/manifest.webmanifest`        | Name, Symbole, `display: "standalone"`                                  | JSON, statisch                                      |
-| `/sw.js`                       | Service Worker (Offline-Seite, Push-Anzeige)                           | JavaScript, `Cache-Control: no-cache`               |
+| `/sw.js`                       | Service Worker (Offline-Seite, Push-Anzeige)                            | JavaScript, `Cache-Control: no-cache`               |
 | `/offline.html`                | Offline-Seite, vom Service Worker bei der Installation abgelegt         | HTML, statisch                                      |
 | `/.well-known/assetlinks.json` | Digital Asset Links: bestätigt Android, dass die App zur Adresse gehört | `application/json`, eine Stunde zwischenspeicherbar |
 | `/konto-loeschen`              | Anleitung zur Kontolöschung – Pflichtangabe für Google Play             | HTML, ohne Vereins- oder Personendaten              |
@@ -209,6 +211,8 @@ Gesichert werden müssen **zwei** Dinge, möglichst zeitnah zueinander:
 
 2. **Dateiablage** (`STORAGE_DIR`, im Compose das Volume `storage`): Volume-Snapshot oder `rsync`/`restic`.
 
+Beides zusammen, verschlüsselt und mit automatischem Aufräumen: [`deploy/sicherung.sh`](../deploy/sicherung.sh) (täglich per Zeitplan, siehe [deploy/README.md](../deploy/README.md)).
+
 Hinweise:
 
 - **Sicherung wiederherstellen testen** – eine ungeprüfte Sicherung ist keine. Wiederherstellung: `pg_restore -d vereinsflow --clean --if-exists sicherung.dump`.
@@ -218,6 +222,8 @@ Hinweise:
 - Migrationen sind **nur vorwärts**. Erstelle vor jedem Update eine Sicherung; ein Rückgang auf eine ältere Version bedeutet Wiederherstellung.
 
 ## Updates
+
+Auf dem eigenen Server mit Sicherung vorab und Prüfung danach: [`deploy/aktualisieren.sh`](../deploy/aktualisieren.sh). Von Hand:
 
 ```bash
 git pull

@@ -1,0 +1,4 @@
+# Ergänzt die .editorconfig im Hauptordner: Caddy erwartet Tabs im Caddyfile. Mit Leerzeichen meldet Caddy bei jedem Start und
+# jedem Neuladen "Caddyfile input is not formatted" (Prüfung und Korrektur: caddy fmt --diff bzw. caddy fmt --overwrite).
+[Caddyfile]
+indent_style = tab

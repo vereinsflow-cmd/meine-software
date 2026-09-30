@@ -1,0 +1,39 @@
+# VereinsFlow – Reverse-Proxy (Caddy) für https://app.vereins-flow.com
+#
+# Wird von deploy/server-einrichten.sh nach /etc/caddy/Caddyfile kopiert und geladen (nachträglich: das Skript erneut ausführen).
+# Hintergrund: docs/OPERATIONS.md, Abschnitt „Reverse-Proxy“.
+#
+# Caddy holt und erneuert das TLS-Zertifikat selbst (Let's Encrypt), leitet HTTP von allein auf HTTPS um und bietet HTTP/3 an
+# (443/udp). Voraussetzung: Der DNS-A-Eintrag von app.vereins-flow.com zeigt auf diesen Server, und 80/tcp, 443/tcp sowie
+# 443/udp sind offen. Die Werbe-Website vereins-flow.com liegt beim Webspace-Anbieter und hat mit diesem Server nichts zu tun.
+#
+# Weitergeleitete Header (die Anwendung läuft mit TRUST_PROXY=true und vertraut dem ersten Wert von X-Forwarded-For – für das
+# Rate-Limit bei Anmeldung, Passwort-Reset usw. Setzt der Client den Header selbst und würde er durchgereicht, könnte er sein
+# Limit umgehen): Caddy setzt X-Forwarded-For, -Proto und -Host standardmäßig selbst (auf die Adresse des Clients) und ignoriert
+# vom Client mitgeschickte Werte – solange trusted_proxies NICHT konfiguriert ist (Caddy-Dokumentation, reverse_proxy).
+# Deshalb steht hier keine Zeile dazu (eine ausdrückliche „header_up X-Forwarded-For“-Zeile meldet Caddy als überflüssig).
+#
+# Bewusst NICHT enthalten:
+#  - trusted_proxies (weder hier noch als globale Option „servers“): Damit würde Caddy Fremdwerte von Clients übernehmen.
+#    Erst wenn ein weiterer Proxy (z. B. ein CDN) VOR Caddy geschaltet wird, gehört dessen Adressbereich dort hinein.
+#  - header-Anweisungen für Antworten: Die Sicherheits-Header (CSP mit Nonce, HSTS, X-Frame-Options, ...) setzt die Anwendung
+#    selbst; Caddy reicht sie unverändert durch. Nichts hier darf sie überschreiben oder entfernen.
+#  - Zugriffsprotokoll (log): Es würde IP-Adressen dauerhaft auf die Platte schreiben. Fehler von Caddy stehen im Journal:
+#    journalctl -u caddy
+
+app.vereins-flow.com {
+	# Antworten komprimieren (Zstandard, sonst gzip).
+	encode zstd gzip
+
+	# Größenlimit für Anfragen: MAX_UPLOAD_MB (10) plus Spielraum für die übrigen Formularfelder. Größere Anfragen beantwortet
+	# Caddy mit 413. Wer MAX_UPLOAD_MB in .env.production erhöht, muss diesen Wert mit anheben.
+	request_body {
+		max_size 12MB
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		# Die Anwendung nutzt X-Real-IP als Ersatz, falls X-Forwarded-For fehlt. Caddy fasst diesen Header nicht an, deshalb
+		# setzt ihn der Proxy ebenfalls selbst – auch er darf nicht vom Client stammen.
+		header_up X-Real-IP {remote_host}
+	}
+}

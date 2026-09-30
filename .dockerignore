@@ -28,3 +28,7 @@ storage
 *.md
 docs
 website
+
+# Android-App und Server-Skripte – laufen außerhalb des Containers
+android
+deploy
