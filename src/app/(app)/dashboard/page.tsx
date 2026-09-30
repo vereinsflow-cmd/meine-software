@@ -66,7 +66,12 @@ export default async function DashboardPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
-  const [data, layout] = await Promise.all([getDashboard(ctx), getDashboardLayout(ctx)]);
+  // Lässt sich die eigene Einstellung nicht lesen (etwa weil ein laufender Server die neue Spalte noch nicht kennt), gilt die
+  // Standard-Ansicht – das Dashboard als Startseite soll daran nie scheitern.
+  const [data, layout] = await Promise.all([
+    getDashboard(ctx),
+    getDashboardLayout(ctx).catch(() => null),
+  ]);
   const { members, events, shifts, tasks, notifications, birthdays, activity, payments } = data;
 
   // Einmal berechnen, von mehreren Reitern verwendet. Das `catch` verhindert eine „unbehandelte Ablehnung“, falls kein
