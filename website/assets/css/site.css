@@ -1323,9 +1323,12 @@ html:not(.js) .nav ul a:hover {
    Bild ist (site.js setzt .is-playing; Laptop 3,6 s, Telefon 4 s, einmal je Aufruf). Der Browser führt sie selbst aus –
    ohne Skript und ohne neu zu zeichnen, deshalb flüssig. Prozent in den Keyframes = Anteil der Zeit. Die Keyframes (am Dateiende) sind aus Formeln erzeugt: weiche Teil-Abläufe (smoothstep x² · (3 − 2x))
    für Erscheinen, Drehen, Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert (Helligkeit = cos des Winkels
-   zwischen Flächennormale und Licht, Licht von vorn links oben, beim Telefon von vorn rechts).
+   zwischen Flächennormale und Licht, Licht von vorn links oben, beim Telefon von vorn rechts; beim Laptop mit
+   Umgebungslicht, abgewandte Flächen werden also nicht ganz dunkel, und die Kanten des Unterteils werden mit ihm nach
+   vorn gekippt etwas dunkler).
    Die Regeln hier beschreiben die Endlage: So stehen die Geräte ohne JavaScript, bei reduzierter Bewegung und im Druck.
-   In der Endlage steht alles gerade, unverschoben und in der Bildebene – die Bildschirme werden Pixel für Pixel gezeichnet.
+   In der Endlage stehen die Bildschirme mit allem, was sie trägt, gerade, unverschoben und in der Bildebene – sie werden
+   Pixel für Pixel gezeichnet (gekippt ist nur das Unterteil des Laptops, siehe .laptop-body).
    Kein opacity/filter/overflow an den Geräten selbst – das würde die 3D-Darstellung flach drücken. */
 .showcase {
   position: relative;
@@ -1401,12 +1404,25 @@ html:not(.js) .nav ul a:hover {
   aspect-ratio: 451 / 261;
 }
 
-/* Gemeinsame Oberflächen: Aluminium (fein gekörnt) */
+/* Gemeinsame Oberflächen: Aluminium (fein gekörnt), neutral silbern wie eloxiertes Aluminium im hellen Studio. Verlauf
+   quer über die senkrechten Kanten des Unterteils (--edge-stops): oben die polierte Fase mit feiner Fuge, darunter die
+   helle Schulter, zur Unterseite dunkler, wo das Gehäuse nach innen rundet. Kanten des Deckels (--lid-stops): an der
+   Glasebene eine dunklere Fuge, die weich ins Aluminium übergeht – nur mäßig dunkel: Fast genau von der Kante gesehen
+   ist die Fläche schmaler als ein Pixel, und Chromium zeichnet sie dann gestrichelt. */
 .laptop {
   --grain: url("../img/textur-koernung.svg");
-  --alu-hi: #eef0f2;
-  --alu: #d9dce0;
-  --alu-lo: #b9bdc3;
+  --alu-hi: #f4f4f5;
+  --alu: #dcdddf;
+  --alu-lo: #b0b2b5;
+  --edge-stops:
+    #fff 0 1px,
+    #bfc1c4 1px 2px,
+    #f2f2f3 calc(2px + 4%),
+    #dcdddf 34%,
+    #b3b5b8 66%,
+    #85878b 88%,
+    #5c5e62 100%;
+  --lid-stops: #87888b 0, #a9aaad 9%, #c3c4c7 18%, #eeeeef 50%, #b6b7ba;
 }
 
 /* --- Laptop ---
@@ -1414,31 +1430,35 @@ html:not(.js) .nav ul a:hover {
    dreht sich zugeklappt um 180°, klappt vor dem Betrachter auf und richtet sich zur Vorderansicht auf. Beim Aufklappen
    geht der Bildschirm an (die Abdunklung über ihm blendet aus).
    Maße hängen an der Bildschirmbreite --sw (höchstens 880 px – dafür gibt es die Bilddatei in genau dieser Breite).
-   Deckel = Rand + Bildschirm (16 : 10) + Rand (unten breiter, das Kinn: 2,2 Ränder); das Unterteil ist so tief, wie der
-   Deckel hoch ist (zugeklappt deckt er es genau ab). Gedreht wird um die Mitte des Unterteils. Der Blickpunkt liegt 0,55
-   Deckelhöhen über der Deckeloberkante, wie bei einem Studiofoto von schräg oben: Der Deckel steht in der Bildebene
-   (bleibt also unverzerrt und scharf), Tastatur und Touchpad liegen perspektivisch davor und sind gut zu sehen, die
-   Vorderkante ist etwa 14 % breiter als der Deckel. Beim Aufklappen, schräg von oben gesehen, ist der Laptop kurz etwas
-   kleiner, damit die Vorderkante im Bild bleibt. --sw, --pw: bei Änderung „sizes“ im HTML mitziehen. */
+   Deckel = Rand + Bildschirm (16 : 10) + Rand (unten breiter, das Kinn: 3,2 Ränder), Grundfläche damit etwa 1,45 : 1 wie
+   bei aktuellen Geräten; das Unterteil ist so tief, wie der Deckel hoch ist (zugeklappt deckt er es genau ab). Gedreht
+   wird um die Mitte des Unterteils. Die Endlage ist wie ein Produktfoto aufgenommen: Der Deckel steht 104° offen – dafür
+   ist das Unterteil um das Scharnier 14° nach vorn gekippt (.laptop-body), der Deckel selbst bleibt in der Bildebene
+   (unverzerrt und scharf). Lange Brennweite (Abstand zehn Bildschirmbreiten), Blick aus Höhe des oberen Bildschirmdrittels
+   genau auf den Deckel: Tastatur und Touchpad liegen gut sichtbar davor, die Seiten des Unterteils stehen fast senkrecht,
+   die Vorderkante ist nur etwa 7 % breiter als der Deckel. Beim Aufklappen, schräg von oben gesehen, fährt die Kamera
+   kurz zurück, damit die Vorderkante im Bild bleibt. --sw, --pw: bei Änderung „sizes“ im HTML mitziehen. */
 .showcase-laptop {
-  /* Höhe in der Endlage ≈ 0,926 · --sw + 218 px (Kopfzeile, Text, Abstände); die Vorderkante ist 1,19 · --sw breit
-     (Faktor 1,2 mit Reserve) */
-  --sw: min(880px, 80vw, calc((100vh - 218px) * 1.08));
+  /* Höhe in der Endlage ≈ 1,02 · --sw + 218 px (Kopfzeile, Text, Abstände); das Unterteil ist vorn knapp 1,13 · --sw
+     breit (Faktor 1,15 mit Reserve) */
+  --sw: min(880px, 80vw, calc((100vh - 218px) * 0.98));
   --b: calc(var(--sw) / 44);
   --lw: calc(var(--sw) + 2 * var(--b));
-  --lh: calc(var(--sw) / 1.6 + 3.2 * var(--b));
+  --lh: calc(var(--sw) / 1.6 + 4.2 * var(--b));
   --t: calc(var(--sw) / 36);   /* Unterteil 2,8 % der Breite (MacBook Air 2,4 %, Pro 3,2 %) */
   --tl: calc(var(--sw) / 66);  /* Deckel 1,45 % */
-  --rr: var(--b);              /* ein Eckenradius für Deckel und Unterteil (zugeklappt ein Körper) */
+  --rr: var(--b);              /* ein Eckenradius für Deckel und Unterteil, an allen vier Ecken (zugeklappt ein Körper) */
+  --open: 14deg;               /* Kippung des Unterteils in der Endlage (OPEN im Generator, muss gleich sein) */
+  --cam: calc(var(--sw) * 10); /* Kameraabstand (perspective; auch die Kamerafahrt in vf-laptop-body rechnet damit) */
   /* Aluminiumkante um das Glas des Bildschirms, etwa 1 mm. Ganze Pixel: Browser runden Rahmenbreiten ab – mit einem
      Bruchteil stünde das Bild um diesen Rest versetzt und würde unscharf. */
   --rim: 2px;
 }
 
 .showcase-laptop .showcase-scene {
-  perspective: 5000px;
-  perspective: calc(var(--sw) * 5.68); /* bei 880 px Bildschirm 5000 px; kleiner Laptop, gleicher Blick */
-  perspective-origin: 50% calc(var(--lh) * -0.55); /* Blickpunkt über der Deckeloberkante (siehe oben) */
+  perspective: 7000px;
+  perspective: var(--cam);
+  perspective-origin: 50% calc(var(--lh) * 0.3); /* Blickpunkt im oberen Drittel des Deckels (siehe oben) */
 }
 
 /* Von oben gesehen braucht der Laptop mehr Höhe: Text etwas näher an die Kopfzeile */
@@ -1453,28 +1473,39 @@ html:not(.js) .nav ul a:hover {
   width: 98%;
   bottom: calc(var(--sw) * 0.04); /* unter der Vorderkante wie das Gerät im Schwebeflug, nicht an der Szenenunterkante */
   height: 11%;
-  opacity: 0; /* aufgesetzt übernimmt der Kontaktschatten (.laptop::before) */
+  opacity: 0; /* aufgesetzt übernehmen die Kontaktschatten (.laptop-body::before, .laptop-front::before) */
 }
 
 .laptop {
   position: relative;
   width: var(--lw);
   height: calc(var(--lh) + var(--t));
-  margin-bottom: calc(var(--sw) * 0.2); /* Platz für das perspektivisch davor liegende Unterteil */
+  margin-bottom: calc(var(--sw) * 0.27); /* Platz für das perspektivisch davor liegende Unterteil und seinen Schatten */
   transform-style: preserve-3d;
   transform-origin: 50% var(--lh) calc(var(--lh) / 2);
 }
 
 .laptop > *,
+.laptop-body > *,
 .laptop-lid > *,
 .laptop-screen > *,
 .laptop-deck > * {
   position: absolute;
 }
 
-/* Schatten unter dem aufgesetzten Laptop: eine Fläche knapp unter dem Unterteil mit weichem Auslauf nach außen (nah am
-   Gerät dunkler). Sie erscheint beim Aufsetzen; der flache Bodenschatten der Bühne übernimmt, solange er schwebt. */
-.laptop::before {
+/* Unterteil mit Tastatur, Kanten und Ecken: um das Scharnier (Oberkante hinten) nach vorn gekippt – so steht der Deckel
+   über 90° offen und bleibt selbst doch unverdreht in der Bildebene. Zugeklappt liegt es gerade (vf-laptop-hinge). */
+.laptop-body {
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% var(--lh) 0;
+  transform: rotateX(calc(var(--open) * -1));
+}
+
+/* Schatten unter dem aufgesetzten Laptop: eine Fläche knapp unter dem Unterteil (mit ihm gekippt) mit weichem Auslauf
+   nach außen (nah am Gerät dunkler). Sie erscheint beim Aufsetzen; der flache Bodenschatten der Bühne übernimmt, solange
+   er schwebt. Die dichte Schattenkante direkt vor dem Gerät trägt .laptop-front::before. */
+.laptop-body::before {
   content: "";
   position: absolute;
   top: calc(var(--lh) + var(--t) + 1px);
@@ -1507,45 +1538,56 @@ html:not(.js) .nav ul a:hover {
 .laptop-screen,
 .laptop-cover {
   inset: 0;
-  border-radius: var(--rr) var(--rr) calc(var(--b) * 0.3) calc(var(--b) * 0.3);
+  border-radius: var(--rr);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* Vorderseite: schwarzes Glas mit schmaler, heller Aluminiumkante; das Glas fängt oben links etwas Licht. In der Endlage
-   ist scale genau 1 (keine Umrechnung, der Bildschirm bleibt 1 : 1). */
+/* Vorderseite: schwarzes Glas mit schmaler, heller Aluminiumkante; das Glas fängt oben links etwas Licht, oben an der
+   Glaskante eine feine Lichtlinie, im Rand rechts unten schwach das Spiegelbild eines Fensters (nur im Rand, das Bild
+   bleibt frei). In der Endlage ist scale genau 1 (keine Umrechnung, der Bildschirm bleibt 1 : 1). */
 .laptop-screen {
   /* Aluminiumkante um das Glas (--rim, siehe .showcase-laptop): nach innen gelegt, oben hell, nach unten dunkler. Bild und
      Kamera sind um genau diese Breite zurückgesetzt – sie stehen damit an derselben Stelle wie ohne Kante. */
   scale: 1;
   border: var(--rim) solid transparent;
   background:
-    linear-gradient(158deg, #202227 0%, #0c0d10 28%, #07080a 100%) padding-box,
-    linear-gradient(180deg, #f4f5f7 0%, #d3d6da 35%, #a9aeb4 100%) border-box;
+    linear-gradient(121deg, rgb(255 255 255 / 0%) 64%, rgb(255 255 255 / 5%) 64.3% 76%, rgb(255 255 255 / 0%) 76.3%) padding-box,
+    linear-gradient(158deg, #202124 0%, #0c0d0f 28%, #070809 100%) padding-box,
+    linear-gradient(180deg, #f4f4f5 0%, #d4d5d7 35%, #a9abae 100%) border-box;
   box-shadow:
-    0 0 0 0.5px rgb(80 86 94 / 45%),
+    0 0 0 0.5px rgb(80 82 86 / 45%),
+    inset 0 1px 0 rgb(255 255 255 / 14%),
     inset 0 0 0 1px rgb(0 0 0 / 60%);
 }
 
-/* Kamera: dunkle Linse mit bläulichem Schimmer und kleinem Lichtpunkt, mittig im schwarzen Rand über dem Bild */
+/* Kamera: dunkle Linse mit bläulichem Schimmer und kleinem Lichtpunkt in einem etwas helleren Ring, mittig im schwarzen
+   Rand über dem Bild */
 .laptop-camera {
-  top: calc((var(--b) - var(--rim) - var(--b) * 0.28) / 2);
+  top: calc((var(--b) - var(--rim) - var(--b) * 0.3) / 2);
   left: 50%;
-  width: calc(var(--b) * 0.28);
+  width: calc(var(--b) * 0.3);
   aspect-ratio: 1;
   border-radius: 50%;
   background:
     radial-gradient(circle at 36% 32%, rgb(255 255 255 / 70%) 0 8%, rgb(255 255 255 / 0%) 16%),
     radial-gradient(circle closest-side, #2d3b55 0 35%, #0b0f16 70%, #1d2026 100%);
+  box-shadow:
+    0 0 0 calc(var(--b) * 0.09) #17191d,
+    0 0 0 calc(var(--b) * 0.09 + 0.5px) rgb(255 255 255 / 6%);
   translate: -50% 0;
 }
 
+/* Bildschirm mit runden oberen Ecken wie bei aktuellen Geräten und schwarzem Rand des Panels */
 .laptop-screen picture {
   top: calc(var(--b) - var(--rim));
   left: calc(var(--b) - var(--rim));
   width: var(--sw);
   height: calc(var(--sw) / 1.6);
+  overflow: hidden;
+  border-radius: calc(var(--b) * 0.45) calc(var(--b) * 0.45) 0 0;
   background: var(--surface-soft);
+  box-shadow: 0 0 0 1px #000;
 }
 
 .laptop-screen img {
@@ -1555,8 +1597,8 @@ html:not(.js) .nav ul a:hover {
   object-fit: cover;
 }
 
-/* Über dem Bildschirm: aus, solange der Deckel aufgeht (dunkel), Spiegelung, solange der Laptop schräg steht – in der
-   Endlage beides vollständig durchsichtig */
+/* Über dem Bildschirm: aus, solange der Deckel aufgeht (schwarzes Glas), und die Spiegelung, die beim Aufklappen über
+   das Glas wandert – in der Endlage beides vollständig durchsichtig */
 .laptop-screen::before,
 .laptop-screen::after {
   content: "";
@@ -1569,31 +1611,36 @@ html:not(.js) .nav ul a:hover {
 }
 
 .laptop-screen::before {
-  background: #040507;
+  background: #040506;
 }
 
+/* Spiegelung: ein weiches Lichtband, dreimal so hoch angelegt wie das Glas, damit es beim Aufklappen von oben über das
+   Glas hinein- und unten wieder hinausgleiten kann (vf-laptop-screen-glare, hier Endlage: unterhalb) */
 .laptop-screen::after {
   background: linear-gradient(
-    118deg,
-    rgb(255 255 255 / 16%) 0%,
-    rgb(255 255 255 / 4%) 38%,
-    rgb(255 255 255 / 0%) 55%
-  );
+      172deg,
+      rgb(255 255 255 / 0%) 33%,
+      rgb(255 255 255 / 9%) 39%,
+      rgb(255 255 255 / 26%) 44.5%,
+      rgb(255 255 255 / 9%) 50%,
+      rgb(255 255 255 / 0%) 56%
+    )
+    0 7.5% / 100% 300%;
 }
 
 /* Rückseite des Deckels: gestrahltes Aluminium mit eingelassenem, spiegelndem Zeichen von VereinsFlow */
 .laptop-cover {
   display: grid;
   place-items: center;
+  overflow: hidden; /* Rückfall für Browser ohne „clip“ (Safari vor 16) */
+  overflow: clip; /* beschneidet den stillstehenden Lichtschein (::before) an der runden Kontur */
   background:
     var(--grain),
-    radial-gradient(120% 90% at 20% 0%, rgb(255 255 255 / 55%), rgb(255 255 255 / 0%) 60%),
-    linear-gradient(170deg, var(--alu-hi) 0%, #d4d8dd 55%, #c8ccd2 100%);
+    linear-gradient(170deg, var(--alu-hi) 0%, #d9dadc 55%, #c8c9cc 100%);
   scale: 0; /* in der Endlage abgewandt (siehe oben) */
   box-shadow:
     inset 0 0 0 1px rgb(0 0 0 / 8%),
     inset 0 2px 0 rgb(255 255 255 / 65%);
-  color: #aeb4bc;
   transform: rotateY(180deg) translateZ(var(--tl));
   /* An der Scharnierseite 2 px über die Unterkante des Deckels hinaus (das Zeichen bleibt mittig): Kurz bevor die
      Scharnierseite beim Drehen genau von der Kante zu sehen ist (p ≈ 0,42), ist sie schmaler als ein Pixel – Safari
@@ -1602,70 +1649,100 @@ html:not(.js) .nav ul a:hover {
   padding-bottom: 2px;
 }
 
+/* Zeichen ohne filter: Ein Filter zeichnet es in der gedrehten Fläche als eigene Ebene ohne Kantenglättung (gezackt) –
+   die Lichtkante steckt im Symbol selbst (i-mark-mirror) */
 .laptop-cover .device-mark {
   width: 13%;
-  filter: drop-shadow(0 0.5px 0 rgb(255 255 255 / 80%)) drop-shadow(0 -0.5px 0 rgb(0 0 0 / 20%));
 }
 
-/* Lichtschein auf dem Aluminium, der beim Drehen auf- und wieder abblendet (::before), und Abdunklung, wenn der Deckel
-   hochklappt und die Rückseite vom Licht wegzeigt (::after, hier Endlage – dann ist die Rückseite ohnehin abgewandt) */
+/* Abdunklung, wenn der Deckel hochklappt und die Rückseite vom Licht wegzeigt (::after, hier Endlage – dann ist die
+   Rückseite ohnehin abgewandt) */
 .laptop-cover::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgb(20 26 34);
+  background: rgb(20 24 30);
   opacity: 0.4;
   pointer-events: none;
 }
 
+/* Spiegelbild der Studioleuchten auf dem zugeklappten Deckel: ein breiter Schein und ein Lichtband. Es steht still,
+   während sich das Aluminium und das Zeichen darunter drehen – die Schicht dreht in der Deckelebene genau gegen die
+   Drehung des Laptops (vf-laptop-sheen) und ist dafür größer als der Deckel (beschnitten, siehe .laptop-cover). */
 .laptop-cover::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    110deg,
-    rgb(255 255 255 / 0%) 25%,
-    rgb(255 255 255 / 42%) 50%,
-    rgb(255 255 255 / 0%) 75%
-  );
+  inset: -45%;
+  background:
+    radial-gradient(60% 40% at 32% 30%, rgb(255 255 255 / 52%), rgb(255 255 255 / 0%) 70%),
+    linear-gradient(
+      112deg,
+      rgb(255 255 255 / 0%) 38%,
+      rgb(255 255 255 / 36%) 47%,
+      rgb(255 255 255 / 55%) 50%,
+      rgb(255 255 255 / 36%) 53%,
+      rgb(255 255 255 / 0%) 62%
+    ),
+    linear-gradient(
+      112deg,
+      rgb(120 124 130 / 0%) 60%,
+      rgb(120 124 130 / 12%) 66%,
+      rgb(120 124 130 / 0%) 74%
+    );
+  rotate: 0deg;
   opacity: 0;
   pointer-events: none;
 }
 
 /* Kanten des Deckels (oben, links, rechts, unten), damit er beim Drehen nicht zu einem Strich wird. Die Vorderseite jeder
    Kante (und jedes Eckstreifens) zeigt nach außen: So blendet Safari sie aus, sobald sie vom Betrachter wegzeigt – sonst
-   schimmerte sie an der abgewandten Seite gestrichelt durch die Rückseite des Deckels. */
+   schimmerte sie an der abgewandten Seite gestrichelt durch die Rückseite des Deckels. Licht wie auf den Kanten des
+   Unterteils (::after, Werte hier: Endlage) – zugeklappt wirken Deckel und Unterteil wie ein Körper. Der durchsichtige
+   Umriss (outline) lässt Chromium und Safari die Ränder der schräg gesehenen, schmalen Flächen glätten. */
 .laptop-edge {
-  background: linear-gradient(90deg, #b9bdc3, #eceef0 50%, #b9bdc3);
+  background: linear-gradient(90deg, #b6b7ba, #eeeeef 50%, #b6b7ba);
+  outline: 1px solid transparent;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* Quer zur Dicke ein Verlauf mit einer dunklen Fuge an der Glasebene (dort, wo das Glas in das Aluminium übergeht): 8 % der
-   Dicke, bei der größten Breite gut 1 px. Eine feste 1-px-Fuge zeichnete Safari auf kleinen Bildschirmen (Deckel nur gut
-   4 px dick) an der schräg gesehenen Kante gestrichelt. */
+.laptop-edge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(12 16 22);
+  pointer-events: none;
+}
+
+/* Quer zur Dicke ein Verlauf mit einer dunkleren Fuge an der Glasebene (dort, wo das Glas in das Aluminium übergeht), die
+   weich ausläuft – eine harte, schwarze Fuge zeichneten Chromium und Safari an der schräg gesehenen Kante gestrichelt. */
 .laptop-edge-top {
   top: 0;
   left: var(--rr);
   width: calc(100% - 2 * var(--rr));
   height: var(--tl);
-  background: linear-gradient(180deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
+  background: linear-gradient(180deg, var(--lid-stops));
   transform-origin: 50% 0;
   transform: rotateX(-90deg) rotateY(180deg); /* rotateY: Vorderseite nach außen (oben) */
+}
+
+.laptop-edge-top::after {
+  opacity: 0;
 }
 
 .laptop-edge-l,
 .laptop-edge-r {
   top: var(--rr);
   width: var(--tl);
-  height: calc(100% - var(--rr));
+  height: calc(100% - 2 * var(--rr));
 }
 
-/* Die oberen runden Ecken des Deckels: je vier schmale, ebene Streifen entlang der Rundung zwischen Glas und Rückseite
-   (wie vorn am Unterteil, Radius --rr, Tiefe --tl). Gebaut ist die Ecke oben links, oben rechts ist sie um 90° gedreht.
-   Streifen statt einer flachen Scheibe: schräg von der Seite gesehen ist die Ecke geschlossen. */
+/* Die runden Ecken des Deckels: je vier schmale, ebene Streifen entlang der Rundung zwischen Glas und Rückseite (wie am
+   Unterteil, Radius --rr, Tiefe --tl). Gebaut ist die Ecke oben links; oben rechts, unten links und unten rechts ist sie
+   um 90°, 270° bzw. 180° gedreht. Streifen statt einer flachen Scheibe: schräg von der Seite gesehen ist die Ecke
+   geschlossen. */
 .lid-c {
   top: 0;
   width: var(--rr);
@@ -1682,64 +1759,186 @@ html:not(.js) .nav ul a:hover {
   transform: rotateZ(90deg);
 }
 
+.lid-bl {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  transform: rotateZ(270deg);
+}
+
+.lid-br {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  transform: rotateZ(180deg);
+}
+
 /* Streifen: Sehne im Abstand R · cos 11,25° vom Mittelpunkt der Rundung (rechts unten im Quadrat), an jedem Ende 1 px
    länger; rotateY(90deg) lässt ihn wie .laptop-edge-l von der Glasebene nach hinten zur Rückseite laufen, rotateX(180deg)
-   dreht seine Vorderseite nach außen (siehe .laptop-edge) */
+   dreht seine Vorderseite nach außen (siehe .laptop-edge) – und kehrt damit oben und unten um: Das untere Ende (::after,
+   --lit0) liegt hier am Stoß zum nächsten Streifen, das obere (::before, --lit1) am vorigen (wie am Unterteil) */
 .lid-c i {
   position: absolute;
   top: calc(var(--rr) * 0.80491 - 1px);
   left: 100%;
   width: var(--tl);
   height: calc(var(--rr) * 0.39018 + 2px);
-  background: linear-gradient(90deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
+  background: linear-gradient(90deg, var(--lid-stops));
+  outline: 1px solid transparent;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transform-origin: 0 50%;
   transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.98079)) rotateY(90deg) rotateX(180deg);
 }
 
-.lid-c i:nth-child(1) {
+.lid-c i:nth-child(1),
+.base-c i:nth-child(1) {
   --a: 11.25deg;
 }
 
-.lid-c i:nth-child(2) {
+.lid-c i:nth-child(2),
+.base-c i:nth-child(2) {
   --a: 33.75deg;
 }
 
-.lid-c i:nth-child(3) {
+.lid-c i:nth-child(3),
+.base-c i:nth-child(3) {
   --a: 56.25deg;
 }
 
-.lid-c i:nth-child(4) {
+.lid-c i:nth-child(4),
+.base-c i:nth-child(4) {
   --a: 78.75deg;
 }
 
+/* Licht an den Streifen der Deckelecken, Stöße wie am Unterteil (siehe .base-c i) – zugeklappt zeigen oben links/rechts
+   nach vorn, unten links/rechts nach hinten (Scharnierseite) */
+.lid-tl i:nth-child(1) {
+  --lit0: vf-laptop-lit-m67;
+  --lit1: vf-laptop-lit-side-l;
+  --shade0: 0.088;
+  --shade1: 0.154;
+}
+
+.lid-tl i:nth-child(2) {
+  --lit0: vf-laptop-lit-m45;
+  --lit1: vf-laptop-lit-m67;
+  --shade0: 0.054;
+  --shade1: 0.088;
+}
+
+.lid-tl i:nth-child(3) {
+  --lit0: vf-laptop-lit-m22;
+  --lit1: vf-laptop-lit-m45;
+  --shade0: 0.056;
+  --shade1: 0.054;
+}
+
+.lid-tl i:nth-child(4) {
+  --lit0: vf-laptop-lit-front;
+  --lit1: vf-laptop-lit-m22;
+  --shade0: 0.094;
+  --shade1: 0.056;
+}
+
+.lid-tr i:nth-child(1) {
+  --lit0: vf-laptop-lit-p22;
+  --lit1: vf-laptop-lit-front;
+  --shade0: 0.163;
+  --shade1: 0.094;
+}
+
+.lid-tr i:nth-child(2) {
+  --lit0: vf-laptop-lit-p45;
+  --lit1: vf-laptop-lit-p22;
+  --shade1: 0.163;
+}
+
+.lid-tr i:nth-child(3) {
+  --lit0: vf-laptop-lit-p67;
+  --lit1: vf-laptop-lit-p45;
+}
+
+.lid-tr i:nth-child(4) {
+  --lit0: vf-laptop-lit-side-r;
+  --lit1: vf-laptop-lit-p67;
+}
+
+.lid-bl i:nth-child(1) {
+  --lit0: vf-laptop-lit-m157;
+  --lit1: vf-laptop-lit-rear;
+}
+
+.lid-bl i:nth-child(2) {
+  --lit0: vf-laptop-lit-m135;
+  --lit1: vf-laptop-lit-m157;
+}
+
+.lid-bl i:nth-child(3) {
+  --lit0: vf-laptop-lit-m112;
+  --lit1: vf-laptop-lit-m135;
+  --shade0: 0.242;
+}
+
+.lid-bl i:nth-child(4) {
+  --lit0: vf-laptop-lit-side-l;
+  --lit1: vf-laptop-lit-m112;
+  --shade0: 0.154;
+  --shade1: 0.242;
+}
+
+.lid-br i:nth-child(1) {
+  --lit0: vf-laptop-lit-p112;
+  --lit1: vf-laptop-lit-side-r;
+}
+
+.lid-br i:nth-child(2) {
+  --lit0: vf-laptop-lit-p135;
+  --lit1: vf-laptop-lit-p112;
+}
+
+.lid-br i:nth-child(3) {
+  --lit0: vf-laptop-lit-p157;
+  --lit1: vf-laptop-lit-p135;
+}
+
+.lid-br i:nth-child(4) {
+  --lit0: vf-laptop-lit-rear;
+  --lit1: vf-laptop-lit-p157;
+}
+
+/* linke Kante: in der Endlage abgewandt und ausgeblendet, fast von der Kante gesehen ebenso (siehe .laptop-side-l) */
 .laptop-edge-l {
   left: 0;
-  background: linear-gradient(90deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
+  opacity: 0;
+  background: linear-gradient(90deg, var(--lid-stops));
   transform-origin: 0 50%;
   transform: rotateY(90deg) rotateX(180deg); /* rotateX: Vorderseite nach außen (links) */
 }
 
+.laptop-edge-l::after {
+  opacity: 0.154;
+}
+
 .laptop-edge-r {
   right: 0;
-  background: linear-gradient(270deg, #2d3035 0 8%, #b9bdc3 8%, #eceef0 50%, #b9bdc3);
+  background: linear-gradient(270deg, var(--lid-stops));
   transform-origin: 100% 50%;
   transform: rotateY(-90deg) rotateX(180deg); /* rotateX: Vorderseite nach außen (rechts) */
 }
 
-/* Unterkante des Deckels (Scharnierseite): Aluminium über die volle Breite, darin die dunkle Scharnierabdeckung, die
-   mit dem Deckel dreht. Zugeklappt schließt sie den Spalt zwischen Deckel und Rückkante des Unterteils, aufgeklappt
-   zeigt sie nach unten und ist verdeckt. Ihre Vorderseite zeigt nach außen (um die Oberkante gekippt, dann eine
-   Deckeldicke nach unten geschoben, siehe .laptop-edge) – sonst schimmerte das dunkle Band von vorn gesehen über der
-   fernen Deckelkante durch. Von hinten steht die Fläche deshalb auf dem Kopf, die Verläufe laufen von unten nach oben
-   (0deg). */
+/* Unterkante des Deckels (Scharnierseite): Aluminium zwischen den runden Ecken, darin die dunkle Scharnierabdeckung, die
+   mit dem Deckel dreht (eine Walze mit Glanzstreifen). Zugeklappt schließt sie den Spalt zwischen Deckel und Rückkante
+   des Unterteils, aufgeklappt zeigt sie nach unten und ist verdeckt. Ihre Vorderseite zeigt nach außen (um die Oberkante
+   gekippt, dann eine Deckeldicke nach unten geschoben, siehe .laptop-edge) – sonst schimmerte das dunkle Band von vorn
+   gesehen über der fernen Deckelkante durch. Von hinten steht die Fläche deshalb auf dem Kopf, die Verläufe laufen von
+   unten nach oben (0deg). */
 .laptop-edge-bottom {
   bottom: 0;
-  left: 0;
-  width: 100%;
+  left: var(--rr);
+  width: calc(100% - 2 * var(--rr));
   height: var(--tl);
-  background: linear-gradient(0deg, #e6e8eb, #b9bdc3);
+  background: linear-gradient(0deg, #e6e7e9, #b6b7ba);
   transform-origin: 50% 0;
   transform: translateY(var(--tl)) rotateX(-90deg);
 }
@@ -1747,27 +1946,44 @@ html:not(.js) .nav ul a:hover {
 .laptop-edge-bottom::before {
   content: "";
   position: absolute;
-  inset: 0 8%;
+  inset: 12% 6%;
   border-radius: calc(var(--tl) / 2);
-  background: linear-gradient(0deg, #5a5e65, #2a2c31 45%, #1b1d21);
+  background: linear-gradient(0deg, #101114 0%, #2a2c30 26%, #62666c 44%, #3a3c41 56%, #16171a 82%, #0c0d0f 100%);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 35%);
 }
 
-/* Unterteil (von oben): Aluminium mit Lichtverlauf, hinten die Scharnierfuge, Lautsprecher links und rechts, die
-   schwarze Tastaturmulde und das große Glas-Touchpad. Maße der Tastatur in cqw (Breite des Unterteils). */
+.laptop-edge-r::after,
+.laptop-edge-bottom::after {
+  opacity: 0.252;
+}
+
+/* Unterteil (von oben): Aluminium mit Lichtverlauf und einem breiten, weichen Lichtband quer zur Tiefe (es bleibt
+   auch in der flachen Ansicht sichtbar), vorn eine Lichtkante an der Fase und eine kleine Mulde zum Aufklappen, hinten das
+   Scharnier, Lautsprecher links und rechts, die schwarze Tastaturmulde und das große Glas-Touchpad; darüber der Schatten
+   des Deckels (::after). Maße der Tastatur in
+   cqw (Breite des Unterteils). Senkrechte Maße sind in der Endlage stark verkürzt (etwa auf ein Drittel) – Schatten und
+   Lichtkanten deshalb höher angelegt, als sie aussehen. */
 .laptop-deck {
   container-type: inline-size;
   top: var(--lh);
   left: 0;
   width: 100%;
   height: var(--lh);
-  border-radius: calc(var(--b) * 0.3) calc(var(--b) * 0.3) var(--rr) var(--rr);
+  border-radius: var(--rr);
   background:
+    radial-gradient(5.5% 1.6% at 50% 100%, rgb(40 42 46 / 18%), rgb(40 42 46 / 0%)),
     var(--grain),
-    radial-gradient(90% 70% at 30% 20%, rgb(255 255 255 / 45%), rgb(255 255 255 / 0%) 70%),
-    linear-gradient(180deg, #c3c7cc 0%, var(--alu) 16%, #e4e7ea 70%, #d0d3d7 100%);
+    linear-gradient(
+      96deg,
+      rgb(255 255 255 / 0%) 20%,
+      rgb(255 255 255 / 36%) 43%,
+      rgb(255 255 255 / 12%) 55%,
+      rgb(255 255 255 / 0%) 72%
+    ),
+    linear-gradient(180deg, #cdced0 0%, #dddee0 16%, #ecedee 60%, #e3e4e6 86%, #cbccce 100%);
   box-shadow:
     inset 0 0 0 1px rgb(0 0 0 / 7%),
-    inset 0 -2px 0 rgb(255 255 255 / 70%);
+    inset 0 calc(var(--sw) * -0.005) 0 rgb(255 255 255 / 80%);
   /* Bezugspunkt in der Mitte der Fläche statt an der Scharnierkante: Safari sortiert die Flächen nach diesem Punkt und
      zeichnete die Oberseite sonst beim Drehen über den zugeklappten Deckel (Zeichen weg, gezackte Kanten). Die Lage ist
      dieselbe: um die Mitte kippen, dann eine halbe Tiefe nach oben und nach vorn schieben. */
@@ -1775,60 +1991,97 @@ html:not(.js) .nav ul a:hover {
   transform: translate3d(0, calc(var(--lh) / -2), calc(var(--lh) / 2)) rotateX(90deg);
 }
 
-/* Scharnierfuge hinten */
+/* Scharnier hinten: dunkle Walze mit Glanzlinie unter dem Kinn des Deckels (fast über die ganze Breite), dahinter ein
+   weicher Schatten auf dem Aluminium. Senkrecht dreimal so stark gerundet wie waagerecht – die Fläche ist stark verkürzt. */
 .laptop-deck::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 8%;
-  right: 8%;
-  height: 1.6%;
-  border-radius: 0 0 0.4cqw 0.4cqw;
-  background: linear-gradient(180deg, #4a4d53, #7a7e85);
+  left: 5%;
+  right: 5%;
+  height: 4.2%;
+  border-radius: 0 0 0.6cqw 0.6cqw / 0 0 1.8cqw 1.8cqw;
+  background: linear-gradient(180deg, #060708 0%, #141517 30%, #3d4045 56%, #1a1b1e 76%, #0a0b0c 100%);
+  box-shadow:
+    0 0.15cqw 0 rgb(10 12 16 / 35%),
+    0 0.5cqw 0.8cqw rgb(10 12 16 / 26%);
 }
 
+/* Schatten des Deckels auf der Oberseite: dicht bis kurz vor die Reichweite, dann weich auslaufend. Die Schicht wird vom
+   Scharnier aus gestreckt (scale): Steht der Deckel noch flach darüber, reicht der Schatten fast bis zur Vorderkante, beim
+   Aufklappen zieht er sich zum Scharnier zurück und wird heller (vf-laptop-deck-shade). Endlage: ein schmaler Schatten
+   am Scharnier über den oberen Tastenreihen (16 % der Tiefe, Deckkraft 0,5 – DECK_REACH, DECK_SHADE im Generator). Liegt
+   als letztes über Tastatur, Touchpad und Lautsprechern. */
+.laptop-deck::after {
+  content: "";
+  position: absolute;
+  inset: 0 1px; /* seitlich 1 px schmaler: Ist die linke Seite beim Drehen ausgeblendet, sähe man sonst seinen Rand */
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgb(8 10 14 / 72%) 0%,
+    rgb(8 10 14 / 64%) 62%,
+    rgb(8 10 14 / 30%) 82%,
+    rgb(8 10 14 / 0%) 100%
+  );
+  opacity: 0.5;
+  scale: 1 0.16;
+  transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+/* Lautsprecher: versetzte Löcher, etwas dunkler als das Aluminium, leicht vertieft. Die Kacheln sind dreimal so tief wie
+   breit – in der Endlage stark verkürzt, erscheinen die Löcher rund und als feines Raster; dazu ein Grauton zur
+   Scharnierseite hin dunkler, damit die Fläche auch sehr flach gesehen noch als Gitter wirkt. Ecken senkrecht dreimal so
+   stark gerundet (wie am Scharnier). */
 .laptop-speaker {
-  top: 6%;
-  width: 7.2%;
-  height: 45%;
-  border-radius: 0.5cqw;
+  top: 5.5%;
+  width: 4.2%;
+  height: 49%;
+  border-radius: 0.5cqw / 1.5cqw;
   background:
-    radial-gradient(circle closest-side, rgb(20 24 30 / 34%) 0 50%, rgb(20 24 30 / 0%) 85%) 0 0 / 0.2cqw 0.2cqw,
-    linear-gradient(rgb(20 24 30 / 13%), rgb(20 24 30 / 13%));
-  box-shadow: inset 0 0 0 0.05cqw rgb(20 24 30 / 12%);
+    radial-gradient(closest-side, rgb(20 22 26 / 42%) 0 45%, rgb(20 22 26 / 0%) 85%) 0 0 / 0.36cqw 1.05cqw,
+    radial-gradient(closest-side, rgb(20 22 26 / 42%) 0 45%, rgb(20 22 26 / 0%) 85%) 0.18cqw 0.525cqw / 0.36cqw 1.05cqw,
+    linear-gradient(180deg, rgb(20 22 26 / 12%), rgb(20 22 26 / 6%));
+  box-shadow:
+    inset 0 0.3cqw 0.45cqw rgb(20 22 26 / 16%),
+    0 0.3cqw 0 rgb(255 255 255 / 55%);
 }
 
 .laptop-speaker-l {
-  left: 3.2%;
+  left: 1.6%;
 }
 
 .laptop-speaker-r {
-  right: 3.2%;
+  right: 1.6%;
 }
 
-/* Tastatur: 58 Viertel-Einheiten breit (Taste = 4), sechs gleich hohe Reihen (auch die Funktionsreihe, wie bei aktuellen
-   Geräten); ISO-Eingabetaste über
-   zwei Reihen aus zwei Teilen (oben 1, unten ¾ Taste breit) */
+/* Tastatur: volle Größe wie bei 14-Zoll-Geräten (85 % der Breite, schmale Lautsprecher daneben), 58 Viertel-Einheiten
+   breit (Taste = 4), sechs gleich hohe Reihen (auch die Funktionsreihe, wie bei aktuellen Geräten) – Tasten damit etwa
+   quadratisch, Fugen etwa 15 % des Rasters; ISO-Eingabetaste über zwei Reihen aus zwei Teilen (oben 1, unten ¾ Taste
+   breit, gleiche Farbe ohne Naht) */
 .laptop-keys {
   top: 5.5%;
-  left: 12.5%;
+  left: 7.5%;
   display: grid;
   grid-template-columns: repeat(58, 1fr);
   grid-template-rows: repeat(6, 1fr);
-  gap: 0.5cqw 0.46cqw;
-  width: 75%;
-  height: 46%;
-  padding: 0.55cqw;
+  gap: 0.9cqw 0.82cqw;
+  width: 85%;
+  height: 49%;
+  padding: 0.8cqw;
   border-radius: 0.9cqw;
-  background: #0b0c0e;
+  isolation: isolate; /* die Eingabetaste (z-index) bleibt unter dem Schatten des Deckels (.laptop-deck::after) */
+  background: #060607;
   box-shadow:
-    inset 0 0.12cqw 0.3cqw rgb(0 0 0 / 70%),
+    inset 0 0.3cqw 0.5cqw rgb(0 0 0 / 70%),
     0 0 0 0.07cqw rgb(255 255 255 / 55%),
-    0 -0.07cqw 0 0.07cqw rgb(0 0 0 / 12%);
-  color: #e3e5e9;
-  font: 500 1.3cqw/1 var(--font-display);
+    0 -0.12cqw 0 0.07cqw rgb(0 0 0 / 12%);
+  color: #f1f2f4;
+  font: 600 1.3cqw/1 var(--font-display);
 }
 
+/* Tastenkappe matt: oben eine feine Lichtkante, unten die dunkle Flanke, darunter ein Schatten in der Mulde */
 .k {
   display: flex;
   flex-direction: column;
@@ -1837,13 +2090,11 @@ html:not(.js) .nav ul a:hover {
   gap: 0.28cqw;
   grid-column: span 4;
   border-radius: 0.5cqw;
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 7%), rgb(255 255 255 / 0%) 60%),
-    linear-gradient(180deg, #27292d, #1b1c1f);
+  background: linear-gradient(180deg, #2a2b2f, #1e1f22);
   box-shadow:
-    0 0.1cqw 0 #050506,
-    0 0.18cqw 0.3cqw rgb(0 0 0 / 45%),
-    inset 0 0.06cqw 0 rgb(255 255 255 / 12%);
+    inset 0 0.25cqw 0 rgb(255 255 255 / 10%),
+    inset 0 -0.3cqw 0 rgb(0 0 0 / 40%),
+    0 0.3cqw 0.3cqw rgb(0 0 0 / 55%);
   white-space: nowrap;
 }
 
@@ -1869,13 +2120,13 @@ html:not(.js) .nav ul a:hover {
 }
 
 .kf {
-  font-size: 0.72cqw;
+  font-size: 0.9cqw;
 }
 
 .k-touch {
   background:
     radial-gradient(circle closest-side, rgb(255 255 255 / 0%) 52%, rgb(255 255 255 / 14%) 56% 62%, rgb(255 255 255 / 0%) 66%),
-    linear-gradient(180deg, #27292d, #1b1c1f);
+    linear-gradient(180deg, #2a2b2f, #1e1f22);
 }
 
 .u5 {
@@ -1898,6 +2149,11 @@ html:not(.js) .nav ul a:hover {
   grid-column: span 20;
 }
 
+.k-enter,
+.k-enter-low {
+  background: #242528;
+}
+
 .k-enter {
   z-index: 1;
   grid-area: 3 / 55 / 4 / 59;
@@ -1910,8 +2166,8 @@ html:not(.js) .nav ul a:hover {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   box-shadow:
-    0 0.1cqw 0 #050506,
-    0 0.18cqw 0.3cqw rgb(0 0 0 / 45%);
+    inset 0 -0.3cqw 0 rgb(0 0 0 / 40%),
+    0 0.3cqw 0.3cqw rgb(0 0 0 / 55%);
 }
 
 /* Pfeiltasten halb hoch, hoch/runter übereinander */
@@ -1932,23 +2188,23 @@ html:not(.js) .nav ul a:hover {
   height: auto;
 }
 
-/* Touchpad: Glas mit feinem Rand und Lichtverlauf */
+/* Touchpad: Glas, leicht vertieft (Schatten an der hinteren Kante), mit feinem Rand und heller Kante vorn */
 .laptop-pad {
-  top: 55%;
+  top: 57%;
   left: 27.5%;
   width: 45%;
-  height: 40%;
+  height: 39%;
   border-radius: 1.3cqw;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 35%), rgb(255 255 255 / 0%) 40%),
-    linear-gradient(180deg, #e3e6e9, #dcdfe3);
+  background: linear-gradient(180deg, #d9dadd, #e3e4e6);
   box-shadow:
-    0 0 0 0.09cqw rgb(58 64 72 / 30%),
-    0 0.14cqw 0 rgb(255 255 255 / 85%);
+    inset 0 0.4cqw 0.4cqw rgb(30 32 36 / 12%),
+    0 0 0 0.09cqw rgb(40 42 46 / 32%),
+    0 0.35cqw 0 rgb(255 255 255 / 85%);
 }
 
-/* Senkrechte Kanten des Unterteils (vorn, hinten, links, rechts): oben eine Lichtkante, zur Unterseite dunkler. Vorn,
-   an den Seiten und in den runden Ecken derselbe Verlauf – so gehen sie nahtlos ineinander über. */
+/* Senkrechte Kanten des Unterteils (vorn, hinten, links, rechts): oben die Lichtkante, zur Unterseite dunkler. An allen
+   Kanten und in den runden Ecken derselbe Verlauf (--edge-stops) – so gehen sie nahtlos ineinander über. Alle reichen je
+   1 px unter die Streifen der runden Ecken. */
 .laptop-front,
 .laptop-rear,
 .laptop-side {
@@ -1956,7 +2212,8 @@ html:not(.js) .nav ul a:hover {
   height: var(--t);
   background:
     var(--grain),
-    linear-gradient(180deg, #fbfcfd 0 1px, #e6e8eb calc(1px + 6%), #d2d5d9 45%, #adb1b7 82%, #8f939a 100%);
+    linear-gradient(180deg, var(--edge-stops));
+  outline: 1px solid transparent; /* geglättete Ränder, siehe .laptop-edge */
   /* Alle vier Kanten zeigen nach außen: von innen gesehen zeichnete Safari die abgewandte rechte Seite über die Kante
      der Oberseite (dunkle Linie in der Endlage) */
   -webkit-backface-visibility: hidden;
@@ -1965,36 +2222,117 @@ html:not(.js) .nav ul a:hover {
 
 .laptop-front,
 .laptop-rear {
-  left: 0;
-  width: 100%;
-}
-
-/* Vorderkante mit der Mulde zum Aufklappen (innen dunkler, am Rand eine Lichtkante) – über den geraden Teil und je 1 px
-   unter die Streifen der runden Ecken */
-.laptop-front {
   left: calc(var(--rr) - 1px);
   width: calc(100% - 2 * var(--rr) + 2px);
+}
+
+/* Vorderkante mit der Mulde zum Aufklappen: flach ausgefräst, innen nur wenig dunkler, am Rand eine Lichtkante */
+.laptop-front {
   background:
-    radial-gradient(5% 40% at 50% 0, #9aa0a7 0 46%, #b3b8be 58%, #f3f4f6 66%, rgb(243 244 246 / 0%) 78%),
+    radial-gradient(5.5% 55% at 50% 0, #b5b6b9 0 30%, #cbccce 50%, #f5f5f6 62%, rgb(245 245 246 / 0%) 74%),
     var(--grain),
-    linear-gradient(180deg, #fbfcfd 0 1px, #e6e8eb calc(1px + 6%), #d2d5d9 45%, #adb1b7 82%, #8f939a 100%);
+    linear-gradient(180deg, var(--edge-stops));
   transform: translateZ(var(--lh));
+}
+
+/* Kontaktschatten vor der Vorderkante: in der Ebene der Kante nach unten verlängert, damit er nicht perspektivisch zum
+   Strich wird – an der Kante dicht, weich auslaufend, zu den runden Ecken hin ausgeblendet. Erscheint beim Aufsetzen
+   (vf-laptop-contact). */
+.laptop-front::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -3%;
+  right: -3%;
+  height: calc(var(--t) * 1.5);
+  background: linear-gradient(
+    180deg,
+    rgb(14 20 30 / 36%) 0,
+    rgb(14 20 30 / 16%) 16%,
+    rgb(14 20 30 / 6%) 42%,
+    rgb(14 20 30 / 0%) 100%
+  );
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%);
+  pointer-events: none;
 }
 
 /* Rückseite: glattes Aluminium – die dunkle Scharnierabdeckung sitzt am Deckel (.laptop-edge-bottom) und dreht mit ihm */
 .laptop-rear {
-  background:
-    var(--grain),
-    linear-gradient(180deg, #f5f6f8 0 1px, #dfe2e5 calc(1px + 7%), var(--alu) 45%, var(--alu-lo) 100%);
   transform: rotateY(180deg);
 }
 
+/* Seiten zwischen den runden Ecken vorn und hinten */
 .laptop-side {
-  width: calc(var(--lh) - var(--rr) + 1px); /* bis 1 px in die runde Ecke vorn */
+  width: calc(var(--lh) - 2 * var(--rr) + 2px);
+}
+
+/* Linke Seite: in der Endlage abgewandt und ausgeblendet – beim Drehen blendet sie aus, solange sie fast genau von der
+   Kante zu sehen ist (vf-laptop-side-l, siehe Generator): Nur ein, zwei Pixel breit zeichnete Chromium sie als
+   gestrichelte helle Linie. Ebenso die linke Kante des Deckels. */
+.laptop-side-l {
+  left: 0;
+  opacity: 0;
+  transform-origin: 0 50%;
+  transform: rotateY(-90deg) translateX(calc(var(--rr) - 1px));
+}
+
+/* Anschlüsse links (von hinten: MagSafe, zweimal USB-C, vorn die Kopfhörerbuchse) – nur diese Seite dreht sich beim
+   Ablauf zum Betrachter. Längliche Öffnungen mit runden Enden (Maße wie bei 14-Zoll-Geräten: USB-C gut dreimal so breit
+   wie hoch, MagSafe etwas länger), innen dunkel mit einem Schimmer der Kontaktzunge, unten eine Lichtkante. Sie blenden
+   aus, kurz bevor die Seite selbst ausblendet (vf-laptop-ports) – dunkle Striche fielen noch mehr auf. Unter der
+   Lichtschicht (::after) – sie werden mit der Seite dunkler. Endlage: abgewandt, ausgeblendet. */
+.laptop-ports {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.laptop-ports i {
+  position: absolute;
+  top: 46%;
+  width: calc(var(--sw) * 0.027);
+  height: 30%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #030304 0%, #0e0f11 40%, #2a2c30 52%, #111214 64%, #060708 100%);
+  box-shadow:
+    0 0 0 0.5px rgb(40 42 46 / 50%),
+    0 1px 0 rgb(255 255 255 / 55%);
+  translate: -50% -50%;
+}
+
+.laptop-ports i:nth-child(1) {
+  left: 6.8%;
+  width: calc(var(--sw) * 0.036);
+  height: 34%;
+  background: linear-gradient(180deg, #050607 0%, #17181b 60%, #2c2e32 100%);
+}
+
+.laptop-ports i:nth-child(2) {
+  left: 16.4%;
+}
+
+.laptop-ports i:nth-child(3) {
+  left: 23.2%;
+}
+
+.laptop-ports i:nth-child(4) {
+  left: 89%;
+  width: calc(var(--t) * 0.4);
+  height: auto;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 50% 40%, #040405 0 42%, #1b1c1f 68%, #3b3d41 100%);
+}
+
+.laptop-side-r {
+  right: 0;
+  transform-origin: 100% 50%;
+  transform: rotateY(90deg) translateX(calc(1px - var(--rr)));
 }
 
 /* Licht auf den senkrechten Kanten: dunkle Schicht, deren Deckkraft die Animation nach der Ausrichtung zum Licht setzt
-   (Werte hier: Endlage) */
+   (Lambert mit Umgebungslicht, Werte hier: Endlage) */
 .laptop-front::after,
 .laptop-rear::after,
 .laptop-side::after {
@@ -2007,23 +2345,24 @@ html:not(.js) .nav ul a:hover {
 }
 
 .laptop-front::after {
-  opacity: 0.09;
+  opacity: 0.094;
 }
 
 .laptop-rear::after,
 .laptop-side-r::after {
-  opacity: 0.5;
+  opacity: 0.252;
 }
 
 .laptop-side-l::after {
-  opacity: 0.213;
+  opacity: 0.154;
 }
 
-/* Runde Ecken vorn am Unterteil: je vier schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,4 px neben
-   dem Kreis), so hoch wie die Kante, im selben Verlauf und mit Licht wie die Kanten (siehe unten). Liegen in einer Ebene mit der Tastaturfläche; gebaut ist eine Ecke oben
-   links (wie ein Viertelkreis in einem Quadrat), vorn links und vorn rechts ist sie um 270° bzw. 180° gedreht.
+/* Runde Ecken am Unterteil: je vier schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,4 px neben dem
+   Kreis), so hoch wie die Kante, im selben Verlauf und mit Licht wie die Kanten (siehe unten). Liegen in einer Ebene mit
+   der Tastaturfläche; gebaut ist eine Ecke oben links (wie ein Viertelkreis in einem Quadrat) – das ist hinten links, oben
+   liegt hier die Scharnierseite. Hinten rechts, vorn rechts und vorn links ist sie um 90°, 180° bzw. 270° gedreht.
    Streifen statt gestapelter Schichten: keine Stufen, und nur wenige, kleine Grafikebenen. Der Eckenradius --rr kommt von
-   .showcase-laptop und ist derselbe wie oben am Deckel – zugeklappt wirken beide wie ein Körper. */
+   .showcase-laptop und ist derselbe wie am Deckel – zugeklappt wirken beide wie ein Körper. */
 .laptop-base {
   top: var(--lh);
   left: 0;
@@ -2052,9 +2391,24 @@ html:not(.js) .nav ul a:hover {
   transform: rotateZ(180deg);
 }
 
+.base-rl {
+  top: 0;
+  bottom: auto;
+  left: 0;
+}
+
+.base-rr {
+  top: 0;
+  right: 0;
+  bottom: auto;
+  transform: rotateZ(90deg);
+}
+
 /* Streifen: steht senkrecht (rotateY), liegt als Sehne im Abstand R · cos 11,25° vom Mittelpunkt der Rundung (rechts
    unten im Quadrat) und ist um ihn auf seinen Winkel gedreht; an jedem Ende 1 px länger als die Sehne (Überlappung
-   statt Fuge) */
+   statt Fuge). rotateX(180deg) dreht seine Vorderseite nach außen, die Innenseite wird ausgeblendet – sonst sähe man sie
+   durch die ausgeblendete linke Seite (vf-laptop-side-l) als dunklen Strich. Damit sind oben und unten vertauscht wie
+   am Deckel (siehe .lid-c i): Das untere Ende (::after, --lit0) liegt am Stoß zum nächsten Streifen. */
 .base-c i {
   position: absolute;
   top: calc(var(--rr) * 0.80491 - 1px);
@@ -2063,108 +2417,134 @@ html:not(.js) .nav ul a:hover {
   height: calc(var(--rr) * 0.39018 + 2px);
   background:
     var(--grain),
-    linear-gradient(90deg, #fbfcfd 0 1px, #e6e8eb calc(1px + 6%), #d2d5d9 45%, #adb1b7 82%, #8f939a 100%); /* wie die Kanten */
+    linear-gradient(90deg, var(--edge-stops)); /* wie die Kanten */
+  outline: 1px solid transparent;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transform-origin: 0 50%;
-  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.98079)) rotateY(90deg);
+  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.98079)) rotateY(90deg) rotateX(180deg);
 }
 
 /* Licht wie auf den Kanten, als Verlauf entlang des Streifens: oben (::before) der Wert an seinem oberen Stoß, unten
-   (::after) der am unteren – zusammen ein weicher Übergang von der Vorderkante zur Seite ohne Stufen zwischen den
+   (::after) der am unteren – zusammen ein weicher Übergang von einer Kante zur nächsten ohne Stufen zwischen den
    Streifen. Die Deckkraft setzt die Animation des jeweiligen Winkels (--lit0/--lit1; die Stöße ganz außen teilen sie mit
-   Vorderkante und Seite), hier die Endlage. */
+   den Kanten), hier die Endlage. */
 .base-c i::before,
-.base-c i::after {
+.base-c i::after,
+.lid-c i::before,
+.lid-c i::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* Verlauf von Stoß zu Stoß: Die Streifen stehen an jedem Ende 1 px über (siehe oben) */
-.base-c i::before {
+/* Verlauf von Stoß zu Stoß: Die Streifen stehen an jedem Ende 1 px über (siehe oben). Ohne eigenen Wert 0,252: ganz vom
+   Licht abgewandt (nur Umgebungslicht). */
+.base-c i::before,
+.lid-c i::before {
   background: linear-gradient(rgb(12 16 22) 1px, rgb(12 16 22 / 0%) calc(100% - 1px));
-  opacity: var(--shade1);
+  opacity: var(--shade1, 0.252);
 }
 
-.base-c i::after {
+.base-c i::after,
+.lid-c i::after {
   background: linear-gradient(rgb(12 16 22 / 0%) 1px, rgb(12 16 22) calc(100% - 1px));
-  opacity: var(--shade0);
+  opacity: var(--shade0, 0.252);
 }
 
 .base-fl i:nth-child(1) {
-  --a: 11.25deg;
-  --lit0: vf-laptop-lit-front;
-  --lit1: vf-laptop-lit-m22;
-  --shade0: 0.09;
-  --shade1: 0.012;
+  --lit0: vf-laptop-lit-m22;
+  --lit1: vf-laptop-lit-front;
+  --shade0: 0.056;
+  --shade1: 0.094;
 }
 
 .base-fl i:nth-child(2) {
-  --a: 33.75deg;
-  --lit0: vf-laptop-lit-m22;
-  --lit1: vf-laptop-lit-m45;
-  --shade0: 0.012;
-  --shade1: 0.008;
+  --lit0: vf-laptop-lit-m45;
+  --lit1: vf-laptop-lit-m22;
+  --shade0: 0.054;
+  --shade1: 0.056;
 }
 
 .base-fl i:nth-child(3) {
-  --a: 56.25deg;
-  --lit0: vf-laptop-lit-m45;
-  --lit1: vf-laptop-lit-m67;
-  --shade0: 0.008;
-  --shade1: 0.078;
+  --lit0: vf-laptop-lit-m67;
+  --lit1: vf-laptop-lit-m45;
+  --shade0: 0.088;
+  --shade1: 0.054;
 }
 
 .base-fl i:nth-child(4) {
-  --a: 78.75deg;
-  --lit0: vf-laptop-lit-m67;
-  --lit1: vf-laptop-lit-side-l;
-  --shade0: 0.078;
-  --shade1: 0.213;
+  --lit0: vf-laptop-lit-side-l;
+  --lit1: vf-laptop-lit-m67;
+  --shade0: 0.154;
+  --shade1: 0.088;
 }
 
 .base-fr i:nth-child(1) {
-  --a: 11.25deg;
-  --lit0: vf-laptop-lit-side-r;
-  --lit1: vf-laptop-lit-p67;
-  --shade0: 0.5;
-  --shade1: 0.5;
+  --lit0: vf-laptop-lit-p67;
+  --lit1: vf-laptop-lit-side-r;
 }
 
 .base-fr i:nth-child(2) {
-  --a: 33.75deg;
-  --lit0: vf-laptop-lit-p67;
-  --lit1: vf-laptop-lit-p45;
-  --shade0: 0.5;
-  --shade1: 0.413;
+  --lit0: vf-laptop-lit-p45;
+  --lit1: vf-laptop-lit-p67;
 }
 
 .base-fr i:nth-child(3) {
-  --a: 56.25deg;
-  --lit0: vf-laptop-lit-p45;
-  --lit1: vf-laptop-lit-p22;
-  --shade0: 0.413;
-  --shade1: 0.231;
+  --lit0: vf-laptop-lit-p22;
+  --lit1: vf-laptop-lit-p45;
+  --shade0: 0.163;
 }
 
 .base-fr i:nth-child(4) {
-  --a: 78.75deg;
-  --lit0: vf-laptop-lit-p22;
-  --lit1: vf-laptop-lit-front;
-  --shade0: 0.231;
-  --shade1: 0.09;
+  --lit0: vf-laptop-lit-front;
+  --lit1: vf-laptop-lit-p22;
+  --shade0: 0.094;
+  --shade1: 0.163;
 }
 
-.laptop-side-l {
-  left: 0;
-  transform-origin: 0 50%;
-  transform: rotateY(-90deg);
+.base-rl i:nth-child(1) {
+  --lit0: vf-laptop-lit-m112;
+  --lit1: vf-laptop-lit-side-l;
+  --shade0: 0.242;
+  --shade1: 0.154;
 }
 
-.laptop-side-r {
-  right: 0;
-  transform-origin: 100% 50%;
-  transform: rotateY(90deg);
+.base-rl i:nth-child(2) {
+  --lit0: vf-laptop-lit-m135;
+  --lit1: vf-laptop-lit-m112;
+  --shade1: 0.242;
+}
+
+.base-rl i:nth-child(3) {
+  --lit0: vf-laptop-lit-m157;
+  --lit1: vf-laptop-lit-m135;
+}
+
+.base-rl i:nth-child(4) {
+  --lit0: vf-laptop-lit-rear;
+  --lit1: vf-laptop-lit-m157;
+}
+
+.base-rr i:nth-child(1) {
+  --lit0: vf-laptop-lit-p157;
+  --lit1: vf-laptop-lit-rear;
+}
+
+.base-rr i:nth-child(2) {
+  --lit0: vf-laptop-lit-p135;
+  --lit1: vf-laptop-lit-p157;
+}
+
+.base-rr i:nth-child(3) {
+  --lit0: vf-laptop-lit-p112;
+  --lit1: vf-laptop-lit-p135;
+}
+
+.base-rr i:nth-child(4) {
+  --lit0: vf-laptop-lit-side-r;
+  --lit1: vf-laptop-lit-p112;
 }
 
 /* --- Telefon ---
@@ -2711,7 +3091,7 @@ html:not(.js) .nav ul a:hover {
 /* Zugeklappt und schräg gedreht ist der Laptop breiter als ein schmaler Bildschirm – bis zum Aufklappen etwas kleiner */
 @media (min-width: 720px) and (max-width: 1023px) {
   .showcase-laptop {
-    --closed-scale: 0.8;
+    --closed-scale: 0.9;
   }
 }
 
@@ -2719,9 +3099,19 @@ html:not(.js) .nav ul a:hover {
    Zusatztext entfällt, sonst passt das Telefon nicht mehr ganz aufs Bild (dieselbe Aussage steht unter „Mobil“) */
 @media (max-width: 719px) {
   .showcase-laptop {
-    --closed-scale: 0.76;
+    --closed-scale: 0.86;
     --rim: 1px;
-    --sw: min(880px, calc((100vw - 2 * var(--gutter)) / 1.2), calc((100vh - 218px) * 1.08));
+    --sw: min(880px, calc((100vw - 2 * var(--gutter)) / 1.15), calc((100vh - 218px) * 0.98));
+  }
+
+  /* Laptop klein: die obere Belegung der Tasten wäre kaum 3 px hoch, die Löcher der Lautsprecher kleiner als ein Pixel
+     (sie ergäben ein unruhiges Muster) – beides entfällt, die Lautsprecher bleiben eine leicht vertiefte Fläche */
+  .k i {
+    display: none;
+  }
+
+  .laptop-speaker {
+    background: rgb(20 22 26 / 9%);
   }
 
   .iphone {
@@ -4342,7 +4732,12 @@ html:not(.js) .nav ul a:hover {
     animation: vf-laptop-body var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
-  .js .laptop::before {
+  .js .laptop-body {
+    animation: vf-laptop-hinge var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .laptop-body::before,
+  .js .laptop-front::before {
     animation: vf-laptop-contact var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
@@ -4390,11 +4785,41 @@ html:not(.js) .nav ul a:hover {
     animation: vf-laptop-lit-side-r var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
-  .js .base-c i::before {
+  .js .laptop-ports {
+    animation: vf-laptop-ports var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  /* Linke Seite und linke Kante des Deckels: ausgeblendet, solange sie nur wenige Pixel schmal zu sehen sind */
+  .js .laptop-side-l,
+  .js .laptop-edge-l {
+    animation: vf-laptop-side-l var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  /* Kanten des Deckels wie die gleich ausgerichteten Kanten des Unterteils (der Deckel dreht um die Querachse, links und
+     rechts bleiben links und rechts); die Oberkante zeigt zugeklappt nach vorn, aufgeklappt nach oben */
+  .js .laptop-edge-l::after {
+    animation: vf-laptop-lit-side-l var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .laptop-edge-r::after {
+    animation: vf-laptop-lit-side-r var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .laptop-edge-top::after {
+    animation: vf-laptop-lit-lid-top var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .laptop-edge-bottom::after {
+    animation: vf-laptop-lit-rear var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .base-c i::before,
+  .js .lid-c i::before {
     animation: var(--lit1) var(--vf-dur) linear var(--vf-delay) both var(--vf-play); /* Keyframes je Stoß (siehe .base-c i) */
   }
 
-  .js .base-c i::after {
+  .js .base-c i::after,
+  .js .lid-c i::after {
     animation: var(--lit0) var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
@@ -4405,9 +4830,14 @@ html:not(.js) .nav ul a:hover {
     animation: vf-laptop-deck var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
+  .js .laptop-deck::after {
+    animation: vf-laptop-deck-shade var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
   /* Tastatur, Touchpad und Lautsprecher erst, wenn der Deckel aufgeht: Safari sortiert die Flächen beim Drehen nach
      ihrer Mitte, nicht exakt – die Tastatur (weiter hinten als die Mitte des Deckels) käme sonst durch den nur wenige
-     Pixel darüber liegenden, zugeklappten Deckel. */
+     Pixel darüber liegenden, zugeklappten Deckel. Im schmalen Spalt darunter liegt bis dahin der dichte Schatten des
+     Deckels. */
   .js .laptop-keys,
   .js .laptop-pad,
   .js .laptop-speaker {
@@ -5298,279 +5728,353 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-laptop-body {
   0% {
-    transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   3% {
-    transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(1 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   3.66% {
-    transform: translateY(calc(0.9982 * 30vh - 0.42 * var(--lh))) scale(calc(0.7005 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.9982 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7005 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   4.335% {
-    transform: translateY(calc(0.9929 * 30vh - 0.42 * var(--lh))) scale(calc(0.7021 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.9929 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7021 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   5.025% {
-    transform: translateY(calc(0.984 * 30vh - 0.42 * var(--lh))) scale(calc(0.7048 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.984 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7048 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   5.725% {
-    transform: translateY(calc(0.9715 * 30vh - 0.42 * var(--lh))) scale(calc(0.7086 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.9715 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7086 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   6.44% {
-    transform: translateY(calc(0.9554 * 30vh - 0.42 * var(--lh))) scale(calc(0.7134 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.9554 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7134 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   7.175% {
-    transform: translateY(calc(0.9357 * 30vh - 0.42 * var(--lh))) scale(calc(0.7193 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.9357 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7193 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   7.93% {
-    transform: translateY(calc(0.9122 * 30vh - 0.42 * var(--lh))) scale(calc(0.7264 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.9122 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7264 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   8.705% {
-    transform: translateY(calc(0.8849 * 30vh - 0.42 * var(--lh))) scale(calc(0.7345 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.8849 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7345 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   9.535% {
-    transform: translateY(calc(0.8526 * 30vh - 0.42 * var(--lh))) scale(calc(0.7442 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.8526 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7442 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   10.4% {
-    transform: translateY(calc(0.8158 * 30vh - 0.42 * var(--lh))) scale(calc(0.7553 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.8158 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7553 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   11.305% {
-    transform: translateY(calc(0.7744 * 30vh - 0.42 * var(--lh))) scale(calc(0.7677 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.7744 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7677 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   12.265% {
-    transform: translateY(calc(0.7276 * 30vh - 0.42 * var(--lh))) scale(calc(0.7817 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.7276 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.7817 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   14.25% {
-    transform: translateY(calc(0.6238 * 30vh - 0.42 * var(--lh))) scale(calc(0.8128 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.6238 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.8128 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   18.24% {
-    transform: translateY(calc(0.4039 * 30vh - 0.42 * var(--lh))) scale(calc(0.8788 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.4039 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.8788 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   19.925% {
-    transform: translateY(calc(0.3138 * 30vh - 0.42 * var(--lh))) scale(calc(0.9059 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.3138 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9059 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   21.69% {
-    transform: translateY(calc(0.2259 * 30vh - 0.42 * var(--lh))) scale(calc(0.9322 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.2259 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9322 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   22.5% {
-    transform: translateY(calc(0.1886 * 30vh - 0.42 * var(--lh))) scale(calc(0.9434 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.1886 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9434 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   23.275% {
-    transform: translateY(calc(0.1552 * 30vh - 0.42 * var(--lh))) scale(calc(0.9534 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.1552 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9534 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   24.21% {
-    transform: translateY(calc(0.1182 * 30vh - 0.42 * var(--lh))) scale(calc(0.9645 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.1182 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9645 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   25.11% {
-    transform: translateY(calc(0.0865 * 30vh - 0.42 * var(--lh))) scale(calc(0.974 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.0865 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.974 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   25.98% {
-    transform: translateY(calc(0.0599 * 30vh - 0.42 * var(--lh))) scale(calc(0.982 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.0599 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.982 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   26.82% {
-    transform: translateY(calc(0.0383 * 30vh - 0.42 * var(--lh))) scale(calc(0.9885 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.0383 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9885 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   27.64% {
-    transform: translateY(calc(0.0216 * 30vh - 0.42 * var(--lh))) scale(calc(0.9935 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.0216 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9935 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   28.445% {
-    transform: translateY(calc(0.0096 * 30vh - 0.42 * var(--lh))) scale(calc(0.9971 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.0096 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9971 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   29.23% {
-    transform: translateY(calc(0.0024 * 30vh - 0.42 * var(--lh))) scale(calc(0.9993 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0.0024 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(0.9993 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   30% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(172deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(172deg);
   }
 
   30.74% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(171.586deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(171.586deg);
   }
 
   31.5% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(170.332deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(170.332deg);
   }
 
   32.275% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(168.243deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(168.243deg);
   }
 
   33.07% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(165.306deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(165.306deg);
   }
 
   33.885% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(161.523deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(161.523deg);
   }
 
   34.725% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(156.873deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(156.873deg);
   }
 
   35.59% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(151.362deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(151.362deg);
   }
 
   36.495% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(144.894deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(144.894deg);
   }
 
   38.02% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(132.61deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(132.61deg);
   }
 
   39.725% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(117.269deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(117.269deg);
   }
 
   41.34% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(101.687deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(101.687deg);
   }
 
   45.095% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(64.325deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(64.325deg);
   }
 
   46.905% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(47.18deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(47.18deg);
   }
 
   48.525% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(33.101deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(33.101deg);
   }
 
   49.275% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(27.134deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(27.134deg);
   }
 
   50% {
-    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0) * 1)) rotateX(-22deg) rotateY(21.764deg);
+    transform: translateY(calc(0 * 30vh - 0.42 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0))) rotateX(-28deg) rotateY(21.764deg);
   }
 
-  51.145% {
-    transform: translateY(calc(0 * 30vh - 0.4182 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0049) * 0.9987)) rotateX(-22deg) rotateY(14.19deg);
+  50.53% {
+    transform: translateY(calc(0 * 30vh - 0.4194 * var(--lh))) translateZ(calc(-0.0003 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0011))) rotateX(-27.985deg) rotateY(18.112deg);
   }
 
-  52.33% {
-    transform: translateY(calc(0 * 30vh - 0.4127 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0198) * 0.9948)) rotateX(-22deg) rotateY(7.687deg);
+  51.07% {
+    transform: translateY(calc(0 * 30vh - 0.4178 * var(--lh))) translateZ(calc(-0.0013 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0043))) rotateX(-27.94deg) rotateY(14.649deg);
   }
 
-  53.425% {
-    transform: translateY(calc(0 * 30vh - 0.4046 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0416) * 0.9892)) rotateX(-22deg) rotateY(3.054deg);
+  51.615% {
+    transform: translateY(calc(0 * 30vh - 0.415 * var(--lh))) translateZ(calc(-0.0029 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0097))) rotateX(-27.864deg) rotateY(11.437deg);
+  }
+
+  52.17% {
+    transform: translateY(calc(0 * 30vh - 0.411 * var(--lh))) translateZ(calc(-0.0052 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0173))) rotateX(-27.758deg) rotateY(8.478deg);
+  }
+
+  52.735% {
+    transform: translateY(calc(0 * 30vh - 0.4059 * var(--lh))) translateZ(calc(-0.0081 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.027))) rotateX(-27.622deg) rotateY(5.81deg);
+  }
+
+  53.305% {
+    transform: translateY(calc(0 * 30vh - 0.3998 * var(--lh))) translateZ(calc(-0.0117 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0389))) rotateX(-27.455deg) rotateY(3.492deg);
+  }
+
+  53.905% {
+    transform: translateY(calc(0 * 30vh - 0.3922 * var(--lh))) translateZ(calc(-0.016 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0535))) rotateX(-27.252deg) rotateY(1.482deg);
   }
 
   54.48% {
-    transform: translateY(calc(0 * 30vh - 0.3944 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0693) * 0.982)) rotateX(-22deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - 0.384 * var(--lh))) translateZ(calc(-0.0208 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0693))) rotateX(-27.03deg) rotateY(0deg);
   }
 
-  55.615% {
-    transform: translateY(calc(0 * 30vh - 0.3809 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1056) * 0.9726)) rotateX(-22deg) rotateY(0deg);
+  55.295% {
+    transform: translateY(calc(0 * 30vh - 0.3708 * var(--lh))) translateZ(calc(-0.0284 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.0947))) rotateX(-26.674deg) rotateY(0deg);
   }
 
-  56.805% {
-    transform: translateY(calc(0 * 30vh - 0.3645 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.15) * 0.961)) rotateX(-22deg) rotateY(0deg);
+  56.14% {
+    transform: translateY(calc(0 * 30vh - 0.3553 * var(--lh))) translateZ(calc(-0.0373 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1244))) rotateX(-26.258deg) rotateY(0deg);
   }
 
-  58.075% {
-    transform: translateY(calc(0 * 30vh - 0.3447 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2036) * 0.9471)) rotateX(-21.999deg) rotateY(0deg);
+  57.015% {
+    transform: translateY(calc(0 * 30vh - 0.3376 * var(--lh))) translateZ(calc(-0.0475 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1584))) rotateX(-25.782deg) rotateY(0deg);
   }
 
-  59.375% {
-    transform: translateY(calc(0 * 30vh - 0.3223 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2639) * 0.932)) rotateX(-21.82deg) rotateY(0deg);
+  57.93% {
+    transform: translateY(calc(0 * 30vh - 0.3175 * var(--lh))) translateZ(calc(-0.0591 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.1971))) rotateX(-25.24deg) rotateY(0deg);
   }
 
-  60.7% {
-    transform: translateY(calc(0 * 30vh - 0.2975 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.3298) * 0.9169)) rotateX(-21.331deg) rotateY(0deg);
+  59.67% {
+    transform: translateY(calc(0 * 30vh - 0.2757 * var(--lh))) translateZ(calc(-0.0825 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.2782))) rotateX(-23.817deg) rotateY(0deg);
   }
 
-  62.14% {
-    transform: translateY(calc(0 * 30vh - 0.2688 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.405) * 0.9019)) rotateX(-20.489deg) rotateY(0deg);
+  62.095% {
+    transform: translateY(calc(0 * 30vh - 0.2134 * var(--lh))) translateZ(calc(-0.1126 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.4026))) rotateX(-20.86deg) rotateY(0deg);
   }
 
-  64.06% {
-    transform: translateY(calc(0 * 30vh - 0.2284 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5082) * 0.8862)) rotateX(-18.941deg) rotateY(0deg);
+  64.015% {
+    transform: translateY(calc(0 * 30vh - 0.1639 * var(--lh))) translateZ(calc(-0.1309 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5058))) rotateX(-18.049deg) rotateY(0deg);
   }
 
-  65.86% {
-    transform: translateY(calc(0 * 30vh - 0.1894 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.605) * 0.8775)) rotateX(-17.136deg) rotateY(0deg);
+  65.46% {
+    transform: translateY(calc(0 * 30vh - 0.1282 * var(--lh))) translateZ(calc(-0.1398 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.5837))) rotateX(-15.828deg) rotateY(0deg);
   }
 
-  67.625% {
-    transform: translateY(calc(0 * 30vh - 0.1513 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.6968) * 0.8755)) rotateX(-15.119deg) rotateY(0deg);
+  66.395% {
+    transform: translateY(calc(0 * 30vh - 0.1064 * var(--lh))) translateZ(calc(-0.1429 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.6333))) rotateX(-14.39deg) rotateY(0deg);
   }
 
-  69.43% {
-    transform: translateY(calc(0 * 30vh - 0.1137 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.7841) * 0.8805)) rotateX(-12.893deg) rotateY(0deg);
+  67.28% {
+    transform: translateY(calc(0 * 30vh - 0.0868 * var(--lh))) translateZ(calc(-0.1438 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.6792))) rotateX(-13.052deg) rotateY(0deg);
   }
 
-  70.78% {
-    transform: translateY(calc(0 * 30vh - 0.0873 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8432) * 0.8887)) rotateX(-11.172deg) rotateY(0deg);
+  68.13% {
+    transform: translateY(calc(0 * 30vh - 0.0692 * var(--lh))) translateZ(calc(-0.1428 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.722))) rotateX(-11.8deg) rotateY(0deg);
   }
 
-  72% {
-    transform: translateY(calc(0 * 30vh - 0.0653 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8907) * 0.8988)) rotateX(-9.611deg) rotateY(0deg);
+  68.95% {
+    transform: translateY(calc(0 * 30vh - 0.0534 * var(--lh))) translateZ(calc(-0.1402 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.7617))) rotateX(-10.635deg) rotateY(0deg);
   }
 
-  73.18% {
-    transform: translateY(calc(0 * 30vh - 0.0464 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9305) * 0.9107)) rotateX(-8.122deg) rotateY(0deg);
+  69.93% {
+    transform: translateY(calc(0 * 30vh - 0.0363 * var(--lh))) translateZ(calc(-0.1348 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8067))) rotateX(-9.309deg) rotateY(0deg);
   }
 
-  74.29% {
-    transform: translateY(calc(0 * 30vh - 0.0309 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9615) * 0.9232)) rotateX(-6.763deg) rotateY(0deg);
+  70.885% {
+    transform: translateY(calc(0 * 30vh - 0.0215 * var(--lh))) translateZ(calc(-0.1276 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8475))) rotateX(-8.095deg) rotateY(0deg);
   }
 
-  75.35% {
-    transform: translateY(calc(0 * 30vh - 0.0188 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9846) * 0.9357)) rotateX(-5.522deg) rotateY(0deg);
+  71.82% {
+    transform: translateY(calc(0 * 30vh - 0.0091 * var(--lh))) translateZ(calc(-0.1186 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.8841))) rotateX(-6.988deg) rotateY(0deg);
+  }
+
+  72.745% {
+    transform: translateY(calc(0 * 30vh - -0.0011 * var(--lh))) translateZ(calc(-0.1083 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9166))) rotateX(-5.975deg) rotateY(0deg);
+  }
+
+  73.66% {
+    transform: translateY(calc(0 * 30vh - -0.0091 * var(--lh))) translateZ(calc(-0.097 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9447))) rotateX(-5.055deg) rotateY(0deg);
+  }
+
+  74.57% {
+    transform: translateY(calc(0 * 30vh - -0.015 * var(--lh))) translateZ(calc(-0.0849 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9682))) rotateX(-4.221deg) rotateY(0deg);
+  }
+
+  75.47% {
+    transform: translateY(calc(0 * 30vh - -0.0186 * var(--lh))) translateZ(calc(-0.0725 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 0.9868))) rotateX(-3.473deg) rotateY(0deg);
   }
 
   76.36% {
-    transform: translateY(calc(0 * 30vh - 0.01 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9479)) rotateX(-4.408deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - -0.02 * var(--lh))) translateZ(calc(-0.0601 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1))) rotateX(-2.805deg) rotateY(0deg);
   }
 
   78.045% {
-    transform: translateY(calc(0 * 30vh - 0.0062 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9676)) rotateX(-2.743deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - -0.0125 * var(--lh))) translateZ(calc(-0.0374 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1))) rotateX(-1.746deg) rotateY(0deg);
   }
 
   79.605% {
-    transform: translateY(calc(0 * 30vh - 0.0033 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9826)) rotateX(-1.47deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - -0.0067 * var(--lh))) translateZ(calc(-0.02 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1))) rotateX(-0.936deg) rotateY(0deg);
   }
 
   81.08% {
-    transform: translateY(calc(0 * 30vh - 0.0013 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 0.9934)) rotateX(-0.558deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - -0.0025 * var(--lh))) translateZ(calc(-0.0076 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1))) rotateX(-0.355deg) rotateY(0deg);
   }
 
   82.48% {
-    transform: translateY(calc(0 * 30vh - 0 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 1)) rotateX(0deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - 0 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1))) rotateX(0deg) rotateY(0deg);
   }
 
   100% {
-    transform: translateY(calc(0 * 30vh - 0 * var(--lh))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1) * 1)) rotateX(0deg) rotateY(0deg);
+    transform: translateY(calc(0 * 30vh - 0 * var(--lh))) translateZ(calc(0 * var(--cam))) scale(calc(1 * (var(--closed-scale, 1) + (1 - var(--closed-scale, 1)) * 1))) rotateX(0deg) rotateY(0deg);
+  }
+}
+
+@keyframes vf-laptop-hinge {
+  0% {
+    transform: rotateX(0deg);
+  }
+
+  50% {
+    transform: rotateX(0deg);
+  }
+
+  53.135% {
+    transform: rotateX(-0.492deg);
+  }
+
+  56.61% {
+    transform: rotateX(-1.992deg);
+  }
+
+  60.135% {
+    transform: rotateX(-4.217deg);
+  }
+
+  69.655% {
+    transform: rotateX(-11.121deg);
+  }
+
+  72.53% {
+    transform: rotateX(-12.732deg);
+  }
+
+  75.115% {
+    transform: rotateX(-13.721deg);
+  }
+
+  76.36% {
+    transform: rotateX(-14deg);
+  }
+
+  100% {
+    transform: rotateX(-14deg);
   }
 }
 
@@ -5846,38 +6350,42 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-laptop-screen-off {
   0% {
-    opacity: 0.94;
+    opacity: 0.97;
   }
 
-  50.03% {
-    opacity: 0.94;
+  64.96% {
+    opacity: 0.969;
   }
 
-  51.81% {
-    opacity: 0.929;
+  65.73% {
+    opacity: 0.931;
   }
 
-  54.68% {
-    opacity: 0.869;
+  66.595% {
+    opacity: 0.835;
   }
 
-  57.88% {
-    opacity: 0.757;
+  67.415% {
+    opacity: 0.709;
   }
 
-  67.845% {
-    opacity: 0.275;
+  69.66% {
+    opacity: 0.326;
   }
 
-  71.09% {
-    opacity: 0.136;
+  71% {
+    opacity: 0.146;
   }
 
-  73.845% {
-    opacity: 0.047;
+  71.69% {
+    opacity: 0.08;
   }
 
-  76.36% {
+  72.38% {
+    opacity: 0.035;
+  }
+
+  73.85% {
     opacity: 0;
   }
 
@@ -5889,424 +6397,1006 @@ html:not(.js) .nav ul a:hover {
 @keyframes vf-laptop-screen-glare {
   0% {
     opacity: 1;
+    background-position: 0 77.5%;
+  }
+
+  55.52% {
+    opacity: 1;
+    background-position: 0 77.5%;
+  }
+
+  56.795% {
+    opacity: 1;
+    background-position: 0 76.6%;
   }
 
   58% {
     opacity: 1;
+    background-position: 0 74.1%;
   }
 
-  60.8% {
-    opacity: 0.967;
+  59.395% {
+    opacity: 0.992;
+    background-position: 0 68.8%;
   }
 
-  63.89% {
-    opacity: 0.868;
+  60.865% {
+    opacity: 0.966;
+    background-position: 0 60.8%;
   }
 
-  67.215% {
-    opacity: 0.709;
+  62.01% {
+    opacity: 0.935;
+    background-position: 0 53.1%;
   }
 
-  73.94% {
-    opacity: 0.327;
+  63.545% {
+    opacity: 0.882;
+    background-position: 0 41.7%;
   }
 
-  76.795% {
-    opacity: 0.18;
+  65.3% {
+    opacity: 0.806;
+    background-position: 0 28.8%;
   }
 
-  79.795% {
-    opacity: 0.061;
+  66.6% {
+    opacity: 0.742;
+    background-position: 0 20.4%;
+  }
+
+  67.815% {
+    opacity: 0.677;
+    background-position: 0 14.2%;
+  }
+
+  68.975% {
+    opacity: 0.612;
+    background-position: 0 10.1%;
+  }
+
+  69.83% {
+    opacity: 0.563;
+    background-position: 0 8.3%;
+  }
+
+  70.695% {
+    opacity: 0.513;
+    background-position: 0 7.5%;
+  }
+
+  74.455% {
+    opacity: 0.298;
+    background-position: 0 7.5%;
+  }
+
+  77.13% {
+    opacity: 0.164;
+    background-position: 0 7.5%;
+  }
+
+  79.94% {
+    opacity: 0.056;
+    background-position: 0 7.5%;
   }
 
   82.48% {
     opacity: 0;
+    background-position: 0 7.5%;
   }
 
   100% {
     opacity: 0;
+    background-position: 0 7.5%;
   }
 }
 
 @keyframes vf-laptop-sheen {
   0% {
-    opacity: 0;
+    rotate: 172deg;
+    opacity: 0.9;
   }
 
-  30% {
-    opacity: 0;
+  30.075% {
+    rotate: 172deg;
+    opacity: 0.9;
   }
 
-  31.46% {
-    opacity: 0.036;
+  30.605% {
+    rotate: 171.72deg;
+    opacity: 0.9;
   }
 
-  33.05% {
-    opacity: 0.148;
+  31.14% {
+    rotate: 171.03deg;
+    opacity: 0.9;
   }
 
-  34.53% {
-    opacity: 0.299;
+  31.685% {
+    rotate: 169.91deg;
+    opacity: 0.9;
   }
 
-  38.045% {
-    opacity: 0.709;
+  32.24% {
+    rotate: 168.35deg;
+    opacity: 0.9;
   }
 
-  39.82% {
-    opacity: 0.875;
+  32.85% {
+    rotate: 166.2deg;
+    opacity: 0.9;
   }
 
-  41.4% {
-    opacity: 0.969;
+  33.475% {
+    rotate: 163.52deg;
+    opacity: 0.9;
   }
 
-  42.915% {
-    opacity: 1;
+  34.11% {
+    rotate: 160.35deg;
+    opacity: 0.9;
   }
 
-  44.62% {
-    opacity: 0.961;
+  34.765% {
+    rotate: 156.63deg;
+    opacity: 0.9;
   }
 
-  46.41% {
-    opacity: 0.841;
+  35.435% {
+    rotate: 152.4deg;
+    opacity: 0.9;
   }
 
-  48.12% {
-    opacity: 0.668;
+  36.125% {
+    rotate: 147.62deg;
+    opacity: 0.9;
   }
 
-  52.25% {
-    opacity: 0.179;
+  37.585% {
+    rotate: 136.27deg;
+    opacity: 0.9;
   }
 
-  53.425% {
-    opacity: 0.07;
+  38.85% {
+    rotate: 125.32deg;
+    opacity: 0.9;
+  }
+
+  40.26% {
+    rotate: 112.19deg;
+    opacity: 0.9;
+  }
+
+  44.825% {
+    rotate: 66.97deg;
+    opacity: 0.9;
+  }
+
+  46.455% {
+    rotate: 51.33deg;
+    opacity: 0.9;
+  }
+
+  48.015% {
+    rotate: 37.37deg;
+    opacity: 0.9;
+  }
+
+  49.43% {
+    rotate: 25.95deg;
+    opacity: 0.9;
+  }
+
+  50.79% {
+    rotate: 16.41deg;
+    opacity: 0.898;
+  }
+
+  51.44% {
+    rotate: 12.44deg;
+    opacity: 0.893;
+  }
+
+  52.075% {
+    rotate: 8.96deg;
+    opacity: 0.886;
+  }
+
+  52.695% {
+    rotate: 5.99deg;
+    opacity: 0.876;
+  }
+
+  53.305% {
+    rotate: 3.49deg;
+    opacity: 0.865;
+  }
+
+  53.905% {
+    rotate: 1.48deg;
+    opacity: 0.852;
   }
 
   54.48% {
+    rotate: 0deg;
+    opacity: 0.838;
+  }
+
+  59.14% {
+    rotate: 0deg;
+    opacity: 0.673;
+  }
+
+  67.37% {
+    rotate: 0deg;
+    opacity: 0.285;
+  }
+
+  70.475% {
+    rotate: 0deg;
+    opacity: 0.153;
+  }
+
+  73.57% {
+    rotate: 0deg;
+    opacity: 0.052;
+  }
+
+  76.36% {
+    rotate: 0deg;
     opacity: 0;
   }
 
   100% {
+    rotate: 0deg;
     opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-deck-shade {
+  0% {
+    opacity: 1;
+    scale: 1 1;
+  }
+
+  53.69% {
+    opacity: 1;
+    scale: 1 1;
+  }
+
+  54.635% {
+    opacity: 0.992;
+    scale: 1 1;
+  }
+
+  55.255% {
+    opacity: 0.975;
+    scale: 1 0.9309;
+  }
+
+  55.89% {
+    opacity: 0.948;
+    scale: 1 0.8518;
+  }
+
+  57.185% {
+    opacity: 0.86;
+    scale: 1 0.666;
+  }
+
+  58.525% {
+    opacity: 0.733;
+    scale: 1 0.4424;
+  }
+
+  60.035% {
+    opacity: 0.585;
+    scale: 1 0.16;
+  }
+
+  60.945% {
+    opacity: 0.522;
+    scale: 1 0.16;
+  }
+
+  61.725% {
+    opacity: 0.5;
+    scale: 1 0.16;
+  }
+
+  100% {
+    opacity: 0.5;
+    scale: 1 0.16;
   }
 }
 
 @keyframes vf-laptop-lit-front {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   46.06% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
-  48.345% {
-    opacity: 0.326;
+  48.37% {
+    opacity: 0.163;
   }
 
-  50.32% {
-    opacity: 0.21;
+  50.365% {
+    opacity: 0.105;
   }
 
-  52.33% {
-    opacity: 0.132;
+  52.355% {
+    opacity: 0.067;
   }
 
   54.475% {
-    opacity: 0.09;
+    opacity: 0.049;
+  }
+
+  75.33% {
+    opacity: 0.094;
   }
 
   100% {
-    opacity: 0.09;
+    opacity: 0.094;
   }
 }
 
 @keyframes vf-laptop-lit-rear {
   0% {
-    opacity: 0.054;
+    opacity: 0.027;
   }
 
   30.22% {
-    opacity: 0.054;
-  }
-
-  35.535% {
-    opacity: 0.003;
+    opacity: 0.027;
   }
 
   37.47% {
-    opacity: 0.005;
+    opacity: 0.002;
   }
 
   39.365% {
-    opacity: 0.045;
+    opacity: 0.022;
   }
 
   41.225% {
-    opacity: 0.129;
+    opacity: 0.065;
   }
 
   43.12% {
-    opacity: 0.258;
+    opacity: 0.13;
   }
 
   46.065% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   100% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 }
 
 @keyframes vf-laptop-lit-side-l {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   36.48% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
-  40.545% {
-    opacity: 0.209;
+  42.28% {
+    opacity: 0.052;
   }
 
-  42.245% {
-    opacity: 0.104;
+  44.125% {
+    opacity: 0.014;
   }
 
-  44.075% {
-    opacity: 0.028;
-  }
-
-  45.855% {
+  45.925% {
     opacity: 0;
   }
 
-  47.01% {
-    opacity: 0.006;
-  }
-
-  48.265% {
-    opacity: 0.029;
-  }
-
-  52.645% {
-    opacity: 0.171;
+  48.38% {
+    opacity: 0.016;
   }
 
   54.48% {
-    opacity: 0.213;
+    opacity: 0.11;
+  }
+
+  75.245% {
+    opacity: 0.154;
   }
 
   100% {
-    opacity: 0.213;
+    opacity: 0.154;
   }
 }
 
 @keyframes vf-laptop-lit-side-r {
   0% {
-    opacity: 0.273;
+    opacity: 0.138;
   }
 
   30.53% {
-    opacity: 0.275;
-  }
-
-  31.965% {
-    opacity: 0.295;
+    opacity: 0.138;
   }
 
   33.42% {
-    opacity: 0.339;
-  }
-
-  34.895% {
-    opacity: 0.406;
+    opacity: 0.171;
   }
 
   36.485% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   100% {
-    opacity: 0.5;
+    opacity: 0.252;
+  }
+}
+
+@keyframes vf-laptop-side-l {
+  0% {
+    opacity: 0.309;
+  }
+
+  30.065% {
+    opacity: 0.31;
+  }
+
+  30.48% {
+    opacity: 0.346;
+  }
+
+  30.89% {
+    opacity: 0.437;
+  }
+
+  31.285% {
+    opacity: 0.577;
+  }
+
+  32.07% {
+    opacity: 0.924;
+  }
+
+  32.265% {
+    opacity: 0.981;
+  }
+
+  32.435% {
+    opacity: 1;
+  }
+
+  51.465% {
+    opacity: 1;
+  }
+
+  51.6% {
+    opacity: 0.967;
+  }
+
+  51.75% {
+    opacity: 0.864;
+  }
+
+  51.895% {
+    opacity: 0.723;
+  }
+
+  52.265% {
+    opacity: 0.314;
+  }
+
+  52.465% {
+    opacity: 0.136;
+  }
+
+  52.645% {
+    opacity: 0.033;
+  }
+
+  52.815% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-ports {
+  0% {
+    opacity: 0;
+  }
+
+  32.015% {
+    opacity: 0;
+  }
+
+  32.215% {
+    opacity: 0.036;
+  }
+
+  32.42% {
+    opacity: 0.147;
+  }
+
+  32.635% {
+    opacity: 0.334;
+  }
+
+  33.005% {
+    opacity: 0.736;
+  }
+
+  33.145% {
+    opacity: 0.871;
+  }
+
+  33.29% {
+    opacity: 0.97;
+  }
+
+  33.415% {
+    opacity: 1;
+  }
+
+  50.825% {
+    opacity: 1;
+  }
+
+  50.92% {
+    opacity: 0.964;
+  }
+
+  51.025% {
+    opacity: 0.856;
+  }
+
+  51.13% {
+    opacity: 0.701;
+  }
+
+  51.375% {
+    opacity: 0.29;
+  }
+
+  51.495% {
+    opacity: 0.126;
+  }
+
+  51.6% {
+    opacity: 0.032;
+  }
+
+  51.7% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-lit-lid-top {
+  0% {
+    opacity: 0.252;
+  }
+
+  46.06% {
+    opacity: 0.252;
+  }
+
+  48.205% {
+    opacity: 0.169;
+  }
+
+  50.045% {
+    opacity: 0.113;
+  }
+
+  51.985% {
+    opacity: 0.071;
+  }
+
+  53.99% {
+    opacity: 0.046;
+  }
+
+  76.36% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-laptop-lit-m157 {
+  0% {
+    opacity: 0.088;
+  }
+
+  30.44% {
+    opacity: 0.088;
+  }
+
+  32.67% {
+    opacity: 0.072;
+  }
+
+  37.325% {
+    opacity: 0.01;
+  }
+
+  39.41% {
+    opacity: 0;
+  }
+
+  41.245% {
+    opacity: 0.015;
+  }
+
+  43.105% {
+    opacity: 0.055;
+  }
+
+  48.6% {
+    opacity: 0.252;
+  }
+
+  100% {
+    opacity: 0.252;
+  }
+}
+
+@keyframes vf-laptop-lit-m135 {
+  0% {
+    opacity: 0.174;
+  }
+
+  30.665% {
+    opacity: 0.173;
+  }
+
+  33.425% {
+    opacity: 0.141;
+  }
+
+  39.09% {
+    opacity: 0.02;
+  }
+
+  41.615% {
+    opacity: 0;
+  }
+
+  43.27% {
+    opacity: 0.012;
+  }
+
+  45.015% {
+    opacity: 0.045;
+  }
+
+  51.855% {
+    opacity: 0.252;
+  }
+
+  100% {
+    opacity: 0.252;
+  }
+}
+
+@keyframes vf-laptop-lit-m112 {
+  0% {
+    opacity: 0.252;
+  }
+
+  32.495% {
+    opacity: 0.252;
+  }
+
+  34.94% {
+    opacity: 0.2;
+  }
+
+  40.565% {
+    opacity: 0.038;
+  }
+
+  42.2% {
+    opacity: 0.009;
+  }
+
+  43.75% {
+    opacity: 0;
+  }
+
+  46.575% {
+    opacity: 0.028;
+  }
+
+  52.03% {
+    opacity: 0.16;
+  }
+
+  54.475% {
+    opacity: 0.2;
+  }
+
+  75.09% {
+    opacity: 0.241;
+  }
+
+  100% {
+    opacity: 0.242;
   }
 }
 
 @keyframes vf-laptop-lit-m67 {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   39.16% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
-  42.355% {
-    opacity: 0.243;
+  42.375% {
+    opacity: 0.122;
   }
 
-  44.305% {
-    opacity: 0.115;
+  44.345% {
+    opacity: 0.057;
   }
 
-  46.235% {
-    opacity: 0.033;
+  46.295% {
+    opacity: 0.016;
   }
 
-  48.2% {
-    opacity: 0.001;
+  48.29% {
+    opacity: 0;
   }
 
-  50.125% {
-    opacity: 0.01;
+  54.475% {
+    opacity: 0.042;
   }
 
-  54.48% {
-    opacity: 0.078;
+  72.99% {
+    opacity: 0.084;
   }
 
   100% {
-    opacity: 0.078;
+    opacity: 0.088;
   }
 }
 
 @keyframes vf-laptop-lit-m45 {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   41.51% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
-  44.425% {
-    opacity: 0.257;
+  44.435% {
+    opacity: 0.129;
   }
 
-  46.545% {
-    opacity: 0.12;
+  46.57% {
+    opacity: 0.06;
   }
 
-  48.665% {
-    opacity: 0.036;
+  48.705% {
+    opacity: 0.018;
   }
 
-  50.985% {
-    opacity: 0.002;
+  51.035% {
+    opacity: 0.001;
+  }
+
+  75.25% {
+    opacity: 0.053;
   }
 
   100% {
-    opacity: 0.008;
+    opacity: 0.054;
   }
 }
 
 @keyframes vf-laptop-lit-m22 {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   43.76% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
-  46.625% {
-    opacity: 0.267;
+  46.585% {
+    opacity: 0.136;
   }
 
-  48.955% {
-    opacity: 0.129;
+  48.875% {
+    opacity: 0.067;
   }
 
-  51.37% {
-    opacity: 0.048;
+  51.215% {
+    opacity: 0.026;
   }
 
-  54.27% {
-    opacity: 0.013;
+  53.93% {
+    opacity: 0.01;
+  }
+
+  75.46% {
+    opacity: 0.055;
   }
 
   100% {
-    opacity: 0.012;
+    opacity: 0.056;
   }
 }
 
 @keyframes vf-laptop-lit-p22 {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   48.595% {
-    opacity: 0.5;
-  }
-
-  50.18% {
-    opacity: 0.396;
+    opacity: 0.252;
   }
 
   51.625% {
-    opacity: 0.32;
-  }
-
-  53.05% {
-    opacity: 0.265;
+    opacity: 0.162;
   }
 
   54.475% {
-    opacity: 0.231;
+    opacity: 0.12;
+  }
+
+  75.23% {
+    opacity: 0.162;
   }
 
   100% {
-    opacity: 0.231;
+    opacity: 0.163;
   }
 }
 
 @keyframes vf-laptop-lit-p45 {
   0% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
-  51.875% {
-    opacity: 0.5;
-  }
-
-  53.21% {
-    opacity: 0.446;
+  51.9% {
+    opacity: 0.252;
   }
 
   54.48% {
-    opacity: 0.413;
+    opacity: 0.211;
+  }
+
+  75.09% {
+    opacity: 0.251;
   }
 
   100% {
-    opacity: 0.413;
+    opacity: 0.252;
   }
 }
 
 @keyframes vf-laptop-lit-p67 {
   0% {
-    opacity: 0.461;
+    opacity: 0.232;
   }
 
   30.09% {
-    opacity: 0.461;
-  }
-
-  31.27% {
-    opacity: 0.471;
+    opacity: 0.232;
   }
 
   32.5% {
-    opacity: 0.5;
+    opacity: 0.252;
   }
 
   100% {
-    opacity: 0.5;
+    opacity: 0.252;
+  }
+}
+
+@keyframes vf-laptop-lit-p112 {
+  0% {
+    opacity: 0.06;
+  }
+
+  31.14% {
+    opacity: 0.063;
+  }
+
+  33.155% {
+    opacity: 0.082;
+  }
+
+  35.095% {
+    opacity: 0.118;
+  }
+
+  37% {
+    opacity: 0.172;
+  }
+
+  39.165% {
+    opacity: 0.252;
+  }
+
+  100% {
+    opacity: 0.252;
+  }
+}
+
+@keyframes vf-laptop-lit-p135 {
+  0% {
+    opacity: 0.012;
+  }
+
+  32.47% {
+    opacity: 0.019;
+  }
+
+  34.815% {
+    opacity: 0.042;
+  }
+
+  36.925% {
+    opacity: 0.085;
+  }
+
+  38.995% {
+    opacity: 0.149;
+  }
+
+  41.515% {
+    opacity: 0.252;
+  }
+
+  100% {
+    opacity: 0.252;
+  }
+}
+
+@keyframes vf-laptop-lit-p157 {
+  0% {
+    opacity: 0.001;
+  }
+
+  34.975% {
+    opacity: 0.006;
+  }
+
+  37.105% {
+    opacity: 0.028;
+  }
+
+  39.09% {
+    opacity: 0.072;
+  }
+
+  41.09% {
+    opacity: 0.139;
+  }
+
+  43.765% {
+    opacity: 0.252;
+  }
+
+  100% {
+    opacity: 0.252;
   }
 }
 
