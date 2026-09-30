@@ -1,0 +1,9 @@
+# Build-Ausgaben und lokale Einstellungen
+/build/
+/app/build/
+/.gradle/
+/local.properties
+# Signaturschlüssel gehören nie ins Repository
+*.keystore
+*.jks
+keystore.properties
