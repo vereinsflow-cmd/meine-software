@@ -75,4 +75,34 @@ test.describe("Dashboard selbst einstellen", () => {
     await again.getByRole("button", { name: "Speichern" }).click();
     await expect(page.getByText("Alle Karten ausgeblendet")).toHaveCount(0);
   });
+  test("„Erste Schritte“: offene Schritte als Links, „Ausblenden“ blendet die Karte aus, „Anpassen“ holt sie zurück", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    const card = page.getByRole("region", { name: "Erste Schritte" });
+    await expect(card).toBeVisible();
+    await expect(card).toContainText(/\d von \d erledigt/);
+    await expect(
+      card.getByRole("progressbar", { name: "Fortschritt der ersten Schritte" }),
+    ).toBeVisible();
+    await expect(card.getByRole("link", { name: "Vereinslogo hochladen" })).toHaveAttribute(
+      "href",
+      "/einstellungen",
+    );
+
+    await card.getByRole("button", { name: "Ausblenden" }).click();
+    await expect(
+      page.getByText("Ausgeblendet – über „Anpassen“ holst du die Karte zurück."),
+    ).toBeVisible();
+    await expect(card).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("region", { name: "Meine Aufgaben" })).toBeVisible();
+    await expect(card).toHaveCount(0);
+
+    const dialog = await openCustomize(page);
+    await expect(dialog.getByRole("checkbox", { name: /Erste Schritte/ })).not.toBeChecked();
+    await dialog.getByRole("button", { name: "Standard wiederherstellen" }).click();
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(card).toBeVisible();
+  });
 });

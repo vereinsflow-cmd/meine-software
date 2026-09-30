@@ -15,6 +15,7 @@ import {
 } from "@/modules/dashboard/components/customize-dashboard";
 import { DashboardTabs, type DashboardTab } from "@/modules/dashboard/components/dashboard-tabs";
 import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
+import { OnboardingCard } from "@/modules/dashboard/components/onboarding-card";
 import { CardGrid, Group } from "@/modules/dashboard/components/layout";
 import {
   Birthdays,
@@ -40,6 +41,7 @@ import {
   segmentBlocks,
 } from "@/modules/dashboard/layout-prefs";
 import { getDashboardLayout } from "@/modules/dashboard/layout-service";
+import { getOnboarding } from "@/modules/dashboard/onboarding";
 import { getDashboard } from "@/modules/dashboard/service";
 import {
   DASHBOARD_TABS,
@@ -68,9 +70,10 @@ export default async function DashboardPage({
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
   // Lässt sich die eigene Einstellung nicht lesen (etwa weil ein laufender Server die neue Spalte noch nicht kennt), gilt die
   // Standard-Ansicht – das Dashboard als Startseite soll daran nie scheitern.
-  const [data, layout] = await Promise.all([
+  const [data, layout, onboarding] = await Promise.all([
     getDashboard(ctx),
     getDashboardLayout(ctx).catch(() => null),
+    getOnboarding(ctx),
   ]);
   const { members, events, shifts, tasks, notifications, birthdays, activity, payments } = data;
 
@@ -82,6 +85,8 @@ export default async function DashboardPage({
   // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
   const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
     uebersicht: {
+      // Nur für den Vereinsadministrator, solange noch etwas offen ist.
+      ...(onboarding ? { "erste-schritte": <OnboardingCard steps={onboarding} /> } : {}),
       kennzahlen: (
         <KpiCarousel>
           {members ? (

@@ -184,7 +184,7 @@ export function StatCard({
   );
 }
 
-function Widget({
+export function Widget({
   id,
   title,
   icon,
