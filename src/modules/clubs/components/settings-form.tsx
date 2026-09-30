@@ -4,18 +4,29 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormError, SubmitButton, TextField, TextareaField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
-import { updateClubSettingsAction } from "../settings-actions";
-import { clubSettingsSchema, type ClubSettingsFormInput } from "../schemas";
+import { saveClubSetupDataAction, updateClubSettingsAction } from "../settings-actions";
+import { clubSettingsSchema, clubSetupSchema, type ClubSettingsFormInput } from "../schemas";
 
-export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput }) {
+/**
+ * Vereinsdaten und Datenschutz-Einstellungen. `setup`: im Assistenten „Verein einrichten“ – Kontakt-E-Mail und Anschrift
+ * sind dann Pflicht, und nach dem Speichern geht es direkt zum nächsten Schritt.
+ */
+export function ClubSettingsForm({
+  defaults,
+  setup,
+}: {
+  defaults: ClubSettingsFormInput;
+  setup?: { nextHref: string };
+}) {
   const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
-    schema: clubSettingsSchema,
+    schema: setup ? clubSetupSchema : clubSettingsSchema,
     defaultValues: defaults,
-    action: updateClubSettingsAction,
-    successMessage: "Einstellungen gespeichert.",
-    onSuccess: () => router.refresh(),
+    action: setup ? saveClubSetupDataAction : updateClubSettingsAction,
+    successMessage: setup ? "Vereinsdaten gespeichert." : "Einstellungen gespeichert.",
+    onSuccess: () => (setup ? router.push(setup.nextHref) : router.refresh()),
   });
+  const required = Boolean(setup);
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid max-w-4xl gap-6">
@@ -37,12 +48,19 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
             required
             className="sm:col-span-2"
           />
-          <TextField form={form} name="contactEmail" label="Kontakt-E-Mail" type="email" />
+          <TextField
+            form={form}
+            name="contactEmail"
+            label="Kontakt-E-Mail"
+            type="email"
+            required={required}
+          />
           <TextField form={form} name="phone" label="Telefon" type="tel" />
           <TextField
             form={form}
             name="street"
             label="Straße und Hausnummer"
+            required={required}
             className="sm:col-span-2"
           />
           <TextField
@@ -50,9 +68,10 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
             name="postalCode"
             label="PLZ"
             inputMode="numeric"
+            required={required}
             inputClassName="sm:max-w-48"
           />
-          <TextField form={form} name="city" label="Ort" />
+          <TextField form={form} name="city" label="Ort" required={required} />
           <TextField
             form={form}
             name="website"
@@ -113,7 +132,9 @@ export function ClubSettingsForm({ defaults }: { defaults: ClubSettingsFormInput
       </Card>
 
       <div className="flex justify-end">
-        <SubmitButton pending={isPending}>Einstellungen speichern</SubmitButton>
+        <SubmitButton pending={isPending}>
+          {setup ? "Speichern und weiter" : "Einstellungen speichern"}
+        </SubmitButton>
       </div>
     </form>
   );

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { hasRequiredClubData, isAllowedDuringSetup } from "@/lib/club-setup";
+import { clubSetupSchema, clubSettingsSchema } from "@/modules/clubs/schemas";
 import { clubSlugFrom } from "@/server/platform/first-run";
 import { doneSteps, firstOpenStep, SETUP_STEP_IDS, type SetupFacts } from "@/modules/setup/steps";
 
@@ -58,5 +60,83 @@ describe("Kürzel aus dem Vereinsnamen", () => {
     const long = clubSlugFrom("Förderverein ".repeat(10));
     expect(long.length).toBeLessThanOrEqual(50);
     expect(long).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+  });
+});
+
+describe("Sperre während der Einrichtung", () => {
+  it("Pflichtangaben: Kontakt-E-Mail und vollständige Anschrift", () => {
+    const full = {
+      contactEmail: "info@verein.test",
+      street: "Am Sportplatz 1",
+      postalCode: "12345",
+      city: "Musterstadt",
+    };
+    expect(hasRequiredClubData(full)).toBe(true);
+    for (const field of ["contactEmail", "street", "postalCode", "city"] as const) {
+      expect(hasRequiredClubData({ ...full, [field]: null })).toBe(false);
+      expect(hasRequiredClubData({ ...full, [field]: "" })).toBe(false);
+    }
+  });
+
+  it("vor den Pflichtangaben nur der Assistent", () => {
+    expect(isAllowedDuringSetup("/einrichtung", false)).toBe(true);
+    for (const path of [
+      "/dashboard",
+      "/mitglieder",
+      "/mitglieder/neu",
+      "/benutzer",
+      "/einstellungen",
+    ]) {
+      expect(isAllowedDuringSetup(path, false)).toBe(false);
+    }
+  });
+
+  it("danach zusätzlich die Seiten, zu denen der Assistent führt – sonst nichts", () => {
+    for (const path of [
+      "/einrichtung",
+      "/mitglieder/neu",
+      "/mitglieder/import",
+      "/mitglieder/antraege/aushang",
+      "/mitglieder",
+      "/benutzer",
+    ]) {
+      expect(isAllowedDuringSetup(path, true)).toBe(true);
+    }
+    for (const path of [
+      "/dashboard",
+      "/kalender",
+      "/einstellungen",
+      "/mitgliederversammlung",
+      "/benutzerkonto",
+    ]) {
+      expect(isAllowedDuringSetup(path, true)).toBe(false);
+    }
+  });
+});
+
+describe("Vereinsdaten im Assistenten (Pflichtfelder)", () => {
+  const base = { name: "TSV Test", leftMembersMonths: 24, trashDays: 30, auditMonths: 24 };
+
+  it("verlangt Kontakt-E-Mail und Anschrift – nur Leerzeichen zählen nicht", () => {
+    const result = clubSetupSchema.safeParse({ ...base, street: "   " });
+    expect(result.success).toBe(false);
+    const fields = result.error!.issues.map((issue) => issue.path.join("."));
+    expect(fields).toEqual(
+      expect.arrayContaining(["contactEmail", "street", "postalCode", "city"]),
+    );
+    // In den normalen Vereinseinstellungen bleiben die Felder freiwillig
+    expect(clubSettingsSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("akzeptiert vollständige Angaben", () => {
+    const result = clubSetupSchema.safeParse({
+      ...base,
+      contactEmail: "Info@Verein.test",
+      street: "Am Sportplatz 1",
+      postalCode: "12345",
+      city: "Musterstadt",
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.contactEmail).toBe("info@verein.test");
   });
 });

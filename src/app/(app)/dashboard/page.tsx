@@ -43,6 +43,7 @@ import {
 import { getDashboardLayout } from "@/modules/dashboard/layout-service";
 import { getOnboarding } from "@/modules/dashboard/onboarding";
 import { getDashboard } from "@/modules/dashboard/service";
+import { SetupFrameSync } from "@/modules/setup/components/setup-frame";
 import {
   DASHBOARD_TABS,
   availableTabs,
@@ -212,6 +213,8 @@ export default async function DashboardPage({
 
   return (
     <>
+      {/* Wer hier ankommt, ist nicht (mehr) in der Einrichtung – steht noch deren Rahmen, wird er ersetzt. */}
+      <SetupFrameSync locked={false} />
       <PageHeader
         inline
         title={`Willkommen, ${ctx.user.firstName}!`}
