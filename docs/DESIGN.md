@@ -152,7 +152,7 @@ Breite 17 rem (ab 1280 px 18,5 rem, das sind bei 1280 px rund 326 px). Kopf (Log
 
 ## Kopfzeile und Vereinslogo
 
-Neben dem Vereinsnamen steht das Logo des Vereins als kleine, abgerundete Kachel (`ClubLogo`, `src/components/shared/club-logo.tsx`): `size-8` in der Kopfzeile (ein Verein) und in den Einträgen des Vereinswechslers, `size-6` im Wechsler-Knopf, im ausklappenden Menü und im Profil, `size-16` als Vorschau in den Vereinseinstellungen. Ohne Logo – oder wenn das Bild nicht lädt – erscheinen die **Anfangsbuchstaben** („TSV Musterstadt 1898 e.V.“ → „TM“; Rechtsform und Zahlen zählen nicht, `clubInitials` in `src/lib/club-logo.ts`) in neutralen Farben (`bg-muted`/`text-muted-foreground`, keine Markenfarbe – die Kachel ist nicht anklickbar). Das Logo liegt auf einer hellen Kachel (`--club-logo-bg`, auch im Dunkeln hell), damit dunkle Logos mit durchsichtigem Hintergrund sichtbar bleiben, und wird nie beschnitten (`object-contain`). Die Kachel ist **schmückend** (`aria-hidden`, `alt=""`): Der Name steht immer daneben, bestehende Namen wie „Verein wechseln“ bleiben unverändert. Der Name kürzt sich bei wenig Platz, die Kachel behält ihre Größe (auf dem Smartphone läuft nichts über, geprüft in `vereinslogo.mobil.spec.ts`). Mit Logo erscheinen die Buchstaben erst nach 600 ms (kein kurzes Aufblitzen beim Laden). Bewusst **kein** Logo auf öffentlichen Seiten (Einladung), in E-Mails und im Kalender-Abo – dort gibt es keine Anmeldung.
+Neben dem Vereinsnamen steht das Logo des Vereins als kleine, abgerundete Kachel (`ClubLogo`, `src/components/shared/club-logo.tsx`): `size-8` in der Kopfzeile (ein Verein) und in den Einträgen des Vereinswechslers, `size-6` im Wechsler-Knopf, im ausklappenden Menü und im Profil, `size-16` als Vorschau in den Vereinseinstellungen. Ohne Logo – oder wenn das Bild nicht lädt – erscheinen die **Anfangsbuchstaben** („TSV Musterstadt 1898 e.V.“ → „TM“; Rechtsform und Zahlen zählen nicht, `clubInitials` in `src/lib/club-logo.ts`) in neutralen Farben (`bg-muted`/`text-muted-foreground`, keine Markenfarbe – die Kachel ist nicht anklickbar). Das Logo liegt auf einer hellen Kachel (`--club-logo-bg`, auch im Dunkeln hell), damit dunkle Logos mit durchsichtigem Hintergrund sichtbar bleiben, und wird nie beschnitten (`object-contain`). Die Kachel ist **schmückend** (`aria-hidden`, `alt=""`): Der Name steht immer daneben, bestehende Namen wie „Verein wechseln“ bleiben unverändert. Der Name kürzt sich bei wenig Platz, die Kachel behält ihre Größe (auf dem Smartphone läuft nichts über, geprüft in `vereinslogo.mobil.spec.ts`). Mit Logo erscheinen die Buchstaben erst nach 600 ms (kein kurzes Aufblitzen beim Laden). Bewusst **kein** Logo auf öffentlichen Seiten (Einladung), in E-Mails und im Kalender-Abo – dort gibt es keine Anmeldung. Einzige Ausnahme ist die Beitrittsseite „Mitglied werden“ (siehe unten): Dort stellt sich der Verein Fremden vor wie auf seinem Aushang; das Bild kommt über eine eigene Adresse, die nur mit gültigem Beitrittslink antwortet.
 
 ## Helferplan drucken
 
@@ -164,6 +164,46 @@ Der Helferplan (Helferplanung) lässt sich zum Aushängen ausdrucken: `(app)/hel
 - **Seitenumbrüche:** Jede Schicht (Überschrift + Tabelle) trägt `break-inside-avoid`, damit sie nicht mitten im Umbruch zerrissen wird – im Zweifel bleibt eher Platz am Seitenende frei.
 - **Schwarz-Weiß-tauglich:** Rahmen und Text in Schwarz/Grau (`border-black`, `print:text-black`), keine Statusfarben; Bildschirmfarben (`text-muted-foreground` u. a.) sind für sich schon kontrastreich genug (axe-geprüft) und werden beim Drucken zusätzlich auf Schwarz gezwungen.
 - Geprüft (`tests/e2e/helferplan-drucken.spec.ts`, `.mobil.spec.ts`): Sichtbarkeit des Buttons, Filter (Veranstaltungen/Zeitraum/nur offene Schichten), „Noch nicht besetzt“, Hoch-/Querformat (tatsächliches `@page`-CSS), `print:hidden` unter `page.emulateMedia({media:"print"})`, keine Kontaktdaten/Bedienelemente im Ausdruck, leere Auswahl, axe hell/dunkel, Smartphone- und Tablet-Breite. Die tatsächliche Papierform (A4 Hoch-/Querformat) wurde einmalig zusätzlich an einer echten, mit Playwright erzeugten PDF-Datei nachgewiesen (`page.pdf()`, `/MediaBox` in der Datei).
+
+## Mitglied werden per QR-Code
+
+Eingeführt am 30.09.2026 auf Wunsch „Ein Verein erzeugt einen QR-Code, wer ihn scannt, stellt einen Mitgliedsantrag, der Vorstand prüft“.
+Geschäftslogik in `modules/membership-applications/service.ts`, Bausteine in `modules/membership-applications/components/`, der QR-Code als
+SVG-Pfad aus `src/lib/qr-code.ts`.
+
+- **Kein Zugang ohne Bestätigung:** Der Antrag legt nichts an. Erst „Annehmen“ macht die Person zum Mitglied und verschickt die Einladung –
+  Mitglieder sehen Chats, Termine und Dokumente. Deshalb steht das auf jeder der drei Seiten in einem Satz.
+- **Öffentliche Seite** `/beitreten/<Schlüssel>` (ohne Anmeldung, im Aussehen der Anmeldeseiten, `AuthCard`-Rahmen): Vereinslogo und -name,
+  „Mitglied werden“, ein Satz zum Ablauf, dann das Formular – **Handy zuerst**, weil der Code meist mit der Kamera geöffnet wird: Felder
+  untereinander (Vor- und Nachname ab 640 px nebeneinander), 16-px-Schrift in allen Feldern (sonst zoomt iOS), passende Tastaturen
+  (`type="email"`, `tel`, `date`), Fehlertexte am Feld, der Knopf „Antrag senden“ über die volle Breite. Pflichtfelder tragen den Stern –
+  auch das Einwilligungs-Kästchen (`CheckboxField` mit `required`: Stern und `aria-required`); es verlinkt die Datenschutzerklärung.
+  Allgemeine Meldungen vom Server (Link inzwischen ungültig, zu viele Anträge mit Wartezeit) stehen **direkt über dem Knopf**, nicht
+  oben: Das Formular ist am Handy höher als der Bildschirm, oben bliebe die Meldung unbemerkt. Feldfehler vom Server springen wie
+  Browser-Fehler zum ersten betroffenen Feld (gilt für alle Formulare mit `useActionForm`). Danach ersetzt eine Bestätigung das Formular (Fokus darauf, `role="status"`).
+  Ein ungültiger, erneuerter oder geschlossener Link zeigt nur „Dieser Link ist nicht (mehr) gültig …“ – ohne Vereinsangaben.
+- **Verwaltung** `/mitglieder/antraege` („Beitrittsanträge“, erreichbar über den umrandeten Knopf „Anträge (2)“ in der Mitgliederliste –
+  nur für Vereinsadministrator und Vorstand): Karte „QR-Code zum Beitritt“ (ohne Link: drei Sätze zum Ablauf und die Hauptaktion
+  „QR-Code einrichten“; mit Link: der Code, die Adresse mit „Kopieren“, „Aushang drucken“, „Neuen Code erzeugen“ und – rot beschriftet, aber
+  umrandet – „Beitritt schließen“, beide mit Rückfrage). Darunter „Offene Anträge“ als Karten (älteste zuerst) mit allen Angaben;
+  „Annehmen“ ist wie „Eintragen“ in Listen der blaue Knopf der Karte, „Ablehnen“ umrandet, beide fragen nach. Was dem Annehmen im Weg
+  stünde, zeigt die Karte **vorher** als bernsteinfarbenen Hinweis (`Alert variant="warning"`) mit nächstem Schritt: ein Mitglied mit
+  derselben Adresse (mit Link, „im Archiv“ samt Hinweis auf „Wiederherstellen“), ein vorhandener Zugang oder eine offene Einladung (Link
+  „Benutzer und Rollen“). Weitere offene Anträge derselben Adresse (doppelt abgeschickt) nennt ein neutraler Hinweis; eine inzwischen
+  deaktivierte Abteilung steht als „(nicht mehr aktiv)“ da – sie wird beim Annehmen trotzdem zugeordnet. Hat inzwischen jemand anderes
+  entschieden, lädt die Seite nach der Fehlermeldung neu, die veraltete Karte verschwindet. „Zuletzt entschieden“ ist eine kompakte Liste
+  der letzten 30 Tage mit Abzeichen und „Zum Mitglied“; hat ein angenommenes Mitglied noch kein Konto, steht dort „Noch kein Konto –
+  Einladung gültig bis …“ (bzw. „keine gültige Einladung“) mit dem kleinen umrandeten Knopf „Einladung erneut senden“ (ohne Rückfrage,
+  wie „Erneut senden“ unter „Benutzer und Rollen“). Konnte die Einladung beim Annehmen nicht verschickt werden, verweist die Warnung
+  (20 Sekunden sichtbar) genau darauf. Leer: das kompakte Feld „Keine offenen Anträge“.
+- **QR-Code immer Schwarz auf Weiß** (auch dunkel): Kameras lesen umgedrehte Codes schlecht; die helle Ruhezone gehört dazu. Ein einziger
+  `<path>` aus den Modulen (waagerechte Streifen, `shape-rendering: crispEdges`) – scharf in jeder Größe, kein eingebettetes Markup.
+- **Aushang** `/mitglieder/antraege/aushang` nach dem Vorbild „Helferplan drucken“: Bedienelemente `print:hidden`, das Blatt als weiße
+  Papiervorschau (auch in der dunklen Darstellung), `@page` A4 hoch ohne Kopf- und Fußzeile (`buildPosterPageStyle`). Inhalt: Logo, Name,
+  groß „Mitglied werden“, ein Satz, großer Code (8,5 cm im Druck), die Adresse als Text (falls die Kamera streikt) und drei Schritte.
+  Passt auf eine Seite (an einer echten PDF geprüft).
+- Geprüft in `tests/e2e/beitritt.spec.ts` (Einrichten, Antrag ohne Anmeldung, Annehmen mit Einladungsmail im Postausgang, neuer Code,
+  Schließen, Aushang, Rechte, axe hell/dunkel), `beitritt.mobil.spec.ts` (Überlauf, 16-px-Felder, Knopfgröße) und `a11y.spec.ts`.
 
 ## Neuer Termin im Kalender
 

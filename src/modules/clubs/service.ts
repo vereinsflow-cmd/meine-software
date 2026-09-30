@@ -3,6 +3,7 @@ import { readRetention } from "@/lib/club-settings";
 import { CLUB_LOGO_TYPES, checkClubLogo, clubLogoUrl, clubLogoVersion } from "@/lib/club-logo";
 import { formatBytes } from "@/lib/uploads";
 import { diffChanges, recordAudit } from "@/server/audit/audit";
+import type { TenantDb } from "@/server/db/tenant";
 import { conflict, notFound, validationFailed } from "@/server/errors";
 import { assertCan } from "@/server/permissions/policy";
 import { enforceRateLimit } from "@/server/security/rate-limit";
@@ -263,26 +264,37 @@ export async function removeClubLogo(ctx: TenantContext): Promise<void> {
   await deleteFile(ctx.clubId, previousKey).catch(() => undefined);
 }
 
-/**
- * Öffnet das Logo des Vereins im Kontext zum Ausliefern. Ohne Logo – oder wenn die Datei fehlt, etwa nach einer
- * Wiederherstellung ohne Dateiablage – „nicht gefunden“ statt Serverfehler.
- */
-export async function openClubLogo(ctx: TenantContext): Promise<{
+export interface ClubLogoFile {
   stream: ReadableStream<Uint8Array>;
   size: number;
   mimeType: string;
   ext: string;
   version: string;
-}> {
+}
+
+/**
+ * Öffnet das Logo des Vereins im Kontext zum Ausliefern. Ohne Logo – oder wenn die Datei fehlt, etwa nach einer
+ * Wiederherstellung ohne Dateiablage – „nicht gefunden“ statt Serverfehler.
+ */
+export async function openClubLogo(ctx: TenantContext): Promise<ClubLogoFile> {
   assertCan(ctx, "club:read");
-  const club = await ctx.db.club.findFirstOrThrow({
+  return readClubLogoFile(ctx.db, ctx.clubId);
+}
+
+/**
+ * Liest die Logo-Datei über einen bereits auf den Verein begrenzten Zugriff – OHNE eigene Rechteprüfung. Nur für Aufrufer,
+ * die den Zugang selbst geprüft haben: angemeldete Mitglieder (`openClubLogo`) und die öffentliche Beitrittsseite mit einem
+ * gültigen Beitrittslink (dort zeigt der Verein sein Logo bewusst auch Fremden, wie auf dem Aushang).
+ */
+export async function readClubLogoFile(db: TenantDb, clubId: string): Promise<ClubLogoFile> {
+  const club = await db.club.findFirstOrThrow({
     select: { logoStorageKey: true, logoMimeType: true, logoSha256: true },
   });
   const type = CLUB_LOGO_TYPES.find((entry) => entry.mime === club.logoMimeType);
   if (!club.logoStorageKey || !club.logoSha256 || !type) throw notFound("Das Logo");
   let file: Awaited<ReturnType<typeof openFile>>;
   try {
-    file = await openFile(ctx.clubId, club.logoStorageKey);
+    file = await openFile(clubId, club.logoStorageKey);
   } catch {
     throw notFound("Das Logo");
   }

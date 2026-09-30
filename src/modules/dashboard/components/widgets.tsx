@@ -70,7 +70,9 @@ const PROGRESS_BAR_COLOR: Partial<Record<Tone, string>> = {
 const COMPARE_TEXT_COLOR: Record<Tone, string> = {
   neutral: "text-muted-foreground",
   ended: "text-muted-foreground",
-  success: "text-emerald-600 dark:text-emerald-400",
+  // Wie bei Bernstein: emerald-600 liegt auf Weiß unter 4,5:1 (fiel erst auf, als im laufenden Monat Mitglieder dazukamen –
+  // „+1 gegenüber dem Vormonat“), emerald-700 besteht sicher.
+  success: "text-emerald-700 dark:text-emerald-400",
   info: "text-primary",
   // amber-600 fällt bei normaler Schriftstärke auf hellem Grund knapp unter 4,5:1 (WCAG AA) – amber-700 besteht sicher.
   warning: "text-amber-700 dark:text-amber-400",

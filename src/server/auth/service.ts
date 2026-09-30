@@ -10,6 +10,7 @@ import {
   assertNotRateLimited,
   checkRateLimit,
   enforceRateLimit,
+  rateLimitIp,
   rateLimitSubject,
   resetRateLimit,
 } from "@/server/security/rate-limit";
@@ -59,7 +60,7 @@ export async function authenticate(
 ): Promise<AuthenticatedUser> {
   const email = normalizeEmail(input.email);
   const accountKey = `login:acct:${rateLimitSubject(email)}`;
-  const ipKey = `login:ip:${meta.ip}`;
+  const ipKey = `login:ip:${rateLimitIp(meta.ip)}`;
 
   await assertNotRateLimited(accountKey, LOGIN_ACCOUNT_FAILURES);
   if (hasKnownIp(meta)) await assertNotRateLimited(ipKey, LOGIN_IP_FAILURES);
@@ -116,7 +117,7 @@ export async function authenticate(
 export async function requestPasswordReset(emailInput: string, meta: ClientMeta): Promise<void> {
   const email = normalizeEmail(emailInput);
   await enforceRateLimit(`reset:acct:${rateLimitSubject(email)}`, 3, 60 * 60);
-  if (hasKnownIp(meta)) await enforceRateLimit(`reset:ip:${meta.ip}`, 10, 60 * 60);
+  if (hasKnownIp(meta)) await enforceRateLimit(`reset:ip:${rateLimitIp(meta.ip)}`, 10, 60 * 60);
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || user.disabledAt || user.deletedAt) return;
@@ -155,7 +156,8 @@ export async function resetPassword(
   input: { token: string; password: string },
   meta: ClientMeta,
 ): Promise<void> {
-  if (hasKnownIp(meta)) await enforceRateLimit(`reset-submit:ip:${meta.ip}`, 20, 60 * 60);
+  if (hasKnownIp(meta))
+    await enforceRateLimit(`reset-submit:ip:${rateLimitIp(meta.ip)}`, 20, 60 * 60);
 
   const record = await prisma.verificationToken.findUnique({
     where: { tokenHash: hashToken(input.token) },

@@ -240,14 +240,19 @@ export function SelectField<T extends FieldValues>({
   );
 }
 
+/**
+ * Kästchen mit Beschriftung. `required` für Kästchen, die angekreuzt sein MÜSSEN (z. B. eine Einwilligung): Stern wie bei
+ * den Textfeldern und `aria-required` – sonst hielte man das Kästchen nach „Pflichtfelder sind mit * markiert“ für freiwillig.
+ */
 export function CheckboxField<T extends FieldValues>({
   form,
   name,
   label,
   hint,
+  required,
   disabled,
   className,
-}: Omit<BaseProps<T>, "required" | "label"> & { label: React.ReactNode }) {
+}: Omit<BaseProps<T>, "label"> & { label: React.ReactNode }) {
   const id = useId();
   const error = errorOf(form, name);
   return (
@@ -258,13 +263,25 @@ export function CheckboxField<T extends FieldValues>({
           type="checkbox"
           disabled={disabled}
           aria-invalid={error ? true : undefined}
+          aria-required={required}
           aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
           className="mt-1 size-4 shrink-0 rounded accent-primary"
           defaultChecked={initialOf(form, name) === true}
           {...form.register(name)}
         />
         <Label htmlFor={id} className="leading-snug font-normal">
-          {label}
+          {required ? (
+            // Eine Hülle, damit Stern und Beschriftung im Flex-Container der Beschriftung eine Zeile bilden.
+            <span>
+              {label}
+              <span aria-hidden="true" className="text-destructive">
+                {" "}
+                *
+              </span>
+            </span>
+          ) : (
+            label
+          )}
         </Label>
       </div>
       {hint && !error && (
@@ -281,7 +298,10 @@ export function CheckboxField<T extends FieldValues>({
   );
 }
 
-/** Allgemeine Fehlermeldung oberhalb des Formulars (wird Screenreadern sofort vorgelesen). */
+/**
+ * Allgemeine Fehlermeldung des Formulars (wird Screenreadern sofort vorgelesen). Meist oben; in langen Formularen, die vor
+ * allem am Handy ausgefüllt werden, direkt über dem Absende-Knopf – dort, wo man gerade hinschaut.
+ */
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (

@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { PlaceholderNotice } from "@/components/shared/legal-notice";
+import {
+  APPLICATION_DECIDED_RETENTION_DAYS,
+  APPLICATION_PENDING_RETENTION_DAYS,
+} from "@/lib/membership-application";
 
 export const metadata: Metadata = { title: "Datenschutzerklärung" };
 
@@ -13,10 +17,10 @@ export default function PrivacyPolicyPage() {
         <h2 className="text-lg font-medium">1. Verantwortlicher</h2>
         <p>
           Verantwortlich für die Verarbeitung Ihrer personenbezogenen Daten in VereinsFlow ist der
-          Verein, dem Sie angehören: [Name und Anschrift des Vereins, Kontakt des
-          Datenschutzbeauftragten bzw. Ansprechpartners]. Den Betrieb der Plattform übernimmt [Name
-          des Plattformbetreibers] als Auftragsverarbeiter im Sinne von Art. 28 DSGVO
-          [Auftragsverarbeitungsvertrag abschließen].
+          Verein, dem Sie angehören oder bei dem Sie einen Aufnahmeantrag stellen: [Name und
+          Anschrift des Vereins, Kontakt des Datenschutzbeauftragten bzw. Ansprechpartners]. Den
+          Betrieb der Plattform übernimmt [Name des Plattformbetreibers] als Auftragsverarbeiter im
+          Sinne von Art. 28 DSGVO [Auftragsverarbeitungsvertrag abschließen].
         </p>
       </section>
 
@@ -27,6 +31,19 @@ export default function PrivacyPolicyPage() {
             <strong>Mitgliederdaten</strong> (Name, Kontaktdaten, Geburtsdatum, Eintritts- und
             Austrittsdatum, Abteilungszugehörigkeit, Funktion): zur Durchführung der Mitgliedschaft
             (Art. 6 Abs. 1 lit. b DSGVO).
+          </li>
+          <li>
+            <strong>Beitrittsanträge über den QR-Code des Vereins</strong> (Vor- und Nachname,
+            E-Mail-Adresse, freiwillig Telefon, Geburtsdatum, gewünschte Abteilung und Nachricht an
+            den Verein; dazu Zeitpunkt Ihrer Einwilligung und die gekürzte IP-Adresse): damit der
+            Verein über Ihren Aufnahmeantrag entscheiden kann (Art. 6 Abs. 1 lit. b DSGVO,
+            vorvertragliche Maßnahmen, und Ihre Einwilligung im Formular, Art. 6 Abs. 1 lit. a
+            DSGVO). Den Antrag sehen nur die Vereinsadministration und der Vorstand. Zugang zum
+            Verein erhalten Sie erst, wenn der Verein Ihren Antrag annimmt – dann per Einladung an
+            Ihre E-Mail-Adresse; bei einer Ablehnung bekommen Sie keine E-Mail. Der Antrag wird{" "}
+            {APPLICATION_DECIDED_RETENTION_DAYS} Tage nach der Entscheidung gelöscht, ein nie
+            entschiedener nach {APPLICATION_PENDING_RETENTION_DAYS} Tagen. Werden Sie Mitglied,
+            gelten ab dann die Angaben zu den Mitgliederdaten.
           </li>
           <li>
             <strong>Veranstaltungs- und Helferdaten</strong> (Zu-/Absagen, Schichteintragungen,

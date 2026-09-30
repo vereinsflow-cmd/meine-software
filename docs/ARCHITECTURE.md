@@ -46,7 +46,8 @@ die anderen:
 2. **Gefilterter Datenbank-Client** (`src/server/db/tenant.ts`). `createTenantDb(clubId)` ist eine Prisma-Client-Erweiterung, die
    bei **jeder** Operation auf mandantenbezogenen Tabellen `clubId` in den Filter setzt (Lesen, Ändern, Löschen), beim Anlegen
    fest einträgt und ein Umziehen in einen anderen Verein verbietet. Verschachtelte Schreibzugriffe, Roh-SQL und unbekannte
-   Operationen sind gesperrt („fail closed“). Plattformweite Tabellen (Benutzer, Sitzungen, …) erreicht man mit diesem Client
+   Operationen sind gesperrt („fail closed“). Einzige Ausnahme ist `lockUntilCommit` im selben Modul: eine Transaktionssperre
+   (Advisory-Lock) für einen fachlichen Schlüssel des Vereins mit gebundenem Wert – sie liest und ändert keine Vereinsdaten. Plattformweite Tabellen (Benutzer, Sitzungen, …) erreicht man mit diesem Client
    gar nicht.
 3. **Datenbank.** Alle Beziehungen zwischen mandantenbezogenen Tabellen sind **zusammengesetzte Fremdschlüssel** `(clubId, id)`:
    Eine Schicht eines Vereins kann nicht mit einem Mitglied eines anderen Vereins verknüpft werden – selbst dann nicht, wenn der

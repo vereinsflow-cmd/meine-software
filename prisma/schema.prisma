@@ -197,6 +197,13 @@ enum SupportStatus {
   DONE
 }
 
+/// Stand eines Beitrittsantrags: offen (wartet auf den Vorstand), angenommen (Mitglied angelegt) oder abgelehnt.
+enum MembershipApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 // ----------------------------------------------------------------------------
 // Plattform: Benutzer, Sitzungen, Tokens (global, ohne clubId)
 // ----------------------------------------------------------------------------
@@ -296,50 +303,56 @@ model Permission {
 // ----------------------------------------------------------------------------
 
 model Club {
-  id             String     @id @default(uuid(7))
-  name           String
+  id                 String     @id @default(uuid(7))
+  name               String
   /// URL-tauglicher, eindeutiger Kurzname.
-  slug           String     @unique
-  status         ClubStatus @default(ACTIVE)
-  timezone       String     @default("Europe/Berlin")
-  contactEmail   String?
-  phone          String?
-  street         String?
-  postalCode     String?
-  city           String?
-  website        String?
+  slug               String     @unique
+  status             ClubStatus @default(ACTIVE)
+  timezone           String     @default("Europe/Berlin")
+  contactEmail       String?
+  phone              String?
+  street             String?
+  postalCode         String?
+  city               String?
+  website            String?
   /// Ansprechpartner für Datenschutzanfragen (erscheint in den Datenschutzhinweisen).
-  privacyContact String?
+  privacyContact     String?
   /// Aufbewahrungsfristen und weitere Vereinseinstellungen.
-  settings       Json       @default("{}")
+  settings           Json       @default("{}")
   /// Vereinslogo: zufälliger Schlüssel der Datei unter STORAGE_DIR/<clubId>/ (nie der Dateiname). Alle logo*-Felder
   /// sind gemeinsam gesetzt oder gemeinsam leer (Prüfregel in der Migration).
-  logoStorageKey String?    @unique
+  logoStorageKey     String?    @unique
   /// Medientyp des Logos aus der Positivliste (PNG, JPEG, WebP) – nie die Angabe des Browsers.
-  logoMimeType   String?
-  logoSizeBytes  Int?
+  logoMimeType       String?
+  logoSizeBytes      Int?
   /// Prüfsumme der Logo-Datei; ihr Anfang dient als Version in der Bildadresse (Zwischenspeicher).
-  logoSha256     String?
-  logoUpdatedAt  DateTime?  @db.Timestamptz(3)
-  deactivatedAt  DateTime?  @db.Timestamptz(3)
-  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+  logoSha256         String?
+  logoUpdatedAt      DateTime?  @db.Timestamptz(3)
+  /// Beitritt per QR-Code: zufälliger Schlüssel des öffentlichen Antragslinks (`/beitreten/<joinToken>`), leer = geschlossen.
+  /// Bewusst im Klartext (nicht als Hash): Er gewährt keinen Zugang, sondern erlaubt nur, einen Antrag einzureichen, und
+  /// muss für Nachdrucke des Aushangs wieder anzeigbar sein. „Neuen Code erzeugen“ ersetzt ihn – alte Aushänge sind dann ungültig.
+  joinToken          String?    @unique
+  joinTokenCreatedAt DateTime?  @db.Timestamptz(3)
+  deactivatedAt      DateTime?  @db.Timestamptz(3)
+  createdAt          DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime   @updatedAt @db.Timestamptz(3)
 
-  roles          Role[]
-  memberships    ClubMembership[]
-  members        Member[]
-  departments    Department[]
-  groups         Group[]
-  events         Event[]
-  tasks          Task[]
-  checklists     Checklist[]
-  messages       Message[]
-  documents      Document[]
-  invoices       Invoice[]
-  folders        DocumentFolder[]
-  invitations    Invitation[]
-  sessions       Session[]
-  supportTickets SupportTicket[]
+  roles                  Role[]
+  memberships            ClubMembership[]
+  members                Member[]
+  departments            Department[]
+  groups                 Group[]
+  events                 Event[]
+  tasks                  Task[]
+  checklists             Checklist[]
+  messages               Message[]
+  documents              Document[]
+  invoices               Invoice[]
+  folders                DocumentFolder[]
+  invitations            Invitation[]
+  sessions               Session[]
+  supportTickets         SupportTicket[]
+  membershipApplications MembershipApplication[]
 }
 
 model Role {
@@ -462,18 +475,20 @@ model Member {
   club       Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   membership ClubMembership? @relation(fields: [clubId, userId], references: [clubId, userId], onDelete: Restrict)
 
-  departments       MemberDepartment[]
-  groups            GroupMember[]
-  consents          Consent[]
-  participations    EventParticipant[]
-  shiftAssignments  ShiftAssignment[]
-  contactForEvents  Event[]            @relation("EventContact")
-  responsibleShifts EventShift[]       @relation("ShiftResponsible")
-  assignedTasks     Task[]             @relation("TaskAssignee")
-  checklistItems    ChecklistItem[]    @relation("ChecklistItemAssignee")
-  documents         Document[]
-  invitations       Invitation[]
-  messageRecipients MessageRecipient[]
+  departments            MemberDepartment[]
+  groups                 GroupMember[]
+  consents               Consent[]
+  participations         EventParticipant[]
+  shiftAssignments       ShiftAssignment[]
+  contactForEvents       Event[]                 @relation("EventContact")
+  responsibleShifts      EventShift[]            @relation("ShiftResponsible")
+  assignedTasks          Task[]                  @relation("TaskAssignee")
+  checklistItems         ChecklistItem[]         @relation("ChecklistItemAssignee")
+  documents              Document[]
+  invitations            Invitation[]
+  messageRecipients      MessageRecipient[]
+  /// Beitrittsantrag, aus dem das Mitglied angelegt wurde.
+  membershipApplications MembershipApplication[]
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -493,11 +508,12 @@ model Department {
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
-  club     Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  members  MemberDepartment[]
-  groups   Group[]
-  events   Event[]
-  messages Message[]
+  club                   Club                    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  members                MemberDepartment[]
+  groups                 Group[]
+  events                 Event[]
+  messages               Message[]
+  membershipApplications MembershipApplication[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -571,6 +587,45 @@ model Consent {
   member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
 
   @@index([clubId, memberId, type, recordedAt])
+}
+
+/// Beitrittsantrag über den öffentlichen QR-Code-Link des Vereins. Wer ihn stellt, hat noch KEIN Konto und keinen Zugang:
+/// Erst wenn der Vorstand annimmt, entsteht das Mitglied und bekommt eine Einladung per E-Mail (Mitglieder sehen Chats,
+/// Termine und Dokumente). Entschiedene Anträge werden 30 Tage nach der Entscheidung gelöscht, offene nach 180 Tagen.
+model MembershipApplication {
+  id                 String                      @id @default(uuid(7))
+  clubId             String
+  firstName          String
+  lastName           String
+  /// Immer klein geschrieben gespeichert (Prüfregel in der Migration).
+  email              String
+  phone              String?
+  birthDate          DateTime?                   @db.Date
+  /// Gewünschte Abteilung (freiwillig). Wird die Abteilung gelöscht, leert der Dienst das Feld vorher.
+  departmentId       String?
+  /// Nachricht an den Verein – reiner Text, höchstens 1000 Zeichen.
+  message            String?
+  /// Zeitpunkt der Einwilligung, die Angaben zur Bearbeitung des Antrags zu speichern.
+  consentAt          DateTime                    @db.Timestamptz(3)
+  /// Fassung des Einwilligungstexts im Formular (`APPLICATION_CONSENT_VERSION`) – Nachweis, welchem Text zugestimmt wurde.
+  /// Diese Einwilligung gilt nur für die Bearbeitung des Antrags und wird beim Annehmen NICHT als Einwilligung übernommen.
+  consentTextVersion String
+  status             MembershipApplicationStatus @default(PENDING)
+  createdAt          DateTime                    @default(now()) @db.Timestamptz(3)
+  decidedAt          DateTime?                   @db.Timestamptz(3)
+  /// Wer entschieden hat – Herkunftsangabe ohne Fremdschlüssel (wird beim Löschen des Kontos gelöst).
+  decidedById        String?
+  /// Beim Annehmen angelegtes Mitglied.
+  memberId           String?
+  /// Gekürzte IP des Absenders (Nachweis bei Missbrauch, Datensparsamkeit).
+  ipPrefix           String?
+
+  club       Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
+  member     Member?     @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Restrict)
+
+  @@unique([clubId, id])
+  @@index([clubId, status, createdAt])
 }
 
 // ----------------------------------------------------------------------------
