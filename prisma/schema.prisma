@@ -321,7 +321,7 @@ model Club {
   settings           Json       @default("{}")
   /// Vereinslogo: zufälliger Schlüssel der Datei unter STORAGE_DIR/<clubId>/ (nie der Dateiname). Alle logo*-Felder
   /// sind gemeinsam gesetzt oder gemeinsam leer (Prüfregel in der Migration).
-  /// Einrichtung des Vereins (Assistent „Verein einrichten“) abgeschlossen; leer = noch nicht – der Admin sieht einen Hinweis.
+  /// Einrichtung des Vereins (Assistent „Verein einrichten“) abgeschlossen; leer = noch nicht – bis dahin sieht der Vereinsadministrator nur den Assistenten.
   setupCompletedAt   DateTime?  @db.Timestamptz(3)
   logoStorageKey     String?    @unique
   /// Medientyp des Logos aus der Positivliste (PNG, JPEG, WebP) – nie die Angabe des Browsers.

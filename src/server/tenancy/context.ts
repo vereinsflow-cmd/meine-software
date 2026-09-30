@@ -8,6 +8,7 @@ import { setSessionActiveClub, type SessionUser } from "@/server/auth/session-co
 import { forbidden, unauthenticated } from "@/server/errors";
 import { getRequestMeta } from "@/server/security/request";
 import { loadTenantContext, type TenantContext } from "./context-core";
+import { enforceSetupGate } from "./setup-gate";
 
 export type { TenantContext } from "./context-core";
 export { auditActor } from "./context-core";
@@ -42,8 +43,13 @@ export async function requireTenantContext(): Promise<TenantContext> {
   return ctx;
 }
 
-/** Für Seiten und Layouts: leitet auf die Anmeldung bzw. eine Hinweisseite um. */
-export async function requirePageContext(): Promise<TenantContext> {
+/**
+ * Für Seiten und Layouts: leitet auf die Anmeldung bzw. eine Hinweisseite um – und während der Einrichtung eines neuen
+ * Vereins auf den Assistenten (`setup-gate.ts`). Das Layout übergibt `setupGate: false`: Eine Weiterleitung aus dem
+ * gemeinsamen Layout heraus hinterlässt beim Wechsel innerhalb der App eine leere Seite; die Seite selbst leitet sauber um
+ * (und wird anders als das Layout bei jedem Wechsel neu berechnet).
+ */
+export async function requirePageContext({ setupGate = true } = {}): Promise<TenantContext> {
   const session = await getCurrentSession();
   if (!session) {
     // Cookie vorhanden, Sitzung aber ungültig → abgelaufen/inaktiv: mit Hinweis zur Anmeldung.
@@ -52,9 +58,10 @@ export async function requirePageContext(): Promise<TenantContext> {
   }
 
   const ctx = await getTenantContext();
-  if (ctx) return ctx;
+  if (!ctx) redirect(session.user.isPlatformAdmin ? "/system" : "/kein-verein");
 
-  redirect(session.user.isPlatformAdmin ? "/system" : "/kein-verein");
+  if (setupGate) await enforceSetupGate(ctx);
+  return ctx;
 }
 
 /** Angemeldeter Benutzer ohne Vereinsbezug (z. B. Profil, Systemadministration). */

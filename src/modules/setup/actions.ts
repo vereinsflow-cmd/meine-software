@@ -24,7 +24,7 @@ export async function firstRunAction(input: unknown): Promise<ActionResult> {
 export async function completeSetupAction(): Promise<ActionResult> {
   return runAction(async () => {
     await completeSetup(await requireTenantContext());
-    revalidatePath("/", "layout"); // Der Hinweis „Verein einrichten“ verschwindet aus dem Rahmen
+    revalidatePath("/", "layout"); // Statt des Einrichtungsrahmens erscheint jetzt die ganze App
     redirect("/dashboard");
   }, "setup-complete");
 }

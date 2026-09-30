@@ -16,7 +16,8 @@ vi.mock("@/server/env", async (importOriginal) => {
 import { prisma } from "@/server/db/client";
 import { authenticate } from "@/server/auth/service";
 import { completeFirstRun, isFirstRunOpen } from "@/server/platform/first-run";
-import { completeSetup, getSetupOverview, isSetupPending } from "@/modules/setup/service";
+import { completeSetup, getSetupOverview } from "@/modules/setup/service";
+import { isSetupLocked } from "@/server/tenancy/setup-gate";
 import { addUserToClub, contextFor, createDepartment, createMember } from "../helpers/factories";
 
 const meta = { ip: "unknown", ipPrefix: null };
@@ -88,12 +89,12 @@ describe("Ersteinrichtung der leeren Version", () => {
     expect(await prisma.club.count()).toBe(1);
   });
 
-  it("der Assistent zeigt den Fortschritt und lässt sich einmal abschließen", async () => {
+  it("der Assistent zeigt den Fortschritt; abschließen erst mit den Pflichtangaben, dann ist die App frei", async () => {
     const club = await theClub();
     const admin = await prisma.clubMembership.findFirstOrThrow({ where: { clubId: club.id } });
     const ctx = await contextFor(admin.userId, club.id);
 
-    expect(await isSetupPending(ctx)).toBe(true);
+    expect(isSetupLocked(ctx)).toBe(true);
     let overview = await getSetupOverview(ctx);
     expect(overview.done).toEqual({
       verein: false,
@@ -103,10 +104,15 @@ describe("Ersteinrichtung der leeren Version", () => {
       vorstand: false,
     });
 
+    // Kontakt-E-Mail ist schon da (aus der Ersteinrichtung), die Anschrift fehlt noch
+    await expect(completeSetup(ctx)).rejects.toMatchObject({ code: "CONFLICT" });
     await prisma.club.update({
       where: { id: club.id },
-      data: { street: "Hauptstraße 1", postalCode: "12345", city: "Musterstadt" },
+      data: { street: "Hauptstraße 1", city: "Musterstadt" },
     });
+    expect((await getSetupOverview(ctx)).done.verein).toBe(false); // ohne PLZ unvollständig
+    await prisma.club.update({ where: { id: club.id }, data: { postalCode: "12345" } });
+
     await createDepartment(club.id, "Fußball");
     await createMember(club.id);
     await addUserToClub(club, "BOARD");
@@ -123,18 +129,24 @@ describe("Ersteinrichtung der leeren Version", () => {
 
     await completeSetup(ctx);
     await completeSetup(ctx); // ein zweites Mal ändert nichts
-    expect(await isSetupPending(ctx)).toBe(false);
+    expect(isSetupLocked(await contextFor(admin.userId, club.id))).toBe(false);
     expect(
       await prisma.auditLog.count({ where: { clubId: club.id, action: "club.setup_completed" } }),
     ).toBe(1);
   });
 
-  it("nur wer den Verein verwaltet, sieht den Hinweis und darf abschließen", async () => {
+  it("gesperrt ist nur, wer den Verein verwaltet – Vorstand und Mitglieder sehen die App wie gewohnt", async () => {
     const club = await theClub();
     await prisma.club.update({ where: { id: club.id }, data: { setupCompletedAt: null } });
+    const admin = await prisma.clubMembership.findFirstOrThrow({
+      where: { clubId: club.id, role: { key: "CLUB_ADMIN" } },
+    });
+    expect(isSetupLocked(await contextFor(admin.userId, club.id))).toBe(true);
+    const board = await addUserToClub(club, "BOARD");
+    expect(isSetupLocked(await contextFor(board.user.id, club.id))).toBe(false);
     const member = await addUserToClub(club, "MEMBER");
     const ctx = await contextFor(member.user.id, club.id);
-    expect(await isSetupPending(ctx)).toBe(false);
+    expect(isSetupLocked(ctx)).toBe(false);
     await expect(completeSetup(ctx)).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

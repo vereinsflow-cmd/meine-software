@@ -51,4 +51,20 @@ export const clubSettingsSchema = z.object({
   auditMonths: wholeNumber("Änderungsprotokoll", 6, 120),
 });
 export type ClubSettingsInput = z.output<typeof clubSettingsSchema>;
+
+/**
+ * Assistent „Verein einrichten“: dieselben Vereinsdaten, aber Kontakt-E-Mail und Anschrift sind Pflicht – sie stehen in
+ * der Datenschutzerklärung, im Aushang zum Beitritt und in E-Mails an die Mitglieder (siehe `lib/club-setup.ts`).
+ */
+export const clubSetupSchema = clubSettingsSchema.superRefine((data, ctx) => {
+  const required = [
+    ["contactEmail", "Bitte gib eine Kontakt-E-Mail-Adresse ein."],
+    ["street", "Bitte gib Straße und Hausnummer ein."],
+    ["postalCode", "Bitte gib die Postleitzahl ein."],
+    ["city", "Bitte gib den Ort ein."],
+  ] as const;
+  for (const [field, message] of required) {
+    if (!data[field]) ctx.addIssue({ code: "custom", path: [field], message });
+  }
+});
 export type ClubSettingsFormInput = z.input<typeof clubSettingsSchema>;

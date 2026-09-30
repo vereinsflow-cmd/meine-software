@@ -16,7 +16,15 @@ export interface TenantContext extends PermissionHolder {
   user: SessionUser;
   clubId: string;
   /** `logoSha256`: Prüfsumme des Vereinslogos (für die Bildadresse, siehe `clubLogoUrl`) – `null` ohne Logo. */
-  club: { id: string; name: string; slug: string; timezone: string; logoSha256: string | null };
+  club: {
+    id: string;
+    name: string;
+    slug: string;
+    timezone: string;
+    logoSha256: string | null;
+    /** Leer = Einrichtung noch nicht abgeschlossen (siehe `server/tenancy/setup-gate.ts`). */
+    setupCompletedAt: Date | null;
+  };
   membershipId: string;
   roleKey: string;
   roleName: string;
@@ -33,7 +41,16 @@ export interface LoadedContext {
 }
 
 const membershipInclude = {
-  club: { select: { id: true, name: true, slug: true, timezone: true, logoSha256: true } },
+  club: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      timezone: true,
+      logoSha256: true,
+      setupCompletedAt: true,
+    },
+  },
   role: {
     select: {
       key: true,

@@ -1,7 +1,8 @@
 /**
  * Der Assistent „Verein einrichten“: sechs Schritte, die ein neuer Verein nacheinander durchgeht. Jeder Schritt (außer
  * dem Abschluss) gilt als erledigt, sobald die Daten da sind – egal ob im Assistenten oder auf der normalen Seite
- * angelegt. Überspringen ist immer erlaubt; nichts davon ist Pflicht.
+ * angelegt. Pflicht sind nur die Vereinsdaten (Kontakt-E-Mail und Anschrift, `lib/club-setup.ts`); alle übrigen Schritte
+ * lassen sich überspringen.
  */
 export const SETUP_STEPS = [
   { id: "verein", title: "Vereinsdaten", hint: "Name, Anschrift und Kontakt" },
@@ -17,7 +18,7 @@ export type SetupTaskId = Exclude<SetupStepId, "abschluss">;
 export const SETUP_STEP_IDS: readonly SetupStepId[] = SETUP_STEPS.map((step) => step.id);
 
 export interface SetupFacts {
-  /** Kontakt-E-Mail, Straße und Ort sind hinterlegt. */
+  /** Pflichtangaben vollständig: Kontakt-E-Mail und Anschrift (`hasRequiredClubData`). */
   contact: boolean;
   logo: boolean;
   departments: number;

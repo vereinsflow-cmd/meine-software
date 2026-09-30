@@ -76,6 +76,9 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-request-id", requestId);
   // Next.js liest den Nonce aus dem CSP-Header der Anfrage und versieht damit die eigenen Skripte.
   requestHeaders.set("Content-Security-Policy", csp);
+  // Aufgerufene Seite – Seiten kennen ihren Pfad sonst nicht. Genutzt, um während der Einrichtung eines neuen Vereins
+  // nur den Assistenten zu zeigen (`server/tenancy/setup-gate.ts`). Das ist Benutzerführung, keine Rechteprüfung.
+  requestHeaders.set("x-vf-pathname", pathname);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

@@ -1,5 +1,7 @@
+import { hasRequiredClubData } from "@/lib/club-setup";
 import { recordAudit } from "@/server/audit/audit";
-import { assertCan, can } from "@/server/permissions/policy";
+import { conflict } from "@/server/errors";
+import { assertCan } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { doneSteps, type SetupFacts, type SetupTaskId } from "./steps";
 
@@ -18,6 +20,7 @@ export async function getSetupOverview(ctx: TenantContext): Promise<SetupOvervie
         setupCompletedAt: true,
         contactEmail: true,
         street: true,
+        postalCode: true,
         city: true,
         logoStorageKey: true,
       },
@@ -34,7 +37,7 @@ export async function getSetupOverview(ctx: TenantContext): Promise<SetupOvervie
     }),
   ]);
   const facts: SetupFacts = {
-    contact: Boolean(club.contactEmail && club.street && club.city),
+    contact: hasRequiredClubData(club),
     logo: club.logoStorageKey !== null,
     departments: departments.length,
     members,
@@ -44,18 +47,25 @@ export async function getSetupOverview(ctx: TenantContext): Promise<SetupOvervie
   return { completedAt: club.setupCompletedAt, facts, done: doneSteps(facts), departments };
 }
 
-/** Hinweis „Verein einrichten“ im Rahmen der App: nur für Personen, die den Verein verwalten, bis zum Abschluss. */
-export async function isSetupPending(ctx: TenantContext): Promise<boolean> {
-  if (!can(ctx, "club:update")) return false;
-  const club = await ctx.db.club.findFirst({ select: { setupCompletedAt: true } });
-  return club !== null && club.setupCompletedAt === null;
-}
-
+/** Schaltet die App frei (siehe `server/tenancy/setup-gate.ts`) – erst, wenn die Pflichtangaben vollständig sind. */
 export async function completeSetup(ctx: TenantContext): Promise<void> {
   assertCan(ctx, "club:update");
   await ctx.db.$transaction(async (tx) => {
-    const club = await tx.club.findFirstOrThrow({ select: { setupCompletedAt: true } });
+    const club = await tx.club.findFirstOrThrow({
+      select: {
+        setupCompletedAt: true,
+        contactEmail: true,
+        street: true,
+        postalCode: true,
+        city: true,
+      },
+    });
     if (club.setupCompletedAt) return; // schon abgeschlossen – nichts doppelt protokollieren
+    if (!hasRequiredClubData(club)) {
+      throw conflict(
+        "Bitte fülle zuerst die Pflichtangaben unter „Vereinsdaten“ aus: Kontakt-E-Mail und Anschrift.",
+      );
+    }
     await tx.club.update({ where: { id: ctx.clubId }, data: { setupCompletedAt: new Date() } });
     await recordAudit(tx, auditActor(ctx), {
       action: "club.setup_completed",

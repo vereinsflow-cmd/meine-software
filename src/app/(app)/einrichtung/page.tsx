@@ -21,6 +21,8 @@ import { ClubSettingsForm } from "@/modules/clubs/components/settings-form";
 import { getClubSettings } from "@/modules/clubs/service";
 import { DepartmentDialog } from "@/modules/departments/components/department-dialog";
 import { CompleteSetupButton } from "@/modules/setup/components/complete-setup-button";
+import { RememberStep } from "@/modules/setup/components/remember-step";
+import { SetupFrameSync } from "@/modules/setup/components/setup-frame";
 import { SetupStepper } from "@/modules/setup/components/setup-stepper";
 import { getSetupOverview, type SetupOverview } from "@/modules/setup/service";
 import {
@@ -39,13 +41,14 @@ import {
 import { env } from "@/server/env";
 import { can, scopeOf } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
+import { isSetupLocked } from "@/server/tenancy/setup-gate";
 import type { TenantContext } from "@/server/tenancy/context-core";
 
 export const metadata: Metadata = { title: "Verein einrichten" };
 
 const INTRO: Record<SetupStepId, string> = {
   verein:
-    "Diese Angaben erscheinen in der Datenschutzerklärung, auf dem Aushang zum Beitritt und in E-Mails an deine Mitglieder.",
+    "Pflichtangaben sind mit * markiert: Kontakt-E-Mail und Anschrift stehen in der Datenschutzerklärung, auf dem Aushang zum Beitritt und in E-Mails an deine Mitglieder. Ohne sie geht es nicht weiter.",
   logo: "Mit eurem Logo erkennen alle sofort, in welchem Verein sie gerade sind – in der Kopfzeile, auf dem Aushang und beim Vereinswechsel.",
   abteilungen:
     "Lege die Sparten und Gruppen deines Vereins an, zum Beispiel Fußball, Tennis oder Jugend. Mitglieder, Termine und Aufgaben lassen sich später danach ordnen.",
@@ -54,7 +57,7 @@ const INTRO: Record<SetupStepId, string> = {
   vorstand:
     "Lade die Personen ein, die mit dir im Verein arbeiten: Vorstand, Kasse, Abteilungsleitungen. Jede Person bekommt eine Rolle mit passenden Rechten.",
   abschluss:
-    "Fast geschafft. Hier siehst du, was schon erledigt ist. Offene Schritte kannst du jederzeit später nachholen.",
+    "Fast geschafft. Hier siehst du, was schon erledigt ist. Mit „Einrichtung abschließen“ öffnet sich VereinsFlow mit allen Bereichen – offene Schritte kannst du jederzeit später nachholen.",
 };
 
 export default async function SetupPage({
@@ -67,10 +70,13 @@ export default async function SetupPage({
   if (!can(ctx, "club:update")) return <NoAccess what="die Einrichtung des Vereins" />;
 
   const overview = await getSetupOverview(ctx);
-  const step = enumParam(params, "schritt", SETUP_STEP_IDS);
-  // Ohne Angabe beim ersten offenen Schritt beginnen – mit ihm in der Adresse, sonst spränge die Seite nach dem Speichern
-  // (der Schritt ist dann erledigt) von selbst zum nächsten.
-  if (!step) redirect(`/einrichtung?schritt=${firstOpenStep(overview.done)}`);
+  const requested = enumParam(params, "schritt", SETUP_STEP_IDS);
+  // Ohne Angabe beim ersten offenen Schritt beginnen (`RememberStep` trägt ihn in die Adresse ein).
+  const step = requested ?? firstOpenStep(overview.done);
+  // Zuerst die Pflichtangaben – vorher sind die übrigen Schritte gesperrt (nur solange die Einrichtung läuft; ein längst
+  // eingerichteter Verein ohne vollständige Anschrift kann jeden Schritt öffnen).
+  const stepsLocked = !overview.completedAt && !overview.done.verein;
+  if (stepsLocked && step !== "verein") redirect("/einrichtung?schritt=verein");
   const index = SETUP_STEP_IDS.indexOf(step);
   const current = SETUP_STEPS[index]!;
   const previous = SETUP_STEPS[index - 1];
@@ -83,11 +89,13 @@ export default async function SetupPage({
         description={
           overview.completedAt
             ? "Die Einrichtung ist abgeschlossen – du kannst jeden Schritt jederzeit wieder öffnen."
-            : "Schritt für Schritt startklar. Jeder Schritt lässt sich überspringen und später nachholen."
+            : "Schritt für Schritt startklar: Zuerst die Pflichtangaben, danach lässt sich jeder Schritt überspringen. Die übrigen Bereiche von VereinsFlow öffnen sich nach dem Abschluss."
         }
       />
+      <RememberStep step={step} />
+      <SetupFrameSync locked={isSetupLocked(ctx)} />
       <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start">
-        <SetupStepper current={step} done={overview.done} />
+        <SetupStepper current={step} done={overview.done} locked={stepsLocked} />
         <section aria-labelledby="schritt-titel" className="grid max-w-4xl min-w-0 gap-6">
           <div className="grid gap-1">
             <p className="text-sm text-muted-foreground">
@@ -114,7 +122,11 @@ export default async function SetupPage({
             ) : (
               <span />
             )}
-            {next ? (
+            {stepsLocked ? (
+              <p className="text-sm text-muted-foreground">
+                Fülle zuerst die Pflichtfelder (*) aus und klicke auf „Speichern und weiter“.
+              </p>
+            ) : next ? (
               <Button asChild>
                 <Link href={`/einrichtung?schritt=${next.id}`}>
                   Weiter: {next.title} <ArrowRightIcon />
@@ -153,6 +165,7 @@ async function StepContent({
         <ClubLogoCard clubId={ctx.clubId} clubName={settings.name} logo={settings.logo} />
       ) : (
         <ClubSettingsForm
+          setup={overview.completedAt ? undefined : { nextHref: "/einrichtung?schritt=logo" }}
           defaults={{
             name: settings.name,
             contactEmail: settings.contactEmail ?? "",

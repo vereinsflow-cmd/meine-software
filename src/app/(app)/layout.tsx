@@ -11,13 +11,14 @@ import { SearchProvider } from "@/components/search/search-provider";
 import { SearchTrigger } from "@/components/search/search-trigger";
 import { clubLogoUrl } from "@/lib/club-logo";
 import { countUnread } from "@/modules/notifications/service";
-import { SetupBanner } from "@/modules/setup/components/setup-banner";
-import { isSetupPending } from "@/modules/setup/service";
+import { SetupFrame } from "@/modules/setup/components/setup-frame";
+import { SetupShell } from "@/modules/setup/components/setup-shell";
 import { getStaticSearchEntries } from "@/modules/search/service";
 import { getTaskStats } from "@/modules/tasks/service";
 import { env } from "@/server/env";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
+import { isSetupLocked } from "@/server/tenancy/setup-gate";
 import { listUserClubs } from "@/server/tenancy/clubs";
 
 /**
@@ -25,13 +26,29 @@ import { listUserClubs } from "@/server/tenancy/clubs";
  * Vereinsmitgliedschaft und Vereinsstatus – ohne gültigen Kontext sieht man keine Seite.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await requirePageContext();
-  const [clubs, unread, taskStats, setupPending] = await Promise.all([
+  const ctx = await requirePageContext({ setupGate: false }); // umgeleitet wird in der Seite selbst
+  // Neuer Verein: bis zum Abschluss der Einrichtung nur der Assistent – ohne Menü, Suche und Benachrichtigungen.
+  if (isSetupLocked(ctx)) {
+    return (
+      <SetupFrame locked>
+        <SetupShell
+          clubName={ctx.club.name}
+          clubLogoUrl={clubLogoUrl(ctx.clubId, ctx.club.logoSha256)}
+          clubs={await listUserClubs(ctx.userId)}
+          activeClubId={ctx.clubId}
+          isPlatformAdmin={ctx.user.isPlatformAdmin}
+        >
+          {children}
+        </SetupShell>
+        <IdleLogout idleMinutes={env.SESSION_IDLE_MINUTES} />
+      </SetupFrame>
+    );
+  }
+
+  const [clubs, unread, taskStats] = await Promise.all([
     listUserClubs(ctx.userId),
     countUnread(ctx),
     can(ctx, "tasks:read") ? getTaskStats(ctx) : Promise.resolve(null),
-    // Ohne Hinweis weiter, falls der laufende Server die neue Spalte noch nicht kennt (erst nach einem Neustart).
-    isSetupPending(ctx).catch(() => false),
   ]);
   const groups = getNavigation(ctx, {
     isPlatformAdmin: ctx.user.isPlatformAdmin,
@@ -43,36 +60,37 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <SearchProvider staticEntries={staticSearchEntries}>
-      <SidebarCollapseProvider>
-        {/* Kopf fest, Navigation scrollt; die letzte Gruppe („Persönlich“ mit Hilfe & Support) bleibt unten immer sichtbar. */}
-        <Sidebar groups={groups} />
+    <SetupFrame locked={false}>
+      <SearchProvider staticEntries={staticSearchEntries}>
+        <SidebarCollapseProvider>
+          {/* Kopf fest, Navigation scrollt; die letzte Gruppe („Persönlich“ mit Hilfe & Support) bleibt unten immer sichtbar. */}
+          <Sidebar groups={groups} />
 
-        <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">
-            <MobileNav
-              groups={groups}
-              clubName={ctx.club.name}
-              clubLogoUrl={clubLogoUrl(ctx.clubId, ctx.club.logoSha256)}
-            />
-            <ClubSwitcher clubs={clubs} activeId={ctx.clubId} />
-            <div className="flex flex-1 justify-center px-2 sm:px-4">
-              <SearchTrigger />
-            </div>
-            <div className="ml-auto flex items-center gap-1">
-              <NotificationBell unread={unread} />
-              <UserMenu name={name} email={ctx.user.email} roleName={ctx.roleName} />
-            </div>
-          </header>
-          <main id="inhalt" className="mx-auto w-full max-w-[96rem] flex-1 p-4 sm:p-6 xl:p-8">
-            {setupPending && <SetupBanner />}
-            {children}
-          </main>
-        </div>
+          <div className="flex min-w-0 flex-col">
+            <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">
+              <MobileNav
+                groups={groups}
+                clubName={ctx.club.name}
+                clubLogoUrl={clubLogoUrl(ctx.clubId, ctx.club.logoSha256)}
+              />
+              <ClubSwitcher clubs={clubs} activeId={ctx.clubId} />
+              <div className="flex flex-1 justify-center px-2 sm:px-4">
+                <SearchTrigger />
+              </div>
+              <div className="ml-auto flex items-center gap-1">
+                <NotificationBell unread={unread} />
+                <UserMenu name={name} email={ctx.user.email} roleName={ctx.roleName} />
+              </div>
+            </header>
+            <main id="inhalt" className="mx-auto w-full max-w-[96rem] flex-1 p-4 sm:p-6 xl:p-8">
+              {children}
+            </main>
+          </div>
 
-        <IdleLogout idleMinutes={env.SESSION_IDLE_MINUTES} />
-      </SidebarCollapseProvider>
-      <CommandPalette />
-    </SearchProvider>
+          <IdleLogout idleMinutes={env.SESSION_IDLE_MINUTES} />
+        </SidebarCollapseProvider>
+        <CommandPalette />
+      </SearchProvider>
+    </SetupFrame>
   );
 }
