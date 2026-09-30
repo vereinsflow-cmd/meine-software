@@ -61,11 +61,11 @@ Embedded-PostgreSQL.
 > **Leere Version (wie für einen neuen Verein):** `npm run dev:all -- --leer`, Doppelklick auf
 > **`Start-VereinsFlow-leer.command`** (Mac) bzw. **`Start-VereinsFlow-leer.cmd`** (Windows). Ohne Demo-Daten, mit eigener
 > Datenbank (`.local/pgdata-leer`, Port 5433), eigenen Dateien und eigenem Build-Ordner auf **Port 3001** – läuft neben der
-> Vorschau. Beim ersten Öffnen legt man unter `/einrichten` Verein und Administrator-Konto an (nur solange es noch kein
+> Vorschau. Sie beginnt **bei jedem Start wieder ganz leer** (die Daten vom letzten Mal werden gelöscht, auch wenn sie
+> noch in einem anderen Fenster läuft). Beim Öffnen legt man unter `/einrichten` Verein und Administrator-Konto an (nur solange es noch kein
 > Konto gibt, gesteuert über `FIRST_RUN_SETUP`); danach führt der Assistent „Verein einrichten“ (`/einrichtung`) durch
 > Vereinsdaten (Pflicht: Kontakt-E-Mail und Anschrift), Logo, Abteilungen, Mitglieder, Vorstand und Abschluss – bis zum
-> Abschluss ist die übrige App für den Administrator gesperrt. Zurücksetzen: Version beenden und
-> `.local/pgdata-leer` sowie `.local/leer-storage` löschen.
+> Abschluss ist die übrige App für den Administrator gesperrt.
 
 1. **Abhängigkeiten installieren**
 

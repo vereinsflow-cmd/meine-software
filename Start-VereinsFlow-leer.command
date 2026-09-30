@@ -6,6 +6,7 @@ cd "${0:A:h}"
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 echo
 echo "  VereinsFlow (leere Version) wird gestartet. Das dauert beim ersten Mal etwas länger."
+echo "  Sie beginnt bei jedem Start wieder ganz leer – alles vom letzten Mal wird gelöscht."
 echo "  Dieses Fenster OFFEN lassen, solange du die leere Version benutzt."
 echo "  Beenden: Ctrl+C drücken."
 echo

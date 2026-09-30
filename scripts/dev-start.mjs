@@ -18,15 +18,18 @@
  *
  * Leere Version (`--leer`, Doppelklick auf `Start-VereinsFlow-leer.command`): ohne Demo-Daten, mit eigener Datenbank
  * (`.local/pgdata-leer`, Port 5433), eigenen Dateien und eigenem Build-Ordner auf Port 3001 – sie läuft neben der
- * Vorschau, ohne sie zu berühren. Beim ersten Öffnen legt man Verein und Administrator-Konto an (/einrichten), danach
- * führt der Assistent „Verein einrichten“ Schritt für Schritt durch den Start.
+ * Vorschau, ohne sie zu berühren. Sie beginnt bei JEDEM Start wieder ganz leer, wie bei einem neuen Kunden: Die Daten
+ * vom letzten Mal werden gelöscht (auch wenn sie in einem anderen Fenster noch läuft). Man legt Verein und
+ * Administrator-Konto an (/einrichten), danach führt der Assistent „Verein einrichten“ Schritt für Schritt durch den Start.
  *
  * Beenden mit Strg+C: Anwendung UND die von diesem Skript gestartete Datenbank werden sauber gestoppt.
  * Unter Windows genügt ein Doppelklick auf `Start-VereinsFlow.cmd`, auf dem Mac auf `Start-VereinsFlow.command`.
  */
 import { spawn, spawnSync } from "node:child_process";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import pg from "pg";
 import { isPortOpen, startEmbeddedDatabase } from "./lib/embedded-db.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -102,6 +105,28 @@ function run(script, scriptArgs) {
   });
 }
 
+/**
+ * Leere Version: alles vom letzten Mal löschen – Datenbank neu anlegen, hochgeladene Dateien entfernen. Nur für die
+ * eigene Datenbank der leeren Version (Port 5433); die Vorschau (Port 5432) wird nie angefasst. `WITH (FORCE)` trennt
+ * eine noch laufende leere Version von der alten Datenbank; ihre nächste Anfrage findet die neue, leere vor.
+ */
+async function resetLeer() {
+  if (!leer || dbPort === 5432) throw new Error("Zurücksetzen gibt es nur für die leere Version.");
+  console.log("Leere Version: Die Daten vom letzten Mal werden gelöscht …");
+  const client = new pg.Client({
+    connectionString: `postgresql://vereinsflow:vereinsflow@localhost:${dbPort}/postgres`,
+  });
+  await client.connect();
+  try {
+    await client.query(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
+    await client.query(`CREATE DATABASE "${dbName}"`);
+  } finally {
+    await client.end();
+  }
+  await rm(path.resolve(".local", "leer-storage"), { recursive: true, force: true });
+  console.log("✔ Alles wieder leer.");
+}
+
 /** Öffnet den Browser, sobald die Anwendung antwortet (höchstens ~2 Minuten warten). */
 async function openBrowserWhenReady() {
   for (let attempt = 0; attempt < 120; attempt++) {
@@ -131,11 +156,18 @@ async function main() {
       : "\n=== VereinsFlow: lokaler Start ===\n",
   );
 
-  // 0. Läuft die Anwendung schon, genügt der Browser.
+  // 0. Läuft die Anwendung schon, genügt der Browser – die leere Version wird vorher trotzdem geleert.
   if (await isPortOpen(appPort)) {
     console.log(
       `✔ VereinsFlow läuft bereits unter ${appUrl} – es wird keine zweite Kopie gestartet.`,
     );
+    if (leer) {
+      await resetLeer();
+      if ((await run(prismaCli, ["migrate", "deploy"])) !== 0) {
+        console.error("✘ Die Tabellen konnten nicht neu angelegt werden (siehe Meldung oben).");
+        return;
+      }
+    }
     if (args.has("--open")) {
       console.log("  Der Browser wird geöffnet.");
       await openBrowserWhenReady();
@@ -155,6 +187,7 @@ async function main() {
     });
     console.log(`✔ Datenbank bereit (localhost:${dbPort}).`);
   }
+  if (leer) await resetLeer();
 
   // 2. Tabellen
   console.log("\nTabellen prüfen und aktualisieren …");
