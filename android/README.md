@@ -5,13 +5,13 @@ Adresszeile. Die App enthält VereinsFlow nicht selbst – Updates der Web-Anwen
 Push-Nachrichten kommen per Web Push; Chrome leitet sie an die App weiter (Notification Delegation), sie erscheinen unter dem
 Namen und Symbol der App.
 
-| Wert                 | Stand                                                                 |
-| -------------------- | --------------------------------------------------------------------- |
-| Paketname            | `com.vereinsflow.app` (in der Play Console später nicht mehr änderbar) |
-| Zielversion          | Android 16 (API 36), wie Google Play es seit 31.08.2026 verlangt       |
-| Mindestversion       | Android 7 (API 24)                                                    |
-| Erzeugt mit          | Bubblewrap 1.25.0 aus [`twa-manifest.json`](twa-manifest.json)         |
-| Symbol Statusleiste  | `public/app-icon-monochrome-512.png` (weiß auf transparent)           |
+| Wert                | Stand                                                                  |
+| ------------------- | ---------------------------------------------------------------------- |
+| Paketname           | `com.vereinsflow.app` (in der Play Console später nicht mehr änderbar) |
+| Zielversion         | Android 16 (API 36), wie Google Play es seit 31.08.2026 verlangt       |
+| Mindestversion      | Android 7 (API 24)                                                     |
+| Erzeugt mit         | Bubblewrap 1.25.0 aus [`twa-manifest.json`](twa-manifest.json)         |
+| Symbol Statusleiste | `public/app-icon-monochrome-512.png` (weiß auf transparent)            |
 
 Die Freigabe zwischen App und Website (Digital Asset Links) liefert der Server unter `/.well-known/assetlinks.json`; Einstellung
 siehe [docs/OPERATIONS.md](../docs/OPERATIONS.md#app-ansicht-android-app-und-iphone). Ohne passenden Fingerabdruck zeigt die App
@@ -39,17 +39,23 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 ## Signieren für den Play Store
 
 Google signiert die App über **Play App Signing** selbst; hochgeladen wird ein mit dem eigenen **Upload-Schlüssel** signiertes
-App Bundle. Den Schlüssel einmal anlegen und **außerhalb des Repositorys** aufbewahren (Datei und Passwort im Passwortmanager):
+App Bundle. Der Schlüssel liegt **außerhalb des Repositorys**, standardmäßig in `~/VereinsFlow-Schluessel` (Datei und Passwort
+zusätzlich im Passwortmanager). Bauen und Signieren in einem Schritt:
+
+```bash
+./signieren.sh    # legt vereinsflow-<Version>-<Code>.aab in ~/Downloads ab (anderer Ordner als Argument)
+```
+
+Nur falls noch kein Upload-Schlüssel existiert – einmal anlegen:
 
 ```bash
 keytool -genkeypair -v -keystore vereinsflow-upload.keystore -alias vereinsflow-upload \
-  -keyalg RSA -keysize 2048 -validity 10000
-jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore vereinsflow-upload.keystore \
-  app/build/outputs/bundle/release/app-release.aab vereinsflow-upload
+  -keyalg RSA -keysize 4096 -validity 10000
 ```
 
 Geht der Upload-Schlüssel verloren, lässt er sich in der Play Console zurücksetzen – der Signaturschlüssel von Google bleibt.
-Nach dem ersten Hochladen den SHA-256-Fingerabdruck aus der Play Console („App-Integrität“) in `ANDROID_APP_CERT_SHA256` eintragen.
+Nach dem ersten Hochladen den SHA-256-Fingerabdruck des **App-Signaturschlüssels** aus der Play Console („App-Integrität“)
+**zusätzlich** in `ANDROID_APP_CERT_SHA256` eintragen (kommagetrennt) – auf den Handys läuft die von Google signierte App.
 
 ## Projekt neu erzeugen oder Version erhöhen
 
