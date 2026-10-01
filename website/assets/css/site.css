@@ -891,6 +891,39 @@ html:not(.js) .nav ul a:hover {
   margin-inline: auto;
 }
 
+/* Das Logo hinter der Überschrift: zwei Kreise in den Logofarben, so hell, dass die Schrift davor gut lesbar bleibt.
+   Wo sie sich überdecken, entsteht von selbst die dunklere Mitte des Logos. Maße wie im Logo: Abstand der
+   Mittelpunkte = 0,728 × Durchmesser. Beim Aufruf gleiten sie von links und rechts herein (siehe „Bewegung“). */
+.hero h1 {
+  --mark: clamp(170px, 18vw + 110px, 380px);
+  position: relative;
+  isolation: isolate;
+}
+
+.hero h1::before,
+.hero h1::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: var(--mark);
+  aspect-ratio: 1;
+  margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero h1::before {
+  translate: calc(var(--mark) * -0.364) 0;
+  background: rgb(28 74 122 / 7%);
+}
+
+.hero h1::after {
+  translate: calc(var(--mark) * 0.364) 0;
+  background: rgb(91 156 214 / 11%);
+}
+
 .flow-word {
   position: relative;
   white-space: nowrap;
@@ -899,7 +932,7 @@ html:not(.js) .nav ul a:hover {
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .flow-word {
-    background: linear-gradient(100deg, var(--brand) 5%, var(--accent) 55%, var(--brand-2) 100%);
+    background: linear-gradient(100deg, var(--brand) 5%, var(--accent) 55%, #3f83c6 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -6147,6 +6180,15 @@ html:not(.js) .nav ul a:hover {
     animation: underline-in 0.9s var(--ease-out) 0.9s both;
   }
 
+  /* Logo hinter der Überschrift: Die Kreise gleiten von links und rechts herein und fügen sich zum Logo */
+  .hero h1::before {
+    animation: mark-in-left 1.6s var(--ease-out) 0.1s both;
+  }
+
+  .hero h1::after {
+    animation: mark-in-right 1.6s var(--ease-out) 0.1s both;
+  }
+
   .hero-glow::before {
     animation: drift-left 16s ease-in-out infinite alternate;
   }
@@ -6809,6 +6851,28 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
     translate: 0 64px;
     scale: 0.96;
+  }
+}
+
+@keyframes mark-in-left {
+  from {
+    opacity: 0;
+    translate: calc(var(--mark) * -0.364 - 55vw) 0;
+  }
+
+  35% {
+    opacity: 1;
+  }
+}
+
+@keyframes mark-in-right {
+  from {
+    opacity: 0;
+    translate: calc(var(--mark) * 0.364 + 55vw) 0;
+  }
+
+  35% {
+    opacity: 1;
   }
 }
 
