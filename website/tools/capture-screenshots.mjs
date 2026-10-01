@@ -4,9 +4,10 @@
 //   node tools/capture-screenshots.mjs --only dashboard   nur ein Bild (mehrere: --only a,b)
 //   node tools/capture-screenshots.mjs --scheme dark      dunkle Darstellung (wird derzeit nicht verwendet)
 //
-// Voraussetzungen: Die Demo-App läuft (Standard http://localhost:3000, `npm run dev:all` im Ordner der App), und im
-// App-Ordner sind Playwright und sharp installiert. Ist nur Edge (kein Chromium) installiert, funktioniert das Skript
-// trotzdem: es startet standardmäßig den Kanal „msedge“ (änderbar mit VF_BROWSER_CHANNEL).
+// Voraussetzungen: Die Demo-App läuft (Standard http://localhost:3000, `npm run dev:all` im Ordner der App), der
+// Demo-Verein ist mit tools/demo-vorbereiten.mjs aufgefüllt, und im App-Ordner sind Playwright und sharp installiert.
+// Ist nur Edge (kein Chromium) installiert, funktioniert das Skript trotzdem: es startet standardmäßig den Kanal
+// „msedge“ (änderbar mit VF_BROWSER_CHANNEL).
 //
 // Umgebungsvariablen (alle optional):
 //   VF_APP_DIR         Ordner mit node_modules (Playwright, sharp)  (Standard: der übergeordnete Ordner = Repository-Hauptordner)
@@ -49,6 +50,12 @@ const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960
  * angleichen. `crisp`: die Breiten, in denen das Bild bei 100 % Skalierung erscheint (siehe encode).
  */
 const PHONE = { viewport: { width: 390, height: 844 }, scale: 3, widths: [260, 390, 520, 780], crisp: [260] };
+/**
+ * Sichtbarer Teil des Telefonbildschirms auf der Website: zwischen Statusleiste und Home-Balken (.phone-screen picture
+ * in site.css: 26/28 der Gerätebreite, 90 % der Bildschirmhöhe) – bei 390 Punkten Breite 760 hoch. Aufnahmen in dieser
+ * Größe erscheinen vollständig; bei 844 schneidet der Rahmen unten gut 80 Punkte ab.
+ */
+const PHONE_SCREEN = { width: 390, height: 760 };
 
 /**
  * Breiten aus `crisp` (das Bild erscheint so groß auf der Seite, die Schrift ist dort nur wenige Pixel hoch) verlustfrei
@@ -74,6 +81,11 @@ function encode(png, width, shot, spec) {
  */
 const DETAIL = { width: 1249, height: 900 };
 const CONTENT_CROP = { width: 960, height: 720 };
+/**
+ * Zentrale Suche: Der Dialog steht in der Mitte des Fensters. So breit, dass ein 960 px breiter Ausschnitt um den Dialog
+ * genau an der Seitenleiste (289 px) beginnt – im Bild steht die Seitenleiste dann gar nicht statt angeschnitten.
+ */
+const SEARCH = { width: 2 * 289 + CONTENT_CROP.width, height: 800 };
 
 /** Ein Klick auf den ersten Link mit diesem Text; wartet, bis die neue Seite wirklich da und ruhig ist. */
 const followLink = (name) => async (page) => {
@@ -120,6 +132,46 @@ const scrollToCard = (title) => async (page) => {
     window.scrollTo(0, Math.max(0, top));
   }, title);
   await page.waitForTimeout(200);
+};
+
+/**
+ * Telefon: scrollt so, dass das gesuchte Element direkt unter dem beginnt, was oben fest stehen bleibt – der Kopfzeile
+ * der Anwendung, auf dem Dashboard auch der Reiterleiste –, `gap` Punkte darunter. So steht im sichtbaren Teil des
+ * Telefonbilds, worum es geht, statt Kopfbereich und Schaltflächen.
+ */
+const scrollBelowHeader = (locate, { gap = 16 } = {}) => async (page) => {
+  const target = locate(page).first();
+  await target.waitFor();
+  const top = await target.evaluate((node, space) => {
+    const y = node.getBoundingClientRect().top + window.scrollY;
+    let covered = 0;
+    for (const bar of document.querySelectorAll("body *")) {
+      const style = getComputedStyle(bar);
+      if (style.position !== "sticky" && style.position !== "fixed") continue;
+      const box = bar.getBoundingClientRect();
+      if (!box.height || box.height > innerHeight / 3 || bar.contains(node)) continue;
+      // oben haftend: „top“ gesetzt (unten haftende Leisten zählen nicht) und im Dokument über dem Ziel
+      if (style.position === "sticky" && (style.top === "auto" || box.top + window.scrollY > y)) continue;
+      const stuck = style.position === "fixed" ? box.top : Number.parseFloat(style.top);
+      if (stuck > 8 + covered) continue;
+      covered = Math.max(covered, stuck + box.height);
+    }
+    return y - covered - space;
+  }, gap);
+  await page.evaluate((y) => window.scrollTo(0, Math.max(0, y)), top);
+  await page.waitForTimeout(400);
+};
+
+/**
+ * Bricht ab, wenn das Dashboard noch die Einrichtungs-Checkliste („Erste Schritte“) oder Finanzen zeigt – dann fehlt
+ * tools/demo-vorbereiten.mjs (die Website soll den Vereinsüberblick mit Kennzahlen zeigen, Finanzen gibt es noch nicht).
+ */
+const assertPreparedDashboard = async (page) => {
+  for (const title of ["Erste Schritte", "Offene Zahlungen"]) {
+    if (await page.getByText(title, { exact: true }).count()) {
+      throw new Error(`„${title}“ im Dashboard – zuerst node tools/demo-vorbereiten.mjs ausführen`);
+    }
+  }
 };
 
 /** Öffnet die zentrale Suche (Strg+K) und tippt einen Suchbegriff; wartet, bis die Treffer aus der Datenbank da sind. */
@@ -274,28 +326,31 @@ async function memberFrames(page, snap) {
   console.log(`      Positionen: Suchfeld ${at.field.at}, Filtern ${at.filter.at}${live ? " (Liste filterte schon beim Tippen)" : ""}`);
 }
 
-/** Kalender: Zeiger auf „Woche“, Wochenansicht, zurück zu „Monat“. */
+/**
+ * Kalender: Zeiger auf „Liste“, Listenansicht des Monats, zurück zu „Monat“. (Die Liste füllt den Ausschnitt; die
+ * Wochenansicht ließe auch mit Terminen an jedem Tag die untere Hälfte leer.)
+ */
 async function calendarFrames(page, snap) {
   const clip = await cropArea(page, "content");
   const view = (name) => page.getByRole("link", { name, exact: true }).or(page.getByRole("button", { name, exact: true })).first();
-  const week = await spot(page, view("Woche"), clip);
+  const list = await spot(page, view("Liste"), clip);
   const month = await spot(page, view("Monat"), clip);
   await page.mouse.move(0, 0);
   await snap("kalender", { clip });
-  await page.mouse.move(week.x, week.y);
+  await page.mouse.move(list.x, list.y);
   await page.waitForTimeout(300);
   await snap("kalender-live-1", { clip });
   const before = page.url();
-  await view("Woche").click();
+  await view("Liste").click();
   await page.waitForURL((url) => url.href !== before);
   await page.waitForLoadState("networkidle");
-  await page.mouse.move(week.x, week.y);
+  await page.mouse.move(list.x, list.y);
   await page.waitForTimeout(500);
   await snap("kalender-live-2", { clip });
   await page.mouse.move(month.x, month.y);
   await page.waitForTimeout(300);
   await snap("kalender-live-3", { clip });
-  console.log(`      Positionen: Woche ${week.at}, Monat ${month.at}`);
+  console.log(`      Positionen: Liste ${list.at}, Monat ${month.at}`);
 }
 
 /** Auswertungen: Diagrammart „Fläche“, dann „Balken“ (zurück zu „Linie“ = Standbild). */
@@ -331,6 +386,7 @@ const shots = [
     name: "dashboard",
     path: "/dashboard",
     steps: async (page) => {
+      await assertPreparedDashboard(page);
       await openNavGroup("Verein")(page);
       await hideText("Noch keine Stunden erfasst")(page);
     },
@@ -342,8 +398,9 @@ const shots = [
   // aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
   { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1140, height: 1000 }, frames: liveFrames },
   { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content", frames: memberFrames },
-  // Der Oktober ist gefüllter als der September (Sommerfest, Trainings); der Monat steht in der Adresse.
-  { name: "kalender", path: "/kalender?ansicht=monat&datum=2026-10-01", viewport: DETAIL, crop: "content", frames: calendarFrames },
+  // Monat des Sommerfests (dort legt tools/demo-vorbereiten.mjs Trainings und weitere Termine an); das Datum steht in
+  // der Adresse – nach einem neuen Seed an das Sommerfest anpassen.
+  { name: "kalender", path: "/kalender?ansicht=monat&datum=2026-10-07", viewport: DETAIL, crop: "content", frames: calendarFrames },
   // Diagramme („Auswertungen“) liegen weiter unten auf dem Reiter „Mitglieder“: Verlauf statt Donut, und ein
   // niedrigeres Fenster (720 px), damit die Seite weit genug scrollt, um mit der Karte zu beginnen.
   {
@@ -358,7 +415,7 @@ const shots = [
     frames: chartFrames,
   },
   // Zentrale Suche: Treffer aus mehreren Gruppen (Aktionen, Seiten, Mitglieder) – nur lesen, nichts auswählen
-  { name: "suche", path: "/dashboard", crop: "dialog", frames: searchFrames },
+  { name: "suche", path: "/dashboard", viewport: SEARCH, crop: "dialog", frames: searchFrames },
   // Der Helferplan zum Aushängen, so wie er gedruckt wird (A4 hoch, 794 px = 210 mm bei 96 dpi). Papier ist in beiden
   // Darstellungen weiß, deshalb nur hell.
   {
@@ -369,12 +426,26 @@ const shots = [
     widths: [640, 1280],
     schemes: ["light"],
   },
+  // Telefon im Einstieg: das Dashboard mit Kennzahlen (Rechner und Telefon zeigen verschiedene Bildschirme)
+  {
+    name: "phone-dashboard",
+    device: "phone",
+    path: "/dashboard",
+    steps: assertPreparedDashboard,
+    viewport: PHONE_SCREEN,
+    widths: [221, 260, 332, 442, 520, 663, 780],
+    crisp: [221, 260],
+  },
+  // Vorführung „Unterwegs“: ab „Meine Einsätze“, damit die Schaltfläche „Eintragen“ der ersten offenen Schicht ganz zu
+  // sehen ist (über ihr stehen je nach Datum noch Hinweise auf unbesetzte Schichten)
   {
     name: "phone-helferplanung",
     device: "phone",
     path: "/helferplanung",
-    widths: [221, 260, 312, 332, 442, 468, 520, 624, 663, 780],
-    crisp: [221, 260, 312],
+    steps: scrollBelowHeader((page) => page.getByRole("heading", { name: "Meine Einsätze" })),
+    viewport: PHONE_SCREEN,
+    widths: [260, 312, 468, 520, 624, 780],
+    crisp: [260, 312],
   },
   {
     name: "phone-schichten",
@@ -383,6 +454,40 @@ const shots = [
     steps: followLink(/Sommerfest 2026/),
     widths: [208, 260, 312, 416, 520, 624, 780],
     crisp: [208, 260],
+  },
+  // „Im Detail“ auf dem Smartphone (unter 720 px statt der Browserfenster): Suche über die Lupe, Mitgliederliste,
+  // Kalender als Liste, Auswertung – je 260 CSS-Pixel breit wie die übrigen Telefone dort
+  {
+    name: "phone-suche",
+    device: "phone",
+    path: "/dashboard",
+    steps: openSearch("Hel", { viaButton: true }),
+    viewport: PHONE_SCREEN,
+  },
+  {
+    name: "phone-mitglieder",
+    device: "phone",
+    path: "/mitglieder",
+    steps: scrollBelowHeader((page) => page.getByPlaceholder(/suchen/).or(page.getByRole("searchbox"))),
+    viewport: PHONE_SCREEN,
+  },
+  {
+    name: "phone-kalender",
+    device: "phone",
+    path: "/kalender?ansicht=liste&datum=2026-10-07", // Monat wie bei „kalender“
+    steps: scrollBelowHeader((page) => page.getByRole("button", { name: "Heute" }).or(page.getByRole("link", { name: "Heute" }))),
+    viewport: PHONE_SCREEN,
+  },
+  {
+    name: "phone-auswertung",
+    device: "phone",
+    path: "/dashboard?tab=mitglieder",
+    steps: async (page) => {
+      await page.getByText("Entwicklung", { exact: true }).first().click();
+      await page.waitForTimeout(1200); // Diagramm-Animation
+      await scrollBelowHeader((p) => p.getByText("Nach Status", { exact: true }))(page); // Umschalter, Diagramm ganz im Bild
+    },
+    viewport: PHONE_SCREEN,
   },
 ];
 
@@ -486,7 +591,9 @@ async function cropArea(page, crop) {
     if (!box) throw new Error("Kein geöffneter Dialog");
     const viewport = page.viewportSize();
     const { width, height } = CONTENT_CROP;
-    const x = Math.round(Math.min(Math.max(0, box.x + box.width / 2 - width / 2), viewport.width - width));
+    // nie mitten durch die Seitenleiste: frühestens an ihrer rechten Kante
+    const aside = await page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? 0));
+    const x = Math.round(Math.min(Math.max(aside, box.x + box.width / 2 - width / 2), viewport.width - width));
     const y = Math.round(Math.min(Math.max(0, box.y - 56), viewport.height - height));
     return { x, y, width, height };
   }

@@ -8,10 +8,10 @@
    - Einstieg: kurze Ladeanimation (Wörter, Text, Bild, schwebende Hinweise) – rein per CSS, kein Aufblitzen.
    - Beim Scrollen (.reveal): site.js schaltet .is-pending; Überschriften blenden aus der Unschärfe ein, Häkchen
      zeichnen sich, Symbole und Kennzahlen erscheinen nacheinander.
-   - Parallaxe (.plx), Laufband, Fortschrittsbalken und Scroll-Effekte im Einstieg: CSS-Scroll-Timelines bzw.
+   - Parallaxe (.plx), Fortschrittsbalken und Scroll-Effekte im Einstieg: CSS-Scroll-Timelines bzw.
      Transformationen, laufen ohne JavaScript auf dem Compositor – außer bei den Telefonen: Ihre Verschiebung
      (--phone-shift) berechnet der Hauptthread, damit sie nur um ganze Pixel wandern.
-   - Vorführungen (Laptop, Telefon unter dem Einstieg): Aufklappen und Drehen als Animationen an einer Scroll-Timeline,
+   - Vorführungen (Laptop, Telefon nach der Ausgangslage): Aufklappen und Drehen als Animationen an einer Scroll-Timeline,
      ebenfalls auf dem Compositor; ohne Scroll-Timeline stellt site.js ihre Zeit nach dem Scrollfortschritt ein.
    - „Bewegung reduzieren“ (prefers-reduced-motion): keine Animationen, alles sofort sichtbar.
    ========================================================================== */
@@ -42,6 +42,7 @@
 
   --ok: #0e7a55;
   --ok-soft: #dff3ea;
+  --ok-tint: #effaf4;
   --warn: #8a5a00;
   --warn-soft: #fcefd0;
 
@@ -108,7 +109,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Nichts darf die Seite seitlich verschiebbar machen (Lichtschein, schwebende Telefone, Laufband). „clip“ statt
+/* Nichts darf die Seite seitlich verschiebbar machen (Lichtschein, schwebende Telefone). „clip“ statt
    „hidden“: erzeugt keinen Scroll-Container, die feste Kopfzeile bleibt kleben. */
 main {
   overflow-x: clip;
@@ -157,6 +158,14 @@ h3 {
 
 p {
   margin: 0;
+  text-wrap: pretty;
+}
+
+/* Texte, die keine Absätze sind, ebenfalls ohne einzelnes Wort in der letzten Zeile */
+.facts li > span,
+.checks li > span,
+.cta-steps li > span,
+summary {
   text-wrap: pretty;
 }
 
@@ -293,6 +302,7 @@ html:not(.js) .site-header,
 .brand {
   display: inline-flex;
   align-items: center;
+  min-height: 44px; /* Tippfläche: das Logo selbst ist nur 26 px hoch */
   border-radius: 8px;
   transition: opacity 0.2s;
 }
@@ -371,6 +381,17 @@ html:not(.js) .site-header,
 
 html:not(.js) .nav ul a:hover {
   background: var(--accent-soft);
+}
+
+/* Knapp über 900 px wird es eng: Menüpunkte etwas dichter, damit „Demo anfragen“ einzeilig bleibt */
+@media (min-width: 900px) and (max-width: 999px) {
+  .nav {
+    gap: 14px;
+  }
+
+  .nav ul a {
+    padding-inline: 10px;
+  }
 }
 
 .scroll-progress {
@@ -454,7 +475,22 @@ html:not(.js) .nav ul a:hover {
   }
 
   .nav.is-open .btn-header {
+    align-self: flex-start;
+    width: 100%;
+    max-width: 360px;
     min-height: 50px;
+  }
+
+  /* Abdunkelung unter dem offenen Menü; ein Tipp darauf schließt es (site.js) */
+  .js .site-header.is-open::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 100vh;
+    background: rgb(15 30 50 / 25%);
   }
 
   /* Ohne JavaScript bleibt die Navigation ausgeblendet; alle Bereiche sind trotzdem in der Seite erreichbar (Fußzeile). */
@@ -543,8 +579,69 @@ html:not(.js) .nav ul a:hover {
   font-size: 0.92rem;
 }
 
-.btn-header {
+.btn-header,
+.header-cta {
   box-shadow: 0 1px 1px rgb(5 85 183 / 18%), 0 3px 8px -2px rgb(5 85 183 / 35%);
+  white-space: nowrap;
+}
+
+/* Demo-Knopf neben dem Menüknopf (unter 900 px, darüber steht er in der Navigation): Auf der Startseite erscheint er,
+   sobald gescrollt ist – ganz oben stehen die Knöpfe des Einstiegs. Ohne JavaScript und auf den Unterseiten immer
+   sichtbar, bei offenem Menü ausgeblendet (dort steht der große Knopf). Am Handy kurz „Demo“; vorgelesen wird immer
+   „Demo anfragen“. */
+.header-cta {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .header-cta {
+    display: inline-flex;
+    gap: 0.25em;
+    min-height: 44px;
+    margin-left: auto;
+    transition:
+      opacity 0.25s var(--ease-soft),
+      translate 0.35s var(--ease-out),
+      visibility 0s,
+      transform 0.28s var(--ease-out),
+      background-color 0.2s,
+      box-shadow 0.28s var(--ease-out);
+  }
+
+  .header-cta,
+  .header-cta + .nav-toggle {
+    flex: none; /* auf sehr schmalen Geräten (320 px) wird eher das Logo kleiner als ein Knopf unter 44 px */
+  }
+
+  .header-cta + .nav-toggle {
+    margin-left: -12px; /* 12 px Abstand zum Menüknopf statt der 24 px der Kopfzeile */
+  }
+
+  .js body:not(.subpage) .site-header:not(.is-scrolled) .header-cta,
+  .js .site-header.is-open .header-cta {
+    visibility: hidden;
+    opacity: 0;
+    translate: 0 -6px;
+    transition:
+      opacity 0.2s var(--ease-soft),
+      translate 0.2s var(--ease-soft),
+      visibility 0s linear 0.2s;
+  }
+}
+
+@media (max-width: 559px) {
+  .header-cta {
+    padding-inline: 1.15em;
+  }
+
+  .header-cta-more {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 .btn .icon {
@@ -563,8 +660,32 @@ html:not(.js) .nav ul a:hover {
   padding-block: var(--section-pad);
 }
 
-/* Weiße Abschnitte, die jeweils zweiten mit einem weichen Lichtschein am oberen Rand – ruhiger Wechsel ohne harte
-   Farbkanten */
+/* Jeder zweite Abschnitt (Funktionen, Im Detail) liegt auf einer randlosen, getönten Fläche, die oben und unten weich
+   ausläuft: Der Wechsel von Weiß und Fläche gliedert die Seite, ohne harte Farbkante. Dazu ein weicher Lichtschein am
+   oberen Rand. */
+.section-alt {
+  --surface-fade: clamp(40px, 5vw, 72px);
+  background: linear-gradient(
+    to bottom,
+    rgb(245 247 250 / 0%),
+    var(--bg-alt) var(--surface-fade),
+    var(--bg-alt) calc(100% - var(--surface-fade)),
+    rgb(245 247 250 / 0%)
+  );
+}
+
+/* Neben einer getönten Fläche (auch der des Sicherheitsbands) trennt schon der Wechsel – die weißen Nachbarn rücken etwas
+   näher heran */
+.section-alt + .section,
+.band + .section {
+  padding-top: calc(var(--section-pad) * 0.75);
+}
+
+.section:has(+ .section-alt),
+.section:has(+ .band) {
+  padding-bottom: calc(var(--section-pad) * 0.75);
+}
+
 .section-alt::before {
   content: "";
   position: absolute;
@@ -589,6 +710,54 @@ html:not(.js) .nav ul a:hover {
 .section-head.center {
   margin-inline: auto;
   text-align: center;
+}
+
+/* Breiter Kopf für eine zweizeilige Überschrift aus zwei Sätzen (Ausgangslage): jeder Satz beginnt eine eigene Zeile
+   (.h-line), auf breiten Bildschirmen passt jeder in eine Zeile */
+.section-head.wide {
+  max-width: 1120px;
+}
+
+.h-line {
+  display: block;
+}
+
+/* Zwischenaufforderung am Ende eines Abschnitts: ein einzelner Textlink zur Demo, kein weiterer Block */
+.section-more {
+  margin-top: clamp(36px, 4.5vw, 56px);
+  color: var(--text);
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Als Inline-Block mit Mindesthöhe: Die Tippfläche ist mindestens 44 px hoch (46 px wie die Schaltflächen, so bleibt es
+   auch beim Einblenden über 44). Kein Flex – bricht der Link um, bleibt der Pfeil am letzten Wort (span mit nowrap). */
+.section-more a {
+  display: inline-block;
+  min-height: 46px;
+  padding-block: 9px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.section-more a:hover {
+  text-decoration: underline;
+}
+
+.section-more a span {
+  white-space: nowrap;
+}
+
+.section-more .icon {
+  width: 1.1em;
+  height: 1.1em;
+  margin-left: 0.4em;
+  vertical-align: -0.2em;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.section-more a:hover .icon {
+  transform: translateX(4px);
 }
 
 .eyebrow {
@@ -618,6 +787,29 @@ html:not(.js) .nav ul a:hover {
   max-width: 44rem;
   margin-inline: auto;
   text-wrap: balance;
+}
+
+/* Smartphone: Köpfe linksbündig – zentriert springt bei mehrzeiligen Absätzen jeder Zeilenanfang. Ein zweiter Satz,
+   der die Einleitung dort zu lang machte (.lead-more), entfällt; dieselbe Aussage folgt im Abschnitt. */
+@media (max-width: 719px) {
+  .section-head.center {
+    text-align: left;
+  }
+
+  .center .lead {
+    margin-inline: 0;
+    text-wrap: pretty;
+  }
+
+  .lead-more {
+    display: none;
+  }
+
+  /* Der Textlink zur Demo am Abschnittsende steht dann ebenfalls links, bündig mit Text und Kleingedrucktem */
+  .section-more {
+    text-align: left;
+    text-wrap: pretty;
+  }
 }
 
 /* Kleine Kennzeile über einer Zwischenüberschrift (z. B. „Helferplan drucken“) */
@@ -699,6 +891,40 @@ html:not(.js) .nav ul a:hover {
   margin-inline: auto;
 }
 
+/* Das Logo hinter der Überschrift: zwei Kreise in den Logofarben, kräftig genug, um als Logo zu wirken, und so hell, dass
+   die Schrift davor gut lesbar bleibt (Überschrift über 9 : 1, „in Fluss“ über 3 : 1, Lead über 4,5 : 1).
+   Wo sie sich überdecken, entsteht von selbst die dunklere Mitte des Logos. Maße wie im Logo: Abstand der
+   Mittelpunkte = 0,728 × Durchmesser. Beim Aufruf gleiten sie von links und rechts herein (siehe „Bewegung“). */
+.hero h1 {
+  --mark: clamp(170px, 18vw + 110px, 380px);
+  position: relative;
+  isolation: isolate;
+}
+
+.hero h1::before,
+.hero h1::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: var(--mark);
+  aspect-ratio: 1;
+  margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero h1::before {
+  translate: calc(var(--mark) * -0.364) 0;
+  background: rgb(28 74 122 / 20%);
+}
+
+.hero h1::after {
+  translate: calc(var(--mark) * 0.364) 0;
+  background: rgb(91 156 214 / 34%);
+}
+
 .flow-word {
   position: relative;
   white-space: nowrap;
@@ -707,7 +933,7 @@ html:not(.js) .nav ul a:hover {
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .flow-word {
-    background: linear-gradient(100deg, var(--brand) 5%, var(--accent) 55%, var(--brand-2) 100%);
+    background: linear-gradient(100deg, var(--brand) 5%, var(--accent) 55%, #2563a6 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -730,6 +956,7 @@ html:not(.js) .nav ul a:hover {
 .hero .lead {
   max-width: 42rem;
   margin: 28px auto 0;
+  color: var(--text); /* dunkler als sonst bei Leads: steht teils über den Logo-Kreisen */
   text-wrap: balance;
 }
 
@@ -749,8 +976,8 @@ html:not(.js) .nav ul a:hover {
   margin: 30px 0 0;
   padding: 0;
   list-style: none;
-  color: var(--muted);
-  font-size: 0.95rem;
+  color: var(--text);
+  font-size: 1.0625rem;
 }
 
 .hero-points li {
@@ -772,8 +999,65 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* Schwebende Hinweise rund um das Dashboard (nur Schmuck) */
+/* Die Kennzeile nennt, worum es geht: etwas größer und mit Symbol */
+.hero .eyebrow {
+  padding: 6px 15px 6px 12px;
+  font-size: 0.92rem;
+}
+
+.hero .eyebrow .icon {
+  width: 17px;
+  height: 17px;
+}
+
+/* Sehr schmale Telefone (320 px): wie bisher, damit die Kennzeile einzeilig bleibt */
+@media (max-width: 359px) {
+  .hero .eyebrow {
+    padding: 5px 13px;
+    font-size: 0.84rem;
+  }
+
+  .hero .eyebrow .icon {
+    display: none;
+  }
+}
+
+/* Ab Tablet-Breite: Luft über der Kennzeile und vor dem Bild richtet sich auch nach der Fensterhöhe, auf niedrigen
+   Bildschirmen (Laptops mit 768 oder 800 px) wird die Überschrift kleiner – so ist schon im ersten Bild der obere Teil
+   des Dashboards zu sehen. Auf hohen Bildschirmen bleibt alles wie bisher. */
+@media (min-width: 720px) {
+  .hero {
+    padding-top: calc(var(--header-h) + clamp(48px, min(8vw, 7vh), 112px));
+  }
+
+  .hero h1 {
+    font-size: min(clamp(2.5rem, 5.6vw + 0.6rem, 5.25rem), 9.5vh);
+  }
+
+  .hero .hero-visual {
+    margin-top: clamp(40px, min(7vw, 5.5vh), 88px);
+  }
+}
+
+@media (min-width: 720px) and (max-height: 860px) {
+  .hero .lead {
+    margin-top: 22px;
+  }
+
+  .hero-actions {
+    margin-top: 28px;
+  }
+
+  .hero-points {
+    margin-top: 22px;
+  }
+}
+
+/* Schwebende Hinweise rund um das Dashboard (nur Schmuck). --rise: wie weit sie beim Scrollen steigen (Bewegung) – in
+   schmaleren Fenstern ist die freie Stelle in der Seitenleiste niedriger und das gekippte Dashboard schon früh zu sehen:
+   Dort steigen sie nicht, sonst rutschte „Voll besetzt“ über „Persönlich“. */
 .hero-chips {
+  --rise: 48px;
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -829,10 +1113,13 @@ html:not(.js) .nav ul a:hover {
   stroke-width: 2.4;
 }
 
-/* Die Hinweise ragen über den Rahmen hinaus, statt Text im Bild zu verdecken */
+/* Die Hinweise liegen auf freien Stellen und verdecken weder Text noch Navigation im Bild: „Voll besetzt“ in der leeren
+   Seitenleiste zwischen „Einstellungen“ und „Persönlich“ (ragt links über den Rahmen), „Erinnerung“ auf der Leiste des
+   Fensters, „Zentrale Suche“ unter dem unteren Rand. Lage in Prozent der Höhe plus festem Anteil (Leiste des Fensters):
+   So treffen sie in jeder Breite dieselbe Stelle des Dashboards. Mit Bewegung starten sie etwas tiefer (siehe Bewegung). */
 .chip-a {
   left: -5%;
-  top: 24%;
+  top: calc(56.25% + 30px);
 }
 
 .chip-b {
@@ -841,13 +1128,16 @@ html:not(.js) .nav ul a:hover {
 }
 
 .chip-c {
-  left: -3%;
-  bottom: 9%;
+  left: 4%;
+  bottom: -6.5%;
 }
 
 @media (max-width: 1239px) {
-  .chip-a,
-  .chip-c {
+  .hero-chips {
+    --rise: 0px;
+  }
+
+  .chip-a {
     left: -1%;
   }
 }
@@ -856,50 +1146,6 @@ html:not(.js) .nav ul a:hover {
   .hero-chips {
     display: none;
   }
-}
-
-/* ---------- Laufband der Bereiche ---------- */
-
-.ribbon {
-  position: relative;
-  overflow: hidden;
-  padding: 8px 0 clamp(40px, 5vw, 64px);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-}
-
-.ribbon-track {
-  display: flex;
-  width: max-content;
-}
-
-.ribbon ul {
-  display: flex;
-  gap: 12px;
-  margin: 0;
-  padding: 4px 12px 10px 0;
-  list-style: none;
-}
-
-.ribbon li {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 18px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  color: var(--text);
-  font-size: 0.95rem;
-  font-weight: 550;
-  white-space: nowrap;
-}
-
-.ribbon li .icon {
-  width: 18px;
-  height: 18px;
-  color: var(--accent);
 }
 
 /* ---------- Bildschirmfotos in Rahmen ---------- */
@@ -1178,15 +1424,37 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
-/* Telefon im Einstieg, über dem Dashboard: deckt die vierte Kennzahlenkarte vollständig ab (keine abgeschnittenen Reste).
-   Steht das Dashboard gerade (ohne Scroll-Animation, bei reduzierter Bewegung), genügt diese Lage und der Reiter
-   „Aufgaben & Aktivität“ bleibt frei; mit der gekippten Startlage sitzt es etwas höher (siehe Bewegung). */
+/* Telefon im Einstieg, über dem Dashboard: liegt ganz unter der Reiterleiste und deckt die vierte Kennzahlenkarte
+   vollständig ab. Die Oberkante steht zwischen der Beschriftung „Aufgaben & Aktivität“ (Unterkante bei 41 % der
+   Bildhöhe; sie reicht nach rechts über den Rand der Karte hinaus) und der Oberkante der Karte (47 %), die linke Kante
+   samt Seitentasten links vom Rand der Karte (81,5 % der Bildbreite) und rechts der dritten Karte (79,5 %). So schneidet
+   es keine Textzeile an und lässt keinen Streifen der Karte stehen – auch nicht während der Scroll-Animation, dort folgt
+   das Telefon dem sich aufrichtenden Dashboard (siehe Bewegung). Die Werte gelten für das Dashboard-Bild – nach einer
+   Neuaufnahme prüfen, am besten im Browser über den ganzen Scrollweg gemessen. */
 .hero-phone {
   position: absolute;
   z-index: 1;
-  right: -1.5%;
-  bottom: -9%;
+  right: -1.55%;
+  bottom: -13.63%;
   width: clamp(120px, 21.25%, 238px);
+}
+
+/* Schmaler als 1240 px ist der Seitenrand nur 32 px breit: etwas kleiner, damit das Telefon samt Tasten nicht über den
+   Rand ragt; dieselbe Lage, umgerechnet auf die geringere Größe (der feste Anteil gleicht die Leiste des Fensters aus) */
+@media (max-width: 1239px) {
+  .hero-phone {
+    right: 0.4%;
+    bottom: calc(-8.62% + 3.7px);
+    width: 19.5%;
+  }
+}
+
+/* Ab 1240 px ragt das größere Telefon weiter unter dem Bild hervor: etwas mehr Luft bis zur Kennzahlenleiste, sonst
+   schnitte der Einstieg (overflow: clip) seinen Schatten ab */
+@media (min-width: 1240px) {
+  .hero {
+    padding-bottom: 136px;
+  }
 }
 
 @media (max-width: 719px) {
@@ -1232,7 +1500,9 @@ html:not(.js) .nav ul a:hover {
   box-shadow: 0 0 0 1px rgb(15 30 50 / 7%), var(--shadow-lg);
 }
 
-/* ---------- Kennzahlen-Leiste ---------- */
+/* ---------- Kennzahlen-Leiste ----------
+   Direkt unter dem Einstieg: vier Belege auf einer ruhigen, getönten Fläche mit runden Ecken, die Zahlen in der
+   Aktionsfarbe, die Einheit in Schwarz. Auf dem Smartphone zwei mal zwei statt vier untereinander. */
 
 .facts {
   position: relative;
@@ -1240,21 +1510,21 @@ html:not(.js) .nav ul a:hover {
 
 .facts ul {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
-  padding: 0;
+  padding: clamp(4px, 1vw, 12px) clamp(6px, 1.4vw, 16px);
   list-style: none;
-  border-block: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: clamp(24px, 3vw, 36px);
+  background: var(--bg-alt);
 }
 
 .facts li {
-  padding: 30px 28px;
-  border-left: 1px solid var(--line);
+  padding: clamp(18px, 2vw, 26px) clamp(16px, 2vw, 26px);
 }
 
-.facts li:first-child {
-  padding-left: 0;
-  border-left: 0;
+.facts li + li {
+  border-left: 1px solid var(--line-strong);
 }
 
 .facts strong {
@@ -1268,53 +1538,58 @@ html:not(.js) .nav ul a:hover {
   white-space: nowrap;
 }
 
-/* Zähler: feste Ziffernbreite, damit beim Hochzählen nichts springt */
-.count {
-  display: inline-block;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+.facts .num {
+  color: var(--accent);
 }
 
-.facts span:not(.count) {
+/* Zähler (site.js): hält beim Hochzählen die Breite der Endzahl und steht linksbündig – die Zahl beginnt an derselben
+   Kante wie die übrigen, und die Einheit daneben springt nicht */
+.count {
+  display: inline-block;
+}
+
+.facts li > span {
   display: block;
   margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.94rem;
-  line-height: 1.45;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 899px) {
   .facts ul {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .facts li {
-    padding: 24px 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .facts li:nth-child(odd) {
-    padding-left: 0;
     border-left: 0;
   }
 
   .facts li:nth-child(n + 3) {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--line-strong);
   }
 }
 
 @media (max-width: 559px) {
   .facts ul {
-    grid-template-columns: 1fr;
+    border-radius: var(--radius);
   }
 
-  .facts li,
-  .facts li:nth-child(odd) {
-    padding: 20px 0;
-    border-left: 0;
+  .facts li {
+    padding: 16px 12px;
   }
 
-  .facts li + li {
-    border-top: 1px solid var(--line);
+  .facts strong {
+    font-size: clamp(1.15rem, 4vw + 0.25rem, 1.3rem);
+  }
+
+  /* Zwei Spalten sind schmal: etwas kleinere Schrift; getrennt wird nur an der Fuge, die im HTML markiert ist
+     („Vereins-administrator“ statt einer automatischen Trennung mitten im Wortteil) */
+  .facts li > span {
+    margin-top: 6px;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    hyphens: manual;
   }
 }
 
@@ -3645,16 +3920,26 @@ html:not(.js) .nav ul a:hover {
   box-shadow: inset 0 1px 1px rgb(0 0 0 / 60%);
 }
 
-/* Breite Fenster: beim Telefon Text links, Gerät rechts */
+/* Breite Fenster: beim Telefon Text links, Gerät rechts – im Raster der Seite: Der Text beginnt an der Kante des
+   Inhaltsbereichs (wie „Im Detail“ und „Helferplan drucken“, gleiche Spalten), das Telefon steht mittig in der rechten
+   Spalte. Die Bühne selbst bleibt fensterbreit (sie schneidet das Gerät beim Drehen nicht seitlich ab), ihr Innenabstand
+   rückt den Inhalt auf die Kante; die Höhe und die senkrechte Lage des Telefons bleiben wie bisher. */
 @media (min-width: 900px) {
   .showcase-phone .showcase-stage {
-    flex-direction: row;
-    gap: clamp(48px, 8vw, 140px);
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: clamp(36px, 6vw, 96px);
+    padding-inline: max(var(--gutter), (100% - var(--container)) / 2);
   }
 
   .showcase-phone .showcase-copy {
     max-width: 440px;
     text-align: left;
+  }
+
+  .showcase-phone .showcase-scene {
+    justify-self: center;
   }
 }
 
@@ -3690,6 +3975,20 @@ html:not(.js) .nav ul a:hover {
 
   .showcase-copy .lead {
     display: none;
+  }
+
+  /* Kopf linksbündig wie alle Abschnittsköpfe am Smartphone; die Höhe bleibt gleich, das Gerät steht wie bisher */
+  .showcase-laptop .showcase-copy {
+    align-self: stretch;
+    text-align: left;
+  }
+}
+
+/* Telefon nur im Hochformat (quer stehen Text und Telefon nebeneinander, siehe unten) */
+@media (max-width: 719px) and (orientation: portrait) {
+  .showcase-phone .showcase-copy {
+    align-self: stretch;
+    text-align: left;
   }
 }
 
@@ -3776,15 +4075,16 @@ html:not(.js) .nav ul a:hover {
   margin-bottom: 8px;
 }
 
+/* Erklärender Text in der Größe und Farbe der Antworten unter „Häufige Fragen“ (17 px, --text); --muted bleibt
+   Metadaten und den „Bisher“-Zeilen vorbehalten */
 .card p {
-  color: var(--muted);
-  font-size: 0.98rem;
+  color: var(--text);
+  font-size: 1.0625rem;
   line-height: 1.6;
 }
 
 /* Lichtschein, der dem Mauszeiger folgt (site.js setzt --mx/--my); liegt unter dem Text */
-.card::before,
-.role::before {
+.card::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -3843,33 +4143,91 @@ html:not(.js) .nav ul a:hover {
   --tone-fg: var(--t-slate-fg);
 }
 
-/* Funktionen: auf dem Smartphone kompakt (Symbol links), damit zwölf Karten nicht endlos werden */
-@media (max-width: 599px) {
+/* Funktionen: kompakte Kacheln zum Überfliegen – Symbol neben dem Titel, der Text darunter über die ganze Breite. Alle
+   zwölf stehen als Raster im Bild (Spalten wie .grid-4: 4, unter 1100 px 3; anders als dort auch zwischen 720 und 899 px
+   noch 3, mit engerem Innenabstand – darunter 2); auf dem Smartphone dieselben Kacheln im Slider. */
+.grid.features {
+  gap: 16px;
+}
+
+.features .card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 14px;
+  align-items: center;
+  padding: 20px 22px 22px;
+}
+
+.features .card-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  border-radius: 12px;
+}
+
+.features .card-icon .icon {
+  width: 21px;
+  height: 21px;
+}
+
+.features .card h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  hyphens: auto; /* nur im Notfall: „Benachrichtigungen“ in sehr schmalen Kacheln */
+}
+
+.features .card p {
+  grid-column: 1 / -1;
+  align-self: start;
+  margin-top: 12px;
+}
+
+/* Tablet (720–899 px): drei schmale Spalten. Engerer Rahmen, kleineres Symbol und etwas kleinere Titel halten die
+   Kacheln niedrig (Titel wie „Veranstaltungen“ passen so ungetrennt in eine Zeile); im Text dürfen lange Wörter
+   („Änderungshistorie“, „Teilnehmerlimit“) getrennt werden, kurze nicht – sonst blieben die Zeilen bei rund 25 Zeichen
+   sehr ungleich lang. Der Text bleibt 17 px groß. */
+@media (min-width: 720px) and (max-width: 899px) {
+  .grid-4.features {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
   .features .card {
-    display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    column-gap: 16px;
-    padding: 20px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 10px;
+    padding: 16px 16px 18px;
   }
 
   .features .card-icon {
-    grid-row: span 2;
-    width: 44px;
-    height: 44px;
-    margin: 0;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .features .card-icon .icon {
+    width: 18px;
+    height: 18px;
   }
 
   .features .card h3 {
-    margin: 1px 0 4px;
+    font-size: 1.0625rem;
+  }
+
+  .features .card p {
+    margin-top: 10px;
+    line-height: 1.5;
+    hyphens: auto;
+    hyphenate-limit-chars: 12 5 5;
   }
 }
 
 /* ---------- Slider ----------
-   Karten in einer waagerechten Reihe, die man wischt oder mit den Pfeilen blättert (site.js setzt .is-slider: bei den
-   Funktionen immer, bei Rollen und Sicherheit – .slider-phone – nur auf dem Smartphone). Die sichtbaren Karten stehen
-   ganz im Bild und im Fokus; die Nachbarn schauen am Rand ein Stück herein (--peek), etwas kleiner und blasser, und
-   laufen weich aus. Ohne JavaScript, im Druck und außerhalb der Smartphone-Breite bleibt das Raster.
+   Karten in einer waagerechten Reihe, die man wischt oder mit den Pfeilen blättert (site.js setzt .is-slider; bei den
+   Funktionen – .slider-phone – nur auf dem Smartphone). Die sichtbaren Karten stehen ganz im Bild und im Fokus; die
+   Nachbarn schauen am Rand ein Stück herein (--peek), etwas kleiner und blasser, und laufen weich aus. Zwischen den
+   Pfeilen steht, die wievielte Karte zu sehen ist (.slider-count). Ohne JavaScript, im Druck und außerhalb der
+   Smartphone-Breite bleibt das Raster.
    Die Reihe reicht über den Inhaltsbereich hinaus bis zu --bleed in den Rand, die Karten richten sich trotzdem am
    Inhaltsbereich aus (Innenabstand und Einrastabstand gleich --bleed). */
 .section:has(.slider),
@@ -3878,7 +4236,8 @@ html:not(.js) .nav ul a:hover {
 }
 
 .slider-btn,
-.slider-progress {
+.slider-progress,
+.slider-count {
   display: none;
 }
 
@@ -3948,19 +4307,9 @@ html:not(.js) .nav ul a:hover {
   cursor: pointer;
 }
 
-@media (min-width: 600px) {
-  .slider.is-slider .features {
-    --cols: 2;
-    --gap: 20px;
-    --peek: 44px;
-  }
-}
-
-@media (min-width: 1100px) {
-  .slider.is-slider .features {
-    --cols: 3;
-    --peek: 64px;
-  }
+/* Funktionen: die nächste Kachel schaut deutlich herein – so ist zu sehen, dass es weitergeht */
+.slider.is-slider .features {
+  --peek: 40px;
 }
 
 /* Pfeile: rund, im Stil der hellen Schaltflächen; am Anfang bzw. Ende blass und ohne Wirkung */
@@ -4024,10 +4373,26 @@ html:not(.js) .nav ul a:hover {
   transition-duration: 0.08s;
 }
 
+/* Zähler („3 von 12“) über dem Fortschritt, mittig zwischen den Pfeilen */
+.slider.is-slider .slider-count {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  display: block;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
 /* Fortschritt: schmale Leiste, der dunkle Teil zeigt, welcher Ausschnitt der Karten gerade zu sehen ist */
 .slider.is-slider .slider-progress {
   position: absolute;
-  bottom: 22px;
+  bottom: 10px;
   left: 50%;
   display: block;
   width: min(160px, 36%);
@@ -4071,12 +4436,19 @@ html:not(.js) .nav ul a:hover {
     bottom: 6px;
   }
 
+  .slider.is-slider .slider-count {
+    bottom: 14px;
+  }
+
   .slider.is-slider:has(> .slider-track:focus-visible)::after {
     bottom: 24px;
   }
 }
 
-/* Vorher/Nachher-Karten */
+/* Vorher/Nachher-Karten: „Bisher“ mit rosé Kreuz, „Mit VereinsFlow“ als grün getönte Fläche – der Gegensatz trägt das
+   Argument. Breit stehen Symbol, Titel, Vorher und Nachher aller drei Karten auf gleicher Höhe (subgrid). Darunter, auf
+   Tablets und kleinen Bildschirmen, bekommt jede Karte eine Zeile mit Vorher und Nachher nebeneinander – drei schmale
+   Spalten brächen den Text in Wortfetzen um, zwei ließen die dritte Karte allein stehen. */
 .swap .before,
 .swap .after {
   display: grid;
@@ -4092,13 +4464,14 @@ html:not(.js) .nav ul a:hover {
 .swap .before p,
 .swap .after p {
   color: inherit;
-  font-size: 0.975rem;
+  font-size: 1.0625rem;
 }
 
 .swap .after {
   margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px dashed var(--line-strong);
+  padding: 14px 16px 16px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--ok-tint);
   color: var(--ink);
 }
 
@@ -4108,13 +4481,13 @@ html:not(.js) .nav ul a:hover {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--bg-alt);
-  color: var(--muted);
+  background: var(--t-rose-bg);
+  color: var(--t-rose-fg);
 }
 
 .swap .after .mark {
-  background: var(--ok-soft);
-  color: var(--ok);
+  background: var(--ok);
+  color: #ffffff;
 }
 
 .swap .mark .icon {
@@ -4126,10 +4499,56 @@ html:not(.js) .nav ul a:hover {
   display: block;
   margin-bottom: 2px;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.swap .after small {
+  color: var(--ok);
+}
+
+@media (min-width: 1100px) {
+  .swap .card {
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1099px) {
+  .grid-3.swap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .swap .card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+
+  .swap .card-icon {
+    grid-area: 1 / 1;
+    margin-bottom: 18px;
+  }
+
+  /* Titel neben dem Symbol (beide in der ersten Zeile, der Titel um die Breite des Symbols eingerückt) */
+  .swap .card h3 {
+    grid-area: 1 / 1 / 2 / -1;
+    margin: 11px 0 0 64px;
+  }
+
+  .swap .before {
+    grid-area: 2 / 1;
+    padding-top: 14px;
+  }
+
+  .swap .after {
+    grid-area: 2 / 2;
+    margin-top: 0;
+  }
 }
 
 /* ---------- Hervorgehobene Bereiche (Bild + Text im Wechsel) ---------- */
@@ -4215,9 +4634,11 @@ html:not(.js) .nav ul a:hover {
     box-shadow 0.3s var(--ease-soft);
 }
 
+/* Symbole in der Farbe ihrer Inhaltsart (tone-* am Reiter, wie bei den Funktionen) */
 .tab .icon {
   width: 18px;
   height: 18px;
+  color: var(--tone-fg, currentColor);
 }
 
 .tab:hover {
@@ -4352,6 +4773,13 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Einleitung und Punkte auf eine gut lesbare Zeilenlänge begrenzen (höchstens etwa 75 Zeichen) – wirkt einspaltig unter
+   900 px und in der breiten Textspalte von „Helferplan drucken“ */
+.spot-text .lead,
+.spot-text .checks {
+  max-width: 36rem;
+}
+
 .checks {
   display: grid;
   gap: 16px;
@@ -4392,6 +4820,11 @@ html:not(.js) .nav ul a:hover {
 .checks strong {
   color: var(--ink);
   font-weight: 650;
+}
+
+/* Zusammengehöriges nicht umbrechen, z. B. „(Mac: ⌘ K)“ – sonst steht die Klammer allein am Zeilenanfang */
+.nowrap {
+  white-space: nowrap;
 }
 
 /* Kapitel „Helferschichten“: Punkte als ruhiges 3 × 2-Raster unter dem großen Bild */
@@ -4447,6 +4880,32 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* „Im Detail“ auf dem Smartphone: Statt des verkleinerten Browserfensters (Schrift dort nur 5–6 px) steht ein Telefon mit
+   eigener Aufnahme (Lupe, Liste, Diagramm wie auf dem Gerät), Bildschirm 260 px breit wie die übrigen Telefone. Ab 720 px
+   bleibt es beim Live-Fenster; das jeweils verborgene Bild lädt der Browser nicht (loading="lazy"). */
+.spot-phone {
+  display: none;
+}
+
+@media (max-width: 719px) {
+  .spots .spot-media > .plx:first-child {
+    display: none;
+  }
+
+  .spot-phone {
+    display: block;
+    width: min(280px, 72vw);
+    margin: 0 auto;
+  }
+
+  /* Als Reiter steht das Telefon direkt unter der Reiterleiste, der Text darunter: Ein Tipp auf einen Reiter zeigt sofort
+     das neue Bild, statt nur den Text im Blick zu tauschen */
+  .spots.is-tabs > .spot .spot-media {
+    order: -1;
+    margin-top: 0;
+  }
+}
+
 /* ---------- Live-Fenster ----------
    Browserbilder, in denen ein Mauszeiger die Anwendung bedient (Helferschichten und die vier Themen „Im Detail“). Über dem
    ruhigen Bild liegen weitere Aufnahmen aus der Demo-App (tools/capture-screenshots.mjs); site.js blendet sie nach einem
@@ -4460,102 +4919,196 @@ html:not(.js) .nav ul a:hover {
   display: none;
 }
 
-/* ---------- Rollen ---------- */
+/* ---------- Rollen ----------
+   Rechtetabelle: eine Fläche, je Rolle eine Zeile. Breit: Symbol, Name, Aufgaben und Reichweite nebeneinander unter einer
+   Kopfzeile; Tablet: Name über den Aufgaben, Reichweite rechts; Smartphone: neben dem Symbol Name und Reichweite,
+   darunter die Aufgaben. Die Reichweite bei den Mitgliederdaten zeigt eine kleine Stufenanzeige: drei Striche für den
+   ganzen Verein, zwei für die eigene Abteilung, einer für die eigenen Daten. */
 
 .roles {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.role {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  padding: 24px 22px;
+  max-width: 1040px;
+  margin-inline: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
 
+.roles-head {
+  display: none;
+}
+
+.role {
+  --reveal-shift: 16px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-areas:
+    "icon name"
+    "icon scope"
+    "text text";
+  column-gap: 14px;
+  align-items: center;
+  padding: 18px 20px 20px;
+}
+
+.role + .role {
+  border-top: 1px solid var(--line);
+}
+
 .role .card-icon {
+  grid-area: icon;
   width: 44px;
   height: 44px;
-  margin-bottom: 16px;
+  margin: 0;
   border-radius: 13px;
 }
 
+.role .card-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
 .role h3 {
-  font-size: 1.06rem;
+  grid-area: name;
+  align-self: end;
+  font-size: 1.125rem;
 }
 
 .role p {
-  margin: 8px 0 18px;
-  color: var(--muted);
-  font-size: 0.94rem;
+  grid-area: text;
+  margin-top: 12px;
+  color: var(--text);
+  font-size: 1.0625rem;
   line-height: 1.55;
 }
 
 .role .scope {
-  display: block;
-  margin-top: auto;
-  padding: 10px 13px;
-  border-radius: 12px;
+  grid-area: scope;
+  display: flex;
+  align-self: start;
+  margin-top: 4px;
+}
+
+/* Die Beschriftung „Mitgliederdaten“ steht in der Kopfzeile bzw. in der Einleitung – in der Zeile nur für Screenreader */
+.role .scope small {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.role .scope > span {
+  --s2: var(--accent);
+  --s3: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 13px 5px 11px;
+  border-radius: 999px;
   background: var(--bg-alt);
   color: var(--ink);
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 650;
-  line-height: 1.3;
+  line-height: 1.35;
+  white-space: nowrap;
 }
 
-.role .scope small {
-  display: block;
-  margin-bottom: 1px;
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 650;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+/* Stufenanzeige: drei Striche, die nach rechts höher werden; nicht erreichte Stufen hell */
+.role .scope > span::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 12px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) 0 100% / 4px 45% no-repeat,
+    linear-gradient(var(--s2), var(--s2)) 7px 100% / 4px 72% no-repeat,
+    linear-gradient(var(--s3), var(--s3)) 14px 100% / 4px 100% no-repeat;
 }
 
-/* Tablet: 3 + 2 statt 4 + 1 (keine einzelne Karte in der letzten Reihe) */
-@media (min-width: 700px) and (max-width: 1099px) {
-  .roles {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .role:nth-child(-n + 3) {
-    grid-column: span 2;
-  }
-
-  .role:nth-child(n + 4) {
-    grid-column: span 3;
-  }
+.role .scope-dept > span {
+  --s3: var(--line-strong);
 }
 
-/* Smartphone: kompakte Zeilen, Symbol links */
-@media (max-width: 699px) {
-  .roles {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+.role .scope-own > span {
+  --s2: var(--line-strong);
+  --s3: var(--line-strong);
+}
+
+/* Ab Tablet: Kopfzeile über der Tabelle, die Reichweite in einer eigenen Spalte rechts */
+@media (min-width: 720px) {
+  .roles-head,
+  .role {
+    grid-template-columns: 44px minmax(0, 1fr) 12rem;
+    column-gap: 20px;
+    padding-inline: 28px;
+  }
+
+  .roles-head {
+    display: grid;
+    margin: 0;
+    padding-block: 14px;
+    border-bottom: 1px solid var(--line);
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .roles-head span:first-child {
+    grid-column: 1 / 3;
+  }
+
+  .roles-head span:nth-child(2) {
+    display: none;
   }
 
   .role {
-    display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    column-gap: 16px;
-    padding: 20px;
+    grid-template-areas:
+      "icon name scope"
+      "icon text scope";
+    padding-block: 20px;
   }
 
-  .role .card-icon {
-    grid-row: span 3;
-    margin: 0;
+  .role h3 {
+    align-self: auto;
   }
 
   .role p {
-    margin-bottom: 14px;
+    margin-top: 4px;
+  }
+
+  .role .scope {
+    align-self: center;
+    margin: 0;
+  }
+}
+
+/* Breit: Name, Aufgaben und Reichweite nebeneinander (Aufgaben etwa 55 Zeichen je Zeile) */
+@media (min-width: 1100px) {
+  .roles-head,
+  .role {
+    grid-template-columns: 44px 12.5rem minmax(0, 1fr) 12rem;
+    column-gap: 24px;
+  }
+
+  .roles-head span:nth-child(2) {
+    display: block;
+  }
+
+  .role {
+    grid-template-areas: "icon name text scope";
+    padding-block: 18px;
+  }
+
+  .role p {
+    margin-top: 0;
   }
 }
 
@@ -4563,7 +5116,7 @@ html:not(.js) .nav ul a:hover {
   display: flex;
   align-items: center;
   gap: 14px;
-  max-width: 820px;
+  max-width: 40rem;
   margin: 32px auto 0;
   padding: 14px 20px 14px 14px;
   border: 1px solid var(--line);
@@ -4571,9 +5124,10 @@ html:not(.js) .nav ul a:hover {
   background: var(--surface);
   box-shadow: var(--shadow-sm);
   color: var(--text);
-  font-size: 0.975rem;
+  font-size: 1.0625rem;
 }
 
+/* Dokumente: schiefergrau wie unter „Funktionen“ */
 .note-icon {
   display: grid;
   flex: none;
@@ -4581,8 +5135,8 @@ html:not(.js) .nav ul a:hover {
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  background: var(--t-amber-bg);
-  color: var(--t-amber-fg);
+  background: var(--t-slate-bg);
+  color: var(--t-slate-fg);
 }
 
 .note-icon .icon {
@@ -4590,22 +5144,28 @@ html:not(.js) .nav ul a:hover {
   height: 18px;
 }
 
-/* ---------- Sicherheit (helle, leicht getönte Fläche) ---------- */
+/* ---------- Sicherheit (randlose, hellblau getönte Fläche) ----------
+   Über die ganze Breite und oben und unten weich auslaufend wie die getönten Abschnitte, aber in kühlem Blau: Die
+   Argumente zum Datenschutz stehen als eigene Fläche im Wechsel mit Weiß. Die Kontaktkarte am Ende bleibt dagegen eine
+   gerahmte Karte auf Weiß – die beiden sehen nicht mehr gleich aus. */
 
 .band {
-  padding-block: clamp(24px, 3vw, 48px);
+  padding-block: 0;
 }
 
 .band-panel {
+  --surface-fade: clamp(40px, 5vw, 72px);
   position: relative;
   isolation: isolate;
   overflow: clip;
-  margin-inline: clamp(8px, 1.6vw, 24px);
   padding-block: var(--section-pad);
-  border: 1px solid #e3ebf5;
-  border-radius: clamp(28px, 3.4vw, 44px);
-  background: linear-gradient(180deg, #f2f7fd 0%, #f8fbfe 55%, #ffffff 100%);
-  transform-origin: 50% 20%;
+  background: linear-gradient(
+    to bottom,
+    rgb(236 243 251 / 0%),
+    #ecf3fb var(--surface-fade),
+    #ecf3fb calc(100% - var(--surface-fade)),
+    rgb(236 243 251 / 0%)
+  );
 }
 
 .band-panel::before {
@@ -4626,13 +5186,84 @@ html:not(.js) .nav ul a:hover {
   color: var(--t-blue-fg);
 }
 
+/* Smartphone: die Eigenschaften als knappe Liste direkt auf der getönten Fläche – Symbol links, daneben Titel und ein
+   Satz (der Rest der Karte, .card-more, entfällt), ohne Kartenrahmen. Alle sechs stehen untereinander im Bild. */
+@media (max-width: 599px) {
+  .grid.safety {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .band .safety .card {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+    padding: 18px 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .band .safety .card + .card {
+    border-top: 1px solid #dde6f1;
+  }
+
+  .band .safety .card:first-child {
+    padding-top: 0;
+  }
+
+  .band .safety .card:last-child {
+    padding-bottom: 0;
+  }
+
+  .band .safety .card::before {
+    content: none;
+  }
+
+  .band .safety .card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Weißes Feld: Das Hellblau der Karten verschwände auf der ebenso hellblauen Fläche */
+  .band .safety .card-icon {
+    grid-row: 1 / 3;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    border-radius: 11px;
+    background: var(--surface);
+  }
+
+  .band .safety .card-icon .icon {
+    width: 19px;
+    height: 19px;
+  }
+
+  /* Titel auf Höhe der Mitte des Symbols */
+  .band .safety .card h3 {
+    margin: 0;
+    padding-top: 5px;
+  }
+
+  .band .safety .card p {
+    margin-top: 4px;
+  }
+
+  .card-more {
+    display: none;
+  }
+}
+
+/* Kleingedrucktes: linksbündig in einer schmalen, mittig gestellten Spalte (etwa 65 Zeichen je Zeile) */
 .band .small-print {
-  max-width: 64ch;
+  max-width: 36rem;
   margin: 44px auto 0;
-  color: var(--muted);
-  font-size: 0.98rem;
-  text-align: center;
-  text-wrap: balance;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.6;
 }
 
 /* ---------- Häufige Fragen ---------- */
@@ -4658,6 +5289,7 @@ html:not(.js) .nav ul a:hover {
   font-weight: 620;
   line-height: 1.4;
   letter-spacing: -0.012em;
+  text-wrap: balance; /* kein einzelnes Wort allein in der zweiten Zeile */
   list-style: none;
   cursor: pointer;
   border-radius: 10px;
@@ -4696,7 +5328,7 @@ html:not(.js) .nav ul a:hover {
 
 .faq .answer {
   padding: 0 4px 26px;
-  max-width: 70ch;
+  max-width: 35rem; /* höchstens etwa 75 Zeichen je Zeile */
   color: var(--text);
 }
 
@@ -4726,16 +5358,42 @@ html:not(.js) .nav ul a:hover {
   padding-bottom: clamp(56px, 7vw, 104px);
 }
 
+/* Kontaktkarte, alles linksbündig: Die Demo-Anfrage ist die einzige Hauptaktion (gefüllter Knopf), daneben das Telefon,
+   darunter die Adresse zum Kopieren, der Hinweis zur Nachricht und der Ablauf in drei Schritten. Die Benachrichtigung
+   zum Start steht zurückgenommen als weiße Nebenkarte rechts daneben. Unter 1200 px alles untereinander: Demo, Ablauf,
+   Benachrichtigung. */
 .cta {
   position: relative;
   isolation: isolate;
   overflow: clip;
-  padding: clamp(48px, 7vw, 92px) clamp(24px, 6vw, 80px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(36px, 5vw, 56px);
+  padding: clamp(36px, 6vw, 80px) clamp(20px, 5vw, 64px);
   border: 1px solid #dde7f4;
   border-radius: clamp(28px, 3.4vw, 44px);
   background: linear-gradient(180deg, #f1f6fd 0%, #ffffff 100%);
   box-shadow: var(--shadow-sm);
-  text-align: center;
+}
+
+@media (min-width: 1200px) {
+  .cta {
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 25rem);
+    column-gap: clamp(48px, 5vw, 72px);
+    align-items: start;
+  }
+
+  .cta-main {
+    grid-area: 1 / 1;
+  }
+
+  .cta-steps-block {
+    grid-area: 2 / 1;
+  }
+
+  .notify {
+    grid-area: 1 / 2 / 3 / 3;
+  }
 }
 
 /* Zwei weiche Lichtflecken, die langsam wandern (Bewegung unten) */
@@ -4763,35 +5421,115 @@ html:not(.js) .nav ul a:hover {
 }
 
 .cta h2 {
-  max-width: 20ch;
-  margin-inline: auto;
+  max-width: 18ch;
+  font-size: clamp(2rem, 1.9vw + 1.1rem, 2.9rem);
 }
 
-.cta p {
-  max-width: 40rem;
-  margin: 20px auto 0;
+.cta-lead {
+  max-width: 36rem;
+  margin-top: 18px;
   color: var(--muted);
-  font-size: 1.15rem;
+  font-size: clamp(1.0625rem, 0.4vw + 0.95rem, 1.15rem);
 }
 
-/* Drei Schritte bis zum Start: kompakt unter der Anfrage, auf breiten Bildschirmen nebeneinander */
-.cta-steps-title {
-  margin-top: clamp(36px, 5vw, 56px);
+.cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+@media (max-width: 479px) {
+  .cta-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* E-Mail-Adresse ausgeschrieben, daneben „Adresse kopieren“ (erscheint nur mit JavaScript, site.js) */
+.cta-mail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 22px;
+  color: var(--text);
+}
+
+.cta-mail a {
+  font-weight: 650;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 46px; /* wie die Schaltflächen: auch beim Einblenden (leicht verkleinert) noch über 44 px */
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.copy-btn[hidden] {
+  display: none;
+}
+
+.copy-btn:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.copy-btn .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.copy-btn .icon-done,
+.copy-btn.is-done .icon-copy {
+  display: none;
+}
+
+.copy-btn.is-done .icon-done {
+  display: block;
+  color: var(--ok);
+}
+
+.cta-hint {
+  max-width: 32rem;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+/* Drei Schritte bis zum Start: ruhige Zeile unter der Anfrage, auf breiten Bildschirmen nebeneinander. Die Ziffern sind
+   nur Markierungen – getönt statt gefüllt, damit sie nicht wie Knöpfe wirken. */
+.cta-steps-block {
   padding-top: clamp(28px, 4vw, 40px);
   border-top: 1px solid var(--line);
-  font-size: 1.15rem;
+}
+
+.cta-steps-title {
+  font-size: clamp(1.25rem, 0.6vw + 1.05rem, 1.5rem);
   scroll-margin-top: calc(var(--header-h) + 24px);
 }
 
 .cta-steps {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(16px, 2.4vw, 32px);
-  max-width: 980px;
-  margin: 20px auto 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  max-width: 36rem;
+  margin: 20px 0 0;
   padding: 0;
   list-style: none;
-  text-align: left;
 }
 
 .cta-steps li {
@@ -4799,8 +5537,8 @@ html:not(.js) .nav ul a:hover {
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
-  color: var(--muted);
-  font-size: 0.95rem;
+  color: var(--text);
+  font-size: 1.0625rem;
   line-height: 1.55;
 }
 
@@ -4814,52 +5552,95 @@ html:not(.js) .nav ul a:hover {
   place-items: center;
   width: 34px;
   height: 34px;
+  border: 1px solid var(--accent-line);
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: var(--shadow-accent);
-  color: var(--on-accent);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-weight: 700;
 }
 
-@media (max-width: 899px) {
+@media (min-width: 900px) and (max-width: 1199px) {
   .cta-steps {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 34rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+    max-width: none;
   }
 }
 
-.cta .hero-actions {
-  margin-top: 34px;
-}
-
-/* Benachrichtigung zum Start: E-Mail-Formular im Abschlussbereich (Anmeldung mit Bestätigung, newsletter.php) */
+/* Benachrichtigung zum Start: E-Mail-Formular als zurückgenommene Nebenkarte (Anmeldung mit Bestätigung, newsletter.php).
+   Der Knopf ist nur umrandet – gefüllt ist allein „Demo anfragen“. */
 .notify {
-  max-width: 46rem;
-  margin: clamp(36px, 5vw, 56px) auto 0;
-  padding-top: clamp(28px, 4vw, 40px);
-  border-top: 1px solid var(--line);
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
   scroll-margin-top: calc(var(--header-h) + 24px);
 }
 
 .notify h3 {
-  font-size: 1.15rem;
+  font-size: clamp(1.25rem, 0.6vw + 1.05rem, 1.5rem);
 }
 
-.cta .notify p {
+.notify-intro {
+  max-width: 34rem;
   margin-top: 10px;
-  font-size: 1rem;
+  color: var(--text);
+}
+
+.notify-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.notify-points li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.notify-points .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--ok);
+  stroke-width: 2.6;
 }
 
 .notify-form {
   margin-top: 22px;
-  text-align: left;
 }
 
 .notify-fields {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 600px) and (max-width: 1199px) {
+  .notify-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.btn-quiet {
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.btn-quiet:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.notify-form .btn {
+  margin-top: 18px;
 }
 
 .notify-field {
@@ -4870,10 +5651,7 @@ html:not(.js) .nav ul a:hover {
   font-weight: 600;
 }
 
-.cta .notify-field small {
-  display: inline;
-  max-width: none;
-  margin: 0;
+.notify-field small {
   color: var(--muted);
   font-size: inherit;
   font-weight: 500;
@@ -4883,17 +5661,24 @@ html:not(.js) .nav ul a:hover {
   width: 100%;
   min-height: 46px;
   padding: 0 14px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid #7b8a9d; /* 3,5 : 1 auf Weiß – die Feldgrenze muss erkennbar sein */
   border-radius: 12px;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
   font-size: max(1rem, 16px); /* unter 16 px vergrößert Safari auf dem iPhone die Seite beim Antippen */
   font-weight: 400;
+  transition: border-color 0.2s;
 }
 
+.notify-field input:hover {
+  border-color: var(--accent);
+}
+
+/* Beispiele („z. B. …“), keine Vorbelegung; 4,6 : 1 auf Weiß (Firefox blendet Platzhalter sonst zusätzlich ab) */
 .notify-field input::placeholder {
-  color: #8a97a8;
+  color: #66768a;
+  opacity: 1;
 }
 
 .notify-field input:focus-visible {
@@ -4911,10 +5696,12 @@ html:not(.js) .nav ul a:hover {
   overflow: hidden;
 }
 
-.cta .notify-note {
-  max-width: none;
-  margin: 0 0 14px;
-  font-size: 0.85rem;
+/* Einwilligung: klein, aber in Textfarbe, unter Feldern und Knopf (vor dem Absenden sichtbar) */
+.notify-note {
+  max-width: 30rem;
+  margin-top: 16px;
+  color: var(--text);
+  font-size: 0.875rem;
   line-height: 1.55;
 }
 
@@ -4932,25 +5719,6 @@ html:not(.js) .nav ul a:hover {
 .notify-page .lead {
   max-width: 36rem;
   margin-inline: auto;
-}
-
-.cta .mail-line {
-  margin-top: 22px;
-  font-size: 1rem;
-}
-
-.cta .mail-line a {
-  font-weight: 650;
-}
-
-.cta small {
-  display: block;
-  max-width: 44rem;
-  margin: 26px auto 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
-  text-wrap: balance;
 }
 
 /* ---------- Fußzeile ---------- */
@@ -5022,17 +5790,6 @@ html:not(.js) .nav ul a:hover {
   font-size: 0.88rem;
 }
 
-/* Schlanke Fußzeile der Rechtstexte */
-.site-footer.compact {
-  padding: 32px 0;
-}
-
-.site-footer.compact .footer-bottom {
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
 @media (max-width: 899px) {
   .footer-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -5051,6 +5808,30 @@ html:not(.js) .nav ul a:hover {
 
 /* ---------- Rechtstexte und Fehlerseite ---------- */
 
+/* Unterseiten (Impressum, Datenschutz, Fehlerseite, Seiten von newsletter.php) haben dieselbe Kopf- und Fußzeile wie die
+   Startseite. Die Seite ist eine Spalte, der Inhalt füllt den freien Platz – so steht die Fußzeile auch bei wenig Text
+   unten. Die Kopfzeile ist von Anfang an deckend mit Trennlinie (kein Einstieg dahinter). */
+.subpage {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.subpage > main {
+  flex: 1 0 auto;
+}
+
+.subpage .site-header {
+  background: var(--bg);
+  border-bottom-color: var(--line);
+}
+
+/* Ohne gleitende Markierung (die gehört zu den Abschnitten der Startseite): Hintergrund beim Überfahren */
+.subpage .nav ul a:hover {
+  background: var(--accent-soft);
+}
+
 .page-head {
   padding: clamp(40px, 6vw, 88px) 0 12px;
 }
@@ -5064,8 +5845,9 @@ html:not(.js) .nav ul a:hover {
   font-size: clamp(2.1rem, 3.6vw + 0.6rem, 3.25rem);
 }
 
+/* Lesbare Zeilen: 34rem ergeben bei 17 px Schrift höchstens etwa 75 Zeichen (im Mittel rund 65) */
 .prose {
-  max-width: 760px;
+  max-width: 34rem;
   padding-bottom: clamp(56px, 8vw, 112px);
 }
 
@@ -5138,12 +5920,107 @@ html:not(.js) .nav ul a:hover {
   white-space: normal;
 }
 
+/* Datenschutz: oben „Kurz gesagt“ und das Inhaltsverzeichnis (als Reihe von Sprungmarken), darunter der Text. Ab
+   1100 px steht das Verzeichnis rechts neben dem Text und läuft beim Scrollen mit. */
+.legal-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 34rem);
+  gap: 28px;
+  margin-top: 20px;
+}
+
+@media (min-width: 1100px) {
+  .legal-layout {
+    grid-template-columns: minmax(0, 34rem) minmax(13rem, 16rem);
+    column-gap: clamp(56px, 7vw, 112px);
+  }
+
+  .legal-layout .toc {
+    position: sticky;
+    top: calc(var(--header-h) + 32px);
+    grid-area: 1 / 2 / 3 / 3;
+    align-self: start;
+  }
+}
+
+.summary {
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.summary h2 {
+  font-size: 1.3rem;
+}
+
+.summary .checks {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.toc-title {
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toc ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 550;
+  text-decoration: none;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.toc a:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+@media (min-width: 1100px) {
+  .toc ol {
+    display: grid;
+    gap: 0;
+    border-left: 2px solid var(--line);
+  }
+
+  .toc a {
+    margin-left: -2px;
+    padding: 0 14px;
+    border: 0;
+    border-left: 2px solid transparent;
+    border-radius: 0 10px 10px 0;
+  }
+
+  .toc a:hover {
+    border-left-color: var(--accent);
+  }
+}
+
 .not-found {
   display: grid;
-  min-height: 60vh;
   place-content: center;
   gap: 20px;
-  padding: 80px var(--gutter);
+  padding: clamp(56px, 8vw, 96px) var(--gutter);
   text-align: center;
 }
 
@@ -5156,13 +6033,101 @@ html:not(.js) .nav ul a:hover {
   line-height: 1;
 }
 
+/* Fehlerseite: Rückwege zu den meistgesuchten Stellen der Startseite */
+.page-links {
+  margin-top: 12px;
+}
+
+.page-links p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.page-links ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.page-links a:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.page-links .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+/* Seiten von newsletter.php: großes Zeichen über der Überschrift (Brief = E-Mail ist unterwegs, Häkchen = angemeldet) */
+.page-symbol {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: var(--t-blue-bg);
+  color: var(--t-blue-fg);
+}
+
+.page-symbol .icon {
+  width: 40px;
+  height: 40px;
+  stroke-width: 1.8;
+}
+
+.page-symbol-circle-check {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+/* Ergebnisseiten der Anmeldung: Rückweg und Demo-Anfrage nebeneinander, am Smartphone gleich breit untereinander */
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+@media (max-width: 559px) {
+  .page-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page-actions .btn {
+    width: min(100%, 260px);
+  }
+}
+
 /* ==========================================================================
    Bewegung
    Alle Effekte stehen unter „prefers-reduced-motion: no-preference“ – wer Bewegung reduziert, sieht die Seite
    sofort vollständig. Bewegt werden nur opacity, filter und die Einzel-Transformationen translate/scale/rotate (vom
    Browser ohne Neuberechnung des Layouts gezeichnet). Aufgeteilt, damit sich nichts in die Quere kommt:
-   translate/scale = Einblenden bzw. Parallaxe, transform = Hover und Schweben. Ausnahme Telefone: Sie schweben nicht und
-   verschieben sich nur um ganze Pixel (--phone-shift), sonst würde die kleine Schrift im Bildschirm unscharf.
+   translate/scale = Einblenden bzw. Parallaxe, transform = Hover. Ausnahme Telefone: Sie verschieben sich nur um ganze
+   Pixel (--phone-shift), sonst würde die kleine Schrift im Bildschirm unscharf.
    ========================================================================== */
 
 @media (prefers-reduced-motion: no-preference) {
@@ -5217,6 +6182,15 @@ html:not(.js) .nav ul a:hover {
     animation: underline-in 0.9s var(--ease-out) 0.9s both;
   }
 
+  /* Logo hinter der Überschrift: Die Kreise gleiten von links und rechts herein und fügen sich zum Logo */
+  .hero h1::before {
+    animation: mark-in-left 1.6s var(--ease-out) 0.1s both;
+  }
+
+  .hero h1::after {
+    animation: mark-in-right 1.6s var(--ease-out) 0.1s both;
+  }
+
   .hero-glow::before {
     animation: drift-left 16s ease-in-out infinite alternate;
   }
@@ -5225,32 +6199,21 @@ html:not(.js) .nav ul a:hover {
     animation: drift-right 18s ease-in-out infinite alternate;
   }
 
-  /* Schwebende Hinweise: erscheinen nach dem Bild und schweben dann leicht */
+  /* Schwebende Hinweise: erscheinen einmal nach dem Bild und stehen dann still (keine Dauerbewegung neben dem Text) */
   .float-chip {
-    animation:
-      chip-in 0.8s var(--ease-out) both,
-      bob 6s ease-in-out infinite alternate;
+    animation: chip-in 0.8s var(--ease-out) both;
   }
 
   .chip-a {
-    animation-delay: 1.05s, 1.85s;
+    animation-delay: 1.05s;
   }
 
   .chip-b {
-    animation-delay: 1.2s, 2.4s;
+    animation-delay: 1.2s;
   }
 
   .chip-c {
-    animation-delay: 1.35s, 2.1s;
-  }
-
-  /* Laufband: gleichmäßig, hält beim Überfahren an */
-  .ribbon-track {
-    animation: marquee 52s linear infinite;
-  }
-
-  .ribbon:hover .ribbon-track {
-    animation-play-state: paused;
+    animation-delay: 1.35s;
   }
 
   .cta::before {
@@ -5297,6 +6260,33 @@ html:not(.js) .nav ul a:hover {
     height: 100vh;
     height: 100svh;
     overflow: clip;
+  }
+
+  /* Hochformat (Tablet, Smartphone): Der Laptop richtet sich nach der Breite und füllt nur gut die Hälfte der Höhe – seine
+     Bühne ist dort so hoch wie ihr Inhalt. Unten bleibt so viel Platz, wie das Gerät beim Hereinschweben braucht (es
+     kommt 30vh tiefer, verkleinert und angehoben herein: gemessen höchstens 30vh − 0,375 · --sw unter der Szene), damit
+     es in keinem Moment beschnitten wird; die Bewegung bleibt dieselbe. Die Bühne des Telefons bleibt eine
+     Bildschirmhöhe: Sie ist im Hochformat ohnehin gefüllt, und ihr unterer Rand gehört zum Erscheinen des Telefons. Sie
+     rückt aber in diesen Streifen hinein, so weit sie oben leer ist: Beide Bühnen teilen sich die freie Fläche, keine
+     wird kleiner. Auf dem Smartphone ist das der ganze obere Innenabstand (das Telefon ist so bemessen, dass der Inhalt
+     passt), auf dem Tablet nur der Platz der Kopfzeile (dort ragt der Inhalt bei manchen Höhen in den Abstand hinein);
+     es bleiben jeweils mindestens 16 px bis zum Text. */
+  @media (orientation: portrait) {
+    .js .showcase-laptop .showcase-stage {
+      height: auto;
+      padding-top: var(--section-pad);
+      padding-bottom: max(var(--section-pad), 30vh - 0.36 * var(--sw) + 12px);
+    }
+
+    .js .showcase-laptop + .showcase-phone {
+      margin-top: calc(16px - var(--header-h));
+    }
+  }
+
+  @media (orientation: portrait) and (max-width: 719px) {
+    .js .showcase-laptop + .showcase-phone {
+      margin-top: calc(16px - var(--header-h) - clamp(24px, 4vh, 48px));
+    }
   }
 
   /* Bewegungen der Vorführungen (Keyframes am Dateiende); Dauer, Verzögerung und Abspielen aus den Variablen oben */
@@ -5646,7 +6636,7 @@ html:not(.js) .nav ul a:hover {
     transition-duration: 0.2s;
   }
 
-  /* Karten: Einblendung, Symbol springt kurz nach, weiche Reaktion auf den Mauszeiger */
+  /* Karten und Zeilen der Rechtetabelle: Einblendung, Symbol springt kurz nach; Karten reagieren weich auf den Mauszeiger */
   .card.reveal,
   .role.reveal {
     transition:
@@ -5772,11 +6762,12 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
   }
 
-  /* Tastenkürzel (Suche): erscheint kurz oben in der Mitte */
+  /* Tastenkürzel (Suche): erscheint kurz unten in der Mitte – dort liegt im Dashboard die leere rechte Hälfte der Karte
+     „Meine Aufgaben“, im geöffneten Dialog der abgedunkelte Hintergrund; oben verdeckte es das Suchfeld */
   .js .live-keys {
     position: absolute;
     z-index: 100001;
-    top: 7%;
+    bottom: 6%;
     left: 50%;
     display: flex;
     gap: 6px;
@@ -5815,15 +6806,13 @@ html:not(.js) .nav ul a:hover {
 }
 
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
-  .card:hover,
-  .role:hover {
+  .card:hover {
     transform: translateY(-4px);
     border-color: var(--accent-line);
     box-shadow: var(--shadow-md);
   }
 
-  .card:hover::before,
-  .role:hover::before {
+  .card:hover::before {
     opacity: 1;
   }
 
@@ -5832,18 +6821,8 @@ html:not(.js) .nav ul a:hover {
     opacity: 0.8;
   }
 
-  .card:hover .card-icon,
-  .role:hover .card-icon {
+  .card:hover .card-icon {
     transform: translateY(-2px) scale(1.08) rotate(-4deg);
-  }
-
-  .ribbon li {
-    transition: border-color 0.25s, color 0.25s;
-  }
-
-  .ribbon li:hover {
-    border-color: var(--accent-line);
-    color: var(--ink);
   }
 
   /* Lichtstreifen, der beim Überfahren über die Hauptschaltfläche zieht */
@@ -5877,6 +6856,28 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+@keyframes mark-in-left {
+  from {
+    opacity: 0;
+    translate: calc(var(--mark) * -0.364 - 55vw) 0;
+  }
+
+  35% {
+    opacity: 1;
+  }
+}
+
+@keyframes mark-in-right {
+  from {
+    opacity: 0;
+    translate: calc(var(--mark) * 0.364 + 55vw) 0;
+  }
+
+  35% {
+    opacity: 1;
+  }
+}
+
 @keyframes word-in {
   from {
     opacity: 0;
@@ -5890,22 +6891,6 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
     scale: 0.8;
     translate: 0 16px;
-  }
-}
-
-@keyframes bob {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes marquee {
-  to {
-    translate: -50% 0;
   }
 }
 
@@ -5951,7 +6936,7 @@ html:not(.js) .nav ul a:hover {
       animation-timeline: scroll(root);
     }
 
-    /* Einstieg: Das Dashboard richtet sich beim Scrollen auf und wird voll groß; Telefon und Hinweise steigen schneller */
+    /* Einstieg: Das Dashboard richtet sich beim Scrollen auf und wird voll groß; die Hinweise steigen schneller */
     .hero-stage .browser {
       transform-origin: 50% 0;
       animation: hero-tilt linear both;
@@ -5959,14 +6944,7 @@ html:not(.js) .nav ul a:hover {
       animation-range: 0 62vh;
     }
 
-    /* Das Dashboard steht anfangs gekippt und verkleinert (hero-tilt): Das Telefon sitzt höher, damit an seiner runden
-       Ecke keine Spur der vierten Kennzahlenkarte hervorschaut */
-    @media (min-width: 720px) {
-      .hero-phone {
-        bottom: -6%;
-      }
-    }
-
+    /* Das Telefon steigt am Smartphone (dort steht es allein) etwas schneller als die Seite */
     .hero-phone {
       translate: 0 var(--phone-shift);
       animation: hero-phone linear both;
@@ -5974,10 +6952,32 @@ html:not(.js) .nav ul a:hover {
       animation-range: 0 90vh;
     }
 
+    /* Über dem Dashboard folgt es dagegen dessen Aufrichten (hero-tilt): Gekippt liegen Reiterleiste und Kennzahlen um
+       gut 2 % der Bildbreite höher, das Telefon startet um ebenso viel höher und sinkt im selben Scrollweg in seine Lage.
+       So bleibt es zwischen „Aufgaben & Aktivität“ und der Oberkante der vierten Karte, statt über die Beschriftung zu
+       steigen. */
+    @media (min-width: 720px) {
+      .hero-phone {
+        --phone-follow: calc(min(1120px, 100vw - 2 * var(--gutter)) * 0.0232);
+        animation-name: hero-phone-follow;
+        animation-range: 0 62vh;
+      }
+    }
+
     .hero-chips {
       animation: chips-rise linear both;
       animation-timeline: scroll(root);
       animation-range: 0 90vh;
+    }
+
+    /* Die Hinweise im Bild starten um den Anstieg (chips-rise) tiefer und kommen genau an ihrer freien Stelle an;
+       „Erinnerung“ beginnt auf der Leiste des Fensters und steigt darüber hinaus */
+    .chip-a {
+      top: calc(56.25% + 30px + var(--rise));
+    }
+
+    .chip-c {
+      bottom: calc(-6.5% - var(--rise));
     }
 
     .hero-copy {
@@ -6042,11 +7042,12 @@ html:not(.js) .nav ul a:hover {
       animation-range: cover 0% cover 100%, entry 0% cover 55%;
     }
 
-    /* Sicherheit: Die Fläche wächst beim Hereinscrollen sanft auf volle Größe */
-    .band-panel {
-      animation: band-in linear both;
+    /* Sicherheit: Der Lichtschein der Fläche blendet beim Hereinscrollen auf wie bei den getönten Abschnitten (die Fläche
+       selbst reicht über die ganze Breite und wächst nicht mehr) */
+    .band-panel::before {
+      animation: glow-in linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 70%;
+      animation-range: entry 0% cover 40%;
     }
 
     /* Lichtschein der Abschnitte blendet beim Hereinscrollen auf */
@@ -6103,6 +7104,16 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+@keyframes hero-phone-follow {
+  from {
+    --phone-shift: calc(var(--phone-follow) * -1);
+  }
+
+  to {
+    --phone-shift: 0px;
+  }
+}
+
 @keyframes phone-plx {
   from {
     --phone-shift: var(--plx);
@@ -6115,7 +7126,7 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes chips-rise {
   to {
-    translate: 0 -110px;
+    translate: 0 calc(var(--rise) * -1);
   }
 }
 
@@ -6160,16 +7171,6 @@ html:not(.js) .nav ul a:hover {
 
   to {
     rotate: -2deg;
-  }
-}
-
-@keyframes band-in {
-  from {
-    scale: 0.955;
-  }
-
-  to {
-    scale: 1;
   }
 }
 
@@ -6256,8 +7257,7 @@ html:not(.js) .nav ul a:hover {
   .nav-toggle,
   .cta,
   .hero-glow,
-  .hero-chips,
-  .ribbon {
+  .hero-chips {
     display: none !important;
   }
 
@@ -6333,7 +7333,8 @@ html:not(.js) .nav ul a:hover {
   }
 
   .slider-btn,
-  .slider-progress {
+  .slider-progress,
+  .slider-count {
     display: none !important;
   }
 

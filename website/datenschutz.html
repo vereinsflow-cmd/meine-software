@@ -12,11 +12,18 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="assets/css/site.css?v=20261001-2">
-  <script src="assets/js/site.js?v=20260930-2" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100104">
+  <script src="assets/js/site.js?v=2026100102" defer></script>
 </head>
-<body>
+<body class="subpage">
 <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<!-- Symbole: lucide (ISC-Lizenz), wie auf der Startseite -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
 
 <header class="site-header">
   <div class="container header-inner">
@@ -25,6 +32,23 @@
         <img src="assets/img/logo.svg" alt="" width="174" height="28">
       </picture>
     </a>
+    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
+      <div class="nav-links">
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helferschichten</a></li>
+          <li><a href="index.html#rollen">Rollen</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+          <li><a href="index.html#faq">Fragen</a></li>
+        </ul>
+      </div>
+      <a class="btn btn-primary btn-sm btn-header" href="index.html#kontakt">Demo anfragen</a>
+    </nav>
+    <a class="btn btn-primary btn-sm header-cta" href="index.html#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
   </div>
 </header>
 
@@ -35,56 +59,117 @@
       <h1>Datenschutzerklärung</h1>
     </div>
 
-    <div class="prose">
-      <p>Diese Erklärung gilt für die Website von VereinsFlow. Sie informiert darüber, welche personenbezogenen Daten beim Besuch verarbeitet werden. Stand: September 2026.</p>
+    <!-- Oben das Wichtigste in vier Zeilen (nur, was die Erklärung unten sagt), ab 1100 px rechts ein mitlaufendes
+         Inhaltsverzeichnis, darunter bzw. links der Text in lesbarer Zeilenlänge -->
+    <div class="legal-layout">
+      <section class="summary" aria-labelledby="kurz-gesagt">
+        <h2 id="kurz-gesagt">Kurz gesagt</h2>
+        <ul class="checks">
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Cookies, kein Tracking.</strong> Keine Analyse-, Werbe- oder Tracking-Dienste.</span></li>
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Nichts von fremden Servern.</strong> Keine fremden Skripte, Karten, Videos oder Schriftarten.</span></li>
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Gehostet bei IONOS.</strong> Verarbeitung nach Angaben von IONOS innerhalb der EU, mit Vertrag zur Auftragsverarbeitung.</span></li>
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>E&#8209;Mail-Benachrichtigung nur mit Ihrer Bestätigung.</strong> Keine Weitergabe an Dritte; abmelden können Sie sich jederzeit.</span></li>
+        </ul>
+      </section>
 
-      <h2>1. Verantwortlicher</h2>
-      <p>
-        Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br>
-        VereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker,
-        Oberschlesienstraße 6a, 45711 Datteln<br>
-        E-Mail: <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a>
-      </p>
+      <nav class="toc" aria-label="Inhalt der Datenschutzerklärung">
+        <p class="toc-title">Inhalt</p>
+        <ol>
+          <li><a href="#verantwortlicher">1. Verantwortlicher</a></li>
+          <li><a href="#ueberblick">2. Überblick</a></li>
+          <li><a href="#hosting">3. Hosting und Logdateien</a></li>
+          <li><a href="#kontaktaufnahme">4. E&#8209;Mail oder Telefon</a></li>
+          <li><a href="#benachrichtigung">5. Benachrichtigung</a></li>
+          <li><a href="#rechte">6. Ihre Rechte</a></li>
+          <li><a href="#aenderungen">7. Änderungen</a></li>
+        </ol>
+      </nav>
 
-      <h2>2. Überblick: keine Cookies, kein Tracking</h2>
-      <p>Diese Website ist ein Informationsangebot mit einer Anmeldung für E-Mail-Benachrichtigungen. Sie</p>
-      <ul>
-        <li>setzt keine Cookies,</li>
-        <li>verwendet keine Analyse-, Werbe- oder Tracking-Dienste,</li>
-        <li>bindet keine Skripte, Karten, Videos oder Schriftarten von fremden Servern ein und</li>
-        <li>enthält nur ein Formular: die Anmeldung, um zum Start und bei Neuigkeiten eine E-Mail zu bekommen (Abschnitt 5).</li>
-      </ul>
-      <p>Bilder, Stylesheets und Skripte werden ausschließlich von diesem Server ausgeliefert. Die Schriften stammen aus dem Betriebssystem des Besuchers.</p>
+      <div class="prose">
+        <p>Diese Erklärung gilt für die Website von VereinsFlow. Sie informiert darüber, welche personenbezogenen Daten beim Besuch verarbeitet werden. Stand: September 2026.</p>
 
-      <h2>3. Hosting und Server-Logdateien</h2>
-      <p>Die Website wird bei der IONOS SE, Elgendorfer Str. 57, 56410 Montabaur, gehostet. Beim Aufruf einer Seite verarbeitet der Server automatisch technische Daten in Logdateien: IP-Adresse, Datum und Uhrzeit, aufgerufene Datei, übertragene Datenmenge, Statuscode, Browsertyp und -version, Betriebssystem sowie – soweit übermittelt – die zuvor besuchte Seite.</p>
-      <p>Zweck ist die Auslieferung der Website, die Stabilität und Sicherheit des Betriebs und die Fehleranalyse. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren und stabilen Betrieb). Die Bereitstellung dieser Daten ist weder gesetzlich noch vertraglich vorgeschrieben, für den Aufruf der Website aber technisch erforderlich; ohne sie kann die Seite nicht ausgeliefert werden. Nach Angaben von IONOS werden die Logdateien höchstens acht Wochen aufbewahrt und danach gelöscht. Mit IONOS besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO; die Verarbeitung findet nach Angaben von IONOS innerhalb der Europäischen Union statt.</p>
+        <h2 id="verantwortlicher">1. Verantwortlicher</h2>
+        <p>
+          Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br>
+          VereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker,
+          Oberschlesienstraße&nbsp;6a, 45711&nbsp;Datteln<br>
+          E&#8209;Mail: <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a>
+        </p>
 
-      <h2>4. Kontaktaufnahme per E-Mail oder Telefon</h2>
-      <p>Wenn Sie uns per E-Mail schreiben, etwa für eine Demo-Anfrage, verarbeiten wir Ihre Angaben (zum Beispiel Name, E-Mail-Adresse, Vereinsname und Inhalt der Nachricht), um Ihre Anfrage zu beantworten. Wenn Sie uns anrufen, verarbeiten wir Ihre Rufnummer und die Angaben aus dem Gespräch zum gleichen Zweck. Unser E-Mail-Postfach wird ebenfalls von IONOS im Auftrag betrieben. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, soweit die Anfrage auf einen Vertrag zielt, im Übrigen Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Beantwortung von Anfragen).</p>
-      <p>Ihre Angaben sind freiwillig; ohne sie können wir Ihre Anfrage jedoch nicht beantworten. Wir löschen die Daten, sobald sie für die Bearbeitung nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten entgegenstehen. E-Mails werden in der Regel nur auf dem Transportweg verschlüsselt, nicht Ende-zu-Ende; senden Sie uns daher keine besonders sensiblen Daten per E-Mail.</p>
+        <h2 id="ueberblick">2. Überblick: keine Cookies, kein Tracking</h2>
+        <p>Diese Website ist ein Informationsangebot mit einer Anmeldung für E&#8209;Mail-Benachrichtigungen. Sie</p>
+        <ul>
+          <li>setzt keine Cookies,</li>
+          <li>verwendet keine Analyse-, Werbe- oder Tracking-Dienste,</li>
+          <li>bindet keine Skripte, Karten, Videos oder Schriftarten von fremden Servern ein und</li>
+          <li>enthält nur ein Formular: die Anmeldung, um zum Start und bei Neuigkeiten eine E&#8209;Mail zu bekommen (Abschnitt 5).</li>
+        </ul>
+        <p>Bilder, Stylesheets und Skripte werden ausschließlich von diesem Server ausgeliefert. Die Schriften stammen aus dem Betriebssystem des Besuchers.</p>
 
-      <h2 id="benachrichtigung">5. Benachrichtigung per E-Mail zum Start und bei Neuigkeiten</h2>
-      <p>Auf der Startseite können Sie sich anmelden, um eine E-Mail zu bekommen, sobald VereinsFlow startet, und bei wichtigen Neuigkeiten zu VereinsFlow – selten, höchstens etwa einmal im Monat. Wir verarbeiten dafür Ihre E-Mail-Adresse und – wenn Sie ihn angeben – den Namen Ihres Vereins, damit wir Sie passend ansprechen können und sehen, welche Vereine sich für VereinsFlow interessieren. Bitte tragen Sie dort nur den Vereinsnamen ein. Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).</p>
-      <p>Wir verwenden das Double-Opt-in-Verfahren: Nach der Anmeldung schicken wir Ihnen eine E-Mail mit einem Bestätigungslink; erst mit der Bestätigung nehmen wir Sie in die Liste auf. Um nachweisen zu können, dass und wozu Sie eingewilligt haben, speichern wir Datum, Uhrzeit und IP-Adresse der Anmeldung und der Bestätigung sowie die Fassung des Einwilligungstextes (Art. 6 Abs. 1 lit. c in Verbindung mit Art. 7 Abs. 1 DSGVO sowie Art. 6 Abs. 1 lit. f DSGVO – berechtigtes Interesse am Nachweis der Einwilligung). Unbestätigte Anmeldungen werden nach sieben Tagen ungültig und automatisch gelöscht, spätestens beim nächsten Aufruf des Anmeldeverfahrens. Zum Schutz vor Missbrauch zählen wir außerdem für eine Stunde, wie oft von einem Anschluss aus eine Anmeldung abgeschickt wird, und für sieben Tage, wie viele Bestätigungs-E-Mails an ein Postfach gegangen sind; gespeichert werden dafür nur pseudonymisierte Prüfwerte (Hashwerte), nicht die IP- oder E-Mail-Adresse selbst (Art. 6 Abs. 1 lit. f DSGVO – berechtigtes Interesse daran, dass das Formular nicht missbraucht wird).</p>
-      <p>Die Daten liegen auf dem Server von IONOS (siehe Abschnitt 3) und werden nicht an Dritte weitergegeben. Unsere E-Mails enthalten keine Zählpixel und keine nachverfolgten Links. Ihre Adresse und die Angaben zur Anmeldung speichern wir, bis Sie sich abmelden. Sie können Ihre Einwilligung jederzeit widerrufen – über den Abmeldelink in jeder E-Mail oder mit einer Nachricht an <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a>; die Rechtmäßigkeit der bis dahin erfolgten Verarbeitung bleibt unberührt. Nach der Abmeldung schicken wir Ihnen keine E-Mails mehr und löschen den Vereinsnamen; Ihre E-Mail-Adresse und die Angaben zu Anmeldung, Bestätigung und Abmeldung bewahren wir noch bis zu drei Jahre auf, um die frühere Einwilligung nachweisen zu können, und verwenden sie für nichts anderes (Art. 6 Abs. 1 lit. f, Art. 17 Abs. 3 lit. e DSGVO). Die Angaben sind freiwillig; ohne E-Mail-Adresse können wir Sie nicht benachrichtigen.</p>
+        <h2 id="hosting">3. Hosting und Server-Logdateien</h2>
+        <p>Die Website wird bei der IONOS SE, Elgendorfer Str.&nbsp;57, 56410&nbsp;Montabaur, gehostet. Beim Aufruf einer Seite verarbeitet der Server automatisch technische Daten in Logdateien: IP-Adresse, Datum und Uhrzeit, aufgerufene Datei, übertragene Datenmenge, Statuscode, Browsertyp und -version, Betriebssystem sowie&nbsp;– soweit übermittelt&nbsp;– die zuvor besuchte Seite.</p>
+        <p>Zweck ist die Auslieferung der Website, die Stabilität und Sicherheit des Betriebs und die Fehleranalyse. Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO (berechtigtes Interesse am sicheren und stabilen Betrieb). Die Bereitstellung dieser Daten ist weder gesetzlich noch vertraglich vorgeschrieben, für den Aufruf der Website aber technisch erforderlich; ohne sie kann die Seite nicht ausgeliefert werden. Nach Angaben von IONOS werden die Logdateien höchstens acht Wochen aufbewahrt und danach gelöscht. Mit IONOS besteht ein Vertrag zur Auftragsverarbeitung nach Art.&nbsp;28 DSGVO; die Verarbeitung findet nach Angaben von IONOS innerhalb der Europäischen Union statt.</p>
 
-      <h2>6. Ihre Rechte</h2>
-      <p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Datenübertragbarkeit (Art. 20). Eine erteilte Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen (Art. 7 Abs. 3 DSGVO). Wenden Sie sich dazu an die oben genannte E-Mail-Adresse.</p>
-      <p><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Soweit wir Daten auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO verarbeiten (Server-Logdateien, Beantwortung von Anfragen, Schutz des Anmeldeformulars vor Missbrauch, Nachweis einer Einwilligung), können Sie aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit Widerspruch einlegen. Wir verarbeiten die Daten dann nicht mehr, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die Ihre Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen. Der Verarbeitung Ihrer Daten für Direktwerbung (Benachrichtigung per E-Mail) können Sie jederzeit ohne Angabe von Gründen widersprechen; wir verwenden sie dann nicht mehr für diesen Zweck.</p>
-      <p>Außerdem können Sie sich bei einer Datenschutz-Aufsichtsbehörde beschweren (Art. 77 DSGVO), zum Beispiel bei der für uns zuständigen Landesbeauftragten für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf, www.ldi.nrw.de.</p>
+        <h2 id="kontaktaufnahme">4. Kontaktaufnahme per E&#8209;Mail oder Telefon</h2>
+        <p>Wenn Sie uns per E&#8209;Mail schreiben, etwa für eine Demo-Anfrage, verarbeiten wir Ihre Angaben (zum Beispiel Name, E&#8209;Mail-Adresse, Vereinsname und Inhalt der Nachricht), um Ihre Anfrage zu beantworten. Wenn Sie uns anrufen, verarbeiten wir Ihre Rufnummer und die Angaben aus dem Gespräch zum gleichen Zweck. Unser E&#8209;Mail-Postfach wird ebenfalls von IONOS im Auftrag betrieben. Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;b DSGVO, soweit die Anfrage auf einen Vertrag zielt, im Übrigen Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO (berechtigtes Interesse an der Beantwortung von Anfragen).</p>
+        <p>Ihre Angaben sind freiwillig; ohne sie können wir Ihre Anfrage jedoch nicht beantworten. Wir löschen die Daten, sobald sie für die Bearbeitung nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten entgegenstehen. E&#8209;Mails werden in der Regel nur auf dem Transportweg verschlüsselt, nicht Ende-zu-Ende; senden Sie uns daher keine besonders sensiblen Daten per E&#8209;Mail.</p>
 
-      <h2>7. Änderungen</h2>
-      <p>Wir passen diese Erklärung an, wenn sich die Website oder die Rechtslage ändert.</p>
+        <h2 id="benachrichtigung">5. Benachrichtigung per E&#8209;Mail zum Start und bei Neuigkeiten</h2>
+        <p>Auf der Startseite können Sie sich anmelden, um eine E&#8209;Mail zu bekommen, sobald VereinsFlow startet, und bei wichtigen Neuigkeiten zu VereinsFlow&nbsp;– selten, höchstens etwa einmal im Monat. Wir verarbeiten dafür Ihre E&#8209;Mail-Adresse und&nbsp;– wenn Sie ihn angeben&nbsp;– den Namen Ihres Vereins, damit wir Sie passend ansprechen können und sehen, welche Vereine sich für VereinsFlow interessieren. Bitte tragen Sie dort nur den Vereinsnamen ein. Rechtsgrundlage ist Ihre Einwilligung (Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;a DSGVO).</p>
+        <p>Wir verwenden das Double-Opt-in-Verfahren: Nach der Anmeldung schicken wir Ihnen eine E&#8209;Mail mit einem Bestätigungslink; erst mit der Bestätigung nehmen wir Sie in die Liste auf. Um nachweisen zu können, dass und wozu Sie eingewilligt haben, speichern wir Datum, Uhrzeit und IP-Adresse der Anmeldung und der Bestätigung sowie die Fassung des Einwilligungstextes (Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;c in Verbindung mit Art.&nbsp;7 Abs.&nbsp;1 DSGVO sowie Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO&nbsp;– berechtigtes Interesse am Nachweis der Einwilligung). Unbestätigte Anmeldungen werden nach sieben Tagen ungültig und automatisch gelöscht, spätestens beim nächsten Aufruf des Anmeldeverfahrens. Zum Schutz vor Missbrauch zählen wir außerdem für eine Stunde, wie oft von einem Anschluss aus eine Anmeldung abgeschickt wird, und für sieben Tage, wie viele Bestätigungs-E&#8209;Mails an ein Postfach gegangen sind; gespeichert werden dafür nur pseudonymisierte Prüfwerte (Hashwerte), nicht die IP- oder E&#8209;Mail-Adresse selbst (Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO&nbsp;– berechtigtes Interesse daran, dass das Formular nicht missbraucht wird).</p>
+        <p>Die Daten liegen auf dem Server von IONOS (siehe Abschnitt 3) und werden nicht an Dritte weitergegeben. Unsere E&#8209;Mails enthalten keine Zählpixel und keine nachverfolgten Links. Ihre Adresse und die Angaben zur Anmeldung speichern wir, bis Sie sich abmelden. Sie können Ihre Einwilligung jederzeit widerrufen&nbsp;– über den Abmeldelink in jeder E&#8209;Mail oder mit einer Nachricht an <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a>; die Rechtmäßigkeit der bis dahin erfolgten Verarbeitung bleibt unberührt. Nach der Abmeldung schicken wir Ihnen keine E&#8209;Mails mehr und löschen den Vereinsnamen; Ihre E&#8209;Mail-Adresse und die Angaben zu Anmeldung, Bestätigung und Abmeldung bewahren wir noch bis zu drei Jahre auf, um die frühere Einwilligung nachweisen zu können, und verwenden sie für nichts anderes (Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f, Art.&nbsp;17 Abs.&nbsp;3 lit.&nbsp;e DSGVO). Die Angaben sind freiwillig; ohne E&#8209;Mail-Adresse können wir Sie nicht benachrichtigen.</p>
+
+        <h2 id="rechte">6. Ihre Rechte</h2>
+        <p>Sie haben das Recht auf Auskunft (Art.&nbsp;15 DSGVO), Berichtigung (Art.&nbsp;16), Löschung (Art.&nbsp;17), Einschränkung der Verarbeitung (Art.&nbsp;18) und Datenübertragbarkeit (Art.&nbsp;20). Eine erteilte Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen (Art.&nbsp;7 Abs.&nbsp;3 DSGVO). Wenden Sie sich dazu an die oben genannte E&#8209;Mail-Adresse.</p>
+        <p><strong>Widerspruchsrecht (Art.&nbsp;21 DSGVO):</strong> Soweit wir Daten auf Grundlage von Art.&nbsp;6 Abs.&nbsp;1 lit.&nbsp;f DSGVO verarbeiten (Server-Logdateien, Beantwortung von Anfragen, Schutz des Anmeldeformulars vor Missbrauch, Nachweis einer Einwilligung), können Sie aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit Widerspruch einlegen. Wir verarbeiten die Daten dann nicht mehr, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die Ihre Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen. Der Verarbeitung Ihrer Daten für Direktwerbung (Benachrichtigung per E&#8209;Mail) können Sie jederzeit ohne Angabe von Gründen widersprechen; wir verwenden sie dann nicht mehr für diesen Zweck.</p>
+        <p>Außerdem können Sie sich bei einer Datenschutz-Aufsichtsbehörde beschweren (Art.&nbsp;77 DSGVO), zum Beispiel bei der für uns zuständigen Landesbeauftragten für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße&nbsp;2–4, 40213&nbsp;Düsseldorf, www.ldi.nrw.de.</p>
+
+        <h2 id="aenderungen">7. Änderungen</h2>
+        <p>Wir passen diese Erklärung an, wenn sich die Website oder die Rechtslage ändert.</p>
+      </div>
     </div>
   </div>
 </main>
 
-<footer class="site-footer compact">
+<footer class="site-footer">
   <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <picture>
+          <img src="assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
+        </picture>
+        <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+      </div>
+      <div>
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helferschichten</a></li>
+          <li><a href="index.html#suche">Zentrale Suche</a></li>
+          <li><a href="index.html#rollen">Rollen und Rechte</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Mehr</h2>
+        <ul>
+          <li><a href="index.html#ablauf">Ablauf</a></li>
+          <li><a href="index.html#faq">Häufige Fragen</a></li>
+          <li><a href="index.html#kontakt">Demo anfragen</a></li>
+          <li><a href="index.html#benachrichtigen">Zum Start benachrichtigen</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Rechtliches</h2>
+        <ul>
+          <li><a href="impressum.html">Impressum</a></li>
+          <li><a href="datenschutz.html">Datenschutz</a></li>
+        </ul>
+      </div>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow</span>
-      <span><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></span>
+      <span>© 2026 VereinsFlow · Funktionsumfang: Stand September 2026</span>
+      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
     </div>
   </div>
 </footer>

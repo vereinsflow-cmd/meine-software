@@ -38,7 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=20260927-2';
+const VF_STYLESHEET = '/assets/css/site.css?v=2026100104';
+const VF_SKRIPT = '/assets/js/site.js?v=2026100102'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
@@ -61,13 +62,18 @@ function vf_h(string $text): string
     return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-/** Eine Seite im Stil der Fehlerseite (404.html): Kopfzeile mit Logo, Meldung in der Mitte, kurze Fußzeile. */
-function vf_seite(int $status, string $titel, string $text, string $zusatz = ''): void
+/** Eine Seite im Stil der Fehlerseite (404.html): volle Kopf- und Fußzeile wie auf den übrigen Seiten, Meldung in der
+ *  Mitte. $symbol (optional, „mail“ oder „circle-check“) setzt ein großes Zeichen über die Überschrift – Brief bei
+ *  „Fast geschafft“, Häkchen bei erfolgreicher Anmeldung –, damit Ergebnisseiten nicht wie eine Fehlerseite aussehen. */
+function vf_seite(int $status, string $titel, string $text, string $zusatz = '', string $symbol = ''): void
 {
     http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: no-store');
     header('X-Robots-Tag: noindex, nofollow');
+    $zeichen = $symbol === '' ? '' : '<span class="page-symbol page-symbol-' . vf_h($symbol) . '" aria-hidden="true">'
+        . '<svg class="icon"><use href="#i-' . vf_h($symbol) . '"/></svg></span>
+  ';
     echo '<!doctype html>
 <html lang="de">
 <head>
@@ -78,8 +84,19 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '')
   <meta name="color-scheme" content="light">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="' . vf_h(VF_STYLESHEET) . '">
+  <script src="' . vf_h(VF_SKRIPT) . '" defer></script>
 </head>
-<body>
+<body class="subpage">
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<!-- Symbole: lucide (ISC-Lizenz), wie auf der Startseite -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+  <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
+</svg>
+
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="/" aria-label="VereinsFlow – zur Startseite">
@@ -87,19 +104,71 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '')
         <img src="/assets/img/logo.svg" alt="" width="174" height="28">
       </picture>
     </a>
+    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
+      <div class="nav-links">
+        <ul>
+          <li><a href="/#funktionen">Funktionen</a></li>
+          <li><a href="/#helferschichten">Helferschichten</a></li>
+          <li><a href="/#rollen">Rollen</a></li>
+          <li><a href="/#sicherheit">Sicherheit</a></li>
+          <li><a href="/#faq">Fragen</a></li>
+        </ul>
+      </div>
+      <a class="btn btn-primary btn-sm btn-header" href="/#kontakt">Demo anfragen</a>
+    </nav>
+    <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
   </div>
 </header>
-<main class="not-found notify-page">
-  <h1>' . vf_h($titel) . '</h1>
+
+<main id="inhalt" class="not-found notify-page">
+  ' . $zeichen . '<h1>' . vf_h($titel) . '</h1>
   <p class="lead">' . $text . '</p>
   ' . $zusatz . '
 </main>
 
-<footer class="site-footer compact">
+<footer class="site-footer">
   <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <picture>
+          <img src="/assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
+        </picture>
+        <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+      </div>
+      <div>
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="/#funktionen">Funktionen</a></li>
+          <li><a href="/#helferschichten">Helferschichten</a></li>
+          <li><a href="/#suche">Zentrale Suche</a></li>
+          <li><a href="/#rollen">Rollen und Rechte</a></li>
+          <li><a href="/#sicherheit">Sicherheit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Mehr</h2>
+        <ul>
+          <li><a href="/#ablauf">Ablauf</a></li>
+          <li><a href="/#faq">Häufige Fragen</a></li>
+          <li><a href="/#kontakt">Demo anfragen</a></li>
+          <li><a href="/#benachrichtigen">Zum Start benachrichtigen</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Rechtliches</h2>
+        <ul>
+          <li><a href="/impressum.html">Impressum</a></li>
+          <li><a href="/datenschutz.html">Datenschutz</a></li>
+        </ul>
+      </div>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow</span>
-      <span><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a></span>
+      <span>© 2026 VereinsFlow · Funktionsumfang: Stand September 2026</span>
+      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
     </div>
   </div>
 </footer>
@@ -120,6 +189,13 @@ function vf_weiter(string $status): void
 function vf_start_link(): string
 {
     return '<p><a class="btn btn-primary btn-lg" href="/">Zur Startseite</a></p>';
+}
+
+/** Nach einer erfolgreichen Anmeldung (Moment des größten Interesses): neben dem Rückweg gleich die Demo-Anfrage */
+function vf_start_demo_links(): string
+{
+    return '<p class="page-actions"><a class="btn btn-primary btn-lg" href="/">Zur Startseite</a>'
+        . '<a class="btn btn-secondary btn-lg" href="/#kontakt">Demo anfragen</a></p>';
 }
 
 function vf_mail_link(): string
@@ -627,7 +703,7 @@ function vf_anmelden(): void
     $email = vf_adresse(vf_eingabe($_POST, 'email'));
     if ($email === null) {
         vf_seite(422, 'Bitte prüfen Sie die E-Mail-Adresse',
-            'Die eingegebene Adresse sieht nicht wie eine gültige E-Mail-Adresse aus.',
+            'Die eingegebene Adresse sieht nicht wie eine gültige E&#8209;Mail-Adresse aus.',
             '<p><a class="btn btn-primary btn-lg" href="/#benachrichtigen">Zurück zum Formular</a></p>');
     }
     $verein = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', vf_eingabe($_POST, 'verein')) ?? '');
@@ -900,7 +976,7 @@ try {
         }
         vf_knopfseite('bestaetigen', $token, 'Anmeldung bestätigen',
             'Ein Klick noch: Bestätigen Sie, dass Sie zum Start von VereinsFlow und bei wichtigen Neuigkeiten eine '
-                . 'E-Mail bekommen möchten.',
+                . 'E&#8209;Mail bekommen möchten.',
             'Anmeldung bestätigen');
     }
     if (isset($_GET['abmelden'])) {
@@ -909,33 +985,33 @@ try {
             vf_weiter('ungueltig');
         }
         vf_knopfseite('abmelden', $token, 'Abmelden',
-            'Möchten Sie keine E-Mails mehr zu VereinsFlow bekommen? Dann melden Sie sich hier ab.',
+            'Möchten Sie keine E&#8209;Mails mehr zu VereinsFlow bekommen? Dann melden Sie sich hier ab.',
             'Jetzt abmelden');
     }
 
     $status = vf_eingabe($_GET, 'status');
     if ($status === 'gesendet') {
         vf_seite(200, 'Fast geschafft',
-            'Wir haben Ihnen eine E-Mail mit einem Bestätigungslink geschickt. Bitte klicken Sie darauf – erst dann '
-                . 'ist Ihre Anmeldung gültig. Keine E-Mail bekommen? Sehen Sie bitte auch im Spam-Ordner nach, oder '
-                . 'schreiben Sie uns an ' . vf_mail_link() . '.',
-            vf_start_link());
+            'Wir haben Ihnen eine E&#8209;Mail mit einem Bestätigungslink geschickt. Bitte klicken Sie darauf&nbsp;– '
+                . 'erst dann ist Ihre Anmeldung gültig. Keine E&#8209;Mail bekommen? Sehen Sie bitte auch im Spam-Ordner '
+                . 'nach, oder schreiben Sie uns an ' . vf_mail_link() . '.',
+            vf_start_demo_links(), 'mail');
     }
     if ($status === 'bestaetigt') {
         vf_seite(200, 'Danke – Sie sind angemeldet',
             'Wir melden uns, sobald VereinsFlow startet, und bei wichtigen Neuigkeiten. Abmelden können Sie sich '
-                . 'jederzeit über den Link in unseren E-Mails.',
-            vf_start_link());
+                . 'jederzeit über den Link in unseren E&#8209;Mails.',
+            vf_start_demo_links(), 'circle-check');
     }
     if ($status === 'abgemeldet') {
         vf_seite(200, 'Sie sind abgemeldet',
-            'Sie bekommen keine E-Mails mehr von uns. Mehr dazu in der <a href="/datenschutz.html#benachrichtigung">'
+            'Sie bekommen keine E&#8209;Mails mehr von uns. Mehr dazu in der <a href="/datenschutz.html#benachrichtigung">'
                 . 'Datenschutzerklärung</a>.', vf_start_link());
     }
     if ($status === 'ungueltig') {
         vf_seite(410, 'Dieser Link ist nicht mehr gültig',
             'Der Link ist abgelaufen oder wurde schon verwendet. Haben Sie sich mehrmals angemeldet, nutzen Sie bitte '
-                . 'den Link aus der neuesten E-Mail. Sonst können Sie sich einfach neu anmelden.',
+                . 'den Link aus der neuesten E&#8209;Mail. Sonst können Sie sich einfach neu anmelden.',
             '<p><a class="btn btn-primary btn-lg" href="/#benachrichtigen">Neu anmelden</a></p>');
     }
     header('Location: /#benachrichtigen', true, 302);
