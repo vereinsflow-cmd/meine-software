@@ -5,7 +5,8 @@
 //
 // Ohne Abhängigkeiten. p = Anteil der Laufzeit (Laptop 3,6 s, Telefon 4 s, siehe site.css): 0 % = Start, 100 % = Ende.
 // (Die Formeln stammen aus der Zeit, als die Bewegung am Scrollen hing; die ersten 3 % ohne Bewegung überspringt site.css.) Die Formeln bilden weiche Teil-Abläufe (smoothstep) für Erscheinen, Drehen,
-// Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert (beim Laptop mit Umgebungslicht, siehe shadeL). Stützpunkte
+// Aufklappen und Aufrichten; Licht auf den Flächen nach Lambert (beim Laptop mit Umgebungslicht, siehe shadeL; beim
+// Telefon dazu Glanzlichter, siehe spec). Stützpunkte
 // werden adaptiv gesetzt – so viele, dass die
 // lineare Interpolation dazwischen höchstens um die Toleranz von der Formel abweicht (etwa 0,3 px, 0,2°, 1 % Deckkraft).
 // Die Endwerte (p = 1) müssen mit den Grundregeln in site.css übereinstimmen: So stehen die Geräte ohne Animation.
@@ -41,12 +42,23 @@ const sideL = (s) => Math.sin(rad(s.ang)) * Math.cos(rad(s.tilt)) - 0.05 * Math.
 // Schatten des Deckels auf der Oberseite (Endlage, siehe .laptop-deck::after): Deckkraft und Reichweite (Anteil der Tiefe)
 const DECK_SHADE = 0.5, DECK_REACH = 0.16;
 // ---------- Telefon ----------
+// Drehung wie in einem Produktfilm: Geschwindigkeit an beiden Enden 0, am schnellsten nach einem Drittel, langer Auslauf
+// (die letzten 10° dauern gut 0,6 s) – smoothstep käme so schnell an, wie es losfährt. Start in der Dreiviertelansicht
+// von hinten (30° neben der Rückseite): Dicke, Seite und Kameraplateau sind schon beim Erscheinen zu sehen.
+const spin = (x) => 1 - (1 - x) ** 3 * (1 + 3 * x);
+const START = -150;
 const P = (p) => {
-  const a = clamp((p - 0.03) / 0.3), r = clamp((p - 0.26) / 0.46);
-  const ae = ss(a), re = Math.min(1, ss(r) * 1.01);
-  return { a, ae, re, ang: (1 - re) * -172 };
+  const a = clamp((p - 0.03) / 0.3), r = clamp((p - 0.26) / 0.56);
+  const ae = ss(a), re = spin(r);
+  return { a, ae, re, ang: (1 - re) * START };
 };
 const shade = (phi, ang, light, k) => (1 - Math.max(0, Math.cos(rad(phi + ang + light)))) * k;
+// Glanz (Blinn-Phong-Keule): am hellsten, wenn die Flächennormale (phi + ang) auf der Winkelhalbierenden zwischen Blick
+// (0°) und Licht (30°) steht, also bei 15°; w = halbe Breite der Keule in Grad (Abfall auf 1/e)
+const spec = (phi, ang, w = 16) => {
+  const d = ((phi + ang - 15 + 540) % 360) - 180;
+  return Math.exp(-((d / w) ** 2));
+};
 // Laptop: Lambert mit Umgebungslicht (Licht von vorn links, 35° zur Seite und 35° über der Waagerechten, tan 0,7) –
 // eloxiertes Aluminium spiegelt die helle Umgebung, eine abgewandte Fläche wird deshalb höchstens gut 25 % dunkler statt
 // 50 %. tilt: Die senkrechten Flächen des Unterteils kippen beim Aufklappen mit ihm um bis zu 14° nach unten, vom Licht
@@ -136,25 +148,71 @@ const anims = [
   // ---------- Telefon ----------
   {
     name: "vf-phone-body",
-    fn: (p) => { const s = P(p); return { X: 1 - s.ae, A: (0.74 + 0.26 * s.ae) * (0.9 + 0.1 * s.re), Z: (1 - s.re) * -9, R: (1 - s.re) * 8, S: (1 - s.re) * -172 }; },
+    fn: (p) => { const s = P(p); return { X: 1 - s.ae, A: (0.74 + 0.26 * s.ae) * (0.9 + 0.1 * s.re), Z: (1 - s.re) * -9, R: (1 - s.re) * 8, S: s.ang }; },
     err: (v, w) => [Math.abs(v.X - w.X) * 264.6 / 0.3, Math.abs(v.A - w.A) / 0.0015, Math.abs(v.Z - w.Z) / 0.2, Math.abs(v.R - w.R) / 0.2, Math.abs(v.S - w.S) / 0.2],
     css: (v) => `transform: translateY(calc(${f(v.X)} * 28vh)) scale(${f(v.A)}) rotateZ(${f(v.Z, 3)}deg) rotateX(${f(v.R, 3)}deg) rotateY(${f(v.S, 3)}deg);`,
   },
-  { name: "vf-phone-front", fn: (p) => ({ V: clamp((P(p).re - 0.47) * 100) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
-  { name: "vf-phone-glare", fn: (p) => ({ V: 1 - P(p).re }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
-  { name: "vf-phone-buttons", fn: (p) => ({ V: clamp((P(p).re - 0.82) * 6) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
-  { name: "vf-phone-back", fn: (p) => ({ V: clamp((0.485 - P(p).re) * 100) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
+  // Vorder- und Rückseite wechseln in der Kantenansicht, nach dem Winkel: In ±1,5° um −90° ist keine von beiden zu sehen,
+  // nur Seite, Ecken, Stirnflächen und das Profil der Kamera. So flach gesehen zeichnete Chromium die Flächen als
+  // gestrichelte Linie; bei der schnellsten Drehung dauert die Lücke gut 25 ms.
+  { name: "vf-phone-front", fn: (p) => ({ V: clamp((P(p).ang + 88.5) / 0.3) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
+  { name: "vf-phone-back", fn: (p) => ({ V: clamp((-91.5 - P(p).ang) / 0.3) }), tol: { V: 0.001 }, css: (v) => `scale: ${f(v.V)};` },
+  // Spiegelung auf dem Deckglas: ein weiches Lichtband, dreimal so breit angelegt wie das Glas, gleitet beim Herandrehen
+  // von rechts nach links darüber (Hintergrund 300 % breit: bei 0 % steht es rechts daneben, bei 100 % links – Endlage),
+  // am hellsten bei −50°, wenn es mitten über dem Glas steht; in den letzten 10° ganz aus
+  {
+    name: "vf-phone-glare",
+    fn: (p) => { const s = P(p); return { V: 0.8 * Math.exp(-(((s.ang + 50) / 26) ** 2)) * clamp(-s.ang / 10), X: 100 * clamp((s.ang + 90) / 80) }; },
+    tol: { V: 0.01, X: 0.4 },
+    css: (v) => `opacity: ${f(v.V, 3)}; background-position: ${f(v.X, 1)}% 0;`,
+  },
+  // Fresnel: Glas spiegelt umso stärker, je flacher man darauf schaut (Näherung nach Schlick, (1 − cos)⁵) – kurz nach der
+  // Kantenansicht ist das Deckglas hell von der Umgebung, in der Vorderansicht klar
+  { name: "vf-phone-fresnel", fn: (p) => ({ V: 0.9 * (1 - Math.abs(Math.cos(rad(P(p).ang)))) ** 5 }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
+  // Flache Tasten der Vorderansicht (und die helle Außenkante des Rahmens, .iphone-ring::after) erst in den letzten 8°:
+  // Die Seite ist dann nur noch wenige Pixel breit, ihre Tasten fallen mit den flachen zusammen
+  { name: "vf-phone-buttons", fn: (p) => ({ V: ss(clamp((P(p).ang + 8) / 7)) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
+  // Feine Linien an den Rahmen von Vorder- und Rückseite (.iphone-ring, .back-rings): aus, solange die Fläche weniger
+  // als gut 15° aus der Kantenansicht gedreht ist (|cos| unter 0,25) – so flach wären sie schmaler als ein Pixel und
+  // zerfielen in Striche; ganz da ab gut 33° (|cos| 0,55)
+  { name: "vf-phone-rings", fn: (p) => ({ V: ss(clamp((Math.abs(Math.cos(rad(P(p).ang))) - 0.25) / 0.3)) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-phone-back-shade", fn: (p) => ({ V: shade(180, P(p).ang, -30, 0.38) }), tol: { V: 0.008 }, css: (v) => `opacity: ${f(v.V, 3)};` },
-  // Glanz auf dem matten Rückglas: wandert beim Drehen über die Fläche zur herandrehenden Kante (Spiegelbild des
-  // ruhenden Lichts; auf der gedrehten Rückseite zeigt +x zur zurückweichenden Kante, daher das Minus), am stärksten,
-  // wenn die Flächennormale auf der Winkelhalbierenden zwischen Blick und Licht steht (≈ −165°)
-  { name: "vf-phone-sheen", fn: (p) => { const d = (P(p).ang + 165) / 40; return { X: clamp(d, -1.5, 1.5), O: Math.exp(-d * d) }; }, tol: { X: 0.01, O: 0.01 }, css: (v) => `translate: ${f(v.X * -40, 2)}% 0; opacity: ${f(v.O, 3)};` },
+  // Glanz auf dem matten Rückglas: gleitet beim Drehen über die Fläche zur herandrehenden Kante (auf der gedrehten
+  // Rückseite zeigt +x zur zurückweichenden Kante, daher das Minus) – am stärksten bei −135°, kurz nach dem Start, so
+  // zieht er einmal ganz über das Glas
+  { name: "vf-phone-sheen", fn: (p) => { const d = (P(p).ang + 135) / 40; return { X: clamp(d, -1.5, 1.5), O: Math.exp(-d * d) }; }, tol: { X: 0.01, O: 0.01 }, css: (v) => `translate: ${f(v.X * -40, 2)}% 0; opacity: ${f(v.O, 3)};` },
+  // Das polierte Kameraplateau spiegelt dasselbe Licht schärfer: schmalere Keule, das Band läuft schneller darüber
+  // (Schicht dreimal so breit wie das Plateau: je Einheit ein Drittel, bei ±1,5 ganz daneben)
+  { name: "vf-phone-plateau", fn: (p) => { const d = (P(p).ang + 135) / 16; return { X: clamp(d, -1.5, 1.5), O: Math.exp(-d * d) }; }, tol: { X: 0.01, O: 0.01 }, css: (v) => `translate: ${f(v.X * -33.333, 2)}% 0; opacity: ${f(v.O, 3)};` },
   ...[["side-l", -90], ["side-r", 90]].map(([n, phi]) => ({
     name: `vf-phone-${n}`, fn: (p) => ({ V: shade(phi, P(p).ang, -30, 0.32) }), tol: { V: 0.008 }, css: (v) => `opacity: ${f(v.V, 3)};`,
   })),
+  // Glanz auf der rechten Seite (die einzige, die sich dem Betrachter zudreht): Titan spiegelt – das Band leuchtet auf,
+  // wenn seine Normale durch die Winkelhalbierende zwischen Blick und Licht läuft (bei −75°); die Eckstreifen mit
+  // ihrem Anteil (siehe .rim-tr i, .rim-br i)
+  { name: "vf-phone-spec-r", fn: (p) => ({ V: spec(90, P(p).ang) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
+  // Kameraplateau und Objektive stehen aus der Rückseite heraus. Nach der Kantenansicht, bevor das Gehäuse sie verdeckt,
+  // fahren sie in die Rückseite ein (scale in der Tiefe, zwischen −84° und −70°): Safari sortiert Flächen nach ihrer
+  // Mitte und zeichnete die Objektive sonst über die herandrehende Vorderseite
+  { name: "vf-phone-bump", fn: (p) => ({ V: 1 - ss(clamp((P(p).ang + 84) / 14)) }), tol: { V: 0.01 }, css: (v) => `scale: 1 1 ${f(v.V, 3)};` },
+  // Mittlere Wand des Plateaus und Wände der Objektivringe (Karten durch die Mitte, nur für den Umriss): ganz da in ±12°
+  // um die Kantenansicht, aus ab ±16° – schräger gesehen liegen sie im Plateau bzw. unter dem Glas, Safari sortierte sie
+  // womöglich davor, und durch die Lücke zwischen zwei Ringen sähe man den dritten als flache Karte
+  { name: "vf-phone-profile", fn: (p) => ({ V: ss(clamp((16 - Math.abs(P(p).ang + 90)) / 4)) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
   { name: "vf-phone-scene", fn: (p) => ({ V: clamp(P(p).a * 1.6) }), tol: { V: 0.01 }, css: (v) => `opacity: ${f(v.V, 3)};` },
-  // Bodenschatten: in der Kantenansicht nur so breit, wie das Gehäuse dick ist (|cos| des Drehwinkels), sonst wie bisher
-  { name: "vf-phone-floor", fn: (p) => { const s = P(p), c = Math.abs(Math.cos(rad(s.ang))), sy = 0.55 + 0.45 * s.ae; return { SX: sy * (0.28 + 0.72 * c), SY: sy }; }, tol: { SX: 0.003, SY: 0.003 }, css: (v) => `scale: ${f(v.SX)} ${f(v.SY)};` },
+  // Bodenschatten: in der Kantenansicht nur so breit, wie das Gehäuse dick ist (|cos| des Drehwinkels), sonst wie bisher.
+  // X: Das um −9° geneigte Telefon (rotateZ um seine Mitte) steht mit dem unteren Ende weiter rechts – um die halbe Höhe
+  // (874 / 420 / 2 Breiten) mal sin, mal Maßstab; der Schatten bleibt darunter
+  {
+    name: "vf-phone-floor",
+    fn: (p) => {
+      const s = P(p), c = Math.abs(Math.cos(rad(s.ang))), sy = 0.55 + 0.45 * s.ae;
+      const A = (0.74 + 0.26 * s.ae) * (0.9 + 0.1 * s.re);
+      return { SX: sy * (0.28 + 0.72 * c), SY: sy, X: -Math.sin(rad((1 - s.re) * -9)) * 1.0405 * A };
+    },
+    tol: { SX: 0.003, SY: 0.003, X: 0.001 },
+    css: (v) => `scale: ${f(v.SX)} ${f(v.SY)}; translate: calc(-50% + ${f(v.X)} * var(--pw)) 0;`,
+  },
 ];
 
 const N = 20000; // Rasterschritte für die Fehlersuche
