@@ -179,14 +179,18 @@ SVG-Pfad aus `src/lib/qr-code.ts`.
   untereinander (Vor- und Nachname ab 640 px nebeneinander), 16-px-Schrift in allen Feldern (sonst zoomt iOS), passende Tastaturen
   (`type="email"`, `tel`, `date`), Fehlertexte am Feld, der Knopf „Antrag senden“ über die volle Breite. Pflichtfelder tragen den Stern –
   auch das Einwilligungs-Kästchen (`CheckboxField` mit `required`: Stern und `aria-required`); es verlinkt die Datenschutzerklärung.
-  Allgemeine Meldungen vom Server (Link inzwischen ungültig, zu viele Anträge mit Wartezeit) stehen **direkt über dem Knopf**, nicht
+  Allgemeine Meldungen vom Server (Link inzwischen ungültig, alle Plätze inzwischen vergeben, zu viele Anträge mit Wartezeit) stehen **direkt über dem Knopf**, nicht
   oben: Das Formular ist am Handy höher als der Bildschirm, oben bliebe die Meldung unbemerkt. Feldfehler vom Server springen wie
   Browser-Fehler zum ersten betroffenen Feld (gilt für alle Formulare mit `useActionForm`). Danach ersetzt eine Bestätigung das Formular (Fokus darauf, `role="status"`).
-  Ein ungültiger, erneuerter oder geschlossener Link zeigt nur „Dieser Link ist nicht (mehr) gültig …“ – ohne Vereinsangaben.
+  Ein ungültiger, erneuerter oder geschlossener Link zeigt nur „Dieser Link ist nicht (mehr) gültig …“ – ohne Vereinsangaben. Sind alle
+  Plätze des Codes vergeben, steht statt des Formulars „Alle Plätze vergeben“ mit dem Vereinsnamen und der Bitte, den Verein direkt
+  anzusprechen.
 - **Verwaltung** `/mitglieder/antraege` („Beitrittsanträge“, erreichbar über den umrandeten Knopf „Anträge (2)“ in der Mitgliederliste –
   nur für Vereinsadministrator und Vorstand): Karte „QR-Code zum Beitritt“ (ohne Link: drei Sätze zum Ablauf und die Hauptaktion
-  „QR-Code einrichten“; mit Link: der Code, die Adresse mit „Kopieren“, „Aushang drucken“, „Neuen Code erzeugen“ und – rot beschriftet, aber
-  umrandet – „Beitritt schließen“, beide mit Rückfrage). Darunter „Offene Anträge“ als Karten (älteste zuerst) mit allen Angaben;
+  „QR-Code einrichten“, die im Fenster nach der Zahl der Anmeldungen fragt – Pflichtfeld; mit Link: der Code, die Adresse mit „Kopieren“,
+  die Belegung „12 von 50 Anmeldungen genutzt – noch 38 Plätze frei“ mit Balken (voll: bernsteinfarbener Hinweis statt Blau), „Aushang
+  drucken“, „Anzahl ändern“, „Neuen Code erzeugen“ (fragt die Anzahl erneut, vorbelegt; beginnt bei 0) und – rot beschriftet, aber
+  umrandet – „Beitritt schließen“ mit Rückfrage. Ältere Codes ohne Anzahl zeigen stattdessen „Anzahl festlegen“). Darunter „Offene Anträge“ als Karten (älteste zuerst) mit allen Angaben;
   „Annehmen“ ist wie „Eintragen“ in Listen der blaue Knopf der Karte, „Ablehnen“ umrandet, beide fragen nach. Was dem Annehmen im Weg
   stünde, zeigt die Karte **vorher** als bernsteinfarbenen Hinweis (`Alert variant="warning"`) mit nächstem Schritt: ein Mitglied mit
   derselben Adresse (mit Link, „im Archiv“ samt Hinweis auf „Wiederherstellen“), ein vorhandener Zugang oder eine offene Einladung (Link

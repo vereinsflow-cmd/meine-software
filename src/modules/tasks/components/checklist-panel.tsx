@@ -68,7 +68,7 @@ export function NewChecklistDialog({
             z. B. „Vorbereitung Sommerfest“. Die Punkte fügst du danach hinzu.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <TextField form={form} name="title" label="Titel" required />
           {!eventId && events && (
@@ -93,6 +93,7 @@ function AddItemForm({ checklistId }: { checklistId: string }) {
   const router = useRouter();
   return (
     <form
+      method="post"
       className="flex gap-2"
       onSubmit={(event) => {
         event.preventDefault();

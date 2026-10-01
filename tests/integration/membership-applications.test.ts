@@ -20,7 +20,7 @@ vi.mock("@/modules/members/service", async (importOriginal) => {
 });
 
 import { todayCalendarDate } from "@/lib/dates";
-import { APPLICATION_CONSENT_VERSION } from "@/lib/membership-application";
+import { APPLICATION_CONSENT_VERSION, JOIN_LINK_FULL_TEXT } from "@/lib/membership-application";
 import { deleteDepartment } from "@/modules/departments/service";
 import { suggestNextMemberNumber } from "@/modules/members/service";
 import {
@@ -41,6 +41,7 @@ import {
   listApplications,
   rejectApplication,
   renewJoinLink,
+  setJoinLimit,
   resendApplicationInvitation,
   submitApplication,
 } from "@/modules/membership-applications/service";
@@ -112,7 +113,7 @@ const form = (token: string, over: Partial<ApplicationFormInput> = {}) =>
 
 /** Richtet den Link ein und reicht einen Antrag ein; liefert den gespeicherten Antrag. */
 async function applyOnce(s: Setup, over: Partial<ApplicationFormInput> = {}) {
-  const link = await enableJoinLink(s.ctx.admin);
+  const link = await enableJoinLink(s.ctx.admin, 100);
   const input = form(link.token, over);
   await submitApplication(input, freshIp());
   // Der neueste mit dieser Adresse – dieselbe Person kann mehrere Anträge stellen (IDs aus uuid(7) steigen mit der Zeit).
@@ -131,13 +132,13 @@ describe("Beitrittslink (QR-Code)", () => {
     const s = await setup();
     expect(await getJoinLink(s.ctx.admin)).toBeNull();
 
-    const first = await enableJoinLink(s.ctx.admin);
+    const first = await enableJoinLink(s.ctx.admin, 100);
     expect(first.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(first.url).toBe(`http://localhost:3000/beitreten/${first.token}`);
-    expect((await enableJoinLink(s.ctx.board)).token).toBe(first.token); // kein versehentliches Ungültigmachen
+    expect((await enableJoinLink(s.ctx.board, 100)).token).toBe(first.token); // kein versehentliches Ungültigmachen
     expect((await getJoinPage(first.token))?.clubName).toBe("Beitrittsverein");
 
-    const renewed = await renewJoinLink(s.ctx.board);
+    const renewed = await renewJoinLink(s.ctx.board, 100);
     expect(renewed.token).not.toBe(first.token);
     expect(await getJoinPage(first.token)).toBeNull();
     expect(await getJoinPage(renewed.token)).not.toBeNull();
@@ -172,12 +173,14 @@ describe("Beitrittslink (QR-Code)", () => {
     const inactive = await prisma.department.create({
       data: { clubId: s.club.id, name: "Ruhende Abteilung", isActive: false },
     });
-    const link = await enableJoinLink(s.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
 
     const page = await getJoinPage(link.token);
+    // Nur „voll oder nicht“ – wie viele Plätze es gibt, erfährt die Öffentlichkeit nicht
     expect(page).toEqual({
       clubName: "Öffentlicher Verein",
       logoUrl: null,
+      full: false,
       departments: [{ id: s.department.id, name: "Tischtennis" }],
     });
     expect(page?.departments.map((d) => d.id)).not.toContain(inactive.id);
@@ -190,10 +193,159 @@ describe("Beitrittslink (QR-Code)", () => {
   });
 });
 
+describe("Begrenzte Anmeldungen je QR-Code", () => {
+  it("nimmt nur so viele Anträge an wie festgelegt; abgelehnte geben ihren Platz zurück; ein neuer Code beginnt bei 0", async () => {
+    const s = await setup();
+    const link = await enableJoinLink(s.ctx.admin, 2);
+    expect(link).toMatchObject({ limit: 2, used: 0 });
+    await submitApplication(form(link.token), freshIp());
+    // Honigtopf: vorgetäuschter Erfolg – verbraucht keinen Platz
+    await submitApplication(form(link.token, { website: "https://spam.example" }), freshIp());
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ used: 1 });
+    expect((await getJoinPage(link.token))?.full).toBe(false);
+
+    await submitApplication(form(link.token), freshIp());
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ limit: 2, used: 2 });
+    expect((await getJoinPage(link.token))?.full).toBe(true);
+    await expect(submitApplication(form(link.token), freshIp())).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: JOIN_LINK_FULL_TEXT,
+    });
+    expect(await prisma.membershipApplication.count({ where: { clubId: s.club.id } })).toBe(2);
+    // Mit dem letzten Platz erfahren die Berechtigten, dass der Code ausgeschöpft ist
+    const [latest] = await prisma.notification.findMany({
+      where: { clubId: s.club.id, userId: s.people.admin.user.id, title: "Neuer Beitrittsantrag" },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    });
+    expect(latest?.body).toContain("alle 2 Plätze des QR-Codes vergeben");
+
+    // Ablehnen gibt den Platz zurück
+    const first = await prisma.membershipApplication.findFirstOrThrow({
+      where: { clubId: s.club.id },
+      orderBy: { id: "asc" },
+    });
+    await rejectApplication(s.ctx.admin, first.id);
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ used: 1 });
+    expect((await getJoinPage(link.token))?.full).toBe(false);
+
+    // Anzahl ändern (ohne neuen Code): weniger als genutzt → voll, mehr → wieder frei; protokolliert
+    await setJoinLimit(s.ctx.board, 1);
+    expect((await getJoinPage(link.token))?.full).toBe(true);
+    expect(await setJoinLimit(s.ctx.admin, 5)).toMatchObject({
+      token: link.token,
+      limit: 5,
+      used: 1,
+    });
+    expect(
+      await prisma.auditLog.count({
+        where: { clubId: s.club.id, action: "member.join_limit_changed" },
+      }),
+    ).toBe(2);
+
+    // Neuer Code: Zählung von vorn – ein abgelehnter Antrag des alten Codes ändert sie nicht
+    expect(await renewJoinLink(s.ctx.admin, 3)).toMatchObject({ limit: 3, used: 0 });
+    const old = await prisma.membershipApplication.findFirstOrThrow({
+      where: { clubId: s.club.id, status: "PENDING" },
+    });
+    await rejectApplication(s.ctx.admin, old.id);
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ limit: 3, used: 0 });
+
+    // Schließen setzt alles zurück
+    await closeJoinLink(s.ctx.admin);
+    expect(
+      await prisma.club.findUniqueOrThrow({
+        where: { id: s.club.id },
+        select: { joinLimit: true, joinUsed: true },
+      }),
+    ).toEqual({ joinLimit: null, joinUsed: 0 });
+  });
+
+  it("zweimal gleichzeitig „QR-Code einrichten“: derselbe Code – der zweite ersetzt den ersten nicht", async () => {
+    const s = await setup();
+    const [a, b] = await Promise.all([
+      enableJoinLink(s.ctx.admin, 10),
+      enableJoinLink(s.ctx.board, 20),
+    ]);
+    expect(a.token).toBe(b.token);
+    expect(a.limit).toBe(b.limit);
+    expect(
+      await prisma.auditLog.count({
+        where: { clubId: s.club.id, action: "member.join_link_created" },
+      }),
+    ).toBe(1);
+  });
+
+  it("jeder Antrag merkt sich seinen Code: nur Anträge des aktuellen Codes geben beim Ablehnen ihren Platz zurück", async () => {
+    const s = await setup();
+    const first = await enableJoinLink(s.ctx.admin, 5);
+    await submitApplication(form(first.token), freshIp());
+    const old = await prisma.membershipApplication.findFirstOrThrow({
+      where: { clubId: s.club.id },
+    });
+    expect(old.joinLinkCreatedAt?.getTime()).toBe(first.createdAt.getTime());
+
+    const second = await renewJoinLink(s.ctx.admin, 5);
+    await submitApplication(form(second.token), freshIp());
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ used: 1 });
+    await rejectApplication(s.ctx.admin, old.id); // vom alten Code: ändert die neue Zählung nicht
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ used: 1 });
+    const current = await prisma.membershipApplication.findFirstOrThrow({
+      where: { clubId: s.club.id, status: "PENDING" },
+    });
+    await rejectApplication(s.ctx.admin, current.id);
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ used: 0 });
+  });
+
+  it("gleichzeitige Anträge auf den letzten Platz: genau einer kommt durch", async () => {
+    const s = await setup();
+    const link = await enableJoinLink(s.ctx.admin, 1);
+    const results = await Promise.allSettled(
+      Array.from({ length: 4 }, () => submitApplication(form(link.token), freshIp())),
+    );
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(await prisma.membershipApplication.count({ where: { clubId: s.club.id } })).toBe(1);
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ limit: 1, used: 1 });
+  });
+
+  it("die Anzahl ändern nur Vereinsadministrator und Vorstand – und nur, wenn es einen QR-Code gibt", async () => {
+    const s = await setup();
+    await expect(setJoinLimit(s.ctx.admin, 5)).rejects.toMatchObject({ code: "CONFLICT" });
+    await enableJoinLink(s.ctx.admin, 5);
+    for (const ctx of [s.ctx.lead, s.ctx.helper, s.ctx.member]) {
+      await expect(setJoinLimit(ctx, 50)).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(renewJoinLink(ctx, 50)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ limit: 5 });
+  });
+
+  it("ein QR-Code von vor der Begrenzung (ohne Anzahl) nimmt weiter Anträge an und zählt mit", async () => {
+    const s = await setup();
+    const link = await enableJoinLink(s.ctx.admin, 5);
+    await prisma.club.update({ where: { id: s.club.id }, data: { joinLimit: null } });
+    await submitApplication(form(link.token), freshIp());
+    expect(await getJoinLink(s.ctx.admin)).toMatchObject({ limit: null, used: 1 });
+    expect((await getJoinPage(link.token))?.full).toBe(false);
+  });
+
+  it("die Datenbank lässt keine unsinnige Anzahl zu", async () => {
+    const s = await setup();
+    await enableJoinLink(s.ctx.admin, 5);
+    for (const joinLimit of [0, 5001]) {
+      await expect(
+        prisma.club.update({ where: { id: s.club.id }, data: { joinLimit } }),
+      ).rejects.toThrow();
+    }
+    await expect(
+      prisma.club.update({ where: { id: s.club.id }, data: { joinUsed: -1 } }),
+    ).rejects.toThrow();
+  });
+});
+
 describe("Antrag einreichen (öffentlich)", () => {
   it("legt einen offenen Antrag an, protokolliert ohne Namen und benachrichtigt nur Vereinsadministrator und Vorstand", async () => {
     const s = await setup();
-    const link = await enableJoinLink(s.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
     const input = form(link.token, {
       email: "Neu.Person@Example.test",
       phone: "0170 1234567",
@@ -249,7 +401,7 @@ describe("Antrag einreichen (öffentlich)", () => {
 
   it("Honigtopf ausgefüllt: vorgetäuschter Erfolg, nichts gespeichert, niemand benachrichtigt", async () => {
     const s = await setup();
-    const link = await enableJoinLink(s.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
     await expect(
       submitApplication(form(link.token, { website: "https://spam.example" }), freshIp()),
     ).resolves.toBeUndefined();
@@ -263,7 +415,7 @@ describe("Antrag einreichen (öffentlich)", () => {
     const inactive = await prisma.department.create({
       data: { clubId: s.club.id, name: "Ruhend", isActive: false },
     });
-    const link = await enableJoinLink(s.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
     for (const departmentId of [other.department.id, inactive.id, "gibt-es-nicht"]) {
       await expect(
         submitApplication(form(link.token, { departmentId }), freshIp()),
@@ -277,7 +429,7 @@ describe("Antrag einreichen (öffentlich)", () => {
 
   it(`Rate-Limit: höchstens ${APPLICATION_RATE_LIMITS.perIp.limit} Anträge je IP und Stunde`, async () => {
     const s = await setup();
-    const link = await enableJoinLink(s.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
     const meta = { ip: "192.0.2.44", ipPrefix: "192.0.2.0" };
     for (let i = 0; i < APPLICATION_RATE_LIMITS.perIp.limit; i++)
       await submitApplication(form(link.token), meta);
@@ -299,7 +451,7 @@ describe("Antrag einreichen (öffentlich)", () => {
 
   it("Rate-Limit bei IPv6: gezählt wird das ganze /64-Netz – ein Wechsel der Adresse darin hilft nicht", async () => {
     const s = await setup();
-    const link = await enableJoinLink(s.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
     const net = "2001:db8:4711:42";
     for (let i = 1; i <= APPLICATION_RATE_LIMITS.perIp.limit; i++)
       await submitApplication(form(link.token), {
@@ -325,8 +477,8 @@ describe("Antrag einreichen (öffentlich)", () => {
   it(`Rate-Limit: höchstens ${APPLICATION_RATE_LIMITS.perClub.limit} Anträge je Verein und Tag – auch ohne bekannte IP`, async () => {
     const s = await setup();
     const other = await setup("Nachbarverein");
-    const link = await enableJoinLink(s.ctx.admin);
-    const otherLink = await enableJoinLink(other.ctx.admin);
+    const link = await enableJoinLink(s.ctx.admin, 100);
+    const otherLink = await enableJoinLink(other.ctx.admin, 100);
     const noIp = { ip: "unknown", ipPrefix: null };
     for (let i = 0; i < APPLICATION_RATE_LIMITS.perClub.limit; i++)
       await submitApplication(form(link.token), noIp);
@@ -346,8 +498,8 @@ describe("Rechte und Mandantentrennung", () => {
     const application = await applyOnce(s);
     for (const ctx of [s.ctx.lead, s.ctx.helper, s.ctx.member]) {
       await expect(getJoinLink(ctx)).rejects.toMatchObject({ code: "FORBIDDEN" });
-      await expect(enableJoinLink(ctx)).rejects.toMatchObject({ code: "FORBIDDEN" });
-      await expect(renewJoinLink(ctx)).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(enableJoinLink(ctx, 100)).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(renewJoinLink(ctx, 100)).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(closeJoinLink(ctx)).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(listApplications(ctx)).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(acceptApplication(ctx, application.id)).rejects.toMatchObject({
@@ -635,7 +787,7 @@ describe("Annehmen", () => {
     const s = await setup();
     const first = await applyOnce(s);
     const second = await applyOnce(s);
-    await renewJoinLink(s.ctx.admin);
+    await renewJoinLink(s.ctx.admin, 100);
     await closeJoinLink(s.ctx.board);
 
     await expect(acceptApplication(s.ctx.board, first.id)).resolves.toMatchObject({

@@ -37,7 +37,7 @@ export function TicketEditForm({
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-3 border-t pt-3">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-3 border-t pt-3">
       <FormError message={formError} />
       <div className="grid gap-3 sm:grid-cols-[14rem_minmax(0,1fr)]">
         <SelectField

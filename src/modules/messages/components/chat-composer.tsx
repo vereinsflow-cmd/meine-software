@@ -88,6 +88,7 @@ export function ChatComposer({
 
   return (
     <form
+      method="post"
       onSubmit={(event) => {
         event.preventDefault();
         ask();

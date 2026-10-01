@@ -275,7 +275,7 @@ export function UploadDialog({
               </AlertDescription>
             </Alert>
           ) : (
-            <form onSubmit={submit} noValidate className="grid gap-4">
+            <form method="post" onSubmit={submit} noValidate className="grid gap-4">
               <FormError message={formError} />
               <div className="grid gap-1.5">
                 <Label id="upload-datei-titel" htmlFor="upload-datei">
@@ -608,7 +608,7 @@ export function EditDocumentDialog({
             eine neue Fassung hoch.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <TextField form={form} name="name" label="Name" required />
           <TextField form={form} name="category" label="Kategorie" />

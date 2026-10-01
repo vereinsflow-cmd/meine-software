@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AuthCard } from "@/components/shared/auth-card";
-import { INVALID_JOIN_LINK_TEXT } from "@/lib/membership-application";
+import { INVALID_JOIN_LINK_TEXT, JOIN_LINK_FULL_TEXT } from "@/lib/membership-application";
 import { JoinApplicationCard } from "@/modules/membership-applications/components/join-form";
 import { getJoinPage } from "@/modules/membership-applications/service";
 
@@ -20,6 +20,19 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
 
   // Ungültig, erneuert oder geschlossen: bewusst ohne Vereinsangaben – ein alter Aushang verrät nichts mehr.
   if (!page) return <AuthCard title="Link nicht gültig" description={INVALID_JOIN_LINK_TEXT} />;
+  // Alle Plätze des QR-Codes vergeben: Vereinsname ja (der Code ist gültig), Formular nein.
+  if (page.full) {
+    return (
+      <AuthCard
+        title="Alle Plätze vergeben"
+        description={
+          <>
+            <strong>{page.clubName}</strong>: {JOIN_LINK_FULL_TEXT}
+          </>
+        }
+      />
+    );
+  }
 
   return (
     <JoinApplicationCard

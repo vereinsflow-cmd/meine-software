@@ -17,10 +17,13 @@ import {
   APPLICATION_DECIDED_RETENTION_DAYS,
   APPLICATION_PENDING_RETENTION_DAYS,
   APPLICATION_STATUS_LABEL,
+  isJoinLinkFull,
 } from "@/lib/membership-application";
 import { phoneHref } from "@/lib/phone";
+import { cn } from "@/lib/utils";
 import {
   AcceptApplicationButton,
+  ChangeJoinLimitButton,
   CloseJoinLinkButton,
   CopyJoinLinkButton,
   RejectApplicationButton,
@@ -40,6 +43,65 @@ import {
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Beitrittsanträge" };
+
+/**
+ * Wie viele Plätze der QR-Code noch hat: „12 von 50 Anmeldungen genutzt“ mit Balken. Ausgeschöpft: Hinweis, dass er
+ * keine Anträge mehr annimmt. Ohne festgelegte Anzahl (QR-Code von vor der Begrenzung): Aufforderung, sie festzulegen.
+ */
+function JoinCapacityInfo({ link }: { link: JoinLink }) {
+  if (link.limit === null) {
+    return (
+      <Alert>
+        <AlertDescription className="grid gap-3">
+          <p>
+            Für diesen QR-Code ist keine Anzahl festgelegt – er nimmt unbegrenzt Anträge an (bisher{" "}
+            {link.used}).
+          </p>
+          <ChangeJoinLimitButton limit={null} used={link.used} label="Anzahl festlegen" />
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  const full = isJoinLinkFull(link);
+  return (
+    <div className="grid gap-2">
+      <p className="text-sm">
+        <span className="font-medium">
+          {link.used} von {link.limit} {link.limit === 1 ? "Anmeldung" : "Anmeldungen"} genutzt
+        </span>
+        {!full && (
+          <span className="text-muted-foreground">
+            {" "}
+            – noch {link.limit - link.used} {link.limit - link.used === 1 ? "Platz" : "Plätze"}{" "}
+            frei.
+          </span>
+        )}
+      </p>
+      <div
+        role="progressbar"
+        aria-label="Genutzte Anmeldungen des QR-Codes"
+        aria-valuemin={0}
+        aria-valuemax={link.limit}
+        aria-valuenow={Math.min(link.used, link.limit)}
+        className="h-2 overflow-hidden rounded-full bg-muted"
+      >
+        <div
+          className={cn("h-full rounded-full", full ? "bg-amber-500" : "bg-primary")}
+          style={{ width: `${Math.min(100, (link.used / link.limit) * 100)}%` }}
+        />
+      </div>
+      {full && (
+        <Alert variant="warning">
+          <AlertDescription>
+            {link.limit === 1 ? "Der einzige Platz ist" : `Alle ${link.limit} Plätze sind`}{" "}
+            vergeben. Der QR-Code nimmt keine Anträge mehr an – mit „Anzahl ändern“ lässt du weitere
+            zu.
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+}
 
 /** Karte „QR-Code zum Beitritt“: ohne Link eine kurze Erklärung und die Hauptaktion, mit Link Code, Adresse und Knöpfe. */
 function JoinLinkCard({ link }: { link: JoinLink | null }) {
@@ -78,13 +140,17 @@ function JoinLinkCard({ link }: { link: JoinLink | null }) {
                   Eingerichtet am {formatDateTime(link.createdAt)} Uhr.
                 </p>
               </div>
+              <JoinCapacityInfo link={link} />
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="outline">
                   <Link href="/mitglieder/antraege/aushang">
                     <PrinterIcon /> Aushang drucken
                   </Link>
                 </Button>
-                <RenewJoinLinkButton />
+                {link.limit !== null && (
+                  <ChangeJoinLimitButton limit={link.limit} used={link.used} />
+                )}
+                <RenewJoinLinkButton limit={link.limit} />
                 <CloseJoinLinkButton />
               </div>
             </div>
@@ -93,7 +159,10 @@ function JoinLinkCard({ link }: { link: JoinLink | null }) {
           <div className="grid gap-4">
             <p className="text-sm">Noch ist kein QR-Code eingerichtet. So funktioniert es:</p>
             <ol className="grid list-decimal gap-1.5 pl-5 text-sm">
-              <li>QR-Code einrichten und den Aushang drucken.</li>
+              <li>
+                QR-Code einrichten – dabei legst du fest, wie viele Anmeldungen er zulässt – und den
+                Aushang drucken.
+              </li>
               <li>Interessierte scannen den Code und füllen den Antrag am Handy aus.</li>
               <li>
                 Du nimmst den Antrag hier an – dann wird die Person Mitglied und bekommt eine

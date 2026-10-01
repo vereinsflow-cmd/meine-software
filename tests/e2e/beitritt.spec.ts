@@ -171,11 +171,14 @@ test.describe("Beitritt per QR-Code", () => {
 
     // … dann erzeugt der Verein einen neuen.
     await page.getByRole("button", { name: "Neuen Code erzeugen" }).click();
-    const confirm = page.getByRole("alertdialog", { name: "Neuen QR-Code erzeugen?" });
+    const confirm = page.getByRole("dialog", { name: "Neuen QR-Code erzeugen?" });
     await expect(confirm).toContainText(
       "Der alte QR-Code funktioniert danach nicht mehr – bereits gedruckte Aushänge musst du ersetzen.",
     );
+    // Die Anzahl ist vorbelegt (die bisherige), der neue Code beginnt wieder bei 0
+    await expect(confirm.locator('input[name="limit"]')).not.toHaveValue("");
     await confirm.getByRole("button", { name: "Neuen Code erzeugen" }).click();
+    await expect(page.getByText(/^0 von \d+ Anmeldung(en)? genutzt$/)).toBeVisible();
     const linkField = page.getByLabel("Link zum Antragsformular");
     await expect(linkField).not.toHaveValue(oldLink);
     const newLink = await linkField.inputValue();
@@ -199,6 +202,79 @@ test.describe("Beitritt per QR-Code", () => {
     await expect(page.getByRole("button", { name: "QR-Code einrichten" })).toBeVisible();
     await guest.goto(newLink);
     await expect(guest.getByText(INVALID)).toBeVisible();
+    await guestContext.close();
+  });
+
+  test("begrenzte Plätze: Ist die Anzahl erreicht, nimmt der QR-Code keine Anträge mehr an – Ablehnen gibt den Platz zurück", async ({
+    page,
+    browser,
+  }) => {
+    test.setTimeout(90_000);
+    await login(page, USERS.admin);
+    const link = await setUpJoinLink(page);
+    const usage = page.getByText(/^\d+ von \d+ Anmeldung(en)? genutzt$/);
+    const used = Number(/^(\d+)/.exec((await usage.textContent()) ?? "")?.[1]);
+
+    /** Anzahl ändern (ohne neuen Code). */
+    const setLimit = async (limit: number) => {
+      await page.getByRole("button", { name: "Anzahl ändern" }).click();
+      const dialog = page.getByRole("dialog", { name: "Anzahl der Anmeldungen ändern" });
+      await dialog.locator('input[name="limit"]').fill(String(limit));
+      await dialog.getByRole("button", { name: "Speichern" }).click();
+      await expect(dialog).toBeHidden();
+      await expect(
+        page.getByText(new RegExp(`^\\d+ von ${limit} Anmeldung(en)? genutzt$`)),
+      ).toBeVisible();
+    };
+    // Nur noch ein Platz frei
+    await setLimit(used + 1);
+    await expect(page.getByText("– noch 1 Platz frei.")).toBeVisible();
+
+    const person = {
+      first: "Lotte",
+      last: "Letzterplatz",
+      email: `lotte.${Date.now() % 1_000_000}@example.org`,
+    };
+    const guestContext = await browser.newContext();
+    const guest = await guestContext.newPage();
+    await guest.goto(link);
+    await fillApplication(guest, person);
+    await guest.getByRole("button", { name: "Antrag senden" }).click();
+    await expect(guest.getByText("Danke! Dein Antrag ist beim Verein angekommen.")).toBeVisible();
+
+    // Wer jetzt scannt, kann keinen Antrag mehr stellen
+    await guest.goto(link);
+    await expect(guest.getByRole("heading", { name: "Alle Plätze vergeben" })).toBeVisible();
+    await expect(guest.getByRole("button", { name: "Antrag senden" })).toHaveCount(0);
+    expect(await violations(guest)).toEqual([]);
+
+    // Die Verwaltung sieht den Hinweis; Ablehnen gibt den Platz zurück
+    await open(page, "/mitglieder/antraege");
+    await expect(
+      page.getByText(
+        used === 0 ? "Der einzige Platz ist vergeben." : `Alle ${used + 1} Plätze sind vergeben.`,
+        {
+          exact: false,
+        },
+      ),
+    ).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+    const card = page
+      .getByRole("heading", { level: 3, name: `${person.first} ${person.last}` })
+      .locator("xpath=ancestor::div[@data-slot='card'][1]");
+    await card.getByRole("button", { name: "Ablehnen" }).click();
+    await page
+      .getByRole("alertdialog", { name: `Antrag von ${person.first} ${person.last} ablehnen?` })
+      .getByRole("button", { name: "Ablehnen" })
+      .click();
+    await expect(
+      page.getByText(new RegExp(`^${used} von ${used + 1} Anmeldung(en)? genutzt$`)),
+    ).toBeVisible();
+    await guest.goto(link);
+    await expect(guest.getByRole("heading", { level: 1, name: "Mitglied werden" })).toBeVisible();
+
+    // Wieder reichlich Plätze für die übrigen Tests
+    await setLimit(1000);
     await guestContext.close();
   });
 

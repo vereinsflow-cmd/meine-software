@@ -180,7 +180,7 @@ export function ComposeForm({
 
   return (
     <>
-      <form onSubmit={onSubmit} noValidate className="grid max-w-3xl gap-5">
+      <form method="post" onSubmit={onSubmit} noValidate className="grid max-w-3xl gap-5">
         <FormError message={formError} />
         <SelectField
           form={form}

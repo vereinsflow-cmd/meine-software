@@ -19,6 +19,12 @@ export const USERS = {
 /** Meldet über die Oberfläche an – genau wie ein echter Benutzer. */
 export async function login(page: Page, email: string, password = DEMO_PASSWORD): Promise<void> {
   await page.goto("/anmelden");
+  // Erst wenn React das Formular übernommen hat („hydratisiert“), schickt es per JavaScript ab – vorher täte es der Browser
+  // selbst (als POST an die Seite, ohne Anmeldung). React hängt dabei eigene Schlüssel an die DOM-Knoten.
+  await page.waitForFunction(() => {
+    const form = document.querySelector("form");
+    return form !== null && Object.keys(form).some((key) => key.startsWith("__react"));
+  });
   await page.getByLabel("E-Mail-Adresse").fill(email);
   await page.getByLabel("Passwort").fill(password);
   await page.getByRole("button", { name: "Anmelden" }).click();
@@ -95,7 +101,14 @@ export async function logout(page: Page): Promise<void> {
 export async function setUpJoinLink(page: Page): Promise<string> {
   await open(page, "/mitglieder/antraege");
   const setup = page.getByRole("button", { name: "QR-Code einrichten" });
-  if (await setup.isVisible()) await setup.click();
+  if (await setup.isVisible()) {
+    await setup.click();
+    // Beim Einrichten fragt die App, wie viele Anmeldungen der QR-Code zulässt – reichlich für alle Tests
+    const dialog = page.getByRole("dialog", { name: "QR-Code einrichten" });
+    await dialog.locator('input[name="limit"]').fill("1000");
+    await dialog.getByRole("button", { name: "QR-Code einrichten" }).click();
+    await expect(dialog).toBeHidden();
+  }
   const link = page.getByLabel("Link zum Antragsformular");
   await expect(link).toBeVisible();
   return link.inputValue();

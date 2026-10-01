@@ -58,7 +58,7 @@ export function ContactsDialog({ contacts }: { contacts: SupportContact[] }) {
             ein, die veröffentlicht werden dürfen (z. B. Vereinsadresse statt privater Handynummer).
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           {fields.length === 0 && (
             <p className="text-sm text-muted-foreground">

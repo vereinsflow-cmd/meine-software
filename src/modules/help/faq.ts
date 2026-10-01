@@ -404,11 +404,11 @@ export const FAQ: readonly FaqSection[] = [
         ],
         steps: [
           "Öffne „Mitglieder“ und klicke auf „Anträge“.",
-          "Klicke in der Karte „QR-Code zum Beitritt“ auf „QR-Code einrichten“ und danach auf „Aushang drucken“. Häng das Blatt im Verein auf oder teile den Link („Kopieren“).",
+          "Klicke in der Karte „QR-Code zum Beitritt“ auf „QR-Code einrichten“ und gib ein, wie viele neue Mitglieder sich darüber anmelden können (z. B. 50). Klicke danach auf „Aushang drucken“. Häng das Blatt im Verein auf oder teile den Link („Kopieren“).",
           "Wer den Code scannt, füllt am Handy einen kurzen Antrag aus. Du bekommst dazu eine Benachrichtigung.",
           "Prüfe den Antrag unter „Offene Anträge“ und klicke auf „Annehmen“ oder „Ablehnen“.",
         ],
-        tip: "Erst beim Annehmen wird die Person als Mitglied angelegt und bekommt eine Einladung per E-Mail (Rolle „Mitglied“) – vorher hat sie keinen Zugang, Chats, Termine und Dokumente bleiben geschützt. Beim Ablehnen bekommt sie keine E-Mail. Ist die Einladung abgelaufen, schick sie unter „Zuletzt entschieden“ mit „Einladung erneut senden“ noch einmal. „Neuen Code erzeugen“ macht den alten QR-Code ungültig (gedruckte Aushänge ersetzen), „Beitritt schließen“ stoppt neue Anträge. Entschiedene Anträge werden nach 30 Tagen gelöscht, offene nach 180 Tagen.",
+        tip: "Erst beim Annehmen wird die Person als Mitglied angelegt und bekommt eine Einladung per E-Mail (Rolle „Mitglied“) – vorher hat sie keinen Zugang, Chats, Termine und Dokumente bleiben geschützt. Beim Ablehnen bekommt sie keine E-Mail. Ist die Einladung abgelaufen, schick sie unter „Zuletzt entschieden“ mit „Einladung erneut senden“ noch einmal. Sind alle Plätze vergeben, nimmt der QR-Code keine Anträge mehr an – mit „Anzahl ändern“ lässt du weitere zu; abgelehnte Anträge geben ihren Platz zurück. „Neuen Code erzeugen“ macht den alten QR-Code ungültig (gedruckte Aushänge ersetzen) und beginnt wieder bei 0, „Beitritt schließen“ stoppt neue Anträge. Entschiedene Anträge werden nach 30 Tagen gelöscht, offene nach 180 Tagen.",
         link: { href: "/mitglieder/antraege", label: "Zu den Beitrittsanträgen" },
         keywords:
           "qr code aushang beitritt antrag mitgliedsantrag aufnahme neu werben scannen einladung erneut",

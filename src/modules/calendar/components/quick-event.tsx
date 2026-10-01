@@ -86,7 +86,7 @@ function QuickEventForm({
   const repeat = form.watch("repeat");
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
       {formError && (
         <div className="sm:col-span-2">
           <FormError message={formError} />
