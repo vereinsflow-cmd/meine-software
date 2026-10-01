@@ -21,6 +21,8 @@ export function Sparkline({
   values,
   variant = "line",
   highlight = "last",
+  nowFillClass = "fill-primary",
+  nowStrokeClass = "stroke-primary",
   className,
 }: {
   /** Werte in zeitlicher Reihenfolge, älteste zuerst. Unter zwei Werten gibt es nichts zu zeigen. */
@@ -28,6 +30,9 @@ export function Sparkline({
   variant?: "line" | "bar";
   /** Welcher Balken „jetzt“ ist und in der Markenfarbe steht – bei einem Blick nach vorn (kommende Wochen) der erste. */
   highlight?: "first" | "last";
+  /** Farbe des hervorgehobenen Werts – als Füllung (Balken) bzw. Strich (Punkt am Ende der Linie). */
+  nowFillClass?: string;
+  nowStrokeClass?: string;
   className?: string;
 }) {
   if (values.length < 2) return null;
@@ -56,7 +61,7 @@ export function Sparkline({
             rx={1}
             className={
               index === (highlight === "first" ? 0 : bars.length - 1)
-                ? "fill-primary"
+                ? nowFillClass
                 : "fill-current"
             }
           />
@@ -106,7 +111,7 @@ export function Sparkline({
         y1={last[1]}
         x2={last[0] + 0.001}
         y2={last[1]}
-        stroke="var(--primary)"
+        className={nowStrokeClass}
         strokeWidth="6"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"

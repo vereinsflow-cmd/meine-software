@@ -96,6 +96,7 @@ export default async function DashboardPage({
           ) : (
             <StatCard
               label="Ungelesen"
+              accent="blue" // Ungelesenes ist im ganzen Verein blau (Glocke, Punkt, „Neu“)
               value={notifications.unread}
               hint={notifications.unread === 1 ? "Benachrichtigung" : "Benachrichtigungen"}
               href="/benachrichtigungen"
