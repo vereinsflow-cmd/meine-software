@@ -42,6 +42,28 @@ export default function ImprintPage() {
         <h2 className="text-lg font-medium">Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)</h2>
         <p>[Name und Anschrift der verantwortlichen Person]</p>
       </section>
+      <section className="space-y-1">
+        <h2 className="text-lg font-medium">Verwendete Daten</h2>
+        <p>
+          Postleitzahlen und Ortsnamen (Ort automatisch ergänzen):{" "}
+          <a
+            href="https://www.geonames.org"
+            className="text-primary underline underline-offset-4"
+            rel="noreferrer"
+          >
+            GeoNames
+          </a>
+          , Lizenz{" "}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/deed.de"
+            className="text-primary underline underline-offset-4"
+            rel="noreferrer"
+          >
+            CC BY 4.0
+          </a>
+          , bereinigt.
+        </p>
+      </section>
     </article>
   );
 }

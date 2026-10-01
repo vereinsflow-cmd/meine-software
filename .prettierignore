@@ -11,6 +11,8 @@ prisma/migrations
 next-env.d.ts
 .next-e2e
 .next-leer
+# Erzeugt von scripts/build-postal-codes.mjs – bewusst kompakt in einer Zeile
+src/server/geo/postal-codes-de.json
 # Wird von Next.js automatisch angepasst (Typ-Ordner der Build-Verzeichnisse) – nicht formatieren.
 tsconfig.json
 # Die Werbe-Website ist eine eigenständige statische Seite mit eigenen Werkzeugen (siehe website/README.md).
