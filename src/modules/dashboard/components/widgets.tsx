@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ACCENT, type Accent } from "@/components/shared/accent";
+import { ACCENT, type Accent, KPI_ACCENT, type KpiAccent } from "@/components/shared/accent";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Sparkline } from "@/components/charts/sparkline";
 import { CompactEmpty as Empty } from "@/components/shared/compact-empty";
@@ -82,6 +82,7 @@ const COMPARE_TEXT_COLOR: Record<Tone, string> = {
 
 export function StatCard({
   label,
+  accent,
   value,
   hint,
   compare,
@@ -94,6 +95,8 @@ export function StatCard({
   progress,
 }: {
   label: string;
+  /** Farbe des Bereichs (Mitglieder blau, Termine violett, Helferplätze grün, Stunden bernstein). */
+  accent: KpiAccent;
   value: React.ReactNode;
   hint?: React.ReactNode;
   /** Kurzer Vergleich zum Vormonat/zur letzten Woche o. Ä. („+3 gegenüber dem Vormonat“); farbig nach `tone`. */
@@ -113,12 +116,18 @@ export function StatCard({
   const ratio =
     progress && progress.total > 0 ? Math.min(1, progress.value / progress.total) : null;
   const tone = ratio !== null ? staffingTone(ratio) : null;
+  const colors = KPI_ACCENT[accent];
   const body = (
+    // Jede Karte in der Farbe ihres Bereichs: zart getönter Grund, farbiger Rand, kräftiges Symbol, farbige Mini-Grafik.
     <Card
       className={cn(
         "h-full gap-0 py-0",
+        colors.surface,
         href &&
-          "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+          cn(
+            "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+            colors.hover,
+          ),
       )}
     >
       {/* Spalte über die volle Kartenhöhe: Die Mini-Grafik rückt an den unteren Rand (`mt-auto`), damit sie bei allen
@@ -129,12 +138,10 @@ export function StatCard({
         <div className="flex items-start gap-2">
           <div
             className={cn(
-              // Alle Kennzahlenkarten teilen sich denselben, zurückhaltenden Symbolstil (kein Regenbogen aus
-              // Blau/Lila/Grün/Gelb) – die Markenfarbe bleibt Aktionen vorbehalten und erscheint hier nur beim
-              // Überfahren, als Zugabe zum Anheben der ganzen Karte.
-              "flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground [&_svg]:size-4",
+              "flex size-7 shrink-0 items-center justify-center rounded-lg shadow-sm [&_svg]:size-4",
+              colors.tile,
               href &&
-                "transition-[transform,background-color,color] duration-200 group-hover/card:scale-110 group-hover/card:bg-primary/10 group-hover/card:text-primary motion-reduce:transition-none",
+                "transition-transform duration-200 group-hover/card:scale-110 motion-reduce:transition-none",
             )}
             aria-hidden="true"
           >
@@ -160,7 +167,14 @@ export function StatCard({
           <div className="mt-auto pt-1.5">
             <div className="flex h-8 items-center motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in">
               {trend && trend.length > 1 ? (
-                <Sparkline values={trend} variant={trendVariant} highlight={trendHighlight} />
+                <Sparkline
+                  values={trend}
+                  variant={trendVariant}
+                  highlight={trendHighlight}
+                  className={colors.spark}
+                  nowFillClass={colors.sparkNowFill}
+                  nowStrokeClass={colors.sparkNowStroke}
+                />
               ) : ratio !== null ? (
                 <div
                   aria-hidden="true"
@@ -816,6 +830,7 @@ export function MembersStat({ members }: { members: NonNullable<DashboardData["m
   return (
     <StatCard
       label={members.scope === "CLUB" ? "Mitglieder" : "Mitglieder (deine Abteilung)"}
+      accent="blue"
       value={members.total}
       compare={memberCompare(members.trend) ?? undefined}
       href="/mitglieder"
@@ -830,6 +845,7 @@ export function NextEventsStat({ events }: { events: NonNullable<DashboardData["
   return (
     <StatCard
       label="Termine in 30 Tagen"
+      accent="violet"
       value={events.countNext30Days}
       compare={
         nextEventCompare(events.nextInDays) ?? {
@@ -856,6 +872,7 @@ export function FreeShiftsStat({ shifts }: { shifts: NonNullable<DashboardData["
   return (
     <StatCard
       label="Freie Helferplätze"
+      accent="emerald"
       value={shifts.freeSpots}
       compare={staffingCompare(shifts.staffing.filled, shifts.staffing.required)}
       href="/helferplanung"
@@ -876,6 +893,7 @@ export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shift
       label={
         hours.scope === "ALL" ? `Helferstunden ${hours.year}` : `Meine Helferstunden ${hours.year}`
       }
+      accent="amber"
       value={compactHours(hours.minutes)}
       compare={hoursCompare(hours.trend) ?? undefined}
       href="/helferplanung/stunden"
