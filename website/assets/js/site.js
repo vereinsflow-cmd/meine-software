@@ -26,6 +26,12 @@
     nav.addEventListener("click", (event) => {
       if (event.target instanceof Element && event.target.closest("a")) setOpen(false);
     });
+    // Tipp neben das Menü (auf die Abdunkelung darunter) schließt es
+    document.addEventListener("click", (event) => {
+      if (isOpen() && event.target instanceof Node && !nav.contains(event.target) && !toggle.contains(event.target)) {
+        setOpen(false);
+      }
+    });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && isOpen()) {
         setOpen(false);
@@ -54,6 +60,37 @@
       },
       { passive: true },
     );
+  }
+
+  // Kopieren der E-Mail-Adresse im Kontaktbereich (für Webmail, wenn sich beim Klick kein E-Mail-Programm öffnet). Der
+  // Knopf ist im HTML versteckt und erscheint nur, wenn der Browser die Zwischenablage anbietet (sichere Verbindung).
+  for (const button of document.querySelectorAll("[data-copy]")) {
+    if (!navigator.clipboard?.writeText) continue;
+    button.hidden = false;
+    const label = button.querySelector(".copy-label");
+    const status = button.parentElement?.querySelector(".copy-status");
+    const idle = label?.textContent ?? "";
+    let timer = 0;
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy ?? "");
+      } catch {
+        // Zwischenablage verweigert: Adresse markieren, dann genügt Strg+C bzw. ⌘C
+        const address = button.parentElement?.querySelector('a[href^="mailto:"]');
+        if (address) window.getSelection()?.selectAllChildren(address);
+        if (status) status.textContent = "Kopieren hat nicht geklappt – die Adresse ist markiert.";
+        return;
+      }
+      button.classList.add("is-done");
+      if (label) label.textContent = "Kopiert";
+      if (status) status.textContent = "E-Mail-Adresse kopiert.";
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        button.classList.remove("is-done");
+        if (label) label.textContent = idle;
+        if (status) status.textContent = "";
+      }, 2400);
+    });
   }
 
   // Bildschirmfotos: ruhiger Platzhalter, bis das Bild da ist; danach blendet es weich ein. Bereits geladene Bilder
@@ -114,7 +151,7 @@
       steps: [
         ["frame", 1], ["wait", 900], ["keys", true], ["wait", 650], ["frame", 2], ["wait", 400], ["keys", false], ["wait", 600],
         ["frame", 3, 90], ["wait", 280], ["frame", 4, 90], ["wait", 280], ["frame", 0, 90], ["wait", 900],
-        ["show"], ["move", "37.07% 33.59%", 1000], ["frame", 5, 150], ["wait", 1900],
+        ["show"], ["move", "32.2% 33.76%", 1000], ["frame", 5, 150], ["wait", 1900],
         ["frame", 0, 150], ["move", "72% 90%", 900], ["hide"], ["wait", 900],
       ],
     },
@@ -128,13 +165,13 @@
         ["move", "45% 82%", 1000], ["hide"], ["wait", 900],
       ],
     },
-    // Kalender: Wochenansicht und zurück zum Monat
+    // Kalender: Monat als Liste und zurück zum Monat
     veranstaltungen: {
       rest: "58% 86%",
       steps: [
         ["frame", 0], ["show"], ["wait", 900],
-        ["move", "80.26% 29.81%", 1100], ["frame", 1, 150], ["wait", 400], ["click"], ["frame", 2], ["wait", 2300],
-        ["move", "72.08% 29.81%", 700], ["frame", 3, 150], ["wait", 400], ["click"], ["frame", 0], ["wait", 900],
+        ["move", "93.72% 29.81%", 1100], ["frame", 1, 150], ["wait", 400], ["click"], ["frame", 2], ["wait", 2300],
+        ["move", "72.08% 29.81%", 900], ["frame", 3, 150], ["wait", 400], ["click"], ["frame", 0], ["wait", 900],
         ["move", "58% 86%", 900], ["hide"], ["wait", 900],
       ],
     },
@@ -143,9 +180,9 @@
       rest: "62% 88%",
       steps: [
         ["frame", 0], ["show"], ["wait", 900],
-        ["move", "46.71% 34.92%", 1000], ["click"], ["frame", 1], ["wait", 1900],
-        ["move", "57.35% 34.92%", 650], ["click"], ["frame", 2], ["wait", 1900],
-        ["move", "36.84% 34.92%", 850], ["click"], ["frame", 0], ["wait", 1300],
+        ["move", "46.71% 34.97%", 1000], ["click"], ["frame", 1], ["wait", 1900],
+        ["move", "57.35% 34.97%", 650], ["click"], ["frame", 2], ["wait", 1900],
+        ["move", "36.84% 34.97%", 850], ["click"], ["frame", 0], ["wait", 1300],
         ["move", "62% 88%", 900], ["hide"], ["wait", 900],
       ],
     },
@@ -270,7 +307,8 @@
     }
   }
 
-  // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da)
+  // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da).
+  // Am Ende steht die Endzahl wieder in ihrer natürlichen Breite (die vorgehaltene Breite entfällt).
   const armed = new Set();
   const countUp = (element) => {
     const target = Number(element.dataset.count);
@@ -280,6 +318,7 @@
       const progress = Math.min(1, (now - start) / duration);
       element.textContent = String(Math.round(target * (1 - (1 - progress) ** 3)));
       if (progress < 1) requestAnimationFrame(frame);
+      else element.style.removeProperty("min-width");
     };
     requestAnimationFrame(frame);
   };
@@ -323,23 +362,25 @@
     for (const element of items) {
       const box = element.getBoundingClientRect();
       if (box.top > limit || box.bottom < 0) {
-        hide(element, box.bottom < 0);
         for (const counter of element.querySelectorAll(".count")) {
-          // Breite der Endzahl vorhalten, damit beim Hochzählen nichts springt
-          counter.style.setProperty("min-width", `${counter.textContent.trim().length}ch`);
+          // Breite der Endzahl vorhalten (gemessen, bevor das Ausblenden sie verkleinert – nicht in ch: die Ziffern sind
+          // verschieden breit und enger gesetzt), damit beim Hochzählen nichts springt
+          counter.style.setProperty("min-width", `${counter.getBoundingClientRect().width}px`);
           counter.textContent = "0";
           armed.add(counter);
         }
+        hide(element, box.bottom < 0);
       }
       observer.observe(element);
     }
   }
 
-  // Slider (Funktionen immer, Rollen und Sicherheit nur auf dem Smartphone – .slider-phone): Die Karten stehen in einer
-  // waagerechten Reihe (site.css), die man wischt oder mit den Pfeilen bzw. Pfeiltasten blättert – jeweils eine Karte
-  // weiter, weich gleitend (bei reduzierter Bewegung sofort). Karten, die nicht ganz im Bild stehen, werden blass
+  // Slider (Funktionen, nur auf dem Smartphone – .slider-phone; ohne die Klasse liefe er auf allen Breiten): Die Karten
+  // stehen in einer waagerechten Reihe (site.css), die man wischt oder mit den Pfeilen bzw. Pfeiltasten blättert – jeweils
+  // eine Karte weiter, weich gleitend (bei reduzierter Bewegung sofort). Karten, die nicht ganz im Bild stehen, werden blass
   // (.is-dim); ein Klick darauf holt sie herein. Am Anfang bzw. Ende sind die Pfeile ohne Wirkung (aria-disabled – so
-  // bleibt der Fokus auf ihnen). Eine unsichtbare Zeile sagt Screenreadern nach dem Blättern, welche Karten zu sehen sind.
+  // bleibt der Fokus auf ihnen). Ein Zähler zwischen den Pfeilen zeigt die Stelle („2 von 12“, .slider-count); eine
+  // unsichtbare Zeile sagt Screenreadern nach dem Blättern, welche Karten zu sehen sind.
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const phone = window.matchMedia("(max-width: 599px)");
   for (const slider of document.querySelectorAll(".slider")) {
@@ -350,6 +391,7 @@
     const cards = [...track.children];
     const bar = slider.querySelector(".slider-progress span");
     const status = slider.querySelector(".slider-status");
+    const count = slider.querySelector(".slider-count");
     const name = slider.dataset.sliderName ?? "Karten";
     let active = false;
     let pad = 0; // Innenabstand der Reihe = Abstand der Karten vom Rand des sichtbaren Bereichs (--bleed)
@@ -381,9 +423,10 @@
     };
     let spoken = "";
     let interacted = false; // erst nach dem ersten Blättern ansagen, nicht schon beim Laden
+    const position = () => (first === last ? `${first + 1} von ${cards.length}` : `${first + 1} bis ${last + 1} von ${cards.length}`);
     const announce = () => {
       if (!status || !interacted || !active) return;
-      const text = first === last ? `${first + 1} von ${cards.length}` : `${first + 1} bis ${last + 1} von ${cards.length}`;
+      const text = position();
       if (text !== spoken) status.textContent = spoken = `${name} ${text}`;
     };
     let queued = false;
@@ -408,6 +451,7 @@
         }
       });
       first = Math.max(0, seenFirst);
+      if (count) count.textContent = position();
       const max = total - width;
       prevButton.setAttribute("aria-disabled", String(left <= 1));
       nextButton.setAttribute("aria-disabled", String(left >= max - 1));
