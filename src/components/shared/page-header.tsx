@@ -12,12 +12,15 @@ export function PageHeader({
   title,
   description,
   actions,
+  actionsClassName,
   className,
   inline = false,
 }: {
   title: string;
   description?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Zusätzliche Klassen für die Zeile der Aktionen (z. B. am Handy als Raster). */
+  actionsClassName?: string;
   className?: string;
   inline?: boolean;
 }) {
@@ -51,7 +54,9 @@ export function PageHeader({
           </p>
         )}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{actions}</div>
+      )}
     </div>
   );
 }

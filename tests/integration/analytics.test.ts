@@ -131,7 +131,7 @@ describe("Auswertungen: Mitglieder", () => {
     const status = datasetOf<DistributionDataset>(data, "members", "members-status");
     // aktuell, ohne Archiv und Papierkorb: vier Konten + A + B + D aktiv, C ausgetreten
     expect(slicesById(status)).toEqual({ ACTIVE: 4 + 3, LEFT: 1 });
-    expect(status.views.ALL!.map((slice) => slice.slot)).toEqual([1, 4]); // feste Farbposition je Status
+    expect(status.views.ALL!.map((slice) => slice.slot)).toEqual([1, 0]); // feste Farbposition je Status (Ausgetreten: Grau)
     expect(status.types).toEqual(["donut", "bar"]);
   });
 

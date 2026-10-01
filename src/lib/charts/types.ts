@@ -54,6 +54,11 @@ export interface TimeDataset {
   views: Partial<Record<Granularity, TimeSeriesView>>;
   types: TimeChartType[];
   defaultType: TimeChartType;
+  /**
+   * Was die Werte sind – für die Kennzahlen über dem Diagramm: `sum` = Mengen je Zeitraum (Veranstaltungen, Stunden:
+   * „Gesamt“ zählt zusammen), `last` = Bestand am Ende des Zeitraums (Mitglieder: „Aktuell“ und die Veränderung).
+   */
+  aggregate: "sum" | "last";
   /** Hinweis unter dem Diagramm, z. B. was nicht gezählt wird. */
   note?: string;
 }
@@ -62,7 +67,7 @@ export interface DistributionSlice {
   id: string;
   label: string;
   value: number;
-  /** Feste Farbposition (1–6) dieser Kategorie: Die Farbe hängt an der Kategorie, nicht an ihrem Rang. */
+  /** Feste Farbposition (1–6, 0 = neutrales Grau) dieser Kategorie: Die Farbe hängt an der Kategorie, nicht an ihrem Rang. */
   slot: number;
 }
 

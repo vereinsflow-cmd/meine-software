@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ToggleGroup } from "radix-ui";
 import { cn } from "@/lib/utils";
-import { SEGMENT_BAR } from "./segment-styles";
+import { SEGMENT_BAR, SEGMENT_ITEM, SEGMENT_ITEM_ON } from "./segment-styles";
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -22,6 +22,7 @@ export function SegmentedControl<T extends string>({
   onValueChange,
   options,
   label,
+  stretch = false,
   className,
 }: {
   value: T;
@@ -29,6 +30,11 @@ export function SegmentedControl<T extends string>({
   options: readonly SegmentOption<T>[];
   /** Name der Gruppe für Screenreader, z. B. „Diagrammtyp“. */
   label: string;
+  /**
+   * Auf dem Handy über die volle Breite mit gleich breiten, 36 px hohen Einträgen (ab vier Einträgen zwei Spalten) –
+   * statt einer Leiste, die irgendwo umbricht.
+   */
+  stretch?: boolean;
   className?: string;
 }) {
   return (
@@ -39,17 +45,21 @@ export function SegmentedControl<T extends string>({
         if (next) onValueChange(next as T); // leerer Wert = Klick auf die schon gewählte Option: ignorieren
       }}
       aria-label={label}
-      className={cn(SEGMENT_BAR, className)}
+      className={cn(
+        SEGMENT_BAR,
+        stretch &&
+          (options.length > 3
+            ? "max-sm:grid max-sm:w-full max-sm:grid-cols-2"
+            : "max-sm:flex max-sm:w-full"),
+        className,
+      )}
     >
       {options.map((option) => (
         <ToggleGroup.Item
           key={option.value}
           value={option.value}
           aria-label={option.ariaLabel}
-          className={cn(
-            "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none [&_svg]:size-4 [&_svg]:shrink-0",
-            "data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm dark:data-[state=on]:bg-secondary",
-          )}
+          className={cn(SEGMENT_ITEM, SEGMENT_ITEM_ON, stretch && "max-sm:h-9 max-sm:flex-1")}
         >
           {option.icon}
           {option.label}

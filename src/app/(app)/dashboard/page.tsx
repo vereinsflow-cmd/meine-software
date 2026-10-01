@@ -51,6 +51,7 @@ import {
   type DashboardTabId,
 } from "@/modules/dashboard/tabs";
 import { can } from "@/server/permissions/policy";
+import { cn } from "@/lib/utils";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -169,16 +170,38 @@ export default async function DashboardPage({
       );
     }
     const seen = new Set<string>();
+    const segments = segmentBlocks(tab, shown);
+    // Eine einzelne Liste (z. B. Geburtstage) und die Auswertungen: ab 1280 px nebeneinander – Liste ein Drittel, Diagramm
+    // zwei Drittel –, statt eine fast leere, breite Karte über einem Diagramm. Gibt es keine Auswertung (Rolle), wird der
+    // Platz nicht leer gehalten (`has-[…:empty]`).
+    const pair =
+      segments.length === 2 &&
+      segments.some((segment) => segment.kind === "single" && segment.id === "auswertungen") &&
+      segments.every((segment) => segment.kind === "single" || segment.ids.length === 1);
     return (
-      <div className="grid gap-10">
-        {segmentBlocks(tab, shown).map((segment, index) => {
+      <div
+        className={cn(
+          "grid gap-10",
+          pair &&
+            "xl:grid-cols-3 xl:items-start xl:gap-7 xl:has-[>[data-analytics]:empty]:grid-cols-1",
+        )}
+      >
+        {segments.map((segment, index) => {
           if (segment.kind === "single") {
-            return <Fragment key={segment.id}>{available[segment.id]}</Fragment>;
+            const content = <Fragment key={segment.id}>{available[segment.id]}</Fragment>;
+            return pair ? (
+              // Oben bündig mit der Karte daneben (die steht unter einer Gruppenüberschrift)
+              <div key={segment.id} data-analytics="" className="min-w-0 xl:col-span-2 xl:pt-9">
+                {content}
+              </div>
+            ) : (
+              content
+            );
           }
           // Die erste Gruppe behält ihre bekannte Kennung (z. B. „g-fuer-dich“); kommt sie ein zweites Mal vor, eine eigene.
           const id = seen.has(segment.group) ? `g-${segment.group}-${index}` : `g-${segment.group}`;
           seen.add(segment.group);
-          return (
+          const group = (
             <Group key={`${segment.group}-${index}`} id={id} title={GROUP_TITLE[segment.group]}>
               <CardGrid>
                 {segment.ids.map((blockId) => (
@@ -186,6 +209,13 @@ export default async function DashboardPage({
                 ))}
               </CardGrid>
             </Group>
+          );
+          return pair ? (
+            <div key={`${segment.group}-${index}`} className="min-w-0">
+              {group}
+            </div>
+          ) : (
+            group
           );
         })}
       </div>
@@ -219,6 +249,8 @@ export default async function DashboardPage({
         inline
         title={`Willkommen, ${ctx.user.firstName}!`}
         description={ctx.roleName}
+        // Am Handy: die Hauptaktion über die volle Breite, die übrigen gleich breit daneben – statt eines Umbruchs irgendwo.
+        actionsClassName="max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
         actions={
           <>
             {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten. */}

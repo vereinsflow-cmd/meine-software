@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useId, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { seriesColor } from "@/lib/charts/colors";
 import {
   areaPath,
   formatNumber,
@@ -22,13 +23,21 @@ const TYPE_LABEL: Record<TimeChartType, string> = {
   area: "Flächendiagramm",
 };
 
-const MARGIN = { top: 26, right: 14, bottom: 30 };
-/** Balken sind höchstens 24 px breit (der Rest der Spalte bleibt Luft), Lücke zwischen zwei Balken einer Gruppe: 2 px. */
-const BAR_MAX = 24;
+const MARGIN = { top: 26, right: 14 };
+/** Unterer Rand: eine Zeile Beschriftung (Wochen, Jahre) oder zwei (Monat/Quartal und darunter das Jahr). */
+const BOTTOM = { oneLine: 30, twoLines: 46 };
+/**
+ * Balken: bei einer Reihe höchstens 40 px breit (sonst wirken wenige Werte verloren), bei mehreren je 24 px; der Rest der
+ * Spalte bleibt Luft. Lücke zwischen zwei Balken einer Gruppe: 2 px.
+ */
+const BAR_MAX = { single: 40, multi: 24 };
 const BAR_GAP = 2;
+/** Bis zu so vielen Balken mit Wert steht jeder Wert direkt am Balken – darüber nur der aktuelle und der höchste. */
+const LABEL_ALL_UP_TO = 8;
 
-/** Farbe der n-ten Reihe: feste Reihenfolge der Palette (globals.css), nie zyklisch – mehr als 6 Reihen gibt es nicht. */
-const colorOf = (index: number) => `var(--chart-${Math.min(index, 5) + 1})`;
+const colorOf = seriesColor;
+/** Monate („Sep 26“) und Quartale („Q3 26“): oben Monat bzw. Quartal, darunter das Jahr – nur dort, wo es wechselt. */
+const TWO_LINE_KEY = /^\d{4}-(\d{2}|Q\d)$/;
 
 /** Oben abgerundeter Balken (Radius 4 px), unten bündig auf der Grundlinie. */
 function barPath(x: number, width: number, top: number, baseline: number): string {
@@ -67,8 +76,15 @@ export function TimeChart({
 }) {
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const hatchId = (seriesIndex: number) => `${uid}-laufend-${seriesIndex}`;
 
   const count = buckets.length;
+  const twoLines = count > 0 && buckets.every((bucket) => TWO_LINE_KEY.test(bucket.key));
+  const mainLabel = (bucket: BucketLabel) =>
+    twoLines ? (bucket.label.split(" ")[0] ?? bucket.label) : bucket.label;
+  const yearOf = (bucket: BucketLabel) => bucket.key.slice(0, 4);
+  const marginBottom = twoLines ? BOTTOM.twoLines : BOTTOM.oneLine;
   const height = width < 520 ? 240 : 300;
   const max = Math.max(0, ...values.flat());
   const scale = niceScale(max, 4, unit.decimals === 0);
@@ -78,16 +94,37 @@ export function TimeChart({
   const tickText = scale.ticks.map((tick) => formatNumber(tick, tickDecimals));
   const left = Math.max(...tickText.map((text) => text.length)) * 7.6 + 16;
   const plotWidth = Math.max(0, width - left - MARGIN.right);
-  const baseline = height - MARGIN.bottom;
+  const baseline = height - marginBottom;
   const y = linearScale([0, scale.max], [baseline, MARGIN.top]);
   const band = count > 0 ? plotWidth / count : 0;
   const centers = buckets.map((_, index) => left + band * (index + 0.5));
   const stride = labelStride(
     count,
     plotWidth,
-    Math.max(...buckets.map((bucket) => bucket.label.length)) * 7 + 12,
+    Math.max(...buckets.map((bucket) => mainLabel(bucket).length)) * 7 + 12,
   );
   const single = series.length === 1;
+  // Welche Zeiträume eine Beschriftung tragen (der laufende immer) – und wo darunter das Jahr steht.
+  const labelled = buckets.map((_, index) => (count - 1 - index) % stride === 0);
+  const showYear = buckets.map((bucket, index) => {
+    if (!twoLines || !labelled[index]) return false;
+    const previous = buckets.findLast((_, before) => before < index && labelled[before]);
+    return !previous || yearOf(previous) !== yearOf(bucket);
+  });
+
+  // Direkte Werte (nur bei einer Reihe): bei wenigen Balken jeder Wert, sonst der aktuelle und der höchste.
+  const directLabels = new Set<number>();
+  if (single && count > 0) {
+    const row = values[0]!;
+    const filled = row.flatMap((value, index) => (value > 0 ? [index] : []));
+    if (type === "bar" && filled.length <= LABEL_ALL_UP_TO && band >= 22) {
+      filled.forEach((index) => directLabels.add(index));
+    } else {
+      directLabels.add(count - 1);
+      const peak = row.indexOf(Math.max(...row));
+      if (row[peak]! > 0) directLabels.add(peak);
+    }
+  }
 
   // Zusammenfassung für Screenreader: Art, Thema, Zeitraum und der Höchstwert.
   let peakSeries = 0;
@@ -205,41 +242,88 @@ export function TimeChart({
             </g>
           ))}
 
-          {/* x-Achse: so viele Beschriftungen, wie nebeneinander passen; der laufende Zeitraum ist immer beschriftet. */}
-          {buckets.map((bucket, index) =>
-            (count - 1 - index) % stride === 0 ? (
-              <text
-                key={bucket.key}
-                x={centers[index]}
-                y={height - 8}
-                textAnchor="middle"
-                className={cn(
-                  "text-xs",
-                  index === active ? "fill-foreground font-semibold" : "fill-muted-foreground",
-                )}
+          {/* Schraffur für den laufenden Zeitraum: kräftige Streifen in der Reihenfarbe – „noch nicht fertig“, aber nicht blass. */}
+          <defs>
+            {series.map((_, seriesIndex) => (
+              <pattern
+                key={seriesIndex}
+                id={hatchId(seriesIndex)}
+                width={6}
+                height={6}
+                patternUnits="userSpaceOnUse"
+                patternTransform="rotate(45)"
               >
-                {bucket.label}
-              </text>
+                <rect width={6} height={6} fill={colorOf(seriesIndex)} fillOpacity={0.3} />
+                <rect width={2.5} height={6} fill={colorOf(seriesIndex)} />
+              </pattern>
+            ))}
+          </defs>
+
+          {/* x-Achse: so viele Beschriftungen, wie nebeneinander passen; der laufende Zeitraum ist immer beschriftet. Bei
+              Monaten und Quartalen steht das Jahr in einer zweiten Zeile – nur am Anfang und dort, wo es wechselt. */}
+          {buckets.map((bucket, index) =>
+            labelled[index] ? (
+              <g key={bucket.key}>
+                <text
+                  x={centers[index]}
+                  y={baseline + 18}
+                  textAnchor="middle"
+                  className={cn(
+                    "text-xs",
+                    index === active ? "fill-foreground font-semibold" : "fill-muted-foreground",
+                  )}
+                >
+                  {mainLabel(bucket)}
+                </text>
+                {showYear[index] && (
+                  <text
+                    x={centers[index]}
+                    y={baseline + 35}
+                    textAnchor="middle"
+                    className="fill-muted-foreground text-xs tabular-nums"
+                  >
+                    {yearOf(bucket)}
+                  </text>
+                )}
+              </g>
             ) : null,
           )}
 
-          {/* Balken: höchstens 24 px breit, oben 4 px gerundet, unten bündig; der laufende Zeitraum ist blasser. */}
+          {/* Balken: oben 4 px gerundet, unten bündig. Der laufende Zeitraum ist schraffiert mit kräftigem Rand; eine gemessene
+              0 ist ein flacher Strich auf der Grundlinie (sonst sähe „0“ aus wie „keine Daten“). */}
           {type === "bar" &&
             series.map((_, seriesIndex) => {
+              const barMax = single ? BAR_MAX.single : BAR_MAX.multi;
               const group = Math.min(
-                BAR_MAX * series.length + BAR_GAP * (series.length - 1),
+                barMax * series.length + BAR_GAP * (series.length - 1),
                 band * 0.7,
               );
               const barWidth = Math.max(2, (group - BAR_GAP * (series.length - 1)) / series.length);
               return values[seriesIndex]!.map((value, index) => {
-                if (value <= 0) return null;
                 const x = centers[index]! - group / 2 + seriesIndex * (barWidth + BAR_GAP);
+                const key = `${seriesIndex}-${buckets[index]!.key}`;
+                if (value <= 0) {
+                  return (
+                    <rect
+                      key={key}
+                      x={x}
+                      y={baseline - 2}
+                      width={barWidth}
+                      height={2}
+                      rx={1}
+                      fill={colorOf(seriesIndex)}
+                      opacity={0.3}
+                    />
+                  );
+                }
+                const partial = buckets[index]!.partial;
                 return (
                   <path
-                    key={`${seriesIndex}-${buckets[index]!.key}`}
+                    key={key}
                     d={barPath(x, barWidth, y(value), baseline)}
-                    fill={colorOf(seriesIndex)}
-                    opacity={buckets[index]!.partial ? 0.6 : 1}
+                    fill={partial ? `url(#${hatchId(seriesIndex)})` : colorOf(seriesIndex)}
+                    stroke={partial ? colorOf(seriesIndex) : undefined}
+                    strokeWidth={partial ? 1.25 : undefined}
                   />
                 );
               });
@@ -251,6 +335,9 @@ export function TimeChart({
               const points = values[seriesIndex]!.map(
                 (value, index) => [centers[index]!, y(value)] as const,
               );
+              // Der Weg zum laufenden Zeitraum ist gestrichelt – sein Wert kann sich noch ändern.
+              const partialEnd = count >= 2 && buckets[count - 1]!.partial;
+              const solid = partialEnd ? points.slice(0, -1) : points;
               return (
                 <g key={seriesIndex}>
                   {type === "area" && (
@@ -261,13 +348,23 @@ export function TimeChart({
                     />
                   )}
                   <path
-                    d={linePath(points)}
+                    d={linePath(solid)}
                     fill="none"
                     stroke={colorOf(seriesIndex)}
                     strokeWidth={2}
                     strokeLinejoin="round"
                     strokeLinecap="round"
                   />
+                  {partialEnd && (
+                    <path
+                      d={linePath(points.slice(-2))}
+                      fill="none"
+                      stroke={colorOf(seriesIndex)}
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                      strokeLinecap="round"
+                    />
+                  )}
                 </g>
               );
             })}
@@ -303,17 +400,18 @@ export function TimeChart({
               }),
             )}
 
-          {/* Direkte Beschriftung sparsam: bei einer Reihe nur der aktuelle (letzte) Wert. */}
-          {single && count > 0 && (
+          {/* Direkte Beschriftung (nur bei einer Reihe): siehe `directLabels`. */}
+          {[...directLabels].map((index) => (
             <text
-              x={centers[count - 1]}
-              y={y(values[0]![count - 1]!) - (type === "bar" ? 6 : 12)}
+              key={`wert-${buckets[index]!.key}`}
+              x={centers[index]}
+              y={y(values[0]![index]!) - (type === "bar" ? 6 : 12)}
               textAnchor="middle"
               className="fill-foreground text-xs font-semibold tabular-nums"
             >
-              {formatNumber(values[0]![count - 1]!, unit.decimals)}
+              {formatNumber(values[0]![index]!, unit.decimals)}
             </text>
-          )}
+          ))}
         </svg>
       )}
 

@@ -36,6 +36,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-chart-neutral: var(--chart-neutral);
   --color-ring: var(--ring);
   --color-field: var(--field-border);
   --color-input: var(--input);
@@ -121,6 +122,8 @@
   --chart-4: #eda100;
   --chart-5: #e87ba4;
   --chart-6: #008300;
+  /* Neutrales Grau für Beendetes/„Sonstiges“ (Ausgetreten) – ≥ 3:1 gegen die weiße Karte */
+  --chart-neutral: oklch(0.6 0.012 258);
   --chart-grid: oklch(0.93 0 0);
   --chart-axis: oklch(0.8 0 0);
   --radius: 0.625rem;
@@ -192,6 +195,7 @@
   --chart-4: #c98500;
   --chart-5: #d55181;
   --chart-6: #008300;
+  --chart-neutral: oklch(0.62 0.012 258);
   --chart-grid: oklch(1 0 0 / 8%);
   --chart-axis: oklch(1 0 0 / 22%);
   --sidebar: oklch(0.185 0.03 258);
