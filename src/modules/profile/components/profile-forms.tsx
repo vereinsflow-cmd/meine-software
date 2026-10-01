@@ -32,7 +32,12 @@ export function ProfileNameForm({ firstName, lastName }: { firstName: string; la
     onSuccess: () => router.refresh(),
   });
   return (
-    <form onSubmit={onSubmit} noValidate className="grid max-w-xl gap-4 sm:grid-cols-2">
+    <form
+      method="post"
+      onSubmit={onSubmit}
+      noValidate
+      className="grid max-w-xl gap-4 sm:grid-cols-2"
+    >
       <div className="sm:col-span-2">
         <FormError message={formError} />
       </div>
@@ -96,7 +101,7 @@ export function ChangePasswordForm() {
     resetOnSuccess: true,
   });
   return (
-    <form onSubmit={onSubmit} noValidate className="grid max-w-md gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid max-w-md gap-4">
       <FormError message={formError} />
       <TextField
         form={form}

@@ -48,7 +48,7 @@ export function CreateClubDialog() {
             E-Mail.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <TextField form={form} name="name" label="Vereinsname" required />
           <TextField

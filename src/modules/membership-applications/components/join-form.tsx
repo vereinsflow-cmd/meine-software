@@ -96,7 +96,7 @@ export function JoinApplicationCard({
             </p>
           </div>
         ) : (
-          <form onSubmit={onSubmit} noValidate className="relative grid gap-4">
+          <form method="post" onSubmit={onSubmit} noValidate className="relative grid gap-4">
             <p className="text-sm text-muted-foreground">
               Pflichtfelder sind mit <span aria-hidden="true">*</span>
               <span className="sr-only">Stern</span> markiert.

@@ -37,6 +37,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "member.join_link_created": "QR-Code zum Beitritt eingerichtet",
   "member.join_link_renewed": "QR-Code zum Beitritt erneuert",
   "member.join_link_closed": "Beitritt per QR-Code geschlossen",
+  "member.join_limit_changed": "Anzahl der Anmeldungen über den QR-Code geändert",
   "members.imported": "Mitglieder importiert",
   "members.exported": "Mitglieder exportiert",
   "department.created": "Abteilung angelegt",

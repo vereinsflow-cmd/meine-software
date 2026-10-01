@@ -74,6 +74,11 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
   kein `users:invite`, wenn die Einladung nicht verschickt werden konnte oder nach 7 Tagen abgelaufen ist.
 - **Erneuern und schließen.** „Neuen Code erzeugen“ ersetzt den Schlüssel sofort – alte Aushänge und bereits geöffnete Formulare
   werden abgewiesen. „Beitritt schließen“ leert ihn; offene Anträge bleiben.
+- **Begrenzte Plätze.** Jeder Code nimmt nur so viele Anträge an, wie der Verein beim Einrichten festlegt (`joinLimit`, gezählt in
+  `joinUsed`). Belegt wird unter einer Sperre je Verein (`pg_advisory_xact_lock`) mit erneuter Prüfung von Schlüssel und freien
+  Plätzen – auch gleichzeitige Anträge überschreiten die Grenze nie. Honigtopf-Treffer zählen nicht; abgelehnte Anträge geben ihren
+  Platz zurück, aber nur, wenn sie über den aktuellen Code kamen (`MembershipApplication.joinLinkCreatedAt`). Öffentlich ist nur
+  „voll oder nicht“ – keine Zahlen.
 - **Missbrauch:** Zod-Prüfung aller Felder (Längen wie die Datenbank-CHECKs), Einwilligung Pflicht, gewünschte Abteilung nur aus
   diesem Verein. **Honigtopf**-Feld `website` (unsichtbar, nicht fokussierbar): ausgefüllt → vorgetäuschter Erfolg, nichts gespeichert.
   **Rate-Limits:** 5 Anträge je Anschluss und Stunde (IPv4-Adresse bzw. IPv6-/64-Netz; zählt auch Roboter im Honigtopf), 30 je

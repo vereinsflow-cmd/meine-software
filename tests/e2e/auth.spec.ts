@@ -70,6 +70,21 @@ test.describe("Anmeldung und Zugriffsschutz", () => {
     await expect(page.getByText("Link ungültig oder abgelaufen")).toBeVisible();
   });
 
+  test("vor dem Laden abgeschickt (ohne JavaScript): das Passwort landet nie in der Adresse", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/anmelden");
+    await page.getByLabel("E-Mail-Adresse").fill("niemand@example.org");
+    await page.locator('input[name="password"]').fill("Geheim-und-lang-genug-2026");
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await page.waitForLoadState("load");
+    expect(page.url()).not.toContain("Geheim");
+    expect(page.url()).not.toContain("password");
+    await context.close();
+  });
+
   test("Impressum und Datenschutzerklärung sind ohne Anmeldung erreichbar", async ({ page }) => {
     await page.goto("/impressum");
     await expect(page.getByRole("heading", { name: "Impressum" })).toBeVisible();

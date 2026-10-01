@@ -2,9 +2,12 @@ import { Prisma } from "@/generated/prisma/client";
 import type { MembershipApplicationStatus } from "@/generated/prisma/enums";
 import { parseCalendarDate, todayCalendarDate } from "@/lib/dates";
 import {
+  type JoinCapacity,
   APPLICATION_CONSENT_VERSION,
   APPLICATION_DECIDED_RETENTION_DAYS,
   INVALID_JOIN_LINK_TEXT,
+  isJoinLinkFull,
+  JOIN_LINK_FULL_TEXT,
   joinLogoUrl,
   joinPath,
 } from "@/lib/membership-application";
@@ -47,6 +50,9 @@ import { isHoneypotFilled, type ApplicationInput } from "./schemas";
  *  - Der Link ist kein Zugangsschlüssel: Er zeigt nur Vereinsname, Logo und Abteilungen und nimmt Anträge an. Deshalb
  *    steht er im Klartext am Verein und lässt sich für Nachdrucke wieder anzeigen; „Neuen Code erzeugen“ ersetzt ihn.
  *  - Das öffentliche Formular ist gegen Missbrauch begrenzt (Rate-Limits je Anschluss und je Verein, Honigtopf-Feld).
+ *  - Jeder QR-Code lässt nur so viele Anträge zu, wie der Verein beim Einrichten festlegt (`joinLimit`, gezählt in
+ *    `joinUsed`, unter einer Sperre je Verein – auch bei gleichzeitigen Anträgen nie mehr). Abgelehnte Anträge geben ihren
+ *    Platz zurück, ein neuer Code beginnt wieder bei 0. Ist der Code ausgeschöpft, nimmt er keine Anträge mehr an.
  *  - Angenommen wird genau einmal – auch wenn zwei Personen gleichzeitig klicken (atomarer Übergang „offen → angenommen“) –,
  *    und je E-Mail-Adresse entsteht nur ein Mitglied, auch wenn zwei Anträge derselben Person gleichzeitig angenommen werden.
  *  - Die Einwilligung im Formular gilt nur für die Bearbeitung des Antrags. Sie bleibt mit Zeitpunkt und Textfassung am
@@ -90,7 +96,7 @@ function assertCanManage(ctx: TenantContext): void {
 // Beitrittslink (QR-Code)
 // ---------------------------------------------------------------------------------------------
 
-export interface JoinLink {
+export interface JoinLink extends JoinCapacity {
   token: string;
   /** Pfad der öffentlichen Seite, z. B. „/beitreten/…“. */
   path: string;
@@ -99,34 +105,54 @@ export interface JoinLink {
   createdAt: Date;
 }
 
-const toJoinLink = (token: string, createdAt: Date): JoinLink => ({
+const toJoinLink = (token: string, createdAt: Date, capacity: JoinCapacity): JoinLink => ({
   token,
   path: joinPath(token),
   url: `${env.APP_URL}${joinPath(token)}`,
   createdAt,
+  ...capacity,
 });
 
 export async function getJoinLink(ctx: TenantContext): Promise<JoinLink | null> {
   assertCanManage(ctx);
   const club = await ctx.db.club.findFirstOrThrow({
-    select: { joinToken: true, joinTokenCreatedAt: true },
+    select: { joinToken: true, joinTokenCreatedAt: true, joinLimit: true, joinUsed: true },
   });
   return club.joinToken && club.joinTokenCreatedAt
-    ? toJoinLink(club.joinToken, club.joinTokenCreatedAt)
+    ? toJoinLink(club.joinToken, club.joinTokenCreatedAt, {
+        limit: club.joinLimit,
+        used: club.joinUsed,
+      })
     : null;
 }
 
+/** Neuer Schlüssel mit neuer Anzahl – die Zählung beginnt wieder bei 0 (der alte QR-Code gilt nicht mehr). */
 async function storeNewToken(
   ctx: TenantContext,
   action: "member.join_link_created" | "member.join_link_renewed",
   summary: string,
+  limit: number,
 ): Promise<JoinLink> {
   const token = generateToken(32);
-  const createdAt = new Date();
-  await ctx.db.$transaction(async (tx) => {
+  return ctx.db.$transaction(async (tx) => {
+    await lockUntilCommit(tx, ctx.clubId, JOIN_LIMIT_LOCK);
+    if (action === "member.join_link_created") {
+      // Zwei gleichzeitige „Einrichten“: Der zweite übernimmt den ersten, statt ihn zu ersetzen.
+      const club = await tx.club.findFirstOrThrow({
+        select: { joinToken: true, joinTokenCreatedAt: true, joinLimit: true, joinUsed: true },
+      });
+      if (club.joinToken && club.joinTokenCreatedAt) {
+        return toJoinLink(club.joinToken, club.joinTokenCreatedAt, {
+          limit: club.joinLimit,
+          used: club.joinUsed,
+        });
+      }
+    }
+    // Erst unter der Sperre: Jeder Antrag, der hiernach noch über den alten Code durchkommt, ist sicher älter.
+    const createdAt = new Date();
     await tx.club.update({
       where: { id: ctx.clubId },
-      data: { joinToken: token, joinTokenCreatedAt: createdAt },
+      data: { joinToken: token, joinTokenCreatedAt: createdAt, joinLimit: limit, joinUsed: 0 },
     });
     await recordAudit(tx, auditActor(ctx), {
       action,
@@ -134,36 +160,74 @@ async function storeNewToken(
       entityId: ctx.clubId,
       summary,
     });
+    return toJoinLink(token, createdAt, { limit, used: 0 });
   });
-  return toJoinLink(token, createdAt);
 }
 
-/** Richtet den Beitrittslink ein. Gibt es schon einen, bleibt er (ein zweiter Klick macht keine Aushänge ungültig). */
-export async function enableJoinLink(ctx: TenantContext): Promise<JoinLink> {
+/** Sperre je Verein für Zählen und Ändern der Plätze (Antrag, Ablehnen, Einrichten, neuer Code, neue Anzahl, Schließen). */
+const JOIN_LIMIT_LOCK = "join-limit";
+
+/**
+ * Richtet den Beitrittslink ein – mit der Zahl der Anmeldungen, die er zulässt. Gibt es schon einen, bleibt er
+ * unverändert (ein zweiter Klick macht keine Aushänge ungültig und setzt keine Zählung zurück).
+ */
+export async function enableJoinLink(ctx: TenantContext, limit: number): Promise<JoinLink> {
   const current = await getJoinLink(ctx);
   if (current) return current;
-  return storeNewToken(ctx, "member.join_link_created", "QR-Code zum Beitritt eingerichtet");
+  return storeNewToken(
+    ctx,
+    "member.join_link_created",
+    `QR-Code zum Beitritt eingerichtet (${limit} ${limit === 1 ? "Anmeldung" : "Anmeldungen"})`,
+    limit,
+  );
 }
 
-/** Ersetzt den Link durch einen neuen – der alte QR-Code (und jeder gedruckte Aushang) funktioniert danach nicht mehr. */
-export async function renewJoinLink(ctx: TenantContext): Promise<JoinLink> {
+/**
+ * Ersetzt den Link durch einen neuen – der alte QR-Code (und jeder gedruckte Aushang) funktioniert danach nicht mehr.
+ * Die Zählung beginnt wieder bei 0.
+ */
+export async function renewJoinLink(ctx: TenantContext, limit: number): Promise<JoinLink> {
   assertCanManage(ctx);
   return storeNewToken(
     ctx,
     "member.join_link_renewed",
-    "Neuer QR-Code zum Beitritt erzeugt (der alte gilt nicht mehr)",
+    `Neuer QR-Code zum Beitritt erzeugt (der alte gilt nicht mehr; ${limit} ${limit === 1 ? "Anmeldung" : "Anmeldungen"})`,
+    limit,
   );
+}
+
+/**
+ * Ändert, wie viele Anmeldungen der aktuelle QR-Code zulässt – ohne neuen Code, die Zählung bleibt. Weniger als schon
+ * genutzt ist erlaubt: Dann nimmt der Code einfach keine Anträge mehr an.
+ */
+export async function setJoinLimit(ctx: TenantContext, limit: number): Promise<JoinLink> {
+  assertCanManage(ctx);
+  await ctx.db.$transaction(async (tx) => {
+    await lockUntilCommit(tx, ctx.clubId, JOIN_LIMIT_LOCK);
+    const club = await tx.club.findFirstOrThrow({ select: { joinToken: true, joinLimit: true } });
+    if (!club.joinToken) throw conflict("Es ist kein QR-Code eingerichtet.");
+    if (club.joinLimit === limit) return;
+    await tx.club.update({ where: { id: ctx.clubId }, data: { joinLimit: limit } });
+    await recordAudit(tx, auditActor(ctx), {
+      action: "member.join_limit_changed",
+      entityType: "Club",
+      entityId: ctx.clubId,
+      summary: `Anmeldungen über den QR-Code: ${club.joinLimit ?? "unbegrenzt"} → ${limit}`,
+    });
+  });
+  return (await getJoinLink(ctx))!;
 }
 
 /** Schließt den Beitritt: Der Link gilt nicht mehr, neue Anträge sind nicht möglich. Offene Anträge bleiben erhalten. */
 export async function closeJoinLink(ctx: TenantContext): Promise<void> {
   assertCanManage(ctx);
   await ctx.db.$transaction(async (tx) => {
+    await lockUntilCommit(tx, ctx.clubId, JOIN_LIMIT_LOCK);
     const club = await tx.club.findFirstOrThrow({ select: { joinToken: true } });
     if (!club.joinToken) return;
     await tx.club.update({
       where: { id: ctx.clubId },
-      data: { joinToken: null, joinTokenCreatedAt: null },
+      data: { joinToken: null, joinTokenCreatedAt: null, joinLimit: null, joinUsed: 0 },
     });
     await recordAudit(tx, auditActor(ctx), {
       action: "member.join_link_closed",
@@ -181,6 +245,8 @@ export async function closeJoinLink(ctx: TenantContext): Promise<void> {
 export interface JoinPage {
   clubName: string;
   logoUrl: string | null;
+  /** Alle Plätze des QR-Codes vergeben – statt des Formulars ein Hinweis. */
+  full: boolean;
   /** Nur Kennung und Name der aktiven Abteilungen – mehr erfahren Fremde über den Verein nicht. */
   departments: { id: string; name: string }[];
 }
@@ -197,6 +263,7 @@ export async function getJoinPage(token: string): Promise<JoinPage | null> {
   return {
     clubName: join.club.name,
     logoUrl: joinLogoUrl(token, join.club.logoSha256),
+    full: isJoinLinkFull({ limit: join.club.joinLimit, used: join.club.joinUsed }),
     departments,
   };
 }
@@ -237,9 +304,10 @@ async function enforceApplicationLimit(
 /**
  * Nimmt einen Antrag über das öffentliche Formular an. Die Eingaben sind bereits mit `applicationFormSchema` geprüft.
  *
- * Reihenfolge mit Absicht: Link prüfen → Grenze je Anschluss → Honigtopf (ausgefüllt: Erfolg vortäuschen, nichts
- * speichern – der Roboter zählt aber gegen die Grenze) → Abteilung → Vereinsgrenze → speichern. Fehleingaben verbrauchen so
- * kein Kontingent des Vereins. Ohne bekannte IP (kein vertrauenswürdiger Proxy) gibt es nur die Vereinsgrenze.
+ * Reihenfolge mit Absicht: Link prüfen (auch: noch Plätze frei?) → Grenze je Anschluss → Honigtopf (ausgefüllt: Erfolg
+ * vortäuschen, nichts speichern – der Roboter zählt aber gegen die Grenze) → Abteilung → Vereinsgrenze → Platz belegen und
+ * speichern. Fehleingaben verbrauchen so weder Kontingent noch Plätze des Vereins. Ohne bekannte IP (kein
+ * vertrauenswürdiger Proxy) gibt es nur die Vereinsgrenze.
  */
 export async function submitApplication(
   input: ApplicationInput,
@@ -248,6 +316,9 @@ export async function submitApplication(
 ): Promise<void> {
   const join = await resolveJoinToken(input.token);
   if (!join) throw badRequest(INVALID_JOIN_LINK_TEXT);
+  if (isJoinLinkFull({ limit: join.club.joinLimit, used: join.club.joinUsed })) {
+    throw conflict(JOIN_LINK_FULL_TEXT);
+  }
 
   const { perIp, perClub } = APPLICATION_RATE_LIMITS;
   if (meta.ip !== "unknown")
@@ -284,6 +355,19 @@ export async function submitApplication(
   });
 
   await join.db.$transaction(async (tx) => {
+    // Platz belegen – unter der Sperre und mit dem Stand von JETZT (Code inzwischen erneuert, Plätze inzwischen vergeben?)
+    await lockUntilCommit(tx, join.clubId, JOIN_LIMIT_LOCK);
+    const club = await tx.club.findFirstOrThrow({
+      select: { joinToken: true, joinTokenCreatedAt: true, joinLimit: true, joinUsed: true },
+    });
+    if (club.joinToken !== input.token) throw badRequest(INVALID_JOIN_LINK_TEXT);
+    if (isJoinLinkFull({ limit: club.joinLimit, used: club.joinUsed })) {
+      throw conflict(JOIN_LINK_FULL_TEXT);
+    }
+    const used = club.joinUsed + 1;
+    await tx.club.update({ where: { id: join.clubId }, data: { joinUsed: used } });
+    const nowFull = isJoinLinkFull({ limit: club.joinLimit, used });
+
     const application = await tx.membershipApplication.create({
       data: {
         clubId: join.clubId,
@@ -298,6 +382,8 @@ export async function submitApplication(
         consentAt: now,
         consentTextVersion: APPLICATION_CONSENT_VERSION,
         ipPrefix: meta.ipPrefix,
+        // Zu welchem QR-Code der Antrag gehört – nur dann gibt Ablehnen den Platz zurück
+        joinLinkCreatedAt: club.joinTokenCreatedAt,
       },
       select: { id: true },
     });
@@ -319,7 +405,11 @@ export async function submitApplication(
       userIds: approvers.map((approver) => approver.userId),
       type: "SYSTEM",
       title: "Neuer Beitrittsantrag",
-      body: "Über den QR-Code möchte jemand Mitglied werden. Bitte prüfe den Antrag und nimm ihn an oder lehne ihn ab.",
+      body:
+        "Über den QR-Code möchte jemand Mitglied werden. Bitte prüfe den Antrag und nimm ihn an oder lehne ihn ab." +
+        (nowFull
+          ? ` Damit ${club.joinLimit === 1 ? "ist der einzige Platz" : `sind alle ${club.joinLimit} Plätze`} des QR-Codes vergeben – er nimmt keine Anträge mehr an. Unter „Beitrittsanträge“ kannst du die Anzahl erhöhen.`
+          : ""),
       linkUrl: "/mitglieder/antraege",
       email: true,
     });
@@ -771,10 +861,14 @@ export async function resendApplicationInvitation(
   return { email };
 }
 
-/** Lehnt einen offenen Antrag ab. Bewusst ohne E-Mail an die Person; der Antrag wird nach 30 Tagen gelöscht. */
+/**
+ * Lehnt einen offenen Antrag ab. Bewusst ohne E-Mail an die Person; der Antrag wird nach 30 Tagen gelöscht. Kam er über
+ * den aktuellen QR-Code, wird sein Platz wieder frei – Spam oder doppelte Anträge verbrauchen so keine Plätze.
+ */
 export async function rejectApplication(ctx: TenantContext, id: string): Promise<void> {
   assertCanManage(ctx);
   await ctx.db.$transaction(async (tx) => {
+    await lockUntilCommit(tx, ctx.clubId, JOIN_LIMIT_LOCK);
     const claimed = await tx.membershipApplication.updateMany({
       where: { id, status: "PENDING" },
       data: { status: "REJECTED", decidedAt: new Date(), decidedById: ctx.userId },
@@ -782,6 +876,20 @@ export async function rejectApplication(ctx: TenantContext, id: string): Promise
     if (claimed.count !== 1) {
       const exists = await tx.membershipApplication.count({ where: { id } });
       throw exists > 0 ? conflict(ALREADY_DECIDED_TEXT) : notFound("Der Antrag");
+    }
+    const [application, club] = await Promise.all([
+      tx.membershipApplication.findFirstOrThrow({
+        where: { id },
+        select: { joinLinkCreatedAt: true },
+      }),
+      tx.club.findFirstOrThrow({ select: { joinTokenCreatedAt: true, joinUsed: true } }),
+    ]);
+    const viaCurrentCode =
+      application.joinLinkCreatedAt !== null &&
+      club.joinTokenCreatedAt !== null &&
+      application.joinLinkCreatedAt.getTime() === club.joinTokenCreatedAt.getTime();
+    if (viaCurrentCode && club.joinUsed > 0) {
+      await tx.club.update({ where: { id: ctx.clubId }, data: { joinUsed: { decrement: 1 } } });
     }
     await recordAudit(tx, auditActor(ctx), {
       action: "member.application_rejected",

@@ -144,7 +144,7 @@ export function ClubLogoCard({ clubId, clubName, logo }: ClubLogoCardProps) {
           </div>
         </div>
 
-        <form ref={formRef} onSubmit={submit} noValidate className="grid gap-4">
+        <form ref={formRef} method="post" onSubmit={submit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <div className="grid max-w-md gap-1.5">
             <Label htmlFor="vereinslogo-datei">{logo ? "Neues Logo" : "Logo auswählen"}</Label>

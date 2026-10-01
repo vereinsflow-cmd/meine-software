@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseCalendarDate, todayCalendarDate } from "@/lib/dates";
-import { APPLICATION_LIMITS } from "@/lib/membership-application";
+import { APPLICATION_LIMITS, JOIN_LIMIT_MAX } from "@/lib/membership-application";
 
 /**
  * Eingaben rund um den Beitritt per QR-Code. Das Antragsformular ist öffentlich (ohne Anmeldung) – der Server prüft
@@ -28,6 +28,16 @@ const name = (label: string, what: string) =>
 
 /** Frühestes Geburtsjahr, das noch plausibel ist (wie beim Mitglied). */
 const EARLIEST_BIRTH_YEAR = 1900;
+
+/** Wie viele Anmeldungen der QR-Code zulässt – beim Einrichten, beim neuen Code und beim Ändern. */
+export const joinLimitSchema = z.object({
+  limit: z.coerce
+    .number({ error: "Bitte gib eine Zahl ein." })
+    .int("Bitte gib eine ganze Zahl ein.")
+    .min(1, "Bitte gib mindestens 1 ein.")
+    .max(JOIN_LIMIT_MAX, `Höchstens ${JOIN_LIMIT_MAX.toLocaleString("de-DE")} Anmeldungen.`),
+});
+export type JoinLimitFormInput = z.input<typeof joinLimitSchema>;
 
 export const applicationFormSchema = z
   .object({

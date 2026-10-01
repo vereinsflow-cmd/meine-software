@@ -72,7 +72,7 @@ function CancelDialog({
             Schichten werden storniert.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <TextareaField
             form={form}
@@ -117,7 +117,7 @@ function DuplicateDialog({
             Kopiert alle Angaben und Schichten (ohne Teilnehmer und Einteilungen) als neuen Entwurf.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <TextField
             form={form}

@@ -80,7 +80,7 @@ export function ShiftFormDialog({
             02:00 Uhr).
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <FormError message={formError} />
           </div>

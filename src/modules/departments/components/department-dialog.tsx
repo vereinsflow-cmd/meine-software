@@ -59,7 +59,7 @@ function DepartmentForm({
     },
   });
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
       <TextField form={form} name="name" label="Name" required />
       <TextareaField form={form} name="description" label="Beschreibung" rows={3} />
@@ -147,7 +147,7 @@ function GroupForm({
     },
   });
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
       <TextField form={form} name="name" label="Name der Gruppe" required />
       <TextareaField form={form} name="description" label="Beschreibung" rows={3} />

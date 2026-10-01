@@ -335,6 +335,10 @@ model Club {
   /// muss für Nachdrucke des Aushangs wieder anzeigbar sein. „Neuen Code erzeugen“ ersetzt ihn – alte Aushänge sind dann ungültig.
   joinToken          String?    @unique
   joinTokenCreatedAt DateTime?  @db.Timestamptz(3)
+  /// Höchstzahl der Anträge über den aktuellen QR-Code (1–5000, Prüfregel in der Migration); leer = unbegrenzt.
+  joinLimit          Int?
+  /// Eingegangene Anträge über den aktuellen QR-Code (neuer Code: wieder 0; abgelehnte geben ihren Platz zurück).
+  joinUsed           Int        @default(0)
   deactivatedAt      DateTime?  @db.Timestamptz(3)
   createdAt          DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime   @updatedAt @db.Timestamptz(3)
@@ -621,6 +625,9 @@ model MembershipApplication {
   memberId           String?
   /// Gekürzte IP des Absenders (Nachweis bei Missbrauch, Datensparsamkeit).
   ipPrefix           String?
+  /// Über welchen QR-Code der Antrag kam (Zeitpunkt, zu dem dieser Code eingerichtet wurde) – nur wenn er noch der
+  /// aktuelle ist, gibt Ablehnen den Platz zurück. Leer bei Anträgen von vor der Begrenzung über ältere Codes.
+  joinLinkCreatedAt  DateTime?                   @db.Timestamptz(3)
 
   club       Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
   department Department? @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)

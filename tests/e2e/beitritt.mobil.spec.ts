@@ -70,7 +70,7 @@ test("Antragsformular am Handy: passt auf den Bildschirm, 16-px-Felder, Absenden
   // oben außerhalb des Bildschirms (das Formular ist am Handy höher als der Bildschirm).
   await page.getByRole("button", { name: "Neuen Code erzeugen" }).click();
   await page
-    .getByRole("alertdialog", { name: "Neuen QR-Code erzeugen?" })
+    .getByRole("dialog", { name: "Neuen QR-Code erzeugen?" })
     .getByRole("button", { name: "Neuen Code erzeugen" })
     .click();
   const linkField = page.getByLabel("Link zum Antragsformular");

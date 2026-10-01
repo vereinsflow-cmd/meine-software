@@ -58,7 +58,7 @@ export function ReportDialog({ pagePath }: { pagePath: string | null }) {
             benachrichtigt und antwortet dir hier.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           <SelectField
             form={form}

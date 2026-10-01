@@ -13,7 +13,7 @@ export const JOIN_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
  */
 export interface JoinContext {
   clubId: string;
-  club: { name: string; logoSha256: string | null };
+  club: { name: string; logoSha256: string | null; joinLimit: number | null; joinUsed: number };
   /** Mandantengebundener Client – dieselbe Absicherung wie `ctx.db` angemeldeter Benutzer. */
   db: TenantDb;
 }
@@ -26,12 +26,24 @@ export async function resolveJoinToken(token: string): Promise<JoinContext | nul
   if (!JOIN_TOKEN_PATTERN.test(token)) return null;
   const club = await prisma.club.findUnique({
     where: { joinToken: token },
-    select: { id: true, name: true, status: true, logoSha256: true },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      logoSha256: true,
+      joinLimit: true,
+      joinUsed: true,
+    },
   });
   if (!club || club.status !== "ACTIVE") return null;
   return {
     clubId: club.id,
-    club: { name: club.name, logoSha256: club.logoSha256 },
+    club: {
+      name: club.name,
+      logoSha256: club.logoSha256,
+      joinLimit: club.joinLimit,
+      joinUsed: club.joinUsed,
+    },
     db: createTenantDb(club.id),
   };
 }

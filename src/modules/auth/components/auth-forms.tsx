@@ -35,7 +35,7 @@ export function LoginForm({
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       {notice === "expired" && (
         <Alert>
           <InfoIcon />
@@ -108,7 +108,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
       <TextField
         form={form}
@@ -133,7 +133,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
       <TextField
         form={form}
@@ -174,7 +174,7 @@ export function AcceptInvitationForm({ token }: { token: string }) {
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField

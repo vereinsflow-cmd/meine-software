@@ -42,6 +42,22 @@ export const APPLICATION_CONSENT_VERSION = "beitrittsantrag-2026-09";
 export const INVALID_JOIN_LINK_TEXT =
   "Dieser Link ist nicht (mehr) gültig. Bitte frag im Verein nach dem aktuellen QR-Code.";
 
+/** Höchstzahl der Anmeldungen, die ein QR-Code zulassen kann (Prüfregel `Club_join_limit_chk`). */
+export const JOIN_LIMIT_MAX = 5000;
+
+export const JOIN_LINK_FULL_TEXT =
+  "Über diesen QR-Code sind schon alle Plätze vergeben. Bitte sprich den Verein direkt an.";
+
+/** „12 von 50 Plätzen genutzt“ – Stand eines begrenzten QR-Codes. */
+export interface JoinCapacity {
+  /** Leer = unbegrenzt (QR-Code von vor der Begrenzung). */
+  limit: number | null;
+  used: number;
+}
+
+export const isJoinLinkFull = ({ limit, used }: JoinCapacity): boolean =>
+  limit !== null && used >= limit;
+
 export const APPLICATION_STATUS_LABEL = {
   PENDING: "Offen",
   ACCEPTED: "Angenommen",

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { getRequestMeta } from "@/server/security/request";
 import { requireTenantContext } from "@/server/tenancy/context";
-import { applicationFormSchema, idSchema } from "./schemas";
+import { applicationFormSchema, idSchema, joinLimitSchema } from "./schemas";
 import {
   acceptApplication,
   closeJoinLink,
@@ -12,6 +12,7 @@ import {
   rejectApplication,
   renewJoinLink,
   resendApplicationInvitation,
+  setJoinLimit,
   submitApplication,
   type AcceptResult,
 } from "./service";
@@ -37,20 +38,31 @@ export async function submitApplicationAction(input: unknown): Promise<ActionRes
 }
 
 /** Der Link wird hier nicht zurückgegeben: Die Seite lädt ihn nach dem Neuladen selbst (nur für Berechtigte). */
-export async function enableJoinLinkAction(): Promise<ActionResult> {
+export async function enableJoinLinkAction(input: unknown): Promise<ActionResult> {
   return runAction(async () => {
-    await enableJoinLink(await requireTenantContext());
+    const { limit } = parseInput(joinLimitSchema, input);
+    await enableJoinLink(await requireTenantContext(), limit);
     refresh();
     return undefined;
   }, "join-link-enable");
 }
 
-export async function renewJoinLinkAction(): Promise<ActionResult> {
+export async function renewJoinLinkAction(input: unknown): Promise<ActionResult> {
   return runAction(async () => {
-    await renewJoinLink(await requireTenantContext());
+    const { limit } = parseInput(joinLimitSchema, input);
+    await renewJoinLink(await requireTenantContext(), limit);
     refresh();
     return undefined;
   }, "join-link-renew");
+}
+
+export async function setJoinLimitAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const { limit } = parseInput(joinLimitSchema, input);
+    await setJoinLimit(await requireTenantContext(), limit);
+    refresh();
+    return undefined;
+  }, "join-limit-set");
 }
 
 export async function closeJoinLinkAction(): Promise<ActionResult> {
