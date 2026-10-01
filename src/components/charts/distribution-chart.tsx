@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { slotColor } from "@/lib/charts/colors";
 import { donutAngles, donutSegmentPath, formatNumber, formatPercent } from "@/lib/charts/geometry";
 import type { ChartUnit, DistributionChartType, DistributionSlice } from "@/lib/charts/types";
 import { cn } from "@/lib/utils";
@@ -10,13 +11,15 @@ const CENTER = SIZE / 2;
 const OUTER = 98;
 const INNER = 70; // Das Loch muss auch ein langes Wort wie „Veranstaltungen“ aufnehmen
 
-/** Die Farbe gehört zur Kategorie (feste Position 1–6), nicht zu ihrem Rang: Filtern lässt die übrigen Farben stehen. */
-const colorOfSlot = (slot: number) => `var(--chart-${Math.min(Math.max(slot, 1), 6)})`;
+/** Die Farbe gehört zur Kategorie (feste Position), nicht zu ihrem Rang: Filtern lässt die übrigen Farben stehen. */
+const colorOfSlot = slotColor;
 
 /**
  * Verteilung auf Kategorien: als Ring (Anteile am Ganzen, höchstens sechs Teile) oder als Balken (Größen vergleichen).
  * Die Werte stehen immer sichtbar in der Legende bzw. am Balkenende – nichts hängt an der Farbe oder am Tooltip.
- * Beim Ring hebt Zeiger oder Tastaturfokus auf einem Legendeneintrag das Stück hervor und zeigt es in der Mitte.
+ * Beim Ring steht die Legende kompakt daneben (Wert, Anteil und ein schmaler Anteilsbalken je Kategorie); Zeiger oder
+ * Tastaturfokus auf einem Legendeneintrag heben das Stück hervor und zeigen es in der Mitte. Die Balken tragen dieselben
+ * Kategoriefarben wie der Ring – beim Umschalten bleibt jede Kategorie in ihrer Farbe.
  */
 export function DistributionChart({
   type,
@@ -54,18 +57,18 @@ export function DistributionChart({
               <span className="truncate text-sm" title={slice.label}>
                 {slice.label}
               </span>
-              {/* Eine Reihe = eine Farbe (Position 1); die Länge zeigt die Größe. Der Wert steht am Balkenende. */}
-              <div className="relative h-7">
+              {/* Die Länge zeigt die Größe, die Farbe die Kategorie (wie im Ring). Der Wert steht am Balkenende. */}
+              <div className="relative h-8">
                 <div
-                  className="absolute inset-y-1.5 left-0 rounded-r-[4px]"
+                  className="absolute inset-y-1.5 left-0 rounded-r-[5px]"
                   style={{
                     width: `calc((100% - 6.5rem) * ${ratio})`,
                     minWidth: 3,
-                    backgroundColor: "var(--chart-1)",
+                    backgroundColor: colorOfSlot(slice.slot),
                   }}
                 />
                 <span
-                  className="absolute top-0 flex h-7 items-center gap-2 text-sm whitespace-nowrap"
+                  className="absolute top-0 flex h-8 items-center gap-2 text-sm whitespace-nowrap"
                   style={{ left: `calc((100% - 6.5rem) * ${ratio} + 0.5rem)` }}
                 >
                   <span className="font-semibold tabular-nums">
@@ -87,7 +90,7 @@ export function DistributionChart({
   const activeSlice = active !== null ? slices[active] : undefined;
 
   return (
-    <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-10">
+    <div className="grid justify-items-center gap-6 sm:grid-cols-[auto_minmax(0,28rem)] sm:items-center sm:justify-start sm:justify-items-stretch sm:gap-10">
       <div
         role="group"
         aria-roledescription="Diagramm"
@@ -130,7 +133,7 @@ export function DistributionChart({
         </div>
       </div>
 
-      <ul className="grid w-full gap-1 sm:flex-1" aria-label={`Legende: ${title}`}>
+      <ul className="grid w-full max-w-sm gap-1 sm:max-w-none" aria-label={`Legende: ${title}`}>
         {slices.map((slice, index) => (
           <li
             key={slice.id}
@@ -140,7 +143,7 @@ export function DistributionChart({
             onPointerEnter={() => setActive(index)}
             onPointerLeave={() => setActive(null)}
             className={cn(
-              "flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
+              "grid grid-cols-[0.75rem_minmax(0,1fr)_auto_3rem] items-center gap-x-3 gap-y-1.5 rounded-md px-2 py-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
               index === active && "bg-muted",
             )}
           >
@@ -149,12 +152,26 @@ export function DistributionChart({
               style={{ backgroundColor: colorOfSlot(slice.slot) }}
               aria-hidden="true"
             />
-            <span className="min-w-0 flex-1 truncate">{slice.label}</span>
+            <span className="min-w-0 truncate">{slice.label}</span>
             <span className="font-semibold tabular-nums">
               {formatNumber(slice.value, unit.decimals)}
             </span>
-            <span className="w-12 text-right text-sm text-muted-foreground tabular-nums">
+            <span className="text-right text-sm text-muted-foreground tabular-nums">
               {formatPercent(share(slice.value))}
+            </span>
+            {/* Anteil als schmaler Balken unter dem Eintrag – auf einen Blick vergleichbar, auch ohne den Ring. */}
+            <span
+              className="col-span-3 col-start-2 h-1.5 overflow-hidden rounded-full bg-foreground/10"
+              aria-hidden="true"
+            >
+              <span
+                className="block h-full rounded-full"
+                style={{
+                  width: `${share(slice.value) * 100}%`,
+                  minWidth: slice.value > 0 ? 3 : 0,
+                  backgroundColor: colorOfSlot(slice.slot),
+                }}
+              />
             </span>
           </li>
         ))}

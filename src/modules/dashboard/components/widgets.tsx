@@ -51,7 +51,7 @@ import { sortByImportance, taskRank } from "../task-order";
  * die Zeile bis an den Kartenrand; die Karte selbst schneidet das (`overflow-hidden`) wieder passend zur Rundung ab.
  */
 const LIST_ROW =
-  "-mx-(--card-spacing) rounded-lg px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
+  "-mx-(--card-spacing) px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
 
 /** Stufe einer Besetzung: voll (gut), teilweise (Aufmerksamkeit), leer (dringend) – dieselben drei Stufen wie bei Schichten. */
 function staffingTone(ratio: number): Tone {
@@ -89,6 +89,8 @@ export function StatCard({
   icon,
   trend,
   trendVariant = "line",
+  trendHighlight = "last",
+  trendCaption,
   progress,
 }: {
   label: string;
@@ -101,6 +103,10 @@ export function StatCard({
   /** Letzte Werte für eine kleine Trendgrafik (älteste zuerst, mind. zwei Werte); ohne Angabe entfällt sie. */
   trend?: readonly number[];
   trendVariant?: "line" | "bar";
+  /** Welcher Wert „jetzt“ ist (Markenfarbe): bei Rückblicken der letzte, beim Blick nach vorn der erste. */
+  trendHighlight?: "first" | "last";
+  /** Beschriftung unter der Mini-Grafik bzw. Statusleiste, links und rechts („vor 5 Monaten“ … „jetzt“). */
+  trendCaption?: readonly [string, string];
   /** Anteil an einem Bestand (z. B. besetzte von benötigten Plätzen) als schmale Statusleiste; ohne Angabe entfällt sie. */
   progress?: { value: number; total: number };
 }) {
@@ -118,14 +124,15 @@ export function StatCard({
       {/* Spalte über die volle Kartenhöhe: Die Mini-Grafik rückt an den unteren Rand (`mt-auto`), damit sie bei allen
           vier Karten auf einer Linie liegt – auch wenn eine Beschriftung oder ein Vergleich umbricht. */}
       <CardContent className="flex flex-1 flex-col gap-1.5 py-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="pt-0.5 text-sm font-medium text-muted-foreground">{label}</p>
+        {/* Symbol klein VOR der Beschriftung (nicht groß daneben): So hat die Beschriftung Platz für eine Zeile, und alle vier
+            Zahlen stehen auf einer Höhe statt im Zickzack. */}
+        <div className="flex items-start gap-2">
           <div
             className={cn(
               // Alle Kennzahlenkarten teilen sich denselben, zurückhaltenden Symbolstil (kein Regenbogen aus
               // Blau/Lila/Grün/Gelb) – die Markenfarbe bleibt Aktionen vorbehalten und erscheint hier nur beim
               // Überfahren, als Zugabe zum Anheben der ganzen Karte.
-              "flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground [&_svg]:size-5",
+              "flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground [&_svg]:size-4",
               href &&
                 "transition-[transform,background-color,color] duration-200 group-hover/card:scale-110 group-hover/card:bg-primary/10 group-hover/card:text-primary motion-reduce:transition-none",
             )}
@@ -133,8 +140,13 @@ export function StatCard({
           >
             {icon}
           </div>
+          {/* Zwischen 1280 und 1440 px sind die vier Karten schmal: zwei Zeilen Platz, damit die Zahlen trotzdem auf einer
+              Höhe stehen, auch wenn nur manche Beschriftungen umbrechen. */}
+          <p className="min-w-0 pt-1 text-sm font-medium text-muted-foreground xl:max-[90rem]:min-h-[calc(2lh+0.25rem)]">
+            {label}
+          </p>
         </div>
-        <p className="text-4xl leading-tight font-bold tabular-nums">{value}</p>
+        <p className="mt-2 text-4xl leading-tight font-bold tabular-nums">{value}</p>
         {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
         {compare && (
           <p className={cn("text-sm font-medium", COMPARE_TEXT_COLOR[compare.tone ?? "neutral"])}>
@@ -148,11 +160,11 @@ export function StatCard({
           <div className="mt-auto pt-1.5">
             <div className="flex h-8 items-center motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in">
               {trend && trend.length > 1 ? (
-                <Sparkline values={trend} variant={trendVariant} />
+                <Sparkline values={trend} variant={trendVariant} highlight={trendHighlight} />
               ) : ratio !== null ? (
                 <div
                   aria-hidden="true"
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/10"
                 >
                   <div
                     className={cn(
@@ -165,6 +177,16 @@ export function StatCard({
                 </div>
               ) : null}
             </div>
+            {trendCaption && (
+              // Immer einzeilig (sonst stünden die Mini-Grafiken der vier Karten nicht mehr auf einer Linie)
+              <div
+                aria-hidden="true"
+                className="mt-1 flex justify-between gap-2 text-xs whitespace-nowrap text-muted-foreground"
+              >
+                <span className="min-w-0 truncate">{trendCaption[0]}</span>
+                <span className="min-w-0 truncate">{trendCaption[1]}</span>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -192,6 +214,7 @@ export function Widget({
   description,
   children,
   more,
+  action,
   emphasis = false,
 }: {
   id: string;
@@ -201,6 +224,8 @@ export function Widget({
   description?: string;
   children: React.ReactNode;
   more?: { href: string; label: string };
+  /** Kleine Aktion rechts im Kopf der Karte (z. B. „Ausblenden“). */
+  action?: React.ReactNode;
   /** Hebt die Karte als „hier ist etwas zu tun“ hervor (kräftiger Rahmen, gefüllte Symbolfläche). */
   emphasis?: boolean;
 }) {
@@ -218,13 +243,14 @@ export function Widget({
             >
               {icon}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               {/* Ebene 3: Die Gruppen des Dashboards („Für dich“, „Anstehend“ …) tragen die Ebene-2-Überschriften. */}
               <CardTitle id={id} role="heading" aria-level={3}>
                 {title}
               </CardTitle>
               {description && <CardDescription className="mt-0.5">{description}</CardDescription>}
             </div>
+            {action && <div className="shrink-0 self-start">{action}</div>}
           </div>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-4">
@@ -406,9 +432,12 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
           {shifts.open.map((shift) => (
             <li
               key={shift.shiftId}
-              className={cn("grid gap-2 py-3 first:pt-0 last:pb-0", LIST_ROW)}
+              className={cn(
+                "grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-x-4",
+                LIST_ROW,
+              )}
             >
-              <div className="min-w-0">
+              <div className="min-w-0 sm:col-span-2">
                 {/* Abzeichen („Beginnt bald“) in der Zeile des Schichtnamens – so steht „Eintragen“ unten immer an
                     derselben Stelle, mit oder ohne Abzeichen. */}
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -426,14 +455,14 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
                 </p>
               </div>
               <FillBar filled={shift.filled} required={shift.requiredCount} health={shift.health} />
-              {/* Wie auf der Helferplan-Seite: unter dem Besetzungsbalken, am Handy so breit wie die Karte (gut
-                  treffbar), ab 640 px schmal am rechten Rand. */}
+              {/* Am Handy unter dem Besetzungsbalken so breit wie die Karte (gut treffbar), ab 640 px rechts daneben – die Zeile
+                  wird kürzer, und die Karte steht nicht mehr viel höher als ihre Nachbarin. */}
               {shift.signup.allowed && (
                 <QuickSignUpButton
                   shiftId={shift.shiftId}
                   eventId={shift.event.id}
                   size="default"
-                  className="w-full sm:w-auto sm:justify-self-end"
+                  className="w-full sm:w-auto"
                 />
               )}
             </li>
@@ -473,9 +502,10 @@ export function OpenPayments({ payments }: { payments: NonNullable<DashboardData
           Es gibt keine offenen Rechnungen.
         </Empty>
       ) : (
-        <>
-          <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-3xl leading-tight font-bold tabular-nums">
+        // Ab 1024 px: links die Summe als große Zahl (wie bei den Kennzahlen), rechts die Rechnungen.
+        <div className="grid gap-4 lg:grid-cols-[minmax(13rem,1fr)_minmax(0,2.2fr)] lg:items-start lg:gap-8">
+          <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 lg:flex-col lg:items-start lg:gap-y-1 lg:self-stretch lg:border-r lg:pr-8">
+            <span className="text-3xl leading-tight font-bold tabular-nums lg:text-4xl">
               {formatEuroFromCents(payments.totalCents)}
             </span>
             <span className="text-sm text-muted-foreground">
@@ -487,74 +517,76 @@ export function OpenPayments({ payments }: { payments: NonNullable<DashboardData
               </span>
             )}
           </p>
-          <ExpandableList
-            className="grid gap-2.5"
-            initial={3}
-            itemNoun={payments.items.length === 4 ? "weitere Rechnung" : "weitere Rechnungen"}
-          >
-            {payments.items.map((invoice) => {
-              const due = dueText(invoice.dueInDays);
-              return (
-                <li
-                  key={invoice.id}
-                  className={cn(
-                    "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border p-3",
-                    invoice.overdue
-                      ? "border-red-300 bg-red-50 dark:border-red-400/30 dark:bg-red-400/10"
-                      : soon(invoice)
-                        ? "border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10"
-                        : "bg-muted/40",
-                  )}
-                >
-                  <div className="min-w-0">
-                    {invoice.canOpen ? (
-                      <a
-                        href={`/api/dokumente/${invoice.documentId}/download`}
-                        className="font-semibold break-words underline-offset-4 hover:underline"
-                      >
-                        {invoice.name}
-                      </a>
-                    ) : (
-                      <span className="font-semibold break-words">{invoice.name}</span>
+          <div className="grid min-w-0 gap-3">
+            <ExpandableList
+              className="grid gap-2.5"
+              initial={3}
+              itemNoun={payments.items.length === 4 ? "weitere Rechnung" : "weitere Rechnungen"}
+            >
+              {payments.items.map((invoice) => {
+                const due = dueText(invoice.dueInDays);
+                return (
+                  <li
+                    key={invoice.id}
+                    className={cn(
+                      "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border p-3",
+                      invoice.overdue
+                        ? "border-red-300 bg-red-50 dark:border-red-400/30 dark:bg-red-400/10"
+                        : soon(invoice)
+                          ? "border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10"
+                          : "bg-muted/40",
                     )}
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground tabular-nums">
-                        {invoice.amountCents !== null
-                          ? formatEuroFromCents(invoice.amountCents)
-                          : "Betrag fehlt"}
-                      </span>
-                      {invoice.dueDate && (
-                        <span
-                          className={cn(
-                            invoice.overdue && "font-semibold text-red-700 dark:text-red-300",
-                            soon(invoice) && "font-semibold text-amber-700 dark:text-amber-400",
-                          )}
+                  >
+                    <div className="min-w-0">
+                      {invoice.canOpen ? (
+                        <a
+                          href={`/api/dokumente/${invoice.documentId}/download`}
+                          className="font-semibold break-words underline-offset-4 hover:underline"
                         >
-                          {" "}
-                          · Fällig: {formatCalendarDate(invoice.dueDate)}
-                          {due ? ` – ${due}` : ""}
-                        </span>
+                          {invoice.name}
+                        </a>
+                      ) : (
+                        <span className="font-semibold break-words">{invoice.name}</span>
                       )}
-                    </p>
-                  </div>
-                  {payments.canManage && (
-                    <MarkPaidButton
-                      invoiceId={invoice.id}
-                      name={invoice.name}
-                      className="w-full sm:w-auto"
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ExpandableList>
-          {payments.count > payments.items.length && (
-            <p className="text-sm text-muted-foreground">
-              Hier stehen die {payments.items.length} dringendsten von {payments.count} – die
-              übrigen findest du unter „Alle offenen Rechnungen“.
-            </p>
-          )}
-        </>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground tabular-nums">
+                          {invoice.amountCents !== null
+                            ? formatEuroFromCents(invoice.amountCents)
+                            : "Betrag fehlt"}
+                        </span>
+                        {invoice.dueDate && (
+                          <span
+                            className={cn(
+                              invoice.overdue && "font-semibold text-red-700 dark:text-red-300",
+                              soon(invoice) && "font-semibold text-amber-700 dark:text-amber-400",
+                            )}
+                          >
+                            {" "}
+                            · Fällig: {formatCalendarDate(invoice.dueDate)}
+                            {due ? ` – ${due}` : ""}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    {payments.canManage && (
+                      <MarkPaidButton
+                        invoiceId={invoice.id}
+                        name={invoice.name}
+                        className="w-full sm:w-auto"
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ExpandableList>
+            {payments.count > payments.items.length && (
+              <p className="text-sm text-muted-foreground">
+                Hier stehen die {payments.items.length} dringendsten von {payments.count} – die
+                übrigen findest du unter „Alle offenen Rechnungen“.
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </Widget>
   );
@@ -710,20 +742,23 @@ export function Birthdays({ birthdays }: { birthdays: NonNullable<DashboardData[
           {birthdays.map((b) => (
             <li
               key={b.memberId}
-              className={cn(
-                "flex flex-wrap items-baseline justify-between gap-x-3 py-2.5 first:pt-0 last:pb-0",
-                LIST_ROW,
-              )}
+              className={cn("flex items-center gap-3 py-2.5 first:pt-0 last:pb-0", LIST_ROW)}
             >
-              <Link
-                href={`/mitglieder/${b.memberId}`}
-                className="text-base font-semibold underline-offset-4 hover:underline"
-              >
-                {b.name}
-              </Link>
-              <span className="text-sm text-muted-foreground">
-                wird {b.turns} · {formatDateShort(b.date)} ({inDaysLabel(b.inDays)})
-              </span>
+              <DateTile value={b.date} accent="rose" />
+              <div className="grid min-w-0 gap-0.5">
+                <Link
+                  href={`/mitglieder/${b.memberId}`}
+                  className="text-base font-semibold underline-offset-4 hover:underline"
+                >
+                  {b.name}
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  wird {b.turns} ·{" "}
+                  <span className="whitespace-nowrap">
+                    {formatDateShort(b.date)} ({inDaysLabel(b.inDays)})
+                  </span>
+                </span>
+              </div>
             </li>
           ))}
         </ExpandableList>
@@ -773,6 +808,10 @@ export function RecentActivity({ entries }: { entries: NonNullable<DashboardData
   );
 }
 
+/** „vor 5 Monaten“, „vor 1 Woche“ – Beschriftung am Anfang einer rückblickenden Mini-Grafik. */
+const agoText = (count: number, singular: string, plural: string) =>
+  `vor ${count} ${count === 1 ? singular : plural}`;
+
 export function MembersStat({ members }: { members: NonNullable<DashboardData["members"]> }) {
   return (
     <StatCard
@@ -782,6 +821,7 @@ export function MembersStat({ members }: { members: NonNullable<DashboardData["m
       href="/mitglieder"
       icon={<AREA_ICON.mitglieder />}
       trend={members.trend}
+      trendCaption={[agoText(members.trend.length - 1, "Monat", "Monaten"), "jetzt"]}
     />
   );
 }
@@ -799,10 +839,15 @@ export function NextEventsStat({ events }: { events: NonNullable<DashboardData["
       }
       href="/veranstaltungen"
       icon={<AREA_ICON.veranstaltungen />}
-      // events.weeklyTrend blickt nach vorn (diese Woche zuerst); für die Grafik gedreht, damit wie bei den anderen
-      // Karten die JÜNGSTE (= hier: diese) Woche zuletzt steht und in der Markenfarbe hervorgehoben wird.
-      trend={[...events.weeklyTrend].reverse()}
+      // events.weeklyTrend blickt nach vorn (diese Woche zuerst) – die Grafik ebenso: links „jetzt“ in der Markenfarbe,
+      // nach rechts die kommenden Wochen (beschriftet, damit die Richtung klar ist).
+      trend={events.weeklyTrend}
       trendVariant="bar"
+      trendHighlight="first"
+      trendCaption={[
+        "jetzt",
+        `in ${events.weeklyTrend.length - 1} ${events.weeklyTrend.length - 1 === 1 ? "Woche" : "Wochen"}`,
+      ]}
     />
   );
 }
@@ -816,6 +861,7 @@ export function FreeShiftsStat({ shifts }: { shifts: NonNullable<DashboardData["
       href="/helferplanung"
       icon={<AREA_ICON.helferplanung />}
       progress={{ value: shifts.staffing.filled, total: shifts.staffing.required }}
+      trendCaption={["leer", "alle besetzt"]}
     />
   );
 }
@@ -836,6 +882,7 @@ export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shift
       icon={<AREA_ICON.helferstunden />}
       trend={hours.trend}
       trendVariant="bar"
+      trendCaption={[agoText(hours.trend.length - 1, "Woche", "Wochen"), "jetzt"]}
     />
   );
 }

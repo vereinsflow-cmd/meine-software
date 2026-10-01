@@ -21,7 +21,7 @@ export function Group({
     <section aria-labelledby={id} className="grid gap-4">
       <h2
         id={id}
-        className="flex items-center gap-3 text-sm font-semibold tracking-wider text-muted-foreground uppercase after:h-px after:flex-1 after:bg-border"
+        className="flex items-center gap-3 text-sm font-semibold tracking-wider text-foreground/70 uppercase after:h-px after:flex-1 after:bg-border"
       >
         {title}
       </h2>

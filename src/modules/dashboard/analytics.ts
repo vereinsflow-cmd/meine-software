@@ -33,13 +33,16 @@ import type { TenantContext } from "@/server/tenancy/context-core";
  * Zahlen, dafür schaltet die Oberfläche ohne Nachladen sofort um.
  */
 
-/** Feste Farbposition je Kategorie: Die Farbe gehört zur Kategorie, nicht zu ihrem Rang (siehe Palette in globals.css). */
+/**
+ * Feste Farbposition je Kategorie (`lib/charts/colors.ts`), passend zur Bedeutung wie bei den Statusabzeichen:
+ * 1 Blau, 2 Rot-Orange (Problem), 3 Grün (gut/erledigt), 4 Gelb, 5 Rosa, 6 Dunkelgrün, 0 Grau (beendet).
+ */
 const MEMBER_STATUS_SLOT: Record<MemberStatus, number> = {
   ACTIVE: 1,
-  PASSIVE: 2,
+  PASSIVE: 4,
   HONORARY: 3,
-  LEFT: 4,
-  BLOCKED: 5,
+  LEFT: 0,
+  BLOCKED: 2,
 };
 const EVENT_TYPE_SLOT: Record<EventType, number> = {
   EVENT: 1,
@@ -51,9 +54,9 @@ const EVENT_TYPE_SLOT: Record<EventType, number> = {
 };
 const TASK_STATUS_SLOT: Record<TaskStatus, number> = {
   OPEN: 1,
-  IN_PROGRESS: 2,
-  BLOCKED: 3,
-  DONE: 4,
+  IN_PROGRESS: 4,
+  BLOCKED: 2,
+  DONE: 3,
 };
 
 type Windows = Record<Granularity, TimeBucket[]>;
@@ -117,6 +120,7 @@ async function membersTopic(
   const trend: TimeDataset = {
     kind: "time",
     id: "members-trend",
+    aggregate: "last",
     title: "Mitgliederentwicklung",
     shortTitle: "Entwicklung",
     description:
@@ -184,6 +188,7 @@ async function eventsTopic(ctx: TenantContext, windows: Windows): Promise<Analyt
   const trend: TimeDataset = {
     kind: "time",
     id: "events-trend",
+    aggregate: "sum",
     title: "Veranstaltungen im Zeitverlauf",
     shortTitle: "Verlauf",
     description: "Veröffentlichte und abgeschlossene Veranstaltungen je Zeitraum",
@@ -251,6 +256,7 @@ async function hoursTopic(ctx: TenantContext, windows: Windows): Promise<Analyti
   const trend: TimeDataset = {
     kind: "time",
     id: "hours-trend",
+    aggregate: "sum",
     title: scope === "ALL" ? "Helferstunden" : "Meine Helferstunden",
     shortTitle: "Verlauf",
     description:
