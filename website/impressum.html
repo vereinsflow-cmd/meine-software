@@ -12,11 +12,17 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="assets/css/site.css?v=20261001-2">
-  <script src="assets/js/site.js?v=20260930-2" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100102">
+  <script src="assets/js/site.js?v=2026100102" defer></script>
 </head>
-<body>
+<body class="subpage">
 <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<!-- Symbole: lucide (ISC-Lizenz), wie auf der Startseite -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+</svg>
 
 <header class="site-header">
   <div class="container header-inner">
@@ -25,6 +31,23 @@
         <img src="assets/img/logo.svg" alt="" width="174" height="28">
       </picture>
     </a>
+    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
+      <div class="nav-links">
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helferschichten</a></li>
+          <li><a href="index.html#rollen">Rollen</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+          <li><a href="index.html#faq">Fragen</a></li>
+        </ul>
+      </div>
+      <a class="btn btn-primary btn-sm btn-header" href="index.html#kontakt">Demo anfragen</a>
+    </nav>
+    <a class="btn btn-primary btn-sm header-cta" href="index.html#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
   </div>
 </header>
 
@@ -36,11 +59,11 @@
     </div>
 
     <div class="prose">
-      <h2>Angaben gemäß § 5 DDG</h2>
+      <h2>Angaben gemäß §&nbsp;5 DDG</h2>
       <p>
         VereinsFlow GbR<br>
-        Oberschlesienstraße 6a<br>
-        45711 Datteln
+        Oberschlesienstraße&nbsp;6a<br>
+        45711&nbsp;Datteln
       </p>
 
       <h2>Vertreten durch</h2>
@@ -48,7 +71,7 @@
 
       <h2>Kontakt</h2>
       <dl>
-        <dt>E-Mail</dt>
+        <dt>E&#8209;Mail</dt>
         <dd><a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a></dd>
         <dt>Telefon</dt>
         <dd><a href="tel:+4917656792302">+49 176 56792302</a></dd>
@@ -57,11 +80,45 @@
   </div>
 </main>
 
-<footer class="site-footer compact">
+<footer class="site-footer">
   <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <picture>
+          <img src="assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
+        </picture>
+        <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+      </div>
+      <div>
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helferschichten</a></li>
+          <li><a href="index.html#suche">Zentrale Suche</a></li>
+          <li><a href="index.html#rollen">Rollen und Rechte</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Mehr</h2>
+        <ul>
+          <li><a href="index.html#ablauf">Ablauf</a></li>
+          <li><a href="index.html#faq">Häufige Fragen</a></li>
+          <li><a href="index.html#kontakt">Demo anfragen</a></li>
+          <li><a href="index.html#benachrichtigen">Zum Start benachrichtigen</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Rechtliches</h2>
+        <ul>
+          <li><a href="impressum.html">Impressum</a></li>
+          <li><a href="datenschutz.html">Datenschutz</a></li>
+        </ul>
+      </div>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow</span>
-      <span><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></span>
+      <span>© 2026 VereinsFlow · Funktionsumfang: Stand September 2026</span>
+      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
     </div>
   </div>
 </footer>

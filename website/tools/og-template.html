@@ -1,56 +1,85 @@
 <!doctype html>
-<!-- Vorlage für das Vorschaubild beim Teilen der Website (1200 × 630). Erzeugt wird es mit: node tools/make-og-image.mjs -->
+<!-- Vorlage für das Vorschaubild beim Teilen der Website (1200 × 630). Erzeugt wird es mit: node tools/make-og-image.mjs
+     Gestaltet wie der Einstieg der Website (weiß, Lichtschein und Blau des Logos, Überschrift mit Unterstrich) und mit den
+     Stilen der Website (site.css) für Kennzeile, Überschrift und Telefonrahmen. Logo und Kernaussage stehen im mittleren
+     Quadrat (630 × 630): Messenger schneiden das Bild in kleinen Vorschauen oft quadratisch aus der Mitte. Links und rechts
+     je ein Telefon mit echten Aufnahmen (Dashboard, Helferplanung mit „Eintragen“). -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <title>VereinsFlow – Vorschaubild</title>
+<link rel="stylesheet" href="../assets/css/site.css">
 <style>
-  * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
     position: relative;
     width: 1200px;
     height: 630px;
     overflow: hidden;
-    background: #f6f3ec;
-    color: #12253b;
-    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #ffffff;
   }
-  .circle { position: absolute; border-radius: 50%; }
-  .c1 { width: 520px; height: 520px; left: -150px; top: -190px; background: #1c4a7a; opacity: .08; }
-  .c2 { width: 520px; height: 520px; left: 20px; top: -190px; background: #5b9cd6; opacity: .2; }
-  .logo { position: absolute; left: 72px; top: 64px; width: 300px; height: auto; }
-  .copy { position: absolute; left: 72px; top: 170px; width: 540px; }
-  h1 { margin: 0; font-size: 76px; line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; }
-  h1 span { color: #1c4a7a; }
-  p { margin: 28px 0 0; font-size: 28px; line-height: 1.4; color: #55677b; }
-  .frame {
+  /* Feines Punkteraster wie im Einstieg, zur Mitte hin sichtbar */
+  .dots {
     position: absolute;
-    left: 640px;
-    top: 150px;
-    width: 760px;
-    border: 1px solid #c8c0ac;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 30px 70px rgb(18 37 59 / 24%), 0 8px 20px rgb(18 37 59 / 12%);
+    inset: 0;
+    background-image: radial-gradient(rgb(15 30 50 / 9%) 1px, transparent 1.5px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse 46% 60% at 50% 40%, #000 25%, transparent 75%);
+    mask-image: radial-gradient(ellipse 46% 60% at 50% 40%, #000 25%, transparent 75%);
   }
-  .bar { display: flex; gap: 8px; padding: 12px 16px; background: #faf8f3; border-bottom: 1px solid #ddd6c6; }
-  .bar i { width: 12px; height: 12px; border-radius: 50%; background: #c8c0ac; }
-  .frame img { display: block; width: 100%; height: auto; }
+  .copy {
+    position: absolute;
+    left: 300px;
+    top: 0;
+    width: 600px;
+    height: 630px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .logo { width: 236px; height: auto; margin-bottom: 30px; }
+  .copy .eyebrow { margin-bottom: 22px; padding: 6px 15px 6px 12px; font-size: 17px; }
+  .copy .eyebrow .icon { width: 18px; height: 18px; }
+  h1 { margin: 0; font-size: 58px; line-height: 1.04; }
+  .sub { margin: 26px 0 0; max-width: 520px; color: var(--muted); font-size: 22px; line-height: 1.45; text-wrap: balance; }
+  /* Telefone wie auf der Website (.phone aus site.css), außerhalb des mittleren Quadrats */
+  .og-phone { position: absolute; width: 236px; }
+  .og-phone.left { left: 38px; top: 96px; }
+  .og-phone.right { right: 38px; top: 52px; }
+  .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 </style>
 </head>
 <body>
-  <div class="circle c1"></div>
-  <div class="circle c2"></div>
-  <img class="logo" src="../assets/img/logo.svg" alt="VereinsFlow">
-  <div class="copy">
-    <h1>Bringt Vereinsarbeit <span>in Fluss</span></h1>
-    <p>Mitglieder, Veranstaltungen, Helferschichten und Aufgaben an einem Ort.</p>
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="i-hand-heart" viewBox="0 0 24 24"><path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m14.45 13.39 5.05-4.694C20.196 8 21 6.85 21 5.75a2.75 2.75 0 0 0-4.797-1.837.276.276 0 0 1-.406 0A2.75 2.75 0 0 0 11 5.75c0 1.2.802 2.248 1.5 2.946L16 11.95"/><path d="m2 15 6 6"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a1 1 0 0 0-2.75-2.91"/></symbol>
+    <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
+  </svg>
+  <div class="hero-glow"></div>
+  <div class="dots"></div>
+
+  <div class="phone og-phone left">
+    <span class="phone-hw"></span>
+    <div class="phone-screen">
+      <div class="phone-status"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+      <picture><img src="../assets/img/app/phone-dashboard-light-520.webp" alt=""></picture>
+    </div>
   </div>
-  <div class="frame">
-    <div class="bar"><i></i><i></i><i></i></div>
-    <img src="../assets/img/app/dashboard-light-1920.webp" alt="">
+
+  <div class="copy">
+    <img class="logo" src="../assets/img/logo.svg" alt="VereinsFlow">
+    <p class="eyebrow"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg>Vereinsverwaltung mit Helferplanung</p>
+    <h1>Bringt Vereinsarbeit <span class="flow-word">in Fluss</span></h1>
+    <p class="sub">Mitglieder, Veranstaltungen, Helferschichten und Aufgaben an einem Ort.</p>
+  </div>
+
+  <div class="phone og-phone right">
+    <span class="phone-hw"></span>
+    <div class="phone-screen">
+      <div class="phone-status"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+      <picture><img src="../assets/img/app/phone-helferplanung-light-520.webp" alt=""></picture>
+    </div>
   </div>
 </body>
 </html>
