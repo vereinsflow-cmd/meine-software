@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="256" viewBox="0 0 128 256">
-  <!-- Feine Bürstung für die Titanseiten: Streifen längs (hohe Frequenz quer, sehr niedrige längs), 10 % deckend -->
+  <!-- Feine Bürstung für die Titanseiten: dichte, kurze Streifen längs (hohe Frequenz quer, niedrige längs), 5 % deckend –
+       fast unsichtbar, sie bricht nur das Licht (gröbere Streifen läsen sich wie Holz) -->
   <filter id="b" x="0" y="0" width="100%" height="100%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.9 0.012" numOctaves="2" stitchTiles="stitch"/>
-    <feColorMatrix values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.10"/>
+    <feTurbulence type="fractalNoise" baseFrequency="1.2 0.04" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.05"/>
   </filter>
   <rect width="128" height="256" filter="url(#b)"/>
 </svg>

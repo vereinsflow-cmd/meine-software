@@ -26,7 +26,7 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=20260930-2">
+  <link rel="stylesheet" href="assets/css/site.css?v=20261001-2">
   <script src="assets/js/site.js?v=20260930-2" defer></script>
 
   <script type="application/ld+json">
@@ -83,17 +83,20 @@
   
   
   
-  <!-- Zeichen von VereinsFlow (die beiden Kreise aus dem Logo), einfarbig für die Rückseiten der Geräte -->
-  <symbol id="i-mark" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="130.5" fill="currentColor" stroke="none" fill-opacity="0.8"/><circle cx="975.5" cy="420.5" r="130.5" fill="currentColor" stroke="none" fill-opacity="0.45"/><path d="M880.5 331.03A130.5 130.5 0 0 0 880.5 509.97A130.5 130.5 0 0 0 880.5 331.03Z" fill="currentColor" stroke="none"/></symbol>
-  <!-- Zeichen spiegelpoliert für den Deckel des Laptops: ein gemeinsamer, weicher Metallverlauf über beide Kreise, die
-       Schnittfläche dunkler, am Rand eine feine Lichtkante. Kanten weich über die Masken (m-mark-*) statt einer Kontur:
-       Schräg gesehen wird der Deckel verkürzt gezeichnet, eine harte Kante zerfiele dabei in Punkte. -->
+  <!-- Zeichen von VereinsFlow (die beiden Kreise aus dem Logo) spiegelpoliert für den Deckel des Laptops: ein gemeinsamer,
+       weicher Metallverlauf über beide Kreise, die Schnittfläche dunkler, am Rand eine feine Lichtkante. Kanten weich über
+       die Masken (m-mark-*) statt einer Kontur: Schräg gesehen wird der Deckel verkürzt gezeichnet, eine harte Kante
+       zerfiele dabei in Punkte. -->
   <linearGradient id="g-mirror" gradientUnits="userSpaceOnUse" x1="700" y1="300" x2="860" y2="560"><stop offset="0" stop-color="#f7f7f8"/><stop offset=".3" stop-color="#d9dbdd"/><stop offset=".55" stop-color="#bec1c4"/><stop offset=".8" stop-color="#cbcdd0"/><stop offset="1" stop-color="#9fa2a6"/></linearGradient>
   <radialGradient id="g-mark-edge"><stop offset=".9" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
   <radialGradient id="g-mark-rim"><stop offset=".84" stop-color="#fff" stop-opacity="0"/><stop offset=".935" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
   <mask id="m-mark-l"><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mark-edge)"/></mask>
   <mask id="m-mark-r"><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mark-edge)"/></mask>
   <symbol id="i-mark-mirror" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mirror)" mask="url(#m-mark-l)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mirror)" fill-opacity="0.7" mask="url(#m-mark-r)"/><g mask="url(#m-mark-l)"><circle cx="975.5" cy="420.5" r="131" fill="#7b7e83" mask="url(#m-mark-r)"/></g><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/></symbol>
+  <!-- Dasselbe Zeichen als glänzende Einlage im matten Rückglas des Telefons: polierter Verlauf im warmen Ton des Glases
+       (je nach Licht heller oder dunkler als die matte Fläche), Schnittfläche dunkler, weiche Kanten wie oben -->
+  <linearGradient id="g-gloss-warm" gradientUnits="userSpaceOnUse" x1="700" y1="300" x2="860" y2="560"><stop offset="0" stop-color="#f8f0e6"/><stop offset=".35" stop-color="#dac8b3"/><stop offset=".6" stop-color="#b9a38b"/><stop offset=".85" stop-color="#d3c0aa"/><stop offset="1" stop-color="#a38c74"/></linearGradient>
+  <symbol id="i-mark-gloss" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="131" fill="url(#g-gloss-warm)" mask="url(#m-mark-l)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-gloss-warm)" fill-opacity="0.7" mask="url(#m-mark-r)"/><g mask="url(#m-mark-l)"><circle cx="975.5" cy="420.5" r="131" fill="#927c66" mask="url(#m-mark-r)"/></g><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/></symbol>
   <!-- Statusleiste der Telefon-Rahmen: Mobilfunk, WLAN, Akku (eigene Zeichnung, gefüllt statt Linien) -->
   <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
 </svg>
@@ -269,7 +272,7 @@
     </div>
   </section>
 
-  <!-- ===== Vorführung unterwegs: Ein Telefon zeigt erst seine Rückseite und dreht sich von selbst um 180° zum
+  <!-- ===== Vorführung unterwegs: Ein Telefon zeigt erst schräg seine Rückseite und dreht sich von selbst um 150° zum
        Betrachter, sobald es ins Bild kommt; auf dem Bildschirm die Helferplanung (wie im Einstieg). ===== -->
   <section class="showcase showcase-phone" aria-labelledby="unterwegs-title">
     <div class="showcase-stage">
@@ -280,28 +283,42 @@
       </div>
       <div class="showcase-scene">
         <div class="iphone">
+          <!-- Gehäuse (nur mit Bewegung): das Kameraplateau mit Sockel, Wänden und Objektivringen, die aus der Rückseite
+               herausstehen, an den vier runden Ecken je neun Streifen zwischen Vorder- und Rückseite und die Standby-Taste.
+               Reihenfolge mit Absicht: Chromium sortiert die Flächen, indem es sie an den Ebenen der zuerst genommenen
+               zerteilt, und nimmt die im Dokument späteren zuerst. Alles, was an einer Schnittlinie eine feine Fuge zeigen
+               würde (Vorderseite, Rückseite, Gläser, Sockel und Plateau), steht deshalb hinter den quer stehenden Wänden. -->
+          <div class="iphone-rim" aria-hidden="true">
+            <span class="iphone-bump">
+              <span class="bump-wall"></span><span class="bump-wall bump-mid"></span>
+              <span class="iphone-barrels"><b class="barrel"></b><b class="barrel"></b><b class="barrel"></b></span>
+              <span class="bump-base"></span>
+              <span class="iphone-camera"><i class="lens-foot"></i><i class="lens-foot"></i><i class="lens-foot"></i><b class="flash"></b><b class="lidar"></b><b class="mic"></b></span>
+              <span class="iphone-lenses"><i class="lens"></i><i class="lens"></i><i class="lens"></i></span>
+            </span>
+            <span class="rim-c rim-tl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-tr"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-bl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-br"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="iphone-key"></span><span class="iphone-key iphone-key-mid"></span>
+          </div>
+          <div class="iphone-back" aria-hidden="true">
+            <span class="bump-foot"></span>
+            <span class="back-rings"></span>
+            <svg class="device-mark"><use href="#i-mark-gloss"/></svg>
+          </div>
+          <span class="iphone-side iphone-side-l" aria-hidden="true"><b class="btn-action"></b><b class="btn-up"></b><b class="btn-down"></b></span>
+          <span class="iphone-side iphone-side-r" aria-hidden="true"><b class="btn-power"></b><b class="btn-cam"></b></span>
+          <span class="iphone-cap iphone-cap-t" aria-hidden="true"></span>
+          <span class="iphone-cap iphone-cap-b" aria-hidden="true"><i class="port"></i></span>
           <div class="phone iphone-front">
             <span class="phone-hw" aria-hidden="true"></span>
+            <span class="iphone-ring" aria-hidden="true"></span>
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
                 <img src="assets/img/app/phone-helferplanung-light-312.webp?v=20260930" srcset="assets/img/app/phone-helferplanung-light-260.webp?v=20260930 260w, assets/img/app/phone-helferplanung-light-312.webp?v=20260930 312w, assets/img/app/phone-helferplanung-light-468.webp?v=20260930 468w, assets/img/app/phone-helferplanung-light-520.webp?v=20260930 520w, assets/img/app/phone-helferplanung-light-624.webp?v=20260930 624w, assets/img/app/phone-helferplanung-light-780.webp?v=20260930 780w" sizes="(max-width: 899px) and (orientation: landscape) min(312px, 37vw, calc((100vh - 124px) / 2.161 * 26 / 28)), (max-width: 719px) min(260px, 67vw, calc((100vh - 300px) / 2.16 * 26 / 28)), min(312px, calc((100vh - 174px) / 2.081 * 26 / 28))" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten mit der Schaltfläche „Eintragen“">
               </picture>
             </div>
+            <span class="iphone-glass" aria-hidden="true"></span>
           </div>
-          <!-- Gehäuse: an den vier runden Ecken je sechs Streifen zwischen Vorder- und Rückseite -->
-          <div class="iphone-rim" aria-hidden="true"><span class="rim-c rim-tl"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-tr"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-bl"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-br"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
-          <div class="iphone-back" aria-hidden="true">
-            <span class="iphone-camera">
-              <i class="lens"></i><i class="lens"></i><i class="lens"></i>
-              <b class="flash"></b><b class="lidar"></b><b class="mic"></b>
-            </span>
-            <svg class="device-mark"><use href="#i-mark"/></svg>
-          </div>
-          <span class="iphone-side iphone-side-l" aria-hidden="true"><b class="btn-action"></b><b class="btn-up"></b><b class="btn-down"></b></span>
-          <span class="iphone-side iphone-side-r" aria-hidden="true"><b class="btn-power"></b></span>
-          <span class="iphone-cap iphone-cap-t" aria-hidden="true"></span>
-          <span class="iphone-cap iphone-cap-b" aria-hidden="true"></span>
         </div>
         <span class="showcase-floor" aria-hidden="true"></span>
       </div>

@@ -2551,28 +2551,55 @@ html:not(.js) .nav ul a:hover {
    Die Vorderseite ist der bekannte Telefonrahmen (.phone), 336 px breit – der Bildschirm ist damit genau 312 px breit,
    passend zur Bilddatei. Sie liegt in der Bildebene (z = 0), die Rückseite eine Gehäusedicke dahinter; gedreht wird um
    die Mitte dazwischen. Die geraden Stücke des Gehäuses sind Seiten- und Stirnflächen (mit Tasten), die vier runden
-   Ecken je sechs schmale Streifen – so hat das Gehäuse beim Drehen rundum eine geschlossene Kante. */
+   Ecken je neun schmale Streifen – so hat das Gehäuse beim Drehen rundum eine geschlossene Kante. Kameraplateau und
+   Objektivringe stehen wie beim echten Gerät aus der Rückseite heraus (.iphone-bump). Aufgenommen wie ein Produktfoto:
+   lange Brennweite, ein Glanzlicht, das beim Drehen über Glas und Rahmen zieht, ein flacher, weicher Schatten am Boden. */
+
+/* Maße schon an der Bühne: Blickwinkel (perspective) und Bodenschatten rechnen mit der Breite des Geräts */
+.showcase-phone .showcase-scene {
+  --pw: min(336px, 72vw, calc((100vh - var(--header-h) - 110px) / 2.081));
+  perspective: calc(var(--pw) * 13); /* Abstand gut sechs Gerätehöhen: Kanten bleiben fast parallel */
+}
 
 .iphone {
-  --pw: min(336px, 72vw, calc((100vh - var(--header-h) - 110px) / 2.081));
   --t: calc(var(--pw) * 0.117); /* Gehäusedicke: 8,25 mm bei 70,6 mm Breite */
+  --bump: calc(var(--pw) * 0.018); /* Kameraplateau: 1,3 mm über dem Rückglas */
+  --barrel: calc(var(--pw) * 0.03); /* Objektivringe: noch einmal 2 mm darüber */
   --grain: url("../img/textur-koernung.svg");
-  --brush: url("../img/textur-buerstung.svg");
-  /* Titan in warmem Sandton (wie „Wüstentitan“): flaches, fein gebürstetes Band mit schmalen, hellen Schultern zu Glas
-     und Rückseite. Das Profil ist mit Absicht symmetrisch – so ist gleich, in welcher Richtung eine Fläche gedreht ist,
-     und an keinem Stoß zwischen Seite, Eckstreifen und Stirnfläche entsteht eine Stufe. Stirnflächen: dieselben Stufen
-     quer (siehe .iphone-cap). */
+  --brush: url("../img/textur-buerstung.svg?v=20261001");
+  /* Titan in warmem Sandton (wie „Wüstentitan“), im Schnitt von hinten nach vorn: Lippe am Rückglas, breite, runde und
+     polierte Schulter, flaches, fein gebürstetes Band, zweite Schulter und vorn die Kante zum Deckglas, die sich dunkel
+     zur Vorderseite abrollt – fast flach auf die Vorderseite gesehen trennt sie den hellen Bildschirm vom Titan (der
+     schwarze Glasrand ist dann schmaler als ein Pixel). Nicht ganz schwarz und weich auslaufend: Schräg von vorn läge eine
+     schwarze Linie wie eine Fuge neben dem hellen Rahmen der Vorderseite, und flach gesehen zerfiele eine schmale, harte
+     Linie in Striche. Jede Fläche legt den Verlauf so an, dass 0 % hinten liegt (siehe .iphone-side, .rim-c i,
+     .iphone-cap) – so passen Seiten, Eckstreifen und Stirnflächen ohne Stufe aneinander. */
   --titan-stops:
-    #7d7163 0%,
-    #dbcfc2 4%,
-    #f0e9e0 7%,
-    #c5b7a7 13%,
-    #b4a695 50%,
-    #c5b7a7 87%,
-    #f0e9e0 93%,
-    #dbcfc2 96%,
-    #7d7163 100%;
-  --titan: linear-gradient(90deg, var(--titan-stops));
+    #a8947e 0%,
+    #dccab6 4%,
+    #f5ebdf 9%,
+    #cfbca6 17%,
+    #b8a38c 50%,
+    #cbb8a2 82%,
+    #f2e8db 89%,
+    #d3c0aa 92.5%,
+    #7c6957 96%,
+    #3b322b 98.5%,
+    #332b25 100%;
+  /* Glanz auf diesem Profil (siehe .iphone-side-r::before): hell auf den polierten Schultern, ein breiter, weicher Schein
+     auf dem gebürsteten Band, nichts auf der Glaskante */
+  --spec-stops:
+    rgb(255 250 242 / 0%) 4%,
+    rgb(255 250 242 / 95%) 9%,
+    rgb(255 248 238 / 34%) 15%,
+    rgb(255 248 238 / 34%) 83%,
+    rgb(255 250 242 / 95%) 89%,
+    rgb(255 250 242 / 0%) 94%;
+  /* Kameraplateau: poliertes Glas, satter und dunkler als das matte Rückglas (es spiegelt den Raum), oben links heller
+     (.iphone-camera und flach gemalt .bump-foot) */
+  --plateau:
+    radial-gradient(120% 90% at 18% 8%, rgb(255 252 247 / 42%), rgb(255 252 247 / 0%) 60%),
+    linear-gradient(160deg, #dac8b4 0%, #b49e86 52%, #a38c74 76%, #bfab95 100%);
   position: relative;
   width: var(--pw);
   aspect-ratio: 420 / 874;
@@ -2581,22 +2608,57 @@ html:not(.js) .nav ul a:hover {
   transform-origin: 50% 50% calc(var(--t) / -2);
 }
 
-/* Vorderseite im selben Titanton wie das Gehäuse (die übrigen Telefone der Seite bleiben dunkel). Sie erscheint erst,
-   wenn man bei der Drehung genau auf die Kante schaut (Drehung zu 47,7 % geschafft: 90° von 172°), die Rückseite verschwindet dort – siehe
-   .laptop-screen. In der Endlage ist scale genau 1. */
+/* Vorderseite im selben Titanton wie das Gehäuse (die übrigen Telefone der Seite bleiben dunkel), mit den Antennenfugen
+   im Rahmen (auf Höhe derer an den Seiten: 7,5 % + 85 % · 18 % bzw. 82 %). Sie erscheint erst, wenn man bei der Drehung
+   über die Kante hinaus ist (nach dem Winkel, siehe vf-phone-front), die Rückseite verschwindet kurz davor – siehe
+   .laptop-screen. In der Endlage ist scale genau 1. Kein Schlagschatten: Er drehte sich mit der Fläche wie eine Karte;
+   den Schatten trägt der Boden (.showcase-floor). */
 .iphone-front {
   scale: 1;
-  background: linear-gradient(135deg, #e2d8cb 0%, #a49685 13%, #c1b3a3 40%, #968878 68%, #dbcfc2 100%);
-  box-shadow:
-    0 0 0 1px #dfd5c8,
-    inset 0 0 0 1px rgb(255 255 255 / 40%),
-    inset 0 0 0 2px rgb(40 36 30 / 35%),
-    var(--shadow-lg);
+  background:
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 0 22.8% / 1.4% 0.5% no-repeat,
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 100% 22.8% / 1.4% 0.5% no-repeat,
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 0 77.2% / 1.4% 0.5% no-repeat,
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 100% 77.2% / 1.4% 0.5% no-repeat,
+    linear-gradient(135deg, #e6d9c9 0%, #a8927b 13%, #c6b39e 40%, #9a8672 68%, #dfd0bf 100%);
+  box-shadow: none;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* Beim Drehen spiegelt das Glas; in der Endlage nicht mehr */
+/* Feine Linien am Rahmen (Lichtkante, Fuge) als eigene Schicht: Flach gesehen wären sie schmaler als ein Pixel und
+   zerfielen in Striche – dann blendet vf-phone-rings sie aus (Endlage: sichtbar) */
+.iphone-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 250 242 / 45%),
+    inset 0 0 0 2px rgb(52 40 28 / 35%);
+  pointer-events: none;
+}
+
+/* Die helle Außenkante der Vorderansicht liegt außerhalb der Fläche, also schräg gesehen über der Seite – vor deren
+   dunkler Glaskante zerfiele sie in Striche. Sie kommt deshalb erst mit den flachen Tasten (vf-phone-buttons), wenn die
+   Seite nur noch wenige Pixel breit ist. */
+.iphone-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px #d9cbb9;
+}
+
+/* Schwarzer Glasrand: unter dem Deckglas ein Hauch Verlauf und an der gerundeten Glaskante eine feine Lichtkante */
+.iphone-front::before {
+  background: linear-gradient(162deg, #1c1e22 0%, #08090b 28%, #050607 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 10%),
+    inset 0 1.5px 0 rgb(255 255 255 / 14%);
+}
+
+/* Beim Drehen gleitet ein Lichtband über das Glas (vf-phone-glare, Hintergrund dreimal so breit, hier Endlage: links
+   daneben und ausgeblendet) */
 .iphone-front::after {
   content: "";
   position: absolute;
@@ -2604,30 +2666,82 @@ html:not(.js) .nav ul a:hover {
   inset: 0;
   border-radius: inherit;
   background: linear-gradient(
-    122deg,
-    rgb(255 255 255 / 0%) 8%,
-    rgb(255 255 255 / 20%) 26%,
-    rgb(255 255 255 / 0%) 46%
-  );
+      112deg,
+      rgb(255 255 255 / 0%) 40%,
+      rgb(255 255 255 / 20%) 46%,
+      rgb(255 255 255 / 34%) 50%,
+      rgb(255 255 255 / 20%) 54%,
+      rgb(255 255 255 / 0%) 60%
+    )
+    100% 0 / 300% 100%;
   opacity: 0;
   pointer-events: none;
 }
 
-/* Das Telefon schwebt: Schatten schmaler und ohne harten Kontaktschatten */
+/* Fresnel: flach gesehen spiegelt das Deckglas die helle Umgebung (vf-phone-fresnel); in der Vorderansicht klar. Auch
+   über dem schwarzen Glasrand: Fast flach gesehen wäre er schmaler als ein Pixel und zerfiele in Striche – die dunkle
+   Trennung zwischen Bildschirm und Titan trägt dann die Kante des Rahmens (siehe --titan-stops). */
+.iphone-glass {
+  position: absolute;
+  z-index: 5;
+  inset: 0.6% 1.2%;
+  border-radius: 14.8% / 7%;
+  background: linear-gradient(100deg, #f4f2ef, #dedad4);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Schatten am Boden wie auf einem Produktfoto: Das Telefon schwebt knapp über dem Tisch, sein Schatten ist breit, flach
+   und weich, im warmen Ton des Gehäuses; darin ein etwas dichterer, ebenso weicher Kern (keine harte Auflagelinie) */
 .showcase-phone .showcase-floor {
-  width: 64%;
-  height: 8%;
+  width: 92%;
+  height: 6%;
+  background: radial-gradient(
+    closest-side,
+    rgb(40 32 24 / 17%),
+    rgb(40 32 24 / 10%) 35%,
+    rgb(40 32 24 / 4%) 68%,
+    rgb(40 32 24 / 0%)
+  );
 }
 
 .showcase-phone .showcase-floor::before {
-  opacity: 0.45;
+  inset: 30% 14%;
+  opacity: 0.55;
+  background: radial-gradient(closest-side, rgb(30 24 18 / 36%), rgb(30 24 18 / 16%) 50%, rgb(30 24 18 / 0%));
 }
 
 /* Die flachen Tasten der Vorderansicht (im Titanton des Gehäuses) erst am Ende – beim Drehen sitzen die Tasten auf den
-   Seitenkanten */
+   Seitenkanten. Mit weichen Enden und einer feinen Fuge zum Rahmen. */
 .iphone-front .phone-hw::before,
 .iphone-front .phone-hw::after {
-  background: linear-gradient(90deg, #918475, #ddd1c4 55%, #9b8d7d);
+  background: linear-gradient(90deg, #8a7865, #e4d8c9 55%, #95826e);
+}
+
+.iphone-front .phone-hw::before {
+  border-radius: 1.5px 0 0 1.5px / 8% 0 0 8%;
+  box-shadow: inset -1px 0 rgb(40 36 30 / 30%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0 15.2%,
+    transparent 16.2% 31.8%,
+    #000 32.8% 60.6%,
+    transparent 61.4% 70.6%,
+    #000 71.4% 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0 15.2%,
+    transparent 16.2% 31.8%,
+    #000 32.8% 60.6%,
+    transparent 61.4% 70.6%,
+    #000 71.4% 100%
+  );
+}
+
+.iphone-front .phone-hw::after {
+  border-radius: 0 1.5px 1.5px 0 / 0 16% 16% 0;
+  box-shadow: inset 1px 0 rgb(40 36 30 / 30%);
 }
 
 /* Frontkamera in der Dynamic Island (nur dieses Telefon; cqw = Breite des Geräts) */
@@ -2645,11 +2759,11 @@ html:not(.js) .nav ul a:hover {
   transform-style: preserve-3d;
 }
 
-/* Die vier runden Ecken: je sechs schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,5 px neben dem
-   Kreis), so tief wie das Gehäuse, nach außen gerichtet und im Titan-Verlauf der Seitenflächen. Gebaut ist die Ecke
-   oben links (Viertelkreis in einem Quadrat); die übrigen sind dieselbe Ecke, um 90°, 180° und 270° gedreht. Streifen
-   statt gestapelter Schichten: keine Stufen an der Kante, wenn man genau von der Seite schaut, und nur wenige, kleine
-   Grafikebenen. */
+/* Die vier runden Ecken: je neun schmale, ebene Streifen entlang der Rundung (ein Vieleck, höchstens 0,2 px neben dem
+   Kreis, 10° Knick an jedem Stoß), so tief wie das Gehäuse, nach außen gerichtet und im Titan-Verlauf der Seitenflächen.
+   Gebaut ist die Ecke oben links (Viertelkreis in einem Quadrat); die übrigen sind dieselbe Ecke, um 90°, 180° und 270°
+   gedreht. Streifen statt gestapelter Schichten: keine Stufen an der Kante, wenn man genau von der Seite schaut, und nur
+   wenige, kleine Grafikebenen. */
 .rim-c {
   position: absolute;
   width: var(--rr);
@@ -2681,20 +2795,22 @@ html:not(.js) .nav ul a:hover {
 }
 
 /* Streifen: steht senkrecht auf der Vorderseite und zeigt nach außen (rotateY um seine Vorderkante, siehe
-   .iphone-side), liegt als Sehne im Abstand R · cos 7,5° vom Mittelpunkt der Rundung (rechts unten im Quadrat, dort
+   .iphone-side), liegt als Sehne im Abstand R · cos 5° vom Mittelpunkt der Rundung (rechts unten im Quadrat, dort
    seine rechte Kante) und ist um ihn auf seinen Winkel gedreht; an jedem Ende 1 px länger als die Sehne: Die Nachbarn
-   überlappen, sonst schiene an den Stößen der Hintergrund durch die geglätteten Kanten. */
+   überlappen, sonst schiene an den Stößen der Hintergrund durch die geglätteten Kanten. Der unsichtbare Umriss
+   (outline) lässt Chromium die Längskanten glätten wie beim Laptop – ohne ihn wären sie gezackt. */
 .rim-c i {
   position: absolute;
-  top: calc(var(--rr) * 0.86947 - 1px);
+  top: calc(var(--rr) * 0.91284 - 1px);
   right: 0;
   width: var(--t);
-  height: calc(var(--rr) * 0.26105 + 2px);
-  background: var(--brush), var(--titan);
+  height: calc(var(--rr) * 0.17431 + 2px);
+  background: var(--brush), linear-gradient(90deg, var(--titan-stops));
+  outline: 1px solid transparent;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transform-origin: 100% 50%;
-  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.99144)) rotateY(-90deg);
+  transform: rotateZ(var(--a)) translateX(calc(var(--rr) * -0.99619)) rotateY(-90deg);
 }
 
 /* Licht: dieselbe warme, dunkle Schicht wie auf der angrenzenden Seitenfläche (gleiche Animation), zur Stirnseite hin
@@ -2704,9 +2820,18 @@ html:not(.js) .nav ul a:hover {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgb(38 34 28 / var(--w1)) 1px, rgb(38 34 28 / var(--w0)) calc(100% - 1px)); /* von Stoß zu Stoß */
+  background: linear-gradient(rgb(62 45 30 / var(--w1)) 1px, rgb(62 45 30 / var(--w0)) calc(100% - 1px)); /* von Stoß zu Stoß */
   opacity: var(--side-rest);
   pointer-events: none;
+}
+
+/* Unten: der Anteil der Unterseite (von unten beleuchtet wird sie nie, siehe .iphone-cap-b) fest im Streifen */
+.rim-bl i,
+.rim-br i {
+  background:
+    linear-gradient(rgb(62 45 30 / calc(0.3 * var(--k1))) 1px, rgb(62 45 30 / calc(0.3 * var(--k0))) calc(100% - 1px)),
+    var(--brush),
+    linear-gradient(90deg, var(--titan-stops));
 }
 
 .rim-tl,
@@ -2722,70 +2847,142 @@ html:not(.js) .nav ul a:hover {
 }
 
 /* Die Ecke oben links beginnt an der linken Seite (Winkel 0°); gedreht beginnt sie oben rechts und unten links an der
-   Stirnseite */
+   Stirnseite. --k: Anteil der Unterseite, --g: Anteil am Glanz der rechten Seite (siehe unten) */
 .rim-tl i,
 .rim-br i {
   --w0: var(--c0);
   --w1: var(--c1);
+  --k0: var(--s0);
+  --k1: var(--s1);
+  --g0: var(--q0, 0);
+  --g1: var(--q1, 0);
 }
 
 .rim-tr i,
 .rim-bl i {
   --w0: var(--s0);
   --w1: var(--s1);
+  --k0: var(--c0);
+  --k1: var(--c1);
+  --g0: var(--r0, 0);
+  --g1: var(--r1, 0);
 }
 
+/* Je Streifen: Winkel seiner Mitte (--a), cos² an beiden Stößen (--c0 unten, --c1 oben), sin² (--s), und der Anteil
+   am Glanz der Seite, cos¹² des Winkels zur Seite (--q von der Seite links bzw. unten rechts aus, --r von oben rechts) */
 .rim-c i:nth-child(1) {
-  --a: 7.5deg;
+  --a: 5deg;
   --c0: 1;
-  --c1: 0.933;
+  --c1: 0.97;
   --s0: 0;
-  --s1: 0.067;
+  --s1: 0.03;
+  --q0: 1;
+  --q1: 0.834;
 }
 
 .rim-c i:nth-child(2) {
-  --a: 22.5deg;
-  --c0: 0.933;
-  --c1: 0.75;
-  --s0: 0.067;
-  --s1: 0.25;
+  --a: 15deg;
+  --c0: 0.97;
+  --c1: 0.883;
+  --s0: 0.03;
+  --s1: 0.117;
+  --q0: 0.834;
+  --q1: 0.474;
 }
 
 .rim-c i:nth-child(3) {
-  --a: 37.5deg;
-  --c0: 0.75;
-  --c1: 0.5;
-  --s0: 0.25;
-  --s1: 0.5;
+  --a: 25deg;
+  --c0: 0.883;
+  --c1: 0.75;
+  --s0: 0.117;
+  --s1: 0.25;
+  --q0: 0.474;
+  --q1: 0.178;
 }
 
 .rim-c i:nth-child(4) {
-  --a: 52.5deg;
-  --c0: 0.5;
-  --c1: 0.25;
-  --s0: 0.5;
-  --s1: 0.75;
+  --a: 35deg;
+  --c0: 0.75;
+  --c1: 0.587;
+  --s0: 0.25;
+  --s1: 0.413;
+  --q0: 0.178;
+  --q1: 0.041;
 }
 
 .rim-c i:nth-child(5) {
-  --a: 67.5deg;
-  --c0: 0.25;
-  --c1: 0.067;
-  --s0: 0.75;
-  --s1: 0.933;
+  --a: 45deg;
+  --c0: 0.587;
+  --c1: 0.413;
+  --s0: 0.413;
+  --s1: 0.587;
+  --q0: 0.041;
+  --q1: 0.005;
+  --r0: 0.005;
+  --r1: 0.041;
 }
 
 .rim-c i:nth-child(6) {
-  --a: 82.5deg;
-  --c0: 0.067;
+  --a: 55deg;
+  --c0: 0.413;
+  --c1: 0.25;
+  --s0: 0.587;
+  --s1: 0.75;
+  --r0: 0.041;
+  --r1: 0.178;
+}
+
+.rim-c i:nth-child(7) {
+  --a: 65deg;
+  --c0: 0.25;
+  --c1: 0.117;
+  --s0: 0.75;
+  --s1: 0.883;
+  --r0: 0.178;
+  --r1: 0.474;
+}
+
+.rim-c i:nth-child(8) {
+  --a: 75deg;
+  --c0: 0.117;
+  --c1: 0.03;
+  --s0: 0.883;
+  --s1: 0.97;
+  --r0: 0.474;
+  --r1: 0.834;
+}
+
+.rim-c i:nth-child(9) {
+  --a: 85deg;
+  --c0: 0.03;
   --c1: 0;
-  --s0: 0.933;
+  --s0: 0.97;
   --s1: 1;
+  --r0: 0.834;
+  --r1: 1;
+}
+
+/* Glanz der rechten Seite (vf-phone-spec-r) auf den angrenzenden Eckstreifen: dasselbe Profil quer über die Tiefe
+   (Schultern und Band, so stoßen Seite und Ecke bei jedem Winkel gleich hell aneinander), entlang des Streifens von Stoß
+   zu Stoß mit seinem Anteil abgeschwächt (Maske) – eine polierte Rundung fängt das Licht nur nahe der Seite (nur die
+   Streifen, die es sehen). Die Maske sitzt auf dem flachen Inhalt eines Streifens, nicht auf einer Fläche im Raum. */
+.rim-br i:nth-child(-n + 5)::before,
+.rim-tr i:nth-child(n + 5)::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(90deg, var(--spec-stops));
+  -webkit-mask-image: linear-gradient(rgb(0 0 0 / var(--g1)) 1px, rgb(0 0 0 / var(--g0)) calc(100% - 1px));
+  mask-image: linear-gradient(rgb(0 0 0 / var(--g1)) 1px, rgb(0 0 0 / var(--g0)) calc(100% - 1px));
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Rückseite: mattes Glas im warmen Sandton des Titans (wie „Wüstentitan“) im Metallrahmen – Licht von oben links, zum
-   Rand hin leicht gewölbt (weiche Innenschattierung), am Übergang zum Rahmen eine feine Lichtkante (2 px breit, damit
-   Safari sie nicht strichelt) und eine Fuge. Kameramodul oben links. */
+   Rand hin leicht gewölbt (weiche Innenschattierung). Von außen nach innen: Silhouette, polierte Fase des Rahmens (hell,
+   2 px breit, damit Safari sie nicht strichelt), Rahmen, dunkle Fuge, dann das Glas. Darauf der Fuß des Kameraplateaus
+   (.bump-foot, das Plateau selbst steht heraus, siehe .iphone-bump) und das Zeichen als glänzende Einlage. */
 .iphone-back {
   container-type: inline-size;
   position: absolute;
@@ -2797,27 +2994,47 @@ html:not(.js) .nav ul a:hover {
   border-radius: 15.6% / 7.5%;
   background:
     var(--grain),
-    radial-gradient(140% 90% at 18% 0%, rgb(255 255 255 / 30%), rgb(255 255 255 / 0%) 55%),
-    radial-gradient(120% 70% at 88% 100%, rgb(60 56 50 / 14%), rgb(60 56 50 / 0%) 60%),
-    linear-gradient(170deg, #e8ded3 0%, #dacec1 48%, #cdc0b0 100%);
+    radial-gradient(140% 90% at 18% 0%, rgb(255 250 244 / 38%), rgb(255 250 244 / 0%) 55%),
+    radial-gradient(120% 70% at 88% 100%, rgb(90 70 52 / 18%), rgb(90 70 52 / 0%) 60%),
+    linear-gradient(170deg, #e5d9cc 0%, #d3c4b3 50%, #c1af9c 100%);
   /* Kein großer Schlagschatten auf der drehenden Rückseite: Er vergrößert ihre Grafikebene, Chromium zerteilt sie dann
-     an Seiten und Eckstreifen (dunkler Keil, harte Schattenkante). Den Schatten am Boden trägt .showcase-floor. */
-  box-shadow:
-    0 0 0 1px #a29483,
-    inset 0 0 0 calc(var(--pw) * 0.012) #b1a392,
-    inset 0 0 0 calc(var(--pw) * 0.012 + 2px) rgb(255 255 255 / 45%),
-    inset 0 0 0 calc(var(--pw) * 0.012 + 3.5px) rgb(40 36 30 / 16%),
-    inset 0 0 calc(var(--pw) * 0.09) calc(var(--pw) * 0.012) rgb(40 36 30 / 10%);
-  color: rgb(255 252 244 / 62%);
+     an Seiten und Eckstreifen (dunkler Keil, harte Schattenkante). Den Schatten am Boden trägt .showcase-floor. Rahmen
+     und Fugen zeichnet .back-rings. */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   scale: 0; /* in der Endlage abgewandt (siehe .iphone-front) */
   transform: translateZ(calc(var(--t) * -1)) rotateY(180deg);
 }
 
+/* Rahmen der Rückseite als eigene Schicht (wie .iphone-ring: flach gesehen blendet vf-phone-rings ihn aus) – von
+   außen nach innen Kante, Fase, Rahmen, Fuge, weiche Wölbung; darüber die Antennenfugen auf Höhe derer an den Seiten */
+.back-rings {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px #8e7a66,
+    inset 0 0 0 3px #f4ece2,
+    inset 0 0 0 calc(var(--pw) * 0.014 + 1px) #a8927c,
+    inset 0 0 0 calc(var(--pw) * 0.014 + 3px) rgb(52 40 28 / 40%),
+    inset 0 0 calc(var(--pw) * 0.06) calc(var(--pw) * 0.014) rgb(60 45 30 / 12%);
+  pointer-events: none;
+}
+
+.back-rings::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 0 22.8% / 1.6% 0.5% no-repeat,
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 100% 22.8% / 1.6% 0.5% no-repeat,
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 0 77.2% / 1.6% 0.5% no-repeat,
+    linear-gradient(rgb(120 104 86 / 70%), rgb(120 104 86 / 70%)) 100% 77.2% / 1.6% 0.5% no-repeat;
+  pointer-events: none;
+}
+
 .iphone-back .device-mark {
-  width: 24%;
-  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 45%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 10%));
+  width: 23%;
 }
 
 /* Glanz, der beim Drehen über das Glas wandert (siehe vf-phone-sheen), und Abdunklung, wenn die Rückseite vom Licht
@@ -2831,16 +3048,17 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
-/* Das Glanzband ist breiter als die Rückseite (links und rechts je 60 % mehr), damit es ganz hinausgleiten kann */
+/* Das Glanzband ist breiter als die Rückseite (links und rechts je 60 % mehr), damit es ganz hinausgleiten kann; auf dem
+   matten Glas ein breiter, weicher Schein im warmen Ton des Lichts */
 .iphone-back::before {
   z-index: 2;
   inset: 0 -60%;
   border-radius: 0;
   background: linear-gradient(
     105deg,
-    rgb(255 255 255 / 0%) 38%,
-    rgb(255 255 255 / 30%) 50%,
-    rgb(255 255 255 / 0%) 62%
+    rgb(255 248 238 / 0%) 32%,
+    rgb(255 248 238 / 42%) 50%,
+    rgb(255 248 238 / 0%) 68%
   );
   opacity: 0;
   translate: -60% 0; /* hier Endlage: außerhalb der beschnittenen Fläche */
@@ -2848,36 +3066,138 @@ html:not(.js) .nav ul a:hover {
 
 .iphone-back::after {
   z-index: 3;
-  background: rgb(38 34 28);
+  background: rgb(62 45 30);
   opacity: 0.38;
 }
 
-/* Kameramodul: Plateau aus poliertem Glas im Ton der Rückseite (die Rückseite selbst ist matt) und mit ihr aus einem
-   Stück – schärferer Reflex, oben helle, unten dunkle Lichtkante, kein Schlagschatten. Objektive mit schmalem Ring im
-   Titanton, schwarzem Rand, violett vergütetem Glas und Lichtpunkt; Blitz, LiDAR und Mikrofon. */
+/* Fuß des Kameraplateaus auf dem Rückglas mit seinem weichen Schatten; darauf flach gemalt dieselbe Kamera wie oben auf
+   dem Plateau (Glas, Objektive in ihren Ringen, Blitz, LiDAR, Mikrofon). Mit 3D sieht man davon nur den Schatten: Den
+   Rest deckt der Sockel des herausstehenden Plateaus (.bump-base, 1 px darüber) aus jedem Blickwinkel ganz ab. Drückt
+   ein Browser die verschachtelte 3D-Darstellung flach, verdeckt die Rückseite das Gehäuse samt Plateau – dann bleibt so
+   wenigstens eine Kamera statt einer leeren Fläche. Maße wie dort in Anteilen von --pw. */
+.bump-foot {
+  --lens: #1d2a3e 0 9%, #0b1019 17%, #16202e 23%, #06080c 29%, #10141b 36%, #020304 44%, #2a2c30 46%, #0c0d0f 49%,
+    #18191c 56%, #24221f 73%, #efe5d9 77%, #b39f89 86%, #e4d8ca 93%, #8f7a65 98%, rgb(143 122 101 / 0%) 100%;
+  position: absolute;
+  top: 2.8%;
+  left: 5.2%;
+  width: 51%;
+  aspect-ratio: 1;
+  border-radius: 24%;
+  background:
+    radial-gradient(circle calc(var(--pw) * 0.1122) at 25.5% 25.5%, var(--lens)),
+    radial-gradient(circle calc(var(--pw) * 0.1122) at 25.5% 74.5%, var(--lens)),
+    radial-gradient(circle calc(var(--pw) * 0.1122) at 74.5% 50%, var(--lens)),
+    radial-gradient(
+      circle calc(var(--pw) * 0.0383) at 80.5% 14.5%,
+      #f7efd9 0 62%,
+      #e6d9bd 80%,
+      #33302c 84% 91%,
+      #b9a894 95%,
+      rgb(125 109 91 / 0%) 100%
+    ),
+    radial-gradient(
+      circle calc(var(--pw) * 0.0306) at 82% 82%,
+      #0a0b0d 0 68%,
+      #2a2c31 76%,
+      #0e0f11 84%,
+      #b09e8a 90%,
+      rgb(111 96 79 / 0%) 100%
+    ),
+    radial-gradient(circle calc(var(--pw) * 0.0077) at 59.5% 9%, #1a1816 55%, rgb(26 24 22 / 0%) 100%),
+    var(--plateau);
+  box-shadow:
+    0.4cqw 0.8cqw 1.6cqw rgb(60 45 30 / 26%),
+    0 0 0 1px rgb(70 56 42 / 25%);
+}
+
+/* Kamera (nur mit Bewegung, im Gehäuse): an der Stelle der Rückseite und wie sie gedreht (rotate um y, translate eine
+   Gehäusedicke nach hinten); ihre Teile liegen um ihre Höhe (translateZ) davor, also über dem Glas. Über scale in der
+   Tiefe fährt alles nach der Kantenansicht in die Rückseite ein (vf-phone-bump; Endlage eingefahren). Einzelne
+   Eigenschaften statt transform: scale wirkt so vor der Drehung, in der Tiefe des Plateaus. Kein overflow, filter, mask
+   oder opacity an diesem Element – Browser zeichneten es sonst flach. */
+.iphone-bump {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  translate: 0 0 calc(var(--t) * -1);
+  rotate: y 180deg;
+  scale: 1 1 0;
+  pointer-events: none;
+}
+
+/* Sockel des Plateaus: so groß wie sein Fuß und 1 px über dem Glas – er deckt die dort flach gemalte Kamera ab (mehr
+   Abstand bräuchte es nicht; weniger, und Chromium hielte beide für eine Ebene). Wo das Plateau schräg gesehen versetzt
+   über ihm liegt, bleibt von ihm ein schmaler Streifen sichtbar: an den Rundungen die polierte Wand des Plateaus, zum
+   Glas hin dunkler und beleuchtet wie die gerade Wand (.bump-wall), denn sie zeigt wie diese zur rechten Seite. */
+.bump-base {
+  position: absolute;
+  top: 2.8%;
+  left: 5.2%;
+  width: 51%;
+  aspect-ratio: 1;
+  border-radius: 24%;
+  background: #cbb8a3;
+  box-shadow:
+    inset 0 0 0 1px rgb(84 66 50 / 50%),
+    inset 0 0 calc(var(--pw) * 0.007) calc(var(--pw) * 0.002) rgb(84 66 50 / 38%);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  scale: 0; /* wie das Plateau (vf-phone-back) */
+  transform: translateZ(1px);
+}
+
+/* Kameraplateau (Glas siehe --plateau), oben links eine helle, unten rechts eine dunkle Kante; darüber ein schärferer
+   Reflex, der schneller wandert als der Glanz auf dem matten Glas (vf-phone-plateau). Objektivringe (ihr Fuß auf dem
+   Plateau: .lens-foot), Blitz, LiDAR und Mikrofon. Maße in Anteilen von --pw: Das Plateau liegt nicht mehr in der
+   Rückseite (cqw). */
 .iphone-camera {
   position: absolute;
-  z-index: 1;
   top: 2.8%;
   left: 5.2%;
   width: 51%; /* Plateau ≈ 51 % der Breite, reicht knapp über die Mitte */
   aspect-ratio: 1;
+  overflow: hidden; /* Rückfall für Browser ohne „clip“ */
+  overflow: clip; /* beschneidet den wandernden Reflex */
   border-radius: 24%;
-  background:
-    linear-gradient(
-      135deg,
-      rgb(255 255 255 / 55%) 0%,
-      rgb(255 255 255 / 8%) 30%,
-      rgb(255 255 255 / 0%) 55%,
-      rgb(255 255 255 / 18%) 78%,
-      rgb(255 255 255 / 0%) 90%
-    ),
-    linear-gradient(170deg, #e1d7cb, #cec2b2);
+  background: var(--plateau);
   box-shadow:
-    0 0 0 1px rgb(60 56 50 / 20%),
-    inset 0 0.35cqw 0.25cqw rgb(255 255 255 / 70%),
-    inset 0 -0.35cqw 0.5cqw rgb(40 36 30 / 22%),
-    inset 0 0 0 0.15cqw rgb(60 56 50 / 25%);
+    0 0 0 1px rgb(70 56 42 / 32%),
+    inset calc(var(--pw) * 0.004) calc(var(--pw) * 0.004) 0 rgb(255 255 255 / 58%),
+    inset calc(var(--pw) * -0.004) calc(var(--pw) * -0.004) 0 rgb(60 45 30 / 32%);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  scale: 0; /* in der Endlage abgewandt wie die Rückseite (vf-phone-back) */
+  transform: translateZ(var(--bump));
+}
+
+/* Reflex (dreimal so breit wie das Plateau, damit er ganz hinausgleiten kann; Endlage außerhalb) und Abdunklung wie
+   auf der Rückseite */
+.iphone-camera::before,
+.iphone-camera::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.iphone-camera::before {
+  z-index: 1;
+  inset: 0 -100%;
+  background: linear-gradient(
+    118deg,
+    rgb(255 255 255 / 0%) 43%,
+    rgb(255 255 255 / 62%) 49.5%,
+    rgb(255 255 255 / 0%) 56%
+  );
+  opacity: 0;
+  translate: -50% 0;
+}
+
+.iphone-camera::after {
+  z-index: 2;
+  background: rgb(62 45 30);
+  opacity: 0.38;
 }
 
 .iphone-camera i,
@@ -2887,64 +3207,50 @@ html:not(.js) .nav ul a:hover {
   border-radius: 50%;
 }
 
-.lens {
+/* Fuß eines Objektivrings: schräg gesehen die Wand des Zylinders, poliertes Titan; dazu ein Schatten auf dem Plateau */
+.lens-foot {
   width: 44%;
-  /* obenauf die helle Fase zwischen Glas und Ring, darunter Lichtpunkt, Glanz, Vergütung, Glas und Ring */
-  background:
-    radial-gradient(
-      circle closest-side,
-      rgb(255 255 255 / 0%) 80%,
-      rgb(255 255 255 / 55%) 81.5%,
-      rgb(255 255 255 / 0%) 84%
-    ),
-    radial-gradient(circle at 34% 30%, rgb(255 255 255 / 78%) 0 2.5%, rgb(255 255 255 / 0%) 6%),
-    radial-gradient(60% 40% at 38% 26%, rgb(255 255 255 / 14%), rgb(255 255 255 / 0%) 70%),
-    radial-gradient(circle at 62% 66%, rgb(120 90 200 / 34%) 0 5%, rgb(120 90 200 / 0%) 16%),
-    radial-gradient(circle at 44% 60%, rgb(60 150 140 / 22%) 0 3%, rgb(60 150 140 / 0%) 11%),
-    radial-gradient(
-      circle closest-side,
-      #1d2a3e 0 13%,
-      #0b1019 24%,
-      #16202e 33%,
-      #06080c 42%,
-      #10141b 51%,
-      #020304 62%,
-      #2a2c30 64.5%,
-      #0c0d0f 68%,
-      #18191c 75.5%,
-      rgb(24 25 28 / 0%) 80%
-    ),
-    conic-gradient(from 215deg, #f6f0ea, #a19382, #eae1d6, #918475, #f6f0ea);
+  background: linear-gradient(135deg, #f2e9de, #a8937c 45%, #6e5d4b);
   box-shadow:
-    0.1cqw 0.3cqw 0.4cqw rgb(20 18 14 / 40%),
-    inset 0 0 0 0.12cqw rgb(255 255 255 / 35%);
+    calc(var(--pw) * 0.002) calc(var(--pw) * 0.005) calc(var(--pw) * 0.009) rgb(50 38 26 / 35%),
+    0 0 0 calc(var(--pw) * 0.0012) rgb(60 48 36 / 30%);
 }
 
-.lens:nth-child(1) {
+.lens-foot:nth-of-type(1),
+.lens:nth-of-type(1) {
   top: 3.5%;
   left: 3.5%;
 }
 
-.lens:nth-child(2) {
+.lens-foot:nth-of-type(2),
+.lens:nth-of-type(2) {
   top: 52.5%;
   left: 3.5%;
 }
 
-.lens:nth-child(3) {
+.lens-foot:nth-of-type(3),
+.lens:nth-of-type(3) {
   top: 28%;
   left: 52.5%;
 }
 
+/* Blitz: flache, blassgelbe Streuscheibe mit feinen Fresnel-Ringen und dunkler Dichtung; LiDAR: schwarzes, glänzendes
+   Fenster mit schmalem Metallrand und violettem Schimmer */
 .flash {
   top: 7%;
   left: 73%;
   width: 15%;
   background:
-    radial-gradient(circle at 38% 34%, rgb(255 255 255 / 70%) 0 8%, rgb(255 255 255 / 0%) 22%),
-    radial-gradient(circle closest-side, #fbf4e2 0 40%, #e2d4b6 72%, #a8997c 100%);
+    repeating-radial-gradient(
+      circle,
+      rgb(150 128 90 / 0%) 0 calc(var(--pw) * 0.0035),
+      rgb(150 128 90 / 14%) calc(var(--pw) * 0.0045),
+      rgb(150 128 90 / 0%) calc(var(--pw) * 0.0055)
+    ),
+    radial-gradient(circle closest-side, #f7efd9 0 62%, #e6d9bd 80%, #33302c 84% 91%, #b9a894 95%, #7d6d5b 100%);
   box-shadow:
-    0.1cqw 0.25cqw 0.4cqw rgb(40 36 30 / 25%),
-    inset 0 0 0 0.25cqw rgb(95 85 73 / 25%);
+    inset 0 0 0 calc(var(--pw) * 0.0012) rgb(255 255 255 / 35%),
+    calc(var(--pw) * 0.001) calc(var(--pw) * 0.0025) calc(var(--pw) * 0.004) rgb(40 36 30 / 25%);
 }
 
 .lidar {
@@ -2952,16 +3258,219 @@ html:not(.js) .nav ul a:hover {
   left: 76%;
   width: 12%;
   background:
-    radial-gradient(circle at 40% 36%, rgb(255 255 255 / 30%) 0 6%, rgb(255 255 255 / 0%) 14%),
-    radial-gradient(circle closest-side, #15171b 0 58%, #3a3c40 66%, #1a1b1e 100%);
-  box-shadow: 0.1cqw 0.25cqw 0.4cqw rgb(40 36 30 / 25%);
+    radial-gradient(ellipse 36% 22% at 38% 32%, rgb(200 190 255 / 30%), rgb(200 190 255 / 0%)),
+    radial-gradient(circle closest-side, #0a0b0d 0 68%, #2a2c31 76%, #0e0f11 84%, #b09e8a 90%, #6f604f 100%);
+  box-shadow: calc(var(--pw) * 0.001) calc(var(--pw) * 0.0025) calc(var(--pw) * 0.004) rgb(40 36 30 / 25%);
 }
 
 .mic {
   top: 7.5%;
   left: 58%;
   width: 3%;
-  background: #3a3c40;
+  background: radial-gradient(circle closest-side, #1a1816 55%, #6f604f 100%);
+}
+
+/* Wände des Plateaus für die Kantenansicht, wie die Seiten gebaut (senkrecht auf der Rückseite, um ihre Kante nach außen
+   geklappt, zeigen zur rechten Seite des Telefons – nur die sieht man): eine am Rand über das gerade Stück zwischen den
+   Rundungen, eine durch die Mitte über die ganze Höhe – genau von der Seite gesehen ist das Plateau ein Rechteck.
+   Schräg gesehen verdeckt das Plateau die mittlere, die Rundungen übernimmt der Sockel (.bump-base). Am Glas dunkler
+   (wie der Rand des Sockels), zum Plateau hin die polierte Kante. */
+.bump-wall {
+  position: absolute;
+  top: calc(2.8% + var(--pw) * 0.1224);
+  left: 5.2%;
+  width: var(--bump);
+  height: calc(var(--pw) * 0.2652);
+  background: linear-gradient(90deg, #8f7a66, #c0ac96 25%, #cbb8a3 55%, #dccbb8 84%, #cdbaa6);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-origin: 0 50%;
+  transform: rotateY(-90deg);
+}
+
+/* Die mittlere endet knapp unter dem Plateau (wie .barrel). Gebraucht wird sie nur für den Umriss nahe der Kantenansicht
+   – sonst liegt sie im Plateau, und Safari sortierte sie womöglich davor (vf-phone-profile, Endlage aus). */
+.bump-mid {
+  top: 2.8%;
+  left: 30.7%;
+  width: calc(var(--bump) - 1.5px);
+  height: calc(var(--pw) * 0.51);
+  opacity: 0;
+}
+
+/* Objektivringe: das Glas mit Ring eine Ringhöhe über dem Plateau (.iphone-lenses), darunter je eine Wand durch die
+   Mitte des Zylinders (.iphone-barrels, Kantenansicht wie .bump-mid); schräg gesehen zeigt der Fuß (.lens-foot) die Wand.
+   Beide Ebenen liegen wie das Plateau, auf ihm. */
+.iphone-lenses,
+.iphone-barrels {
+  position: absolute;
+  top: 2.8%;
+  left: 5.2%;
+  width: 51%;
+  aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transform: translateZ(var(--bump));
+}
+
+/* Glas mit Linsen und farbiger Vergütung in einem polierten Ring im Titanton: obenauf die helle Fase zwischen Glas und
+   Ring, darunter das Spiegelbild eines Fensters auf dem Saphirglas, feine Ringe der Vergütung, ein kleiner Reflex im
+   Inneren, die Linsen und der Ring */
+.lens {
+  position: absolute;
+  width: 44%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle closest-side,
+      rgb(255 255 255 / 0%) 76%,
+      rgb(255 255 255 / 55%) 78%,
+      rgb(255 255 255 / 0%) 81%
+    ),
+    radial-gradient(ellipse 24% 13% at 37% 29%, rgb(255 255 255 / 50%), rgb(255 255 255 / 28%) 55%, rgb(255 255 255 / 0%)),
+    radial-gradient(
+      circle closest-side,
+      rgb(0 0 0 / 0%) 44%,
+      rgb(150 120 230 / 30%) 46.5%,
+      rgb(0 0 0 / 0%) 49%,
+      rgb(0 0 0 / 0%) 52%,
+      rgb(80 180 160 / 22%) 54%,
+      rgb(0 0 0 / 0%) 56%
+    ),
+    radial-gradient(circle at 61% 65%, rgb(170 140 255 / 40%) 0 1.2%, rgb(170 140 255 / 0%) 3.5%),
+    radial-gradient(
+      circle closest-side,
+      #1d2a3e 0 12%,
+      #0b1019 22%,
+      #16202e 30%,
+      #06080c 38%,
+      #10141b 47%,
+      #020304 58%,
+      #2a2c30 60.5%,
+      #0c0d0f 64%,
+      #18191c 72%,
+      rgb(24 25 28 / 0%) 76%
+    ),
+    conic-gradient(from 215deg, #f5ebdf, #a38c75, #e9dccd, #8f7a65, #f5ebdf);
+  box-shadow: inset 0 0 0 calc(var(--pw) * 0.0012) rgb(255 255 255 / 35%);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  scale: 0; /* wie das Plateau */
+  transform: translateZ(var(--barrel));
+}
+
+.lens::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgb(62 45 30);
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+/* Wand eines Rings, von der Seite gesehen: Zylinder (quer schattiert), am Plateau dunkler, oben am Glas die polierte
+   Fase mit einer hellen Lippe. Reicht anderthalb Pixel ins Plateau hinein (so bleibt zur mittleren Wand keine Lücke) und
+   endet anderthalb Pixel unter dem Glas, ohne geglättete Kante: Deren Saum reichte sonst über das Glas hinaus und
+   zeichnete sich als feine Linie quer über das Objektiv. Etwas niedriger als das Glas (42 statt 44 %): Geneigt gesehen
+   stünden ihre Enden sonst unter dem Glas hervor. Nur nahe der Kantenansicht zu sehen (vf-phone-profile, Endlage aus) –
+   schräg gesehen zeigt der Fuß auf dem Plateau (.lens-foot) die Wand. Der hintere Ring (der dritte) steht im Schatten der
+   beiden vorderen: Zwischen ihnen hindurch gesehen ist er dunkler. */
+.barrel {
+  --occlusion: 0%;
+  position: absolute;
+  width: var(--barrel);
+  height: 42%;
+  background:
+    linear-gradient(90deg, rgb(255 250 242 / 0%) calc(100% - 1.5px), rgb(255 250 242 / 75%)),
+    linear-gradient(rgb(40 30 20 / var(--occlusion)), rgb(40 30 20 / var(--occlusion))),
+    linear-gradient(
+      90deg,
+      rgb(45 34 24 / 45%),
+      rgb(45 34 24 / 0%) 40%,
+      rgb(255 250 242 / 0%) 62%,
+      rgb(255 250 242 / 45%) 84%,
+      rgb(255 250 242 / 0%)
+    ),
+    linear-gradient(180deg, #6a5847, #cdbba6 30%, #a8937c 55%, #715e4c);
+  opacity: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-origin: 0 50%;
+  transform: translateZ(-1.5px) rotateY(-90deg);
+}
+
+.barrel:nth-of-type(1) {
+  top: 4.5%;
+  left: 25.5%;
+}
+
+.barrel:nth-of-type(2) {
+  top: 53.5%;
+  left: 25.5%;
+}
+
+.barrel:nth-of-type(3) {
+  --occlusion: 45%;
+  top: 29%;
+  left: 74.5%;
+}
+
+/* Licht auf den Wänden von Plateau und Ringen (auch auf dem Sockel, dessen Rand die Wand an den Rundungen ist): wie die
+   rechte Seite, zu der sie zeigen */
+.bump-wall::after,
+.bump-base::after,
+.barrel::after,
+.iphone-key::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(62 45 30);
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+/* Standby-Taste, wie beim echten Gerät gut einen halben Millimeter aus der Seite heraus: zwei Lagen übereinander (die
+   untere dunkler, die Flanke der Taste), gedreht wie die rechte Seite und um die Höhe vor sie geschoben. Flach, aus
+   demselben gebürsteten Titan, an den Längskanten schmale polierte Fasen. Höhe wie die flache Taste der Vorderansicht
+   (28 – 38,5 % der Höhe, siehe .phone-hw). Auf der Seite selbst liegt darunter nur die Aussparung (.btn-power). */
+.iphone-key {
+  position: absolute;
+  top: 28%;
+  left: calc(100% + var(--t) * 0.29);
+  width: calc(var(--t) * 0.42);
+  height: 10.5%;
+  border-radius: 999px;
+  background:
+    var(--brush),
+    linear-gradient(90deg, #7c6a57 0 6%, #eadfd1 12%, #c4b19c 22% 78%, #e3d6c6 88%, #7c6a57 94%);
+  box-shadow: 0 0 0 1px rgb(60 46 32 / 22%);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-origin: calc(var(--t) * -0.29) 50%;
+  transform: rotateY(90deg) translateZ(calc(var(--pw) * 0.0085));
+}
+
+.iphone-key-mid {
+  background: linear-gradient(90deg, #6f5e4c, #a8927c 50%, #6f5e4c);
+  transform: rotateY(90deg) translateZ(calc(var(--pw) * 0.0042));
+}
+
+/* Glanz wie auf der Seite (nur die obere Lage, die Flanke darunter sieht man kaum) */
+.iphone-key:not(.iphone-key-mid)::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(255 248 238 / 42%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.iphone-key::after {
+  z-index: 2;
 }
 
 /* Gerade Seitenflächen (gebürstetes Titan) mit Antennenfugen und Tasten; unten und oben die Stirnflächen */
@@ -2972,13 +3481,17 @@ html:not(.js) .nav ul a:hover {
      durch das Gehäuse (dunkler Keil an der oberen Ecke), und es sind nur halb so viele Flächen zu sortieren. Jede
      Fläche steht dafür außerhalb des Gehäuses und klappt um ihre Vorderkante nach hinten: Die Vorderkante liegt so
      genau am Drehpunkt (wie bei den Eckstreifen) – mit einer Verschiebung um --t träfen sich Seiten und Streifen je
-     nach Rundung der Ebenengröße um Bruchteile eines Pixels versetzt (sichtbare Stufe am Stoß). */
+     nach Rundung der Ebenengröße um Bruchteile eines Pixels versetzt (sichtbare Stufe am Stoß). Unsichtbarer Umriss
+     für geglättete Kanten (siehe .rim-c i). */
+  outline: 1px solid transparent;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* je 1 px bis in die runden Ecken hinein (unter die Streifen): keine Fuge am Übergang */
+/* je 1 px bis in die runden Ecken hinein (unter die Streifen): keine Fuge am Übergang. Profil von hinten (0 %) nach
+   vorn: links liegt hinten links (90deg), rechts hinten rechts (270deg, siehe unten) */
 .iphone-side {
+  --dir: 90deg;
   top: calc(7.5% - 1px);
   width: var(--t);
   height: calc(85% + 2px);
@@ -2986,28 +3499,42 @@ html:not(.js) .nav ul a:hover {
     linear-gradient(
       180deg,
       rgb(0 0 0 / 0%) 18%,
-      rgb(158 144 127 / 80%) 18% 18.6%,
+      rgb(150 132 112 / 80%) 18% 18.6%,
       rgb(0 0 0 / 0%) 18.6% 81.4%,
-      rgb(158 144 127 / 80%) 81.4% 82%,
+      rgb(150 132 112 / 80%) 81.4% 82%,
       rgb(0 0 0 / 0%) 82%
     ),
     var(--brush),
-    var(--titan);
+    linear-gradient(var(--dir), var(--titan-stops));
 }
 
-/* Licht auf den Seitenflächen: warme, dunkle Schicht (auch über den Tasten); Deckkraft setzt die Animation (hier Endlage) */
+/* Licht auf den Seitenflächen: warme, dunkle Schicht (auch über den Tasten); Deckkraft setzt die Animation (hier Endlage).
+   Im Schatten bleibt Titan warm – es spiegelt eine dunklere, aber gleich getönte Umgebung. */
 .iphone-side::after {
   content: "";
   position: absolute;
   z-index: 1;
   inset: 0;
-  background: rgb(38 34 28);
+  background: rgb(62 45 30);
   opacity: 0.32;
   pointer-events: none;
 }
 
 .iphone-side-r::after {
   opacity: 0.16;
+}
+
+/* Glanz auf der rechten Seite (vf-phone-spec-r): Das Licht spiegelt sich, wenn die Normale der Seite durch die
+   Winkelhalbierende zwischen Blick und Licht läuft (Blinn-Phong-Keule um 15°) – hell an den polierten Schultern, ein
+   breiter, weicher Schein auf dem gebürsteten Band (--spec-stops, in der Richtung des Profils). */
+.iphone-side-r::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: linear-gradient(var(--dir), var(--spec-stops));
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Beide Seiten stehen senkrecht auf der Vorderseite und reichen eine Gehäusedicke nach hinten */
@@ -3018,61 +3545,104 @@ html:not(.js) .nav ul a:hover {
 }
 
 .iphone-side-r {
+  --dir: 270deg;
   left: 100%;
   transform-origin: 0 50%;
   transform: rotateY(90deg);
 }
 
+/* Tasten aus demselben gebürsteten Titan: flach, schmale polierte Fasen, eine feine Fuge und eine Lichtkante am Schlitz.
+   Höhen wie die flachen Tasten der Vorderansicht (.phone-hw; die Seite reicht von 7,5 % bis 92,5 % der Höhe). */
 .iphone-side b {
   position: absolute;
-  left: 20%;
-  width: 60%;
+  left: 29%;
+  width: 42%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #958777, #f2ebe3 45%, #ccbeaf 60%, #918475);
+  background:
+    var(--brush),
+    linear-gradient(90deg, #7c6a57 0 6%, #eadfd1 12%, #c4b19c 22% 78%, #e3d6c6 88%, #7c6a57 94%);
   box-shadow:
-    0 0 0 1px rgb(40 36 30 / 35%),
-    inset 0 1px 0 rgb(255 255 255 / 50%),
-    0 1px 2px rgb(20 18 14 / 25%);
+    0 0 0 1px rgb(60 46 32 / 22%),
+    0 0 0 2px rgb(255 248 238 / 22%);
 }
 
 .btn-action {
-  top: 11.2%;
-  height: 4.7%;
+  top: 12.4%;
+  height: 4.1%;
 }
 
 .btn-up {
-  top: 21.8%;
-  height: 8.2%;
+  top: 20.6%;
+  height: 7.5%;
 }
 
 .btn-down {
-  top: 33.5%;
-  height: 8.2%;
+  top: 30.7%;
+  height: 7.5%;
 }
 
-.btn-power {
-  top: 22.9%;
-  height: 13%;
+/* Auf der rechten Seite nur die Aussparung der Standby-Taste (die Taste selbst steht heraus, .iphone-key) */
+.iphone-side .btn-power {
+  top: calc(24.1% - 1px);
+  left: calc(29% - 1px);
+  width: calc(42% + 2px);
+  height: calc(12.4% + 2px);
+  background: rgb(40 30 20 / 45%);
+  box-shadow: 0 0 0 1px rgb(255 248 238 / 22%);
 }
 
-/* Stirnflächen: dasselbe Profil quer; ohne Bürstung, ihre Streifen lägen hier quer */
+/* Kamerasteuerung: bündige, dunkel spiegelnde Saphirfläche (warmes Dunkelgrau mit schmalem Lichtstreif) in einem
+   schmalen Titanring, unter der Standby-Taste */
+.iphone-side .btn-cam {
+  top: 60%;
+  left: 31%;
+  width: 38%;
+  height: 8%;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0%) 30%, rgb(255 255 255 / 24%) 45%, rgb(255 255 255 / 0%) 60%),
+    linear-gradient(90deg, #463e36, #6a5f53 50%, #433b33);
+  box-shadow:
+    0 0 0 1px rgb(40 32 24 / 38%),
+    0 0 0 2px rgb(214 198 178 / 70%),
+    0 0 0 2.5px rgb(60 46 32 / 20%);
+}
+
+/* Stirnflächen: dasselbe Profil quer (0 % hinten: oben liegt hinten oben, unten hinten unten); ohne Bürstung, ihre
+   Streifen lägen hier quer */
 .iphone-cap {
   left: calc(15.6% - 1px);
   width: calc(68.8% + 2px);
   height: var(--t);
-  background: linear-gradient(180deg, var(--titan-stops));
 }
 
 .iphone-cap-t {
   bottom: 100%;
+  background: linear-gradient(180deg, var(--titan-stops));
   transform-origin: 50% 100%;
   transform: rotateX(90deg);
 }
 
+/* Unterseite: zeigt nach unten, vom Licht weg – fest dunkler (beim Erscheinen sieht man sie von unten, siehe
+   vf-phone-body, nur wenige Pixel hoch); in der Mitte die USB-C-Buchse. Die Löcher von Mikrofon und Lautsprecher
+   entfallen: So flach gesehen zerfielen sie in eine gepunktete Linie. */
 .iphone-cap-b {
   top: 100%;
+  background:
+    linear-gradient(rgb(62 45 30 / 30%), rgb(62 45 30 / 30%)),
+    linear-gradient(0deg, var(--titan-stops));
   transform-origin: 50% 0;
   transform: rotateX(-90deg);
+}
+
+.iphone-cap-b .port {
+  position: absolute;
+  top: 34%;
+  left: 41%;
+  width: 18%;
+  height: 32%;
+  border-radius: 999px;
+  background: #1c1a18;
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 60%);
 }
 
 /* Breite Fenster: beim Telefon Text links, Gerät rechts */
@@ -3114,7 +3684,7 @@ html:not(.js) .nav ul a:hover {
     background: rgb(20 22 26 / 9%);
   }
 
-  .iphone {
+  .showcase-phone .showcase-scene {
     --pw: min(280px, 72vw, calc((100vh - 300px) / 2.16));
   }
 
@@ -3125,7 +3695,7 @@ html:not(.js) .nav ul a:hover {
 
 @supports (height: 100svh) {
   @media (max-width: 719px) {
-    .iphone {
+    .showcase-phone .showcase-scene {
       --pw: min(280px, 72vw, calc((100svh - 300px) / 2.16));
     }
   }
@@ -3144,14 +3714,14 @@ html:not(.js) .nav ul a:hover {
     text-align: left;
   }
 
-  .iphone {
+  .showcase-phone .showcase-scene {
     --pw: min(336px, 40vw, calc((100vh - var(--header-h) - 60px) / 2.161));
   }
 }
 
 @supports (height: 100svh) {
   @media (max-width: 899px) and (orientation: landscape) {
-    .iphone {
+    .showcase-phone .showcase-scene {
       --pw: min(336px, 40vw, calc((100svh - var(--header-h) - 60px) / 2.161));
     }
   }
@@ -4712,6 +5282,16 @@ html:not(.js) .nav ul a:hover {
     display: block;
   }
 
+  /* Linke Seite, Ecke oben links und obere Stirnfläche zeigen bei dieser Drehung (−150° → 0°, die Oberseite dabei nach
+     hinten geneigt) nie zum Betrachter – ohne sie sind gut 20 Grafikebenen weniger zu zeichnen. Ändert sich die Drehung,
+     gehören sie wieder dazu. In der Ruhelage stehen Seite und Stirnfläche wieder da (unsichtbar, genau von der Kante):
+     So setzt der Browser den Bildschirm genauso zusammen wie ohne Bewegung. */
+  .js .showcase-phone:not(.is-rest) .iphone-side-l,
+  .js .showcase-phone:not(.is-rest) .iphone-cap-t,
+  .js .rim-tl {
+    display: none;
+  }
+
   /* Bühne eine Bildschirmhöhe hoch; was beim Erscheinen von unten hereinkommt, bleibt in ihr */
   .js .showcase-stage {
     height: 100vh;
@@ -4864,28 +5444,72 @@ html:not(.js) .nav ul a:hover {
     animation: vf-phone-glare var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
-  .js .iphone-front .phone-hw {
+  .js .iphone-glass {
+    animation: vf-phone-fresnel var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .iphone-front .phone-hw,
+  .js .iphone-ring::after {
     animation: vf-phone-buttons var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
-  .js .iphone-back {
+  .js .iphone-ring,
+  .js .back-rings {
+    animation: vf-phone-rings var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  /* Rückseite und was von ihr wegzeigt (Sockel, Plateau, Gläser der Objektive): gemeinsam ein- und ausgeschaltet und
+     abgedunkelt */
+  .js .iphone-back,
+  .js .bump-base,
+  .js .iphone-camera,
+  .js .lens {
     animation: vf-phone-back var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  /* Mittlere Wand des Plateaus und Wände der Objektivringe nur nahe der Kantenansicht (für den Umriss) */
+  .js .bump-mid,
+  .js .barrel {
+    animation: vf-phone-profile var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-back::before {
     animation: vf-phone-sheen var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
-  .js .iphone-back::after {
+  .js .iphone-back::after,
+  .js .iphone-camera::after,
+  .js .lens::after {
     animation: vf-phone-back-shade var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .iphone-camera::before {
+    animation: vf-phone-plateau var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .iphone-bump {
+    animation: vf-phone-bump var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .iphone-side-l::after {
     animation: vf-phone-side-l var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
-  .js .iphone-side-r::after {
+  /* Alles, was zur rechten Seite zeigt: die Seite, Wände von Plateau (mit dem Rand des Sockels) und Objektivringen, die
+     Standby-Taste */
+  .js .iphone-side-r::after,
+  .js .bump-wall::after,
+  .js .bump-base::after,
+  .js .barrel::after,
+  .js .iphone-key::after {
     animation: vf-phone-side-r var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
+  }
+
+  .js .iphone-side-r::before,
+  .js .rim-br i:nth-child(-n + 5)::before,
+  .js .rim-tr i:nth-child(n + 5)::before,
+  .js .iphone-key:not(.iphone-key-mid)::before {
+    animation: vf-phone-spec-r var(--vf-dur) linear var(--vf-delay) both var(--vf-play);
   }
 
   .js .rim-c i::after {
@@ -7601,186 +8225,194 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-phone-body {
   0% {
-    transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   3% {
-    transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(1 * 28vh)) scale(0.666) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   3.855% {
-    transform: translateY(calc(0.9976 * 28vh)) scale(0.6666) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.9976 * 28vh)) scale(0.6666) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   4.725% {
-    transform: translateY(calc(0.9905 * 28vh)) scale(0.6682) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.9905 * 28vh)) scale(0.6682) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   5.615% {
-    transform: translateY(calc(0.9785 * 28vh)) scale(0.671) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.9785 * 28vh)) scale(0.671) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   6.53% {
-    transform: translateY(calc(0.9617 * 28vh)) scale(0.675) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.9617 * 28vh)) scale(0.675) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   7.465% {
-    transform: translateY(calc(0.9401 * 28vh)) scale(0.68) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.9401 * 28vh)) scale(0.68) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   8.43% {
-    transform: translateY(calc(0.9136 * 28vh)) scale(0.6862) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.9136 * 28vh)) scale(0.6862) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   9.43% {
-    transform: translateY(calc(0.8819 * 28vh)) scale(0.6936) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.8819 * 28vh)) scale(0.6936) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   10.47% {
-    transform: translateY(calc(0.8449 * 28vh)) scale(0.7023) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.8449 * 28vh)) scale(0.7023) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   11.33% {
-    transform: translateY(calc(0.8115 * 28vh)) scale(0.7101) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.8115 * 28vh)) scale(0.7101) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   12.23% {
-    transform: translateY(calc(0.7743 * 28vh)) scale(0.7188) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.7743 * 28vh)) scale(0.7188) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   14.195% {
-    transform: translateY(calc(0.6862 * 28vh)) scale(0.7394) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.6862 * 28vh)) scale(0.7394) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   16.065% {
-    transform: translateY(calc(0.5962 * 28vh)) scale(0.7605) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.5962 * 28vh)) scale(0.7605) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   20.5% {
-    transform: translateY(calc(0.3762 * 28vh)) scale(0.812) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.3762 * 28vh)) scale(0.812) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   22.71% {
-    transform: translateY(calc(0.2722 * 28vh)) scale(0.8363) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.2722 * 28vh)) scale(0.8363) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   23.775% {
-    transform: translateY(calc(0.2255 * 28vh)) scale(0.8472) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.2255 * 28vh)) scale(0.8472) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   24.78% {
-    transform: translateY(calc(0.1841 * 28vh)) scale(0.8569) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.1841 * 28vh)) scale(0.8569) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   25.74% {
-    transform: translateY(calc(0.1473 * 28vh)) scale(0.8655) rotateZ(-9deg) rotateX(8deg) rotateY(-172deg);
+    transform: translateY(calc(0.1473 * 28vh)) scale(0.8655) rotateZ(-9deg) rotateX(8deg) rotateY(-150deg);
   }
 
   26.66% {
-    transform: translateY(calc(0.1151 * 28vh)) scale(0.8731) rotateZ(-8.994deg) rotateX(7.995deg) rotateY(-171.894deg);
+    transform: translateY(calc(0.1151 * 28vh)) scale(0.8731) rotateZ(-8.993deg) rotateX(7.993deg) rotateY(-149.877deg);
   }
 
   27.525% {
-    transform: translateY(calc(0.0878 * 28vh)) scale(0.8798) rotateZ(-8.971deg) rotateX(7.974deg) rotateY(-171.44deg);
+    transform: translateY(calc(0.0878 * 28vh)) scale(0.8799) rotateZ(-8.961deg) rotateX(7.966deg) rotateY(-149.357deg);
   }
 
   28.36% {
-    transform: translateY(calc(0.0644 * 28vh)) scale(0.8857) rotateZ(-8.931deg) rotateX(7.938deg) rotateY(-170.675deg);
+    transform: translateY(calc(0.0644 * 28vh)) scale(0.8859) rotateZ(-8.909deg) rotateX(7.919deg) rotateY(-148.49deg);
   }
 
   29.175% {
-    transform: translateY(calc(0.0446 * 28vh)) scale(0.8909) rotateZ(-8.876deg) rotateX(7.89deg) rotateY(-169.631deg);
+    transform: translateY(calc(0.0446 * 28vh)) scale(0.8913) rotateZ(-8.839deg) rotateX(7.857deg) rotateY(-147.321deg);
   }
 
   29.97% {
-    transform: translateY(calc(0.0285 * 28vh)) scale(0.8954) rotateZ(-8.809deg) rotateX(7.83deg) rotateY(-168.342deg);
+    transform: translateY(calc(0.0285 * 28vh)) scale(0.896) rotateZ(-8.754deg) rotateX(7.781deg) rotateY(-145.893deg);
   }
 
   30.75% {
-    transform: translateY(calc(0.016 * 28vh)) scale(0.8992) rotateZ(-8.729deg) rotateX(7.759deg) rotateY(-166.826deg);
+    transform: translateY(calc(0.016 * 28vh)) scale(0.9001) rotateZ(-8.654deg) rotateX(7.692deg) rotateY(-144.234deg);
   }
 
   31.515% {
-    transform: translateY(calc(0.0071 * 28vh)) scale(0.9023) rotateZ(-8.639deg) rotateX(7.679deg) rotateY(-165.108deg);
+    transform: translateY(calc(0.0071 * 28vh)) scale(0.9034) rotateZ(-8.542deg) rotateX(7.593deg) rotateY(-142.375deg);
   }
 
   32.265% {
-    transform: translateY(calc(0.0018 * 28vh)) scale(0.9047) rotateZ(-8.54deg) rotateX(7.591deg) rotateY(-163.211deg);
+    transform: translateY(calc(0.0018 * 28vh)) scale(0.906) rotateZ(-8.421deg) rotateX(7.485deg) rotateY(-140.345deg);
   }
 
   33% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9063) rotateZ(-8.433deg) rotateX(7.496deg) rotateY(-161.156deg);
+    transform: translateY(calc(0 * 28vh)) scale(0.9079) rotateZ(-8.29deg) rotateX(7.369deg) rotateY(-138.171deg);
   }
 
-  34.815% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9097) rotateZ(-8.127deg) rotateX(7.224deg) rotateY(-155.307deg);
+  34.3% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9107) rotateZ(-8.035deg) rotateX(7.142deg) rotateY(-133.919deg);
   }
 
-  36.715% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9139) rotateZ(-7.75deg) rotateX(6.889deg) rotateY(-148.114deg);
+  35.665% {
+    transform: translateY(calc(0 * 28vh)) scale(0.914) rotateZ(-7.738deg) rotateX(6.878deg) rotateY(-128.961deg);
   }
 
-  38.715% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9189) rotateZ(-7.3deg) rotateX(6.489deg) rotateY(-139.519deg);
+  37.12% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9179) rotateZ(-7.393deg) rotateX(6.571deg) rotateY(-123.209deg);
   }
 
-  40.85% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9248) rotateZ(-6.77deg) rotateX(6.017deg) rotateY(-129.376deg);
+  38.695% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9223) rotateZ(-6.992deg) rotateX(6.215deg) rotateY(-116.54deg);
   }
 
-  42.735% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9304) rotateZ(-6.266deg) rotateX(5.57deg) rotateY(-119.752deg);
+  41.59% {
+    transform: translateY(calc(0 * 28vh)) scale(0.931) rotateZ(-6.206deg) rotateX(5.517deg) rotateY(-103.436deg);
   }
 
-  44.83% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9369) rotateZ(-5.677deg) rotateX(5.047deg) rotateY(-108.503deg);
+  49.1% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9546) rotateZ(-4.083deg) rotateX(3.63deg) rotateY(-68.058deg);
   }
 
-  51.905% {
-    transform: translateY(calc(0 * 28vh)) scale(0.96) rotateZ(-3.598deg) rotateX(3.199deg) rotateY(-68.771deg);
+  51.265% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9611) rotateZ(-3.502deg) rotateX(3.113deg) rotateY(-58.363deg);
   }
 
-  54.59% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9685) rotateZ(-2.831deg) rotateX(2.516deg) rotateY(-54.097deg);
+  53.26% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9667) rotateZ(-2.993deg) rotateX(2.661deg) rotateY(-49.887deg);
   }
 
-  57.28% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9766) rotateZ(-2.107deg) rotateX(1.873deg) rotateY(-40.262deg);
+  55.29% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9721) rotateZ(-2.509deg) rotateX(2.23deg) rotateY(-41.815deg);
   }
 
-  59.7% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9832) rotateZ(-1.512deg) rotateX(1.344deg) rotateY(-28.9deg);
+  57.245% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9769) rotateZ(-2.079deg) rotateX(1.848deg) rotateY(-34.646deg);
   }
 
-  61.025% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9865) rotateZ(-1.215deg) rotateX(1.08deg) rotateY(-23.228deg);
+  59.155% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9812) rotateZ(-1.696deg) rotateX(1.508deg) rotateY(-28.271deg);
   }
 
-  62.305% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9894) rotateZ(-0.951deg) rotateX(0.845deg) rotateY(-18.177deg);
+  61.03% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9849) rotateZ(-1.359deg) rotateX(1.208deg) rotateY(-22.657deg);
   }
 
-  63.545% {
-    transform: translateY(calc(0 * 28vh)) scale(0.992) rotateZ(-0.718deg) rotateX(0.639deg) rotateY(-13.729deg);
+  63.365% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9889) rotateZ(-0.995deg) rotateX(0.885deg) rotateY(-16.591deg);
   }
 
-  64.75% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9943) rotateZ(-0.516deg) rotateX(0.459deg) rotateY(-9.866deg);
+  65.7% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9923) rotateZ(-0.694deg) rotateX(0.617deg) rotateY(-11.566deg);
   }
 
-  65.925% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9962) rotateZ(-0.344deg) rotateX(0.306deg) rotateY(-6.569deg);
+  68.06% {
+    transform: translateY(calc(0 * 28vh)) scale(0.995) rotateZ(-0.452deg) rotateX(0.401deg) rotateY(-7.527deg);
   }
 
-  67.075% {
-    transform: translateY(calc(0 * 28vh)) scale(0.9978) rotateZ(-0.2deg) rotateX(0.178deg) rotateY(-3.828deg);
+  70.48% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9971) rotateZ(-0.265deg) rotateX(0.236deg) rotateY(-4.417deg);
   }
 
-  68.2% {
-    transform: translateY(calc(0 * 28vh)) scale(0.999) rotateZ(-0.086deg) rotateX(0.076deg) rotateY(-1.641deg);
+  72.91% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9985) rotateZ(-0.135deg) rotateX(0.12deg) rotateY(-2.254deg);
   }
 
-  69.305% {
+  75.495% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9994) rotateZ(-0.052deg) rotateX(0.046deg) rotateY(-0.859deg);
+  }
+
+  78.285% {
+    transform: translateY(calc(0 * 28vh)) scale(0.9999) rotateZ(-0.01deg) rotateX(0.009deg) rotateY(-0.166deg);
+  }
+
+  82% {
     transform: translateY(calc(0 * 28vh)) scale(1) rotateZ(0deg) rotateX(0deg) rotateY(0deg);
   }
 
@@ -7794,19 +8426,19 @@ html:not(.js) .nav ul a:hover {
     scale: 0;
   }
 
-  47.935% {
+  44.745% {
     scale: 0;
   }
 
-  47.94% {
-    scale: 0.0114;
+  44.75% {
+    scale: 0.0264;
   }
 
-  48.24% {
-    scale: 0.9979;
+  44.81% {
+    scale: 0.9788;
   }
 
-  48.245% {
+  44.815% {
     scale: 1;
   }
 
@@ -7815,40 +8447,229 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+@keyframes vf-phone-back {
+  0% {
+    scale: 1;
+  }
+
+  44.055% {
+    scale: 1;
+  }
+
+  44.06% {
+    scale: 0.9234;
+  }
+
+  44.115% {
+    scale: 0.051;
+  }
+
+  44.12% {
+    scale: 0;
+  }
+
+  100% {
+    scale: 0;
+  }
+}
+
 @keyframes vf-phone-glare {
   0% {
-    opacity: 1;
+    opacity: 0;
+    background-position: 0% 0;
   }
 
-  26% {
-    opacity: 1;
+  39.36% {
+    opacity: 0.002;
+    background-position: 0% 0;
   }
 
-  30.96% {
-    opacity: 0.967;
+  42.39% {
+    opacity: 0.021;
+    background-position: 0% 0;
   }
 
-  36.425% {
-    opacity: 0.868;
+  44.43% {
+    opacity: 0.075;
+    background-position: 0% 0;
   }
 
-  42.31% {
-    opacity: 0.709;
+  45.64% {
+    opacity: 0.141;
+    background-position: 7.2% 0;
   }
 
-  54.205% {
-    opacity: 0.327;
+  46.82% {
+    opacity: 0.237;
+    background-position: 14.2% 0;
   }
 
-  59.25% {
-    opacity: 0.18;
+  50.085% {
+    opacity: 0.609;
+    background-position: 33% 0;
   }
 
-  64.55% {
-    opacity: 0.061;
+  51.12% {
+    opacity: 0.71;
+    background-position: 38.8% 0;
   }
 
-  69.305% {
+  52.17% {
+    opacity: 0.777;
+    background-position: 44.4% 0;
+  }
+
+  53.185% {
+    opacity: 0.8;
+    background-position: 49.8% 0;
+  }
+
+  54.19% {
+    opacity: 0.782;
+    background-position: 54.9% 0;
+  }
+
+  55.29% {
+    opacity: 0.725;
+    background-position: 60.2% 0;
+  }
+
+  59.065% {
+    opacity: 0.405;
+    background-position: 76.8% 0;
+  }
+
+  60.425% {
+    opacity: 0.303;
+    background-position: 82% 0;
+  }
+
+  61.75% {
+    opacity: 0.224;
+    background-position: 86.7% 0;
+  }
+
+  64.65% {
+    opacity: 0.114;
+    background-position: 95.4% 0;
+  }
+
+  66.55% {
+    opacity: 0.075;
+    background-position: 100% 0;
+  }
+
+  68.535% {
+    opacity: 0.035;
+    background-position: 100% 0;
+  }
+
+  71.205% {
+    opacity: 0.012;
+    background-position: 100% 0;
+  }
+
+  82% {
+    opacity: 0;
+    background-position: 100% 0;
+  }
+
+  100% {
+    opacity: 0;
+    background-position: 100% 0;
+  }
+}
+
+@keyframes vf-phone-fresnel {
+  0% {
+    opacity: 0;
+  }
+
+  33.29% {
+    opacity: 0.001;
+  }
+
+  36.235% {
+    opacity: 0.009;
+  }
+
+  38.09% {
+    opacity: 0.032;
+  }
+
+  39.23% {
+    opacity: 0.064;
+  }
+
+  40.195% {
+    opacity: 0.113;
+  }
+
+  41.05% {
+    opacity: 0.181;
+  }
+
+  41.82% {
+    opacity: 0.27;
+  }
+
+  42.535% {
+    opacity: 0.384;
+  }
+
+  43.2% {
+    opacity: 0.525;
+  }
+
+  43.825% {
+    opacity: 0.695;
+  }
+
+  44.435% {
+    opacity: 0.899;
+  }
+
+  45.015% {
+    opacity: 0.703;
+  }
+
+  45.625% {
+    opacity: 0.535;
+  }
+
+  46.27% {
+    opacity: 0.395;
+  }
+
+  46.955% {
+    opacity: 0.282;
+  }
+
+  47.695% {
+    opacity: 0.191;
+  }
+
+  48.505% {
+    opacity: 0.122;
+  }
+
+  49.415% {
+    opacity: 0.072;
+  }
+
+  50.475% {
+    opacity: 0.037;
+  }
+
+  52.22% {
+    opacity: 0.011;
+  }
+
+  54.875% {
+    opacity: 0.001;
+  }
+
+  81.945% {
     opacity: 0;
   }
 
@@ -7862,23 +8683,43 @@ html:not(.js) .nav ul a:hover {
     opacity: 0;
   }
 
-  59.24% {
+  67.745% {
     opacity: 0;
   }
 
-  61.57% {
-    opacity: 0.347;
+  68.185% {
+    opacity: 0.025;
   }
 
-  63.755% {
-    opacity: 0.626;
+  68.695% {
+    opacity: 0.102;
   }
 
-  65.845% {
-    opacity: 0.844;
+  70.935% {
+    opacity: 0.618;
   }
 
-  67.84% {
+  71.555% {
+    opacity: 0.738;
+  }
+
+  72.16% {
+    opacity: 0.831;
+  }
+
+  72.83% {
+    opacity: 0.908;
+  }
+
+  73.53% {
+    opacity: 0.96;
+  }
+
+  74.285% {
+    opacity: 0.99;
+  }
+
+  75.145% {
     opacity: 1;
   }
 
@@ -7887,62 +8728,102 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-@keyframes vf-phone-back {
+@keyframes vf-phone-rings {
   0% {
-    scale: 1;
+    opacity: 1;
   }
 
-  48.085% {
-    scale: 1;
+  37.08% {
+    opacity: 1;
   }
 
-  48.09% {
-    scale: 0.9955;
+  37.62% {
+    opacity: 0.967;
   }
 
-  48.39% {
-    scale: 0.0086;
+  38.19% {
+    opacity: 0.864;
   }
 
-  48.395% {
-    scale: 0;
+  38.815% {
+    opacity: 0.689;
+  }
+
+  39.985% {
+    opacity: 0.283;
+  }
+
+  40.45% {
+    opacity: 0.14;
+  }
+
+  40.94% {
+    opacity: 0.034;
+  }
+
+  41.37% {
+    opacity: 0;
+  }
+
+  47.485% {
+    opacity: 0;
+  }
+
+  47.915% {
+    opacity: 0.035;
+  }
+
+  48.405% {
+    opacity: 0.143;
+  }
+
+  48.865% {
+    opacity: 0.287;
+  }
+
+  50.015% {
+    opacity: 0.695;
+  }
+
+  50.615% {
+    opacity: 0.867;
+  }
+
+  51.155% {
+    opacity: 0.967;
+  }
+
+  51.665% {
+    opacity: 1;
   }
 
   100% {
-    scale: 0;
+    opacity: 1;
   }
 }
 
 @keyframes vf-phone-back-shade {
   0% {
-    opacity: 0.028;
+    opacity: 0;
   }
 
-  26.395% {
-    opacity: 0.028;
+  26% {
+    opacity: 0;
   }
 
-  35.33% {
-    opacity: 0.001;
+  33.345% {
+    opacity: 0.01;
   }
 
-  39.135% {
-    opacity: 0.009;
+  38.41% {
+    opacity: 0.059;
   }
 
-  42.3% {
-    opacity: 0.044;
+  43.365% {
+    opacity: 0.162;
   }
 
-  45.435% {
-    opacity: 0.11;
-  }
-
-  48.655% {
-    opacity: 0.207;
-  }
-
-  53.495% {
+  50.895% {
     opacity: 0.38;
   }
 
@@ -7953,78 +8834,83 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-phone-sheen {
   0% {
-    translate: 7% 0;
-    opacity: 0.97;
+    translate: 15% 0;
+    opacity: 0.869;
   }
 
-  26.17% {
-    translate: 6.99% 0;
-    opacity: 0.97;
+  26.15% {
+    translate: 14.99% 0;
+    opacity: 0.869;
   }
 
-  27.675% {
-    translate: 6.33% 0;
-    opacity: 0.975;
+  27.585% {
+    translate: 14.31% 0;
+    opacity: 0.88;
   }
 
-  29.215% {
-    translate: 4.57% 0;
-    opacity: 0.987;
+  29.075% {
+    translate: 12.48% 0;
+    opacity: 0.907;
   }
 
-  31.04% {
-    translate: 1.2% 0;
-    opacity: 0.999;
-  }
-
-  32.925% {
-    translate: -3.63% 0;
-    opacity: 0.992;
-  }
-
-  34.335% {
-    translate: -8.04% 0;
+  31.24% {
+    translate: 8.07% 0;
     opacity: 0.96;
   }
 
-  35.665% {
-    translate: -12.78% 0;
-    opacity: 0.903;
+  33.565% {
+    translate: 1.38% 0;
+    opacity: 0.999;
   }
 
-  37.61% {
-    translate: -20.61% 0;
-    opacity: 0.767;
+  35.065% {
+    translate: -3.8% 0;
+    opacity: 0.991;
   }
 
-  40.095% {
-    translate: -31.94% 0;
-    opacity: 0.529;
+  36.475% {
+    translate: -9.19% 0;
+    opacity: 0.949;
   }
 
-  43.02% {
-    translate: -46.75% 0;
-    opacity: 0.255;
+  37.645% {
+    translate: -13.97% 0;
+    opacity: 0.885;
   }
 
-  44.245% {
-    translate: -53.31% 0;
-    opacity: 0.169;
+  38.885% {
+    translate: -19.29% 0;
+    opacity: 0.792;
   }
 
-  45.47% {
+  42.85% {
+    translate: -37.48% 0;
+    opacity: 0.416;
+  }
+
+  44.415% {
+    translate: -44.91% 0;
+    opacity: 0.283;
+  }
+
+  45.985% {
+    translate: -52.38% 0;
+    opacity: 0.18;
+  }
+
+  47.6% {
     translate: -60% 0;
     opacity: 0.105;
   }
 
-  48.155% {
+  50.695% {
     translate: -60% 0;
-    opacity: 0.03;
+    opacity: 0.032;
   }
 
-  52.005% {
+  55.23% {
     translate: -60% 0;
-    opacity: 0.003;
+    opacity: 0.005;
   }
 
   100% {
@@ -8033,20 +8919,110 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+@keyframes vf-phone-plateau {
+  0% {
+    translate: 31.25% 0;
+    opacity: 0.415;
+  }
+
+  26.055% {
+    translate: 31.25% 0;
+    opacity: 0.415;
+  }
+
+  26.925% {
+    translate: 30.75% 0;
+    opacity: 0.427;
+  }
+
+  27.815% {
+    translate: 29.36% 0;
+    opacity: 0.46;
+  }
+
+  29.32% {
+    translate: 25.17% 0;
+    opacity: 0.565;
+  }
+
+  30.895% {
+    translate: 18.54% 0;
+    opacity: 0.734;
+  }
+
+  31.9% {
+    translate: 13.25% 0;
+    opacity: 0.854;
+  }
+
+  32.94% {
+    translate: 6.99% 0;
+    opacity: 0.957;
+  }
+
+  33.65% {
+    translate: 2.31% 0;
+    opacity: 0.995;
+  }
+
+  34.3% {
+    translate: -2.25% 0;
+    opacity: 0.995;
+  }
+
+  34.99% {
+    translate: -7.35% 0;
+    opacity: 0.953;
+  }
+
+  35.695% {
+    translate: -12.82% 0;
+    opacity: 0.863;
+  }
+
+  36.39% {
+    translate: -18.44% 0;
+    opacity: 0.736;
+  }
+
+  38.485% {
+    translate: -36.56% 0;
+    opacity: 0.3;
+  }
+
+  39.215% {
+    translate: -43.22% 0;
+    opacity: 0.186;
+  }
+
+  39.945% {
+    translate: -50% 0;
+    opacity: 0.105;
+  }
+
+  40.64% {
+    translate: -50% 0;
+    opacity: 0.056;
+  }
+
+  41.425% {
+    translate: -50% 0;
+    opacity: 0.025;
+  }
+
+  43.735% {
+    translate: -50% 0;
+    opacity: 0.001;
+  }
+
+  100% {
+    translate: -50% 0;
+    opacity: 0;
+  }
+}
+
 @keyframes vf-phone-side-l {
   0% {
-    opacity: 0.2;
-  }
-
-  27.33% {
-    opacity: 0.202;
-  }
-
-  31.655% {
-    opacity: 0.238;
-  }
-
-  36.245% {
     opacity: 0.32;
   }
 
@@ -8060,36 +9036,246 @@ html:not(.js) .nav ul a:hover {
     opacity: 0.32;
   }
 
-  36.24% {
-    opacity: 0.32;
+  28.15% {
+    opacity: 0.313;
   }
 
-  46.795% {
-    opacity: 0.066;
+  32.91% {
+    opacity: 0.256;
   }
 
-  49.935% {
-    opacity: 0.019;
+  43.92% {
+    opacity: 0.05;
   }
 
-  52.95% {
-    opacity: 0;
+  47.015% {
+    opacity: 0.015;
   }
 
-  57.525% {
-    opacity: 0.021;
+  50.07% {
+    opacity: 0.001;
   }
 
-  65.81% {
-    opacity: 0.128;
+  55.11% {
+    opacity: 0.015;
   }
 
-  69.305% {
-    opacity: 0.16;
+  66.695% {
+    opacity: 0.115;
+  }
+
+  73.16% {
+    opacity: 0.15;
   }
 
   100% {
     opacity: 0.16;
+  }
+}
+
+@keyframes vf-phone-spec-r {
+  0% {
+    opacity: 0;
+  }
+
+  37.755% {
+    opacity: 0;
+  }
+
+  40.82% {
+    opacity: 0.018;
+  }
+
+  42.155% {
+    opacity: 0.074;
+  }
+
+  42.715% {
+    opacity: 0.123;
+  }
+
+  43.245% {
+    opacity: 0.189;
+  }
+
+  44.24% {
+    opacity: 0.372;
+  }
+
+  45.815% {
+    opacity: 0.758;
+  }
+
+  46.385% {
+    opacity: 0.88;
+  }
+
+  47.01% {
+    opacity: 0.97;
+  }
+
+  47.6% {
+    opacity: 1;
+  }
+
+  48.18% {
+    opacity: 0.972;
+  }
+
+  48.8% {
+    opacity: 0.886;
+  }
+
+  49.37% {
+    opacity: 0.77;
+  }
+
+  51.035% {
+    opacity: 0.385;
+  }
+
+  51.59% {
+    opacity: 0.28;
+  }
+
+  52.13% {
+    opacity: 0.198;
+  }
+
+  52.725% {
+    opacity: 0.129;
+  }
+
+  53.36% {
+    opacity: 0.078;
+  }
+
+  54.9% {
+    opacity: 0.02;
+  }
+
+  58.58% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes vf-phone-bump {
+  0% {
+    scale: 1 1 1;
+  }
+
+  45.69% {
+    scale: 1 1 1;
+  }
+
+  46.035% {
+    scale: 1 1 0.963;
+  }
+
+  46.425% {
+    scale: 1 1 0.846;
+  }
+
+  46.79% {
+    scale: 1 1 0.69;
+  }
+
+  47.635% {
+    scale: 1 1 0.276;
+  }
+
+  48.035% {
+    scale: 1 1 0.116;
+  }
+
+  48.37% {
+    scale: 1 1 0.029;
+  }
+
+  48.68% {
+    scale: 1 1 0;
+  }
+
+  100% {
+    scale: 1 1 0;
+  }
+}
+
+@keyframes vf-phone-profile {
+  0% {
+    opacity: 0;
+  }
+
+  41.035% {
+    opacity: 0;
+  }
+
+  41.125% {
+    opacity: 0.029;
+  }
+
+  41.22% {
+    opacity: 0.115;
+  }
+
+  41.335% {
+    opacity: 0.274;
+  }
+
+  41.58% {
+    opacity: 0.69;
+  }
+
+  41.685% {
+    opacity: 0.846;
+  }
+
+  41.8% {
+    opacity: 0.964;
+  }
+
+  41.9% {
+    opacity: 1;
+  }
+
+  46.96% {
+    opacity: 1;
+  }
+
+  47.045% {
+    opacity: 0.973;
+  }
+
+  47.14% {
+    opacity: 0.886;
+  }
+
+  47.255% {
+    opacity: 0.725;
+  }
+
+  47.495% {
+    opacity: 0.315;
+  }
+
+  47.6% {
+    opacity: 0.157;
+  }
+
+  47.715% {
+    opacity: 0.038;
+  }
+
+  47.815% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
   }
 }
 
@@ -8113,134 +9299,187 @@ html:not(.js) .nav ul a:hover {
 
 @keyframes vf-phone-floor {
   0% {
-    scale: 0.5461 0.55;
+    scale: 0.4969 0.55;
+    translate: calc(-50% + 0.1084 * var(--pw)) 0;
   }
 
-  4.685% {
-    scale: 0.5502 0.5541;
+  3.375% {
+    scale: 0.4971 0.5502;
+    translate: calc(-50% + 0.1084 * var(--pw)) 0;
   }
 
-  6.58% {
-    scale: 0.5637 0.5677;
+  4.965% {
+    scale: 0.502 0.5555;
+    translate: calc(-50% + 0.1089 * var(--pw)) 0;
   }
 
-  8.585% {
-    scale: 0.5868 0.591;
+  7.06% {
+    scale: 0.5173 0.5725;
+    translate: calc(-50% + 0.1103 * var(--pw)) 0;
   }
 
-  10.62% {
-    scale: 0.618 0.6223;
+  9.3% {
+    scale: 0.5432 0.6012;
+    translate: calc(-50% + 0.1127 * var(--pw)) 0;
   }
 
-  12.865% {
-    scale: 0.6593 0.664;
+  11.34% {
+    scale: 0.5737 0.635;
+    translate: calc(-50% + 0.1156 * var(--pw)) 0;
   }
 
-  22.175% {
-    scale: 0.8604 0.8665;
+  13.62% {
+    scale: 0.6137 0.6793;
+    translate: calc(-50% + 0.1193 * var(--pw)) 0;
   }
 
-  26.265% {
-    scale: 0.9355 0.9421;
+  23.21% {
+    scale: 0.8019 0.8875;
+    translate: calc(-50% + 0.137 * var(--pw)) 0;
   }
 
-  28.165% {
-    scale: 0.9599 0.9687;
+  25.51% {
+    scale: 0.8402 0.9299;
+    translate: calc(-50% + 0.1406 * var(--pw)) 0;
   }
 
-  29.905% {
-    scale: 0.9723 0.9866;
+  26.99% {
+    scale: 0.8595 0.9531;
+    translate: calc(-50% + 0.1423 * var(--pw)) 0;
   }
 
-  31.505% {
-    scale: 0.9727 0.9968;
+  28.555% {
+    scale: 0.8683 0.9733;
+    translate: calc(-50% + 0.1427 * var(--pw)) 0;
+  }
+
+  30.075% {
+    scale: 0.8642 0.988;
+    translate: calc(-50% + 0.1418 * var(--pw)) 0;
+  }
+
+  31.55% {
+    scale: 0.847 0.9969;
+    translate: calc(-50% + 0.1396 * var(--pw)) 0;
   }
 
   33% {
-    scale: 0.9614 1;
+    scale: 0.8165 1;
+    translate: calc(-50% + 0.1362 * var(--pw)) 0;
   }
 
-  34.945% {
-    scale: 0.9317 1;
+  34.27% {
+    scale: 0.7804 1;
+    translate: calc(-50% + 0.1325 * var(--pw)) 0;
   }
 
-  36.765% {
-    scale: 0.89 1;
+  35.535% {
+    scale: 0.7375 1;
+    translate: calc(-50% + 0.1285 * var(--pw)) 0;
   }
 
-  38.515% {
-    scale: 0.8349 1;
+  36.81% {
+    scale: 0.6875 1;
+    translate: calc(-50% + 0.124 * var(--pw)) 0;
   }
 
-  40.245% {
-    scale: 0.7649 1;
+  38.115% {
+    scale: 0.6295 1;
+    translate: calc(-50% + 0.1191 * var(--pw)) 0;
   }
 
-  41.95% {
-    scale: 0.6808 1;
+  40.825% {
+    scale: 0.4903 1;
+    translate: calc(-50% + 0.108 * var(--pw)) 0;
   }
 
-  43.735% {
-    scale: 0.5779 1;
-  }
-
-  45.65% {
-    scale: 0.454 1;
-  }
-
-  48.14% {
+  44.435% {
     scale: 0.2801 1;
+    translate: calc(-50% + 0.092 * var(--pw)) 0;
   }
 
-  51.465% {
-    scale: 0.5117 1;
+  46.975% {
+    scale: 0.4305 1;
+    translate: calc(-50% + 0.0804 * var(--pw)) 0;
   }
 
-  53.87% {
-    scale: 0.6619 1;
+  48.855% {
+    scale: 0.5359 1;
+    translate: calc(-50% + 0.0718 * var(--pw)) 0;
   }
 
-  55.03% {
-    scale: 0.7256 1;
+  50.605% {
+    scale: 0.6261 1;
+    translate: calc(-50% + 0.064 * var(--pw)) 0;
   }
 
-  56.155% {
-    scale: 0.7809 1;
+  52.26% {
+    scale: 0.7025 1;
+    translate: calc(-50% + 0.0568 * var(--pw)) 0;
   }
 
-  57.265% {
-    scale: 0.8288 1;
+  53.935% {
+    scale: 0.7698 1;
+    translate: calc(-50% + 0.0497 * var(--pw)) 0;
   }
 
-  58.375% {
-    scale: 0.87 1;
+  55.6% {
+    scale: 0.8264 1;
+    translate: calc(-50% + 0.0431 * var(--pw)) 0;
   }
 
-  59.495% {
-    scale: 0.9047 1;
+  57.295% {
+    scale: 0.8736 1;
+    translate: calc(-50% + 0.0367 * var(--pw)) 0;
   }
 
-  60.64% {
-    scale: 0.9334 1;
+  59.04% {
+    scale: 0.9119 1;
+    translate: calc(-50% + 0.0306 * var(--pw)) 0;
   }
 
-  61.815% {
-    scale: 0.9563 1;
+  60.715% {
+    scale: 0.94 1;
+    translate: calc(-50% + 0.0253 * var(--pw)) 0;
   }
 
-  63.05% {
-    scale: 0.974 1;
+  62.49% {
+    scale: 0.9618 1;
+    translate: calc(-50% + 0.0202 * var(--pw)) 0;
   }
 
-  65.72% {
-    scale: 0.9945 1;
+  64.415% {
+    scale: 0.978 1;
+    translate: calc(-50% + 0.0153 * var(--pw)) 0;
   }
 
-  69.305% {
+  66.565% {
+    scale: 0.9891 1;
+    translate: calc(-50% + 0.0108 * var(--pw)) 0;
+  }
+
+  69.895% {
+    scale: 0.9972 1;
+    translate: calc(-50% + 0.0055 * var(--pw)) 0;
+  }
+
+  73.375% {
+    scale: 0.9996 1;
+    translate: calc(-50% + 0.0021 * var(--pw)) 0;
+  }
+
+  81.945% {
     scale: 1 1;
+    translate: calc(-50% + 0 * var(--pw)) 0;
+  }
+
+  82% {
+    scale: 1 1;
+    translate: calc(-50% + 0 * var(--pw)) 0;
   }
 
   100% {
     scale: 1 1;
+    translate: calc(-50% + 0 * var(--pw)) 0;
   }
 }
