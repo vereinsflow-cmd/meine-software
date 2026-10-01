@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useWatch } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormError, SubmitButton, TextField, TextareaField } from "@/components/shared/form-fields";
+import { PostalCodeCity } from "@/components/shared/postal-code-city";
 import { useActionForm } from "@/hooks/use-action-form";
 import { saveClubSetupDataAction, updateClubSettingsAction } from "../settings-actions";
 import { clubSettingsSchema, clubSetupSchema, type ClubSettingsFormInput } from "../schemas";
@@ -27,6 +29,7 @@ export function ClubSettingsForm({
     onSuccess: () => (setup ? router.push(setup.nextHref) : router.refresh()),
   });
   const required = Boolean(setup);
+  const [postalCode, city] = useWatch({ control: form.control, name: ["postalCode", "city"] });
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid max-w-4xl gap-6">
@@ -72,6 +75,18 @@ export function ClubSettingsForm({
             inputClassName="sm:max-w-48"
           />
           <TextField form={form} name="city" label="Ort" required={required} />
+          <PostalCodeCity
+            postalCode={postalCode}
+            city={city}
+            onCity={(value, { picked }) => {
+              form.setValue("city", value, {
+                shouldDirty: true,
+                shouldValidate: form.formState.isSubmitted,
+              });
+              // Nach der Auswahl zurück ins Feld „Ort“ – die Auswahl verschwindet und mit ihr der Fokus
+              if (picked) requestAnimationFrame(() => form.setFocus("city"));
+            }}
+          />
           <TextField
             form={form}
             name="website"

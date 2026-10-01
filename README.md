@@ -253,6 +253,14 @@ Diese Punkte sind bekannt und bewusst offen – sie stehen nicht „still“ in 
   lassen (siehe Roadmap).
 - **Rechtstexte** – Impressum und Datenschutzerklärung sind Platzhalter und müssen vom Verein ausgefüllt werden.
 
+## Datenquellen
+
+- **Postleitzahlen und Ortsnamen** („Ort automatisch ergänzen“ in Vereins- und Mitgliedsadressen):
+  [GeoNames](https://www.geonames.org), Lizenz [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de) –
+  bereinigt um Großkunden und Ortsteile, erzeugt mit `node scripts/build-postal-codes.mjs` nach
+  `src/server/geo/postal-codes-de.json` (liegt der Anwendung bei, keine Anfrage an fremde Dienste). Die Namensnennung
+  steht auch im Impressum.
+
 ## Lizenz
 
 Noch nicht festgelegt.

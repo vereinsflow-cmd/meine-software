@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useController, type Control } from "react-hook-form";
+import { useController, useWatch, type Control } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import {
   TextareaField,
 } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
+import { PostalCodeCity } from "@/components/shared/postal-code-city";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { MEMBER_STATUS_LABEL, options } from "@/lib/labels";
 import { createMemberAction, updateMemberAction } from "../actions";
@@ -154,6 +155,10 @@ export function MemberForm({
       router.refresh();
     },
   });
+  const [postalCode, city, country] = useWatch({
+    control: form.control,
+    name: ["postalCode", "city", "country"],
+  });
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid max-w-4xl gap-6">
@@ -265,6 +270,19 @@ export function MemberForm({
               inputClassName="sm:max-w-48"
             />
             <TextField form={form} name="city" label="Ort" required={isCreate} />
+            <PostalCodeCity
+              postalCode={postalCode}
+              city={city}
+              enabled={!country || country === "DE"}
+              onCity={(value, { picked }) => {
+                form.setValue("city", value, {
+                  shouldDirty: true,
+                  shouldValidate: form.formState.isSubmitted,
+                });
+                // Nach der Auswahl zurück ins Feld „Ort“ – die Auswahl verschwindet und mit ihr der Fokus
+                if (picked) requestAnimationFrame(() => form.setFocus("city"));
+              }}
+            />
             <SelectField
               form={form}
               name="country"
