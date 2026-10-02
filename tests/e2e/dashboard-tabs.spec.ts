@@ -49,7 +49,7 @@ test.describe("Dashboard-Reiter", () => {
     }
   });
 
-  test("Leiste: vier Reiter, der aktive ist eindeutig erkennbar (Auswahl, Farbe, Schrift, Strich)", async ({
+  test("Leiste: vier Reiter, der aktive ist eindeutig erkennbar (Auswahl, Farbe, Schrift, helle Fläche)", async ({
     page,
   }) => {
     await login(page, USERS.admin);
@@ -70,7 +70,7 @@ test.describe("Dashboard-Reiter", () => {
     expect(active.weight).toBeGreaterThan(inactive.weight); // fett gegen normal
     expect(active.color).not.toBe(inactive.color); // Hauptfarbe gegen gedämpftes Grau
 
-    // Der Strich unter dem aktiven Reiter (3 px, Hauptfarbe) liegt genau unter ihm …
+    // Die helle Fläche hinter dem aktiven Reiter deckt genau ihn ab …
     const line = page.locator('[data-slot="tab-indicator"]');
     const rect = async (locator: typeof line) => (await locator.boundingBox())!;
     const under = async (tab: typeof first) => {
@@ -83,7 +83,7 @@ test.describe("Dashboard-Reiter", () => {
       };
     };
     await expect.poll(async () => (await under(first)).left).toBeLessThan(2);
-    expect(await under(first)).toMatchObject({ height: 3 });
+    expect(Math.abs((await under(first)).height - (await rect(first)).height)).toBeLessThan(2);
     expect((await under(first)).width).toBeLessThan(2);
     expect((await under(first)).bottom).toBeLessThan(2);
     await expect(line).toHaveCSS("opacity", "1");
@@ -97,7 +97,7 @@ test.describe("Dashboard-Reiter", () => {
     expect((await look(second)).weight).toBeGreaterThan((await look(first)).weight);
   });
 
-  test("Strich gleitet weich (300 ms); bei „Bewegung reduzieren“ springt er ohne Übergang", async ({
+  test("Fläche gleitet weich (300 ms); bei „Bewegung reduzieren“ springt sie ohne Übergang", async ({
     page,
   }) => {
     await login(page, USERS.admin);
@@ -217,7 +217,7 @@ test.describe("Dashboard-Reiter", () => {
     await expect(page.getByRole("region", { name: "Geburtstage" })).toBeInViewport();
   });
 
-  test("Kennzahlen am Desktop: vier Karten in einer Reihe wie bisher – kein Karussell, keine Punkte, nichts wird abgeschnitten", async ({
+  test("Kennzahlen am Desktop (1280 px): Kachelraster – Mitglieder links über beide Reihen, Termine über Helferstunden, freie Plätze rechts; kein Karussell, nichts abgeschnitten", async ({
     page,
   }) => {
     await login(page, USERS.admin);
@@ -226,13 +226,92 @@ test.describe("Dashboard-Reiter", () => {
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
     const boxes = await cards.evaluateAll((links) =>
       links.map((link) => {
-        const { x, y, width } = link.getBoundingClientRect();
-        return { x, y, width };
+        const { x, y, width, height } = link.getBoundingClientRect();
+        return { x, y, width, height };
       }),
     );
-    expect(new Set(boxes.map((box) => Math.round(box.y))).size).toBe(1); // eine Reihe
+    const [members, events, free, hours] = boxes as [
+      (typeof boxes)[0],
+      (typeof boxes)[0],
+      (typeof boxes)[0],
+      (typeof boxes)[0],
+    ];
+    expect(members.x).toBeLessThan(events.x); // Mitglieder links …
+    expect(events.x).toBeLessThan(free.x); // … freie Plätze rechts …
+    expect(Math.abs(events.x - hours.x)).toBeLessThanOrEqual(1); // … Termine und Helferstunden in der Mitte übereinander
+    expect(hours.y).toBeGreaterThan(events.y);
+    expect(members.height).toBeGreaterThan(events.height * 1.8); // die großen Kacheln reichen über beide Reihen
+    expect(free.height).toBeGreaterThan(events.height * 1.8);
     const width = page.viewportSize()!.width;
     for (const box of boxes) expect(box.x + box.width).toBeLessThanOrEqual(width);
+  });
+
+  test("Kennzahlen nach Inhaltsbreite: zwei Spalten, drei gleich breite, dann wie im Entwurf (Mitglieder breiter, freie Plätze schmaler)", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    const group = page.getByRole("group", { name: "Kennzahlen" });
+    const columns = () =>
+      group.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+    const widths = () =>
+      group
+        .getByRole("link")
+        .evaluateAll((links) => links.map((link) => link.getBoundingClientRect().width));
+
+    await page.setViewportSize({ width: 1100, height: 800 }); // Inhalt schmaler als 49 rem
+    await expect.poll(columns).toBe(2);
+
+    await page.setViewportSize({ width: 1280, height: 800 }); // ab 49 rem: Kachelraster, drei gleich breite Spalten
+    await expect.poll(columns).toBe(12);
+    const [members, events, free] = await widths();
+    expect(Math.abs(members! - events!)).toBeLessThanOrEqual(2);
+    expect(Math.abs(free! - events!)).toBeLessThanOrEqual(2);
+
+    await page.setViewportSize({ width: 1470, height: 900 }); // ab 58 rem: 5/12, 4/12, 3/12
+    await expect.poll(async () => (await widths())[0]! > (await widths())[1]!).toBe(true);
+    const [wide, middle, narrow] = await widths();
+    expect(middle!).toBeGreaterThan(narrow!);
+    expect(wide!).toBeGreaterThan(middle!);
+  });
+
+  test("Ohne Mitgliederzahlen (Helfer): gleich große Karten statt Kachelraster, Zahlen auf einer Höhe, „Ungelesen“ ohne Grafik", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1470, height: 900 });
+    await login(page, USERS.helfer);
+    const group = page.getByRole("group", { name: "Kennzahlen" });
+    await expect(page.locator('[data-layout="grid"]')).toHaveCount(1);
+    await expect(group.getByRole("link")).toHaveCount(4);
+    await expect
+      .poll(() =>
+        group.evaluate(
+          (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        ),
+      )
+      .toBe(4); // ab 58 rem vier nebeneinander
+    const cards = await group.getByRole("link").evaluateAll((links) =>
+      links.map((link) => {
+        const card = link.getBoundingClientRect();
+        const value = link.querySelector('[data-slot="kpi-value"]')!.getBoundingClientRect();
+        const label = link.querySelector<HTMLElement>('[data-slot="kpi-label"]')!;
+        return {
+          top: card.top,
+          height: card.height,
+          valueTop: value.top,
+          overflow: label.scrollWidth > label.clientWidth + 1,
+        };
+      }),
+    );
+    for (const card of cards) {
+      expect(Math.abs(card.top - cards[0]!.top)).toBeLessThanOrEqual(1); // eine Reihe …
+      expect(Math.abs(card.height - cards[0]!.height)).toBeLessThanOrEqual(1); // … gleich hoch …
+      expect(Math.abs(card.valueTop - cards[0]!.valueTop)).toBeLessThanOrEqual(1); // … die Zahlen auf einer Höhe
+      expect(card.overflow).toBe(false); // keine Beschriftung läuft aus ihrer Spalte
+    }
+    // „Ungelesen“ hat keine Verlaufsgrafik (die Zahl ändert sich nicht über die Zeit)
+    await expect(
+      group.getByRole("link", { name: /^Ungelesen/ }).locator('[data-slot="sparkline"]'),
+    ).toHaveCount(0);
   });
 
   test("Leiste bleibt beim Scrollen unter der Kopfzeile stehen", async ({ page }) => {

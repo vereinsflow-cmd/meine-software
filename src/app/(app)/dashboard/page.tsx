@@ -1,7 +1,7 @@
 import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EyeOffIcon, PlusIcon } from "lucide-react";
+import { EyeOffIcon, PlusIcon, ShieldCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty } from "@/components/shared/compact-empty";
@@ -84,15 +84,19 @@ export default async function DashboardPage({
   const analytics = getAnalytics(ctx);
   analytics.catch(() => undefined);
 
+  // Kachelraster der Kennzahlen (Entwurf 2): nur, wenn alle vier Karten da sind – mit „Ungelesen“ statt Mitgliederzahl oder mit
+  // weniger Karten stehen sie gleich groß nebeneinander.
+  const bento = Boolean(members && events && shifts);
+
   // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
   const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
     uebersicht: {
       // „Erste Schritte“ nur für den Vereinsadministrator, solange noch etwas offen ist.
       ...(onboarding ? { "erste-schritte": <OnboardingCard steps={onboarding} /> } : {}),
       kennzahlen: (
-        <KpiCarousel>
+        <KpiCarousel layout={bento ? "bento" : "grid"}>
           {members ? (
-            <MembersStat members={members} />
+            <MembersStat members={members} size={bento ? "hero" : "regular"} />
           ) : (
             <StatCard
               label="Ungelesen"
@@ -104,7 +108,7 @@ export default async function DashboardPage({
             />
           )}
           {events && <NextEventsStat events={events} />}
-          {shifts && <FreeShiftsStat shifts={shifts} />}
+          {shifts && <FreeShiftsStat shifts={shifts} size={bento ? "tall" : "regular"} />}
           {shifts && <HelperHours hours={shifts.hours} />}
         </KpiCarousel>
       ),
@@ -248,15 +252,27 @@ export default async function DashboardPage({
       <SetupFrameSync locked={false} />
       <PageHeader
         inline
+        align="center"
         title={`Willkommen, ${ctx.user.firstName}!`}
-        description={ctx.roleName}
+        titleClassName="text-4xl font-extrabold tracking-[-0.03em] sm:text-[2.625rem]"
+        // Die Rolle als kleines Schild neben der Begrüßung (Entwürfe 2 und 5).
+        description={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 align-middle text-sm font-medium text-primary ring-1 ring-primary/20 ring-inset">
+            <ShieldCheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
+            {ctx.roleName}
+          </span>
+        }
         // Am Handy: die Hauptaktion über die volle Breite, die übrigen gleich breit daneben – statt eines Umbruchs irgendwo.
-        actionsClassName="max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
+        // Runde Knöpfe passend zu den runden Reitern (nur auf dem Dashboard).
+        actionsClassName="*:rounded-full max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
         actions={
           <>
-            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten. */}
+            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten; mit leichtem Schein in der Markenfarbe. */}
             {can(ctx, "events:create") && (
-              <Button asChild>
+              <Button
+                asChild
+                className="shadow-[0_8px_22px_-10px_var(--color-primary)] hover:shadow-[0_10px_26px_-10px_var(--color-primary)]"
+              >
                 <Link href="/veranstaltungen/neu">
                   <PlusIcon /> Neue Veranstaltung
                 </Link>
