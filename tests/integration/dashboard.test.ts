@@ -255,9 +255,8 @@ describe("Dashboard: Inhalte je Rolle", () => {
 
   it("Trendlinien für Mitglieder (6 Monate) und Helferstunden (12 Wochen), älteste zuerst", async () => {
     const { ctx, club, people } = await setup();
-    // Die Testkonten aus setup() haben (wie viele echte Altbestände) kein Eintrittsdatum – sie tauchen in der
-    // Trendlinie bewusst nirgends auf (siehe `membersAtBucketEnds`: ohne Eintrittsdatum nicht einordbar), zählen aber
-    // bei `total` mit. Nur Mitglieder MIT Eintrittsdatum prägen deshalb hier den Verlauf.
+    // Die Testkonten aus setup() haben (wie viele echte Altbestände) kein Eintrittsdatum – sie zählen ab dem Anlegen (also erst
+    // im laufenden Monat), genau wie bei `total`: Der Verlauf endet bei der Zahl der Karte.
     await prisma.member.create({
       data: {
         clubId: club.id,
@@ -290,9 +289,9 @@ describe("Dashboard: Inhalte je Rolle", () => {
     });
 
     const data = await getDashboard(ctx.admin);
-    expect(data.members!.trend).toHaveLength(6);
-    expect(data.members!.trend[0]).toBe(1); // vor 6 Monaten: nur "Alt Eingetreten" war schon dabei
-    expect(data.members!.trend.at(-1)).toBe(2); // laufender Monat: beide beigetreten
+    expect(data.members!.trend).toHaveLength(7); // Stichtage: heute vor 6 Monaten … heute
+    expect(data.members!.trend[0]).toBe(1); // heute vor 6 Monaten: nur "Alt Eingetreten" war schon dabei
+    expect(data.members!.trend.at(-1)).toBe(data.members!.total); // laufender Monat: genau die Zahl der Karte
     expect(Math.min(...data.members!.trend)).toBeGreaterThanOrEqual(1); // steigt, fällt nie unter den Altbestand
 
     expect(data.shifts!.hours.trend).toHaveLength(12);
@@ -300,7 +299,7 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect(data.shifts!.hours.trend.slice(0, -1).every((v) => v === 0)).toBe(true); // sonst nichts dokumentiert
   });
 
-  it("Wochen-Trend (vorausschauend) und Tage bis zum nächsten Termin (für die Termine-Kennzahlenkarte)", async () => {
+  it("Kursverlauf der Termine (Termine in den folgenden 30 Tagen je Stichtag) und Tage bis zum nächsten Termin", async () => {
     const { ctx, club } = await setup();
     await createEvent(club.id, { title: "In 4 Tagen", startsAt: inDays(4) });
     await createEvent(club.id, { title: "In 10 Tagen", startsAt: inDays(10) });
@@ -308,9 +307,13 @@ describe("Dashboard: Inhalte je Rolle", () => {
     await createEvent(club.id, { title: "Vor 8 Wochen", startsAt: inDays(-56) }); // in der Vergangenheit, außerhalb
 
     const data = await getDashboard(ctx.admin);
-    expect(data.events!.weeklyTrend).toHaveLength(6);
-    // Nur die beiden veröffentlichten, künftigen Termine – weder der Entwurf noch der vergangene Termin.
-    expect(data.events!.weeklyTrend.reduce((sum, n) => sum + n, 0)).toBe(2);
+    expect(data.events!.countNext30Days).toBe(2); // der Entwurf zählt nicht
+    const weeks = data.events!.quote.periods.find((period) => period.id === "12W")!.points;
+    expect(weeks).toHaveLength(13); // vor 12 Wochen bis heute
+    // Der letzte Punkt ist „jetzt“ – genau die Zahl auf der Karte
+    expect(weeks.at(-1)!.value).toBe(2);
+    // Vor einigen Wochen lag der Termin „Vor 8 Wochen“ in den folgenden 30 Tagen des Stichtags
+    expect(Math.max(...weeks.slice(0, -1).map((point) => point.value))).toBeGreaterThanOrEqual(1);
     expect(data.events!.nextInDays).toBe(4); // der zeitlich nächste veröffentlichte Termin
   });
 
@@ -334,6 +337,37 @@ describe("Dashboard: Inhalte je Rolle", () => {
     const data = await getDashboard(ctx.admin);
     expect(data.shifts!.staffing).toEqual({ filled: 1, required: 5 }); // 1 von 2 (Kasse) + 0 von 3 (Aufbau)
     expect(data.shifts!.freeSpots).toBe(4);
+    // Kursverlauf der Besetzung: die Eintragung von eben gab es vorher noch nicht, jetzt ist sie da
+    const weeks = data.shifts!.staffingQuote.periods.find((period) => period.id === "6W")!.points;
+    expect(weeks.at(-1)!.value).toBe(1);
+    expect(weeks[0]!.value).toBe(0);
+  });
+
+  it("Kursverläufe der Mitglieder und Helferstunden enden bei den Zahlen der Karten", async () => {
+    const { ctx, club, people } = await setup();
+    const event = await createEvent(club.id, { title: "Arbeitseinsatz", startsAt: inDays(-1) });
+    const shift = await createShift(club.id, event.id, {
+      title: "Aufräumen",
+      startsAt: inDays(-1),
+      requiredCount: 1,
+    });
+    await prisma.shiftAssignment.create({
+      data: {
+        clubId: club.id,
+        shiftId: shift.id,
+        memberId: people.helper.member.id,
+        workedMinutes: 150,
+      },
+    });
+
+    const data = await getDashboard(ctx.admin);
+    const members = data.members!.quote.periods.find((period) => period.id === "12M")!;
+    expect(members.points).toHaveLength(13); // vor 12 Monaten bis heute
+    expect(members.points.at(-1)!.value).toBe(data.members!.total);
+    expect(members.volume!.up).toHaveLength(13);
+    const year = data.shifts!.hours.quote.periods.find((period) => period.id === "Y0")!;
+    expect(year.points[0]).toMatchObject({ label: "Start", value: 0 }); // Summen beginnen bei 0
+    expect(year.points.at(-1)!.value).toBe(data.shifts!.hours.minutes / 60);
   });
 });
 

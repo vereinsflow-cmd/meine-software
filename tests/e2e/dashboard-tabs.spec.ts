@@ -221,12 +221,12 @@ test.describe("Dashboard-Reiter", () => {
     page,
   }) => {
     await login(page, USERS.admin);
-    const cards = page.getByRole("group", { name: "Kennzahlen" }).getByRole("link");
+    const cards = page.getByRole("group", { name: "Kennzahlen" }).locator('[data-slot="card"]');
     await expect(cards).toHaveCount(4);
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
-    const boxes = await cards.evaluateAll((links) =>
-      links.map((link) => {
-        const { x, y, width, height } = link.getBoundingClientRect();
+    const boxes = await cards.evaluateAll((elements) =>
+      elements.map((element) => {
+        const { x, y, width, height } = element.getBoundingClientRect();
         return { x, y, width, height };
       }),
     );
@@ -255,8 +255,10 @@ test.describe("Dashboard-Reiter", () => {
       group.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
     const widths = () =>
       group
-        .getByRole("link")
-        .evaluateAll((links) => links.map((link) => link.getBoundingClientRect().width));
+        .locator('[data-slot="card"]')
+        .evaluateAll((elements) =>
+          elements.map((element) => element.getBoundingClientRect().width),
+        );
 
     await page.setViewportSize({ width: 1100, height: 800 }); // Inhalt schmaler als 49 rem
     await expect.poll(columns).toBe(2);
@@ -281,7 +283,7 @@ test.describe("Dashboard-Reiter", () => {
     await login(page, USERS.helfer);
     const group = page.getByRole("group", { name: "Kennzahlen" });
     await expect(page.locator('[data-layout="grid"]')).toHaveCount(1);
-    await expect(group.getByRole("link")).toHaveCount(4);
+    await expect(group.locator('[data-slot="card"]')).toHaveCount(4);
     await expect
       .poll(() =>
         group.evaluate(
@@ -289,11 +291,14 @@ test.describe("Dashboard-Reiter", () => {
         ),
       )
       .toBe(4); // ab 58 rem vier nebeneinander
-    const cards = await group.getByRole("link").evaluateAll((links) =>
-      links.map((link) => {
-        const card = link.getBoundingClientRect();
-        const value = link.querySelector('[data-slot="kpi-value"]')!.getBoundingClientRect();
-        const label = link.querySelector<HTMLElement>('[data-slot="kpi-label"]')!;
+    // Maus weg und ohne Bewegung: Eine überfahrene Karte hebt sich sonst um 2 px an
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.mouse.move(0, 0);
+    const cards = await group.locator('[data-slot="card"]').evaluateAll((elements) =>
+      elements.map((element) => {
+        const card = element.getBoundingClientRect();
+        const value = element.querySelector('[data-slot="kpi-value"]')!.getBoundingClientRect();
+        const label = element.querySelector<HTMLElement>('[data-slot="kpi-label"]')!;
         return {
           top: card.top,
           height: card.height,
@@ -308,9 +313,12 @@ test.describe("Dashboard-Reiter", () => {
       expect(Math.abs(card.valueTop - cards[0]!.valueTop)).toBeLessThanOrEqual(1); // … die Zahlen auf einer Höhe
       expect(card.overflow).toBe(false); // keine Beschriftung läuft aus ihrer Spalte
     }
-    // „Ungelesen“ hat keine Verlaufsgrafik (die Zahl ändert sich nicht über die Zeit)
+    // „Ungelesen“ hat keinen Kursverlauf (die Zahl ändert sich nicht über die Zeit)
     await expect(
-      group.getByRole("link", { name: /^Ungelesen/ }).locator('[data-slot="sparkline"]'),
+      group
+        .locator('[data-slot="card"]')
+        .filter({ has: page.getByRole("link", { name: /^Ungelesen/ }) })
+        .locator('[data-slot="quote-chart"]'),
     ).toHaveCount(0);
   });
 

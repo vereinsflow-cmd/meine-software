@@ -55,36 +55,67 @@ test.describe("Dashboard", () => {
       /von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant/,
     );
     await expect(hours).toContainText(/gegenüber letzter Woche|Diese Woche noch keine Stunden/);
-    // … und eine kleine, rein schmückende Grafik (Fläche, Balken bzw. Besetzungsanzeige), passend zur Karte.
-    await expect(members.locator('[data-slot="sparkline"]')).toBeVisible();
-    await expect(nextEvents.locator('[data-slot="sparkline"]')).toBeVisible();
-    await expect(hours.locator('[data-slot="sparkline"]')).toBeVisible();
-    await expect(freeShifts.locator('[data-slot="fill-meter"]:visible')).toHaveCount(1);
-    // Kachelraster (ab 1280 px): Mitglieder und freie Plätze reichen über beide Reihen, Termine und Helferstunden teilen sich
-    // die Mitte – oben und unten schließt alles bündig ab. Die Grafiken sitzen am unteren Kartenrand.
-    const [m, t, f, h] = await Promise.all(
-      [members, nextEvents, freeShifts, hours].map(
-        async (card) => (await card.locator('[data-slot="card"]').boundingBox())!,
-      ),
+    // … und wie eine Aktie die Veränderung im Zeitraum (▲/▼/±) – sie gehört zum Namen des Links.
+    await expect(members).toHaveAccessibleName(/[+−±]\d+ \([+−±]\d+,\d %\) in 12 Monaten/);
+    await expect(hours).toContainText(/seit 01\.01\.\d{4}/);
+    // Die Karten (der Link liegt darin, Kurs und Zeitraum-Knöpfe daneben)
+    const card = (label: RegExp) =>
+      page
+        .getByRole("group", { name: "Kennzahlen" })
+        .locator('[data-slot="card"]')
+        .filter({
+          has: page.getByRole("link", { name: label }),
+        });
+    const cards = [
+      card(/^Mitglieder \d+/),
+      card(/Termine in 30 Tagen \d+/),
+      card(/Freie Helferplätze \d+/),
+      card(/^Helferstunden \d{4}/),
+    ];
+    // Kursverlauf in jeder Karte (die freien Plätze: in der hohen Kachel unter dem Ring) …
+    for (const each of cards) {
+      await expect(each.locator('[data-slot="quote-chart"]:visible')).toHaveCount(1);
+    }
+    // … mit Zeitraum-Knöpfen; ein Klick wechselt nur den Verlauf dieser Karte (und führt nicht weg), die Veränderung nennt
+    // den neuen Zeitraum
+    let navigated = false;
+    page.on("framenavigated", (frame) => {
+      if (frame === page.mainFrame()) navigated = true;
+    });
+    const periods = cards[0]!.getByRole("group", { name: "Zeitraum für „Mitglieder“" });
+    await expect(periods.getByRole("button", { pressed: true })).toHaveText("12 M");
+    await periods.getByRole("button", { name: "Verlauf in 6 Monaten" }).click();
+    await expect(periods.getByRole("button", { pressed: true })).toHaveText("6 M");
+    await expect(members).toContainText("in 6 Monaten");
+    const hourPeriods = cards[3]!.getByRole("group", { name: /^Zeitraum für „Helferstunden/ });
+    await hourPeriods.getByRole("button", { name: "Verlauf in 12 Wochen" }).click();
+    await expect(hours).toContainText("in 12 Wochen");
+    await expect(members).toContainText("in 6 Monaten"); // die Mitglieder-Karte bleibt bei ihrem Zeitraum
+    expect(navigated).toBe(false);
+    // Tastaturfokus: Der Rahmen liegt an der Karte selbst (sonst schnitte ihr Rand ihn ab)
+    const ringBefore = await cards[0]!.evaluate((element) => getComputedStyle(element).boxShadow);
+    await members.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(members).toBeFocused();
+    expect(await cards[0]!.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe(
+      ringBefore,
     );
+    await page.keyboard.press("Escape");
+    // Kachelraster (ab 1280 px): Mitglieder und freie Plätze reichen über beide Reihen, Termine und Helferstunden teilen sich
+    // die Mitte – oben und unten schließt alles bündig ab. Ohne Bewegung (eine überfahrene Karte hebt sich sonst an).
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.mouse.move(0, 0);
+    const [m, t, f, h] = await Promise.all(cards.map(async (each) => (await each.boundingBox())!));
     for (const box of [t, f]) expect(Math.abs(box.y - m.y)).toBeLessThanOrEqual(1);
     for (const box of [h, f]) {
       expect(Math.abs(box.y + box.height - (m.y + m.height))).toBeLessThanOrEqual(1);
     }
     expect(Math.abs(t.height - h.height)).toBeLessThanOrEqual(1);
     expect(h.y).toBeGreaterThan(t.y + t.height);
-    const gaps = await Promise.all(
-      [members, nextEvents, hours].map(async (card) => {
-        const box = (await card.locator('[data-slot="card"]').boundingBox())!;
-        const graph = (await card.locator('[data-slot="sparkline"]').boundingBox())!;
-        return box.y + box.height - (graph.y + graph.height);
-      }),
-    );
-    expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThanOrEqual(1);
     // Die hohe Kachel zeigt die freien Plätze im Ring; die schmale Fassung (Leiste) ist ausgeblendet – die Zahl steht genau
     // einmal im Namen des Links, die Aufschlüsselung unter dem Ring wird nicht vorgelesen.
     await expect(freeShifts.locator('svg[data-slot="fill-meter"]')).toBeVisible();
-    await expect(freeShifts.locator('div[data-slot="fill-meter"]')).toBeHidden();
     await expect(freeShifts.getByText(/^(Plätze|Platz) frei$/)).toBeVisible();
     await expect(freeShifts).toHaveAccessibleName(
       /^Freie Helferplätze \d+ (Plätze|Platz) frei (\d+ von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant)$/,

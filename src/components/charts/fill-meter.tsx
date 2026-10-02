@@ -3,61 +3,15 @@ import { cn } from "@/lib/utils";
 /** Bis zu so vielen Plätzen zeigt die Anzeige jeden Platz als eigenes Stück; darüber würden die Stücke zu schmal. */
 const MAX_SEGMENTS = 40;
 
-/**
- * Besetzung als Anzeige auf den farbigen Kennzahlenkarten (seit 02.10.2026): ein Stück je Helferplatz, besetzte weiß, freie
- * durchscheinend – so sieht man auf einen Blick, wie viel noch fehlt. Bei mehr als 40 Plätzen ein durchgehender Balken bzw.
- * Ring. Rein schmückend (`aria-hidden`): Zahl und Vergleichssatz der Karte nennen dasselbe als Text. Die Farbe kommt von außen
- * (`currentColor`).
- *
- *  - `FillSegments`: schmale Leiste (normale Karten, Handy).
- *  - `FillRing`: Ring mit Inhalt in der Mitte (die hohe Kachel „Freie Helferplätze“ im Kachelraster ab 48 rem Inhaltsbreite).
- */
-export function FillSegments({
-  filled,
-  total,
-  className,
-}: {
-  filled: number;
-  total: number;
-  className?: string;
-}) {
-  const ratio = total > 0 ? Math.min(1, filled / total) : 0;
-  return (
-    <div
-      data-slot="fill-meter"
-      aria-hidden="true"
-      className={cn(
-        // Viele Plätze: schmalere Lücken, damit die Stücke nicht zu Strichen schrumpfen
-        "flex h-7 items-stretch",
-        total > 24 ? "gap-px" : total > 12 ? "gap-[2px]" : "gap-[3px]",
-        className,
-      )}
-    >
-      {total > 0 && total <= MAX_SEGMENTS ? (
-        Array.from({ length: total }, (_, index) => (
-          <span
-            key={index}
-            className={cn(
-              "min-w-0 flex-1 rounded-[3px] bg-current",
-              index < filled ? "opacity-100" : "opacity-25",
-            )}
-          />
-        ))
-      ) : (
-        <span className="relative my-auto h-2.5 w-full overflow-hidden rounded-full bg-current/25">
-          <span
-            className="absolute inset-y-0 left-0 rounded-full bg-current"
-            style={{ width: `${ratio * 100}%` }}
-          />
-        </span>
-      )}
-    </div>
-  );
-}
-
 const R = 41;
 const C = 2 * Math.PI * R;
 
+/**
+ * Besetzung als Ring auf der hohen Kachel „Freie Helferplätze“ im Kachelraster (seit 02.10.2026): ein Stück je Helferplatz,
+ * besetzte weiß bzw. in der Farbe der Besetzung (`fillClassName`), freie durchscheinend – so sieht man auf einen Blick, wie viel
+ * noch fehlt; in der Mitte die Zahl. Bei mehr als 40 Plätzen ein durchgehender Ring. Rein schmückend (`aria-hidden`): Zahl und
+ * Vergleichssatz der Karte nennen dasselbe als Text. Die Farbe kommt von außen (`currentColor`).
+ */
 export function FillRing({
   filled,
   total,
