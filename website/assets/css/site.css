@@ -6038,6 +6038,7 @@ html:not(.js) .nav ul a:hover {
   );
 }
 
+/* Lichtschein: mittig über der Fläche; ab 1000 px hinter der linken Spalte (Kopf und Versprechen) */
 .band-panel::before {
   content: "";
   position: absolute;
@@ -6051,89 +6052,443 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
-.band .card-icon {
+@media (min-width: 1000px) {
+  .band-panel::before {
+    left: 30%;
+  }
+}
+
+/* Vertrauensfeld: links Kopf, Kernversprechen und Demo-Link, rechts die sechs Schutzmaßnahmen als Tafel. Schmaler
+   (unter 1000 px) steht alles untereinander, in der Reihenfolge des HTML: Kopf, Versprechen, Tafel, Link. */
+.trust {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1000px) {
+  .trust {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "head panel"
+      "promise panel"
+      "more panel";
+    column-gap: clamp(48px, 5vw, 72px);
+    align-items: start;
+  }
+
+  .trust-head {
+    grid-area: head;
+  }
+
+  .trust-promise {
+    grid-area: promise;
+  }
+
+  .trust-panel {
+    grid-area: panel;
+  }
+
+  .trust-more {
+    grid-area: more;
+  }
+}
+
+/* Kopf: bis 999 px zentriert wie die Köpfe der Nachbarabschnitte (auf dem Telefon linksbündig, siehe .section-head.center),
+   ab 1000 px linksbündig in der linken Spalte. Die Überschrift etwas kleiner als in den übrigen Köpfen (wie in der
+   Kontaktkarte), damit sie breit in der schmaleren Spalte in drei Zeilen passt. */
+.trust-head {
+  max-width: 44rem;
+  margin-bottom: 0;
+}
+
+.trust-head h2 {
+  font-size: clamp(2rem, 1.9vw + 1.1rem, 2.9rem);
+}
+
+.trust-head .lead {
+  font-size: clamp(1.0625rem, 0.4vw + 0.95rem, 1.2rem);
+}
+
+@media (min-width: 1000px) {
+  .trust-head.center {
+    max-width: 34rem;
+    margin-inline: 0;
+    text-align: left;
+  }
+
+  .trust-head.center .lead {
+    margin-inline: 0;
+    text-wrap: pretty;
+  }
+}
+
+/* Der zweite Satz der Einleitung folgt hier nicht noch einmal im Abschnitt – er bleibt (anders als in den übrigen Köpfen)
+   auch auf dem Telefon stehen */
+@media (max-width: 719px) {
+  .trust-head .lead-more {
+    display: inline;
+  }
+}
+
+/* Kernversprechen: Siegel (durchgestrichenes Auge) neben der Aussage, darunter die Erklärung; durch eine feine Linie
+   vom Kopf getrennt. Breit so schmal wie der Kopf, untereinander läuft die Linie über die ganze Breite wie die Tafel
+   darunter (der Text bleibt auf eine gut lesbare Zeilenlänge begrenzt). */
+.trust-promise {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: 18px;
+  align-items: center;
+  margin-top: clamp(22px, 3vw, 36px);
+  padding-top: clamp(22px, 2.6vw, 30px);
+  border-top: 1px solid #d3e0ef;
+}
+
+@media (min-width: 1000px) {
+  .trust-promise {
+    max-width: 34rem;
+  }
+}
+
+.trust-claim,
+.trust-note {
+  max-width: 40rem;
+}
+
+.trust-seal {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(150deg, #2c74cc 0%, var(--accent) 45%, var(--brand) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    0 1px 1px rgb(5 85 183 / 20%),
+    0 10px 22px -8px rgb(5 85 183 / 55%);
+  color: #ffffff;
+}
+
+.trust-seal .icon {
+  width: 25px;
+  height: 25px;
+}
+
+.trust-claim {
+  color: var(--ink);
+  font-size: 1.2rem;
+  line-height: 1.35;
+  letter-spacing: -0.014em;
+  text-wrap: balance;
+}
+
+.trust-claim strong {
+  font-weight: 680;
+}
+
+.trust-note {
+  grid-column: 2;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Die sechs Schutzmaßnahmen: eine weiße Tafel mit feinen Trennlinien, unten eine Fußzeile mit den zwei Fakten zu Cookie
+   und Tracking. Jede Zeile ist ein Aufklapper (details): Symbol, Titel und ein Satz; die Einzelheiten stehen darunter
+   etwas leiser. Die ganze Zeile ist die Schaltfläche. */
+.trust-panel {
+  overflow: clip;
+  border: 1px solid #dde7f4;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 999px) {
+  .trust-panel {
+    margin-top: clamp(28px, 5vw, 44px);
+  }
+}
+
+.trust-list {
+  --trust-inset: calc(22px + 44px + 18px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Trennlinien beginnen erst beim Text (wie in Listen auf dem Telefon) – die Symbole stehen frei untereinander. Die Linie
+   ist ein Hintergrundbild der Zeile: Die Tönung beim Überfahren (Hintergrundfarbe) liegt darunter und deckt sie nicht zu. */
+.trust-list > li + li > .trust-item {
+  background-image: linear-gradient(var(--line), var(--line));
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-size: calc(100% - var(--trust-inset)) 1px;
+}
+
+.trust-item {
+  transition: background-color 0.2s;
+}
+
+.trust-item summary {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 22px;
+  column-gap: 18px;
+  align-items: center;
+  padding: 14px 22px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.trust-item summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Offen rückt der Satz näher an seine Einzelheiten */
+.trust-item[open] summary {
+  padding-bottom: 10px;
+}
+
+/* Fokusrahmen innen, sonst schnitte die Tafel (overflow: clip) ihn ab */
+.trust-item summary:focus-visible {
+  border-radius: 0;
+  outline-offset: -3px;
+}
+
+.trust-list > li:first-child summary:focus-visible {
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.trust-icon {
+  display: grid;
+  grid-row: 1 / 3;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
   background: var(--t-blue-bg);
   color: var(--t-blue-fg);
 }
 
-/* Smartphone: die Eigenschaften als knappe Liste direkt auf der getönten Fläche – Symbol links, daneben Titel und ein
-   Satz (der Rest der Karte, .card-more, entfällt), ohne Kartenrahmen. Alle sechs stehen untereinander im Bild. */
-@media (max-width: 599px) {
-  .grid.safety {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+.trust-icon .icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Titel wie eine kleine Zwischenüberschrift gesetzt, aber ohne Überschriftenrolle (siehe Kommentar im HTML) */
+.trust-title {
+  display: block;
+  grid-column: 2;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  transition: color 0.2s;
+}
+
+.trust-line {
+  display: block;
+  grid-column: 2;
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  text-wrap: pretty; /* kein Wort allein in der letzten Zeile */
+}
+
+/* Pfeil schlicht, ohne Kreis – so sieht die Tafel nicht aus wie die Fragen direkt darunter. Beim Überfahren und offen
+   blau, offen gedreht. */
+.trust-chevron {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  width: 22px;
+  height: 22px;
+  color: var(--muted);
+  stroke-width: 2.25;
+  transition: transform 0.35s var(--ease-out), color 0.2s;
+}
+
+/* Nur mit Maus: Auf Touch-Geräten bliebe der Zustand nach dem Tippen sonst hängen. Getönt wird die ganze Zeile samt
+   aufgeklappten Einzelheiten (ohne :has() bleibt es bei Titel und Pfeil). */
+@media (hover: hover) {
+  .trust-item:has(> summary:hover) {
+    background-color: var(--surface-soft);
   }
 
-  .band .safety .card {
-    display: grid;
-    grid-template-columns: 36px minmax(0, 1fr);
-    column-gap: 14px;
-    align-items: start;
-    padding: 18px 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-  }
-
-  .band .safety .card + .card {
-    border-top: 1px solid #dde6f1;
-  }
-
-  .band .safety .card:first-child {
-    padding-top: 0;
-  }
-
-  .band .safety .card:last-child {
-    padding-bottom: 0;
-  }
-
-  .band .safety .card::before {
-    content: none;
-  }
-
-  .band .safety .card:hover {
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* Weißes Feld: Das Hellblau der Karten verschwände auf der ebenso hellblauen Fläche */
-  .band .safety .card-icon {
-    grid-row: 1 / 3;
-    width: 36px;
-    height: 36px;
-    margin: 0;
-    border-radius: 11px;
-    background: var(--surface);
-  }
-
-  .band .safety .card-icon .icon {
-    width: 19px;
-    height: 19px;
-  }
-
-  /* Titel auf Höhe der Mitte des Symbols */
-  .band .safety .card h3 {
-    margin: 0;
-    padding-top: 5px;
-  }
-
-  .band .safety .card p {
-    margin-top: 4px;
-  }
-
-  .card-more {
-    display: none;
+  .trust-item summary:hover .trust-title,
+  .trust-item summary:hover .trust-chevron {
+    color: var(--accent);
   }
 }
 
-/* Kleingedrucktes: linksbündig in einer schmalen, mittig gestellten Spalte (etwa 65 Zeichen je Zeile) */
-.band .small-print {
-  max-width: 36rem;
-  margin: 44px auto 0;
-  color: var(--text);
-  font-size: 1.0625rem;
+.trust-item[open] .trust-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+/* Einzelheiten: unter dem Satz, bündig mit dem Text */
+.trust-detail {
+  max-width: calc(34rem + 84px);
+  padding: 0 22px 18px calc(22px + 44px + 18px);
+  color: var(--muted);
+  font-size: 1rem;
   line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Fußzeile der Tafel: „In der Anwendung:“ und die zwei Fakten. Passt alles in eine Zeile, steht es nebeneinander,
+   sonst die Einleitung über den Fakten (flex-wrap bricht die Liste als Ganzes um). */
+.trust-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 12px 22px 13px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.trust-facts-lead {
+  color: var(--muted);
+}
+
+.trust-facts ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.trust-facts li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trust-tick {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.trust-tick .icon {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.8;
+}
+
+/* Demo-Link: breit linksbündig unter dem Versprechen, untereinander mittig unter der Tafel wie in den Nachbarabschnitten
+   (auf dem Telefon linksbündig, siehe .section-more) */
+.trust .trust-more {
+  margin-top: clamp(24px, 3vw, 36px);
+}
+
+@media (min-width: 1000px) {
+  .trust .trust-more {
+    text-align: left;
+    text-wrap: pretty;
+  }
+}
+
+/* Smartphone und schmales Tablet: Symbol klein neben dem Titel, der Satz darunter nutzt die ganze Breite der Zeile;
+   Siegel kleiner, die Erklärung des Versprechens ebenfalls in voller Breite; Fakten in einer umbrechenden Zeile */
+@media (max-width: 719px) {
+  .trust-list {
+    --trust-inset: 14px;
+  }
+
+  .trust-item summary {
+    grid-template-columns: 30px minmax(0, 1fr) 20px;
+    column-gap: 12px;
+    padding: 11px 14px 12px;
+  }
+
+  .trust-item[open] summary {
+    padding-bottom: 8px;
+  }
+
+  .trust-icon {
+    grid-row: 1;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+
+  .trust-icon .icon {
+    width: 17px;
+    height: 17px;
+  }
+
+  .trust-title {
+    font-size: 1.0625rem;
+  }
+
+  .trust-chevron {
+    grid-row: 1;
+    width: 20px;
+    height: 20px;
+  }
+
+  .trust-line {
+    grid-column: 1 / -1;
+    margin-top: 3px;
+    font-size: 1rem;
+  }
+
+  .trust-detail {
+    padding: 0 14px 15px;
+  }
+
+  .trust-facts {
+    gap: 4px 14px;
+    padding: 12px 14px;
+  }
+
+  .trust-facts ul {
+    gap: 4px 18px;
+  }
+
+  .trust-promise {
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 14px;
+    margin-top: 22px;
+    padding-top: 20px;
+  }
+
+  .trust-seal {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .trust-seal .icon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .trust-claim {
+    font-size: 1.125rem;
+  }
+
+  .trust-note {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+  }
 }
 
 /* ---------- Häufige Fragen ---------- */
@@ -8086,6 +8441,30 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* --- Sicherheit: Die Einzelheiten der sechs Punkte klappen ebenso weich auf wie die Fragen --- */
+@supports selector(::details-content) {
+  @media (prefers-reduced-motion: no-preference) {
+    .trust-item {
+      interpolate-size: allow-keywords;
+    }
+
+    .trust-item::details-content {
+      height: 0;
+      overflow: clip;
+      opacity: 0;
+      transition:
+        height 0.4s var(--ease-out),
+        opacity 0.4s var(--ease-out),
+        content-visibility 0.4s allow-discrete;
+    }
+
+    .trust-item[open]::details-content {
+      height: auto;
+      opacity: 1;
+    }
+  }
+}
+
 /* --- Funktionen: Die Karte einer Kachel blendet weich auf und wächst dabei ein wenig aus der Ecke ihrer Kachel; das
    Blatt gleitet von unten herein, der Grund dunkelt nach. Beim Schließen läuft es rückwärts (display/overlay
    „allow-discrete“: die Karte bleibt sichtbar, bis sie ausgeblendet ist). Nur mit Popover – ohne steht der Text fest in
@@ -8351,6 +8730,21 @@ html:not(.js) .nav ul a:hover {
 
   /* Live-Fenster: nur das ruhige Bild */
   .live-layers {
+    display: none !important;
+  }
+
+  /* Sicherheit: die Einzelheiten der sechs Punkte auch zugeklappt drucken (Browser mit ::details-content), ohne Pfeile */
+  .trust-item::details-content {
+    content-visibility: visible !important;
+    height: auto !important;
+    opacity: 1 !important;
+  }
+
+  .trust-item summary {
+    padding-bottom: 8px;
+  }
+
+  .trust-chevron {
     display: none !important;
   }
 }
