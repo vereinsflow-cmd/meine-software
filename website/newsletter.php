@@ -38,8 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026100204';
-const VF_SKRIPT = '/assets/js/site.js?v=2026100203'; // Menü der Kopfzeile auf dem Smartphone
+const VF_STYLESHEET = '/assets/css/site.css?v=2026100301';
+const VF_SKRIPT = '/assets/js/site.js?v=2026100301'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
@@ -94,6 +94,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
   <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
 </svg>
 
@@ -104,6 +105,11 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
         <img src="/assets/img/logo.svg" alt="" width="174" height="28">
       </picture>
     </a>
+    <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
     <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
       <div class="nav-links">
         <ul>
@@ -116,11 +122,6 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
       </div>
       <a class="btn btn-primary btn-sm btn-header" href="/#kontakt">Demo anfragen</a>
     </nav>
-    <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
-      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
-      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
-    </button>
   </div>
 </header>
 
@@ -138,6 +139,12 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
           <img src="/assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
         </picture>
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+        <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
+        <address class="footer-contact">
+          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        </address>
       </div>
       <div>
         <h2>Produkt</h2>
@@ -150,12 +157,12 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
         </ul>
       </div>
       <div>
-        <h2>Mehr</h2>
+        <h2>Kontakt</h2>
         <ul>
-          <li><a href="/#ablauf">Ablauf</a></li>
-          <li><a href="/#faq">Häufige Fragen</a></li>
           <li><a href="/#kontakt">Demo anfragen</a></li>
           <li><a href="/#benachrichtigen">Zum Start benachrichtigen</a></li>
+          <li><a href="/#ablauf">So starten Sie</a></li>
+          <li><a href="/#faq">Häufige Fragen</a></li>
         </ul>
       </div>
       <div>
@@ -167,7 +174,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow · Funktionsumfang: Stand September 2026</span>
+      <span>© 2026 VereinsFlow GbR</span>
       <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
     </div>
   </div>
@@ -201,6 +208,25 @@ function vf_start_demo_links(): string
 function vf_mail_link(): string
 {
     return '<a href="mailto:' . VF_ABSENDER . '">' . VF_ABSENDER . '</a>';
+}
+
+/** „Fast geschafft“: woran man die Bestätigungs-E-Mail im Posteingang (oder im Spam-Ordner) erkennt und wie lange der
+ *  Link gilt, dazu der Weg bei vertippter Adresse. Nur Anzeige – die Adresse selbst steht bewusst nirgends auf der Seite
+ *  und nicht in der Adresszeile. Der Betreff hat denselben Wortlaut wie in vf_mail_bestaetigen (bei Änderung dort
+ *  mitziehen); die Frist zählt wie dort ab der ersten Anmeldung. */
+function vf_mail_hinweise(): string
+{
+    return '<dl class="mail-facts">'
+        . '<div><dt>Absender</dt><dd>' . vf_h(VF_ABSENDER_NAME) . ' <span class="nowrap">' . vf_h('<' . VF_ABSENDER . '>')
+        . '</span></dd></div>'
+        . '<div><dt>Betreff</dt><dd>„Bitte bestätigen Sie Ihre Anmeldung bei VereinsFlow“</dd></div>'
+        . '<div><dt>Link gültig</dt><dd>' . VF_FRIST_TAGE . '&nbsp;Tage ab Ihrer Anmeldung <small>(das genaue Ende steht in '
+        . 'der E&#8209;Mail)</small></dd></div>'
+        . '</dl>'
+        . '<p class="mail-help">Keine E&#8209;Mail bekommen? Sehen Sie bitte auch im Spam- oder Werbeordner nach, oder '
+        . 'schreiben Sie uns an ' . vf_mail_link() . '.</p>'
+        . '<p class="mail-help">Adresse vertippt? Dann einfach <a href="/#benachrichtigen">neu eintragen</a>&nbsp;– eine '
+        . 'nicht bestätigte Adresse löschen wir nach ' . VF_FRIST_TAGE . '&nbsp;Tagen von selbst.</p>';
 }
 
 function vf_fehlerseite(): void
@@ -993,9 +1019,8 @@ try {
     if ($status === 'gesendet') {
         vf_seite(200, 'Fast geschafft',
             'Wir haben Ihnen eine E&#8209;Mail mit einem Bestätigungslink geschickt. Bitte klicken Sie darauf&nbsp;– '
-                . 'erst dann ist Ihre Anmeldung gültig. Keine E&#8209;Mail bekommen? Sehen Sie bitte auch im Spam-Ordner '
-                . 'nach, oder schreiben Sie uns an ' . vf_mail_link() . '.',
-            vf_start_demo_links(), 'mail');
+                . 'erst dann ist Ihre Anmeldung gültig.',
+            vf_mail_hinweise() . vf_start_demo_links(), 'mail');
     }
     if ($status === 'bestaetigt') {
         vf_seite(200, 'Danke – Sie sind angemeldet',

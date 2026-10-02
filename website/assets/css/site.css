@@ -457,6 +457,16 @@ html:not(.js) .nav ul a:hover {
     background: var(--bg);
     border-bottom: 1px solid var(--line);
     box-shadow: 0 24px 40px rgb(15 30 50 / 10%);
+    /* Niedrige Fenster (Handy quer): Das Menü rollt in sich, statt unten abgeschnitten zu sein */
+    max-height: calc(100svh - var(--header-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Hinter dem offenen Menü rollt die Seite nicht mit (sie ist dann ohnehin gesperrt, site.js) */
+  html:has(.site-header.is-open) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
 
   .nav.is-open ul {
@@ -494,6 +504,28 @@ html:not(.js) .nav ul a:hover {
   }
 
   /* Ohne JavaScript bleibt die Navigation ausgeblendet; alle Bereiche sind trotzdem in der Seite erreichbar (Fußzeile). */
+}
+
+/* Handy quer: die fünf Menüpunkte in zwei Spalten und etwas dichter – so passen sie samt „Demo anfragen“ ins Bild */
+@media (max-width: 899px) and (max-height: 500px) {
+  .js .nav.is-open {
+    gap: 10px;
+    padding-block: 6px 14px;
+  }
+
+  .nav.is-open ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 8px;
+  }
+
+  .nav.is-open ul a {
+    padding-block: 11px;
+  }
+
+  .nav.is-open .btn-header {
+    min-height: 46px;
+  }
 }
 
 /* ---------- Schaltflächen ---------- */
@@ -1053,6 +1085,42 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Handy quer (niedrige Fenster): Die Kopfzeile wird schmaler, der Einstieg rückt an sie heran, und „Demo anfragen“ steht
+   schon ganz oben neben dem Menüknopf – die Knöpfe des Einstiegs lägen im ersten Bild sonst unter dem Rand */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --header-h: 52px;
+  }
+
+  .brand img {
+    width: 136px;
+  }
+
+  .hero {
+    padding-top: calc(var(--header-h) + 12px);
+  }
+
+  .hero h1 {
+    font-size: min(clamp(2.5rem, 5.6vw + 0.6rem, 5.25rem), 9.5vh); /* wie ab 720 px, auch für schmalere Handys quer */
+  }
+
+  .hero .lead {
+    margin-top: 16px;
+  }
+
+  .hero-actions {
+    margin-top: 22px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 899px) {
+  .js body:not(.subpage) .site-header:not(.is-scrolled):not(.is-open) .header-cta {
+    visibility: visible;
+    opacity: 1;
+    translate: none;
+  }
+}
+
 /* Schwebende Hinweise rund um das Dashboard (nur Schmuck). --rise: wie weit sie beim Scrollen steigen (Bewegung) – in
    schmaleren Fenstern ist die freie Stelle in der Seitenleiste niedriger und das gekippte Dashboard schon früh zu sehen:
    Dort steigen sie nicht, sonst rutschte „Voll besetzt“ über „Persönlich“. */
@@ -1091,10 +1159,6 @@ html:not(.js) .nav ul a:hover {
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.35;
-}
-
-.float-chip kbd {
-  font-size: 0.72rem;
 }
 
 .float-chip-icon {
@@ -5163,6 +5227,47 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Smartphone: Symbol (kleiner) und Titel in einer Zeile, Vorher und Nachher darunter über die ganze Breite – spart je
+   Karte gut 60 px, ohne Text wegzunehmen */
+@media (max-width: 599px) {
+  .swap .card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: center;
+    padding: 22px;
+  }
+
+  .swap .card-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    border-radius: 12px;
+  }
+
+  .swap .card-icon .icon {
+    width: 21px;
+    height: 21px;
+  }
+
+  .swap .card h3 {
+    margin: 0;
+  }
+
+  .swap .before,
+  .swap .after {
+    grid-column: 1 / -1;
+  }
+
+  .swap .before {
+    margin-top: 16px;
+  }
+
+  .swap .after {
+    margin-top: 14px;
+  }
+}
+
 /* ---------- Hervorgehobene Bereiche (Bild + Text im Wechsel) ---------- */
 
 .spot {
@@ -5328,13 +5433,23 @@ html:not(.js) .nav ul a:hover {
   visibility: visible;
 }
 
-/* Smartphone: vier Reiter nebeneinander, Symbol über der Beschriftung */
+/* Smartphone: vier Reiter nebeneinander, Symbol über der Beschriftung (16 px – „Mitglieder“ passt ab 360 px Breite gerade
+   in ein Viertel, deshalb ohne Abstand zwischen den Reitern). Ein Thema ist hier über 1.000 px lang: Die Leiste bleibt
+   beim Lesen unter der Kopfzeile stehen (sticky, deckender Grund), das nächste Thema ist immer einen Tipp entfernt – der
+   Tipp rollt dann an den Anfang des neuen Themas zurück (site.js). */
 @media (max-width: 599px) {
   .tabs {
     width: 100%;
-    gap: 2px;
-    padding: 4px;
+    gap: 0;
+    padding: 3px;
     border-radius: 22px;
+    box-shadow: 0 1px 2px rgb(15 30 50 / 6%), 0 6px 18px rgb(15 30 50 / 8%);
+  }
+
+  .spots.is-tabs > .tabs {
+    position: sticky;
+    z-index: 5;
+    top: calc(var(--header-h) + 8px);
   }
 
   .tab {
@@ -5343,18 +5458,33 @@ html:not(.js) .nav ul a:hover {
     justify-content: center;
     gap: 3px;
     min-width: 0;
-    min-height: 56px;
-    padding: 6px 2px;
-    border-radius: 18px;
-    font-size: 0.8rem;
+    min-height: 58px;
+    padding: 6px 1px;
+    border-radius: 19px;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .tab span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tab:focus-visible {
-    border-radius: 18px;
+    border-radius: 19px;
+    outline-offset: -3px; /* ohne Abstand zwischen den Reitern läge der Ring sonst über dem Nachbarn */
   }
 
   .tabs::before {
-    border-radius: 18px;
+    border-radius: 19px;
+  }
+}
+
+/* Sehr schmale Telefone (320 px): Vier Beschriftungen in 16 px passen nicht nebeneinander, hier 14 px */
+@media (max-width: 359px) {
+  .tab {
+    font-size: 0.875rem;
   }
 }
 
@@ -5750,6 +5880,21 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Handy quer (niedrig, bis 999 px breit): Das Live-Fenster wäre höher als der Bildschirm, der Zeiger klickte außerhalb
+   des sichtbaren Ausschnitts. Wie am Smartphone entfällt es; es bleibt das Raster des Tablets – links die Schritte,
+   rechts Telefon und Blatt –, und das Telefon zeigt einmal den Moment des Eintragens (site.js, STORY_COMPACT: dieselbe
+   Abfrage) */
+@media (min-width: 720px) and (max-width: 999px) and (max-height: 500px) {
+  .story-window {
+    display: none;
+  }
+
+  .story-steps,
+  .story-phone {
+    margin-top: 0;
+  }
+}
+
 /* „Im Detail“ auf dem Smartphone: Statt des verkleinerten Browserfensters (Schrift dort nur 5–6 px) steht ein Telefon mit
    eigener Aufnahme (Lupe, Liste, Diagramm wie auf dem Gerät), Bildschirm 260 px breit wie die übrigen Telefone. Ab 720 px
    bleibt es beim Live-Fenster; das jeweils verborgene Bild lädt der Browser nicht (loading="lazy"). */
@@ -5769,8 +5914,10 @@ html:not(.js) .nav ul a:hover {
   }
 
   /* Als Reiter steht das Telefon direkt unter der Reiterleiste, der Text darunter: Ein Tipp auf einen Reiter zeigt sofort
-     das neue Bild, statt nur den Text im Blick zu tauschen */
-  .spots.is-tabs > .spot .spot-media {
+     das neue Bild, statt nur den Text im Blick zu tauschen. Die zweite Zeile ist nötig, weil die Regel für .flip weiter
+     oben (Bild rechts im Reiter) sonst mit einer Klasse mehr gewinnt – „Mitglieder“ und „Zahlen“ hätten das Bild unten. */
+  .spots.is-tabs > .spot .spot-media,
+  .spots.is-tabs > .spot.flip .spot-media {
     order: -1;
     margin-top: 0;
   }
@@ -5787,6 +5934,107 @@ html:not(.js) .nav ul a:hover {
 
 .live-layers {
   display: none;
+}
+
+/* Anhalten/Abspielen (site.js, erscheint nur, wenn das Fenster abspielen kann): rechts in der Leiste des Fensters, als
+   kleine Pille mit Symbol und Wort, in schmalen Fenstern nur das Symbol. Die Tippfläche ist 44 px hoch und reicht dafür
+   6 px unter die Leiste; der Fokusring liegt um die Pille. Kein Teil der Leiste selbst – die ist für Screenreader
+   verborgen. */
+.live {
+  container-type: inline-size;
+}
+
+.live-toggle {
+  position: absolute;
+  z-index: 100002; /* über dem Mauszeiger des Fensters */
+  top: 0;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px 6px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s;
+}
+
+.live-toggle[hidden] {
+  display: none;
+}
+
+.live-toggle::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 7px 0 13px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--frame-line);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.live-toggle:hover {
+  color: var(--ink);
+}
+
+.live-toggle:hover::before {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.live-toggle:focus-visible {
+  outline: none;
+}
+
+.live-toggle:focus-visible::before {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.live-toggle .icon {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  stroke-width: 1.5;
+}
+
+.live-toggle .icon-play,
+.live-toggle.is-paused .icon-pause {
+  display: none;
+}
+
+.live-toggle.is-paused .icon-play {
+  display: block;
+}
+
+@container (max-width: 549px) {
+  .live-toggle {
+    padding-inline: 0;
+  }
+
+  .live-toggle::before {
+    inset-inline: 8px;
+  }
+
+  .live-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 /* ---------- Rollen ----------
@@ -6682,6 +6930,9 @@ html:not(.js) .nav ul a:hover {
 }
 
 .cta-mail a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* Tippfläche */
   font-weight: 650;
 }
 
@@ -6940,10 +7191,80 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Smartphone: keine Karte in der Karte – die Anmeldung steht unter einer Trennlinie wie der Ablauf darüber, die Felder
+   bekommen die volle Breite der Kontaktkarte */
+@media (max-width: 599px) {
+  .notify {
+    padding: clamp(28px, 4vw, 40px) 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: none;
+  }
+}
+
 /* Seiten von newsletter.php (Bestätigen, Abmelden, Ergebnis) im Stil der Fehlerseite */
 .notify-page .lead {
   max-width: 36rem;
   margin-inline: auto;
+}
+
+/* „Fast geschafft“: Absender, Betreff und Frist der Bestätigungs-E-Mail als ruhige Karte – zum Wiederfinden im
+   Posteingang. Links Bezeichnung, rechts Wert; am Smartphone untereinander. */
+.mail-facts {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 37rem);
+  margin: 4px auto 0;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  text-align: left;
+}
+
+.mail-facts div {
+  display: grid;
+  grid-template-columns: 6.25rem minmax(0, 1fr);
+  gap: 2px 14px;
+}
+
+.mail-facts dt {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.mail-facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.mail-facts dd small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+}
+
+.mail-help {
+  max-width: 34rem;
+  margin-inline: auto;
+  color: var(--text);
+}
+
+@media (max-width: 559px) {
+  .mail-facts {
+    padding: 16px 18px;
+  }
+
+  .mail-facts div {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ---------- Fußzeile ---------- */
@@ -6971,6 +7292,44 @@ html:not(.js) .nav ul a:hover {
 
 .footer-brand p {
   max-width: 32ch;
+}
+
+/* Absender und Kontakt unter dem Claim (Angaben wie im Impressum). E-Mail und Telefon sind volle 44 px hoch (Tippziel);
+   die Unterstreichung beim Überfahren sitzt deshalb am Text (inneres span), nicht am unteren Rand des Links. */
+.footer-contact {
+  display: grid;
+  justify-items: start;
+  margin-top: 18px;
+  font-style: normal;
+}
+
+.footer-sender {
+  margin-bottom: 2px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.site-footer .footer-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  background: none;
+}
+
+.footer-contact a > span {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.35s var(--ease-out);
+}
+
+.footer-contact a:hover > span {
+  background-size: 100% 1px;
+}
+
+.footer-contact .icon {
+  width: 17px;
+  height: 17px;
+  color: var(--accent);
 }
 
 .site-footer h2 {
@@ -7031,6 +7390,30 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Tippflächen (Touch-Geräte, schmale Fenster): Die Links der Fußzeile sind mindestens 44 px hoch – Innenabstand statt
+   Lücke, die Zeilen rücken nur wenig auseinander (44 statt 33 px), die Abstände zu Überschrift und Rand bleiben. Die
+   Unterstreichung beim Überfahren bleibt an der Schrift (am Inhalt statt am Innenabstand ausgerichtet). */
+@media (pointer: coarse), (max-width: 899px) {
+  .site-footer ul {
+    gap: 0;
+    margin-block: -10px;
+  }
+
+  .site-footer li a {
+    display: inline-block;
+    padding-block: 10px;
+    background-origin: content-box;
+  }
+
+  /* Links im Fließtext (Einwilligung, Antworten, Rechtstexte): Die Tippfläche reicht über und unter die Zeile, ohne
+     den Zeilenabstand zu ändern */
+  .notify-note a,
+  .answer a,
+  .prose p a {
+    padding-block: 14px;
+  }
+}
+
 /* ---------- Rechtstexte und Fehlerseite ---------- */
 
 /* Unterseiten (Impressum, Datenschutz, Fehlerseite, Seiten von newsletter.php) haben dieselbe Kopf- und Fußzeile wie die
@@ -7061,9 +7444,12 @@ html:not(.js) .nav ul a:hover {
   padding: clamp(40px, 6vw, 88px) 0 12px;
 }
 
+/* „← Zur Startseite“: Tippfläche 44 px hoch, der Abstand zur Überschrift bleibt wie zuvor */
 .page-head a {
-  display: inline-block;
-  margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 0;
 }
 
 .page-head h1 {
@@ -7109,6 +7495,17 @@ html:not(.js) .nav ul a:hover {
 .prose dt {
   color: var(--ink);
   font-weight: 650;
+}
+
+/* Kontakt im Impressum: E-Mail und Telefon mit 44 px hoher Tippfläche; Begriff und Wert stehen auf einer Grundlinie */
+.prose dl {
+  align-items: baseline;
+}
+
+.prose dd > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .prose dd {
@@ -7923,6 +8320,26 @@ html:not(.js) .nav ul a:hover {
     pointer-events: none;
   }
 
+  /* Smartphone und Handy quer: Fingertipp auf „Eintragen“ im Telefon der Helferschichten, kurz bevor es auf den Stand
+     danach überblendet (site.js). Lage: Mitte des Knopfs im Bild „vorher“ (waagerecht mittig, 54,3 % der Bildhöhe) –
+     nach einer neuen Aufnahme prüfen. */
+  .js .story-tap {
+    position: absolute;
+    top: 54.3%;
+    left: 50%;
+    width: 48px;
+    aspect-ratio: 1;
+    border: 2px solid rgb(255 255 255 / 92%);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 42%);
+    box-shadow:
+      0 0 0 1px rgb(5 85 183 / 45%),
+      0 0 14px rgb(5 85 183 / 35%);
+    translate: -50% -50%;
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /* Zeiger: eine Ebene so groß wie das Bild – ihr translate in Prozent ist damit eine Stelle im Bild */
   .js .live-pointer {
     position: absolute;
@@ -8728,8 +9145,9 @@ html:not(.js) .nav ul a:hover {
     margin-top: 48px;
   }
 
-  /* Live-Fenster: nur das ruhige Bild */
-  .live-layers {
+  /* Live-Fenster: nur das ruhige Bild, ohne Knopf „Anhalten“ */
+  .live-layers,
+  .live-toggle {
     display: none !important;
   }
 

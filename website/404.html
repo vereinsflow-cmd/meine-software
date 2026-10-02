@@ -8,8 +8,8 @@
   <meta name="color-scheme" content="light">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <!-- Wurzelpfade (mit / am Anfang), weil diese Seite unter beliebigen Adressen ausgeliefert wird -->
-  <link rel="stylesheet" href="/assets/css/site.css?v=2026100204">
-  <script src="/assets/js/site.js?v=2026100203" defer></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=2026100301">
+  <script src="/assets/js/site.js?v=2026100301" defer></script>
 </head>
 <body class="subpage">
 <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
@@ -18,6 +18,9 @@
 <svg class="sprite" aria-hidden="true" focusable="false">
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <!-- Fußzeile: E-Mail und Telefon -->
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
 </svg>
 
@@ -28,6 +31,11 @@
         <img src="/assets/img/logo.svg" alt="" width="174" height="28">
       </picture>
     </a>
+    <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
     <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
       <div class="nav-links">
         <ul>
@@ -40,11 +48,6 @@
       </div>
       <a class="btn btn-primary btn-sm btn-header" href="/#kontakt">Demo anfragen</a>
     </nav>
-    <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
-      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
-      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
-    </button>
   </div>
 </header>
 
@@ -73,6 +76,12 @@
           <img src="/assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
         </picture>
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+        <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
+        <address class="footer-contact">
+          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        </address>
       </div>
       <div>
         <h2>Produkt</h2>
@@ -85,12 +94,12 @@
         </ul>
       </div>
       <div>
-        <h2>Mehr</h2>
+        <h2>Kontakt</h2>
         <ul>
-          <li><a href="/#ablauf">Ablauf</a></li>
-          <li><a href="/#faq">Häufige Fragen</a></li>
           <li><a href="/#kontakt">Demo anfragen</a></li>
           <li><a href="/#benachrichtigen">Zum Start benachrichtigen</a></li>
+          <li><a href="/#ablauf">So starten Sie</a></li>
+          <li><a href="/#faq">Häufige Fragen</a></li>
         </ul>
       </div>
       <div>
@@ -102,7 +111,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow · Funktionsumfang: Stand September 2026</span>
+      <span>© 2026 VereinsFlow GbR</span>
       <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
     </div>
   </div>
