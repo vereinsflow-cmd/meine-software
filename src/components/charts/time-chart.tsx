@@ -64,6 +64,7 @@ export function TimeChart({
   series,
   values,
   unit,
+  heights = [240, 300],
 }: {
   type: TimeChartType;
   title: string;
@@ -73,6 +74,8 @@ export function TimeChart({
   /** values[Reihe][Zeitraum] */
   values: number[][];
   unit: ChartUnit;
+  /** Höhe in px: schmal (unter 520 px Breite) und breit – das Dashboard stellt sie nach der eigenen Kartengröße ein. */
+  heights?: readonly [number, number];
 }) {
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
@@ -85,7 +88,7 @@ export function TimeChart({
     twoLines ? (bucket.label.split(" ")[0] ?? bucket.label) : bucket.label;
   const yearOf = (bucket: BucketLabel) => bucket.key.slice(0, 4);
   const marginBottom = twoLines ? BOTTOM.twoLines : BOTTOM.oneLine;
-  const height = width < 520 ? 240 : 300;
+  const height = width < 520 ? heights[0] : heights[1];
   const max = Math.max(0, ...values.flat());
   const scale = niceScale(max, 4, unit.decimals === 0);
   // So viele Nachkommastellen, wie die Teilstriche brauchen (0,25 darf nicht als „0,3“ erscheinen).

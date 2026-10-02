@@ -16,19 +16,27 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { IconButton } from "@/components/shared/icon-button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { saveDashboardLayoutAction } from "../actions";
-import { DASHBOARD_BLOCKS, type DashboardLayout } from "../layout-prefs";
+import {
+  BLOCK_SIZES,
+  BLOCK_SIZE_LABEL,
+  DASHBOARD_BLOCKS,
+  DEFAULT_BLOCK_SIZE,
+  type BlockSize,
+  type DashboardLayout,
+} from "../layout-prefs";
 import type { DashboardTabId } from "../tabs";
 
 export interface CustomizeTab {
   id: DashboardTabId;
   label: string;
   /** Karten des Reiters in der aktuellen Reihenfolge – nur die, die die Rolle sehen darf. */
-  blocks: { id: string; label: string; visible: boolean }[];
+  blocks: { id: string; label: string; visible: boolean; size: BlockSize }[];
 }
 
-/** Standard-Ansicht: alle erlaubten Karten sichtbar, in der vorgesehenen Reihenfolge. */
+/** Standard-Ansicht: alle erlaubten Karten sichtbar, in der vorgesehenen Reihenfolge, alle „Mittel“. */
 function defaults(tabs: CustomizeTab[]): CustomizeTab[] {
   return tabs.map((tab) => {
     const byId = new Map(tab.blocks.map((block) => [block.id, block]));
@@ -36,7 +44,7 @@ function defaults(tabs: CustomizeTab[]): CustomizeTab[] {
       ...tab,
       blocks: DASHBOARD_BLOCKS[tab.id]
         .filter((block) => byId.has(block.id))
-        .map((block) => ({ ...byId.get(block.id)!, visible: true })),
+        .map((block) => ({ ...byId.get(block.id)!, visible: true, size: DEFAULT_BLOCK_SIZE })),
     };
   });
 }
@@ -45,8 +53,9 @@ const sameAs = (a: CustomizeTab[], b: CustomizeTab[]) =>
   JSON.stringify(a.map((tab) => tab.blocks)) === JSON.stringify(b.map((tab) => tab.blocks));
 
 /**
- * „Dashboard anpassen“: Jede Person blendet Karten ein und aus und ändert ihre Reihenfolge – je Reiter, gespeichert im
- * Konto (je Verein), also auf allen Geräten gleich. Verschieben mit „nach oben“/„nach unten“ statt nur Ziehen: so geht es
+ * „Dashboard anpassen“: Jede Person blendet Karten ein und aus, ändert ihre Reihenfolge und ihre Größe (klein, mittel,
+ * groß; seit 02.10.2026) – je Reiter, gespeichert im Konto (je Verein), also auf allen Geräten gleich. Die Größe ist ein
+ * natives Auswahlfeld: am Handy und mit der Tastatur zuverlässig, der Screenreader nennt Karte und gewählte Größe. Verschieben mit „nach oben“/„nach unten“ statt nur Ziehen: so geht es
  * auch mit Tastatur und Screenreader. Entspricht die Auswahl der Standard-Ansicht, wird nichts Eigenes gespeichert.
  */
 export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
@@ -92,6 +101,11 @@ export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
               {
                 order: tab.blocks.map((block) => block.id),
                 hidden: tab.blocks.filter((block) => !block.visible).map((block) => block.id),
+                sizes: Object.fromEntries(
+                  tab.blocks
+                    .filter((block) => block.size !== DEFAULT_BLOCK_SIZE)
+                    .map((block) => [block.id, block.size]),
+                ),
               },
             ]),
           ),
@@ -126,8 +140,8 @@ export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
         <DialogHeader>
           <DialogTitle>Dashboard anpassen</DialogTitle>
           <DialogDescription>
-            Wähle, welche Karten du siehst und in welcher Reihenfolge. Das gilt nur für dich – auf
-            allen Geräten.
+            Wähle, welche Karten du siehst, in welcher Reihenfolge und wie groß. Das gilt nur für
+            dich – auf allen Geräten.
           </DialogDescription>
         </DialogHeader>
 
@@ -146,7 +160,7 @@ export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
                     <li
                       key={block.id}
                       aria-label={block.label}
-                      className="flex items-center gap-2 rounded-lg border px-3 py-1.5"
+                      className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-3 py-1.5"
                     >
                       <input
                         id={checkboxId}
@@ -172,6 +186,25 @@ export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
                         {block.label}
                         {!block.visible && <span className="sr-only"> (ausgeblendet)</span>}
                       </label>
+                      <NativeSelect
+                        aria-label={`Größe von „${block.label}“`}
+                        value={block.size}
+                        onChange={(event) => {
+                          const size = event.target.value as BlockSize;
+                          update(tab.id, (blocks) =>
+                            blocks.map((entry) =>
+                              entry.id === block.id ? { ...entry, size } : entry,
+                            ),
+                          );
+                        }}
+                        className="h-8 w-auto shrink-0 pr-7"
+                      >
+                        {BLOCK_SIZES.map((size) => (
+                          <option key={size} value={size}>
+                            {BLOCK_SIZE_LABEL[size]}
+                          </option>
+                        ))}
+                      </NativeSelect>
                       {/* `aria-disabled` statt `disabled`: Der Fokus bleibt auf dem Knopf, auch wenn die Karte oben ankommt. */}
                       <IconButton
                         label={`„${block.label}“ nach oben`}

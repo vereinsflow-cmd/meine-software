@@ -37,6 +37,7 @@ import {
   GROUP_TITLE,
   arrangeBlocks,
   blockLabel,
+  blockSize,
   orderedBlocks,
   segmentBlocks,
 } from "@/modules/dashboard/layout-prefs";
@@ -61,8 +62,9 @@ export const metadata: Metadata = { title: "Dashboard" };
  * Reiterwechsel geschieht im Browser (`DashboardTabs`), die Seitenleiste zeigt weiter nur „Dashboard“. Der Server berechnet
  * wie bisher nur, was die Rolle sehen darf; Reiter ohne Inhalt gibt es nicht. Die Diagramme laden per `Suspense` nach.
  *
- * Jede Person kann ihr Dashboard selbst einstellen („Anpassen“): Karten je Reiter ein- und ausblenden und umsortieren
- * (`modules/dashboard/layout-prefs.ts`, gespeichert je Person und Verein). Ohne eigene Einstellung gilt die Standard-Ansicht.
+ * Jede Person kann ihr Dashboard selbst einstellen („Anpassen“): Karten je Reiter ein- und ausblenden, umsortieren und in
+ * der Größe ändern – klein, mittel, groß (`modules/dashboard/layout-prefs.ts`, gespeichert je Person und Verein). Ohne eigene
+ * Einstellung gilt die Standard-Ansicht (alle „Mittel“).
  */
 export default async function DashboardPage({
   searchParams,
@@ -84,21 +86,31 @@ export default async function DashboardPage({
   const analytics = getAnalytics(ctx);
   analytics.catch(() => undefined);
 
+  /** Eigene Größe einer Karte („Anpassen“); ohne Einstellung „Mittel“. */
+  const sizeOf = (tab: DashboardTabId, id: string) => blockSize(layout?.tabs[tab], id);
+  const kpiSize = sizeOf("uebersicht", "kennzahlen");
   // Kachelraster der Kennzahlen (Entwurf 2): nur, wenn alle vier Karten da sind – mit „Ungelesen“ statt Mitgliederzahl oder mit
-  // weniger Karten stehen sie gleich groß nebeneinander.
-  const bento = Boolean(members && events && shifts);
+  // weniger Karten stehen sie gleich groß nebeneinander; bei „Klein“ als schmale Reihe ohne Grafiken.
+  const bento = Boolean(members && events && shifts) && kpiSize !== "s";
 
   // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
   const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
     uebersicht: {
       // „Erste Schritte“ nur für den Vereinsadministrator, solange noch etwas offen ist.
-      ...(onboarding ? { "erste-schritte": <OnboardingCard steps={onboarding} /> } : {}),
+      ...(onboarding
+        ? {
+            "erste-schritte": (
+              <OnboardingCard steps={onboarding} size={sizeOf("uebersicht", "erste-schritte")} />
+            ),
+          }
+        : {}),
       kennzahlen: (
-        <KpiCarousel layout={bento ? "bento" : "grid"}>
+        <KpiCarousel layout={bento ? "bento" : "grid"} size={kpiSize}>
           {members ? (
-            <MembersStat members={members} size={bento ? "hero" : "regular"} />
+            <MembersStat members={members} size={bento ? "hero" : "regular"} density={kpiSize} />
           ) : (
             <StatCard
+              density={kpiSize}
               label="Ungelesen"
               accent="blue" // Ungelesenes ist im ganzen Verein blau (Glocke, Punkt, „Neu“)
               value={notifications.unread}
@@ -107,26 +119,58 @@ export default async function DashboardPage({
               icon={<AREA_ICON.benachrichtigungen />}
             />
           )}
-          {events && <NextEventsStat events={events} />}
-          {shifts && <FreeShiftsStat shifts={shifts} size={bento ? "tall" : "regular"} />}
-          {shifts && <HelperHours hours={shifts.hours} />}
+          {events && <NextEventsStat events={events} density={kpiSize} />}
+          {shifts && (
+            <FreeShiftsStat shifts={shifts} size={bento ? "tall" : "regular"} density={kpiSize} />
+          )}
+          {shifts && <HelperHours hours={shifts.hours} density={kpiSize} />}
         </KpiCarousel>
       ),
       // Offene Zahlungen nur für Berechtigte (Vereinsadministrator, Vorstand) – vor „Für dich“, weil Fristen drängen.
-      ...(payments ? { zahlungen: <OpenPayments payments={payments} /> } : {}),
-      ...(tasks
-        ? { aufgaben: <MyTasks tasks={tasks} organizer={can(ctx, "tasks:manage")} /> }
+      ...(payments
+        ? {
+            zahlungen: (
+              <OpenPayments payments={payments} size={sizeOf("uebersicht", "zahlungen")} />
+            ),
+          }
         : {}),
-      ...(shifts ? { einsaetze: <MyShifts shifts={shifts} /> } : {}),
-      benachrichtigungen: <LatestNotifications notifications={notifications} />,
+      ...(tasks
+        ? {
+            aufgaben: (
+              <MyTasks
+                tasks={tasks}
+                organizer={can(ctx, "tasks:manage")}
+                size={sizeOf("uebersicht", "aufgaben")}
+              />
+            ),
+          }
+        : {}),
+      ...(shifts
+        ? { einsaetze: <MyShifts shifts={shifts} size={sizeOf("uebersicht", "einsaetze")} /> }
+        : {}),
+      benachrichtigungen: (
+        <LatestNotifications
+          notifications={notifications}
+          size={sizeOf("uebersicht", "benachrichtigungen")}
+        />
+      ),
     },
     termine: {
-      ...(events ? { veranstaltungen: <UpcomingEvents events={events} /> } : {}),
-      ...(shifts ? { schichten: <OpenShifts shifts={shifts} /> } : {}),
+      ...(events
+        ? {
+            veranstaltungen: (
+              <UpcomingEvents events={events} size={sizeOf("termine", "veranstaltungen")} />
+            ),
+          }
+        : {}),
+      ...(shifts
+        ? { schichten: <OpenShifts shifts={shifts} size={sizeOf("termine", "schichten")} /> }
+        : {}),
       auswertungen: (
         <Suspense fallback={<AnalyticsSkeleton />}>
           <Analytics
             data={analytics}
+            size={sizeOf("termine", "auswertungen")}
             topics={["events", "hours"]}
             description="Veranstaltungen und Helferstunden im Zeitverlauf"
           />
@@ -134,13 +178,20 @@ export default async function DashboardPage({
       ),
     },
     mitglieder: {
-      ...(birthdays ? { geburtstage: <Birthdays birthdays={birthdays} /> } : {}),
+      ...(birthdays
+        ? {
+            geburtstage: (
+              <Birthdays birthdays={birthdays} size={sizeOf("mitglieder", "geburtstage")} />
+            ),
+          }
+        : {}),
       ...(members
         ? {
             auswertungen: (
               <Suspense fallback={<AnalyticsSkeleton />}>
                 <Analytics
                   data={analytics}
+                  size={sizeOf("mitglieder", "auswertungen")}
                   topics={["members"]}
                   description="Verteilung und Entwicklung der Mitglieder"
                 />
@@ -150,12 +201,23 @@ export default async function DashboardPage({
         : {}),
     },
     aktivitaet: {
-      ...(activity ? { aktivitaet: <RecentActivity entries={activity} /> } : {}),
+      ...(activity
+        ? {
+            aktivitaet: (
+              <RecentActivity entries={activity} size={sizeOf("aktivitaet", "aktivitaet")} />
+            ),
+          }
+        : {}),
       ...(tasks
         ? {
             auswertungen: (
               <Suspense fallback={<AnalyticsSkeleton />}>
-                <Analytics data={analytics} topics={["tasks"]} description="Aufgaben nach Status" />
+                <Analytics
+                  data={analytics}
+                  size={sizeOf("aktivitaet", "auswertungen")}
+                  topics={["tasks"]}
+                  description="Aufgaben nach Status"
+                />
               </Suspense>
             ),
           }
@@ -179,10 +241,12 @@ export default async function DashboardPage({
     // Eine einzelne Liste (z. B. Geburtstage) und die Auswertungen: ab 1280 px nebeneinander – Liste ein Drittel, Diagramm
     // zwei Drittel –, statt eine fast leere, breite Karte über einem Diagramm. Gibt es keine Auswertung (Rolle), wird der
     // Platz nicht leer gehalten (`has-[…:empty]`).
+    // Steht eine der beiden auf „Groß“, bekommt jede die volle Breite.
     const pair =
       segments.length === 2 &&
       segments.some((segment) => segment.kind === "single" && segment.id === "auswertungen") &&
-      segments.every((segment) => segment.kind === "single" || segment.ids.length === 1);
+      segments.every((segment) => segment.kind === "single" || segment.ids.length === 1) &&
+      shown.every((id) => sizeOf(tab, id) !== "l");
     return (
       <div
         className={cn(
@@ -208,11 +272,13 @@ export default async function DashboardPage({
           seen.add(segment.group);
           const group = (
             <Group key={`${segment.group}-${index}`} id={id} title={GROUP_TITLE[segment.group]}>
-              <CardGrid>
-                {segment.ids.map((blockId) => (
-                  <Fragment key={blockId}>{available[blockId]}</Fragment>
-                ))}
-              </CardGrid>
+              <CardGrid
+                items={segment.ids.map((blockId) => ({
+                  id: blockId,
+                  node: available[blockId],
+                  wide: sizeOf(tab, blockId) === "l",
+                }))}
+              />
             </Group>
           );
           return pair ? (
@@ -242,6 +308,7 @@ export default async function DashboardPage({
         id,
         label: blockLabel(tab.id, id),
         visible: !hidden.has(id),
+        size: blockSize(prefs, id),
       })),
     };
   });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   arrangeBlocks,
+  blockSize,
+  initialRows,
   parseDashboardLayout,
   segmentBlocks,
 } from "@/modules/dashboard/layout-prefs";
@@ -51,5 +53,44 @@ describe("Dashboard selbst einstellen", () => {
     expect(parseDashboardLayout(null)).toBeNull();
     expect(parseDashboardLayout({ v: 2, tabs: {} })).toBeNull();
     expect(parseDashboardLayout("kaputt")).toBeNull();
+  });
+
+  it("Größe je Karte: nur Klein/Groß werden gespeichert, Unbekanntes fällt weg, ohne Angabe gilt Mittel", () => {
+    const layout = parseDashboardLayout({
+      v: 1,
+      tabs: {
+        uebersicht: {
+          order: [],
+          hidden: [],
+          sizes: {
+            kennzahlen: "s",
+            aufgaben: "l",
+            einsaetze: "m",
+            "gibt-es-nicht": "l",
+            zahlungen: "xl",
+          },
+        },
+      },
+    });
+    expect(layout).toEqual({
+      v: 1,
+      tabs: { uebersicht: { order: [], hidden: [], sizes: { kennzahlen: "s", aufgaben: "l" } } },
+    });
+    const prefs = layout!.tabs.uebersicht;
+    expect(blockSize(prefs, "kennzahlen")).toBe("s");
+    expect(blockSize(prefs, "aufgaben")).toBe("l");
+    expect(blockSize(prefs, "einsaetze")).toBe("m");
+    expect(blockSize(undefined, "aufgaben")).toBe("m");
+    // Ältere Einstellungen ohne Größen bleiben gültig und bekommen kein leeres Feld dazu
+    expect(
+      parseDashboardLayout({ v: 1, tabs: { termine: { order: ["schichten"], hidden: [] } } }),
+    ).toEqual({ v: 1, tabs: { termine: { order: ["schichten"], hidden: [] } } });
+  });
+
+  it("Listenkarten zeigen klein einen Eintrag weniger, groß zwei mehr – nie weniger als einen", () => {
+    expect(initialRows("s", 3)).toBe(2);
+    expect(initialRows("m", 3)).toBe(3);
+    expect(initialRows("l", 3)).toBe(5);
+    expect(initialRows("s", 1)).toBe(1);
   });
 });

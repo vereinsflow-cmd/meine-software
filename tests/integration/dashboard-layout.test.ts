@@ -25,6 +25,25 @@ describe("Dashboard selbst einstellen (gespeichert je Person und Verein)", () =>
     expect(await getDashboardLayout(ctx)).toBeNull();
   });
 
+  it("speichert auch die Größe der Karten (Klein/Groß) und liest sie wieder", async () => {
+    const club = await createClub("Größenverein");
+    const admin = await addUserToClub(club, "CLUB_ADMIN");
+    const ctx = await contextFor(admin.user.id, club.id);
+    const sized = {
+      v: 1 as const,
+      tabs: {
+        uebersicht: {
+          order: [],
+          hidden: [],
+          sizes: { kennzahlen: "s" as const, aufgaben: "l" as const },
+        },
+        termine: { order: [], hidden: [], sizes: { auswertungen: "l" as const } },
+      },
+    };
+    await saveDashboardLayout(ctx, sized);
+    expect(await getDashboardLayout(ctx)).toEqual(sized);
+  });
+
   it("dieselbe Person in zwei Vereinen hat je Verein eine eigene Anordnung", async () => {
     const a = await createClub("Verein A");
     const b = await createClub("Verein B");

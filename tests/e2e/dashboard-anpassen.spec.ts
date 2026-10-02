@@ -60,6 +60,53 @@ test.describe("Dashboard selbst einstellen", () => {
     expect(await cardTitles(page)).toEqual(before);
   });
 
+  test("Größe je Karte: Kennzahlen „Klein“ als schmale Reihe ohne Grafiken, „Meine Aufgaben“ „Groß“ über die volle Breite – bleibt nach dem Neuladen", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    const kpis = page.locator("[data-layout]");
+    const group = page.getByRole("group", { name: "Kennzahlen" });
+    await expect(kpis).toHaveAttribute("data-size", "m"); // Standard: Mittel
+    expect(await group.locator('[data-slot="sparkline"]').count()).toBeGreaterThan(0);
+
+    const dialog = await openCustomize(page);
+    await dialog.getByRole("combobox", { name: "Größe von „Kennzahlen“" }).selectOption("s");
+    await dialog.getByRole("combobox", { name: "Größe von „Meine Aufgaben“" }).selectOption("l");
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(page.getByText("Dashboard gespeichert.")).toBeVisible();
+
+    const check = async () => {
+      await expect(kpis).toHaveAttribute("data-size", "s");
+      await expect(group.locator('[data-slot="sparkline"]')).toHaveCount(0); // keine Grafiken
+      const tops = await group
+        .getByRole("link")
+        .evaluateAll((links) => links.map((link) => Math.round(link.getBoundingClientRect().top)));
+      expect(new Set(tops).size).toBe(1); // eine Reihe
+      // „Meine Aufgaben“ über die volle Breite, die beiden übrigen „Für dich“-Karten darunter nebeneinander
+      const tasks = (await page.getByRole("region", { name: "Meine Aufgaben" }).boundingBox())!;
+      const shifts = (await page.getByRole("region", { name: "Meine Einsätze" }).boundingBox())!;
+      const news = (await page.getByRole("region", { name: "Benachrichtigungen" }).boundingBox())!;
+      expect(tasks.width).toBeGreaterThan(shifts.width * 1.8);
+      expect(shifts.y).toBeGreaterThan(tasks.y + tasks.height);
+      expect(Math.abs(shifts.y - news.y)).toBeLessThanOrEqual(1);
+    };
+    await check();
+    await page.reload();
+    await check();
+
+    const again = await openCustomize(page);
+    await expect(again.getByRole("combobox", { name: "Größe von „Kennzahlen“" })).toHaveValue("s");
+    await expect(again.getByRole("combobox", { name: "Größe von „Meine Aufgaben“" })).toHaveValue(
+      "l",
+    );
+    await again.getByRole("button", { name: "Standard wiederherstellen" }).click();
+    await expect(again.getByRole("combobox", { name: "Größe von „Kennzahlen“" })).toHaveValue("m");
+    await again.getByRole("button", { name: "Speichern" }).click();
+    await expect(page.getByText("Standard-Ansicht wiederhergestellt.")).toBeVisible();
+    await expect(kpis).toHaveAttribute("data-size", "m");
+    expect(await group.locator('[data-slot="sparkline"]').count()).toBeGreaterThan(0);
+  });
+
   test("Alle Karten eines Reiters ausgeblendet: freundlicher Hinweis statt leerer Fläche", async ({
     page,
   }) => {
