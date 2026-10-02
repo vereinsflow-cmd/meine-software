@@ -1,5 +1,6 @@
 // VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// Slider, Reiter, hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und Start der Vorführungen.
+// Karten der Funktionen, Reiter, hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und Start der
+// Vorführungen.
 // Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
 // Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Mausposition setzt das
 // Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
@@ -131,18 +132,24 @@
   // Live-Fenster: In Browserbildern bedient ein Mauszeiger die Anwendung (site.css „Live-Fenster“). Je Fenster ein kurzer
   // Ablaufplan: frame n = Bild n der Folge einblenden (0 = das ruhige Bild), move = Zeiger zu einer Stelle (Prozent des
   // Bildes, Werte aus tools/capture-screenshots.mjs), click = Einfedern und Ring, show/hide = Zeiger ein-/ausblenden,
-  // keys = Tastenkürzel einblenden, wait = Pause (ms). Der Plan wiederholt sich, solange das Fenster im Bild ist (und
-  // sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder geladen sind. Bei reduzierter Bewegung
-  // bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
+  // keys = Tastenkürzel einblenden, wait = Pause (ms). Im Kapitel Helferschichten außerdem: step n = Schritt n der Liste
+  // darunter hervorheben (0 = keiner; data-shown am [data-story], dazu --story-ms = Dauer bis zum nächsten step für den
+  // Balken), print = das gedruckte Blatt herausschieben bzw. zurück (.is-printed), phone n = im Telefon daneben Bild n
+  // zeigen (0 = sein ruhiges Bild; so zeigen Telefon und Fenster immer denselben Stand). Der Plan wiederholt sich,
+  // solange das Fenster im Bild ist (und sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder
+  // geladen sind. Bei reduzierter Bewegung bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
   const LIVE_SCENES = {
-    // Helferschichten: beim Getränkestand eintragen, dann zu „Drucken“
+    // Helferschichten, in drei Schritten wie die Liste darunter: auf „Neue Schicht“ zeigen, beim Getränkestand
+    // eintragen (das Telefon wechselt mit dem Klick von „vorher“ zu „nachher“), „Drucken“ – danach hebt sich der
+    // gedruckte Plan vom Stapel
     schichten: {
-      rest: "55% 93%",
+      rest: "50% 96%",
       steps: [
-        ["frame", 1], ["show"], ["wait", 1000],
-        ["move", "84.25% 74.79%", 1150], ["frame", 2], ["wait", 450], ["click"], ["frame", 3], ["wait", 1900],
-        ["frame", 0], ["move", "92.54% 15.29%", 1100], ["frame", 4], ["wait", 1300],
-        ["frame", 0], ["move", "55% 93%", 1000], ["hide"], ["wait", 900],
+        ["step", 1], ["frame", 1], ["phone", 1], ["show"], ["wait", 700],
+        ["move", "63.6% 4.75%", 1150], ["frame", 5, 150], ["wait", 1700],
+        ["step", 2], ["frame", 1, 150], ["move", "82.53% 74.08%", 1200], ["frame", 2, 150], ["wait", 450], ["click"], ["frame", 3], ["phone", 0, 150], ["wait", 2300],
+        ["step", 3], ["frame", 0, 150], ["move", "91.33% 4.75%", 1150], ["frame", 4, 150], ["wait", 400], ["click"], ["print", true], ["wait", 2800],
+        ["print", false], ["frame", 0, 150], ["move", "50% 96%", 1000], ["hide"], ["step", 0], ["wait", 1100],
       ],
     },
     // Suche: Strg K, „Hel“ tippen, auf einen Treffer zeigen
@@ -197,15 +204,37 @@
       const cursor = live.querySelector(".live-cursor");
       const ring = live.querySelector(".live-ring");
       const keys = live.querySelector(".live-keys");
+      const story = live.closest("[data-story]"); // Schrittliste, Telefon und gedrucktes Blatt (nur Helferschichten)
+      const twins = story ? [...story.querySelectorAll(".story-phone .live-frame")] : []; // Telefon: Bild „vorher“
       if (!scene || !frames.length || !pointer || !cursor || !ring) continue;
+      // Dauer jedes step-Eintrags bis zum nächsten (Bewegungen, Pausen, Klicks) – so lange füllt sich sein Balken
+      const spans = scene.steps.map(([step], i) => {
+        if (step !== "step") return 0;
+        let ms = 0;
+        for (const [next, a, b] of scene.steps.slice(i + 1)) {
+          if (next === "step") break;
+          if (next === "move") ms += b;
+          else if (next === "wait") ms += a;
+          else if (next === "click") ms += 140;
+        }
+        return ms;
+      });
+      const mark = (n, ms) => {
+        if (!story) return;
+        if (n) {
+          story.style.setProperty("--story-ms", `${ms}ms`);
+          story.dataset.shown = String(n);
+        } else story.removeAttribute("data-shown");
+      };
       let run = 0; // Nummer des laufenden Durchgangs – ändert sie sich, bricht der alte ab
       let at = scene.rest;
       let layer = 1;
       let ready = null;
       const load = () => {
         live.classList.add("is-live"); // Ebenen einhängen: erst jetzt lädt der Browser die Bilder der Folge
+        story?.classList.add("is-live");
         return (ready ??= Promise.all(
-          frames.map((img) => {
+          [...frames, ...twins].map((img) => {
             img.loading = "eager";
             return img.decode().catch(() => {});
           }),
@@ -221,9 +250,12 @@
           img.classList.remove("is-on");
           img.style.removeProperty("z-index");
         }
+        twin(0, 0);
         layer = 1;
         pointer.classList.remove("is-on");
         keys?.classList.remove("is-on");
+        mark(0);
+        story?.classList.remove("is-printed");
         place(scene.rest);
       };
       // Überblenden: das neue Bild legt sich darüber und blendet ein; darunterliegende gehen danach aus. Beim ruhigen
@@ -251,6 +283,13 @@
           }
         }
       };
+      // Telefon: Bild n über seinem ruhigen Bild ein-, alle anderen ausblenden (0 = nur das ruhige)
+      const twin = (n, fade = 280) => {
+        twins.forEach((img, i) => {
+          img.style.setProperty("transition-duration", `${fade}ms`);
+          img.classList.toggle("is-on", i === n - 1);
+        });
+      };
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const move = async (spot, ms) => {
         const motion = pointer.animate([{ translate: at }, { translate: spot }], { duration: ms, easing: ease, fill: "forwards" });
@@ -273,9 +312,12 @@
       const play = async (id) => {
         await load();
         for (let round = 0; id === run; round++) {
-          for (const [step, a, b] of scene.steps) {
+          for (const [i, [step, a, b]] of scene.steps.entries()) {
             if (id !== run) return;
             if (step === "frame") frame(a, round === 0 && a && !frames.some((img) => img.classList.contains("is-on")) ? 0 : b);
+            else if (step === "phone") twin(a, round === 0 && a ? 0 : b);
+            else if (step === "step") mark(a, spans[i]);
+            else if (step === "print") story?.classList.toggle("is-printed", a);
             else if (step === "move") await move(a, b);
             else if (step === "click") await click();
             else if (step === "show") pointer.classList.add("is-on");
@@ -375,158 +417,133 @@
     }
   }
 
-  // Slider (Funktionen, nur auf dem Smartphone – .slider-phone; ohne die Klasse liefe er auf allen Breiten): Die Karten
-  // stehen in einer waagerechten Reihe (site.css), die man wischt oder mit den Pfeilen bzw. Pfeiltasten blättert – jeweils
-  // eine Karte weiter, weich gleitend (bei reduzierter Bewegung sofort). Karten, die nicht ganz im Bild stehen, werden blass
-  // (.is-dim); ein Klick darauf holt sie herein. Am Anfang bzw. Ende sind die Pfeile ohne Wirkung (aria-disabled – so
-  // bleibt der Fokus auf ihnen). Ein Zähler zwischen den Pfeilen zeigt die Stelle („2 von 12“, .slider-count); eine
-  // unsichtbare Zeile sagt Screenreadern nach dem Blättern, welche Karten zu sehen sind.
+  // Bewegung reduzieren – für die Reiter jedes Mal neu abgefragt (die Einstellung kann sich während des Besuchs ändern)
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const phone = window.matchMedia("(max-width: 599px)");
-  for (const slider of document.querySelectorAll(".slider")) {
-    const track = slider.querySelector(".slider-track");
-    const prevButton = slider.querySelector(".slider-prev");
-    const nextButton = slider.querySelector(".slider-next");
-    if (!track || !prevButton || !nextButton) continue;
-    const cards = [...track.children];
-    const bar = slider.querySelector(".slider-progress span");
-    const status = slider.querySelector(".slider-status");
-    const count = slider.querySelector(".slider-count");
-    const name = slider.dataset.sliderName ?? "Karten";
-    let active = false;
-    let pad = 0; // Innenabstand der Reihe = Abstand der Karten vom Rand des sichtbaren Bereichs (--bleed)
-    // Einrastpunkte: jede Karte am Anfang des Inhaltsbereichs; zum Ende hin begrenzt – dort stehen die letzten gemeinsam
-    const stops = () => {
-      const max = track.scrollWidth - track.clientWidth;
-      const list = [];
-      for (const card of cards) {
-        const stop = Math.round(Math.min(max, Math.max(0, card.offsetLeft - pad)));
-        if (list.at(-1) !== stop) list.push(stop);
+
+  // Funktionen: Jede Kachel öffnet ihre ganze Beschreibung als Karte (Popover – Öffnen, Schließen mit × und Esc, Klick
+  // daneben und der Fokus laufen ohne Skript). Das Skript ergänzt:
+  // - Die Karte über der Kachel wächst immer nach unten (site.css); ihr unterer Rand reicht bis ans Ende der Reihe, die er
+  //   sonst anschnitte (--feat-bis). Passt sie so nicht ganz ins Bild, rollt die Seite gerade so weit, dass Kachel und
+  //   Karte zu sehen sind – weich, bei reduzierter Bewegung sofort (scroll-behavior).
+  // - Verlässt der Fokus die Karte mit der Tabulatortaste, schließt sie (sie läge sonst über den nächsten Kacheln, deren
+  //   Fokusrahmen verdeckt wäre). Ein Link darin schließt sie ebenfalls, bevor die Seite zum Abschnitt springt; steht
+  //   sein Ziel schon in der Adresse, meldet der Browser keinen Wechsel – dann wählt ein eigenes Signal den Reiter.
+  // - Das Blatt von unten (Smartphone, niedrige Bildschirme) sperrt die Seite dahinter per CSS; rollt sie doch (ältere
+  //   Browser), schließt es, statt über bewegtem Inhalt zu stehen.
+  // - Pfeiltasten wechseln zwischen den Kacheln, wie sie stehen: links/rechts zur vorigen bzw. nächsten, hoch/runter zur
+  //   Kachel darüber bzw. darunter, Pos1/Ende zur ersten bzw. letzten. Die Tabulatortaste geht wie gewohnt alle durch.
+  const sheet = window.matchMedia("(max-width: 719px), (max-height: 499px)");
+  const anchored = window.CSS?.supports?.("anchor-name: --a") ?? false; // sonst steht die Karte mittig im Fenster
+  const tiles = [...document.querySelectorAll(".bento-kacheln > .feat")];
+  for (const card of document.querySelectorAll(".feat-pop")) {
+    if (typeof card.hidePopover !== "function") continue;
+    const tile = card.closest(".feat");
+    const close = () => {
+      if (card.matches(":popover-open")) card.hidePopover();
+    };
+    let openedAt = 0;
+    const closeOnScroll = () => {
+      if (Math.abs(window.scrollY - openedAt) > 40) close();
+    };
+    card.addEventListener("toggle", (event) => {
+      window.removeEventListener("scroll", closeOnScroll);
+      if (event.newState !== "open" || !tile) return;
+      openedAt = window.scrollY;
+      if (sheet.matches) {
+        window.addEventListener("scroll", closeOnScroll, { passive: true });
+        return;
       }
-      return list;
-    };
-    let aim = null; // Ziel eines laufenden Wechsels: schnell hintereinander geklickt, blättert es weiter statt zurück
-    let first = 0;
-    let last = 0;
-    const goTo = (index) => {
-      const list = stops();
-      aim = Math.min(list.length - 1, Math.max(0, index));
-      track.scrollTo({ left: list[aim], behavior: motion.matches ? "auto" : "smooth" });
-    };
-    const step = (delta) => {
-      const list = stops();
-      const current = list.reduce(
-        (best, stop, index) => (Math.abs(stop - track.scrollLeft) < Math.abs(list[best] - track.scrollLeft) ? index : best),
-        0,
-      );
-      goTo((aim ?? current) + delta);
-    };
-    let spoken = "";
-    let interacted = false; // erst nach dem ersten Blättern ansagen, nicht schon beim Laden
-    const position = () => (first === last ? `${first + 1} von ${cards.length}` : `${first + 1} bis ${last + 1} von ${cards.length}`);
-    const announce = () => {
-      if (!status || !interacted || !active) return;
-      const text = position();
-      if (text !== spoken) status.textContent = spoken = `${name} ${text}`;
-    };
-    let queued = false;
-    const update = () => {
-      queued = false;
-      if (!active) return;
-      const left = track.scrollLeft;
-      const width = track.clientWidth;
-      const total = track.scrollWidth;
-      const zoneStart = left + pad;
-      const zoneEnd = left + width - pad;
-      let seenFirst = -1;
-      cards.forEach((card, index) => {
-        // offsetLeft/offsetWidth statt getBoundingClientRect: unabhängig von der Verkleinerung blasser Karten
-        const start = card.offsetLeft;
-        const end = start + card.offsetWidth;
-        const inside = (Math.min(end, zoneEnd) - Math.max(start, zoneStart)) / card.offsetWidth > 0.9;
-        card.classList.toggle("is-dim", !inside);
-        if (inside) {
-          if (seenFirst < 0) seenFirst = index;
-          last = index;
+      if (!anchored) return;
+      // Kacheln, die gerade noch einblenden (.reveal gleitet von unten herein), sofort an ihren Platz – die Karte folgt
+      // ihrer Kachel, gemessen wird erst danach
+      for (const other of tiles) {
+        for (const animation of other.getAnimations?.() ?? []) {
+          try {
+            animation.finish();
+          } catch {
+            // endlose Animation – bleibt, wie sie ist
+          }
+        }
+      }
+      // Unterer Rand nicht mitten durch eine Kachel: reicht bis ans Ende der Reihe, die er sonst anschnitte – sofern das
+      // höchstens 56 px mehr sind (sonst stünde unten eine leere Fläche). Gemessen in Lagen relativ zur eigenen Kachel
+      // (offsetTop/-Left) – Kacheln weiter unten, die noch auf ihr Einblenden warten, sind dort schon an ihrem Platz.
+      card.style.removeProperty("--feat-bis");
+      const box = card.getBoundingClientRect(); // beim Aufblenden noch leicht verkleinert – Maße daher ohne Transformation
+      const own = tile.getBoundingClientRect();
+      const toRight = Math.abs(box.right - own.right) < Math.abs(box.left - own.left); // rechtsbündig über der Kachel
+      const left = toRight ? tile.offsetWidth - card.offsetWidth : 0;
+      const right = left + card.offsetWidth;
+      const natural = card.offsetHeight;
+      let end = natural;
+      for (const other of tiles) {
+        const x = other.offsetLeft - tile.offsetLeft;
+        const y = other.offsetTop - tile.offsetTop;
+        const below = x < right - 10 && x + other.offsetWidth > left + 10; // liegt unter der Karte
+        if (other !== tile && below && y < end - 1 && y + other.offsetHeight > end + 1) end = y + other.offsetHeight;
+      }
+      if (end - natural > 56) end = natural;
+      if (end > natural + 1) card.style.setProperty("--feat-bis", `${Math.ceil(end)}px`);
+      const top = Math.min(box.top, own.top);
+      const bottom = Math.max(box.top + end, own.bottom);
+      const minTop = (header?.getBoundingClientRect().bottom ?? 0) + 12;
+      const maxBottom = window.innerHeight - 12;
+      let delta = Math.max(0, bottom - maxBottom);
+      if (top - delta < minTop) delta = top - minTop; // oben nie unter die Kopfzeile schieben
+      if (Math.abs(delta) > 2) window.scrollBy({ top: delta });
+    });
+    card.addEventListener("focusout", (event) => {
+      const next = event.relatedTarget; // null bei einem Klick auf Text in der Karte – dann bleibt sie offen
+      if (next instanceof Node && !card.contains(next)) close();
+    });
+    card.addEventListener("click", (event) => {
+      const link = event.target instanceof Element ? event.target.closest("a") : null;
+      if (!link) return;
+      close();
+      if (link.hash && link.hash === location.hash) window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+  }
+  const featGrid = document.querySelector(".bento-kacheln");
+  featGrid?.addEventListener("keydown", (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const from = event.target;
+    if (!(from instanceof HTMLElement) || !from.matches(".feat-btn")) return;
+    const buttons = [...featGrid.querySelectorAll(".feat-btn")];
+    const index = buttons.indexOf(from);
+    const box = (button) => (button.closest(".feat") ?? button).getBoundingClientRect();
+    // Nächste Reihe in der Richtung; darin die Kachel unter bzw. über der Mitte der jetzigen (sonst die nächstgelegene)
+    const vertical = (direction) => {
+      const here = box(from);
+      const middle = here.left + here.width / 2;
+      let best = -1;
+      let bestGap = Infinity;
+      let bestSide = Infinity;
+      buttons.forEach((button, i) => {
+        const other = box(button);
+        const gap = direction > 0 ? other.top - here.bottom : here.top - other.bottom;
+        if (gap < -2) return;
+        const side = Math.max(0, other.left - middle, middle - other.right);
+        if (gap < bestGap - 4 || (Math.abs(gap - bestGap) <= 4 && side < bestSide)) {
+          best = i;
+          bestGap = gap;
+          bestSide = side;
         }
       });
-      first = Math.max(0, seenFirst);
-      if (count) count.textContent = position();
-      const max = total - width;
-      prevButton.setAttribute("aria-disabled", String(left <= 1));
-      nextButton.setAttribute("aria-disabled", String(left >= max - 1));
-      bar?.style.setProperty("--pos", (left / total).toFixed(4));
-      bar?.style.setProperty("--size", (width / total).toFixed(4));
+      return best;
     };
-    const schedule = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(update);
+    const moves = {
+      ArrowLeft: () => index - 1,
+      ArrowRight: () => index + 1,
+      ArrowUp: () => vertical(-1),
+      ArrowDown: () => vertical(1),
+      Home: () => 0,
+      End: () => buttons.length - 1,
     };
-    // Ein- und ausschalten: .slider-phone nur auf dem Smartphone, sonst immer. Aus: Raster wie ohne JavaScript.
-    const setActive = () => {
-      const on = !slider.classList.contains("slider-phone") || phone.matches;
-      if (on === active) return;
-      active = on;
-      slider.classList.toggle("is-slider", on);
-      if (on) {
-        track.setAttribute("tabindex", "0");
-        track.setAttribute("role", "region");
-        track.setAttribute("aria-roledescription", "Karussell");
-        track.setAttribute("aria-label", `${name}, mit den Pfeiltasten blättern`);
-      } else {
-        for (const attribute of ["tabindex", "role", "aria-roledescription", "aria-label"]) track.removeAttribute(attribute);
-        for (const card of cards) card.classList.remove("is-dim");
-        track.scrollLeft = 0;
-      }
-    };
-    let settle = 0;
-    track.addEventListener(
-      "scroll",
-      () => {
-        schedule();
-        clearTimeout(settle);
-        settle = setTimeout(() => {
-          aim = null;
-          announce();
-        }, 160);
-      },
-      { passive: true },
-    );
-    const press = (button, delta) =>
-      button.addEventListener("click", () => {
-        if (button.getAttribute("aria-disabled") === "true") return;
-        interacted = true;
-        step(delta);
-      });
-    press(prevButton, -1);
-    press(nextButton, 1);
-    track.addEventListener("keydown", (event) => {
-      if (!active) return;
-      const moves = { ArrowLeft: () => step(-1), ArrowRight: () => step(1), Home: () => goTo(0), End: () => goTo(cards.length) };
-      const move = moves[event.key];
-      if (!move || event.altKey || event.ctrlKey || event.metaKey) return;
-      event.preventDefault();
-      interacted = true;
-      move();
-    });
-    track.addEventListener("click", (event) => {
-      const card = event.target instanceof Element ? event.target.closest(".slider-track > *") : null;
-      if (!active || !card?.classList.contains("is-dim")) return;
-      interacted = true;
-      step(cards.indexOf(card) < first ? -1 : 1);
-    });
-    track.addEventListener("pointerdown", () => (interacted = true), { passive: true });
-    const refresh = () => {
-      setActive();
-      pad = Number.parseFloat(getComputedStyle(track).paddingLeft) || 0;
-      update();
-    };
-    phone.addEventListener("change", refresh);
-    if ("ResizeObserver" in window) new ResizeObserver(refresh).observe(track);
-    else window.addEventListener("resize", refresh, { passive: true });
-    refresh();
-  }
+    const target = moves[event.key]?.() ?? -1;
+    if (target < 0 || target >= buttons.length) return;
+    event.preventDefault();
+    buttons[target].focus();
+  });
 
   // Reiter („Im Detail“): Ohne JavaScript stehen die Themen untereinander. Mit JavaScript erscheint die Reiterleiste,
   // immer ein Thema ist sichtbar. Bedienung wie bei Reitern üblich: Klick, Pfeiltasten (wählen sofort), Pos1/Ende.

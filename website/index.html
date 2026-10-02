@@ -26,8 +26,8 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100104">
-  <script src="assets/js/site.js?v=2026100102" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100203">
+  <script src="assets/js/site.js?v=2026100203" defer></script>
 
   <script type="application/ld+json">
   {
@@ -59,7 +59,6 @@
   <symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol>
   <symbol id="i-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></symbol>
-  <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
   <symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
   <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
@@ -80,7 +79,8 @@
   <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
-  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
   
   
   
@@ -329,81 +329,203 @@
   <!-- ===== Funktionen ===== -->
   <section class="section section-alt" id="funktionen" aria-labelledby="funktionen-title">
     <div class="container">
-      <div class="section-head center reveal">
-        <p class="eyebrow">Funktionen</p>
-        <h2 id="funktionen-title">Alles, was Vereinsarbeit braucht</h2>
-        <p class="lead">Zwölf Bereiche, die zusammenarbeiten&nbsp;– statt zwölf einzelner Werkzeuge.</p>
-      </div>
-      <!-- Ein Raster aus kompakten Kacheln; auf dem Smartphone mit JavaScript ein waagerechter Slider mit Zähler (site.js,
-           Stil unter „Slider“) -->
-      <div class="slider slider-phone features-slider reveal" data-slider-name="Funktionen">
-        <div class="grid grid-4 features slider-track" id="funktionen-karten">
-          <article class="card">
-            <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
-            <h3>Mitglieder</h3>
-            <p>Stammdaten, Notizen, Einwilligungen und Änderungshistorie. CSV-Import mit Vorschau, Export, Statistik, Archiv und Papierkorb.</p>
+      <!-- Bento: Kopf und zwölf Kacheln in einem Raster (site.css, „Funktionen (Bento)“). Breit stehen neben und unter dem
+           Kopf die beiden großen Kacheln Helferschichten und Mitglieder mit kleinem Bild, dann die kompakten mit Symbol,
+           Titel und einem Satz; auf dem Smartphone eine zweispaltige Liste. Jede Kachel öffnet ihre ganze Beschreibung als
+           Karte (Popover – geht ohne Skript). Die Farbe des Bereichs (tone-*) steht an der Kachel und gilt so auch für ihre
+           Karte. Bedingte Trennstelle (&shy;) nur in „Benachrichtigungen“ – die anderen Titel passen ungetrennt. -->
+      <div class="bento">
+        <div class="section-head center reveal">
+          <p class="eyebrow">Funktionen</p>
+          <h2 id="funktionen-title">Alles, was Vereinsarbeit braucht</h2>
+          <p class="lead">Zwölf Bereiche, die zusammenarbeiten&nbsp;– statt zwölf einzelner Werkzeuge.</p>
+        </div>
+        <div class="bento-kacheln">
+          <article class="card feat reveal feat-a tone-green">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-helfer">Helferschichten</button></h3>
+            <p class="feat-kurz">Selbst eintragen, mit Ampel</p>
+            <div class="feat-art art-shifts" aria-hidden="true">
+              <span class="shift is-full"><b>Aufbau</b><i>5/5</i><span class="shift-bar"></span></span>
+              <span class="shift is-part"><b>Theke</b><i>2/4</i><span class="shift-bar"></span></span>
+              <span class="shift is-open"><b>Abbau</b><i>0/3</i><span class="shift-bar"></span></span>
+            </div>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-helfer" popover role="dialog" aria-labelledby="f-helfer-t" aria-describedby="f-helfer-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
+                <p class="feat-pop-title" id="f-helfer-t">Helferschichten</p>
+                <button class="feat-close" type="button" popovertarget="f-helfer" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-helfer-d">Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Erinnerungen und ein druckfertiger Helferplan&nbsp;– für eine oder mehrere Veranstaltungen.</p>
+              <a class="feat-link" href="#helferschichten">So sieht es aus<span class="sr-only">: Helferschichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
-            <h3>Abteilungen und Gruppen</h3>
-            <p>Abteilungen und Gruppen mit eigenen Leitungen. Rechte und Nachrichten lassen sich auf eine Abteilung beschränken.</p>
+          <article class="card feat reveal feat-b tone-blue">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-mitglieder">Mitglieder</button></h3>
+            <p class="feat-kurz">Stammdaten, Import, Historie</p>
+            <div class="feat-art art-people" aria-hidden="true">
+              <span class="faces"><i class="tone-blue">CA</i><i class="tone-green">AA</i><i class="tone-purple">DA</i><i class="tone-amber">KB</i><i class="tone-rose">MB</i></span>
+              <span class="people-tag"><b></b>Aktiv</span>
+            </div>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-mitglieder" popover role="dialog" aria-labelledby="f-mitglieder-t" aria-describedby="f-mitglieder-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
+                <p class="feat-pop-title" id="f-mitglieder-t">Mitglieder</p>
+                <button class="feat-close" type="button" popovertarget="f-mitglieder" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. CSV-Import mit Vorschau, Export, Statistik, Archiv und Papierkorb.</p>
+              <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Mitglieder</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg></div>
-            <h3>Veranstaltungen</h3>
-            <p>Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
+          <article class="card feat reveal tone-blue">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-abteilungen">Abteilungen und Gruppen</button></h3>
+            <p class="feat-kurz">Mit eigenen Leitungen</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-abteilungen" popover role="dialog" aria-labelledby="f-abteilungen-t" aria-describedby="f-abteilungen-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
+                <p class="feat-pop-title" id="f-abteilungen-t">Abteilungen und Gruppen</p>
+                <button class="feat-close" type="button" popovertarget="f-abteilungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-abteilungen-d">Abteilungen und Gruppen mit eigenen Leitungen. Rechte und Nachrichten lassen sich auf eine Abteilung beschränken.</p>
+              <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Abteilungen und Gruppen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
-            <h3>Helferschichten</h3>
-            <p>Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Erinnerungen und ein druckfertiger Helferplan&nbsp;– für eine oder mehrere Veranstaltungen.</p>
+          <article class="card feat reveal tone-amber">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-aufgaben">Aufgaben und Checklisten</button></h3>
+            <p class="feat-kurz">Wer macht was, bis wann</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-aufgaben" popover role="dialog" aria-labelledby="f-aufgaben-t" aria-describedby="f-aufgaben-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg></div>
+                <p class="feat-pop-title" id="f-aufgaben-t">Aufgaben und Checklisten</p>
+                <button class="feat-close" type="button" popovertarget="f-aufgaben" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-aufgaben-d">Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status&nbsp;– auch als Checkliste je Veranstaltung.</p>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-amber"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg></div>
-            <h3>Aufgaben und Checklisten</h3>
-            <p>Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status&nbsp;– auch als Checkliste je Veranstaltung.</p>
+          <article class="card feat reveal tone-purple">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-veranstaltungen">Veranstaltungen</button></h3>
+            <p class="feat-kurz">Anmeldung mit Warteliste</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-veranstaltungen" popover role="dialog" aria-labelledby="f-veranstaltungen-t" aria-describedby="f-veranstaltungen-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg></div>
+                <p class="feat-pop-title" id="f-veranstaltungen-t">Veranstaltungen</p>
+                <button class="feat-close" type="button" popovertarget="f-veranstaltungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-veranstaltungen-d">Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
+              <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Veranstaltungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-purple"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
-            <h3>Kalender</h3>
-            <p>Monat, Woche, Tag oder Liste. Export je Termin und ein persönlicher Abo-Link für jede Kalender-App.</p>
+          <article class="card feat reveal tone-purple">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-kalender">Kalender</button></h3>
+            <p class="feat-kurz">Abo im eigenen Kalender</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-kalender" popover role="dialog" aria-labelledby="f-kalender-t" aria-describedby="f-kalender-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
+                <p class="feat-pop-title" id="f-kalender-t">Kalender</p>
+                <button class="feat-close" type="button" popovertarget="f-kalender" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Export je Termin und ein persönlicher Abo-Link für jede Kalender-App.</p>
+              <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Kalender</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-rose"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
-            <h3>Nachrichten</h3>
-            <p>An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
+          <article class="card feat reveal tone-rose">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-nachrichten">Nachrichten</button></h3>
+            <p class="feat-kurz">Gezielt, mit Lesestatistik</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-nachrichten" popover role="dialog" aria-labelledby="f-nachrichten-t" aria-describedby="f-nachrichten-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
+                <p class="feat-pop-title" id="f-nachrichten-t">Nachrichten</p>
+                <button class="feat-close" type="button" popovertarget="f-nachrichten" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-nachrichten-d">An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-rose"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></div>
-            <h3>Benachrichtigungen</h3>
-            <p>Alle Hinweise an einem Ort, auf Wunsch auch per E&#8209;Mail. Erinnerung 24&nbsp;Stunden vor jedem Einsatz und jeder zugesagten Veranstaltung.</p>
+          <article class="card feat reveal tone-rose">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-hinweise">Benachrich&shy;tigungen</button></h3>
+            <p class="feat-kurz">Erinnerung 24&nbsp;Std. vorher</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-hinweise" popover role="dialog" aria-labelledby="f-hinweise-t" aria-describedby="f-hinweise-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></div>
+                <p class="feat-pop-title" id="f-hinweise-t">Benachrich&shy;tigungen</p>
+                <button class="feat-close" type="button" popovertarget="f-hinweise" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-hinweise-d">Alle Hinweise an einem Ort, auf Wunsch auch per E&#8209;Mail. Erinnerung 24&nbsp;Stunden vor jedem Einsatz und jeder zugesagten Veranstaltung.</p>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-slate"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></div>
-            <h3>Dokumente</h3>
-            <p>Satzung, Protokolle und Formulare an einem Ort&nbsp;– mit Zugriffsstufen für alle Mitglieder, nur den Vorstand oder nur die Verwaltung.</p>
+          <article class="card feat reveal tone-slate">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-dokumente">Dokumente</button></h3>
+            <p class="feat-kurz">Ablage mit Zugriffsstufen</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-dokumente" popover role="dialog" aria-labelledby="f-dokumente-t" aria-describedby="f-dokumente-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></div>
+                <p class="feat-pop-title" id="f-dokumente-t">Dokumente</p>
+                <button class="feat-close" type="button" popovertarget="f-dokumente" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– mit Zugriffsstufen für alle Mitglieder, nur den Vorstand oder nur die Verwaltung.</p>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-slate"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
-            <h3>Auswertungen</h3>
-            <p>Ein Dashboard je Rolle: Kennzahlen mit Mini-Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
+          <article class="card feat reveal tone-slate">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-auswertungen">Auswertungen</button></h3>
+            <p class="feat-kurz">Ein Dashboard je Rolle</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-auswertungen" popover role="dialog" aria-labelledby="f-auswertungen-t" aria-describedby="f-auswertungen-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
+                <p class="feat-pop-title" id="f-auswertungen-t">Auswertungen</p>
+                <button class="feat-close" type="button" popovertarget="f-auswertungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-auswertungen-d">Ein Dashboard je Rolle: Kennzahlen mit Mini-Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
+              <a class="feat-link" href="#auswertungen">So sieht es aus<span class="sr-only">: Auswertungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-slate"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></div>
-            <h3>Zentrale Suche</h3>
-            <p>Mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd> zu Mitgliedern, Veranstaltungen, Dokumenten und häufigen Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf.</p>
+          <article class="card feat reveal tone-slate">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-suche">Zentrale Suche</button></h3>
+            <p class="feat-kurz">Mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd> alles finden</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-suche" popover role="dialog" aria-labelledby="f-suche-t" aria-describedby="f-suche-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></div>
+                <p class="feat-pop-title" id="f-suche-t">Zentrale Suche</p>
+                <button class="feat-close" type="button" popovertarget="f-suche" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-suche-d">Mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd> zu Mitgliedern, Veranstaltungen, Dokumenten und häufigen Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf.</p>
+              <a class="feat-link" href="#suche">So sieht es aus<span class="sr-only">: Zentrale Suche</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+            </div>
           </article>
-          <article class="card">
-            <div class="card-icon tone-slate"><svg class="icon" aria-hidden="true"><use href="#i-life-buoy"/></svg></div>
-            <h3>Hilfe &amp; Support</h3>
-            <p>Anleitung passend zur Rolle, Ansprechpartner des Vereins und ein Meldeformular für Fehler, Fragen und Vorschläge&nbsp;– mit Antwort und Status.</p>
+          <article class="card feat reveal tone-slate">
+            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-life-buoy"/></svg></div>
+            <h3><button class="feat-btn" type="button" popovertarget="f-hilfe">Hilfe &amp; Support</button></h3>
+            <p class="feat-kurz">Anleitung, Meldeformular</p>
+            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
+            <div class="feat-pop" id="f-hilfe" popover role="dialog" aria-labelledby="f-hilfe-t" aria-describedby="f-hilfe-d">
+              <div class="feat-pop-head">
+                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-life-buoy"/></svg></div>
+                <p class="feat-pop-title" id="f-hilfe-t">Hilfe &amp; Support</p>
+                <button class="feat-close" type="button" popovertarget="f-hilfe" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+              </div>
+              <p id="f-hilfe-d">Anleitung passend zur Rolle, Ansprechpartner des Vereins und ein Meldeformular für Fehler, Fragen und Vorschläge&nbsp;– mit Antwort und Status.</p>
+            </div>
           </article>
         </div>
-        <button class="slider-btn slider-prev" type="button" aria-controls="funktionen-karten" aria-label="Vorherige Funktion"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></button>
-        <button class="slider-btn slider-next" type="button" aria-controls="funktionen-karten" aria-label="Nächste Funktion"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
-        <div class="slider-progress" aria-hidden="true"><span></span></div>
-        <p class="slider-count" aria-hidden="true"></p>
-        <p class="slider-status sr-only" aria-live="polite"></p>
       </div>
     </div>
   </section>
@@ -416,61 +538,88 @@
         <h2 id="helfer-title">Helferschichten, die sich fast von selbst organisieren</h2>
         <p class="lead">Kein Zettelchaos, keine Nachfragen, keine leere Theke beim Sommerfest: Helfer sehen offene Schichten und tragen sich mit einem Klick ein.<span class="lead-more"> Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</span></p>
       </div>
-      <div class="chapter-media reveal">
-        <div class="plx plx-slow">
+
+      <!-- Geführter Ablauf: oben eine Bühne – in der Mitte der Helferplan als Live-Fenster, links davor das Telefon, rechts
+           davor der gedruckte Plan; darunter die drei Schritte, die das Live-Fenster nacheinander zeigt (site.js hebt den
+           gerade gezeigten hervor und hält das Telefon auf demselben Stand, LIVE_SCENES.schichten). Ohne JavaScript und bei
+           reduzierter Bewegung: ruhige Bilder, alle Schritte gleich. Unter 720 px steht das Telefon über den Schritten und
+           der Plan unter dem dritten (site.css „Kapitel Helferschichten“). -->
+      <div class="story" data-story>
+        <div class="story-window reveal">
           <div class="browser live" data-live="schichten">
             <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2026</span></div>
             <div class="live-screen">
               <picture>
-                <img src="assets/img/app/schichten-light-960.webp?v=20260930" srcset="assets/img/app/schichten-light-960.webp?v=20260930 960w, assets/img/app/schichten-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
+                <img src="assets/img/app/schichten-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-light-960.webp?v=2026100202 960w, assets/img/app/schichten-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus und Fortschrittsbalken; beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert">
               </picture>
-              <!-- Live-Fenster: Ein Mauszeiger trägt sich beim Getränkestand ein – Bildfolge aus der Demo-App
-                   (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js (LIVE_SCENES) -->
+              <!-- Live-Fenster: Ein Mauszeiger zeigt auf „Neue Schicht“, trägt sich beim Getränkestand ein und klickt auf
+                   „Drucken“ – Bildfolge aus der Demo-App (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js -->
               <div class="live-layers" aria-hidden="true">
-                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=20260930" srcset="assets/img/app/schichten-live-1-light-960.webp?v=20260930 960w, assets/img/app/schichten-live-1-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=20260930" srcset="assets/img/app/schichten-live-2-light-960.webp?v=20260930 960w, assets/img/app/schichten-live-2-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026100102" srcset="assets/img/app/schichten-live-3-light-960.webp?v=2026100102 960w, assets/img/app/schichten-live-3-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=20260930" srcset="assets/img/app/schichten-live-4-light-960.webp?v=20260930 960w, assets/img/app/schichten-live-4-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-1-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-1-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-2-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-2-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-3-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-3-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-4-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-4-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-5-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-5-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-5-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
                 <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
               </div>
             </div>
           </div>
         </div>
-        <div class="phone chapter-phone plx plx-fast">
-          <span class="phone-hw" aria-hidden="true"></span>
-          <div class="phone-screen">
-            <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-            <picture>
-              <img src="assets/img/app/phone-schichten-light-208.webp?v=20260930" srcset="assets/img/app/phone-schichten-light-208.webp?v=20260930 208w, assets/img/app/phone-schichten-light-260.webp?v=20260930 260w, assets/img/app/phone-schichten-light-312.webp?v=20260930 312w, assets/img/app/phone-schichten-light-416.webp?v=20260930 416w, assets/img/app/phone-schichten-light-520.webp?v=20260930 520w, assets/img/app/phone-schichten-light-624.webp?v=20260930 624w, assets/img/app/phone-schichten-light-780.webp?v=20260930 780w" sizes="(max-width: 719px) min(260px, 67vw), min(208px, 20vw)" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
-            </picture>
+        <div class="story-phone reveal">
+          <div class="phone plx plx-slow">
+            <span class="phone-hw" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-schichten-light-208.webp?v=2026100202" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026100202 182w, assets/img/app/phone-schichten-light-208.webp?v=2026100202 208w, assets/img/app/phone-schichten-light-260.webp?v=2026100202 260w, assets/img/app/phone-schichten-light-273.webp?v=2026100202 273w, assets/img/app/phone-schichten-light-312.webp?v=2026100202 312w, assets/img/app/phone-schichten-light-364.webp?v=2026100202 364w, assets/img/app/phone-schichten-light-390.webp?v=2026100202 390w, assets/img/app/phone-schichten-light-416.webp?v=2026100202 416w, assets/img/app/phone-schichten-light-520.webp?v=2026100202 520w, assets/img/app/phone-schichten-light-546.webp?v=2026100202 546w, assets/img/app/phone-schichten-light-624.webp?v=2026100202 624w, assets/img/app/phone-schichten-light-780.webp?v=2026100202 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert, 3 von 4 Plätzen sind besetzt; darunter der noch unbesetzte Grillstand">
+              </picture>
+              <!-- Derselbe Ausschnitt vor dem Eintragen (2 von 4, „Eintragen“): site.js blendet ihn ein, solange das
+                   Live-Fenster den Stand vor dem Klick zeigt – Telefon und Fenster zeigen immer dasselbe -->
+              <div class="live-layers" aria-hidden="true">
+                <img class="live-frame" src="assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100202" srcset="assets/img/app/phone-schichten-live-1-light-182.webp?v=2026100202 182w, assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100202 208w, assets/img/app/phone-schichten-live-1-light-260.webp?v=2026100202 260w, assets/img/app/phone-schichten-live-1-light-273.webp?v=2026100202 273w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026100202 312w, assets/img/app/phone-schichten-live-1-light-364.webp?v=2026100202 364w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026100202 390w, assets/img/app/phone-schichten-live-1-light-416.webp?v=2026100202 416w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026100202 520w, assets/img/app/phone-schichten-live-1-light-546.webp?v=2026100202 546w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026100202 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026100202 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="">
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <ul class="checks checks-grid">
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen:</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung:</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht:</strong> zum Beispiel für den Getränkestand.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel auf einen Blick:</strong> „Unbesetzt“, „Teilweise besetzt“, „Voll besetzt“&nbsp;– dazu der Hinweis „Beginnt bald“.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Helferstunden im Blick:</strong> Veranstalter tragen die Stunden nach dem Einsatz ein, je Person und Jahr zusammengefasst. Helfer sehen ihre eigenen.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, CSV-Export und Erinnerungen 24&nbsp;Stunden vor dem Einsatz.</span></li>
-      </ul>
-
-      <div class="spot spot-print" id="aushang">
-        <div class="spot-text reveal">
-          <p class="kicker"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg>Helferplan drucken</p>
-          <h3>Der Helferplan fürs Schwarze Brett</h3>
-          <p class="lead">Für eine oder mehrere Veranstaltungen auf einmal: VereinsFlow erstellt einen druckfertigen Plan mit einer Zeile je Platz&nbsp;– belegt mit Namen oder frei zum Eintragen.</p>
-          <ul class="checks">
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Gezielt auswählen:</strong> nach Veranstaltungen, Zeitraum oder nur Schichten mit freien Plätzen.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>A4 hoch oder quer:</strong> mit Vereinsnamen, Erstellungsdatum und Seitenzahl auf jeder Seite.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Zum Aushängen gedacht:</strong> nur Namen, keine Kontaktdaten. Über den Druckdialog lässt sich der Plan auch als PDF speichern.</span></li>
-          </ul>
-        </div>
-        <div class="spot-media reveal">
+        <div class="story-paper reveal">
           <figure class="paper plx plx-slow">
-            <img src="assets/img/app/helferplan-druck-light-640.webp?v=2026100102" srcset="assets/img/app/helferplan-druck-light-640.webp?v=2026100102 640w, assets/img/app/helferplan-druck-light-1280.webp?v=2026100102 1280w" sizes="(min-width: 900px) 420px, 80vw" width="1280" height="1810" loading="lazy" decoding="async" alt="Gedruckter Helferplan: je Veranstaltung und Schicht eine Tabelle mit Nummer, Name, Kästchen für „Anwesend“ und Bemerkung; freie Plätze sind als „frei“ markiert">
+            <img src="assets/img/app/helferplan-druck-light-640.webp?v=2026100102" srcset="assets/img/app/helferplan-druck-light-640.webp?v=2026100102 640w, assets/img/app/helferplan-druck-light-1280.webp?v=2026100102 1280w" sizes="(min-width: 1200px) 236px, (min-width: 1000px) 176px, (min-width: 720px) 210px, 220px" width="1280" height="1810" loading="lazy" decoding="async" alt="Gedruckter Helferplan: Kopf mit Vereinsnamen, darunter je Veranstaltung und Schicht eine Tabelle mit Nummer, Name, Kästchen für „Anwesend“ und Bemerkung; freie Plätze sind als „frei“ markiert">
           </figure>
         </div>
+
+        <!-- role="list": Safari liest Listen ohne Aufzählungszeichen sonst nicht als Liste vor -->
+        <ol class="story-steps" role="list">
+          <li class="story-step reveal">
+            <span class="story-bar" aria-hidden="true"></span>
+            <h3><span class="story-num" aria-hidden="true">1</span>Schichten anlegen</h3>
+            <p>Veranstalter planen jede Schicht mit Zeit, Treffpunkt, Plätzen und Verantwortlichen.</p>
+            <ul class="checks">
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht:</strong> zum Beispiel für den Getränkestand.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, CSV-Export und Erinnerungen 24&nbsp;Stunden vor dem Einsatz.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Helferstunden im Blick:</strong> Veranstalter tragen die Stunden nach dem Einsatz ein, je Person und Jahr zusammengefasst. Helfer sehen ihre eigenen.</span></li>
+            </ul>
+          </li>
+          <li class="story-step reveal">
+            <span class="story-bar" aria-hidden="true"></span>
+            <h3><span class="story-num" aria-hidden="true">2</span>Helfer tragen sich ein</h3>
+            <p>Ein Klick auf „Eintragen“ genügt&nbsp;– am Rechner oder unterwegs auf dem Smartphone.</p>
+            <ul class="checks">
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel auf einen Blick:</strong> „Unbesetzt“, „Teilweise besetzt“, „Voll besetzt“&nbsp;– dazu der Hinweis „Beginnt bald“.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen:</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung:</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
+            </ul>
+          </li>
+          <li class="story-step reveal" id="aushang">
+            <span class="story-bar" aria-hidden="true"></span>
+            <h3><span class="story-num" aria-hidden="true">3</span>Helferplan drucken</h3>
+            <p>Fürs Schwarze Brett: VereinsFlow erstellt einen druckfertigen Plan mit einer Zeile je Platz&nbsp;– belegt mit Namen oder frei zum Eintragen.</p>
+            <ul class="checks">
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Gezielt auswählen:</strong> eine oder mehrere Veranstaltungen auf einmal, ein Zeitraum oder nur Schichten mit freien Plätzen.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>A4 hoch oder quer:</strong> mit Vereinsnamen, Erstellungsdatum und Seitenzahl auf jeder Seite.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Zum Aushängen gedacht:</strong> nur Namen, keine Kontaktdaten. Über den Druckdialog lässt sich der Plan auch als PDF speichern.</span></li>
+            </ul>
+          </li>
+        </ol>
       </div>
       <p class="section-more reveal"><a href="#kontakt">Die Helferplanung live sehen&nbsp;– Demo <span>anfragen<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></a></p>
     </div>

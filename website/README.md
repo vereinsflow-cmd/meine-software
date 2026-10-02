@@ -16,11 +16,11 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `index.html`                          | Startseite (Abschnitte: Einstieg, Kennzahlen, Ausgangslage, Laptop- und Telefon-Vorführung, Funktionen, Helferschichten mit Helferplan-Aushang, Im Detail mit Suche/Mitglieder/Veranstaltungen/Auswertungen als Reiter, Rollen, Sicherheit, FAQ mit Ausblick, Kontakt mit den drei Schritten zum Start) |
+| `index.html`                          | Startseite (Abschnitte: Einstieg, Kennzahlen, Ausgangslage, Laptop- und Telefon-Vorführung, Funktionen, Helferschichten als geführter Ablauf in drei Schritten samt Helferplan-Aushang, Im Detail mit Suche/Mitglieder/Veranstaltungen/Auswertungen als Reiter, Rollen, Sicherheit, FAQ mit Ausblick, Kontakt mit den drei Schritten zum Start) |
 | `impressum.html`, `datenschutz.html`  | Rechtstexte (ausgefüllt, Stand 26.09.2026)                                                 |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
-| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Slider für die Funktionen auf dem Smartphone (Pfeile, Wischen, Pfeiltasten, Zähler „2 von 12“), Reiter „Im Detail“, Ladezustand der Bilder, Kopieren der E-Mail-Adresse im Kontaktbereich, Abdunkelung hinter dem offenen Menü (ohne JavaScript bleibt alles nutzbar; Karten stehen dann als Raster, die Themen untereinander) |
+| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Karten der Funktionen (rollen bei Bedarf ganz ins Bild, enden am Rand einer Kachelreihe, schließen, wenn der Fokus sie verlässt; Pfeiltasten wechseln zwischen den Kacheln – Öffnen und Schließen selbst laufen als Popover ohne Skript), Reiter „Im Detail“, Ladezustand der Bilder, Kopieren der E-Mail-Adresse im Kontaktbereich, Abdunkelung hinter dem offenen Menü (ohne JavaScript bleibt alles nutzbar; die Themen stehen dann untereinander) |
 | `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je zwei Größen                     |
 | `assets/img/`, `assets/brand/`        | Logo (Seite) und Logo-Vorlagen (Profilbilder, Präsentationen); Vorschaubild `og-image.png`   |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (Domain `https://vereins-flow.com`)                                         |
@@ -151,11 +151,14 @@ Hinweise zu den Aufnahmen:
   `…@demo-verein.local` werden zu `…@example.org`. Von Hand angelegte Einträge, die nicht aus dem Seed stammen, bekommen
   ebenfalls einen erfundenen Namen (Liste `DEMO_RENAME` im Skript) – das Repository ist öffentlich.
 - Die Detailbilder (Mitglieder, Kalender, Auswertungen) sind Ausschnitte rechts neben der Seitenleiste, die Suche ein Ausschnitt
-  um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt); der
-  Helferplan-Aushang ist die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
+  um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt); das
+  Kapitelbild Helferschichten ist ebenfalls ein Ausschnitt rechts neben der Seitenleiste (Fenster 1440 px breit, vom Titel des
+  Helferplans bis unter die Schicht „Getränkestand“), der Helferplan-Aushang die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
   (Datum in der Adresse, `kalender` in der Bildliste – nach einem neuen Seed anpassen).
 - Telefonbilder: Einstieg `phone-dashboard`, Vorführung „Unterwegs“ `phone-helferplanung` (ab „Meine Einsätze“, damit
-  „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten`; unter 720 px Breite zeigen die vier Reiter
+  „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten` (die Schicht „Getränkestand“ nach dem Eintragen, wie das ruhige Bild des
+  Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster);
+  unter 720 px Breite zeigen die vier Reiter
   „Im Detail“ statt der Browserfenster eigene Telefonbilder (`phone-suche` über die Lupe, `phone-mitglieder`,
   `phone-kalender` als Liste, `phone-auswertung`). Neue Telefonbilder sind 390 × 760 Punkte groß – genau der sichtbare
   Teil des Bildschirms zwischen Statusleiste und Home-Balken –, damit der Rahmen nichts abschneidet.
@@ -164,7 +167,9 @@ Hinweise zu den Aufnahmen:
   gleicht die Breiten im Skript (`PHONE.widths` bzw. `widths` am Bild) und `srcset`/`sizes` im HTML an.
 - Nach neuen Aufnahmen zwei Dinge nachziehen: (1) Die Bildfolgen melden `Positionen:` (wo Knöpfe und Felder liegen) – diese
   Werte in `LIVE_SCENES` in `assets/js/site.js` übernehmen, sonst klickt der Mauszeiger daneben, wenn sich die Oberfläche
-  verschoben hat (danach `site.js?v=` erhöhen). (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
+  verschoben hat (danach `site.js?v=` erhöhen). Beim Helferplan meldet sie außerdem den leeren Rand neben den Karten; ist er
+  deutlich schmaler als gut 3 %, `--story-lap` und `--story-tuck` in `site.css` verkleinern (so weit liegen Telefon und
+  Blatt über dem Fenster). (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
   Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst noch die alten.
 - Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
   `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`
@@ -231,6 +236,6 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
 - **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen in deren Hauptfarbe (`--accent`), das Logo-Blau
   (`--brand`) für Schrift-Akzente. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
 - **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
-  von `site.js`), leichte Parallaxe der Bilder (`.plx`), Live-Fenster im Kapitel „Helferschichten“ und in den vier Reitern „Im Detail“ (ein Mauszeiger bedient die Anwendung – Bildfolgen aus der Demo-App, aufgenommen mit `tools/capture-screenshots.mjs --only schichten,suche,mitglieder,kalender,auswertung`; die Abläufe stehen in `site.js`, `LIVE_SCENES`) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
+  von `site.js`), leichte Parallaxe der Bilder (`.plx`), Live-Fenster im Kapitel „Helferschichten“ und in den vier Reitern „Im Detail“ (ein Mauszeiger bedient die Anwendung – Bildfolgen aus der Demo-App, aufgenommen mit `tools/capture-screenshots.mjs --only schichten,suche,mitglieder,kalender,auswertung`; die Abläufe stehen in `site.js`, `LIVE_SCENES`; bei den Helferschichten hebt der Ablauf zugleich den gerade gezeigten der drei Schritte darunter hervor, hält das Telefon daneben auf demselben Stand und hebt nach „Drucken“ den gedruckten Plan vom Stapel) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
   Unterstützung zeigen feste Bilder. Bewegt werden nur Transparenz und Transformationen, nie das Layout. Mit „Bewegung
   reduzieren“ im Betriebssystem ist alles sofort und ohne Animation sichtbar.

@@ -1162,8 +1162,7 @@ html:not(.js) .nav ul a:hover {
 }
 
 /* Dezenter Lichtschein hinter den großen Bildschirmfotos (Verlauf statt Weichzeichner-Filter: kostet beim Scrollen nichts) */
-.hero-visual::before,
-.chapter-media::before {
+.hero-visual::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -4037,26 +4036,14 @@ html:not(.js) .nav ul a:hover {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.grid-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-@media (max-width: 1099px) {
-  .grid-4 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 899px) {
-  .grid-3,
-  .grid-4 {
+  .grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 599px) {
-  .grid-3,
-  .grid-4 {
+  .grid-3 {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -4143,305 +4130,930 @@ html:not(.js) .nav ul a:hover {
   --tone-fg: var(--t-slate-fg);
 }
 
-/* Funktionen: kompakte Kacheln zum Überfliegen – Symbol neben dem Titel, der Text darunter über die ganze Breite. Alle
-   zwölf stehen als Raster im Bild (Spalten wie .grid-4: 4, unter 1100 px 3; anders als dort auch zwischen 720 und 899 px
-   noch 3, mit engerem Innenabstand – darunter 2); auf dem Smartphone dieselben Kacheln im Slider. */
-.grid.features {
+/* ---------- Funktionen (Bento) ----------
+   Kopf und zwölf Kacheln stehen in einem Raster (.bento). Breit (ab 1200 px, zwölf Spuren): der Kopf oben links, daneben
+   die große Kachel „Helferschichten“ mit drei Schichten in Ampelfarben, darunter „Mitglieder“ doppelt breit mit
+   Gesichtern, dann die kompakten Kacheln – Symbol links, daneben Titel und ein Satz, oben rechts ein Plus. Der Kopf steht
+   hier bewusst als einziger linksbündig (neben der großen Kachel); Schrift, Größen und Abstände sind die aller anderen
+   Abschnittsköpfe. Darunter Kopf wie sonst mittig, die Kacheln kompakt in drei (1024–1199 px) bzw. zwei Spalten; Titel
+   und Satz bleiben einzeilig, so sind alle Reihen gleich hoch. Unter 720 px: eine zweispaltige Liste aus Symbol und Titel
+   auf einer weißen Fläche, das Plus sitzt dort an der Ecke des Symbols.
+   Die ganze Kachel ist ein Knopf (der Titel, seine Fläche reicht über die Kachel) und öffnet die vollständige
+   Beschreibung als Karte (Popover): Sie deckt ihre Kachel ganz ab – mindestens 340 px breit, breit genau zwei Kacheln,
+   in der rechten Spalte rechtsbündig – und wächst nach unten (CSS-Anker; site.js führt den unteren Rand bis ans Ende
+   einer Reihe und rollt die Seite, falls die Karte unten nicht ganz ins Bild passt; ohne Skript wächst sie dann nach
+   oben). Auf dem Smartphone und auf niedrigen Bildschirmen kommt sie als Blatt von
+   unten, die Seite dahinter steht still. Schließen mit ×, Esc oder Klick daneben; das geht ohne Skript. Browser ohne
+   Anker zeigen die Karte mittig, solche ohne Popover den ganzen Text gleich in der Kachel (wie im Druck). */
+#funktionen {
+  padding-block: clamp(44px, 5.5vw, 80px);
+}
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
 }
 
-.features .card {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  column-gap: 14px;
-  align-items: center;
-  padding: 20px 22px 22px;
+/* Die Kacheln stehen in einer eigenen Hülle (für die weiße Fläche der Liste), gehören aber zum Raster */
+.bento-kacheln {
+  display: contents;
 }
 
-.features .card-icon {
+.bento > .section-head {
+  grid-column: 1 / 9;
+  align-self: center;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 4px 2px;
+  text-align: left;
+}
+
+.bento > .section-head .lead {
+  margin-inline: 0;
+}
+
+.feat {
+  display: grid;
+  grid-column: span 3;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  column-gap: 12px;
+  row-gap: 3px;
+  padding: 15px 16px 16px;
+  border-radius: 20px;
+}
+
+.feat > .card-icon {
+  grid-row: 1 / 3;
   width: 40px;
   height: 40px;
   margin: 0;
   border-radius: 12px;
 }
 
-.features .card-icon .icon {
+.feat > .card-icon .icon {
   width: 21px;
   height: 21px;
 }
 
-.features .card h3 {
+/* Titel: rechts bleibt Platz für das Plus (mindestens 8 px Abstand). Getrennt wird nur an der Trennstelle im HTML
+   („Benachrich-tigungen“); nur bei sehr großer eingestellter Schrift bricht ein Wort notfalls um. */
+.feat h3 {
   margin: 0;
-  font-size: 1.125rem;
-  hyphens: auto; /* nur im Notfall: „Benachrichtigungen“ in sehr schmalen Kacheln */
+  padding-right: 26px;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  hyphens: manual;
+  overflow-wrap: break-word;
 }
 
-.features .card p {
-  grid-column: 1 / -1;
-  align-self: start;
-  margin-top: 12px;
+/* Der Satz unter dem Titel: 16 px (der ganze Text in der Karte 17 px) */
+.feat .feat-kurz {
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
-/* Tablet (720–899 px): drei schmale Spalten. Engerer Rahmen, kleineres Symbol und etwas kleinere Titel halten die
-   Kacheln niedrig (Titel wie „Veranstaltungen“ passen so ungetrennt in eine Zeile); im Text dürfen lange Wörter
-   („Änderungshistorie“, „Teilnehmerlimit“) getrennt werden, kurze nicht – sonst blieben die Zeilen bei rund 25 Zeichen
-   sehr ungleich lang. Der Text bleibt 17 px groß. */
-@media (min-width: 720px) and (max-width: 899px) {
-  .grid-4.features {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .features .card {
-    grid-template-columns: 32px minmax(0, 1fr);
-    column-gap: 10px;
-    padding: 16px 16px 18px;
-  }
-
-  .features .card-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-  }
-
-  .features .card-icon .icon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .features .card h3 {
-    font-size: 1.0625rem;
-  }
-
-  .features .card p {
-    margin-top: 10px;
-    line-height: 1.5;
-    hyphens: auto;
-    hyphenate-limit-chars: 12 5 5;
-  }
-}
-
-/* ---------- Slider ----------
-   Karten in einer waagerechten Reihe, die man wischt oder mit den Pfeilen blättert (site.js setzt .is-slider; bei den
-   Funktionen – .slider-phone – nur auf dem Smartphone). Die sichtbaren Karten stehen ganz im Bild und im Fokus; die
-   Nachbarn schauen am Rand ein Stück herein (--peek), etwas kleiner und blasser, und laufen weich aus. Zwischen den
-   Pfeilen steht, die wievielte Karte zu sehen ist (.slider-count). Ohne JavaScript, im Druck und außerhalb der
-   Smartphone-Breite bleibt das Raster.
-   Die Reihe reicht über den Inhaltsbereich hinaus bis zu --bleed in den Rand, die Karten richten sich trotzdem am
-   Inhaltsbereich aus (Innenabstand und Einrastabstand gleich --bleed). */
-.section:has(.slider),
-.band-panel:has(.slider) {
-  container-type: inline-size; /* 100cqw = Breite des Abschnitts bzw. der Fläche ohne Scrollleiste (anders als 100vw) */
-}
-
-.slider-btn,
-.slider-progress,
-.slider-count {
-  display: none;
-}
-
-.slider.is-slider {
-  position: relative;
-  padding-bottom: 72px; /* Platz für Fortschritt und – auf schmalen Bildschirmen – die Pfeile */
-}
-
-.slider.is-slider .slider-track {
-  --cols: 1;
-  --gap: 12px;
-  --peek: 22px;
-  /* Rand zwischen Inhaltsbereich und Abschnittskante (wie .container) */
-  --side: calc((100cqw - min(100cqw, var(--container) + 2 * var(--gutter))) / 2 + var(--gutter));
-  --bleed: min(var(--side), var(--peek) + var(--gap));
-  --peek-in: calc(var(--peek) + var(--gap) - var(--bleed)); /* der Rest der Vorschau kommt aus dem Inhaltsbereich */
-  /* zum Rand hin weich auslaufen (erst ganz außen durchsichtig) */
-  --fade: linear-gradient(
-    90deg,
-    transparent,
-    rgb(0 0 0 / 55%) calc(var(--bleed) * 0.4),
-    #000 var(--bleed),
-    #000 calc(100% - var(--bleed)),
-    rgb(0 0 0 / 55%) calc(100% - var(--bleed) * 0.4),
-    transparent
-  );
-  position: relative; /* Bezug für offsetLeft der Karten (site.js) */
-  display: flex;
-  gap: var(--gap);
-  margin: -12px calc(var(--bleed) * -1) -48px; /* Innenabstand oben/unten für Schatten und Anheben (ein Scrollbereich schneidet dort ab) */
-  padding: 12px var(--bleed) 48px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--bleed);
-  scrollbar-width: none;
-  -webkit-mask-image: var(--fade);
-  mask-image: var(--fade);
-}
-
-.slider.is-slider .slider-track::-webkit-scrollbar {
-  display: none;
-}
-
-.slider.is-slider .slider-track:focus-visible {
-  outline: none; /* Fokusrahmen an der Hülle – die Reihe selbst läuft am Rand weich aus */
-}
-
-.slider.is-slider:has(> .slider-track:focus-visible)::after {
-  content: "";
-  position: absolute;
-  inset: -8px calc(var(--gutter) * -0.5) 56px;
-  border: 3px solid var(--ring);
-  border-radius: calc(var(--radius) + 8px);
-  pointer-events: none;
-}
-
-.slider.is-slider .slider-track > * {
-  flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap) - var(--peek-in)) / var(--cols));
-  scroll-snap-align: start;
-}
-
-/* Karten, die nicht ganz im Bild stehen (site.js setzt .is-dim): kleiner und blasser; ein Klick holt sie herein */
-.slider.is-slider .slider-track > .is-dim {
-  opacity: 0.55;
-  scale: 0.94;
-  cursor: pointer;
-}
-
-/* Funktionen: die nächste Kachel schaut deutlich herein – so ist zu sehen, dass es weitergeht */
-.slider.is-slider .features {
-  --peek: 40px;
-}
-
-/* Pfeile: rund, im Stil der hellen Schaltflächen; am Anfang bzw. Ende blass und ohne Wirkung */
-.slider.is-slider .slider-btn {
-  position: absolute;
-  z-index: 2;
-  bottom: 0;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
+/* Titel als Knopf; seine unsichtbare Fläche (::after) deckt die ganze Kachel ab, der Fokusrahmen liegt um die Kachel */
+.feat-btn {
   padding: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  color: var(--ink);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    opacity 0.3s,
-    background-color 0.2s,
-    border-color 0.2s,
-    box-shadow 0.28s var(--ease-out),
-    transform 0.28s var(--ease-out);
 }
 
-.slider.is-slider .slider-btn:focus-visible {
+.feat-btn::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border-radius: 20px;
+}
+
+.feat-btn:focus-visible {
+  outline: none;
+}
+
+.feat:has(.feat-btn:focus-visible) {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Plus in der Ecke oben rechts – wie die Pfeile der Fragen: hellgrau, beim Überfahren blau */
+.feat-plus {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  background: var(--bg-alt);
+  color: var(--muted);
+  transition: background-color 0.2s, color 0.2s;
 }
 
-.slider.is-slider .slider-btn .icon {
+.feat-plus .icon {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.25;
+}
+
+.feat:hover .feat-plus,
+.feat:has(.feat-btn:focus-visible) .feat-plus {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Beim Überfahren färbt sich auch der Rand – auch bei reduzierter Bewegung, wo die Kachel nicht anhebt */
+@media (hover: hover) and (min-width: 720px) {
+  .feat:hover {
+    border-color: var(--accent-line);
+  }
+}
+
+/* Große Kachel „Helferschichten“: Symbol und Titel in einer Zeile, darunter der Satz und drei Schichten wie im Helferplan
+   (voll, teilweise, unbesetzt) */
+.feat-a {
+  grid-column: 9 / -1;
+  grid-template-rows: auto auto 1fr;
+  row-gap: 0;
+  padding: 18px 20px 20px;
+  background:
+    radial-gradient(120% 90% at 100% 100%, rgb(225 244 235 / 75%), transparent 60%),
+    var(--surface);
+}
+
+.feat-a > .card-icon {
+  grid-row: 1;
+}
+
+.feat-a h3 {
+  align-self: center;
+  padding-right: 34px;
+  font-size: 1.2rem;
+}
+
+.feat-a .feat-kurz {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+.feat-a .feat-plus {
+  top: 26px;
+  right: 18px;
+}
+
+.feat-art {
+  pointer-events: none;
+  user-select: none;
+}
+
+.art-shifts {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-self: end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.shift {
+  --fill: 0%;
+  --shift: #e5484d;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 6px;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 80%);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+.shift b {
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shift i {
+  color: var(--muted);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.shift-bar {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.shift-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--fill);
+  border-radius: inherit;
+  background: var(--shift);
+}
+
+.shift.is-full {
+  --fill: 100%;
+  --shift: #1fae73;
+}
+
+.shift.is-part {
+  --fill: 50%;
+  --shift: #f0a020;
+}
+
+/* Unbesetzt: leerer Balken, die Zahl rosé */
+.shift.is-open i {
+  color: var(--t-rose-fg);
+  font-weight: 600;
+}
+
+/* „Mitglieder“: doppelt breit, rechts ein Stapel Gesichter (Initialen in den Farben der Bereiche) und „Aktiv“ */
+.feat-b {
+  grid-column: span 6;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  background:
+    radial-gradient(70% 140% at 100% 50%, rgb(232 240 251 / 80%), transparent 70%),
+    var(--surface);
+}
+
+.art-people {
+  display: flex;
+  grid-column: 3;
+  grid-row: 1 / 3;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: center;
+  gap: 8px;
+  margin-right: 38px;
+}
+
+/* Gesichter: jedes folgende rückt unter das vorige, die Initialen bleiben frei */
+.faces {
+  display: flex;
+}
+
+.faces i {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--tone-bg);
+  box-shadow: 0 0 0 2.5px var(--surface);
+  color: var(--tone-fg);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.faces i + i {
+  margin-left: -6px;
+}
+
+.faces i:nth-child(1) {
+  z-index: 5;
+}
+
+.faces i:nth-child(2) {
+  z-index: 4;
+}
+
+.faces i:nth-child(3) {
+  z-index: 3;
+}
+
+.faces i:nth-child(4) {
+  z-index: 2;
+}
+
+.people-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.people-tag b {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---- Karte mit der ganzen Beschreibung (Popover) ----
+   Im Kopf das Symbol auf vollem Farbfeld des Bereichs, dazu ein Hauch dieser Farbe oben links (die Farbe erbt die Karte
+   von ihrer Kachel, tone-*); Text 17 px wie überall. Ohne CSS-Anker: mittig im Fenster über einer leichten Abdunkelung. */
+.feat-pop {
+  inset: auto;
+  width: min(400px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: 0;
+  overflow: auto;
+  padding: 18px 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    radial-gradient(100% 140px at 0 0, var(--tone-bg), transparent),
+    var(--surface);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  overscroll-behavior: contain;
+}
+
+.feat-pop:popover-open {
+  inset: 0;
+  height: fit-content;
+  margin: auto;
+}
+
+.feat-pop::backdrop {
+  background: rgb(14 26 43 / 18%);
+}
+
+/* Rechts bleibt Platz für das × (48 px) – lange Titel stoßen nicht daran */
+.feat-pop-head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 14px;
+  min-height: 44px;
+  padding-right: 48px;
+}
+
+.feat-pop .card-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  border-radius: 13px;
+  background: var(--tone-fg);
+  box-shadow: 0 8px 18px -10px var(--tone-fg);
+  color: #ffffff;
+}
+
+.feat-pop .card-icon .icon {
   width: 22px;
   height: 22px;
 }
 
-.slider.is-slider .slider-prev {
-  left: 0;
+/* Titel etwas größer als in der Kachel (die Regel für Kartentexte, .card p, gilt hier nicht) */
+.feat .feat-pop-title {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
 }
 
-.slider.is-slider .slider-next {
-  right: 0;
+.feat-pop-head + p {
+  margin-top: 12px;
 }
 
-.slider.is-slider .slider-btn[aria-disabled="true"] {
-  opacity: 0.35;
-  box-shadow: none;
-  cursor: default;
-}
-
-@media (hover: hover) {
-  .slider.is-slider .slider-btn:not([aria-disabled="true"]):hover {
-    border-color: var(--accent-line);
-    background: var(--accent-soft);
-    box-shadow: var(--shadow-md);
-  }
-}
-
-.slider.is-slider .slider-btn:not([aria-disabled="true"]):active {
-  transform: scale(0.94);
-  transition-duration: 0.08s;
-}
-
-/* Zähler („3 von 12“) über dem Fortschritt, mittig zwischen den Pfeilen */
-.slider.is-slider .slider-count {
+/* × oben rechts in der Karte; die Trefferfläche ist 44 px groß */
+.feat-close {
   position: absolute;
-  bottom: 22px;
-  left: 50%;
-  display: block;
-  margin: 0;
-  color: var(--text);
-  font-size: 0.95rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.3;
-  white-space: nowrap;
-  translate: -50% 0;
+  top: 9px;
+  right: 9px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
 }
 
-/* Fortschritt: schmale Leiste, der dunkle Teil zeigt, welcher Ausschnitt der Karten gerade zu sehen ist */
-.slider.is-slider .slider-progress {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  display: block;
-  width: min(160px, 36%);
-  height: 4px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--line);
-  translate: -50% 0;
-}
-
-.slider.is-slider .slider-progress span {
-  display: block;
-  width: calc(var(--size, 0.25) * 100%);
-  height: 100%;
-  border-radius: inherit;
+.feat-close .icon {
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border-radius: 50%;
   background: var(--accent);
-  translate: calc(var(--pos, 0) / var(--size, 0.25) * 100%) 0;
+  color: var(--on-accent);
+  stroke-width: 2.25;
+  transition: background-color 0.2s;
 }
 
-/* Breite Bildschirme: Pfeile links und rechts auf halber Höhe der Karten, halb über dem Rand */
-@media (min-width: 900px) {
-  .slider.is-slider {
-    padding-bottom: 40px;
+.feat-close:hover .icon {
+  background: var(--accent-hover);
+}
+
+.feat-close:focus-visible {
+  outline-offset: -2px;
+  border-radius: 50%;
+}
+
+/* Verweis auf den Abschnitt mit Bildern – überall derselbe Text, für Screenreader mit dem Namen des Bereichs */
+.feat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 6px;
+  margin-bottom: -10px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.feat-link:hover {
+  text-decoration: underline;
+}
+
+.feat-link .icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.feat-link:hover .icon {
+  transform: translateX(3px);
+}
+
+/* Mit CSS-Ankern (ab 720 px Breite und 500 px Höhe): Die Karte liegt über ihrer Kachel – oben und links bündig, so breit
+   wie die Kachel, mindestens 340 px (breit: zwei Kacheln, siehe unten), und mindestens so hoch – und wächst nach unten. Ohne Skript wächst sie, wenn der
+   Platz darunter nicht reicht, vom unteren Rand der Kachel nach oben; mit Skript bleibt sie unten, und site.js rollt die
+   Seite, bis sie ganz zu sehen ist (eine Karte der oberen Reihe deckt so nie Überschrift und Einleitung zu). Höher als
+   das Fenster unter der Kopfzeile wird sie nicht, der Rest rollt in der Karte. Zuerst jeweils die Fassung ohne max() für
+   Browser, die anchor() darin nicht kennen. Verschwindet die Kachel aus dem Bild, verschwindet auch die Karte. Ein
+   leichter Schleier legt sich über die Seite – angeschnittene Nachbarkacheln am Rand der Karte treten zurück. */
+@position-try --feat-nach-oben {
+  top: auto;
+  bottom: anchor(bottom);
+  bottom: max(12px, anchor(bottom));
+}
+
+@media screen and (min-width: 720px) and (min-height: 500px) {
+  @supports (anchor-name: --a) {
+    .feat:has(> .feat-pop:popover-open) {
+      anchor-name: --feat-offen;
+    }
+
+    .feat-pop:popover-open {
+      position-anchor: --feat-offen;
+      inset: auto;
+      top: anchor(top);
+      top: max(calc(var(--header-h) + 8px), anchor(top));
+      left: anchor(left);
+      width: max(340px, anchor-size(width));
+      max-width: calc(100vw - 32px);
+      height: auto;
+      min-height: anchor-size(height);
+      min-height: max(anchor-size(height), var(--feat-bis, 0px));
+      max-height: calc(100dvh - var(--header-h) - 24px);
+      margin: 0;
+      transform-origin: 24px 24px;
+      position-try-fallbacks: --feat-nach-oben;
+      position-visibility: anchors-visible;
+    }
+
+    .js .feat-pop:popover-open {
+      position-try-fallbacks: none;
+    }
+
+    .feat-pop::backdrop {
+      background: rgb(14 26 43 / 10%);
+    }
+  }
+}
+
+/* Tablet und kleine Laptops: Kopf mittig darüber, alle Kacheln kompakt (ohne Bild) in drei Spalten, unter 1024 px in
+   zwei. In drei Spalten sind die Titel 16 px groß und der Rand etwas schmaler – so passen auch „Abteilungen und Gruppen“
+   und „Aufgaben und Checklisten“ bei 1024 px in eine Zeile. */
+@media (max-width: 1199px) {
+  .bento {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
   }
 
-  .slider.is-slider .slider-btn {
-    top: calc(50% - 20px);
-    bottom: auto;
-    translate: 0 -50%;
+  .bento > .section-head {
+    grid-column: 1 / -1;
+    justify-self: center;
+    max-width: 780px;
+    margin-bottom: calc(clamp(32px, 4vw, 56px) - 12px);
+    padding: 0;
+    text-align: center;
   }
 
-  .slider.is-slider .slider-prev {
-    left: -24px;
+  .bento > .section-head .lead {
+    margin-inline: auto;
   }
 
-  .slider.is-slider .slider-next {
-    right: -24px;
+  .feat,
+  .feat-a,
+  .feat-b {
+    grid-column: auto;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    row-gap: 2px;
+    padding: 14px 14px 15px;
   }
 
-  .slider.is-slider .slider-progress {
-    bottom: 6px;
+  .feat-a > .card-icon {
+    grid-row: 1 / 3;
   }
 
-  .slider.is-slider .slider-count {
-    bottom: 14px;
+  .feat h3,
+  .feat-a h3 {
+    align-self: auto;
+    padding-right: 26px;
+    font-size: 1rem;
   }
 
-  .slider.is-slider:has(> .slider-track:focus-visible)::after {
-    bottom: 24px;
+  .feat-a .feat-kurz {
+    grid-column: auto;
+    margin-top: 0;
+  }
+
+  .feat-a .feat-plus {
+    top: 12px;
+    right: 8px;
+  }
+
+  .feat-art {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feat,
+  .feat-a,
+  .feat-b {
+    padding: 13px 16px 14px;
+  }
+
+  .feat h3,
+  .feat-a h3 {
+    font-size: 1.0625rem;
+  }
+}
+
+/* Karten der rechten Spalte stehen rechtsbündig über ihrer Kachel und wachsen nach innen */
+@media screen and (min-width: 720px) and (min-height: 500px) {
+  @supports (anchor-name: --a) {
+    .bento-kacheln > :nth-child(2n) > .feat-pop:popover-open {
+      left: auto;
+      right: anchor(right);
+      transform-origin: calc(100% - 24px) 24px;
+    }
+  }
+}
+
+@media screen and (min-width: 1024px) and (min-height: 500px) {
+  @supports (anchor-name: --a) {
+    .bento-kacheln > :nth-child(2n) > .feat-pop:popover-open {
+      left: anchor(left);
+      right: auto;
+      transform-origin: 24px 24px;
+    }
+
+    .bento-kacheln > :nth-child(3n) > .feat-pop:popover-open {
+      left: auto;
+      right: anchor(right);
+      transform-origin: calc(100% - 24px) 24px;
+    }
+  }
+}
+
+/* Breit: Die Karte einer kompakten Kachel deckt genau zwei Kacheln ihrer Reihe – Spalten 1 und 2 bzw. 3 und 4, in der
+   zweiten und vierten Spalte also nach links –, die großen Kacheln decken sich selbst. site.js verlängert sie bis ans Ende
+   der Reihe, in der ihr unterer Rand läge (--feat-bis); so schneidet der Rand der Karte keine Kachel an. */
+@media screen and (min-width: 1200px) and (min-height: 500px) {
+  @supports (anchor-name: --a) {
+    .bento-kacheln > .feat:not(.feat-a, .feat-b) > .feat-pop:popover-open {
+      width: calc(anchor-size(width) * 2 + 16px);
+    }
+
+    .bento-kacheln > :nth-child(n) > .feat-pop:popover-open {
+      left: anchor(left);
+      right: auto;
+      transform-origin: 24px 24px;
+    }
+
+    .bento-kacheln > :nth-child(2n) > .feat-pop:popover-open {
+      left: auto;
+      right: anchor(right);
+      transform-origin: calc(100% - 24px) 24px;
+    }
+  }
+}
+
+/* Smartphone und kleine Tablets (unter 720 px): zweispaltige Liste aus Symbol und Titel auf einer weißen Fläche, getrennt
+   durch feine Linien; der Satz steht (unter 600 px) nur im Blatt, das sich beim Antippen öffnet. Die Fläche reicht 8 px
+   in den Seitenrand – so stehen die Symbole bündig mit dem Text darüber, und alle Titel bis auf „Benachrich-tigungen“
+   passen auch bei 360 px ungetrennt. Das Plus sitzt als kleiner runder Knopf an der Ecke des Symbols: Es zeigt, dass sich
+   hinter jeder Zeile mehr verbirgt, und kostet keine Breite. Die Zeile, deren Blatt offen ist, trägt die Farbe ihres
+   Bereichs. */
+@media screen and (max-width: 719px) {
+  .bento {
+    display: block;
+  }
+
+  /* Kopf linksbündig wie alle Köpfe auf dem Smartphone */
+  .bento > .section-head {
+    justify-self: stretch;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .bento > .section-head .lead {
+    margin-inline: 0;
+  }
+
+  .bento-kacheln {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-inline: -8px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .feat,
+  .feat-a,
+  .feat-b {
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    align-items: center;
+    column-gap: 9px;
+    min-height: 54px;
+    padding: 7px 2px 7px 8px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .feat:nth-of-type(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  .feat:nth-of-type(even) {
+    border-left: 1px solid var(--line);
+  }
+
+  /* Zeilen einer Liste: kein Lichtschein, kein Anheben beim Überfahren */
+  .feat::before {
+    content: none;
+  }
+
+  .bento-kacheln .feat:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .feat-btn::after {
+    border-radius: 0;
+  }
+
+  .feat:has(.feat-btn:focus-visible) {
+    z-index: 1;
+    outline-offset: -3px;
+  }
+
+  .feat > .card-icon,
+  .feat-a > .card-icon {
+    grid-row: 1;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+
+  .feat > .card-icon .icon {
+    width: 17px;
+    height: 17px;
+  }
+
+  .feat h3,
+  .feat-a h3 {
+    padding-right: 0;
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .feat .feat-kurz {
+    display: none;
+  }
+
+  /* Plus an der Ecke des Symbols (unten rechts), weiß mit feinem Rand; die Mitte liegt 3 px innerhalb der Ecke */
+  .feat .feat-plus,
+  .feat-a .feat-plus {
+    top: calc(50% + 3px);
+    right: auto;
+    left: 26px;
+    width: 18px;
+    height: 18px;
+    background: var(--surface);
+    box-shadow:
+      0 0 0 1px var(--line-strong),
+      0 1px 3px rgb(15 30 50 / 14%);
+    color: var(--accent);
+  }
+
+  .feat-plus .icon {
+    width: 12px;
+    height: 12px;
+    stroke-width: 2.75;
+  }
+
+  /* Rückmeldung beim Antippen */
+  .feat:active {
+    background: var(--surface-soft);
+  }
+
+  .feat:has(> .feat-pop:popover-open) {
+    background: var(--tone-bg);
+  }
+
+  .feat:has(> .feat-pop:popover-open) > .card-icon {
+    background: var(--tone-fg);
+    color: #ffffff;
+  }
+}
+
+/* Kleine Tablets und Telefone quer (600–719 px): Platz genug für den Satz unter dem Titel, das Symbol wird etwas größer */
+@media screen and (min-width: 600px) and (max-width: 719px) {
+  .feat,
+  .feat-a,
+  .feat-b {
+    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 12px;
+    row-gap: 1px;
+    padding: 9px 8px 10px 10px;
+  }
+
+  .feat > .card-icon,
+  .feat-a > .card-icon {
+    grid-row: 1 / 3;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .feat > .card-icon .icon {
+    width: 19px;
+    height: 19px;
+  }
+
+  .feat .feat-kurz {
+    display: block;
+  }
+
+  .feat .feat-plus,
+  .feat-a .feat-plus {
+    top: calc(50% + 6px);
+    left: 34px;
+  }
+}
+
+/* Sehr schmale Telefone (unter 390 px): Symbol 28 px, etwas weniger Abstand – „Veranstaltungen“ bleibt ganz */
+@media screen and (max-width: 389px) {
+  .feat,
+  .feat-a,
+  .feat-b {
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .feat > .card-icon,
+  .feat-a > .card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  .feat .feat-plus,
+  .feat-a .feat-plus {
+    top: calc(50% + 2px);
+    left: 24px;
+  }
+}
+
+/* Blatt von unten (unter 720 px Breite und auf niedrigen Bildschirmen, etwa einem Telefon quer): über die ganze Breite,
+   höchstens 560 px breit und mittig; die Seite dahinter rollt nicht mit (der Platz der Scrollleiste bleibt frei) */
+@media screen and (max-width: 719px), screen and (max-height: 499px) {
+  .feat-pop:popover-open {
+    inset: auto 0 0;
+    width: auto;
+    max-width: 560px;
+    height: auto;
+    min-height: 0;
+    max-height: min(82dvh, calc(100dvh - 16px));
+    margin: 0 auto;
+    padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+    border-width: 1px 1px 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .feat-pop::backdrop {
+    background: rgb(14 26 43 / 32%);
+  }
+
+  .feat-close {
+    top: 11px;
+    right: 11px;
+  }
+
+  html:has(.feat-pop:popover-open) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Browser ohne Popover: alle zwölf mit dem ganzen Text statt des kurzen Satzes, ohne Plus und × (auf dem Smartphone
+   untereinander) */
+@supports not selector(:popover-open) {
+  .feat-pop {
+    position: static;
+    grid-column: 2 / -1;
+    width: auto;
+    max-height: none;
+    margin-top: 6px;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .feat-pop-head,
+  .feat-plus,
+  .feat-art,
+  .feat .feat-kurz {
+    display: none;
+  }
+
+  .feat-pop-head + p {
+    margin-top: 0;
+  }
+
+  .feat-btn {
+    cursor: default;
+  }
+
+  .feat-btn::after {
+    content: none;
+  }
+
+  @media screen and (max-width: 719px) {
+    .bento-kacheln {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .feat,
+    .feat-a,
+    .feat-b {
+      grid-template-rows: auto auto;
+      padding: 14px 16px 16px;
+    }
+
+    .feat:nth-of-type(n + 2) {
+      border-top: 1px solid var(--line);
+    }
+
+    .feat:nth-of-type(even) {
+      border-left: 0;
+    }
   }
 }
 
@@ -4746,16 +5358,9 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* Helferplan zum Aushängen: eigener Unterabschnitt im Helferschichten-Kapitel */
-.spot-print {
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  margin-top: clamp(72px, 9vw, 128px);
-}
-
 @media (max-width: 899px) {
   .spot,
   .spot.flip,
-  .spot-print,
   .spots.is-tabs > .spot.flip {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -4767,14 +5372,10 @@ html:not(.js) .nav ul a:hover {
   .spot-media {
     margin-top: 4px;
   }
-
-  .spot-print .spot-media {
-    order: 1;
-  }
 }
 
 /* Einleitung und Punkte auf eine gut lesbare Zeilenlänge begrenzen (höchstens etwa 75 Zeichen) – wirkt einspaltig unter
-   900 px und in der breiten Textspalte von „Helferplan drucken“ */
+   900 px */
 .spot-text .lead,
 .spot-text .checks {
   max-width: 36rem;
@@ -4827,56 +5428,325 @@ html:not(.js) .nav ul a:hover {
   white-space: nowrap;
 }
 
-/* Kapitel „Helferschichten“: Punkte als ruhiges 3 × 2-Raster unter dem großen Bild */
-.checks-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px 44px;
-  max-width: 1040px;
-  margin: clamp(96px, 11vw, 144px) auto 0;
-}
-
-@media (max-width: 999px) {
-  .checks-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 599px) {
-  .checks-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-    margin-top: 48px;
-  }
-}
-
-/* ---------- Kapitel „Helferschichten“: ein großes Bild mit schwebendem Telefon ---------- */
-
-.chapter-media {
+/* ---------- Kapitel „Helferschichten“: geführter Ablauf ----------
+   Oben eine Bühne aus drei Teilen: in der Mitte der Helferplan als Live-Fenster (Ausschnitt ohne Seitenleiste,
+   höchstens 700 px breit), links davor das Telefon, rechts davor der gedruckte Plan. Beide reichen unten gleich weit
+   unter dem Fenster hervor und decken von ihm nur den leeren Rand neben Titel und Karten (gut 3 % der Fensterbreite,
+   bei 700 px also 22 px: links 16 px Telefon, rechts 10 px Blatt, mit Drehung und zweitem Blatt unten bis 20 px;
+   schmaler entsprechend weniger – tools/capture-screenshots.mjs meldet den Rand nach jeder Aufnahme).
+   So bleibt jedes Teil ganz zu sehen, auch der Kopf des Blatts.
+   Telefon und Fenster zeigen immer denselben Stand: Bis zum Klick auf „Eintragen“ liegt im Telefon das Bild „vorher“.
+   Darunter die drei Schritte, die das Live-Fenster nacheinander zeigt: Während es läuft, setzt site.js data-shown (1–3) –
+   über dem gezeigten Schritt füllt sich der Balken, seine Nummer wird kräftig, erledigte Schritte bleiben gefüllt; nach
+   „Drucken“ (.is-printed) hebt sich das oberste Blatt vom Stapel (Abschnitt „Bewegung“). Ohne JavaScript und bei
+   reduzierter Bewegung steht alles in Ruhe, die Schritte gleichrangig.
+   Ein Raster für alles: breit nebeneinander; Tablet: Fenster oben, darunter die Schritte, daneben Telefon und Blatt;
+   Smartphone: Telefon über den Schritten, das Blatt unter dem dritten (ohne Live-Fenster – seine Schrift wäre dort nur
+   5 px hoch). Kein Teil ragt über den Inhaltsbereich hinaus, auch nicht das herausgehobene Blatt. */
+.story {
+  --story-phone: 224px; /* Bildschirm 208 px = Breite der Bilddatei phone-schichten-…-208 (siehe .phone) */
+  --story-lap: 16px; /* so weit liegt das Telefon über dem linken Rand des Fensters */
+  --story-paper: 236px; /* Breite des Blatts; der gedrehte Stapel braucht daneben 13 % mehr (zweites Blatt, Drehung) */
+  --story-stack: calc(var(--story-paper) * 1.13);
+  --story-tuck: 10px; /* so weit liegt das Blatt über dem rechten Fensterrand (unten durch die Drehung bis 10 px mehr) */
+  --story-print: translate(1%, -6%) rotate(-2deg); /* so hebt sich das Blatt nach „Drucken“ (nach oben, nicht zur Seite) */
   position: relative;
   isolation: isolate;
-  max-width: 1040px;
-  margin: 0 auto;
+  display: grid;
+  /* Rand · Telefon · Überlappung Telefon · Fenster · Überlappung Blatt · Blatt · Rand – die Schritte darunter nutzen die
+     ganze Breite. Das Fenster gibt als Erstes nach, wenn der Platz nicht reicht. */
+  grid-template-columns:
+    minmax(0, 1fr) calc(var(--story-phone) - var(--story-lap)) var(--story-lap)
+    minmax(0, calc(700px - var(--story-lap) - var(--story-tuck))) var(--story-tuck)
+    calc(var(--story-stack) - var(--story-tuck)) minmax(0, 1fr);
 }
 
-/* Links unten über der Seitenleiste – rechts im Bild liegen die Schaltflächen, die das Live-Fenster bedient */
-.chapter-phone {
+/* Lichtschein hinter der Bühne (nur erste Rasterzeile) */
+.story::before {
+  content: "";
   position: absolute;
-  left: -2%;
-  bottom: -7%;
-  width: clamp(120px, 21.6%, 224px);
+  z-index: -2;
+  grid-area: 1 / 2 / 2 / -2;
+  inset: 2% -6% -10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(91 156 214 / 20%), transparent);
+  pointer-events: none;
 }
 
+.story-window {
+  grid-area: 1 / 3 / 2 / 6;
+  position: relative;
+}
+
+/* Links unten vor dem Fenster: überdeckt nur dessen Rand (die Karten beginnen weiter rechts), unten ragt es heraus */
+.story-phone {
+  grid-area: 1 / 2 / 2 / 4;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  width: var(--story-phone);
+  margin-bottom: -28px;
+}
+
+/* Rechts unten vor dem Fenster, leicht gedreht, mit einem zweiten Blatt dahinter: Die untere Ecke steht so weit unter
+   dem Fenster hervor wie das Telefon */
+.story-paper {
+  grid-area: 1 / 5 / 2 / 7;
+  justify-self: start;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  width: var(--story-paper);
+  margin-bottom: -22px;
+}
+
+.story-paper .paper {
+  width: 100%;
+  rotate: 3deg;
+}
+
+/* Drei Schritte nebeneinander; Titel, Zusammenfassung und Punkte stehen je in einer gemeinsamen Zeile (subgrid), damit
+   die Trennlinien auf einer Höhe liegen, auch wenn eine Zusammenfassung eine Zeile mehr braucht */
+.story-steps {
+  grid-area: 2 / 1 / 3 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, auto);
+  column-gap: 40px;
+  margin: 88px 0 0; /* Telefon und Blatt reichen bis gut 40 px unter das Fenster (samt Parallaxe) */
+  padding: 0;
+  list-style: none;
+}
+
+.story-step {
+  position: relative;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  align-content: start;
+  padding-top: 24px;
+}
+
+/* Balken über dem Schritt; die Füllung (::after) wächst, solange das Live-Fenster ihn zeigt */
+.story-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.story-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  scale: 0 1;
+}
+
+.story-step h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.story-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.story-step > p {
+  margin: 12px 0 0;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.story-step .checks {
+  align-content: start;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.story-step .checks li {
+  line-height: 1.5;
+}
+
+/* Der Textlink zur Demo folgt dichter auf die Schritte (sie enden ohnehin mit einer ruhigen Fläche) */
+.story + .section-more {
+  margin-top: 40px;
+}
+
+/* Gezeigter Schritt: Nummer in der Aktionsfarbe mit hellem Hof; erledigte Schritte: Balken voll */
+.story[data-shown="1"] .story-step:nth-child(1) .story-num,
+.story[data-shown="2"] .story-step:nth-child(2) .story-num,
+.story[data-shown="3"] .story-step:nth-child(3) .story-num {
+  background: var(--accent);
+  box-shadow: 0 0 0 5px var(--accent-soft);
+  color: var(--on-accent);
+}
+
+.story[data-shown="2"] .story-step:nth-child(1) .story-bar::after,
+.story[data-shown="3"] .story-step:nth-child(-n + 2) .story-bar::after {
+  scale: 1 1;
+}
+
+/* Bis 1199 px ist der Inhaltsbereich 936–1135 px breit: Telefon (Bildschirm 182 px, eigene Bilddateien) und Blatt etwas
+   kleiner, damit das Fenster nicht unter 570 px schrumpft und das Telefon nicht höher wird als das Fenster */
+@media (max-width: 1199px) {
+  .story {
+    --story-phone: 196px; /* Bildschirm 182 px = Bilddatei phone-schichten-…-182 */
+    --story-lap: 10px; /* das Fenster ist hier nur 570–690 px breit, sein Rand entsprechend schmaler */
+    --story-paper: 176px;
+    --story-tuck: 4px;
+  }
+
+  .story-steps {
+    column-gap: 28px;
+  }
+}
+
+/* Tablet: das Fenster über die ganze Breite (die Schrift bleibt lesbar), darunter links die Schritte untereinander,
+   rechts Telefon und Blatt */
+@media (max-width: 999px) {
+  .story {
+    --story-phone: 224px;
+    --story-paper: 210px;
+    --story-print: translate(-3%, -5%) rotate(-2deg);
+    grid-template-columns: minmax(0, 1fr) 248px;
+    column-gap: clamp(28px, 4vw, 48px);
+  }
+
+  .story::before {
+    inset: -4% -10% auto;
+    height: 60%;
+  }
+
+  .story-window {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  /* Rechts neben den Schritten: oben das Telefon (neben „Helfer tragen sich ein“), unten das Blatt (neben „Helferplan
+     drucken“) */
+  .story-phone {
+    grid-area: 2 / 2 / 3 / 3;
+    align-self: start;
+    justify-self: start;
+    margin: 64px 0 0;
+  }
+
+  .story-paper {
+    grid-area: 2 / 2 / 3 / 3;
+    align-self: end;
+    justify-self: start;
+    margin: 0 0 12px;
+  }
+
+  .story-steps {
+    grid-area: 2 / 1 / 3 / 2;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    gap: 40px;
+    margin-top: 56px;
+  }
+
+  /* Schritte untereinander (Tablet und Smartphone): Nummer links, eine Linie verbindet sie */
+  .story-step {
+    display: block;
+    grid-row: auto;
+    padding: 0 0 0 52px;
+  }
+
+  .story-step h3 {
+    display: block;
+    padding-top: 3px;
+  }
+
+  .story-num {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .story-bar {
+    top: 46px;
+    left: 16px;
+    right: auto;
+    bottom: -32px;
+    width: 2px;
+    height: auto;
+  }
+
+  .story-step:last-child .story-bar {
+    bottom: 0;
+  }
+
+  .story-bar::after {
+    --fill-from: 1 0;
+    transform-origin: 50% 0;
+    scale: 1 0;
+  }
+
+  .story[data-shown="2"] .story-step:nth-child(1) .story-bar::after,
+  .story[data-shown="3"] .story-step:nth-child(-n + 2) .story-bar::after {
+    scale: 1 1;
+  }
+}
+
+/* Smartphone: oben das Telefon (260 px Bildschirm wie die übrigen) mittig, darunter die Schritte, unter dem dritten das
+   Blatt – eingerückt wie der Text der Schritte */
 @media (max-width: 719px) {
-  .chapter-media > .plx:first-child {
+  .story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .story-window {
     display: none;
   }
 
-  .chapter-phone {
-    position: relative;
-    left: auto;
-    bottom: auto;
+  .story-phone {
+    grid-area: 1 / 1;
+    justify-self: center;
     width: min(280px, 72vw);
-    margin: 0 auto;
+    margin: 0;
+  }
+
+  .story-paper {
+    grid-area: 3 / 1;
+    justify-self: start;
+    width: min(220px, (100% - 52px) / 1.13); /* samt Stapel neben der Einrückung */
+    margin: 36px 0 0 52px;
+  }
+
+  .story::before {
+    inset: 0 -20% auto;
+    height: 50%;
+  }
+
+  .story-steps {
+    grid-area: 2 / 1;
+    gap: 32px;
+    margin-top: 48px;
   }
 }
 
@@ -6667,35 +7537,6 @@ html:not(.js) .nav ul a:hover {
     transition-duration: 0.2s;
   }
 
-  /* Slider: Karten gleiten beim Wechsel sanft in den Fokus (Größe, Deckkraft), Fortschritt läuft mit */
-  .slider.is-slider .slider-track > * {
-    transition:
-      opacity 0.6s cubic-bezier(0.45, 0, 0.25, 1),
-      scale 0.6s cubic-bezier(0.45, 0, 0.25, 1),
-      transform 0.45s var(--ease-out),
-      box-shadow 0.45s var(--ease-out),
-      border-color 0.3s;
-  }
-
-  .slider.is-slider .slider-progress span {
-    transition: translate 0.25s var(--ease-out);
-  }
-
-  /* Karten im Slider blenden nicht einzeln ein (die nicht sichtbaren kämen sonst beim Wischen von unten herein) */
-  .slider.is-slider .slider-track > .reveal.is-pending {
-    translate: none;
-    scale: none;
-  }
-
-  .slider.is-slider .slider-track > .reveal.is-pending:not(.is-dim) {
-    opacity: 1;
-  }
-
-  .slider.is-slider .slider-track > .reveal.is-pending .card-icon {
-    opacity: 1;
-    scale: none;
-  }
-
   /* Live-Fenster: Bildfolge und Mauszeiger (Beschreibung unter „Live-Fenster“) */
   /* Die Ebenen kommen erst dazu, wenn das Fenster abspielt (site.js setzt .is-live) – vorher lädt der Browser ihre Bilder
      nicht (Reiter, die niemand öffnet, kosten nichts) */
@@ -6716,6 +7557,15 @@ html:not(.js) .nav ul a:hover {
 
   .js .live-frame.is-on {
     opacity: 1;
+  }
+
+  /* Telefon im Kapitel Helferschichten: das Bild „vorher“ liegt genau über dem ruhigen Bild (zwischen Statusleiste und
+     Home-Balken); site.js setzt .is-live am Kapitel, sobald das Live-Fenster abspielt */
+  .js .story.is-live .phone-screen .live-layers {
+    position: absolute;
+    inset: 6.4% 0 3.6%;
+    display: block;
+    pointer-events: none;
   }
 
   /* Zeiger: eine Ebene so groß wie das Bild – ihr translate in Prozent ist damit eine Stelle im Bild */
@@ -6795,6 +7645,30 @@ html:not(.js) .nav ul a:hover {
     font-size: clamp(0.72rem, 1.4vw, 0.95rem);
   }
 
+  /* Kapitel Helferschichten: Der Balken des gezeigten Schritts füllt sich in der Zeit, die das Live-Fenster für ihn
+     braucht (--story-ms, aus dem Ablaufplan berechnet); die Nummer wechselt weich die Farbe */
+  .story-num {
+    transition:
+      background-color 0.4s var(--ease-out),
+      color 0.4s var(--ease-out),
+      box-shadow 0.4s var(--ease-out);
+  }
+
+  .story[data-shown="1"] .story-step:nth-child(1) .story-bar::after,
+  .story[data-shown="2"] .story-step:nth-child(2) .story-bar::after,
+  .story[data-shown="3"] .story-step:nth-child(3) .story-bar::after {
+    animation: story-fill var(--story-ms, 4s) linear both;
+  }
+
+  /* Nach dem Klick auf „Drucken“ schiebt sich das oberste Blatt hinter dem Fenster hervor (das zweite bleibt liegen) */
+  .story-paper img {
+    transition: transform 0.9s var(--ease-out);
+  }
+
+  .story.is-printed .story-paper img {
+    transform: var(--story-print);
+  }
+
   /* Reiter: Die Fläche unter dem gewählten Reiter gleitet weich zum neuen (Wechsel der Themen: site.js). Bei der ersten
      Anzeige und bei geänderter Fenstergröße springt sie ohne Gleiten an ihre Stelle (.is-instant). */
   .tabs.has-pill:not(.is-instant)::before {
@@ -6816,13 +7690,17 @@ html:not(.js) .nav ul a:hover {
     opacity: 1;
   }
 
-  /* Blasse Nachbarkarte im Slider: beim Überfahren etwas deutlicher – ein Klick holt sie herein */
-  .slider.is-slider .slider-track > .is-dim:hover {
-    opacity: 0.8;
-  }
-
   .card:hover .card-icon {
     transform: translateY(-2px) scale(1.08) rotate(-4deg);
+  }
+
+  .card:hover .feat-pop .card-icon {
+    transform: none;
+  }
+
+  /* Die Kachel unter ihrer offenen Karte bleibt liegen – angehoben schaute ihr Rand oben unter der Karte hervor */
+  .feat:has(> .feat-pop:popover-open) {
+    transform: none;
   }
 
   /* Lichtstreifen, der beim Überfahren über die Hauptschaltfläche zieht */
@@ -7025,21 +7903,17 @@ html:not(.js) .nav ul a:hover {
       }
     }
 
-    /* Bildschirmfotos wachsen beim Hereinscrollen auf volle Größe */
+    /* Bildschirmfotos wachsen beim Hereinscrollen auf volle Größe – im Kapitel Helferschichten von der linken Kante aus,
+       an der das Telefon anliegt (so bleibt die Überlappung gleich) */
     .spot-media .browser,
-    .chapter-media .browser {
+    .story-window .browser {
       animation: frame-in linear both;
       animation-timeline: view();
       animation-range: entry 0% cover 38%;
     }
 
-    /* Der gedruckte Helferplan dreht sich beim Scrollen gerade */
-    .paper.plx {
-      animation:
-        plx linear both,
-        paper-turn linear both;
-      animation-timeline: view(), view();
-      animation-range: cover 0% cover 100%, entry 0% cover 55%;
+    .story-window .browser {
+      transform-origin: 0 60%;
     }
 
     /* Sicherheit: Der Lichtschein der Fläche blendet beim Hereinscrollen auf wie bei den getönten Abschnitten (die Fläche
@@ -7154,6 +8028,18 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Füllung des Schrittbalkens: waagerecht (breit) bzw. senkrecht (Schritte untereinander: --fill-from, siehe „Kapitel
+   Helferschichten“) */
+@keyframes story-fill {
+  from {
+    scale: var(--fill-from, 0 1);
+  }
+
+  to {
+    scale: 1 1;
+  }
+}
+
 @keyframes frame-in {
   from {
     scale: 0.93;
@@ -7161,16 +8047,6 @@ html:not(.js) .nav ul a:hover {
 
   to {
     scale: 1;
-  }
-}
-
-@keyframes paper-turn {
-  from {
-    rotate: -8deg;
-  }
-
-  to {
-    rotate: -2deg;
   }
 }
 
@@ -7206,6 +8082,102 @@ html:not(.js) .nav ul a:hover {
     .faq details[open]::details-content {
       height: auto;
       opacity: 1;
+    }
+  }
+}
+
+/* --- Funktionen: Die Karte einer Kachel blendet weich auf und wächst dabei ein wenig aus der Ecke ihrer Kachel; das
+   Blatt gleitet von unten herein, der Grund dunkelt nach. Beim Schließen läuft es rückwärts (display/overlay
+   „allow-discrete“: die Karte bleibt sichtbar, bis sie ausgeblendet ist). Nur mit Popover – ohne steht der Text fest in
+   der Kachel und darf nicht ausgeblendet sein. Das Plus einer Kachel erscheint mit ihrem Symbol. --- */
+@media (prefers-reduced-motion: no-preference) {
+  @supports selector(:popover-open) {
+    .feat-pop {
+      opacity: 0;
+      scale: 0.97;
+      transition:
+        opacity 0.22s var(--ease-soft),
+        scale 0.32s var(--ease-out),
+        translate 0.38s cubic-bezier(0.32, 0.72, 0, 1),
+        overlay 0.38s allow-discrete,
+        display 0.38s allow-discrete;
+    }
+
+    .feat-pop:popover-open {
+      opacity: 1;
+      scale: 1;
+    }
+
+    @starting-style {
+      .feat-pop:popover-open {
+        opacity: 0;
+        scale: 0.97;
+      }
+    }
+
+    .feat-pop::backdrop {
+      opacity: 0;
+      transition:
+        opacity 0.3s,
+        overlay 0.38s allow-discrete,
+        display 0.38s allow-discrete;
+    }
+
+    .feat-pop:popover-open::backdrop {
+      opacity: 1;
+    }
+
+    @starting-style {
+      .feat-pop:popover-open::backdrop {
+        opacity: 0;
+      }
+    }
+
+    @media screen and (max-width: 719px), screen and (max-height: 499px) {
+      .feat-pop {
+        opacity: 1;
+        scale: none;
+        translate: 0 100%;
+      }
+
+      .feat-pop:popover-open {
+        translate: none;
+      }
+
+      @starting-style {
+        .feat-pop:popover-open {
+          translate: 0 100%;
+        }
+      }
+    }
+  }
+
+  /* Die Karte gehört im Dokument zu ihrer Kachel – deren Einblenden betrifft sie nicht */
+  .reveal.is-pending .feat-pop .card-icon {
+    opacity: 1;
+    scale: none;
+  }
+
+  .reveal .feat-plus {
+    transition:
+      background-color 0.2s,
+      color 0.2s,
+      scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--reveal-delay, 0s) + 0.3s),
+      opacity 0.5s var(--ease-out) calc(var(--reveal-delay, 0s) + 0.3s);
+  }
+
+  .reveal.is-pending .feat-plus {
+    opacity: 0;
+    scale: 0.6;
+    transition-delay: 0s;
+    transition-duration: 0.2s;
+  }
+
+  /* Die Zeilen der Liste stehen auf einer gemeinsamen Fläche: Sie blenden nur auf, ohne zu gleiten */
+  @media screen and (max-width: 719px) {
+    .feat.reveal.is-pending {
+      translate: none;
+      scale: none;
     }
   }
 }
@@ -7277,9 +8249,36 @@ html:not(.js) .nav ul a:hover {
 
   /* Absolut platzierte Telefone mit Prozentbreite und cqw-Maßen (Uhr, Symbole) lassen Chrome leere Seiten drucken –
      im Druck deshalb eine feste Breite (entspricht ungefähr der Druckbreite) */
-  .hero-phone,
-  .chapter-phone {
+  .hero-phone {
     width: 150px;
+  }
+
+  /* Helferschichten: die Schritte ohne Hervorhebung durch das Live-Fenster, das gedruckte Blatt an seinem Platz */
+  .story-bar::after {
+    display: none;
+  }
+
+  .story .story-num {
+    background: var(--accent-soft) !important;
+    box-shadow: inset 0 0 0 1px var(--accent-line) !important;
+    color: var(--accent) !important;
+  }
+
+  .story-paper img {
+    transform: none !important;
+  }
+
+  /* Die Punkte der Schritte stecken eine Ebene tiefer als die Kinder von .reveal: Häkchen und Zeilen auch dann zeigen,
+     wenn ein Schritt noch nicht ins Bild gescrollt war */
+  .story .reveal.is-pending .checks li,
+  .story .reveal.is-pending .tick {
+    opacity: 1 !important;
+    translate: none !important;
+    scale: none !important;
+  }
+
+  .story .reveal.is-pending .tick .icon {
+    stroke-dashoffset: 0 !important;
   }
 
   /* Vorführungen: Endlage ohne Bewegung, Bühne in natürlicher Höhe */
@@ -7294,18 +8293,42 @@ html:not(.js) .nav ul a:hover {
     overflow: visible;
   }
 
-  /* Slider und Reiter: im Druck das Raster bzw. alle Themen untereinander */
-  .slider.is-slider {
-    padding-bottom: 0;
+  /* Funktionen: alle zwölf als kleine Karten in zwei Spalten (wie auf dem Tablet), jede mit der ganzen Beschreibung statt
+     des kurzen Satzes (ohne Plus, ×, Bilder und Links); Reiter: alle Themen untereinander */
+  .feat {
+    grid-template-rows: auto auto;
+    break-inside: avoid;
   }
 
-  .slider.is-slider .slider-track {
-    display: grid;
-    margin: 0;
-    padding: 0;
-    overflow: visible;
-    -webkit-mask-image: none;
-    mask-image: none;
+  .feat-pop {
+    position: static !important;
+    display: block !important;
+    grid-column: 2 / -1;
+    width: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 4px 0 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    scale: none !important;
+    translate: none !important;
+  }
+
+  .feat-pop-head + p {
+    margin-top: 0;
+  }
+
+  .feat-pop-head,
+  .feat-plus,
+  .feat-art,
+  .feat-link,
+  .feat .feat-kurz {
+    display: none !important;
   }
 
   .spots.is-tabs {
@@ -7324,18 +8347,6 @@ html:not(.js) .nav ul a:hover {
 
   .spots.is-tabs > .spot + .spot {
     margin-top: 48px;
-  }
-
-  .slider.is-slider .slider-track > * {
-    opacity: 1 !important;
-    scale: none !important;
-    transition: none !important;
-  }
-
-  .slider-btn,
-  .slider-progress,
-  .slider-count {
-    display: none !important;
   }
 
   /* Live-Fenster: nur das ruhige Bild */
