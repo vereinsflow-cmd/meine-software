@@ -132,18 +132,24 @@
   // Live-Fenster: In Browserbildern bedient ein Mauszeiger die Anwendung (site.css „Live-Fenster“). Je Fenster ein kurzer
   // Ablaufplan: frame n = Bild n der Folge einblenden (0 = das ruhige Bild), move = Zeiger zu einer Stelle (Prozent des
   // Bildes, Werte aus tools/capture-screenshots.mjs), click = Einfedern und Ring, show/hide = Zeiger ein-/ausblenden,
-  // keys = Tastenkürzel einblenden, wait = Pause (ms). Der Plan wiederholt sich, solange das Fenster im Bild ist (und
-  // sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder geladen sind. Bei reduzierter Bewegung
-  // bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
+  // keys = Tastenkürzel einblenden, wait = Pause (ms). Im Kapitel Helferschichten außerdem: step n = Schritt n der Liste
+  // darunter hervorheben (0 = keiner; data-shown am [data-story], dazu --story-ms = Dauer bis zum nächsten step für den
+  // Balken), print = das gedruckte Blatt herausschieben bzw. zurück (.is-printed), phone n = im Telefon daneben Bild n
+  // zeigen (0 = sein ruhiges Bild; so zeigen Telefon und Fenster immer denselben Stand). Der Plan wiederholt sich,
+  // solange das Fenster im Bild ist (und sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder
+  // geladen sind. Bei reduzierter Bewegung bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
   const LIVE_SCENES = {
-    // Helferschichten: beim Getränkestand eintragen, dann zu „Drucken“
+    // Helferschichten, in drei Schritten wie die Liste darunter: auf „Neue Schicht“ zeigen, beim Getränkestand
+    // eintragen (das Telefon wechselt mit dem Klick von „vorher“ zu „nachher“), „Drucken“ – danach hebt sich der
+    // gedruckte Plan vom Stapel
     schichten: {
-      rest: "55% 93%",
+      rest: "50% 96%",
       steps: [
-        ["frame", 1], ["show"], ["wait", 1000],
-        ["move", "84.25% 74.79%", 1150], ["frame", 2], ["wait", 450], ["click"], ["frame", 3], ["wait", 1900],
-        ["frame", 0], ["move", "92.54% 15.29%", 1100], ["frame", 4], ["wait", 1300],
-        ["frame", 0], ["move", "55% 93%", 1000], ["hide"], ["wait", 900],
+        ["step", 1], ["frame", 1], ["phone", 1], ["show"], ["wait", 700],
+        ["move", "63.6% 4.75%", 1150], ["frame", 5, 150], ["wait", 1700],
+        ["step", 2], ["frame", 1, 150], ["move", "82.53% 74.08%", 1200], ["frame", 2, 150], ["wait", 450], ["click"], ["frame", 3], ["phone", 0, 150], ["wait", 2300],
+        ["step", 3], ["frame", 0, 150], ["move", "91.33% 4.75%", 1150], ["frame", 4, 150], ["wait", 400], ["click"], ["print", true], ["wait", 2800],
+        ["print", false], ["frame", 0, 150], ["move", "50% 96%", 1000], ["hide"], ["step", 0], ["wait", 1100],
       ],
     },
     // Suche: Strg K, „Hel“ tippen, auf einen Treffer zeigen
@@ -198,15 +204,37 @@
       const cursor = live.querySelector(".live-cursor");
       const ring = live.querySelector(".live-ring");
       const keys = live.querySelector(".live-keys");
+      const story = live.closest("[data-story]"); // Schrittliste, Telefon und gedrucktes Blatt (nur Helferschichten)
+      const twins = story ? [...story.querySelectorAll(".story-phone .live-frame")] : []; // Telefon: Bild „vorher“
       if (!scene || !frames.length || !pointer || !cursor || !ring) continue;
+      // Dauer jedes step-Eintrags bis zum nächsten (Bewegungen, Pausen, Klicks) – so lange füllt sich sein Balken
+      const spans = scene.steps.map(([step], i) => {
+        if (step !== "step") return 0;
+        let ms = 0;
+        for (const [next, a, b] of scene.steps.slice(i + 1)) {
+          if (next === "step") break;
+          if (next === "move") ms += b;
+          else if (next === "wait") ms += a;
+          else if (next === "click") ms += 140;
+        }
+        return ms;
+      });
+      const mark = (n, ms) => {
+        if (!story) return;
+        if (n) {
+          story.style.setProperty("--story-ms", `${ms}ms`);
+          story.dataset.shown = String(n);
+        } else story.removeAttribute("data-shown");
+      };
       let run = 0; // Nummer des laufenden Durchgangs – ändert sie sich, bricht der alte ab
       let at = scene.rest;
       let layer = 1;
       let ready = null;
       const load = () => {
         live.classList.add("is-live"); // Ebenen einhängen: erst jetzt lädt der Browser die Bilder der Folge
+        story?.classList.add("is-live");
         return (ready ??= Promise.all(
-          frames.map((img) => {
+          [...frames, ...twins].map((img) => {
             img.loading = "eager";
             return img.decode().catch(() => {});
           }),
@@ -222,9 +250,12 @@
           img.classList.remove("is-on");
           img.style.removeProperty("z-index");
         }
+        twin(0, 0);
         layer = 1;
         pointer.classList.remove("is-on");
         keys?.classList.remove("is-on");
+        mark(0);
+        story?.classList.remove("is-printed");
         place(scene.rest);
       };
       // Überblenden: das neue Bild legt sich darüber und blendet ein; darunterliegende gehen danach aus. Beim ruhigen
@@ -252,6 +283,13 @@
           }
         }
       };
+      // Telefon: Bild n über seinem ruhigen Bild ein-, alle anderen ausblenden (0 = nur das ruhige)
+      const twin = (n, fade = 280) => {
+        twins.forEach((img, i) => {
+          img.style.setProperty("transition-duration", `${fade}ms`);
+          img.classList.toggle("is-on", i === n - 1);
+        });
+      };
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const move = async (spot, ms) => {
         const motion = pointer.animate([{ translate: at }, { translate: spot }], { duration: ms, easing: ease, fill: "forwards" });
@@ -274,9 +312,12 @@
       const play = async (id) => {
         await load();
         for (let round = 0; id === run; round++) {
-          for (const [step, a, b] of scene.steps) {
+          for (const [i, [step, a, b]] of scene.steps.entries()) {
             if (id !== run) return;
             if (step === "frame") frame(a, round === 0 && a && !frames.some((img) => img.classList.contains("is-on")) ? 0 : b);
+            else if (step === "phone") twin(a, round === 0 && a ? 0 : b);
+            else if (step === "step") mark(a, spans[i]);
+            else if (step === "print") story?.classList.toggle("is-printed", a);
             else if (step === "move") await move(a, b);
             else if (step === "click") await click();
             else if (step === "show") pointer.classList.add("is-on");

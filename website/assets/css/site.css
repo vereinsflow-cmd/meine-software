@@ -1162,8 +1162,7 @@ html:not(.js) .nav ul a:hover {
 }
 
 /* Dezenter Lichtschein hinter den großen Bildschirmfotos (Verlauf statt Weichzeichner-Filter: kostet beim Scrollen nichts) */
-.hero-visual::before,
-.chapter-media::before {
+.hero-visual::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -5359,16 +5358,9 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* Helferplan zum Aushängen: eigener Unterabschnitt im Helferschichten-Kapitel */
-.spot-print {
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  margin-top: clamp(72px, 9vw, 128px);
-}
-
 @media (max-width: 899px) {
   .spot,
   .spot.flip,
-  .spot-print,
   .spots.is-tabs > .spot.flip {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -5380,14 +5372,10 @@ html:not(.js) .nav ul a:hover {
   .spot-media {
     margin-top: 4px;
   }
-
-  .spot-print .spot-media {
-    order: 1;
-  }
 }
 
 /* Einleitung und Punkte auf eine gut lesbare Zeilenlänge begrenzen (höchstens etwa 75 Zeichen) – wirkt einspaltig unter
-   900 px und in der breiten Textspalte von „Helferplan drucken“ */
+   900 px */
 .spot-text .lead,
 .spot-text .checks {
   max-width: 36rem;
@@ -5440,56 +5428,325 @@ html:not(.js) .nav ul a:hover {
   white-space: nowrap;
 }
 
-/* Kapitel „Helferschichten“: Punkte als ruhiges 3 × 2-Raster unter dem großen Bild */
-.checks-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px 44px;
-  max-width: 1040px;
-  margin: clamp(96px, 11vw, 144px) auto 0;
-}
-
-@media (max-width: 999px) {
-  .checks-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 599px) {
-  .checks-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-    margin-top: 48px;
-  }
-}
-
-/* ---------- Kapitel „Helferschichten“: ein großes Bild mit schwebendem Telefon ---------- */
-
-.chapter-media {
+/* ---------- Kapitel „Helferschichten“: geführter Ablauf ----------
+   Oben eine Bühne aus drei Teilen: in der Mitte der Helferplan als Live-Fenster (Ausschnitt ohne Seitenleiste,
+   höchstens 700 px breit), links davor das Telefon, rechts davor der gedruckte Plan. Beide reichen unten gleich weit
+   unter dem Fenster hervor und decken von ihm nur den leeren Rand neben Titel und Karten (gut 3 % der Fensterbreite,
+   bei 700 px also 22 px: links 16 px Telefon, rechts 10 px Blatt, mit Drehung und zweitem Blatt unten bis 20 px;
+   schmaler entsprechend weniger – tools/capture-screenshots.mjs meldet den Rand nach jeder Aufnahme).
+   So bleibt jedes Teil ganz zu sehen, auch der Kopf des Blatts.
+   Telefon und Fenster zeigen immer denselben Stand: Bis zum Klick auf „Eintragen“ liegt im Telefon das Bild „vorher“.
+   Darunter die drei Schritte, die das Live-Fenster nacheinander zeigt: Während es läuft, setzt site.js data-shown (1–3) –
+   über dem gezeigten Schritt füllt sich der Balken, seine Nummer wird kräftig, erledigte Schritte bleiben gefüllt; nach
+   „Drucken“ (.is-printed) hebt sich das oberste Blatt vom Stapel (Abschnitt „Bewegung“). Ohne JavaScript und bei
+   reduzierter Bewegung steht alles in Ruhe, die Schritte gleichrangig.
+   Ein Raster für alles: breit nebeneinander; Tablet: Fenster oben, darunter die Schritte, daneben Telefon und Blatt;
+   Smartphone: Telefon über den Schritten, das Blatt unter dem dritten (ohne Live-Fenster – seine Schrift wäre dort nur
+   5 px hoch). Kein Teil ragt über den Inhaltsbereich hinaus, auch nicht das herausgehobene Blatt. */
+.story {
+  --story-phone: 224px; /* Bildschirm 208 px = Breite der Bilddatei phone-schichten-…-208 (siehe .phone) */
+  --story-lap: 16px; /* so weit liegt das Telefon über dem linken Rand des Fensters */
+  --story-paper: 236px; /* Breite des Blatts; der gedrehte Stapel braucht daneben 13 % mehr (zweites Blatt, Drehung) */
+  --story-stack: calc(var(--story-paper) * 1.13);
+  --story-tuck: 10px; /* so weit liegt das Blatt über dem rechten Fensterrand (unten durch die Drehung bis 10 px mehr) */
+  --story-print: translate(1%, -6%) rotate(-2deg); /* so hebt sich das Blatt nach „Drucken“ (nach oben, nicht zur Seite) */
   position: relative;
   isolation: isolate;
-  max-width: 1040px;
-  margin: 0 auto;
+  display: grid;
+  /* Rand · Telefon · Überlappung Telefon · Fenster · Überlappung Blatt · Blatt · Rand – die Schritte darunter nutzen die
+     ganze Breite. Das Fenster gibt als Erstes nach, wenn der Platz nicht reicht. */
+  grid-template-columns:
+    minmax(0, 1fr) calc(var(--story-phone) - var(--story-lap)) var(--story-lap)
+    minmax(0, calc(700px - var(--story-lap) - var(--story-tuck))) var(--story-tuck)
+    calc(var(--story-stack) - var(--story-tuck)) minmax(0, 1fr);
 }
 
-/* Links unten über der Seitenleiste – rechts im Bild liegen die Schaltflächen, die das Live-Fenster bedient */
-.chapter-phone {
+/* Lichtschein hinter der Bühne (nur erste Rasterzeile) */
+.story::before {
+  content: "";
   position: absolute;
-  left: -2%;
-  bottom: -7%;
-  width: clamp(120px, 21.6%, 224px);
+  z-index: -2;
+  grid-area: 1 / 2 / 2 / -2;
+  inset: 2% -6% -10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(91 156 214 / 20%), transparent);
+  pointer-events: none;
 }
 
+.story-window {
+  grid-area: 1 / 3 / 2 / 6;
+  position: relative;
+}
+
+/* Links unten vor dem Fenster: überdeckt nur dessen Rand (die Karten beginnen weiter rechts), unten ragt es heraus */
+.story-phone {
+  grid-area: 1 / 2 / 2 / 4;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  width: var(--story-phone);
+  margin-bottom: -28px;
+}
+
+/* Rechts unten vor dem Fenster, leicht gedreht, mit einem zweiten Blatt dahinter: Die untere Ecke steht so weit unter
+   dem Fenster hervor wie das Telefon */
+.story-paper {
+  grid-area: 1 / 5 / 2 / 7;
+  justify-self: start;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  width: var(--story-paper);
+  margin-bottom: -22px;
+}
+
+.story-paper .paper {
+  width: 100%;
+  rotate: 3deg;
+}
+
+/* Drei Schritte nebeneinander; Titel, Zusammenfassung und Punkte stehen je in einer gemeinsamen Zeile (subgrid), damit
+   die Trennlinien auf einer Höhe liegen, auch wenn eine Zusammenfassung eine Zeile mehr braucht */
+.story-steps {
+  grid-area: 2 / 1 / 3 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, auto);
+  column-gap: 40px;
+  margin: 88px 0 0; /* Telefon und Blatt reichen bis gut 40 px unter das Fenster (samt Parallaxe) */
+  padding: 0;
+  list-style: none;
+}
+
+.story-step {
+  position: relative;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  align-content: start;
+  padding-top: 24px;
+}
+
+/* Balken über dem Schritt; die Füllung (::after) wächst, solange das Live-Fenster ihn zeigt */
+.story-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.story-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  scale: 0 1;
+}
+
+.story-step h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.story-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.story-step > p {
+  margin: 12px 0 0;
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.story-step .checks {
+  align-content: start;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.story-step .checks li {
+  line-height: 1.5;
+}
+
+/* Der Textlink zur Demo folgt dichter auf die Schritte (sie enden ohnehin mit einer ruhigen Fläche) */
+.story + .section-more {
+  margin-top: 40px;
+}
+
+/* Gezeigter Schritt: Nummer in der Aktionsfarbe mit hellem Hof; erledigte Schritte: Balken voll */
+.story[data-shown="1"] .story-step:nth-child(1) .story-num,
+.story[data-shown="2"] .story-step:nth-child(2) .story-num,
+.story[data-shown="3"] .story-step:nth-child(3) .story-num {
+  background: var(--accent);
+  box-shadow: 0 0 0 5px var(--accent-soft);
+  color: var(--on-accent);
+}
+
+.story[data-shown="2"] .story-step:nth-child(1) .story-bar::after,
+.story[data-shown="3"] .story-step:nth-child(-n + 2) .story-bar::after {
+  scale: 1 1;
+}
+
+/* Bis 1199 px ist der Inhaltsbereich 936–1135 px breit: Telefon (Bildschirm 182 px, eigene Bilddateien) und Blatt etwas
+   kleiner, damit das Fenster nicht unter 570 px schrumpft und das Telefon nicht höher wird als das Fenster */
+@media (max-width: 1199px) {
+  .story {
+    --story-phone: 196px; /* Bildschirm 182 px = Bilddatei phone-schichten-…-182 */
+    --story-lap: 10px; /* das Fenster ist hier nur 570–690 px breit, sein Rand entsprechend schmaler */
+    --story-paper: 176px;
+    --story-tuck: 4px;
+  }
+
+  .story-steps {
+    column-gap: 28px;
+  }
+}
+
+/* Tablet: das Fenster über die ganze Breite (die Schrift bleibt lesbar), darunter links die Schritte untereinander,
+   rechts Telefon und Blatt */
+@media (max-width: 999px) {
+  .story {
+    --story-phone: 224px;
+    --story-paper: 210px;
+    --story-print: translate(-3%, -5%) rotate(-2deg);
+    grid-template-columns: minmax(0, 1fr) 248px;
+    column-gap: clamp(28px, 4vw, 48px);
+  }
+
+  .story::before {
+    inset: -4% -10% auto;
+    height: 60%;
+  }
+
+  .story-window {
+    grid-area: 1 / 1 / 2 / -1;
+  }
+
+  /* Rechts neben den Schritten: oben das Telefon (neben „Helfer tragen sich ein“), unten das Blatt (neben „Helferplan
+     drucken“) */
+  .story-phone {
+    grid-area: 2 / 2 / 3 / 3;
+    align-self: start;
+    justify-self: start;
+    margin: 64px 0 0;
+  }
+
+  .story-paper {
+    grid-area: 2 / 2 / 3 / 3;
+    align-self: end;
+    justify-self: start;
+    margin: 0 0 12px;
+  }
+
+  .story-steps {
+    grid-area: 2 / 1 / 3 / 2;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    gap: 40px;
+    margin-top: 56px;
+  }
+
+  /* Schritte untereinander (Tablet und Smartphone): Nummer links, eine Linie verbindet sie */
+  .story-step {
+    display: block;
+    grid-row: auto;
+    padding: 0 0 0 52px;
+  }
+
+  .story-step h3 {
+    display: block;
+    padding-top: 3px;
+  }
+
+  .story-num {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .story-bar {
+    top: 46px;
+    left: 16px;
+    right: auto;
+    bottom: -32px;
+    width: 2px;
+    height: auto;
+  }
+
+  .story-step:last-child .story-bar {
+    bottom: 0;
+  }
+
+  .story-bar::after {
+    --fill-from: 1 0;
+    transform-origin: 50% 0;
+    scale: 1 0;
+  }
+
+  .story[data-shown="2"] .story-step:nth-child(1) .story-bar::after,
+  .story[data-shown="3"] .story-step:nth-child(-n + 2) .story-bar::after {
+    scale: 1 1;
+  }
+}
+
+/* Smartphone: oben das Telefon (260 px Bildschirm wie die übrigen) mittig, darunter die Schritte, unter dem dritten das
+   Blatt – eingerückt wie der Text der Schritte */
 @media (max-width: 719px) {
-  .chapter-media > .plx:first-child {
+  .story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .story-window {
     display: none;
   }
 
-  .chapter-phone {
-    position: relative;
-    left: auto;
-    bottom: auto;
+  .story-phone {
+    grid-area: 1 / 1;
+    justify-self: center;
     width: min(280px, 72vw);
-    margin: 0 auto;
+    margin: 0;
+  }
+
+  .story-paper {
+    grid-area: 3 / 1;
+    justify-self: start;
+    width: min(220px, (100% - 52px) / 1.13); /* samt Stapel neben der Einrückung */
+    margin: 36px 0 0 52px;
+  }
+
+  .story::before {
+    inset: 0 -20% auto;
+    height: 50%;
+  }
+
+  .story-steps {
+    grid-area: 2 / 1;
+    gap: 32px;
+    margin-top: 48px;
   }
 }
 
@@ -7302,6 +7559,15 @@ html:not(.js) .nav ul a:hover {
     opacity: 1;
   }
 
+  /* Telefon im Kapitel Helferschichten: das Bild „vorher“ liegt genau über dem ruhigen Bild (zwischen Statusleiste und
+     Home-Balken); site.js setzt .is-live am Kapitel, sobald das Live-Fenster abspielt */
+  .js .story.is-live .phone-screen .live-layers {
+    position: absolute;
+    inset: 6.4% 0 3.6%;
+    display: block;
+    pointer-events: none;
+  }
+
   /* Zeiger: eine Ebene so groß wie das Bild – ihr translate in Prozent ist damit eine Stelle im Bild */
   .js .live-pointer {
     position: absolute;
@@ -7377,6 +7643,30 @@ html:not(.js) .nav ul a:hover {
   .js .live-keys kbd {
     min-width: 2.2em;
     font-size: clamp(0.72rem, 1.4vw, 0.95rem);
+  }
+
+  /* Kapitel Helferschichten: Der Balken des gezeigten Schritts füllt sich in der Zeit, die das Live-Fenster für ihn
+     braucht (--story-ms, aus dem Ablaufplan berechnet); die Nummer wechselt weich die Farbe */
+  .story-num {
+    transition:
+      background-color 0.4s var(--ease-out),
+      color 0.4s var(--ease-out),
+      box-shadow 0.4s var(--ease-out);
+  }
+
+  .story[data-shown="1"] .story-step:nth-child(1) .story-bar::after,
+  .story[data-shown="2"] .story-step:nth-child(2) .story-bar::after,
+  .story[data-shown="3"] .story-step:nth-child(3) .story-bar::after {
+    animation: story-fill var(--story-ms, 4s) linear both;
+  }
+
+  /* Nach dem Klick auf „Drucken“ schiebt sich das oberste Blatt hinter dem Fenster hervor (das zweite bleibt liegen) */
+  .story-paper img {
+    transition: transform 0.9s var(--ease-out);
+  }
+
+  .story.is-printed .story-paper img {
+    transform: var(--story-print);
   }
 
   /* Reiter: Die Fläche unter dem gewählten Reiter gleitet weich zum neuen (Wechsel der Themen: site.js). Bei der ersten
@@ -7613,21 +7903,17 @@ html:not(.js) .nav ul a:hover {
       }
     }
 
-    /* Bildschirmfotos wachsen beim Hereinscrollen auf volle Größe */
+    /* Bildschirmfotos wachsen beim Hereinscrollen auf volle Größe – im Kapitel Helferschichten von der linken Kante aus,
+       an der das Telefon anliegt (so bleibt die Überlappung gleich) */
     .spot-media .browser,
-    .chapter-media .browser {
+    .story-window .browser {
       animation: frame-in linear both;
       animation-timeline: view();
       animation-range: entry 0% cover 38%;
     }
 
-    /* Der gedruckte Helferplan dreht sich beim Scrollen gerade */
-    .paper.plx {
-      animation:
-        plx linear both,
-        paper-turn linear both;
-      animation-timeline: view(), view();
-      animation-range: cover 0% cover 100%, entry 0% cover 55%;
+    .story-window .browser {
+      transform-origin: 0 60%;
     }
 
     /* Sicherheit: Der Lichtschein der Fläche blendet beim Hereinscrollen auf wie bei den getönten Abschnitten (die Fläche
@@ -7742,6 +8028,18 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
+/* Füllung des Schrittbalkens: waagerecht (breit) bzw. senkrecht (Schritte untereinander: --fill-from, siehe „Kapitel
+   Helferschichten“) */
+@keyframes story-fill {
+  from {
+    scale: var(--fill-from, 0 1);
+  }
+
+  to {
+    scale: 1 1;
+  }
+}
+
 @keyframes frame-in {
   from {
     scale: 0.93;
@@ -7749,16 +8047,6 @@ html:not(.js) .nav ul a:hover {
 
   to {
     scale: 1;
-  }
-}
-
-@keyframes paper-turn {
-  from {
-    rotate: -8deg;
-  }
-
-  to {
-    rotate: -2deg;
   }
 }
 
@@ -7961,9 +8249,36 @@ html:not(.js) .nav ul a:hover {
 
   /* Absolut platzierte Telefone mit Prozentbreite und cqw-Maßen (Uhr, Symbole) lassen Chrome leere Seiten drucken –
      im Druck deshalb eine feste Breite (entspricht ungefähr der Druckbreite) */
-  .hero-phone,
-  .chapter-phone {
+  .hero-phone {
     width: 150px;
+  }
+
+  /* Helferschichten: die Schritte ohne Hervorhebung durch das Live-Fenster, das gedruckte Blatt an seinem Platz */
+  .story-bar::after {
+    display: none;
+  }
+
+  .story .story-num {
+    background: var(--accent-soft) !important;
+    box-shadow: inset 0 0 0 1px var(--accent-line) !important;
+    color: var(--accent) !important;
+  }
+
+  .story-paper img {
+    transform: none !important;
+  }
+
+  /* Die Punkte der Schritte stecken eine Ebene tiefer als die Kinder von .reveal: Häkchen und Zeilen auch dann zeigen,
+     wenn ein Schritt noch nicht ins Bild gescrollt war */
+  .story .reveal.is-pending .checks li,
+  .story .reveal.is-pending .tick {
+    opacity: 1 !important;
+    translate: none !important;
+    scale: none !important;
+  }
+
+  .story .reveal.is-pending .tick .icon {
+    stroke-dashoffset: 0 !important;
   }
 
   /* Vorführungen: Endlage ohne Bewegung, Bühne in natürlicher Höhe */
