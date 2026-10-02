@@ -58,6 +58,7 @@ import {
   nextEventCompare,
   staffingCompare,
 } from "../compare";
+import { DEFAULT_BLOCK_SIZE, initialRows, type BlockSize } from "../layout-prefs";
 import type { DashboardData } from "../service";
 import { sortByImportance, taskRank } from "../task-order";
 
@@ -70,11 +71,61 @@ const LIST_ROW =
   "-mx-(--card-spacing) px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
 
 /**
- * Größe einer Kennzahlenkarte im Kachelraster (`KpiCarousel` mit `layout="bento"`, ab 48 rem Inhaltsbreite (gut 840 px)): `hero` = die große
- * Mitglieder-Kachel (größere Zahl, große Grafik mit Monaten), `tall` = die hohe Kachel „Freie Helferplätze“ (Ring). Unterhalb
- * dieser Breite sehen alle Karten gleich aus (`regular`); die Größen gelten nur innerhalb des Rasters (Containerabfrage `kpis`).
+ * Rolle einer Kennzahlenkarte im Kachelraster (`KpiCarousel` mit `layout="bento"`, Breiten in `kpi-layout.ts`): `hero` = die große
+ * Mitglieder-Kachel (größere Zahl, große Grafik mit Monaten), `tall` = die hohe Kachel „Freie Helferplätze“ (Ring). Schmaler als
+ * das Raster sehen alle Karten gleich aus (`regular`); die Rollen gelten nur innerhalb des Rasters (Containerabfrage `kpis`).
  */
 type StatSize = "regular" | "hero" | "tall";
+
+/**
+ * Maße der Kennzahlenkarten je eigener Größe („Anpassen“, `BlockSize`): „Mittel“ ist der Standard und seit 02.10.2026 etwas
+ * kompakter als zuerst (auf Wunsch: „ein bisschen zu groß“) – kleinere Zahlen, flachere Grafiken, die Aufschlüsselung unter
+ * dem Ring entfällt. „Groß“ ist das ursprüngliche Kachelraster, „Klein“ eine schmale Reihe ohne Grafiken.
+ */
+const KPI_DENSITY: Record<
+  BlockSize,
+  {
+    content: string;
+    value: string;
+    heroValue: string;
+    chart: boolean;
+    area: string;
+    bars: string;
+    heroChart: string;
+    heroGap: string;
+  }
+> = {
+  s: {
+    content: "pt-4 pb-4",
+    value: "mt-2.5 text-3xl",
+    heroValue: "",
+    chart: false,
+    area: "",
+    bars: "",
+    heroChart: "",
+    heroGap: "",
+  },
+  m: {
+    content: "pt-4 pb-3.5",
+    value: "mt-3 text-4xl",
+    heroValue: "@bento/kpis:mt-4 @bento/kpis:text-6xl",
+    chart: true,
+    area: "h-14",
+    bars: "h-10",
+    heroChart: "@bento/kpis:min-h-24",
+    heroGap: "@bento/kpis:pt-4",
+  },
+  l: {
+    content: "pt-5 pb-4",
+    value: "mt-4 text-5xl",
+    heroValue: "@bento/kpis:mt-6 @bento/kpis:text-7xl",
+    chart: true,
+    area: "h-16",
+    bars: "h-12",
+    heroChart: "@bento/kpis:min-h-32",
+    heroGap: "@bento/kpis:pt-6",
+  },
+};
 
 /**
  * Vergleichssatz auf der farbigen Karte: Neutrales als weißer Text; was Aufmerksamkeit braucht, als helles Schild mit dunkler
@@ -122,7 +173,7 @@ function KpiValue({ children, className }: { children: React.ReactNode; classNam
     <p
       data-slot="kpi-value"
       className={cn(
-        "mt-4 text-5xl leading-none font-extrabold tracking-[-0.035em] tabular-nums [text-shadow:0_2px_12px_rgb(0_0_0/0.12)]",
+        "leading-none font-extrabold tracking-[-0.035em] tabular-nums [text-shadow:0_2px_12px_rgb(0_0_0/0.12)]",
         className,
       )}
     >
@@ -156,12 +207,14 @@ function KpiShell({
   accent,
   href,
   icon,
+  density,
   children,
 }: {
   label: string;
   accent: KpiAccent;
   href?: string;
   icon: React.ReactNode;
+  density: BlockSize;
   children: React.ReactNode;
 }) {
   const colors = KPI_ACCENT[accent];
@@ -185,7 +238,7 @@ function KpiShell({
       />
       {/* Spalte über die volle Kartenhöhe: Die Grafik rückt an den unteren Rand (`mt-auto`), damit sie bei allen Karten einer
           Reihe auf einer Linie liegt – auch wenn ein Vergleich umbricht. */}
-      <CardContent className="flex flex-1 flex-col px-5 pt-5 pb-4">
+      <CardContent className={cn("flex flex-1 flex-col px-5", KPI_DENSITY[density].content)}>
         <div className="flex items-start gap-2.5">
           <span
             className={cn(
@@ -247,6 +300,7 @@ export function StatCard({
   trendTitle,
   delta,
   size = "regular",
+  density = DEFAULT_BLOCK_SIZE,
 }: {
   label: string;
   /** Farbe des Bereichs (Mitglieder blau, Termine violett, Helferplätze grün, Stunden orange). */
@@ -271,13 +325,16 @@ export function StatCard({
   /** … und die Veränderung als kleines Schild neben der Zahl („+3“, „±0“). */
   delta?: string;
   size?: StatSize;
+  /** Eigene Größe der Kennzahlen („Anpassen“): Klein ohne Grafik, Mittel (Standard) kompakt, Groß wie das volle Raster. */
+  density?: BlockSize;
 }) {
   const hero = size === "hero";
-  const chart = trend && trend.length > 1;
+  const dims = KPI_DENSITY[density];
+  const chart = dims.chart && trend && trend.length > 1;
   return (
-    <KpiShell label={label} accent={accent} href={href} icon={icon}>
+    <KpiShell label={label} accent={accent} href={href} icon={icon} density={density}>
       <div className="flex items-end gap-3">
-        <KpiValue className={cn(hero && "@bento/kpis:mt-6 @bento/kpis:text-7xl")}>{value}</KpiValue>
+        <KpiValue className={cn(dims.value, hero && dims.heroValue)}>{value}</KpiValue>
         {/* Wiederholt den Vergleichssatz in Kurzform (wie im Entwurf 2) – für Screenreader ausgeblendet. */}
         {hero && delta && (
           <span
@@ -295,7 +352,7 @@ export function StatCard({
         <div
           className={cn(
             "mt-auto flex flex-col pt-4",
-            hero && "@bento/kpis:flex-1 @bento/kpis:pt-6",
+            hero && cn("@bento/kpis:flex-1", dims.heroGap),
           )}
         >
           {hero && trendTitle && (
@@ -307,14 +364,14 @@ export function StatCard({
             </p>
           )}
           <Sparkline
-            values={trend}
+            values={trend!}
             variant={trendVariant}
             highlight={trendHighlight}
             gridClassName={hero ? "hidden @bento/kpis:inline" : undefined}
             className={cn(
               // Die Fläche reicht bis an beide Kartenränder (randlos), Balken bleiben im Innenabstand.
-              trendVariant === "area" && "-mx-5",
-              hero && "@bento/kpis:h-auto @bento/kpis:min-h-32 @bento/kpis:flex-1",
+              trendVariant === "area" ? cn("-mx-5", dims.area) : dims.bars,
+              hero && cn("@bento/kpis:h-auto @bento/kpis:flex-1", dims.heroChart),
             )}
           />
           {trendLabels ? (
@@ -349,6 +406,34 @@ export function StatCard({
   );
 }
 
+/**
+ * Maße der Inhaltskarten je eigener Größe („Anpassen“). „Mittel“ (Standard) ist seit 02.10.2026 etwas enger als zuerst
+ * (Innenabstand 20 statt 24 px, auf Wunsch „ein bisschen zu groß“); „Groß“ hat die ursprüngliche Luft.
+ */
+const WIDGET_SIZE: Record<
+  BlockSize,
+  { card: string; chip: string; title: string; content: string }
+> = {
+  s: {
+    card: "[--card-spacing:--spacing(4)]",
+    chip: "size-8 rounded-[0.7rem] [&_svg]:size-4",
+    title: "text-base",
+    content: "gap-3",
+  },
+  m: {
+    card: "[--card-spacing:--spacing(5)]",
+    chip: "size-10 rounded-[0.85rem] [&_svg]:size-5",
+    title: "",
+    content: "gap-4",
+  },
+  l: {
+    card: "[--card-spacing:--spacing(6)]",
+    chip: "size-10 rounded-[0.85rem] [&_svg]:size-5",
+    title: "",
+    content: "gap-4",
+  },
+};
+
 export function Widget({
   id,
   title,
@@ -359,6 +444,7 @@ export function Widget({
   more,
   action,
   emphasis = false,
+  size = DEFAULT_BLOCK_SIZE,
 }: {
   id: string;
   title: string;
@@ -371,13 +457,17 @@ export function Widget({
   action?: React.ReactNode;
   /** Hebt die Karte als „hier ist etwas zu tun“ hervor (kräftiger Rahmen, gefüllte Symbolfläche). */
   emphasis?: boolean;
+  /** Eigene Größe („Anpassen“): Klein enger und mit kleinerem Kopf, Groß mit mehr Luft (und über die volle Breite, `CardGrid`). */
+  size?: BlockSize;
 }) {
+  const dims = WIDGET_SIZE[size];
   return (
     <section aria-labelledby={id} className="h-full">
       {/* Kachel wie im Entwurf 2: große Rundung, weicher Schein in der Farbe des Bereichs, etwas mehr Innenabstand. */}
       <Card
         className={cn(
-          "h-full rounded-[1.75rem] [--card-spacing:--spacing(6)] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          "h-full rounded-[1.75rem] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          dims.card,
           TILE_ACCENT[accent].surface,
           emphasis && "ring-2 ring-primary/50 dark:ring-primary/60",
         )}
@@ -386,7 +476,8 @@ export function Widget({
           <div className="flex items-center gap-3">
             <span
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] [&_svg]:size-5",
+                "flex shrink-0 items-center justify-center",
+                dims.chip,
                 emphasis ? "bg-primary text-primary-foreground" : TILE_ACCENT[accent].chip,
               )}
               aria-hidden="true"
@@ -395,7 +486,7 @@ export function Widget({
             </span>
             <div className="min-w-0 flex-1">
               {/* Ebene 3: Die Gruppen des Dashboards („Für dich“, „Anstehend“ …) tragen die Ebene-2-Überschriften. */}
-              <CardTitle id={id} role="heading" aria-level={3}>
+              <CardTitle id={id} role="heading" aria-level={3} className={dims.title}>
                 {title}
               </CardTitle>
               {description && <CardDescription className="mt-0.5">{description}</CardDescription>}
@@ -403,7 +494,7 @@ export function Widget({
             {action && <div className="shrink-0 self-start">{action}</div>}
           </div>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col gap-4">
+        <CardContent className={cn("flex flex-1 flex-col", dims.content)}>
           {children}
           {more && (
             <Link
@@ -500,10 +591,17 @@ export function StaffingWarnings({
   );
 }
 
-export function UpcomingEvents({ events }: { events: NonNullable<DashboardData["events"]> }) {
+export function UpcomingEvents({
+  events,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  events: NonNullable<DashboardData["events"]>;
+  size?: BlockSize;
+}) {
   return (
     <Widget
       id="w-termine"
+      size={size}
       title="Kommende Veranstaltungen"
       icon={<AREA_ICON.veranstaltungen />}
       accent="violet"
@@ -514,7 +612,11 @@ export function UpcomingEvents({ events }: { events: NonNullable<DashboardData["
           Keine kommenden Veranstaltungen – neue erscheinen hier, sobald sie geplant sind.
         </Empty>
       ) : (
-        <ExpandableList className="divide-y" initial={3} itemNoun="weitere Termine">
+        <ExpandableList
+          className="divide-y"
+          initial={initialRows(size, 3)}
+          itemNoun="weitere Termine"
+        >
           {events.upcoming.map((event) => (
             <li
               key={event.id}
@@ -548,10 +650,17 @@ export function UpcomingEvents({ events }: { events: NonNullable<DashboardData["
   );
 }
 
-export function MyShifts({ shifts }: { shifts: NonNullable<DashboardData["shifts"]> }) {
+export function MyShifts({
+  shifts,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  shifts: NonNullable<DashboardData["shifts"]>;
+  size?: BlockSize;
+}) {
   return (
     <Widget
       id="w-meine-schichten"
+      size={size}
       title="Meine Einsätze"
       icon={<AREA_ICON.einsaetze />}
       accent="emerald"
@@ -562,7 +671,11 @@ export function MyShifts({ shifts }: { shifts: NonNullable<DashboardData["shifts
           Du bist aktuell für keine Schicht eingetragen.
         </Empty>
       ) : (
-        <ExpandableList className="divide-y" initial={3} itemNoun="weitere Einsätze">
+        <ExpandableList
+          className="divide-y"
+          initial={initialRows(size, 3)}
+          itemNoun="weitere Einsätze"
+        >
           {shifts.mine.map((assignment) => (
             <li
               key={assignment.assignmentId}
@@ -587,10 +700,17 @@ export function MyShifts({ shifts }: { shifts: NonNullable<DashboardData["shifts
   );
 }
 
-export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shifts"]> }) {
+export function OpenShifts({
+  shifts,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  shifts: NonNullable<DashboardData["shifts"]>;
+  size?: BlockSize;
+}) {
   return (
     <Widget
       id="w-offene-schichten"
+      size={size}
       title="Hier werden Helfer gesucht"
       icon={<AREA_ICON.helferplanung />}
       accent="amber"
@@ -601,7 +721,11 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
           Im Moment sind alle Schichten besetzt. Danke!
         </Empty>
       ) : (
-        <ExpandableList className="divide-y" initial={3} itemNoun="weitere Schichten">
+        <ExpandableList
+          className="divide-y"
+          initial={initialRows(size, 3)}
+          itemNoun="weitere Schichten"
+        >
           {shifts.open.map((shift) => (
             <li
               key={shift.shiftId}
@@ -653,12 +777,19 @@ type OpenInvoiceRow = NonNullable<DashboardData["payments"]>["items"][number];
  * rötlich, heute/morgen fällige bernsteinfarben, der Grund steht immer auch als Text da. „Bezahlt“ (nur mit
  * `finance:manage`) markiert eine Rechnung als bezahlt; die Meldung bietet „Rückgängig“ an.
  */
-export function OpenPayments({ payments }: { payments: NonNullable<DashboardData["payments"]> }) {
+export function OpenPayments({
+  payments,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  payments: NonNullable<DashboardData["payments"]>;
+  size?: BlockSize;
+}) {
   const soon = (invoice: OpenInvoiceRow) =>
     !invoice.overdue && invoice.dueInDays !== null && invoice.dueInDays <= 1;
   return (
     <Widget
       id="w-offene-zahlungen"
+      size={size}
       title="Offene Zahlungen"
       icon={<AREA_ICON.finanzen />}
       accent="teal"
@@ -693,7 +824,7 @@ export function OpenPayments({ payments }: { payments: NonNullable<DashboardData
           <div className="grid min-w-0 gap-3">
             <ExpandableList
               className="grid gap-2.5"
-              initial={3}
+              initial={initialRows(size, 3)}
               itemNoun={payments.items.length === 4 ? "weitere Rechnung" : "weitere Rechnungen"}
             >
               {payments.items.map((invoice) => {
@@ -779,9 +910,11 @@ function taskRowTone(task: MyTask): string {
 export function MyTasks({
   tasks,
   organizer,
+  size = DEFAULT_BLOCK_SIZE,
 }: {
   tasks: NonNullable<DashboardData["tasks"]>;
   organizer: boolean;
+  size?: BlockSize;
 }) {
   const sorted = sortByImportance(tasks.mine);
   // Hervorhebung nur, wenn wirklich etwas drängt (überfällig/dringend/hoch) – sonst verliert sie ihre Bedeutung.
@@ -789,6 +922,7 @@ export function MyTasks({
   return (
     <Widget
       id="w-aufgaben"
+      size={size}
       title="Meine Aufgaben"
       icon={<AREA_ICON.aufgaben />}
       accent="blue"
@@ -805,7 +939,11 @@ export function MyTasks({
           Dir sind keine offenen Aufgaben zugewiesen.
         </Empty>
       ) : (
-        <ExpandableList className="grid gap-2.5" initial={3} itemNoun="weitere Aufgaben">
+        <ExpandableList
+          className="grid gap-2.5"
+          initial={initialRows(size, 3)}
+          itemNoun="weitere Aufgaben"
+        >
           {sorted.map((task) => (
             <li
               key={task.id}
@@ -849,12 +987,15 @@ export function MyTasks({
 
 export function LatestNotifications({
   notifications,
+  size = DEFAULT_BLOCK_SIZE,
 }: {
   notifications: DashboardData["notifications"];
+  size?: BlockSize;
 }) {
   return (
     <Widget
       id="w-benachrichtigungen"
+      size={size}
       title="Benachrichtigungen"
       icon={<AREA_ICON.benachrichtigungen />}
       accent="amber"
@@ -865,7 +1006,7 @@ export function LatestNotifications({
           Neue Benachrichtigungen erscheinen hier.
         </Empty>
       ) : (
-        <ExpandableList className="grid gap-2" initial={3} itemNoun="weitere">
+        <ExpandableList className="grid gap-2" initial={initialRows(size, 3)} itemNoun="weitere">
           {notifications.latest.map((n) => (
             <li key={n.id}>
               <Link
@@ -897,10 +1038,17 @@ export function LatestNotifications({
   );
 }
 
-export function Birthdays({ birthdays }: { birthdays: NonNullable<DashboardData["birthdays"]> }) {
+export function Birthdays({
+  birthdays,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  birthdays: NonNullable<DashboardData["birthdays"]>;
+  size?: BlockSize;
+}) {
   return (
     <Widget
       id="w-geburtstage"
+      size={size}
       title="Geburtstage"
       icon={<CakeIcon />}
       accent="rose"
@@ -911,7 +1059,7 @@ export function Birthdays({ birthdays }: { birthdays: NonNullable<DashboardData[
           Niemand feiert in diesem Zeitraum.
         </Empty>
       ) : (
-        <ExpandableList className="divide-y" initial={3} itemNoun="weitere">
+        <ExpandableList className="divide-y" initial={initialRows(size, 3)} itemNoun="weitere">
           {birthdays.map((b) => (
             <li
               key={b.memberId}
@@ -944,10 +1092,17 @@ const actorName = (actor: NonNullable<DashboardData["activity"]>[number]["actor"
   actor.kind === "USER" ? actor.name : actor.kind === "SYSTEM" ? "System" : "Unbekannt";
 
 /** Die letzten Ereignisse im Verein – nur für Rollen mit Zugriff auf das Änderungsprotokoll (Anmeldungen zählen nicht). */
-export function RecentActivity({ entries }: { entries: NonNullable<DashboardData["activity"]> }) {
+export function RecentActivity({
+  entries,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  entries: NonNullable<DashboardData["activity"]>;
+  size?: BlockSize;
+}) {
   return (
     <Widget
       id="w-aktivitaeten"
+      size={size}
       title="Letzte Aktivitäten"
       icon={<AREA_ICON.protokoll />}
       accent="slate"
@@ -958,7 +1113,7 @@ export function RecentActivity({ entries }: { entries: NonNullable<DashboardData
           Änderungen im Verein erscheinen hier.
         </Empty>
       ) : (
-        <ExpandableList className="divide-y" initial={4} itemNoun="weitere">
+        <ExpandableList className="divide-y" initial={initialRows(size, 4)} itemNoun="weitere">
           {entries.map((entry) => {
             const label = auditActionLabel(entry.action);
             // Der Text dahinter nennt Näheres (z. B. den Namen); wiederholt er nur die Überschrift, entfällt er.
@@ -995,9 +1150,11 @@ function signedDelta(trend: readonly number[]): string | undefined {
 export function MembersStat({
   members,
   size,
+  density,
 }: {
   members: NonNullable<DashboardData["members"]>;
   size?: StatSize;
+  density?: BlockSize;
 }) {
   return (
     <StatCard
@@ -1013,13 +1170,21 @@ export function MembersStat({
       trendTitle={`Letzte ${members.trend.length} Monate`}
       delta={signedDelta(members.trend)}
       size={size}
+      density={density}
     />
   );
 }
 
-export function NextEventsStat({ events }: { events: NonNullable<DashboardData["events"]> }) {
+export function NextEventsStat({
+  events,
+  density,
+}: {
+  events: NonNullable<DashboardData["events"]>;
+  density?: BlockSize;
+}) {
   return (
     <StatCard
+      density={density}
       label="Termine in 30 Tagen"
       accent="violet"
       value={events.countNext30Days}
@@ -1063,10 +1228,14 @@ const RING_TONE: Record<Tone, { ring?: string; text: string; swatch: string }> =
 export function FreeShiftsStat({
   shifts,
   size,
+  density = DEFAULT_BLOCK_SIZE,
 }: {
   shifts: NonNullable<DashboardData["shifts"]>;
   size?: StatSize;
+  density?: BlockSize;
 }) {
+  const dims = KPI_DENSITY[density];
+  const big = density === "l";
   const { filled, required } = shifts.staffing;
   const compare = staffingCompare(filled, required);
   const tall = size === "tall";
@@ -1078,21 +1247,31 @@ export function FreeShiftsStat({
         ? 100
         : Math.min(99, Math.max(1, Math.round((filled / required) * 100)));
   // Drei- und vierstellige Zahlen passen sonst nicht in die Öffnung des Rings.
-  const ringNumber =
-    shifts.freeSpots >= 1000 ? "text-4xl" : shifts.freeSpots >= 100 ? "text-5xl" : "text-6xl";
+  const ringNumber = big
+    ? shifts.freeSpots >= 1000
+      ? "text-4xl"
+      : shifts.freeSpots >= 100
+        ? "text-5xl"
+        : "text-6xl"
+    : shifts.freeSpots >= 1000
+      ? "text-3xl"
+      : shifts.freeSpots >= 100
+        ? "text-4xl"
+        : "text-5xl";
   return (
     <KpiShell
       label="Freie Helferplätze"
       accent="emerald"
       href="/helferplanung"
       icon={<AREA_ICON.helferplanung />}
+      density={density}
     >
       <div className={cn("flex flex-1 flex-col", tall && "@bento/kpis:hidden")}>
-        <KpiValue>{shifts.freeSpots}</KpiValue>
+        <KpiValue className={dims.value}>{shifts.freeSpots}</KpiValue>
         <CompareLine compare={compare} className="mt-2" />
-        {required > 0 && (
+        {required > 0 && dims.chart && (
           <div className="mt-auto pt-4">
-            <FillSegments filled={filled} total={required} />
+            <FillSegments filled={filled} total={required} className={big ? "h-7" : "h-6"} />
             <KpiCaption caption={["leer", "alle besetzt"]} />
           </div>
         )}
@@ -1105,7 +1284,7 @@ export function FreeShiftsStat({
               filled={filled}
               total={required}
               fillClassName={RING_TONE[compare.tone].ring}
-              className="w-full max-w-44"
+              className={cn("w-full", big ? "max-w-44" : "max-w-36")}
             >
               <p
                 data-slot="kpi-value"
@@ -1137,8 +1316,8 @@ export function FreeShiftsStat({
               {compare.text}
             </p>
           </div>
-          {required > 0 && (
-            // Wiederholt nur, was Zahl und Vergleich schon sagen – deshalb für Screenreader ausgeblendet.
+          {required > 0 && big && (
+            // Wiederholt nur, was Zahl und Vergleich schon sagen – deshalb für Screenreader ausgeblendet; nur bei „Groß“.
             <dl
               aria-hidden="true"
               className="grid w-full gap-2 rounded-2xl bg-black/15 p-3.5 text-sm ring-1 ring-white/10"
@@ -1181,9 +1360,16 @@ function compactHours(minutes: number) {
   );
 }
 
-export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shifts"]>["hours"] }) {
+export function HelperHours({
+  hours,
+  density,
+}: {
+  hours: NonNullable<DashboardData["shifts"]>["hours"];
+  density?: BlockSize;
+}) {
   return (
     <StatCard
+      density={density}
       label={
         hours.scope === "ALL" ? `Helferstunden ${hours.year}` : `Meine Helferstunden ${hours.year}`
       }

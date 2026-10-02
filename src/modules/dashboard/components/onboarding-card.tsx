@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRightIcon, CircleCheckIcon, CircleIcon, RocketIcon } from "lucide-react";
+import type { BlockSize } from "../layout-prefs";
 import type { OnboardingStep } from "../onboarding";
 import { HideBlockButton } from "./hide-block-button";
 import { Widget } from "./widgets";
@@ -9,12 +10,20 @@ import { Widget } from "./widgets";
  * Zeile mit Häkchen; darüber der Fortschritt. So bleibt die Karte niedrig – die Kennzahlen darunter rücken ins Bild – und
  * zeigt auf einen Blick, was als Nächstes zu tun ist.
  */
-export function OnboardingCard({ steps }: { steps: OnboardingStep[] }) {
+export function OnboardingCard({
+  steps,
+  size,
+}: {
+  steps: OnboardingStep[];
+  /** Eigene Größe der Karte („Anpassen“). */
+  size?: BlockSize;
+}) {
   const done = steps.filter((step) => step.done);
   const open = steps.filter((step) => !step.done);
   return (
     <Widget
       id="w-erste-schritte"
+      size={size}
       title="Erste Schritte"
       icon={<RocketIcon />}
       accent="blue"

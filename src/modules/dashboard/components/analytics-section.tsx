@@ -9,6 +9,7 @@ import { TILE_ACCENT } from "@/components/shared/accent";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { cn } from "@/lib/utils";
 import type { AnalyticsData } from "@/lib/charts/types";
+import type { BlockSize } from "../layout-prefs";
 import { AnalyticsPanel } from "./analytics-panel";
 
 /**
@@ -19,10 +20,13 @@ import { AnalyticsPanel } from "./analytics-panel";
 export function AnalyticsSection({
   data,
   description,
+  size = "m",
 }: {
   data: AnalyticsData;
   /** Untertitel der Karte – nennt, worum es im jeweiligen Dashboard-Reiter geht. */
   description: string;
+  /** Eigene Größe („Anpassen“): Innenabstand wie die übrigen Karten, Diagramme flacher oder höher. */
+  size?: BlockSize;
 }) {
   const [open, setOpen] = useState(true);
   return (
@@ -30,7 +34,12 @@ export function AnalyticsSection({
       {/* Kachel wie die übrigen Karten des Dashboards (große Rundung, weicher Schein in Blau). */}
       <Card
         className={cn(
-          "rounded-[1.75rem] [--card-spacing:--spacing(6)] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          "rounded-[1.75rem] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          size === "s"
+            ? "[--card-spacing:--spacing(4)]"
+            : size === "l"
+              ? "[--card-spacing:--spacing(6)]"
+              : "[--card-spacing:--spacing(5)]",
           TILE_ACCENT.blue.surface,
         )}
       >
@@ -71,7 +80,7 @@ export function AnalyticsSection({
           </CardHeader>
           <CollapsibleContent>
             <CardContent>
-              <AnalyticsPanel data={data} />
+              <AnalyticsPanel data={data} size={size} />
             </CardContent>
           </CollapsibleContent>
         </Collapsible>

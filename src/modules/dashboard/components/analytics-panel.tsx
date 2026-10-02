@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import {
   ChartAreaIcon,
   ChartBarIcon,
@@ -27,6 +27,7 @@ import type {
   TimeDataset,
   TimeSeriesView,
 } from "@/lib/charts/types";
+import type { BlockSize } from "../layout-prefs";
 
 interface Choice {
   type?: string;
@@ -165,6 +166,17 @@ function TimeSummary({ dataset, view }: { dataset: TimeDataset; view: TimeSeries
   );
 }
 
+/**
+ * Höhe der Verlaufsdiagramme (schmal, breit) nach der eigenen Größe der Karte „Auswertungen“ („Anpassen“): klein flacher,
+ * Mittel (Standard) etwas flacher als zuerst, groß wie bisher.
+ */
+const CHART_HEIGHTS: Record<BlockSize, readonly [number, number]> = {
+  s: [180, 200],
+  m: [220, 260],
+  l: [240, 300],
+};
+const ChartSize = createContext<BlockSize>("m");
+
 function DatasetView({
   dataset,
   choice,
@@ -174,6 +186,7 @@ function DatasetView({
   choice: Choice;
   table: boolean;
 }) {
+  const heights = CHART_HEIGHTS[useContext(ChartSize)];
   const type =
     choice.type && (dataset.types as string[]).includes(choice.type)
       ? choice.type
@@ -208,6 +221,7 @@ function DatasetView({
         <TimeSummary dataset={dataset} view={view} />
         {dataset.series.length > 1 && <Legend series={dataset.series} />}
         <TimeChart
+          heights={heights}
           type={type as "bar" | "line" | "area"}
           title={dataset.title}
           rangeLabel={rangeLabel}
@@ -334,7 +348,15 @@ function TopicView({
  * Themen als Reiter, darunter Ansicht, Diagrammtyp und Zeitraum wählbar. Nur das gewählte Diagramm wird gezeichnet – das hält
  * die Seite ruhig. Auswahlen bleiben je Diagramm erhalten, solange die Seite offen ist.
  */
-export function AnalyticsPanel({ data }: { data: AnalyticsData }) {
+export function AnalyticsPanel({ data, size = "m" }: { data: AnalyticsData; size?: BlockSize }) {
+  return (
+    <ChartSize.Provider value={size}>
+      <AnalyticsTopics data={data} />
+    </ChartSize.Provider>
+  );
+}
+
+function AnalyticsTopics({ data }: { data: AnalyticsData }) {
   const [topicId, setTopicId] = useState<AnalyticsTopicId>(data.topics[0]!.id);
   const [datasetByTopic, setDatasetByTopic] = useState<Partial<Record<AnalyticsTopicId, string>>>(
     {},

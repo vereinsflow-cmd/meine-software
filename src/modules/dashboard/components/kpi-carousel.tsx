@@ -2,7 +2,8 @@
 
 import { Children, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { BENTO_CELL, BENTO_GRID, GRID_COLUMNS } from "../kpi-layout";
+import type { BlockSize } from "../layout-prefs";
+import { BENTO_CELL, BENTO_GRID, GRID_COLUMNS, SMALL_COLUMNS } from "../kpi-layout";
 
 /**
  * Kennzahlen: Ab Tablet-Breite (`sm`) ein Raster, auf dem Smartphone ein Karussell – die Karten liegen nebeneinander und
@@ -12,19 +13,23 @@ import { BENTO_CELL, BENTO_GRID, GRID_COLUMNS } from "../kpi-layout";
  * Die Karten selbst bleiben unverändert (Links mit Zahl und Hinweis) – das Karussell ordnet sie nur an.
 
  *
- * `layout="bento"`: das Kachelraster wie im Entwurf 2 (Aufteilung und Breiten: `modules/dashboard/kpi-layout.ts`).
+ * `layout="bento"`: das Kachelraster wie im Entwurf 2 (Aufteilung und Breiten: `modules/dashboard/kpi-layout.ts`). `size`: die
+ * eigene Größe der Kennzahlen („Anpassen“) – „Klein“ ohne Kachelraster als schmale Reihe, am Handy zwei Karten nebeneinander.
  */
 export function KpiCarousel({
   children,
   label = "Kennzahlen",
   layout = "grid",
+  size = "m",
 }: {
   children: React.ReactNode;
   label?: string;
   layout?: "grid" | "bento";
+  size?: BlockSize;
 }) {
   const items = Children.toArray(children);
-  const bento = layout === "bento" && items.length === BENTO_CELL.length;
+  const bento = layout === "bento" && size !== "s" && items.length === BENTO_CELL.length;
+  const columns = size === "s" ? SMALL_COLUMNS : GRID_COLUMNS;
   const scroller = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
 
@@ -49,7 +54,11 @@ export function KpiCarousel({
 
   return (
     // `min-w-0`: Als Element eines Rasters darf das Karussell seine Spalte sonst auf die Breite aller Karten aufweiten.
-    <div data-layout={bento ? "bento" : "grid"} className="group/kpis @container/kpis min-w-0">
+    <div
+      data-layout={bento ? "bento" : "grid"}
+      data-size={size}
+      className="group/kpis @container/kpis min-w-0"
+    >
       <div
         ref={scroller}
         role="group"
@@ -63,13 +72,17 @@ export function KpiCarousel({
           "-mx-4 -mt-1 -mb-10 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pt-1 pb-10 [&::-webkit-scrollbar]:hidden",
           // ab `sm`: Raster aus zwei Spalten; breiter das Kachelraster bzw. mehr Spalten (`kpi-layout.ts`)
           "sm:mx-0 sm:my-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:p-0",
-          bento ? BENTO_GRID : GRID_COLUMNS[Math.min(items.length, 4)],
+          bento ? BENTO_GRID[size === "l" ? "l" : "m"] : columns[Math.min(items.length, 4)],
         )}
       >
         {items.map((item, index) => (
           <div
             key={index}
-            className={cn("w-[78%] shrink-0 snap-start sm:w-auto", bento && BENTO_CELL[index])}
+            className={cn(
+              "shrink-0 snap-start sm:w-auto",
+              size === "s" ? "w-[46%]" : "w-[78%]",
+              bento && BENTO_CELL[index],
+            )}
           >
             {item}
           </div>

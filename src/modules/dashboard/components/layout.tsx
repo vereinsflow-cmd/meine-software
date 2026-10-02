@@ -1,5 +1,3 @@
-import { Children, isValidElement } from "react";
-
 /**
  * Bausteine für den Inhalt der Dashboard-Reiter (ohne Zustand, laufen im Server).
  */
@@ -36,18 +34,39 @@ export function Group({
  * Karten einer Gruppe: eine allein füllt die Breite, zwei oder mehr laufen ab mittlerer Breite in zwei Spalten. Es sind
  * CSS-Spalten statt eines Zeilenrasters – jede Karte behält ihre natürliche Höhe und wird nicht auf die der Nachbarin
  * gedehnt (wo sie dann leer wirken würde); eine Karte wird nie zwischen zwei Spalten geteilt.
+ *
+ * Seit 02.10.2026 lässt sich jede Karte selbst auf „Groß“ stellen („Anpassen“, `wide`): Sie steht dann über die volle Breite,
+ * an ihrem Platz in der Reihenfolge. Die Karten davor und danach bilden je einen eigenen Abschnitt – steht dort nur eine,
+ * füllt auch sie die Breite (statt einer halb leeren Zeile).
  */
-export function CardGrid({ children }: { children: React.ReactNode }) {
-  const items = Children.toArray(children);
+export function CardGrid({
+  items,
+}: {
+  items: readonly { id: string; node: React.ReactNode; wide?: boolean }[];
+}) {
   if (items.length === 0) return null;
+  const runs: (typeof items)[number][][] = [];
+  for (const item of items) {
+    const last = runs.at(-1);
+    if (item.wide || !last || last[0]!.wide) runs.push([item]);
+    else last.push(item);
+  }
   return (
-    <div className={items.length > 1 ? "-mb-7 md:columns-2 md:gap-x-7" : "-mb-7"}>
-      {items.map((item, index) => (
+    <div className="grid gap-7">
+      {runs.map((run) => (
         <div
-          key={isValidElement(item) && item.key !== null ? item.key : index}
-          className="mb-7 break-inside-avoid"
+          key={run[0]!.id}
+          className={run.length > 1 ? "-mb-7 md:columns-2 md:gap-x-7" : undefined}
         >
-          {item}
+          {run.map((item) => (
+            <div
+              key={item.id}
+              data-block={item.id}
+              className={run.length > 1 ? "mb-7 break-inside-avoid" : undefined}
+            >
+              {item.node}
+            </div>
+          ))}
         </div>
       ))}
     </div>

@@ -23,8 +23,8 @@ export default function DashboardLoading() {
         <div
           className={cn(
             "grid gap-5 sm:grid-cols-2",
-            BENTO_GRID,
-            "@bento/kpis:grid-rows-[repeat(2,minmax(15rem,1fr))]",
+            BENTO_GRID.m,
+            "@bento/kpis:grid-rows-[repeat(2,minmax(12.5rem,1fr))]",
           )}
         >
           {BENTO_CELL.map((cell, index) => (

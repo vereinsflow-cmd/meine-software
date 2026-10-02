@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AnalyticsData, AnalyticsTopicId } from "@/lib/charts/types";
+import type { BlockSize } from "../layout-prefs";
 import { AnalyticsSection } from "./analytics-section";
 
 /**
@@ -13,15 +14,18 @@ export async function Analytics({
   data,
   topics,
   description,
+  size,
 }: {
   data: Promise<AnalyticsData>;
   topics: AnalyticsTopicId[];
   description: string;
+  /** Eigene Größe der Karte („Anpassen“). */
+  size?: BlockSize;
 }) {
   const all = await data;
   const chosen = all.topics.filter((topic) => topics.includes(topic.id));
   return chosen.length > 0 ? (
-    <AnalyticsSection data={{ topics: chosen }} description={description} />
+    <AnalyticsSection data={{ topics: chosen }} description={description} size={size} />
   ) : null;
 }
 
