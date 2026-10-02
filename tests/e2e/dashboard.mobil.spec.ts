@@ -293,7 +293,7 @@ test.describe("Dashboard – Kennzahlen als Karussell", () => {
     );
   });
 
-  test("Ab Tablet-Breite (820 px) ein Raster wie bisher: kein Karussell, keine Punkte", async ({
+  test("Ab Tablet-Breite (820 px) ein Raster aus zwei Spalten: kein Karussell, keine Punkte, noch kein Kachelraster", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 820, height: 1180 });
@@ -307,7 +307,13 @@ test.describe("Dashboard – Kennzahlen als Karussell", () => {
     expect(scrollable).toBe(false);
     const one = (await scroller.getByRole("link").nth(0).boundingBox())!;
     const two = (await scroller.getByRole("link").nth(1).boundingBox())!;
-    expect(Math.abs(one.y - two.y)).toBeLessThan(2); // zwei Spalten
+    expect(Math.abs(one.y - two.y)).toBeLessThan(2);
+    // genau zwei Spalten (das Kachelraster beginnt erst bei 49 rem Inhaltsbreite)
+    expect(
+      await scroller.evaluate(
+        (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
+      ),
+    ).toBe(2);
   });
 });
 

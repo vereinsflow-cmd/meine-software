@@ -69,7 +69,8 @@ function ownsGesture(target: Element, boundary: Element): boolean {
  * erscheint er sofort. Die Adresse wird per `replaceState` nachgeführt (`?tab=mitglieder`): verlinkbar, Neuladen bleibt darauf,
  * „Zurück“ verlässt das Dashboard statt durch alle Bereiche zu laufen. Wischen ist nur eine Zugabe – jede Funktion geht auch ohne.
  *
- * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen; ein Strich gleitet unter den aktiven Reiter. Auf schmalen
+ * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen. Seit 02.10.2026 (Entwürfe 2 und 5) ist sie eine runde Schiene; eine
+ * helle Fläche gleitet hinter den aktiven Reiter (vorher ein Strich darunter). Auf schmalen
  * Bildschirmen lässt sie sich seitlich wischen (ein Verlauf am Rand zeigt, dass es weitergeht), der gewählte Reiter wird
  * ins Bild geholt. Hat eine Rolle nur einen Bereich,
  * gibt es keine Leiste – nur den Inhalt.
@@ -95,7 +96,7 @@ export function DashboardTabs({
   const previous = tabs[index - 1];
   const next = tabs[index + 1];
 
-  /** Setzt den Strich unter den aktiven Reiter (ohne Zustand: direkt am Element, damit nichts neu gezeichnet werden muss). */
+  /** Setzt die Fläche hinter den aktiven Reiter (ohne Zustand: direkt am Element, damit nichts neu gezeichnet werden muss). */
   const placeLine = useCallback(() => {
     const trigger = list.current?.querySelector<HTMLElement>('[data-state="active"]');
     const marker = line.current;
@@ -105,7 +106,7 @@ export function DashboardTabs({
     marker.style.opacity = "1";
   }, []);
 
-  // Nach jedem Wechsel: Strich verschieben und den Reiter ins Bild holen (schmale Leiste).
+  // Nach jedem Wechsel: Fläche verschieben und den Reiter ins Bild holen (schmale Leiste).
   useEffect(() => {
     placeLine();
     bar.current
@@ -113,7 +114,7 @@ export function DashboardTabs({
       ?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [active, placeLine]);
 
-  // Erste Platzierung ohne Übergang (der Strich soll nicht von links „hereinfahren“), danach gleitet er.
+  // Erste Platzierung ohne Übergang (die Fläche soll nicht von links „hereinfahren“), danach gleitet sie.
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       if (line.current) line.current.style.transition = "";
@@ -132,7 +133,7 @@ export function DashboardTabs({
     );
   }, []);
 
-  // Ändert sich die Breite (Fenster, Schrift), stimmen die Lage des Strichs und der Verlauf am Rand sonst nicht mehr.
+  // Ändert sich die Breite (Fenster, Schrift), stimmen die Lage der Fläche und der Verlauf am Rand sonst nicht mehr.
   useEffect(() => {
     const element = list.current;
     const scroller = bar.current;
@@ -197,26 +198,28 @@ export function DashboardTabs({
       onValueChange={(value) => select(value as DashboardTabId)}
       className="scroll-mt-16 gap-6"
     >
-      {/* Leiste: bleibt beim Scrollen unter der Kopfzeile stehen (`sticky`), leicht durchscheinend. Auf kleinen Bildschirmen
-          reicht sie bis an den Rand (negativer Rand = Seitenrand) und lässt sich wischen, ab `lg` passt sie in den Inhalt.
-          Läuft sie seitlich weiter, blendet die innere, scrollende Fläche zum Rand hin aus (Hinweis „hier geht es weiter“) –
-          Grund, Rahmen und Schatten sitzen außen und bleiben davon unberührt. `scroll-px-12` hält den gewählten Reiter beim
-          Hereinholen aus dem Verlauf heraus. */}
-      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 shadow-[0_1px_3px_-1px_rgb(0_0_0/0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 lg:mx-0 dark:shadow-none [@media(max-height:820px)]:top-14">
+      {/* Leiste: bleibt beim Scrollen unter der Kopfzeile stehen (`sticky`) und schwebt dann als runde Schiene über dem Inhalt
+          (hell deckend, damit die gedämpfte Schrift auch über den farbigen Kennzahlen lesbar bleibt). Auf kleinen Bildschirmen
+          reicht der Bereich bis an den Rand (negativer Rand = Seitenrand) und lässt sich wischen; ab `lg` ist er nur so breit wie
+          die Schiene – daneben bleibt der Inhalt anklickbar. Läuft die Schiene seitlich weiter, blendet die scrollende Fläche zum
+          Rand hin aus (Hinweis „hier geht es weiter“). `scroll-px-12` hält den gewählten Reiter beim Hereinholen aus dem Verlauf
+          heraus; der kleine Innenabstand der scrollenden Fläche lässt Rand und Schatten der Schiene sichtbar. Am Handy und auf
+          Touchgeräten ist die Schiene etwas höher – jeder Reiter mindestens 44 px, gut mit dem Finger zu treffen. */}
+      <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:mx-0 lg:w-fit [@media(max-height:820px)]:top-14">
         <div
           ref={bar}
           onScroll={updateFade}
           data-fade={
             fade.start && fade.end ? "both" : fade.start ? "start" : fade.end ? "end" : undefined
           }
-          className="scroll-px-12 overflow-x-auto px-4 sm:px-6 lg:px-0"
+          className="scroll-px-12 overflow-x-auto px-4 py-1 sm:px-6 lg:-mx-1 lg:px-1"
           style={{ maskImage: fadeMask(fade) }}
         >
           <TabsList
             ref={list}
             variant="line"
             aria-label="Bereiche des Dashboards"
-            className="relative w-max gap-1 p-0 group-data-horizontal/tabs:h-12"
+            className="relative isolate w-max gap-1 bg-slate-200 p-1 shadow-sm ring-1 ring-slate-300/50 backdrop-blur-md group-data-horizontal/tabs:h-12 data-[variant=line]:rounded-full max-sm:group-data-horizontal/tabs:h-13 dark:bg-card/90 dark:ring-white/10 pointer-coarse:group-data-horizontal/tabs:h-13"
           >
             {/* `transition-colors` statt `transition-all`: Die fette Schrift des gewählten Reiters darf nicht einblenden. Sonst wächst
                 der Reiter erst nach dem Hereinholen – die Leiste bliebe ein paar Pixel vor dem Ende stehen, und der Verlauf am
@@ -227,19 +230,20 @@ export function DashboardTabs({
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="h-full flex-none gap-2 rounded-none px-3.5 text-base font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-primary dark:data-active:text-primary"
+                  className="h-full flex-none gap-2 rounded-full px-4 text-base font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-foreground dark:data-active:text-white"
                 >
                   <Icon className="hidden xl:block" aria-hidden="true" />
                   {tab.label}
                 </TabsTrigger>
               );
             })}
-            {/* Der gleitende Strich unter dem aktiven Reiter (rein optisch). Bis zur ersten Messung unsichtbar und ohne Übergang. */}
+            {/* Die gleitende Fläche hinter dem aktiven Reiter (rein optisch; hell weiß wie eine Karte, dunkel hellgrau
+                durchscheinend mit weißer Schrift wie im Entwurf 2). Bis zur ersten Messung unsichtbar und ohne Übergang. */}
             <span
               ref={line}
               data-slot="tab-indicator"
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full bg-primary opacity-0 transition-[transform,width] duration-300 ease-out motion-reduce:transition-none"
+              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-full bg-card opacity-0 shadow-sm ring-1 ring-black/5 transition-[transform,width] duration-300 ease-out motion-reduce:transition-none dark:bg-white/15 dark:ring-white/40"
               style={{ transition: "none" }}
             />
           </TabsList>
@@ -247,9 +251,11 @@ export function DashboardTabs({
       </div>
 
       {/* Bereich mit Wischgeste: senkrechtes Scrollen und Zoomen bleiben dem Browser, waagerechtes Wischen blättert.
-          `overflow-x-clip` (mit ausgleichendem Rand) verhindert, dass der hereingleitende Bereich einen seitlichen Balken erzeugt. */}
+          `overflow-x-clip` (mit ausgleichendem Rand) verhindert, dass der hereingleitende Bereich einen seitlichen Balken erzeugt.
+          Unter `lg` reicht der Rand bis an den Bildschirm (Seitenrand), damit das Kennzahlen-Karussell und der Schein unter seinen
+          Karten nicht vorher abgeschnitten werden. */}
       <div
-        className="-mx-1.5 touch-pan-y touch-pinch-zoom overflow-x-clip px-1.5"
+        className="-mx-4 touch-pan-y touch-pinch-zoom overflow-x-clip px-4 sm:-mx-6 sm:px-6 lg:-mx-1.5 lg:px-1.5"
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => {
@@ -283,7 +289,7 @@ export function DashboardTabs({
               variant="outline"
               onClick={() => go(previous.id)}
               aria-label={`Zurück: ${previous.label}`}
-              className="w-full sm:w-auto"
+              className="w-full rounded-full sm:w-auto"
             >
               <ArrowLeftIcon aria-hidden="true" /> {previous.label}
             </Button>
@@ -295,7 +301,7 @@ export function DashboardTabs({
               variant="outline"
               onClick={() => go(next.id)}
               aria-label={`Weiter: ${next.label}`}
-              className="w-full sm:w-auto"
+              className="w-full rounded-full sm:w-auto"
             >
               {next.label} <ArrowRightIcon aria-hidden="true" />
             </Button>

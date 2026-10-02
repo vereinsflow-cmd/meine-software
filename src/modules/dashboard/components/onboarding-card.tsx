@@ -40,14 +40,14 @@ export function OnboardingCard({ steps }: { steps: OnboardingStep[] }) {
             {open.map((step) => (
               <li
                 key={step.id}
-                className="relative flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 transition-colors hover:bg-primary/10 motion-reduce:transition-none"
+                className="relative flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 transition-colors hover:bg-primary/10 motion-reduce:transition-none"
               >
                 <CircleIcon className="mt-0.5 size-5 shrink-0 text-primary/70" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                   {/* Der Link deckt die ganze Kachel ab (after:inset-0); sein Name bleibt der Schritt selbst. */}
                   <Link
                     href={step.href}
-                    className="font-semibold text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-lg hover:underline focus-visible:outline-hidden focus-visible:after:ring-2 focus-visible:after:ring-ring"
+                    className="font-semibold text-primary underline-offset-4 after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:outline-hidden focus-visible:after:ring-2 focus-visible:after:ring-ring"
                   >
                     {step.title}
                   </Link>

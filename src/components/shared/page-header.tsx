@@ -3,26 +3,33 @@ import { cn } from "@/lib/utils";
 /**
  * Einheitlicher Seitenkopf mit Titel, Beschreibung und Aktionen.
  * Ab `sm` stehen die Aktionen rechts neben dem Titel, solange der Titel dort seine natürliche Breite behält, höchstens
- * aber 18 rem braucht (ein längerer Titel darf dann umbrechen). Reicht der Platz nicht, rutscht die ganze Leiste als
+ * aber 9,6 Schriftgrößen braucht (bei der üblichen Titelgröße 18 rem; ein längerer Titel darf dann umbrechen – die Grenze
+ * wächst mit der Schrift, so bricht auch die größere Begrüßung des Dashboards nicht mitten im Satz um). Reicht der Platz nicht, rutscht die ganze Leiste als
  * eigene Zeile unter Titel und Beschreibung (`flex-wrap`) – der Titel wird nie zusammengedrückt, nichts läuft seitlich
  * über. Auf dem Smartphone stehen die Aktionen wie bisher immer darunter.
  * `inline`: Beschreibung steht neben dem Titel statt darunter – kompakter, z. B. für die Begrüßung auf dem Dashboard.
+ * `align="center"` richtet sie dabei mittig zum Titel aus statt an der Grundlinie (für ein Schild statt Text).
  */
 export function PageHeader({
   title,
   description,
   actions,
   actionsClassName,
+  titleClassName,
   className,
   inline = false,
+  align = "baseline",
 }: {
   title: string;
+  /** Eigene Schriftgröße o. Ä. für den Titel (z. B. die große Begrüßung auf dem Dashboard). */
+  titleClassName?: string;
   description?: React.ReactNode;
   actions?: React.ReactNode;
   /** Zusätzliche Klassen für die Zeile der Aktionen (z. B. am Handy als Raster). */
   actionsClassName?: string;
   className?: string;
   inline?: boolean;
+  align?: "baseline" | "center";
 }) {
   return (
     <div
@@ -39,12 +46,16 @@ export function PageHeader({
       <div
         className={cn(
           "max-w-full sm:flex-1",
-          inline && "sm:flex sm:flex-wrap sm:items-baseline sm:gap-x-4 sm:gap-y-0",
+          inline && "sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-0",
+          inline && (align === "center" ? "sm:items-center" : "sm:items-baseline"),
         )}
       >
         <h1
           data-title={title}
-          className="text-3xl font-bold tracking-tight break-words after:invisible after:block after:h-0 after:max-w-72 after:overflow-hidden after:whitespace-nowrap after:content-[attr(data-title)]"
+          className={cn(
+            "text-3xl font-bold tracking-tight break-words after:invisible after:block after:h-0 after:max-w-[9.6em] after:overflow-hidden after:whitespace-nowrap after:content-[attr(data-title)]",
+            titleClassName,
+          )}
         >
           {title}
         </h1>

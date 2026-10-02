@@ -237,6 +237,17 @@ export const WEEKDAY_LONG = [
   "Samstag",
   "Sonntag",
 ] as const;
+/**
+ * Kurznamen der letzten `count` Monate bis einschließlich des laufenden (in Europe/Berlin), älteste zuerst – z. B. „Mai“ …
+ * „Okt“ unter der Mitgliederlinie des Dashboards. Über den Jahreswechsel hinweg: im Januar „Aug“ … „Dez“, „Jan“.
+ */
+export function recentMonthLabels(count: number, now: DateInput = new Date()): string[] {
+  const { month } = berlinParts(now);
+  return Array.from({ length: count }, (_, index) =>
+    MONTH_NAMES[(((month - count + index) % 12) + 12) % 12]!.slice(0, 3),
+  );
+}
+
 export const MONTH_NAMES = [
   "Januar",
   "Februar",

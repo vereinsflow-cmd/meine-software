@@ -15,6 +15,7 @@ import {
   formatTimeRange,
   parseBerlinDateTime,
   parseCalendarDate,
+  recentMonthLabels,
   startOfBerlinDay,
   startOfNextBerlinDay,
   toDateInputValue,
@@ -174,5 +175,25 @@ describe("Zahlen", () => {
     expect(formatDuration(45)).toBe("45 Min.");
     expect(formatDuration(120)).toBe("2 Std.");
     expect(formatDuration(150)).toBe("2 Std. 30 Min.");
+  });
+});
+
+describe("recentMonthLabels (Monate unter der Mitgliederlinie)", () => {
+  it("die letzten Monate bis einschließlich des laufenden, älteste zuerst", () => {
+    expect(recentMonthLabels(6, new Date("2026-10-02T10:00:00Z"))).toEqual([
+      "Mai",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Okt",
+    ]);
+  });
+
+  it("über den Jahreswechsel und nach Berliner Zeit (Silvesternacht zählt schon zum Januar)", () => {
+    expect(recentMonthLabels(3, new Date("2027-01-15T12:00:00Z"))).toEqual(["Nov", "Dez", "Jan"]);
+    // 31.12.2026, 23:30 UTC = 01.01.2027, 00:30 in Berlin
+    expect(recentMonthLabels(2, new Date("2026-12-31T23:30:00Z"))).toEqual(["Dez", "Jan"]);
+    expect(recentMonthLabels(1, new Date("2026-03-05T12:00:00Z"))).toEqual(["Mär"]);
   });
 });

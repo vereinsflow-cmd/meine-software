@@ -55,20 +55,24 @@ test.describe("Dashboard", () => {
       /von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant/,
     );
     await expect(hours).toContainText(/gegenüber letzter Woche|Diese Woche noch keine Stunden/);
-    // … und eine kleine, rein schmückende Mini-Grafik (Trendlinie/-balken oder Statusleiste), passend zur Karte.
+    // … und eine kleine, rein schmückende Grafik (Fläche, Balken bzw. Besetzungsanzeige), passend zur Karte.
     await expect(members.locator('[data-slot="sparkline"]')).toBeVisible();
     await expect(nextEvents.locator('[data-slot="sparkline"]')).toBeVisible();
     await expect(hours.locator('[data-slot="sparkline"]')).toBeVisible();
-    await expect(freeShifts.locator('[aria-hidden="true"].rounded-full')).toBeVisible();
-    // Alle vier Karten sind gleich hoch (eine Reihe ab 1280 px), die Mini-Grafiken sitzen am unteren Kartenrand und
-    // liegen dadurch auf einer Linie. Gemessen relativ zur Karte: Das Anheben beim Überfahren verschiebt beides gemeinsam.
-    const cards = [members, nextEvents, freeShifts, hours].map((card) =>
-      card.locator('[data-slot="card"]'),
+    await expect(freeShifts.locator('[data-slot="fill-meter"]:visible')).toHaveCount(1);
+    // Kachelraster (ab 1280 px): Mitglieder und freie Plätze reichen über beide Reihen, Termine und Helferstunden teilen sich
+    // die Mitte – oben und unten schließt alles bündig ab. Die Grafiken sitzen am unteren Kartenrand.
+    const [m, t, f, h] = await Promise.all(
+      [members, nextEvents, freeShifts, hours].map(
+        async (card) => (await card.locator('[data-slot="card"]').boundingBox())!,
+      ),
     );
-    const heights = await Promise.all(
-      cards.map(async (card) => (await card.boundingBox())!.height),
-    );
-    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+    for (const box of [t, f]) expect(Math.abs(box.y - m.y)).toBeLessThanOrEqual(1);
+    for (const box of [h, f]) {
+      expect(Math.abs(box.y + box.height - (m.y + m.height))).toBeLessThanOrEqual(1);
+    }
+    expect(Math.abs(t.height - h.height)).toBeLessThanOrEqual(1);
+    expect(h.y).toBeGreaterThan(t.y + t.height);
     const gaps = await Promise.all(
       [members, nextEvents, hours].map(async (card) => {
         const box = (await card.locator('[data-slot="card"]').boundingBox())!;
@@ -77,6 +81,14 @@ test.describe("Dashboard", () => {
       }),
     );
     expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThanOrEqual(1);
+    // Die hohe Kachel zeigt die freien Plätze im Ring; die schmale Fassung (Leiste) ist ausgeblendet – die Zahl steht genau
+    // einmal im Namen des Links, die Aufschlüsselung unter dem Ring wird nicht vorgelesen.
+    await expect(freeShifts.locator('svg[data-slot="fill-meter"]')).toBeVisible();
+    await expect(freeShifts.locator('div[data-slot="fill-meter"]')).toBeHidden();
+    await expect(freeShifts.getByText(/^(Plätze|Platz) frei$/)).toBeVisible();
+    await expect(freeShifts).toHaveAccessibleName(
+      /^Freie Helferplätze \d+ (Plätze|Platz) frei (\d+ von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant)$/,
+    );
     await expect(page.getByRole("heading", { level: 2, name: "Für dich" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Aufgaben" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Einsätze" })).toBeVisible();

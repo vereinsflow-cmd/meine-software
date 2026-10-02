@@ -11,6 +11,11 @@
   --text-xs--line-height: 1.4;
   --text-sm: 0.9375rem;
   --text-sm--line-height: 1.45;
+  /* Inhaltsbreiten für die Kennzahlen des Dashboards (Containerabfragen `@bento/kpis` und `@bento-wide/kpis`, Aufteilung in
+     modules/dashboard/kpi-layout.ts) – in rem, wachsen also mit der Grundschrift. 49 rem sind bei 1280 px Fensterbreite mit
+     Seitenleiste erreicht, 58 rem z. B. bei 1470 px. */
+  --container-bento: 49rem;
+  --container-bento-wide: 58rem;
 }
 
 @theme inline {
@@ -260,4 +265,13 @@
       font-size: 112.5%; /* 18 px */
     }
   }
+}
+
+/*
+ * Getönte Kacheln des Dashboards (seit 02.10.2026, Mischung aus den Entwürfen 2 und 5): ein weicher Schein in der Farbe des
+ * Bereichs aus der linken oberen Ecke, über der normalen Kartenfläche. Die Farbe kommt aus `--tile-tint` (gesetzt in
+ * `TILE_ACCENT`, components/shared/accent.ts) – hell höchstens Stufe 100, damit grauer Text 4,5 : 1 behält.
+ */
+@utility tile-tint {
+  background-image: radial-gradient(120% 85% at 0% 0%, var(--tile-tint), transparent 62%);
 }

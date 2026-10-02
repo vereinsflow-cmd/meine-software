@@ -1,8 +1,10 @@
 import Link from "next/link";
 import {
   ArrowRightIcon,
+  ArrowUpRightIcon,
   BellOffIcon,
   CakeIcon,
+  CircleAlertIcon,
   CircleCheckBigIcon,
   FaceSlightlySmilingIcon,
   GiftIcon,
@@ -12,9 +14,16 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ACCENT, type Accent, KPI_ACCENT, type KpiAccent } from "@/components/shared/accent";
+import {
+  ACCENT,
+  type Accent,
+  KPI_ACCENT,
+  type KpiAccent,
+  TILE_ACCENT,
+} from "@/components/shared/accent";
 import { AREA_ICON } from "@/components/shared/area-icons";
-import { Sparkline } from "@/components/charts/sparkline";
+import { FillRing, FillSegments } from "@/components/charts/fill-meter";
+import { Sparkline, sparkX } from "@/components/charts/sparkline";
 import { CompactEmpty as Empty } from "@/components/shared/compact-empty";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import {
@@ -33,6 +42,7 @@ import {
   formatEuroFromCents,
   formatTimeRange,
   inDaysLabel,
+  recentMonthLabels,
 } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { URGENCY_LABEL } from "@/lib/shift-health";
@@ -41,7 +51,13 @@ import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
 import { dueText } from "@/modules/finance/invoice-format";
 import { QuickSignUpButton } from "@/modules/shifts/components/quick-actions";
 import { FillBar, UrgencyBadge } from "@/modules/shifts/components/shift-status";
-import { hoursCompare, memberCompare, nextEventCompare, staffingCompare } from "../compare";
+import {
+  type Compare,
+  hoursCompare,
+  memberCompare,
+  nextEventCompare,
+  staffingCompare,
+} from "../compare";
 import type { DashboardData } from "../service";
 import { sortByImportance, taskRank } from "../task-order";
 
@@ -53,32 +69,167 @@ import { sortByImportance, taskRank } from "../task-order";
 const LIST_ROW =
   "-mx-(--card-spacing) px-(--card-spacing) transition-colors motion-reduce:transition-none hover:bg-muted/50";
 
-/** Stufe einer Besetzung: voll (gut), teilweise (Aufmerksamkeit), leer (dringend) – dieselben drei Stufen wie bei Schichten. */
-function staffingTone(ratio: number): Tone {
-  if (ratio >= 1) return "success";
-  if (ratio > 0) return "warning";
-  return "danger";
+/**
+ * Größe einer Kennzahlenkarte im Kachelraster (`KpiCarousel` mit `layout="bento"`, ab 48 rem Inhaltsbreite (gut 840 px)): `hero` = die große
+ * Mitglieder-Kachel (größere Zahl, große Grafik mit Monaten), `tall` = die hohe Kachel „Freie Helferplätze“ (Ring). Unterhalb
+ * dieser Breite sehen alle Karten gleich aus (`regular`); die Größen gelten nur innerhalb des Rasters (Containerabfrage `kpis`).
+ */
+type StatSize = "regular" | "hero" | "tall";
+
+/**
+ * Vergleichssatz auf der farbigen Karte: Neutrales als weißer Text; was Aufmerksamkeit braucht, als helles Schild mit dunkler
+ * Schrift in der Bedeutungsfarbe (Bernstein „teilweise besetzt“, Rot „unbesetzt“, Grün „mehr als zuvor“) – farbige Schrift
+ * direkt auf dem Verlauf hätte zu wenig Kontrast. Die Bedeutung steht immer auch im Text.
+ */
+const COMPARE_ON_COLOR: Record<Tone, string | null> = {
+  neutral: null,
+  ended: null,
+  info: "bg-white text-blue-800",
+  success: "bg-white text-emerald-800",
+  warning: "bg-amber-300 text-amber-950",
+  danger: "bg-white text-red-700",
+};
+
+function CompareLine({ compare, className }: { compare: Compare; className?: string }) {
+  const pill = COMPARE_ON_COLOR[compare.tone];
+  if (!pill) {
+    return <p className={cn("text-sm font-medium text-white/95", className)}>{compare.text}</p>;
+  }
+  const Icon =
+    compare.tone === "warning"
+      ? TriangleAlertIcon
+      : compare.tone === "danger"
+        ? CircleAlertIcon
+        : null;
+  // `rounded-2xl` statt rund: Bricht der Satz in einer schmalen Karte um, wird daraus ein Kästchen statt eines dicken Ovals.
+  return (
+    <p
+      className={cn(
+        "inline-flex w-fit items-start gap-1.5 rounded-2xl px-2.5 py-0.5 text-sm font-semibold text-balance shadow-sm",
+        pill,
+        className,
+      )}
+    >
+      {Icon && <Icon className="mt-[0.2em] size-3.5 shrink-0" aria-hidden="true" />}
+      {compare.text}
+    </p>
+  );
 }
 
-const PROGRESS_BAR_COLOR: Partial<Record<Tone, string>> = {
-  success: "bg-emerald-500",
-  warning: "bg-amber-500",
-  danger: "bg-red-500",
-};
+/** Die große Zahl einer Kennzahlenkarte. */
+function KpiValue({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p
+      data-slot="kpi-value"
+      className={cn(
+        "mt-4 text-5xl leading-none font-extrabold tracking-[-0.035em] tabular-nums [text-shadow:0_2px_12px_rgb(0_0_0/0.12)]",
+        className,
+      )}
+    >
+      {children}
+    </p>
+  );
+}
 
-/** Textfarbe der Vergleichsinformation – dieselbe Bedeutung wie bei Abzeichen (`ToneBadge`), nur ohne Füllfläche. */
-const COMPARE_TEXT_COLOR: Record<Tone, string> = {
-  neutral: "text-muted-foreground",
-  ended: "text-muted-foreground",
-  // Wie bei Bernstein: emerald-600 liegt auf Weiß unter 4,5:1 (fiel erst auf, als im laufenden Monat Mitglieder dazukamen –
-  // „+1 gegenüber dem Vormonat“), emerald-700 besteht sicher.
-  success: "text-emerald-700 dark:text-emerald-400",
-  info: "text-primary",
-  // amber-600 fällt bei normaler Schriftstärke auf hellem Grund knapp unter 4,5:1 (WCAG AA) – amber-700 besteht sicher.
-  warning: "text-amber-700 dark:text-amber-400",
-  // `text-destructive` statt Tailwind-Rot: derselbe eigens auf 4,5:1 nachgeschärfte Ton wie überall sonst im Verein.
-  danger: "text-destructive",
-};
+/** Beschriftung unter einer Grafik, links und rechts („vor 5 Monaten“ … „jetzt“), immer einzeilig. */
+function KpiCaption({ caption }: { caption: readonly [string, string] }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="mt-1.5 flex justify-between gap-2 text-xs font-medium whitespace-nowrap text-white"
+    >
+      <span className="min-w-0 truncate">{caption[0]}</span>
+      <span className="min-w-0 truncate">{caption[1]}</span>
+    </div>
+  );
+}
+
+/**
+ * Hülle jeder Kennzahlenkarte (seit 02.10.2026, Mischung aus den Entwürfen 2 und 5): kräftiger Farbverlauf des Bereichs mit
+ * weißer Schrift, ein heller Schein in der Ecke oben rechts und ein farbiger Schimmer unter der Karte (`KPI_ACCENT`). Oben Symbol
+ * und Beschriftung, bei Links rechts ein kleiner Pfeil („führt weiter“) – nur, wenn die Karte breit genug ist (ab 15 rem,
+ * Containerabfrage `kpi`); sonst bräuchte die Beschriftung eine Zeile mehr. Die ganze Karte ist der Link; beim Überfahren hebt
+ * sie sich leicht an und leuchtet stärker (ohne Bewegung bei „Bewegung reduzieren“).
+ */
+function KpiShell({
+  label,
+  accent,
+  href,
+  icon,
+  children,
+}: {
+  label: string;
+  accent: KpiAccent;
+  href?: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const colors = KPI_ACCENT[accent];
+  const body = (
+    <Card
+      className={cn(
+        "@container/kpi relative isolate h-full gap-0 rounded-[1.75rem] bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
+        colors.card,
+        href &&
+          cn(
+            "transition-[translate,box-shadow] duration-200 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+            colors.hover,
+          ),
+      )}
+    >
+      {/* Der Schein sitzt genau in der Ecke und reicht nur bis zum Pfeil: Weiter innen hellte er den Grund hinter der Beschriftung
+          auf (weiße Schrift unter 4,5 : 1); geprüft in tests/unit/dashboard-contrast.test.ts. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-28 -right-28 -z-10 size-56 rounded-full bg-[radial-gradient(circle_closest-side,rgb(255_255_255/0.1),transparent_60%)]"
+      />
+      {/* Spalte über die volle Kartenhöhe: Die Grafik rückt an den unteren Rand (`mt-auto`), damit sie bei allen Karten einer
+          Reihe auf einer Linie liegt – auch wenn ein Vergleich umbricht. */}
+      <CardContent className="flex flex-1 flex-col px-5 pt-5 pb-4">
+        <div className="flex items-start gap-2.5">
+          <span
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-[0.7rem] bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4",
+              href &&
+                "transition-transform duration-200 group-hover/card:scale-110 motion-reduce:transition-none",
+            )}
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+          {/* Stehen drei oder vier Karten in einer Reihe, reserviert das Raster zwei Zeilen (`GRID_COLUMNS` in kpi-layout.ts). */}
+          <p
+            data-slot="kpi-label"
+            className="min-w-0 flex-1 pt-1 text-[0.9375rem] leading-snug font-semibold"
+          >
+            {label}
+          </p>
+          {href && (
+            <span
+              aria-hidden="true"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/12 inset-ring inset-ring-white/15 transition-colors duration-200 group-hover/card:bg-white/25 motion-reduce:transition-none @max-[15rem]/kpi:hidden"
+            >
+              <ArrowUpRightIcon className="size-4" />
+            </span>
+          )}
+        </div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+  return href ? (
+    // `h-full`: Der Link reicht bis zum Boden seiner Rasterzelle bzw. Karussellspalte, sonst endete die Karte mit ihrem Inhalt
+    // und die Karten einer Reihe wären ungleich hoch.
+    <Link
+      href={href}
+      className="block h-full rounded-[1.75rem] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+    >
+      {body}
+    </Link>
+  ) : (
+    body
+  );
+}
 
 export function StatCard({
   label,
@@ -89,134 +240,112 @@ export function StatCard({
   href,
   icon,
   trend,
-  trendVariant = "line",
+  trendVariant = "area",
   trendHighlight = "last",
   trendCaption,
-  progress,
+  trendLabels,
+  trendTitle,
+  delta,
+  size = "regular",
 }: {
   label: string;
-  /** Farbe des Bereichs (Mitglieder blau, Termine violett, Helferplätze grün, Stunden bernstein). */
+  /** Farbe des Bereichs (Mitglieder blau, Termine violett, Helferplätze grün, Stunden orange). */
   accent: KpiAccent;
   value: React.ReactNode;
   hint?: React.ReactNode;
-  /** Kurzer Vergleich zum Vormonat/zur letzten Woche o. Ä. („+3 gegenüber dem Vormonat“); farbig nach `tone`. */
-  compare?: { text: string; tone?: Tone };
+  /** Kurzer Vergleich zum Vormonat/zur letzten Woche o. Ä. („+3 gegenüber dem Vormonat“); Schild nach `tone`. */
+  compare?: Compare;
   href?: string;
   icon: React.ReactNode;
   /** Letzte Werte für eine kleine Trendgrafik (älteste zuerst, mind. zwei Werte); ohne Angabe entfällt sie. */
   trend?: readonly number[];
-  trendVariant?: "line" | "bar";
-  /** Welcher Wert „jetzt“ ist (Markenfarbe): bei Rückblicken der letzte, beim Blick nach vorn der erste. */
+  trendVariant?: "area" | "bar";
+  /** Welcher Wert „jetzt“ ist (hervorgehoben): bei Rückblicken der letzte, beim Blick nach vorn der erste. */
   trendHighlight?: "first" | "last";
-  /** Beschriftung unter der Mini-Grafik bzw. Statusleiste, links und rechts („vor 5 Monaten“ … „jetzt“). */
+  /** Beschriftung unter der Grafik, links und rechts („vor 5 Monaten“ … „jetzt“). */
   trendCaption?: readonly [string, string];
-  /** Anteil an einem Bestand (z. B. besetzte von benötigten Plätzen) als schmale Statusleiste; ohne Angabe entfällt sie. */
-  progress?: { value: number; total: number };
+  /** Stattdessen eine Beschriftung je Wert, genau unter seinem Punkt (Monate unter der Mitgliederlinie). */
+  trendLabels?: readonly string[];
+  /** Nur auf der großen Kachel (`size="hero"`): Überschrift der Grafik („Letzte 6 Monate“) … */
+  trendTitle?: string;
+  /** … und die Veränderung als kleines Schild neben der Zahl („+3“, „±0“). */
+  delta?: string;
+  size?: StatSize;
 }) {
-  const ratio =
-    progress && progress.total > 0 ? Math.min(1, progress.value / progress.total) : null;
-  const tone = ratio !== null ? staffingTone(ratio) : null;
-  const colors = KPI_ACCENT[accent];
-  const body = (
-    // Jede Karte in der Farbe ihres Bereichs: zart getönter Grund, farbiger Rand, kräftiges Symbol, farbige Mini-Grafik.
-    <Card
-      className={cn(
-        "h-full gap-0 py-0",
-        colors.surface,
-        href &&
-          cn(
-            "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-            colors.hover,
-          ),
-      )}
-    >
-      {/* Spalte über die volle Kartenhöhe: Die Mini-Grafik rückt an den unteren Rand (`mt-auto`), damit sie bei allen
-          vier Karten auf einer Linie liegt – auch wenn eine Beschriftung oder ein Vergleich umbricht. */}
-      <CardContent className="flex flex-1 flex-col gap-1.5 py-5">
-        {/* Symbol klein VOR der Beschriftung (nicht groß daneben): So hat die Beschriftung Platz für eine Zeile, und alle vier
-            Zahlen stehen auf einer Höhe statt im Zickzack. */}
-        <div className="flex items-start gap-2">
-          <div
-            className={cn(
-              "flex size-7 shrink-0 items-center justify-center rounded-lg shadow-sm [&_svg]:size-4",
-              colors.tile,
-              href &&
-                "transition-transform duration-200 group-hover/card:scale-110 motion-reduce:transition-none",
-            )}
+  const hero = size === "hero";
+  const chart = trend && trend.length > 1;
+  return (
+    <KpiShell label={label} accent={accent} href={href} icon={icon}>
+      <div className="flex items-end gap-3">
+        <KpiValue className={cn(hero && "@bento/kpis:mt-6 @bento/kpis:text-7xl")}>{value}</KpiValue>
+        {/* Wiederholt den Vergleichssatz in Kurzform (wie im Entwurf 2) – für Screenreader ausgeblendet. */}
+        {hero && delta && (
+          <span
             aria-hidden="true"
+            className="mb-1.5 hidden rounded-full bg-white/18 px-2.5 py-0.5 text-sm font-bold tabular-nums inset-ring inset-ring-white/20 @bento/kpis:inline-block"
           >
-            {icon}
-          </div>
-          {/* Zwischen 1280 und 1440 px sind die vier Karten schmal: zwei Zeilen Platz, damit die Zahlen trotzdem auf einer
-              Höhe stehen, auch wenn nur manche Beschriftungen umbrechen. */}
-          <p className="min-w-0 pt-1 text-sm font-medium text-muted-foreground xl:max-[90rem]:min-h-[calc(2lh+0.25rem)]">
-            {label}
-          </p>
-        </div>
-        <p className="mt-2 text-4xl leading-tight font-bold tabular-nums">{value}</p>
-        {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
-        {compare && (
-          <p className={cn("text-sm font-medium", COMPARE_TEXT_COLOR[compare.tone ?? "neutral"])}>
-            {compare.text}
-          </p>
+            {delta}
+          </span>
         )}
-        {/* Immer derselbe Platz (32 px), egal ob Trendgrafik oder Statusleiste – „gleiche Höhen“ über alle vier Karten
-            hinweg. Rein schmückend (`aria-hidden` in den Komponenten selbst): Zahl, Hinweis und Vergleich nennen die
-            Lage bereits vollständig als Text. */}
-        {(trend || ratio !== null) && (
-          <div className="mt-auto pt-1.5">
-            <div className="flex h-8 items-center motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in">
-              {trend && trend.length > 1 ? (
-                <Sparkline
-                  values={trend}
-                  variant={trendVariant}
-                  highlight={trendHighlight}
-                  className={colors.spark}
-                  nowFillClass={colors.sparkNowFill}
-                  nowStrokeClass={colors.sparkNowStroke}
-                />
-              ) : ratio !== null ? (
-                <div
-                  aria-hidden="true"
-                  className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/10"
-                >
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      PROGRESS_BAR_COLOR[tone!],
-                      "group-hover/card:brightness-110",
-                    )}
-                    style={{ width: `${ratio * 100}%` }}
-                  />
-                </div>
-              ) : null}
-            </div>
-            {trendCaption && (
-              // Immer einzeilig (sonst stünden die Mini-Grafiken der vier Karten nicht mehr auf einer Linie)
-              <div
-                aria-hidden="true"
-                className="mt-1 flex justify-between gap-2 text-xs whitespace-nowrap text-muted-foreground"
-              >
-                <span className="min-w-0 truncate">{trendCaption[0]}</span>
-                <span className="min-w-0 truncate">{trendCaption[1]}</span>
-              </div>
+      </div>
+      {hint && <p className="mt-2 text-sm font-medium text-white/95">{hint}</p>}
+      {compare && <CompareLine compare={compare} className="mt-2" />}
+      {chart ? (
+        // Rein schmückend (`aria-hidden` in der Grafik): Zahl, Hinweis und Vergleich nennen die Lage bereits als Text.
+        <div
+          className={cn(
+            "mt-auto flex flex-col pt-4",
+            hero && "@bento/kpis:flex-1 @bento/kpis:pt-6",
+          )}
+        >
+          {hero && trendTitle && (
+            <p
+              aria-hidden="true"
+              className="mb-2 hidden text-xs font-semibold tracking-[0.12em] text-white uppercase @bento/kpis:block"
+            >
+              {trendTitle}
+            </p>
+          )}
+          <Sparkline
+            values={trend}
+            variant={trendVariant}
+            highlight={trendHighlight}
+            gridClassName={hero ? "hidden @bento/kpis:inline" : undefined}
+            className={cn(
+              // Die Fläche reicht bis an beide Kartenränder (randlos), Balken bleiben im Innenabstand.
+              trendVariant === "area" && "-mx-5",
+              hero && "@bento/kpis:h-auto @bento/kpis:min-h-32 @bento/kpis:flex-1",
             )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-  return href ? (
-    // `h-full`: Der Link reicht bis zum Boden seiner Rasterzelle bzw. Karussellspalte, sonst endete die Karte (selbst
-    // `h-full`) mit ihrem Inhalt und die vier Karten wären ungleich hoch.
-    <Link
-      href={href}
-      className="block h-full rounded-xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-    >
-      {body}
-    </Link>
-  ) : (
-    body
+          />
+          {trendLabels ? (
+            <div aria-hidden="true" className="relative -mx-5 mt-1.5 h-[1lh] text-xs font-medium">
+              {trendLabels.map((text, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    "absolute top-0 -translate-x-1/2 whitespace-nowrap",
+                    index === trendLabels.length - 1 ? "font-bold text-white" : "text-white/90",
+                  )}
+                  style={{ left: `${sparkX(index, trendLabels.length)}%` }}
+                >
+                  {text}
+                </span>
+              ))}
+            </div>
+          ) : (
+            trendCaption && <KpiCaption caption={trendCaption} />
+          )}
+        </div>
+      ) : (
+        // Ohne Grafik (z. B. „Ungelesen“): das Symbol groß und blass in der Ecke, damit die Karte nicht leer wirkt.
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-6 -bottom-8 -z-10 size-36 -rotate-12 text-white/10 [&_svg]:size-full"
+        >
+          {icon}
+        </span>
+      )}
+    </KpiShell>
   );
 }
 
@@ -245,13 +374,20 @@ export function Widget({
 }) {
   return (
     <section aria-labelledby={id} className="h-full">
-      <Card className={cn("h-full", emphasis && "ring-2 ring-primary/50 dark:ring-primary/60")}>
+      {/* Kachel wie im Entwurf 2: große Rundung, weicher Schein in der Farbe des Bereichs, etwas mehr Innenabstand. */}
+      <Card
+        className={cn(
+          "h-full rounded-[1.75rem] [--card-spacing:--spacing(6)] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          TILE_ACCENT[accent].surface,
+          emphasis && "ring-2 ring-primary/50 dark:ring-primary/60",
+        )}
+      >
         <CardHeader>
           <div className="flex items-center gap-3">
             <span
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
-                emphasis ? "bg-primary text-primary-foreground" : ACCENT[accent].tile,
+                "flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] [&_svg]:size-5",
+                emphasis ? "bg-primary text-primary-foreground" : TILE_ACCENT[accent].chip,
               )}
               aria-hidden="true"
             >
@@ -293,7 +429,7 @@ function DateTile({ value, accent }: { value: Date | string; accent: Accent }) {
   return (
     <div
       className={cn(
-        "flex size-12 shrink-0 flex-col items-center justify-center rounded-lg leading-none",
+        "flex size-12 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
         ACCENT[accent].tile,
       )}
       aria-hidden="true"
@@ -313,30 +449,53 @@ export function StaffingWarnings({
 }) {
   if (warnings.length === 0) return null;
   return (
-    <Alert variant="warning" className="mb-5">
-      <TriangleAlertIcon />
-      <AlertTitle className="text-base font-semibold">
-        Helferschichten sind noch nicht besetzt
-      </AlertTitle>
-      <AlertDescription>
-        <div className="mt-1">
-          <ExpandableList className="grid gap-1" initial={2} itemNoun="weitere Termine">
-            {warnings.map((event) => (
-              <li key={event.eventId}>
-                <Link
-                  href={`/helferplanung/${event.eventId}`}
-                  className="font-semibold underline underline-offset-4"
-                >
-                  {event.title}
-                </Link>{" "}
-                ({formatDateShort(event.startsAt)}): {event.openShifts}{" "}
-                {event.openShifts === 1 ? "Schicht" : "Schichten"} nicht voll besetzt –{" "}
-                {URGENCY_LABEL[event.worstUrgency].toLowerCase()}
-              </li>
-            ))}
-          </ExpandableList>
-        </div>
-      </AlertDescription>
+    // Wie in den Entwürfen 2 und 5: bernsteinfarbene Kachel mit kräftigem Warnsymbol, Streifen als Zierde rechts und einem runden
+    // Pfeil zur Helferplanung. Die Rolle `alert` (Screenreader) und der Text bleiben wie bisher.
+    <Alert
+      variant="warning"
+      className="relative mb-6 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 overflow-hidden rounded-[1.75rem] border border-amber-300/70 bg-linear-to-r from-amber-100 via-amber-50 to-amber-100/70 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] dark:border-amber-400/25 dark:from-amber-500/20 dark:via-amber-500/[0.06] dark:to-amber-500/10"
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-80 bg-[repeating-linear-gradient(-45deg,rgb(245_158_11/0.1)_0_10px,transparent_10px_22px)] [mask-image:linear-gradient(90deg,transparent,#000_70%)] sm:block"
+      />
+      <span
+        aria-hidden="true"
+        className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950 shadow-[0_6px_16px_-6px_rgb(245_158_11/0.8)] [&_svg]:size-5"
+      >
+        <TriangleAlertIcon />
+      </span>
+      <div className="relative min-w-0">
+        <AlertTitle className="text-base font-semibold">
+          Helferschichten sind noch nicht besetzt
+        </AlertTitle>
+        <AlertDescription className="text-foreground/80">
+          <div className="mt-1">
+            <ExpandableList className="grid gap-1" initial={2} itemNoun="weitere Termine">
+              {warnings.map((event) => (
+                <li key={event.eventId}>
+                  <Link
+                    href={`/helferplanung/${event.eventId}`}
+                    className="font-semibold underline underline-offset-4"
+                  >
+                    {event.title}
+                  </Link>{" "}
+                  ({formatDateShort(event.startsAt)}): {event.openShifts}{" "}
+                  {event.openShifts === 1 ? "Schicht" : "Schichten"} nicht voll besetzt –{" "}
+                  {URGENCY_LABEL[event.worstUrgency].toLowerCase()}
+                </li>
+              ))}
+            </ExpandableList>
+          </div>
+        </AlertDescription>
+      </div>
+      <Link
+        href="/helferplanung"
+        aria-label="Zur Helferplanung"
+        className="relative hidden size-11 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950 transition-colors hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none motion-reduce:transition-none sm:flex"
+      >
+        <ArrowRightIcon className="size-5" aria-hidden="true" />
+      </Link>
     </Alert>
   );
 }
@@ -476,7 +635,7 @@ export function OpenShifts({ shifts }: { shifts: NonNullable<DashboardData["shif
                   shiftId={shift.shiftId}
                   eventId={shift.event.id}
                   size="default"
-                  className="w-full sm:w-auto"
+                  className="w-full rounded-full sm:w-auto"
                 />
               )}
             </li>
@@ -543,7 +702,7 @@ export function OpenPayments({ payments }: { payments: NonNullable<DashboardData
                   <li
                     key={invoice.id}
                     className={cn(
-                      "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border p-3",
+                      "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border p-3",
                       invoice.overdue
                         ? "border-red-300 bg-red-50 dark:border-red-400/30 dark:bg-red-400/10"
                         : soon(invoice)
@@ -586,7 +745,7 @@ export function OpenPayments({ payments }: { payments: NonNullable<DashboardData
                       <MarkPaidButton
                         invoiceId={invoice.id}
                         name={invoice.name}
-                        className="w-full sm:w-auto"
+                        className="w-full rounded-full sm:w-auto"
                       />
                     )}
                   </li>
@@ -651,7 +810,7 @@ export function MyTasks({
             <li
               key={task.id}
               className={cn(
-                "flex flex-wrap items-start justify-between gap-2 rounded-lg border p-3 transition-shadow hover:shadow-sm motion-reduce:transition-none",
+                "flex flex-wrap items-start justify-between gap-2 rounded-xl border p-3 transition-shadow hover:shadow-sm motion-reduce:transition-none",
                 taskRowTone(task),
               )}
             >
@@ -712,7 +871,7 @@ export function LatestNotifications({
               <Link
                 href={n.linkUrl ?? "/benachrichtigungen"}
                 className={cn(
-                  "grid gap-0.5 rounded-lg px-3 py-2.5 underline-offset-4 hover:underline",
+                  "grid gap-0.5 rounded-xl px-3 py-2.5 underline-offset-4 hover:underline",
                   n.readAt ? "hover:bg-muted" : "bg-primary/10 hover:bg-primary/15",
                 )}
               >
@@ -826,7 +985,20 @@ export function RecentActivity({ entries }: { entries: NonNullable<DashboardData
 const agoText = (count: number, singular: string, plural: string) =>
   `vor ${count} ${count === 1 ? singular : plural}`;
 
-export function MembersStat({ members }: { members: NonNullable<DashboardData["members"]> }) {
+/** Veränderung des letzten Werts gegenüber dem vorletzten als kurzes Schild: „+3“, „−2“ (echtes Minuszeichen), „±0“. */
+function signedDelta(trend: readonly number[]): string | undefined {
+  if (trend.length < 2) return undefined;
+  const diff = trend.at(-1)! - trend.at(-2)!;
+  return diff > 0 ? `+${diff}` : diff < 0 ? `−${-diff}` : "±0";
+}
+
+export function MembersStat({
+  members,
+  size,
+}: {
+  members: NonNullable<DashboardData["members"]>;
+  size?: StatSize;
+}) {
   return (
     <StatCard
       label={members.scope === "CLUB" ? "Mitglieder" : "Mitglieder (deine Abteilung)"}
@@ -836,7 +1008,11 @@ export function MembersStat({ members }: { members: NonNullable<DashboardData["m
       href="/mitglieder"
       icon={<AREA_ICON.mitglieder />}
       trend={members.trend}
-      trendCaption={[agoText(members.trend.length - 1, "Monat", "Monaten"), "jetzt"]}
+      // Ein Wert je Monat bis einschließlich des laufenden – dieselben Monate wie `members.trend`.
+      trendLabels={recentMonthLabels(members.trend.length)}
+      trendTitle={`Letzte ${members.trend.length} Monate`}
+      delta={signedDelta(members.trend)}
+      size={size}
     />
   );
 }
@@ -855,8 +1031,8 @@ export function NextEventsStat({ events }: { events: NonNullable<DashboardData["
       }
       href="/veranstaltungen"
       icon={<AREA_ICON.veranstaltungen />}
-      // events.weeklyTrend blickt nach vorn (diese Woche zuerst) – die Grafik ebenso: links „jetzt“ in der Markenfarbe,
-      // nach rechts die kommenden Wochen (beschriftet, damit die Richtung klar ist).
+      // events.weeklyTrend blickt nach vorn (diese Woche zuerst) – die Grafik ebenso: links „jetzt“ hervorgehoben, nach rechts
+      // die kommenden Wochen (beschriftet, damit die Richtung klar ist).
       trend={events.weeklyTrend}
       trendVariant="bar"
       trendHighlight="first"
@@ -868,24 +1044,142 @@ export function NextEventsStat({ events }: { events: NonNullable<DashboardData["
   );
 }
 
-export function FreeShiftsStat({ shifts }: { shifts: NonNullable<DashboardData["shifts"]> }) {
+/** Farbe des besetzten Teils im Ring (und des Satzes darunter) nach Besetzung: voll weiß, teilweise bernsteinfarben. */
+const RING_TONE: Record<Tone, { ring?: string; text: string; swatch: string }> = {
+  neutral: { text: "text-white/95", swatch: "bg-white" },
+  ended: { text: "text-white/95", swatch: "bg-white" },
+  info: { text: "text-white", swatch: "bg-white" },
+  success: { text: "text-white", swatch: "bg-white" },
+  warning: { ring: "stroke-amber-300", text: "text-amber-200", swatch: "bg-amber-300" },
+  danger: { ring: "stroke-red-300", text: "text-red-200", swatch: "bg-red-300" },
+};
+
+/**
+ * Freie Helferplätze: auf normalen Karten die Zahl mit einer Leiste (ein Stück je Platz, besetzte weiß); als hohe Kachel im
+ * Raster (`size="tall"`, wie im Entwurf 2) ein Ring mit der Zahl in der Mitte und darunter besetzt/frei/Auslastung. Beide
+ * Fassungen stehen im Code, sichtbar ist je nach Breite genau eine (die andere ist `display: none` und damit auch für
+ * Screenreader nicht da – nichts wird doppelt vorgelesen).
+ */
+export function FreeShiftsStat({
+  shifts,
+  size,
+}: {
+  shifts: NonNullable<DashboardData["shifts"]>;
+  size?: StatSize;
+}) {
+  const { filled, required } = shifts.staffing;
+  const compare = staffingCompare(filled, required);
+  const tall = size === "tall";
+  // Gerundet, aber nie „100 %“, solange noch Plätze frei sind, und nie „0 %“, sobald einer besetzt ist.
+  const percent =
+    required <= 0 || filled <= 0
+      ? 0
+      : filled >= required
+        ? 100
+        : Math.min(99, Math.max(1, Math.round((filled / required) * 100)));
+  // Drei- und vierstellige Zahlen passen sonst nicht in die Öffnung des Rings.
+  const ringNumber =
+    shifts.freeSpots >= 1000 ? "text-4xl" : shifts.freeSpots >= 100 ? "text-5xl" : "text-6xl";
   return (
-    <StatCard
+    <KpiShell
       label="Freie Helferplätze"
       accent="emerald"
-      value={shifts.freeSpots}
-      compare={staffingCompare(shifts.staffing.filled, shifts.staffing.required)}
       href="/helferplanung"
       icon={<AREA_ICON.helferplanung />}
-      progress={{ value: shifts.staffing.filled, total: shifts.staffing.required }}
-      trendCaption={["leer", "alle besetzt"]}
-    />
+    >
+      <div className={cn("flex flex-1 flex-col", tall && "@bento/kpis:hidden")}>
+        <KpiValue>{shifts.freeSpots}</KpiValue>
+        <CompareLine compare={compare} className="mt-2" />
+        {required > 0 && (
+          <div className="mt-auto pt-4">
+            <FillSegments filled={filled} total={required} />
+            <KpiCaption caption={["leer", "alle besetzt"]} />
+          </div>
+        )}
+      </div>
+      {tall && (
+        <div className="hidden flex-1 flex-col items-center gap-4 @bento/kpis:flex">
+          {/* Ring und Satz stehen mittig im freien Platz über der Aufschlüsselung – statt eines leeren Streifens darüber. */}
+          <div className="flex w-full flex-1 flex-col items-center justify-center gap-4 pt-3">
+            <FillRing
+              filled={filled}
+              total={required}
+              fillClassName={RING_TONE[compare.tone].ring}
+              className="w-full max-w-44"
+            >
+              <p
+                data-slot="kpi-value"
+                className={cn(
+                  "leading-none font-extrabold tracking-[-0.035em] tabular-nums [text-shadow:0_2px_12px_rgb(0_0_0/0.12)]",
+                  ringNumber,
+                )}
+              >
+                {shifts.freeSpots}
+              </p>
+              <p className="mt-1 text-sm font-medium text-white/95">
+                {shifts.freeSpots === 1 ? "Platz frei" : "Plätze frei"}
+              </p>
+            </FillRing>
+            {/* Wie im Entwurf 2: der Satz in der Farbe des Rings, ohne Schild – in der schmalen Kachel bräche ein Schild auf drei
+                Zeilen um. Helles Bernstein/Rot auf dem dunklen Grün hat genug Kontrast (tests/unit/dashboard-contrast.test.ts). */}
+            <p
+              className={cn(
+                "text-center text-sm font-semibold text-balance",
+                RING_TONE[compare.tone].text,
+              )}
+            >
+              {compare.tone === "warning" && (
+                <TriangleAlertIcon
+                  className="mr-1 inline size-3.5 -translate-y-px align-middle"
+                  aria-hidden="true"
+                />
+              )}
+              {compare.text}
+            </p>
+          </div>
+          {required > 0 && (
+            // Wiederholt nur, was Zahl und Vergleich schon sagen – deshalb für Screenreader ausgeblendet.
+            <dl
+              aria-hidden="true"
+              className="grid w-full gap-2 rounded-2xl bg-black/15 p-3.5 text-sm ring-1 ring-white/10"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <dt className="flex items-center gap-2 text-white/90">
+                  <span className={cn("size-2.5 rounded-[3px]", RING_TONE[compare.tone].swatch)} />{" "}
+                  besetzt
+                </dt>
+                <dd className="font-semibold tabular-nums">{filled}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <dt className="flex items-center gap-2 text-white/90">
+                  <span className="size-2.5 rounded-[3px] bg-white/30" /> frei
+                </dt>
+                <dd className="font-semibold tabular-nums">{shifts.freeSpots}</dd>
+              </div>
+              {/* Darf umbrechen, statt über den Rand zu ragen, falls die Kachel einmal sehr schmal wird. */}
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-white/15 pt-2">
+                <dt className="text-white/90">Auslastung</dt>
+                <dd className="rounded-full bg-white/18 px-2 py-0.5 text-xs font-bold whitespace-nowrap tabular-nums">
+                  {percent} %
+                </dd>
+              </div>
+            </dl>
+          )}
+        </div>
+      )}
+    </KpiShell>
   );
 }
 
-/** Kompakt für die Kennzahlenkarte: "4,5 Std." statt "4 Std. 30 Min." (die genaue Dauer steht im Hinweis). */
-const compactHours = (minutes: number) =>
-  `${(minutes / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Std.`;
+/** Kompakt für die Kennzahlenkarte: „4,5 Std.“ statt „4 Std. 30 Min.“; die Einheit etwas kleiner neben der Zahl. */
+function compactHours(minutes: number) {
+  return (
+    <>
+      {(minutes / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 })}{" "}
+      <span className="text-[0.55em] font-bold tracking-normal">Std.</span>
+    </>
+  );
+}
 
 export function HelperHours({ hours }: { hours: NonNullable<DashboardData["shifts"]>["hours"] }) {
   return (
