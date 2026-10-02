@@ -26,8 +26,8 @@
   <meta name="twitter:card" content="summary_large_image">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100201">
-  <script src="assets/js/site.js?v=2026100201" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100203">
+  <script src="assets/js/site.js?v=2026100203" defer></script>
 
   <script type="application/ld+json">
   {
@@ -59,7 +59,6 @@
   <symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol>
   <symbol id="i-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></symbol>
-  <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
   <symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
   <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
@@ -539,61 +538,88 @@
         <h2 id="helfer-title">Helferschichten, die sich fast von selbst organisieren</h2>
         <p class="lead">Kein Zettelchaos, keine Nachfragen, keine leere Theke beim Sommerfest: Helfer sehen offene Schichten und tragen sich mit einem Klick ein.<span class="lead-more"> Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</span></p>
       </div>
-      <div class="chapter-media reveal">
-        <div class="plx plx-slow">
+
+      <!-- Geführter Ablauf: oben eine Bühne – in der Mitte der Helferplan als Live-Fenster, links davor das Telefon, rechts
+           davor der gedruckte Plan; darunter die drei Schritte, die das Live-Fenster nacheinander zeigt (site.js hebt den
+           gerade gezeigten hervor und hält das Telefon auf demselben Stand, LIVE_SCENES.schichten). Ohne JavaScript und bei
+           reduzierter Bewegung: ruhige Bilder, alle Schritte gleich. Unter 720 px steht das Telefon über den Schritten und
+           der Plan unter dem dritten (site.css „Kapitel Helferschichten“). -->
+      <div class="story" data-story>
+        <div class="story-window reveal">
           <div class="browser live" data-live="schichten">
             <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2026</span></div>
             <div class="live-screen">
               <picture>
-                <img src="assets/img/app/schichten-light-960.webp?v=20260930" srcset="assets/img/app/schichten-light-960.webp?v=20260930 960w, assets/img/app/schichten-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus, Fortschrittsbalken und eingetragenen Helfern">
+                <img src="assets/img/app/schichten-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-light-960.webp?v=2026100202 960w, assets/img/app/schichten-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus und Fortschrittsbalken; beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert">
               </picture>
-              <!-- Live-Fenster: Ein Mauszeiger trägt sich beim Getränkestand ein – Bildfolge aus der Demo-App
-                   (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js (LIVE_SCENES) -->
+              <!-- Live-Fenster: Ein Mauszeiger zeigt auf „Neue Schicht“, trägt sich beim Getränkestand ein und klickt auf
+                   „Drucken“ – Bildfolge aus der Demo-App (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js -->
               <div class="live-layers" aria-hidden="true">
-                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=20260930" srcset="assets/img/app/schichten-live-1-light-960.webp?v=20260930 960w, assets/img/app/schichten-live-1-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=20260930" srcset="assets/img/app/schichten-live-2-light-960.webp?v=20260930 960w, assets/img/app/schichten-live-2-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026100102" srcset="assets/img/app/schichten-live-3-light-960.webp?v=2026100102 960w, assets/img/app/schichten-live-3-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=20260930" srcset="assets/img/app/schichten-live-4-light-960.webp?v=20260930 960w, assets/img/app/schichten-live-4-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 1000px, 92vw" width="1920" height="1684" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-1-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-1-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-2-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-2-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-3-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-3-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-4-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-4-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-5-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-5-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-5-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
                 <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
               </div>
             </div>
           </div>
         </div>
-        <div class="phone chapter-phone plx plx-fast">
-          <span class="phone-hw" aria-hidden="true"></span>
-          <div class="phone-screen">
-            <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-            <picture>
-              <img src="assets/img/app/phone-schichten-light-208.webp?v=20260930" srcset="assets/img/app/phone-schichten-light-208.webp?v=20260930 208w, assets/img/app/phone-schichten-light-260.webp?v=20260930 260w, assets/img/app/phone-schichten-light-312.webp?v=20260930 312w, assets/img/app/phone-schichten-light-416.webp?v=20260930 416w, assets/img/app/phone-schichten-light-520.webp?v=20260930 520w, assets/img/app/phone-schichten-light-624.webp?v=20260930 624w, assets/img/app/phone-schichten-light-780.webp?v=20260930 780w" sizes="(max-width: 719px) min(260px, 67vw), min(208px, 20vw)" width="780" height="1688" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Die Schicht „Aufbau“ ist voll besetzt, fünf Helfer sind eingetragen">
-            </picture>
+        <div class="story-phone reveal">
+          <div class="phone plx plx-slow">
+            <span class="phone-hw" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-schichten-light-208.webp?v=2026100202" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026100202 182w, assets/img/app/phone-schichten-light-208.webp?v=2026100202 208w, assets/img/app/phone-schichten-light-260.webp?v=2026100202 260w, assets/img/app/phone-schichten-light-273.webp?v=2026100202 273w, assets/img/app/phone-schichten-light-312.webp?v=2026100202 312w, assets/img/app/phone-schichten-light-364.webp?v=2026100202 364w, assets/img/app/phone-schichten-light-390.webp?v=2026100202 390w, assets/img/app/phone-schichten-light-416.webp?v=2026100202 416w, assets/img/app/phone-schichten-light-520.webp?v=2026100202 520w, assets/img/app/phone-schichten-light-546.webp?v=2026100202 546w, assets/img/app/phone-schichten-light-624.webp?v=2026100202 624w, assets/img/app/phone-schichten-light-780.webp?v=2026100202 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert, 3 von 4 Plätzen sind besetzt; darunter der noch unbesetzte Grillstand">
+              </picture>
+              <!-- Derselbe Ausschnitt vor dem Eintragen (2 von 4, „Eintragen“): site.js blendet ihn ein, solange das
+                   Live-Fenster den Stand vor dem Klick zeigt – Telefon und Fenster zeigen immer dasselbe -->
+              <div class="live-layers" aria-hidden="true">
+                <img class="live-frame" src="assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100202" srcset="assets/img/app/phone-schichten-live-1-light-182.webp?v=2026100202 182w, assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100202 208w, assets/img/app/phone-schichten-live-1-light-260.webp?v=2026100202 260w, assets/img/app/phone-schichten-live-1-light-273.webp?v=2026100202 273w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026100202 312w, assets/img/app/phone-schichten-live-1-light-364.webp?v=2026100202 364w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026100202 390w, assets/img/app/phone-schichten-live-1-light-416.webp?v=2026100202 416w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026100202 520w, assets/img/app/phone-schichten-live-1-light-546.webp?v=2026100202 546w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026100202 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026100202 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="">
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <ul class="checks checks-grid">
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen:</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung:</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht:</strong> zum Beispiel für den Getränkestand.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel auf einen Blick:</strong> „Unbesetzt“, „Teilweise besetzt“, „Voll besetzt“&nbsp;– dazu der Hinweis „Beginnt bald“.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Helferstunden im Blick:</strong> Veranstalter tragen die Stunden nach dem Einsatz ein, je Person und Jahr zusammengefasst. Helfer sehen ihre eigenen.</span></li>
-        <li class="reveal"><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, CSV-Export und Erinnerungen 24&nbsp;Stunden vor dem Einsatz.</span></li>
-      </ul>
-
-      <div class="spot spot-print" id="aushang">
-        <div class="spot-text reveal">
-          <p class="kicker"><svg class="icon" aria-hidden="true"><use href="#i-printer"/></svg>Helferplan drucken</p>
-          <h3>Der Helferplan fürs Schwarze Brett</h3>
-          <p class="lead">Für eine oder mehrere Veranstaltungen auf einmal: VereinsFlow erstellt einen druckfertigen Plan mit einer Zeile je Platz&nbsp;– belegt mit Namen oder frei zum Eintragen.</p>
-          <ul class="checks">
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Gezielt auswählen:</strong> nach Veranstaltungen, Zeitraum oder nur Schichten mit freien Plätzen.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>A4 hoch oder quer:</strong> mit Vereinsnamen, Erstellungsdatum und Seitenzahl auf jeder Seite.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Zum Aushängen gedacht:</strong> nur Namen, keine Kontaktdaten. Über den Druckdialog lässt sich der Plan auch als PDF speichern.</span></li>
-          </ul>
-        </div>
-        <div class="spot-media reveal">
+        <div class="story-paper reveal">
           <figure class="paper plx plx-slow">
-            <img src="assets/img/app/helferplan-druck-light-640.webp?v=2026100102" srcset="assets/img/app/helferplan-druck-light-640.webp?v=2026100102 640w, assets/img/app/helferplan-druck-light-1280.webp?v=2026100102 1280w" sizes="(min-width: 900px) 420px, 80vw" width="1280" height="1810" loading="lazy" decoding="async" alt="Gedruckter Helferplan: je Veranstaltung und Schicht eine Tabelle mit Nummer, Name, Kästchen für „Anwesend“ und Bemerkung; freie Plätze sind als „frei“ markiert">
+            <img src="assets/img/app/helferplan-druck-light-640.webp?v=2026100102" srcset="assets/img/app/helferplan-druck-light-640.webp?v=2026100102 640w, assets/img/app/helferplan-druck-light-1280.webp?v=2026100102 1280w" sizes="(min-width: 1200px) 236px, (min-width: 1000px) 176px, (min-width: 720px) 210px, 220px" width="1280" height="1810" loading="lazy" decoding="async" alt="Gedruckter Helferplan: Kopf mit Vereinsnamen, darunter je Veranstaltung und Schicht eine Tabelle mit Nummer, Name, Kästchen für „Anwesend“ und Bemerkung; freie Plätze sind als „frei“ markiert">
           </figure>
         </div>
+
+        <!-- role="list": Safari liest Listen ohne Aufzählungszeichen sonst nicht als Liste vor -->
+        <ol class="story-steps" role="list">
+          <li class="story-step reveal">
+            <span class="story-bar" aria-hidden="true"></span>
+            <h3><span class="story-num" aria-hidden="true">1</span>Schichten anlegen</h3>
+            <p>Veranstalter planen jede Schicht mit Zeit, Treffpunkt, Plätzen und Verantwortlichen.</p>
+            <ul class="checks">
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht:</strong> zum Beispiel für den Getränkestand.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, CSV-Export und Erinnerungen 24&nbsp;Stunden vor dem Einsatz.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Helferstunden im Blick:</strong> Veranstalter tragen die Stunden nach dem Einsatz ein, je Person und Jahr zusammengefasst. Helfer sehen ihre eigenen.</span></li>
+            </ul>
+          </li>
+          <li class="story-step reveal">
+            <span class="story-bar" aria-hidden="true"></span>
+            <h3><span class="story-num" aria-hidden="true">2</span>Helfer tragen sich ein</h3>
+            <p>Ein Klick auf „Eintragen“ genügt&nbsp;– am Rechner oder unterwegs auf dem Smartphone.</p>
+            <ul class="checks">
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel auf einen Blick:</strong> „Unbesetzt“, „Teilweise besetzt“, „Voll besetzt“&nbsp;– dazu der Hinweis „Beginnt bald“.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen:</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung:</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
+            </ul>
+          </li>
+          <li class="story-step reveal" id="aushang">
+            <span class="story-bar" aria-hidden="true"></span>
+            <h3><span class="story-num" aria-hidden="true">3</span>Helferplan drucken</h3>
+            <p>Fürs Schwarze Brett: VereinsFlow erstellt einen druckfertigen Plan mit einer Zeile je Platz&nbsp;– belegt mit Namen oder frei zum Eintragen.</p>
+            <ul class="checks">
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Gezielt auswählen:</strong> eine oder mehrere Veranstaltungen auf einmal, ein Zeitraum oder nur Schichten mit freien Plätzen.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>A4 hoch oder quer:</strong> mit Vereinsnamen, Erstellungsdatum und Seitenzahl auf jeder Seite.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Zum Aushängen gedacht:</strong> nur Namen, keine Kontaktdaten. Über den Druckdialog lässt sich der Plan auch als PDF speichern.</span></li>
+            </ul>
+          </li>
+        </ol>
       </div>
       <p class="section-more reveal"><a href="#kontakt">Die Helferplanung live sehen&nbsp;– Demo <span>anfragen<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></a></p>
     </div>

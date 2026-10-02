@@ -44,7 +44,7 @@ const schemes = flag("scheme") ? [flag("scheme")] : ["light"];
 const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960, 1920] };
 /**
  * Telefonbilder: je Bild die 1-, 1,5-, 2- und 3-fache Breite des Bildschirms, in dem es auf der Website steht (siehe
- * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Einstieg 221, Kapitel 208, Vorführung 312 – dort je Bild eigene
+ * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Einstieg 221, Kapitel 208 (bzw. 182), Vorführung 312 – dort je Bild eigene
  * `widths`), dazu 260, 520 und 780 für das Smartphone (dort sind die Bildschirme 260 px breit). So zeichnet der Browser das
  * Bild Pixel für Pixel, statt es selbst unscharf umzurechnen. Geänderte Größen hier, in site.css und in „sizes“ im HTML
  * angleichen. `crisp`: die Breiten, in denen das Bild bei 100 % Skalierung erscheint (siehe encode).
@@ -163,6 +163,21 @@ const scrollBelowHeader = (locate, { gap = 16 } = {}) => async (page) => {
 };
 
 /**
+ * Telefon: Die Kopfzeile der Anwendung ist leicht durchsichtig und zeichnet weich, was darunter liegt. Beginnt das Bild
+ * mitten in der Seite, schiene dort die vorige Karte als farbiger Fleck durch (rotes „Löschen“ neben dem Vereinsnamen) –
+ * für diese Bilder dieselbe Farbe, nur deckend.
+ */
+const solidHeader = async (page) => {
+  await page.evaluate(() => {
+    const header = document.querySelector("header");
+    if (!header) return;
+    const color = getComputedStyle(header).backgroundColor.replace(/\s*\/\s*[\d.]+%?\)$/, ")").replace(/^rgba\((.+),\s*[\d.]+\)$/, "rgb($1)");
+    header.style.setProperty("background-color", color, "important");
+    header.style.setProperty("backdrop-filter", "none", "important");
+  });
+};
+
+/**
  * Bricht ab, wenn das Dashboard noch die Einrichtungs-Checkliste („Erste Schritte“) oder Finanzen zeigt – dann fehlt
  * tools/demo-vorbereiten.mjs (die Website soll den Vereinsüberblick mit Kennzahlen zeigen, Finanzen gibt es noch nicht).
  */
@@ -187,17 +202,21 @@ const openSearch = (query, { viaButton = false } = {}) => async (page) => {
 };
 
 /**
- * Bildfolge für das Live-Fenster im Kapitel „Helferschichten“ (site.css „Live-Fenster“): Ein Mauszeiger trägt sich beim
- * Getränkestand ein. Aufgenommen werden
+ * Bildfolge für das Live-Fenster im Kapitel „Helferschichten“ (site.css „Live-Fenster“): Ein Mauszeiger zeigt auf
+ * „Neue Schicht“, trägt sich beim Getränkestand ein und geht zu „Drucken“. Aufgenommen werden
  *   schichten-live-1  vorher (Getränkestand 2 von 4, Schaltfläche „Eintragen“)
+ *   schichten-live-5  vorher, Zeiger über „Neue Schicht“ (Schritt 1 „Schichten anlegen“)
  *   schichten-live-2  vorher, Zeiger über „Eintragen“
  *   schichten-live-3  nachher (3 von 4, „Mein Einsatz“, eigener Name), Zeiger über „Austragen“ (steht an derselben Stelle)
  *   schichten-live-4  nachher, Zeiger über „Drucken“
  *   schichten         nachher ohne Zeiger – das bekannte Kapitelbild (ohne JavaScript, bei reduzierter Bewegung)
+ * Alle als derselbe Ausschnitt rechts neben der Seitenleiste: vom Kopf des Helferplans (Titel, „Neue Schicht“,
+ * „Drucken“) bis unter die Schicht „Getränkestand“ (planArea) – so zeigt das Fenster auf der Website nur, worum es
+ * geht, statt Seitenleiste und leerer Fläche.
  * Die Demo-Datenbank ändert sich dabei nur kurz: Der Administrator trägt sich aus und wieder ein, am Ende ist alles wie
  * vorher. Nach jedem Klick wird die Seite neu geladen – das Umbenennen im Bild (normalizeDemoNames) verändert die Seite,
- * die Anwendung soll danach nichts mehr darauf aufbauen. Die Positionen der Schaltflächen (in Prozent des Bildes) stehen
- * in der Ausgabe; sie gehören nach site.css (--live-*).
+ * die Anwendung soll danach nichts mehr darauf aufbauen. Die Positionen der Schaltflächen (in Prozent des Ausschnitts)
+ * stehen in der Ausgabe; sie gehören nach site.js (LIVE_SCENES.schichten).
  */
 async function liveFrames(page, snap) {
   const url = page.url();
@@ -206,6 +225,7 @@ async function liveFrames(page, snap) {
       .locator("h3", { hasText: /^Getränkestand$/ })
       .locator("xpath=ancestor::*[.//button[normalize-space()='Austragen' or normalize-space()='Eintragen']][1]");
   const button = (name) => card().getByRole("button", { name, exact: true });
+  const action = (name) => page.getByRole("button", { name, exact: true }).or(page.getByRole("link", { name, exact: true })).first();
   const fresh = async () => {
     await page.goto(url, { waitUntil: "networkidle" });
     await card().waitFor();
@@ -217,32 +237,107 @@ async function liveFrames(page, snap) {
     await page.waitForLoadState("networkidle");
     await fresh();
   };
-  const viewport = page.viewportSize();
-  const center = async (locator) => {
-    const box = await locator.boundingBox();
-    if (!box) throw new Error("Schaltfläche nicht gefunden");
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
+  // Ausschnitt: rechts neben der Seitenleiste bis zum Fensterrand, vom Titel bis unter die Karte „Getränkestand“ (die
+  // Karte samt Rahmen, nicht nur ihr Inhalt). Oben nichts vom Rücklink „Helferplanung“ (der unterste Link über dem Titel).
+  const planArea = async () => {
+    const x = await page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? 0));
+    const title = await page.locator("main h1").first().boundingBox();
+    const shift = await page.locator("h3", { hasText: /^Getränkestand$/ }).first().evaluate((heading) => {
+      const box = (heading.closest("li") ?? heading.parentElement).getBoundingClientRect(); // jede Schicht ist ein Listeneintrag
+      return { top: box.top, bottom: box.bottom };
+    });
+    if (!title) throw new Error("Titel des Helferplans nicht gefunden");
+    // oben 16 px Luft über dem Titel, aber nichts vom Rücklink „Helferplanung“ darüber; unten 16 px – die nächste Karte
+    // beginnt 18 px tiefer und bleibt so ganz draußen
+    const back = await page.evaluate(
+      ([left, top]) =>
+        Math.max(
+          0,
+          ...[...document.querySelectorAll("a")]
+            .map((link) => link.getBoundingClientRect())
+            .filter((box) => box.width && box.left >= left && box.bottom <= top)
+            .map((box) => box.bottom),
+        ),
+      [x, title.y],
+    ).catch(() => 0);
+    const y = Math.max(0, Math.floor(title.y - 16), Math.ceil(back + 1));
+    return { x, y, width: page.viewportSize().width - x, height: Math.ceil(shift.bottom + 16) - y };
   };
-  const percent = ({ x, y }) => `${((x / viewport.width) * 100).toFixed(2)}% ${((y / viewport.height) * 100).toFixed(2)}%`; // wie spot()
   // Ausgangslage: nicht eingetragen
   if (await button("Austragen").count()) await toggle("Austragen", "Eintragen");
   else await fresh();
+  const clip = await planArea();
+  // Leerer Rand des Ausschnitts neben Titel und Karten: Nur so weit dürfen Telefon und Blatt auf der Website über das
+  // Fenster reichen (site.css, --story-lap und --story-tuck, ausgelegt auf gut 3 % je Seite)
+  const margin = await page.locator("h3", { hasText: /^Getränkestand$/ }).first().evaluate((heading, area) => {
+    const card = (heading.closest("li") ?? heading.parentElement).getBoundingClientRect();
+    const title = document.querySelector("main h1")?.getBoundingClientRect() ?? card;
+    const left = Math.min(card.left, title.left) - area.x;
+    const right = area.x + area.width - card.right;
+    return `links ${((left / area.width) * 100).toFixed(1)} %, rechts ${((right / area.width) * 100).toFixed(1)} %`;
+  }, clip);
   await page.mouse.move(0, 0);
-  await snap("schichten-live-1");
-  const join = await center(button("Eintragen"));
+  await snap("schichten-live-1", { clip });
+  const add = await spot(page, action("Neue Schicht"), clip);
+  await page.mouse.move(add.x, add.y);
+  await snap("schichten-live-5", { clip });
+  const join = await spot(page, button("Eintragen"), clip);
   await page.mouse.move(join.x, join.y);
-  await snap("schichten-live-2");
+  await snap("schichten-live-2", { clip });
   // Eintragen – danach steht „Austragen“ an derselben Stelle unter dem Zeiger
   await toggle("Eintragen", "Austragen");
-  const leave = await center(button("Austragen"));
+  const after = await planArea();
+  if (JSON.stringify(after) !== JSON.stringify(clip)) {
+    console.error(`WARNUNG schichten: Ausschnitt nachher ${JSON.stringify(after)} statt ${JSON.stringify(clip)} – die Bilder passen nicht übereinander`);
+    process.exitCode = 1;
+  }
+  const leave = await spot(page, button("Austragen"), clip);
   await page.mouse.move(leave.x, leave.y);
-  await snap("schichten-live-3");
-  const print = await center(page.getByRole("button", { name: "Drucken", exact: true }).or(page.getByRole("link", { name: "Drucken", exact: true })).first());
+  await snap("schichten-live-3", { clip });
+  const print = await spot(page, action("Drucken"), clip);
   await page.mouse.move(print.x, print.y);
-  await snap("schichten-live-4");
+  await snap("schichten-live-4", { clip });
   await page.mouse.move(0, 0);
-  await snap("schichten");
-  console.log(`      Positionen: Eintragen ${percent(join)} (Austragen ${percent(leave)}), Drucken ${percent(print)}`);
+  await snap("schichten", { clip });
+  console.log(
+    `      Positionen: Neue Schicht ${add.at}, Eintragen ${join.at} (Austragen ${leave.at}), Drucken ${print.at}` +
+      ` · Ausschnitt ${clip.width}×${clip.height} ab ${clip.x}/${clip.y} · Rand neben den Karten ${margin}`,
+  );
+}
+
+/**
+ * Telefon im Kapitel „Helferschichten“: dieselbe Schicht „Getränkestand“ wie im Live-Fenster daneben, vorher und
+ * nachher – site.js blendet im Telefon um, sobald der Mauszeiger im Fenster auf „Eintragen“ klickt, damit beide immer
+ * denselben Stand zeigen:
+ *   phone-schichten-live-1  vorher (2 von 4, „Eintragen“)
+ *   phone-schichten         nachher („Mein Einsatz“, eigener Name, 3 von 4, „Austragen“) – das ruhige Bild
+ * Beide ab der Karte direkt unter der Kopfzeile. Wie bei liveFrames trägt sich der Administrator kurz aus und wieder
+ * ein; am Ende ist er eingetragen.
+ */
+async function phoneFrames(page, snap) {
+  const url = page.url();
+  const shift = () => page.locator("h3", { hasText: /^Getränkestand$/ }).locator("xpath=ancestor::li[1]");
+  const button = (name) => shift().getByRole("button", { name, exact: true });
+  const fresh = async () => {
+    await page.goto(url, { waitUntil: "networkidle" });
+    await shift().waitFor();
+  };
+  const toggle = async (from, to) => {
+    await fresh();
+    await button(from).click();
+    await button(to).waitFor();
+    await page.waitForLoadState("networkidle");
+  };
+  const frame = async (name) => {
+    await fresh();
+    await scrollBelowHeader(() => shift(), { gap: 12 })(page);
+    await solidHeader(page);
+    await snap(name);
+  };
+  if (await button("Austragen").count()) await toggle("Austragen", "Eintragen");
+  await frame("phone-schichten-live-1");
+  await toggle("Eintragen", "Austragen");
+  await frame("phone-schichten");
 }
 
 /** Mittelpunkt eines Elements in Prozent des Ausschnitts (für die Zielpunkte in site.js, LIVE_SCENES). */
@@ -393,10 +488,11 @@ const shots = [
     widths: [880, 960, 1760, 1920],
     crisp: [880],
   },
-  // Der Helferplan behält die Seitenleiste (Kapitelbild in voller Breite); höher, damit die Ampel-Zustände
-  // „Voll besetzt“, „Teilweise besetzt“ und „Unbesetzt“ zu sehen sind. Zusammen mit der Bildfolge für das Live-Fenster
-  // aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
-  { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1140, height: 1000 }, frames: liveFrames },
+  // Der Helferplan als Ausschnitt ohne Seitenleiste: Kopf mit „Neue Schicht“ und „Drucken“, darunter „Aufbau“ (voll
+  // besetzt) und „Getränkestand“ (teilweise besetzt, hier trägt sich der Mauszeiger ein). 1440 px breit: Titel und
+  // Angaben stehen je in einer Zeile, die Karten werden flach – der Ausschnitt ist knapp 3 : 2 statt hochkant. Zusammen
+  // mit der Bildfolge für das Live-Fenster aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
+  { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1440, height: 1000 }, frames: liveFrames },
   { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content", frames: memberFrames },
   // Monat des Sommerfests (dort legt tools/demo-vorbereiten.mjs Trainings und weitere Termine an); das Datum steht in
   // der Adresse – nach einem neuen Seed an das Sommerfest anpassen.
@@ -447,13 +543,18 @@ const shots = [
     widths: [260, 312, 468, 520, 624, 780],
     crisp: [260, 312],
   },
+  // Kapitel Helferschichten: die Schicht „Getränkestand“ aus Sicht des Helfers vor und nach dem Eintragen (siehe
+  // phoneFrames), darunter „Grillstand“ (unbesetzt). Neben dem Live-Fenster 208 CSS-Pixel breit (1000–1199 px: 182),
+  // auf dem Smartphone 260.
   {
     name: "phone-schichten",
     device: "phone",
     path: "/helferplanung",
     steps: followLink(/Sommerfest 2026/),
-    widths: [208, 260, 312, 416, 520, 624, 780],
-    crisp: [208, 260],
+    frames: phoneFrames,
+    viewport: PHONE_SCREEN,
+    widths: [182, 208, 260, 273, 312, 364, 390, 416, 520, 546, 624, 780],
+    crisp: [182, 208, 260],
   },
   // „Im Detail“ auf dem Smartphone (unter 720 px statt der Browserfenster): Suche über die Lupe, Mitgliederliste,
   // Kalender als Liste, Auswertung – je 260 CSS-Pixel breit wie die übrigen Telefone dort
