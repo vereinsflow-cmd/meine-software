@@ -10,6 +10,13 @@ import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
 import {
+  FreeShiftsStat,
+  HelperHours,
+  MembersStat,
+  NextEventsStat,
+  StatCard,
+} from "@/modules/dashboard/components/kpi-stats";
+import {
   CustomizeDashboard,
   type CustomizeTab,
 } from "@/modules/dashboard/components/customize-dashboard";
@@ -19,18 +26,13 @@ import { OnboardingCard } from "@/modules/dashboard/components/onboarding-card";
 import { CardGrid, Group } from "@/modules/dashboard/components/layout";
 import {
   Birthdays,
-  FreeShiftsStat,
-  HelperHours,
   LatestNotifications,
-  MembersStat,
   MyShifts,
   MyTasks,
-  NextEventsStat,
   OpenPayments,
   OpenShifts,
   RecentActivity,
   StaffingWarnings,
-  StatCard,
   UpcomingEvents,
 } from "@/modules/dashboard/components/widgets";
 import {

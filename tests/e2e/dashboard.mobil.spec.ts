@@ -229,6 +229,22 @@ test.describe("Dashboard-Folien – Wischen (Touch)", () => {
     await expect(selected(page)).toHaveText("Übersicht");
   });
 
+  test("Auch auf dem Kursverlauf einer Kennzahl gehört das Wischen dem Karussell", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    const scroller = page.getByRole("group", { name: "Kennzahlen" });
+    await scroller.scrollIntoViewIfNeeded();
+    const chart = scroller.locator('[data-slot="quote-chart"]').first();
+    const box = (await chart.boundingBox())!;
+    const from = { x: box.x + box.width - 40, y: box.y + box.height / 2 };
+    await swipe(page, from, { x: from.x - 240, y: from.y });
+    await expect
+      .poll(() => scroller.evaluate((element) => element.scrollLeft))
+      .toBeGreaterThan(100);
+    await expect(selected(page)).toHaveText("Übersicht");
+  });
+
   test("Ohne Wischen geht alles auch: Zurück/Weiter-Knöpfe bleiben bedienbar", async ({ page }) => {
     await login(page, USERS.admin);
     const pager = page.getByRole("navigation", { name: "Bereich wechseln" });

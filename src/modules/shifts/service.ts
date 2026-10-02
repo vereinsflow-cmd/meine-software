@@ -1,10 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client";
-import type { ShiftStatus } from "@/generated/prisma/enums";
+import type { ShiftStatus, AssignmentStatus } from "@/generated/prisma/enums";
 import {
   formatDate,
   formatDateShort,
   formatTimeRange,
   toDateInputValue,
+  startOfBerlinDate,
   toTimeInputValue,
 } from "@/lib/dates";
 import { toCsv } from "@/lib/csv";
@@ -949,8 +950,10 @@ export async function getHoursOverview(
 ): Promise<{ rows: HoursRow[]; totalMinutes: number; scope: "ALL" | "OWN" }> {
   assertCan(ctx, "shifts:read");
   const scope = scopeOf(ctx, "shifts:hours");
-  const from = new Date(Date.UTC(year - 1, 11, 31, 12));
-  const to = new Date(Date.UTC(year + 1, 0, 1, 12));
+  // Das Jahr nach Berliner Zeit (wie die Auswertungen und der Kursverlauf auf dem Dashboard). Vorher wurde nach UTC-Jahr ODER
+  // UTC-Jahr zwei Stunden später gefiltert – eine Schicht in der Silvesternacht (23–1 Uhr) zählte dann in beiden Jahren.
+  const from = startOfBerlinDate(year, 1, 1);
+  const to = startOfBerlinDate(year + 1, 1, 1);
 
   const rows = await ctx.db.shiftAssignment.findMany({
     where: workedHoursWhere(ctx, scope, from, to),
@@ -964,11 +967,6 @@ export async function getHoursOverview(
 
   const byMember = new Map<string, HoursRow>();
   for (const row of rows) {
-    if (
-      row.shift.startsAt.getUTCFullYear() !== year &&
-      new Date(row.shift.startsAt.getTime() + 2 * 3_600_000).getUTCFullYear() !== year
-    )
-      continue;
     const entry = byMember.get(row.memberId) ?? {
       memberId: row.memberId,
       name: `${row.member.lastName}, ${row.member.firstName}`,
@@ -1069,6 +1067,34 @@ export async function getStaffingOverview(
     events.set(row.event.id, entry);
   }
   return [...events.values()].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+}
+
+/**
+ * Die heute offenen Schichten (wie `getStaffingOverview`) mit allen Eintragungen samt Zeitpunkt der Eintragung und Absage –
+ * daraus berechnet das Dashboard, wie sich die Besetzung entwickelt hat (Kennzahl „wie eine Aktie“,
+ * `modules/dashboard/quote.ts`).
+ */
+export async function listStaffingHistory(ctx: TenantContext): Promise<
+  {
+    requiredCount: number;
+    assignments: { assignedAt: Date; cancelledAt: Date | null; status: AssignmentStatus }[];
+  }[]
+> {
+  assertCan(ctx, "shifts:read");
+  return ctx.db.eventShift.findMany({
+    where: {
+      deletedAt: null,
+      status: { not: "CANCELLED" },
+      endsAt: { gte: new Date() },
+      event: { deletedAt: null, status: "PUBLISHED" },
+    },
+    select: {
+      requiredCount: true,
+      assignments: { select: { assignedAt: true, cancelledAt: true, status: true } },
+    },
+    orderBy: { startsAt: "asc" }, // dieselben (höchstens 1000) Schichten wie `getStaffingOverview`
+    take: 1000,
+  });
 }
 
 export interface OpenShiftItem {

@@ -144,20 +144,6 @@ export function bucketIndexOf(buckets: readonly BucketRange[], instant: Date): n
   return buckets.findIndex((bucket) => time < bucket.end.getTime());
 }
 
-/**
- * Die nächsten `count` Wochen ab der laufenden (Montag–Sonntag, Berliner Zeit), die laufende zuerst – für
- * vorausschauende Übersichten (z. B. Termine je Woche). Anders als `buildBuckets` schaut diese Funktion nach vorn,
- * nicht zurück, und liefert deshalb bewusst keine Beschriftung/„partial“-Kennzeichnung wie dort: Für eine schmucklose
- * Mini-Grafik ohne Achsenbeschriftung (siehe `Sparkline`) reicht der reine Zeitraum.
- */
-export function buildUpcomingWeeks(now: Date, count: number): BucketRange[] {
-  const thisWeekStart = addBerlinDays(startOfBerlinDay(now), -berlinWeekday(now));
-  return Array.from({ length: count }, (_, ahead) => {
-    const start = addBerlinDays(thisWeekStart, 7 * ahead);
-    return { start, end: addBerlinDays(start, 7) };
-  });
-}
-
 /** Nur die Beschriftungen (ohne Zeitpunkte) – das, was die Oberfläche braucht. */
 export function toLabels(buckets: readonly TimeBucket[]): BucketLabel[] {
   return buckets.map(({ key, label, fullLabel, partial }) => ({ key, label, fullLabel, partial }));

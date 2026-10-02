@@ -1,6 +1,7 @@
 import type { MemberStatus } from "@/generated/prisma/enums";
-import { countPerBucket, membersAtBucketEnds, sumPerBucket } from "@/lib/charts/aggregate";
-import { buildBuckets, buildUpcomingWeeks } from "@/lib/charts/time-buckets";
+import { sumPerBucket } from "@/lib/charts/aggregate";
+import { eventsQuote, hoursQuote, membersQuote, staffingQuote, type Quote } from "./quote";
+import { buildBuckets } from "@/lib/charts/time-buckets";
 import { berlinParts, daysUntil } from "@/lib/dates";
 import { listRecentActivity, type AuditEntryDto } from "@/modules/audit/service";
 import { eventVisibilityWhere, listEvents, type EventListItem } from "@/modules/events/service";
@@ -21,6 +22,7 @@ import {
   getStaffingOverview,
   listMyAssignments,
   listOpenShifts,
+  listStaffingHistory,
   listWorkedMinutes,
   type MyAssignment,
   type OpenShiftItem,
@@ -46,16 +48,18 @@ export interface DashboardData {
     byStatus: { status: MemberStatus; count: number }[];
     /** DEPARTMENT: nur die Mitglieder der eigenen Abteilung(en) sind gezählt. */
     scope: "CLUB" | "DEPARTMENT";
-    /** Bestand am Ende jedes der letzten 6 Monate (älteste zuerst) – für die kleine Trendlinie der Kennzahlenkarte. */
+    /** Mitgliederzahl heute vor 6, 5, … Monaten bis heute (älteste zuerst, gezählt wie `total`) – Vergleich zum Vormonat. */
     trend: number[];
+    /** Kursverlauf der Kennzahlenkarte (6 M, 12 M, 5 J; mit Zu- und Abgängen). */
+    quote: Quote;
   } | null;
   events: {
     upcoming: EventListItem[];
     countNext30Days: number;
-    /** Veröffentlichte Termine je der nächsten 6 Wochen (laufende Woche zuerst) – kleines Balkendiagramm. */
-    weeklyTrend: number[];
     /** Tage bis zum nächsten anstehenden Termin (0 = heute); `null` ohne einen. */
     nextInDays: number | null;
+    /** Kursverlauf: Termine in den folgenden 30 Tagen zu jedem Stichtag (12 W, 6 M, 12 M). */
+    quote: Quote;
   } | null;
   shifts: {
     mine: MyAssignment[];
@@ -64,14 +68,18 @@ export interface DashboardData {
     freeSpots: number;
     /** Besetzte/benötigte Plätze insgesamt – für die Fortschrittsanzeige der Kennzahlenkarte. */
     staffing: { filled: number; required: number };
+    /** Kursverlauf der Besetzung: besetzte Plätze der heute offenen Schichten je Woche (6 W, 12 W). */
+    staffingQuote: Quote;
     /** Nur für Veranstalter: Veranstaltungen mit unbesetzten Schichten in den nächsten 7 Tagen. */
     warnings: StaffingEvent[];
     hours: {
       minutes: number;
       scope: "ALL" | "OWN";
       year: number;
-      /** Summierte Stunden je der letzten 12 Wochen (älteste zuerst) – für die kleine Trendlinie der Kennzahlenkarte. */
+      /** Summierte Stunden je der letzten 12 Wochen (älteste zuerst) – für den Vergleich zur Vorwoche. */
       trend: number[];
+      /** Kursverlauf: im Zeitraum aufsummierte Stunden (12 W, laufendes Jahr, 5 J). */
+      quote: Quote;
     };
   } | null;
   /** Meine offenen Aufgaben und Kennzahlen im Rahmen der Sichtbarkeit. */
@@ -91,30 +99,32 @@ async function loadMembers(ctx: TenantContext, now: Date): Promise<DashboardData
   const scope = scopeOf(ctx, "members:read");
   if (scope !== "CLUB" && scope !== "DEPARTMENT") return null; // "nur eigener Datensatz" braucht keine Kennzahlen
   const where = { AND: [{ archivedAt: null, deletedAt: null }, memberReadScope(ctx) ?? {}] };
-  // Für die Trendlinie zählen (wie in den Auswertungen) auch Archivierte mit – sie waren in der Woche Mitglieder.
-  const [groups, membershipRows] = await Promise.all([
+  // Für den Verlauf alle Mitglieder samt Archiv und Papierkorb: Sie zählen bis zum Archivieren bzw. Löschen mit – genau wie
+  // die Zahl auf der Karte (`memberCounts` in quote.ts), der Verlauf endet deshalb immer bei ihr.
+  const [groups, records] = await Promise.all([
     ctx.db.member.groupBy({ by: ["status"], where, _count: { _all: true } }),
     ctx.db.member.findMany({
-      where: { AND: [{ deletedAt: null }, memberReadScope(ctx) ?? {}] },
-      select: { joinedAt: true, leftAt: true, status: true },
+      where: memberReadScope(ctx) ?? {},
+      select: { joinedAt: true, createdAt: true, archivedAt: true, deletedAt: true },
     }),
   ]);
+  const quote = membersQuote(records, now);
   return {
     total: groups.reduce((sum, group) => sum + group._count._all, 0),
     byStatus: groups
       .map((group) => ({ status: group.status, count: group._count._all }))
       .sort((a, b) => b.count - a.count),
     scope,
-    trend: membersAtBucketEnds(membershipRows, buildBuckets("M", now).slice(-6), now).counts,
+    trend: quote.periods.find((period) => period.id === "6M")!.points.map((point) => point.value),
+    quote,
   };
 }
 
 async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData["events"]> {
   if (!can(ctx, "events:read")) return null;
-  // Vorausschauend, nicht zurückblickend (`buildUpcomingWeeks`, nicht `buildBuckets`): Die Kennzahl selbst
-  // ("Termine in 30 Tagen") blickt nach vorn – ein Rückblick wäre hier oft leer, wenn gerade nichts anstand.
-  const weeks = buildUpcomingWeeks(now, 6);
-  const [upcoming, countNext30Days, weekRows] = await Promise.all([
+  // Für den Kursverlauf: alle Termine ab dem ältesten Stichtag (vor 12 Monaten) bis 30 Tage nach heute
+  const historyFrom = buildBuckets("M", now)[0]!.start;
+  const [upcoming, countNext30Days, historyRows] = await Promise.all([
     listEvents(ctx, { status: "PUBLISHED", period: "upcoming", request: FIRST_PAGE }),
     ctx.db.event.count({
       where: {
@@ -128,7 +138,10 @@ async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData[
       where: {
         AND: [
           eventVisibilityWhere(ctx),
-          { status: "PUBLISHED", startsAt: { gte: weeks[0]!.start, lt: weeks.at(-1)!.end } },
+          {
+            status: { in: ["PUBLISHED", "COMPLETED"] },
+            startsAt: { gte: historyFrom, lt: new Date(now.getTime() + 30 * DAY) },
+          },
         ],
       },
       select: { startsAt: true },
@@ -137,9 +150,10 @@ async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData[
   return {
     upcoming: upcoming.items,
     countNext30Days,
-    weeklyTrend: countPerBucket(
-      weekRows.map((row) => row.startsAt),
-      weeks,
+    quote: eventsQuote(
+      historyRows.map((row) => row.startsAt),
+      now,
+      countNext30Days,
     ),
     nextInDays: upcoming.items[0] ? daysUntil(upcoming.items[0].startsAt, now) : null,
   };
@@ -150,25 +164,29 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
   const year = berlinParts(now).year;
   const isOrganizer = can(ctx, "shifts:manage") || can(ctx, "shifts:assign");
   const weeks = buildBuckets("W", now);
-  const [mine, open, staffing, hours, worked] = await Promise.all([
+  const years = buildBuckets("Y", now); // der weiteste Zeitraum des Kursverlaufs (5 Jahre)
+  const [mine, open, staffing, hours, worked, history] = await Promise.all([
     listMyAssignments(ctx, { limit: 5 }),
     listOpenShifts(ctx, { limit: 5 }),
     getStaffingOverview(ctx),
     getHoursOverview(ctx, year),
-    listWorkedMinutes(ctx, { from: weeks[0]!.start, to: weeks[weeks.length - 1]!.end }),
+    listWorkedMinutes(ctx, { from: years[0]!.start, to: years[years.length - 1]!.end }),
+    listStaffingHistory(ctx),
   ]);
   const trend = sumPerBucket(
     worked.rows.map((row) => ({ at: row.at, value: row.minutes / 60 })),
     weeks,
   ).map((value) => Math.round(value * 10) / 10);
+  const filled = staffing.reduce((sum, event) => sum + Math.min(event.filled, event.required), 0);
   return {
     mine,
     open,
     freeSpots: staffing.reduce((sum, event) => sum + Math.max(0, event.required - event.filled), 0),
     staffing: {
-      filled: staffing.reduce((sum, event) => sum + Math.min(event.filled, event.required), 0),
+      filled,
       required: staffing.reduce((sum, event) => sum + event.required, 0),
     },
+    staffingQuote: staffingQuote(history, now, filled),
     warnings: isOrganizer
       ? staffing
           .filter(
@@ -179,7 +197,13 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
           .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
           .slice(0, 5)
       : [],
-    hours: { minutes: hours.totalMinutes, scope: hours.scope, year, trend },
+    hours: {
+      minutes: hours.totalMinutes,
+      scope: hours.scope,
+      year,
+      trend,
+      quote: hoursQuote(worked.rows, now, year, hours.totalMinutes),
+    },
   };
 }
 

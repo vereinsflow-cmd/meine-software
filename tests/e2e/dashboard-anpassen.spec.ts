@@ -67,7 +67,7 @@ test.describe("Dashboard selbst einstellen", () => {
     const kpis = page.locator("[data-layout]");
     const group = page.getByRole("group", { name: "Kennzahlen" });
     await expect(kpis).toHaveAttribute("data-size", "m"); // Standard: Mittel
-    expect(await group.locator('[data-slot="sparkline"]').count()).toBeGreaterThan(0);
+    expect(await group.locator('[data-slot="quote-chart"]').count()).toBeGreaterThan(0);
 
     const dialog = await openCustomize(page);
     await dialog.getByRole("combobox", { name: "Größe von „Kennzahlen“" }).selectOption("s");
@@ -77,7 +77,7 @@ test.describe("Dashboard selbst einstellen", () => {
 
     const check = async () => {
       await expect(kpis).toHaveAttribute("data-size", "s");
-      await expect(group.locator('[data-slot="sparkline"]')).toHaveCount(0); // keine Grafiken
+      await expect(group.locator('[data-slot="quote-chart"]')).toHaveCount(0); // kein Kursverlauf
       const tops = await group
         .getByRole("link")
         .evaluateAll((links) => links.map((link) => Math.round(link.getBoundingClientRect().top)));
@@ -104,7 +104,7 @@ test.describe("Dashboard selbst einstellen", () => {
     await again.getByRole("button", { name: "Speichern" }).click();
     await expect(page.getByText("Standard-Ansicht wiederhergestellt.")).toBeVisible();
     await expect(kpis).toHaveAttribute("data-size", "m");
-    expect(await group.locator('[data-slot="sparkline"]').count()).toBeGreaterThan(0);
+    expect(await group.locator('[data-slot="quote-chart"]').count()).toBeGreaterThan(0);
   });
 
   test("Alle Karten eines Reiters ausgeblendet: freundlicher Hinweis statt leerer Fläche", async ({

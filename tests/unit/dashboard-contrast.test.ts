@@ -87,6 +87,44 @@ describe("Auf den farbigen Kennzahlen", () => {
   });
 });
 
+describe.each(Object.entries(KPI_ACCENT))("Kurs-Karte „%s“ (wie eine Aktie)", (_, colors) => {
+  const { from, via, to } = stops(colors.card);
+
+  it("Zeitraum-Knöpfe: weiße Schrift auf der dunklen Schiene, überall auf dem Verlauf mindestens 4,5 : 1", () => {
+    for (const ground of [from, via, to]) {
+      expect(contrastRgb(WHITE, mix(BLACK, 0.15, ground))).toBeGreaterThanOrEqual(AA);
+      expect(contrastRgb(WHITE, mix(BLACK, 0.2, ground))).toBeGreaterThanOrEqual(AA); // beim Überfahren
+    }
+  });
+
+  it("Hoch/Tief/Ø, Beschriftungen und Achse (Weiß, kleine Schrift) in der Mitte und unten: mindestens 4,5 : 1", () => {
+    // Bewusst volles Weiß: Weiß zu 90 % fiele auf dem orangen Verlauf (Mitte) unter 4,5 : 1
+    expect(
+      contrastRgb(
+        mix(WHITE, 0.9, stops(KPI_ACCENT.amber.card).via),
+        stops(KPI_ACCENT.amber.card).via,
+      ),
+    ).toBeLessThan(AA);
+    for (const ground of [via, to]) expect(contrastRgb(WHITE, ground)).toBeGreaterThanOrEqual(AA);
+  });
+
+  it("Schild „Start · 19“ (dunkles Schild auf der hellen Fläche unter der Linie): mindestens 4,5 : 1", () => {
+    const area = mix(WHITE, 0.26, from); // stärkste Stelle der Fläche
+    expect(contrastRgb(WHITE, mix(BLACK, 0.25, area))).toBeGreaterThanOrEqual(AA);
+  });
+});
+
+describe("Schilder und Infofeld der Kurs-Karten (weiß)", () => {
+  it.each([
+    ["gestiegen (Grün)", "emerald-800"],
+    ["gesunken (Rot)", "red-700"],
+    ["unverändert (Grau)", "slate-600"],
+    ["Infofeld (Schrift)", "slate-900"],
+  ] as const)("%s auf Weiß: mindestens 4,5 : 1", (_, text) => {
+    expect(contrastRgb(tw(text), WHITE)).toBeGreaterThanOrEqual(AA);
+  });
+});
+
 describe.each(Object.entries(TILE_ACCENT))("Getönte Kachel „%s“", (name) => {
   it("hell: gedämpfte Schrift auf der kräftigsten Tönung (Stufe 100): mindestens 4,5 : 1", () => {
     expect(
