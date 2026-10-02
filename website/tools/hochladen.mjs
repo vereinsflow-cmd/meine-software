@@ -4,12 +4,15 @@
 //   node tools/hochladen.mjs <Server> <Benutzer> --anzeigen          (nur die SFTP-Befehle zeigen, nichts hochladen)
 //
 // Server und Benutzer stehen bei IONOS unter Hosting → SFTP; ein anderer Port geht als server:port. Das Passwort fragt
-// sftp selbst im Terminal ab, es wird nirgends gespeichert. Hochgeladen wird genau das, was auch ins Upload-Paket kommt;
-// vorhandene Dateien werden überschrieben, auf dem Server wird nichts gelöscht.
+// sftp selbst im Terminal ab, es wird nirgends gespeichert. Hochgeladen wird genau das, was auch ins Upload-Paket kommt
+// (tools/paket.mjs) – auch die Stildatei wie dort ohne Entwicklerkommentare (eine bereinigte Kopie in einem temporären
+// Ordner, die danach wieder gelöscht wird). Vorhandene Dateien werden überschrieben, auf dem Server wird nichts gelöscht.
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { paketInhalt, sammlePaket, wirdBereinigt } from "./paket.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -24,32 +27,35 @@ if (!server || !benutzer || !erlaubt.test(server) || !erlaubt.test(benutzer) || 
 }
 
 // Wie beim Upload-Paket: Werkzeuge, Paket, README, Vorschau-Starter und Netlify-Header bleiben lokal.
-const obenAusgelassen = new Set(["tools", "upload", "README.md", "Vorschau-starten.cmd", "Vorschau-starten.command", "_headers"]);
-const ordner = [];
-const dateien = [];
-(function sammeln(relativ) {
-  for (const eintrag of fs.readdirSync(path.join(root, relativ), { withFileTypes: true })) {
-    if (eintrag.name === ".DS_Store" || (!relativ && obenAusgelassen.has(eintrag.name))) continue;
-    const pfad = relativ ? `${relativ}/${eintrag.name}` : eintrag.name;
-    if (eintrag.isDirectory()) {
-      ordner.push(pfad);
-      sammeln(pfad);
-    } else if (eintrag.isFile()) {
-      dateien.push(pfad);
-    }
-  }
-})("");
+const { ordner, dateien } = sammlePaket(root);
+
+// Bereinigte Stildatei(en) in einen temporären Ordner schreiben; hochgeladen wird diese Kopie statt des Quelltexts.
+const bereinigtOrdner = fs.mkdtempSync(path.join(os.tmpdir(), "vereinsflow-upload-"));
+const aufraeumen = () => fs.rmSync(bereinigtOrdner, { recursive: true, force: true });
+const quelle = new Map();
+process.on("SIGINT", () => {
+  aufraeumen();
+  process.exit(130);
+});
+for (const pfad of dateien.filter(wirdBereinigt)) {
+  const kopie = path.join(bereinigtOrdner, ...pfad.split("/"));
+  fs.mkdirSync(path.dirname(kopie), { recursive: true });
+  fs.writeFileSync(kopie, paketInhalt(root, pfad));
+  quelle.set(pfad, kopie);
+}
 
 const zitiert = (wert) => `"${wert.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 // „-“ vor mkdir: Fehler bei schon vorhandenen Ordnern ignorieren; jeder andere Fehler bricht ab.
 const befehle = [
   `cd ${zitiert(zielordner)}`,
   ...ordner.map((pfad) => `-mkdir ${zitiert(pfad)}`),
-  ...dateien.map((pfad) => `put ${zitiert(path.join(root, pfad))} ${zitiert(pfad)}`),
+  ...dateien.map((pfad) => `put ${zitiert(quelle.get(pfad) ?? path.join(root, pfad))} ${zitiert(pfad)}`),
 ];
 
 if (nurAnzeigen) {
   console.log(befehle.join("\n"));
+  // Die bereinigte Kopie bleibt hier liegen, damit die gezeigten Befehle funktionieren (temporärer Ordner des Systems).
+  if (quelle.size) console.log(`\n# Bereinigte Stildatei: ${[...quelle.values()].join(", ")}`);
   process.exit(0);
 }
 
@@ -72,10 +78,12 @@ sftp.stderr.on("data", (teil) => {
   for (const zeile of zeilen) if (!/^remote mkdir "/.test(zeile)) process.stderr.write(zeile + "\n");
 });
 sftp.on("error", (fehler) => {
+  aufraeumen();
   console.error(`sftp ließ sich nicht starten: ${fehler.message}`);
   process.exit(1);
 });
 sftp.on("close", (code) => {
+  aufraeumen();
   if (code === 0) {
     console.log(`\nFertig: ${dateien.length} Dateien hochgeladen.`);
   } else {

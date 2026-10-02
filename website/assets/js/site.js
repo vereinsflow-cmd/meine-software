@@ -12,7 +12,10 @@
   const canObserve = "IntersectionObserver" in window;
   const header = document.querySelector(".site-header");
 
-  // Mobiles Menü
+  // Mobiles Menü. Der Knopf steht im HTML vor der Navigation, die Tabulatortaste führt von ihm also direkt zu den
+  // Menüpunkten. Offen ist alles außer der Kopfzeile gesperrt (inert: kein Fokus, kein Vorlesen, kein Tippen), und der
+  // Fokus springt auf den ersten Menüpunkt. Esc oder ein Tipp daneben schließt es, der Fokus kehrt dann zum Knopf zurück
+  // (ein Menüpunkt springt dagegen zu seinem Abschnitt).
   const toggle = document.querySelector(".nav-toggle");
   const nav = document.getElementById("site-nav");
   if (toggle && nav) {
@@ -21,8 +24,17 @@
       toggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
       nav.classList.toggle("is-open", open);
       header?.classList.toggle("is-open", open); // Kopfzeile deckend, sonst entsteht über dem Einstieg eine Kante
+      for (const element of document.body.children) {
+        if (element !== header && !element.matches("script, .sprite")) element.toggleAttribute("inert", open);
+      }
+      if (open) nav.querySelector("a")?.focus();
     };
     const isOpen = () => toggle.getAttribute("aria-expanded") === "true";
+    const close = () => {
+      const inside = nav.contains(document.activeElement);
+      setOpen(false);
+      if (inside) toggle.focus(); // der Menüpunkt ist gleich ausgeblendet – sonst stünde der Fokus nirgends
+    };
     toggle.addEventListener("click", () => setOpen(!isOpen()));
     nav.addEventListener("click", (event) => {
       if (event.target instanceof Element && event.target.closest("a")) setOpen(false);
@@ -30,7 +42,7 @@
     // Tipp neben das Menü (auf die Abdunkelung darunter) schließt es
     document.addEventListener("click", (event) => {
       if (isOpen() && event.target instanceof Node && !nav.contains(event.target) && !toggle.contains(event.target)) {
-        setOpen(false);
+        close();
       }
     });
     document.addEventListener("keydown", (event) => {
@@ -138,6 +150,9 @@
   // zeigen (0 = sein ruhiges Bild; so zeigen Telefon und Fenster immer denselben Stand). Der Plan wiederholt sich,
   // solange das Fenster im Bild ist (und sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder
   // geladen sind. Bei reduzierter Bewegung bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
+  // Jedes Fenster hat einen Knopf „Anhalten“ (außerhalb der für Screenreader verborgenen Leiste, erscheint erst, wenn das
+  // Fenster abspielen kann). Er gilt für alle Fenster der Seite zugleich – wer eines anhält, will auch in den anderen
+  // Themen Ruhe: Angehalten zeigt jedes das ruhige Bild, die Schritte stehen gleichrangig; „Abspielen“ beginnt von vorn.
   const LIVE_SCENES = {
     // Helferschichten, in drei Schritten wie die Liste darunter: auf „Neue Schicht“ zeigen, beim Getränkestand
     // eintragen (das Telefon wechselt mit dem Klick von „vorher“ zu „nachher“), „Drucken“ – danach hebt sich der
@@ -187,16 +202,31 @@
       rest: "62% 88%",
       steps: [
         ["frame", 0], ["show"], ["wait", 900],
-        ["move", "46.71% 34.97%", 1000], ["click"], ["frame", 1], ["wait", 1900],
-        ["move", "57.35% 34.97%", 650], ["click"], ["frame", 2], ["wait", 1900],
-        ["move", "36.84% 34.97%", 850], ["click"], ["frame", 0], ["wait", 1300],
+        ["move", "46.27% 34.38%", 1000], ["click"], ["frame", 1], ["wait", 1900],
+        ["move", "56.9% 34.38%", 650], ["click"], ["frame", 2], ["wait", 1900],
+        ["move", "36.39% 34.38%", 850], ["click"], ["frame", 0], ["wait", 1300],
         ["move", "62% 88%", 900], ["hide"], ["wait", 900],
       ],
     },
   };
   const liveWindows = [...document.querySelectorAll(".live[data-live]")];
+  // Ohne Live-Fenster stehen Telefon und Schritte im Kapitel Helferschichten allein (gleiche Abfrage wie in site.css)
+  const STORY_COMPACT = "(max-width: 719px), (max-width: 999px) and (max-height: 500px)";
   if (liveWindows.length && canObserve && !reduceMotion) {
     const ease = "cubic-bezier(0.45, 0, 0.25, 1)"; // sanftes Ease-in-out
+    let paused = false;
+    const deciders = [];
+    const toggles = [];
+    const setPaused = (value) => {
+      paused = value;
+      for (const button of toggles) {
+        button.setAttribute("aria-label", paused ? "Vorführung abspielen" : "Vorführung anhalten");
+        button.classList.toggle("is-paused", paused);
+        const label = button.querySelector(".live-toggle-label");
+        if (label) label.textContent = paused ? "Abspielen" : "Anhalten";
+      }
+      for (const decide of deciders) decide();
+    };
     for (const live of liveWindows) {
       const scene = LIVE_SCENES[live.dataset.live];
       const frames = [...live.querySelectorAll(".live-frame")];
@@ -245,6 +275,10 @@
         pointer.style.setProperty("translate", spot);
       };
       const reset = () => {
+        // Zeigerweg, Einfedern und Ring sofort beenden – sonst setzte ein noch laufender Weg den Zeiger danach woandershin
+        for (const animation of [pointer, cursor, ring].flatMap((element) => element.getAnimations?.() ?? [])) {
+          if (!("transitionProperty" in animation)) animation.cancel(); // nur die eigenen, nicht das Ausblenden per CSS
+        }
         for (const img of frames) {
           img.style.setProperty("transition-duration", "0ms");
           img.classList.remove("is-on");
@@ -292,8 +326,10 @@
       };
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const move = async (spot, ms) => {
+        const id = run;
         const motion = pointer.animate([{ translate: at }, { translate: spot }], { duration: ms, easing: ease, fill: "forwards" });
         await motion.finished.catch(() => {});
+        if (id !== run) return; // inzwischen angehalten: reset() hat den Zeiger schon an seinen Ruheplatz gesetzt
         place(spot);
         motion.cancel();
       };
@@ -329,7 +365,7 @@
       };
       let visible = false;
       const decide = () => {
-        const should = visible && !live.closest("[inert]") && document.visibilityState === "visible";
+        const should = visible && !paused && !live.closest("[inert]") && document.visibilityState === "visible";
         const running = run % 2 === 1; // ungerade = läuft
         if (should === running) return;
         run++;
@@ -337,6 +373,13 @@
         else reset();
       };
       reset();
+      deciders.push(decide);
+      const button = live.querySelector(".live-toggle");
+      if (button) {
+        toggles.push(button);
+        button.hidden = false;
+        button.addEventListener("click", () => setPaused(!paused));
+      }
       new IntersectionObserver(
         (entries) => {
           visible = entries.some((entry) => entry.isIntersecting);
@@ -346,6 +389,77 @@
       ).observe(live);
       document.addEventListener("visibilitychange", decide);
       document.addEventListener("vf:tabs", decide); // Reiter „Im Detail“ gewechselt
+
+      // Smartphone und quer gehaltenes Handy: Dort fehlt das Fenster (site.css), dem Telefon gehört dann allein der
+      // Moment, der überzeugt – einmal je Aufruf. Kurz bevor es ins Bild kommt, legt sich sein Bild „vorher“ darüber
+      // (2 von 4, „Eintragen“). Steht es zur Hälfte im Bild, ist Schritt 1 hervorgehoben; nach einer kurzen Weile tippt
+      // ein Finger auf „Eintragen“, das Bild blendet auf den Stand danach über (3 von 4, „Mein Einsatz“), Schritt 2 ist
+      // hervorgehoben. Verlässt es vorher das Bild, beginnt die Weile beim nächsten Mal neu. Ohne JavaScript und bei
+      // reduzierter Bewegung zeigt das Telefon gleich den Stand danach.
+      const storyPhone = story?.querySelector(".story-phone");
+      if (storyPhone && twins.length) {
+        const compact = window.matchMedia(STORY_COMPACT);
+        const tap = storyPhone.querySelector(".story-tap");
+        let state = "idle"; // idle → ready (Bild „vorher“ steht) → done
+        let seen = false;
+        let timer = 0;
+        let primed = null;
+        const tapNow = () => {
+          state = "done";
+          tap?.animate(
+            [
+              { opacity: 0, scale: 0.3 },
+              { opacity: 1, scale: 0.7, offset: 0.25 },
+              { opacity: 0, scale: 1.2 },
+            ],
+            { duration: 800, easing: "ease-out" },
+          );
+          setTimeout(() => {
+            twin(0, 450);
+            mark(2, 2400);
+          }, 220);
+        };
+        const schedule = () => {
+          clearTimeout(timer);
+          if (state !== "ready" || !seen || !compact.matches) return;
+          mark(1, 1600);
+          timer = setTimeout(tapNow, 1600);
+        };
+        const prime = () => {
+          if (state !== "idle" || !compact.matches) return;
+          story.classList.add("is-live"); // Ebene im Telefon einhängen: erst jetzt lädt das Bild „vorher“
+          primed ??= Promise.all(
+            twins.map((img) => {
+              img.loading = "eager";
+              return img.decode().catch(() => {});
+            }),
+          );
+          primed.then(() => {
+            if (state !== "idle" || !compact.matches) return;
+            twin(1, seen ? 280 : 0); // schon im Bild (schnell gescrollt): sanft statt mit einem Sprung
+            state = "ready";
+            schedule();
+          });
+        };
+        new IntersectionObserver((entries) => entries.some((entry) => entry.isIntersecting) && prime(), {
+          rootMargin: "400px 0px",
+        }).observe(storyPhone);
+        new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) seen = entry.isIntersecting && entry.intersectionRatio >= 0.5;
+            if (state === "ready" && !seen) {
+              clearTimeout(timer);
+              mark(0);
+            }
+            schedule();
+          },
+          { threshold: [0, 0.5] },
+        ).observe(storyPhone);
+        compact.addEventListener("change", () => {
+          clearTimeout(timer);
+          if (state === "ready") state = "idle"; // das Fenster übernimmt (und setzt das Telefon zurück)
+        });
+      }
     }
   }
 
@@ -553,6 +667,13 @@
   // gegen die Laufrichtung hinaus, das gewählte kommt aus der Laufrichtung herein: erst der Text, dann das Bild mit
   // leichtem Zoom. Dafür Web Animations statt CSS-Übergängen – so lässt sich jeder Wechsel sauber abbrechen, wenn schnell
   // hintereinander geklickt wird. Bei reduzierter Bewegung wechselt alles sofort.
+  // Auf dem Smartphone klebt die Reiterleiste unter der Kopfzeile (site.css); ist ein Thema dort schon ein Stück gelesen,
+  // rollt ein Tipp auf einen anderen Reiter an den Anfang des neuen Themas zurück, wo direkt unter der Leiste sein Bild
+  // steht.
+  // Die Bilder der verborgenen Themen lädt der Browser erst, wenn jemand die Reiter anfasst (Zeiger darüber, Fokus,
+  // Berührung) oder ein Thema gewählt wird: Übereinander gestapelt liegen alle im Bild, loading="lazy" allein hielte sie
+  // nicht zurück. Bis dahin stehen Adresse und Varianten des Bildes nur im Skript (die Maße hält das HTML). Ohne
+  // JavaScript bleibt es bei den normalen Bildern – alle Themen stehen dann untereinander.
   for (const group of document.querySelectorAll("[data-tabs]")) {
     const list = group.querySelector('[role="tablist"]');
     const tabs = [...(list?.querySelectorAll('[role="tab"]') ?? [])];
@@ -605,9 +726,36 @@
       enter(to.querySelector(".spot-text"), 28, 160, false); // erst, wenn das bisherige fast verschwunden ist
       enter(to.querySelector(".spot-media"), 44, 220, true);
     };
+    const parked = []; // [Bild, src, srcset] der Bilder, die noch nicht laden sollen
+    const park = (panel) => {
+      for (const img of panel.querySelectorAll(".spot-media picture img")) {
+        if (img.complete && img.naturalWidth > 0) continue; // schon geladen (Zwischenspeicher)
+        parked.push([img, img.getAttribute("src"), img.getAttribute("srcset")]);
+        img.removeAttribute("srcset");
+        img.removeAttribute("src");
+      }
+    };
+    // Ohne Angabe alle Themen, sonst nur das genannte; der Platzhalter („Ladezustand der Bilder“) gilt auch hier
+    const unpark = (panel) => {
+      for (const entry of [...parked]) {
+        const [img, src, srcset] = entry;
+        if (panel && !panel.contains(img)) continue;
+        parked.splice(parked.indexOf(entry), 1);
+        const frame = img.closest(".browser, .phone");
+        if (frame) {
+          frame.classList.add("is-loading");
+          const done = () => frame.classList.remove("is-loading");
+          img.addEventListener("load", done, { once: true });
+          img.addEventListener("error", done, { once: true });
+        }
+        if (srcset) img.setAttribute("srcset", srcset);
+        if (src) img.setAttribute("src", src);
+      }
+    };
     const select = (index, focus = false) => {
       const previous = current;
       current = index;
+      unpark(panels[index]);
       tabs.forEach((tab, i) => {
         const on = i === index;
         tab.setAttribute("aria-selected", String(on));
@@ -620,26 +768,46 @@
       if (focus) tabs[index].focus();
       document.dispatchEvent(new CustomEvent("vf:tabs")); // Live-Fenster: nur das sichtbare Thema läuft
     };
+    // Gewählt per Tipp oder Pfeiltaste: Klebt die Leiste (Smartphone) und liegt der Anfang des Themas schon über ihr,
+    // zurück an den Anfang – so weit, dass die Leiste wieder an ihrem Platz steht
+    const toStart = () => {
+      if (getComputedStyle(list).position !== "sticky") return;
+      const bar = list.getBoundingClientRect();
+      const gap = parseFloat(getComputedStyle(list).marginBottom) || 0;
+      const delta = panels[current].getBoundingClientRect().top - (bar.bottom + gap);
+      if (delta < -1) window.scrollBy({ top: delta, behavior: motion.matches ? "auto" : "smooth" });
+    };
+    const choose = (index, focus = false) => {
+      const changed = index !== current;
+      select(index, focus);
+      if (changed) toStart();
+    };
     for (const [i, panel] of panels.entries()) {
       panel.setAttribute("role", "tabpanel");
       panel.setAttribute("aria-labelledby", tabs[i].id);
     }
     list.hidden = false;
     group.classList.add("is-tabs");
-    tabs.forEach((tab, i) => tab.addEventListener("click", () => select(i)));
+    tabs.forEach((tab, i) => tab.addEventListener("click", () => choose(i)));
     list.addEventListener("keydown", (event) => {
       const current = tabs.indexOf(document.activeElement);
       if (current < 0) return;
       const moves = { ArrowLeft: current - 1, ArrowRight: current + 1, Home: 0, End: tabs.length - 1 };
       if (!(event.key in moves)) return;
       event.preventDefault();
-      select((moves[event.key] + tabs.length) % tabs.length, true);
+      choose((moves[event.key] + tabs.length) % tabs.length, true);
     });
     const fromHash = () => {
       const index = panels.findIndex((panel) => `#${panel.id}` === location.hash);
       if (index >= 0) select(index);
       return index >= 0;
     };
+    const first = Math.max(0, panels.findIndex((panel) => `#${panel.id}` === location.hash));
+    panels.forEach((panel, i) => i !== first && park(panel));
+    for (const type of ["pointerenter", "focusin", "touchstart"]) {
+      list.addEventListener(type, () => unpark(), { once: true, passive: true });
+    }
+    window.addEventListener("beforeprint", () => unpark()); // im Druck stehen alle Themen untereinander
     if (!fromHash()) select(0);
     settlePill();
     if ("ResizeObserver" in window) new ResizeObserver(settlePill).observe(list);
