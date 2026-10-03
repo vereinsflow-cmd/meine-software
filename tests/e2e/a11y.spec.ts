@@ -76,7 +76,10 @@ test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", 
       .getByRole("link", { name: /Sommerfest 2026/ })
       .first()
       .click();
-    await expect(page.getByRole("heading", { level: 1, name: /Helferplan/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Tagesablauf" })).toBeVisible();
     await page.waitForLoadState("networkidle");
     expect(await violations(page)).toEqual([]);
 

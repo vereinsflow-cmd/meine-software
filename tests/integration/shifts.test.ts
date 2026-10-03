@@ -15,6 +15,7 @@ import {
   listOpenShifts,
   listShiftPlanForPrint,
   listShiftsForEvent,
+  listUpcomingShiftPlans,
   recordHours,
   signOut,
   signUp,
@@ -715,6 +716,72 @@ describe("Übersichten und Export", () => {
       health: { fill: "EMPTY", urgency: "CRITICAL", freeSpots: 2 },
       signup: { allowed: true },
     });
+  });
+
+  it("Planungsübersicht: je Veranstaltung alle Schichten mit Besetzung, eigener Eintragung und Rechten; Summen wie die Besetzungsübersicht", async () => {
+    const { ctx, club, event, fussball } = await setup();
+    const soon = await createEventRow(club.id, {
+      title: "Morgen-Event",
+      startsAt: new Date(Date.now() + 24 * H),
+      endsAt: new Date(Date.now() + 30 * H),
+      departmentId: fussball.id,
+    });
+    const full = await createShiftRow(club.id, soon.id, {
+      title: "Voll",
+      startsAt: new Date(Date.now() + 25 * H),
+      endsAt: new Date(Date.now() + 28 * H),
+      requiredCount: 1,
+    });
+    const closed = await createShiftRow(club.id, soon.id, {
+      title: "Geschlossen",
+      startsAt: new Date(Date.now() + 26 * H),
+      endsAt: new Date(Date.now() + 28 * H),
+      requiredCount: 2,
+    });
+    await prisma.eventShift.update({ where: { id: closed.id }, data: { status: "CLOSED" } });
+    await createShift(ctx.board, event.id, shiftInput({ title: "Später", requiredCount: 2 }));
+    await signUp(ctx.helper, full.id);
+
+    const plans = await listUpcomingShiftPlans(ctx.helper);
+    expect(plans.map((p) => p.title)).toEqual(["Morgen-Event", "Sommerfest"]); // nach Datum
+    const morgen = plans[0]!;
+    expect(morgen).toMatchObject({
+      required: 3,
+      filled: 1,
+      signupFreeSpots: 0, // „Geschlossen“ zählt nicht zum Eintragen
+      canAssign: false,
+      canManage: false,
+    });
+    expect(morgen.shifts.map((s) => s.title)).toEqual(["Voll", "Geschlossen"]);
+    expect(morgen.shifts[0]).toMatchObject({
+      filled: 1,
+      mine: { assignmentId: expect.any(String) },
+      health: { fill: "FULL" },
+      signup: { allowed: false },
+    });
+    expect(morgen.shifts[1]).toMatchObject({
+      status: "CLOSED",
+      mine: null,
+      health: { fill: "EMPTY", urgency: "CRITICAL", freeSpots: 2 },
+      signup: { allowed: false, reason: expect.stringContaining("geschlossen") },
+    });
+    expect(plans[1]).toMatchObject({ signupFreeSpots: 2 });
+    expect(plans[1]!.shifts[0]).toMatchObject({ title: "Später", signup: { allowed: true } });
+
+    // Rechte je Veranstaltung: Die Abteilungsleitung (Fußball) darf beim Morgen-Event zuweisen, beim Sommerfest nicht.
+    const lead = await listUpcomingShiftPlans(ctx.lead);
+    expect(lead.find((p) => p.title === "Morgen-Event")).toMatchObject({ canAssign: true });
+    expect(lead.find((p) => p.title === "Sommerfest")).toMatchObject({ canAssign: false });
+
+    // Dieselben Summen wie die Besetzungsübersicht des Dashboards
+    const overview = await getStaffingOverview(ctx.board);
+    for (const plan of await listUpcomingShiftPlans(ctx.board)) {
+      expect(overview.find((e) => e.eventId === plan.eventId)).toMatchObject({
+        required: plan.required,
+        filled: plan.filled,
+        shifts: plan.shifts.length,
+      });
+    }
   });
 
   it("offene Schichten zeigen dem Benutzer, warum eine Eintragung nicht geht", async () => {

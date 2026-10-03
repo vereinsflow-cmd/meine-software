@@ -141,7 +141,8 @@ test("Vereinslogo: hochladen, anzeigen, geschützt ausliefern und wieder entfern
   await expect(printout.locator("img")).toHaveAttribute("src", src);
 
   await open(page, `/helferplanung/${eventId}`);
-  await probe.getByRole("button", { name: "Löschen" }).click();
+  await probe.getByRole("button", { name: "Weitere Aktionen für „Logo-Probe“" }).click();
+  await page.getByRole("menuitem", { name: "Schicht löschen" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click();
   await expect(probe).toHaveCount(0);
 

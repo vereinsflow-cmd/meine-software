@@ -188,7 +188,7 @@ test.describe("Helferplan drucken", () => {
       .first()
       .click();
     await expect(
-      page.getByRole("heading", { level: 1, name: /Helferplan: Sommerfest 2026/ }),
+      page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
     ).toBeVisible();
     await page.getByRole("link", { name: "Drucken" }).click();
     await expect(page).toHaveURL(/\/helferplanung\/drucken\?event=/);

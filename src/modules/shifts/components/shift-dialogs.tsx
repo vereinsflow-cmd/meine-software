@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ClockIcon, PencilIcon, PlusIcon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
   TextField,
   TextareaField,
 } from "@/components/shared/form-fields";
+import type { MenuDialogProps } from "@/components/shared/more-actions";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatDuration } from "@/lib/dates";
 import {
@@ -34,18 +35,27 @@ import {
 import { shiftFormSchema, type ShiftFormInput } from "../schemas";
 import type { AssignableMember } from "../service";
 
+/**
+ * „Neue Schicht“ bzw. „Schicht bearbeiten“. Ohne `open` bringt der Dialog seinen eigenen Knopf mit; mit `open` (aus
+ * `useMoreActions`) öffnet ihn ein Punkt im Menü „⋯“ der Schicht.
+ */
 export function ShiftFormDialog({
   eventId,
   shiftId,
   defaults,
   members,
+  ...controlled
 }: {
   eventId: string;
   shiftId?: string;
   defaults: ShiftFormInput;
   members: { id: string; name: string }[];
-}) {
-  const [open, setOpen] = useState(false);
+} & Partial<MenuDialogProps>) {
+  const [ownOpen, setOwnOpen] = useState(false);
+  const isControlled = controlled.open !== undefined;
+  const open = controlled.open ?? ownOpen;
+  const setOpen = (next: boolean) =>
+    isControlled ? controlled.onOpenChange?.(next) : setOwnOpen(next);
   const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: shiftFormSchema,
@@ -61,18 +71,23 @@ export function ShiftFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {shiftId ? (
-          <Button variant="ghost" size="sm">
-            <PencilIcon /> Bearbeiten
-          </Button>
-        ) : (
-          <Button>
-            <PlusIcon /> Neue Schicht
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {shiftId ? (
+            <Button variant="ghost" size="sm">
+              <PencilIcon /> Bearbeiten
+            </Button>
+          ) : (
+            <Button>
+              <PlusIcon /> Neue Schicht
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
+      <DialogContent
+        className="max-h-[90dvh] overflow-y-auto sm:max-w-xl"
+        onCloseAutoFocus={controlled.onCloseAutoFocus}
+      >
         <DialogHeader>
           <DialogTitle>{shiftId ? "Schicht bearbeiten" : "Neue Schicht"}</DialogTitle>
           <DialogDescription>
@@ -169,47 +184,41 @@ export function ShiftFormDialog({
   );
 }
 
-/** Zuweisung durch Veranstalter. Die Liste zeigt, wer wegen Überschneidung, Mindestalter o. Ä. nicht möglich ist – mit Grund. */
+/**
+ * Zuweisung durch Veranstalter. Die Liste zeigt, wer wegen Überschneidung, Mindestalter o. Ä. nicht möglich ist – mit Grund.
+ * Ohne weitere Angaben bringt der Dialog seinen Knopf „Zuweisen“ mit; `trigger` ersetzt ihn (z. B. ein schlichter
+ * Textknopf in Listen), mit `open` (aus `useMoreActions`) öffnet ihn ein Punkt im Menü „⋯“ der Schicht.
+ */
 export function AssignDialog({
   shiftId,
   eventId,
   title,
+  trigger,
+  ...controlled
 }: {
   shiftId: string;
   eventId: string;
   title: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [list, setList] = useState<AssignableMember[] | null>(null);
-  const [filter, setFilter] = useState("");
-  const [selected, setSelected] = useState("");
-  const [pending, startTransition] = useTransition();
-  const router = useRouter();
-
-  // Die Liste wird beim Öffnen frisch geladen (nicht früher: Belegungen ändern sich laufend).
-  function changeOpen(next: boolean) {
-    setOpen(next);
-    if (!next) return;
-    setList(null);
-    void listAssignableAction({ shiftId }).then((result) => {
-      if (result.ok) setList(result.data);
-      else toast.error(result.error.message);
-    });
-  }
-
-  const visible = (list ?? []).filter(
-    (m) => !m.alreadyAssigned && m.name.toLowerCase().includes(filter.toLowerCase()),
-  );
-  const chosen = list?.find((m) => m.id === selected);
+  trigger?: ReactNode;
+} & Partial<MenuDialogProps>) {
+  const [ownOpen, setOwnOpen] = useState(false);
+  const isControlled = controlled.open !== undefined;
+  const open = controlled.open ?? ownOpen;
+  const setOpen = (next: boolean) =>
+    isControlled ? controlled.onOpenChange?.(next) : setOwnOpen(next);
 
   return (
-    <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <UserPlusIcon /> Zuweisen
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button variant="outline" size="sm">
+              <UserPlusIcon /> Zuweisen
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
+      <DialogContent onCloseAutoFocus={controlled.onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Helfer zuweisen: {title}</DialogTitle>
           <DialogDescription>
@@ -217,66 +226,104 @@ export function AssignDialog({
             sind mit Grund gekennzeichnet.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="zuweisen-suche">Mitglied suchen</Label>
-            <Input
-              id="zuweisen-suche"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Name eingeben …"
-              autoComplete="off"
-            />
-          </div>
-          <div
-            className="max-h-64 overflow-y-auto rounded-lg border"
-            role="listbox"
-            aria-label="Mitglieder"
-          >
-            {list === null ? (
-              <p className="p-3 text-sm text-muted-foreground">Wird geladen …</p>
-            ) : visible.length === 0 ? (
-              <p className="p-3 text-sm text-muted-foreground">Keine passenden Mitglieder.</p>
-            ) : (
-              visible.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  role="option"
-                  aria-selected={selected === m.id}
-                  disabled={!!m.blockedReason}
-                  onClick={() => setSelected(m.id)}
-                  className="flex w-full flex-col items-start gap-0.5 border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 aria-selected:bg-primary/10"
-                >
-                  <span className="font-medium">{m.name}</span>
-                  {m.blockedReason && (
-                    <span className="text-xs text-destructive">{m.blockedReason}</span>
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-          <Button
-            disabled={!chosen || !!chosen.blockedReason || pending}
-            onClick={() =>
-              startTransition(async () => {
-                const result = await assignMemberAction({ shiftId, memberId: selected, eventId });
-                if (!result.ok) {
-                  toast.error(result.error.message);
-                  return;
-                }
-                toast.success("Helfer zugewiesen.");
-                setSelected("");
-                setOpen(false);
-                router.refresh();
-              })
-            }
-          >
-            {pending ? "Wird zugewiesen …" : chosen ? `${chosen.name} zuweisen` : "Zuweisen"}
-          </Button>
-        </div>
+        {/* Eigene Komponente im Dialoginhalt: Sie entsteht bei jedem Öffnen neu und lädt die Liste dann frisch
+            (Belegungen ändern sich laufend) – auch wenn das Menü „⋯“ den Dialog von außen öffnet. */}
+        <AssignPicker shiftId={shiftId} eventId={eventId} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AssignPicker({
+  shiftId,
+  eventId,
+  onDone,
+}: {
+  shiftId: string;
+  eventId: string;
+  onDone: () => void;
+}) {
+  const [list, setList] = useState<AssignableMember[] | null>(null);
+  const [filter, setFilter] = useState("");
+  const [selected, setSelected] = useState("");
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  useEffect(() => {
+    let active = true;
+    void listAssignableAction({ shiftId }).then((result) => {
+      if (!active) return;
+      if (result.ok) setList(result.data);
+      else toast.error(result.error.message);
+    });
+    return () => {
+      active = false;
+    };
+  }, [shiftId]);
+
+  const visible = (list ?? []).filter(
+    (m) => !m.alreadyAssigned && m.name.toLowerCase().includes(filter.toLowerCase()),
+  );
+  const chosen = list?.find((m) => m.id === selected);
+
+  return (
+    <div className="grid gap-3">
+      <div className="grid gap-1.5">
+        <Label htmlFor="zuweisen-suche">Mitglied suchen</Label>
+        <Input
+          id="zuweisen-suche"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Name eingeben …"
+          autoComplete="off"
+        />
+      </div>
+      <div
+        className="max-h-64 overflow-y-auto rounded-lg border"
+        role="listbox"
+        aria-label="Mitglieder"
+      >
+        {list === null ? (
+          <p className="p-3 text-sm text-muted-foreground">Wird geladen …</p>
+        ) : visible.length === 0 ? (
+          <p className="p-3 text-sm text-muted-foreground">Keine passenden Mitglieder.</p>
+        ) : (
+          visible.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="option"
+              aria-selected={selected === m.id}
+              disabled={!!m.blockedReason}
+              onClick={() => setSelected(m.id)}
+              className="flex w-full flex-col items-start gap-0.5 border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 aria-selected:bg-primary/10"
+            >
+              <span className="font-medium">{m.name}</span>
+              {m.blockedReason && (
+                <span className="text-xs text-destructive">{m.blockedReason}</span>
+              )}
+            </button>
+          ))
+        )}
+      </div>
+      <Button
+        disabled={!chosen || !!chosen.blockedReason || pending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await assignMemberAction({ shiftId, memberId: selected, eventId });
+            if (!result.ok) {
+              toast.error(result.error.message);
+              return;
+            }
+            toast.success("Helfer zugewiesen.");
+            onDone();
+            router.refresh();
+          })
+        }
+      >
+        {pending ? "Wird zugewiesen …" : chosen ? `${chosen.name} zuweisen` : "Zuweisen"}
+      </Button>
+    </div>
   );
 }
 
@@ -307,7 +354,8 @@ export function HoursDialog({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className="h-7 px-2 text-xs max-sm:h-11"
+          data-hours=""
           aria-label={`Stunden von ${name} erfassen`}
         >
           <ClockIcon /> {currentMinutes === null ? "Stunden" : formatDuration(currentMinutes)}

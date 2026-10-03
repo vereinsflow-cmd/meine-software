@@ -355,7 +355,7 @@ export function OpenShifts({
       title="Hier werden Helfer gesucht"
       icon={<AREA_ICON.helferplanung />}
       accent="amber"
-      more={{ href: "/helferplanung", label: "Alle offenen Schichten" }}
+      more={{ href: "/helferplanung", label: "Alle Schichten in der Helferplanung" }}
     >
       {shifts.open.length === 0 ? (
         <Empty icon={<PartyPopperIcon />} accent="emerald" title="Alle Schichten besetzt">

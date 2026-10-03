@@ -52,13 +52,6 @@ export function shiftHealth(
   return { fill, urgency, freeSpots, ratio };
 }
 
-export const FILL_LABEL: Record<ShiftFill, string> = {
-  CANCELLED: "Abgesagt",
-  EMPTY: "Unbesetzt",
-  PARTIAL: "Teilweise besetzt",
-  FULL: "Voll besetzt",
-};
-
 export const URGENCY_LABEL: Record<ShiftUrgency, string> = {
   NONE: "",
   SOON: "Beginnt bald",

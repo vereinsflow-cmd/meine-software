@@ -138,6 +138,8 @@ export interface EventShiftPlan {
     status: string;
     startsAt: Date;
     endsAt: Date;
+    allDay: boolean;
+    locationName: string | null;
     departmentId: string | null;
   };
   canManage: boolean;
@@ -243,6 +245,8 @@ export async function listShiftsForEvent(
       status: event.status,
       startsAt: event.startsAt,
       endsAt: event.endsAt,
+      allDay: event.allDay,
+      locationName: event.locationName,
       departmentId: event.departmentId,
     },
     canManage,
@@ -1195,6 +1199,159 @@ export async function listOpenShifts(
           })
         : { allowed: false, reason: "Für dich ist die Selbst-Eintragung nicht freigeschaltet." },
     }));
+}
+
+export interface PlanningShift {
+  id: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  requiredCount: number;
+  minAge: number | null;
+  status: ShiftStatus;
+  /** Die Schicht hat begonnen (läuft noch – beendete sind nicht dabei). */
+  started: boolean;
+  filled: number;
+  health: ShiftHealth;
+  mine: { assignmentId: string } | null;
+  signup: Eligibility;
+}
+
+export interface PlanningEvent {
+  eventId: string;
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  /** Die Veranstaltung hat begonnen und dauert noch (Zeitpunkt der Abfrage). */
+  running: boolean;
+  /** Darf die Person hier Helfer zuweisen bzw. Schichten verwalten (Abteilung der Veranstaltung)? */
+  canAssign: boolean;
+  canManage: boolean;
+  required: number;
+  /** Besetzte Plätze, je Schicht höchstens so viele wie benötigt (wie `getStaffingOverview`). */
+  filled: number;
+  /** Freie Plätze, in die man sich selbst eintragen kann: offene Schichten, die noch nicht begonnen haben. */
+  signupFreeSpots: number;
+  shifts: PlanningShift[];
+}
+
+/**
+ * Für die Übersicht der Helferplanung: kommende, veröffentlichte Veranstaltungen mit **allen** ihren laufenden und
+ * kommenden Schichten – je Schicht Besetzung, Warnstufe, eigene Eintragung und ob man sich eintragen darf. Dieselben
+ * Schichten wie `getStaffingOverview` (nicht abgesagt, noch nicht beendet), aber nicht nur als Summen. Zwei Abfragen
+ * plus die eigenen Einsätze, unabhängig von der Zahl der Veranstaltungen.
+ */
+export async function listUpcomingShiftPlans(ctx: TenantContext): Promise<PlanningEvent[]> {
+  assertCan(ctx, "shifts:read");
+  const now = new Date();
+  const [rows, own] = await Promise.all([
+    ctx.db.eventShift.findMany({
+      where: {
+        deletedAt: null,
+        status: { not: "CANCELLED" },
+        endsAt: { gte: now },
+        event: { deletedAt: null, status: "PUBLISHED" },
+      },
+      select: {
+        id: true,
+        title: true,
+        startsAt: true,
+        endsAt: true,
+        requiredCount: true,
+        minAge: true,
+        status: true,
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startsAt: true,
+            endsAt: true,
+            allDay: true,
+            status: true,
+            departmentId: true,
+          },
+        },
+        _count: { select: { assignments: { where: { status: "CONFIRMED" } } } },
+        assignments: ctx.memberId
+          ? { where: { memberId: ctx.memberId, status: "CONFIRMED" }, select: { id: true } }
+          : { take: 0, select: { id: true } },
+      },
+      orderBy: [{ startsAt: "asc" }, { title: "asc" }],
+      take: 1000, // dieselbe Grenze wie `getStaffingOverview`
+    }),
+    ownContext(ctx),
+  ]);
+  const canSignup = can(ctx, "shifts:signup") && ctx.memberId !== null;
+
+  const events = new Map<string, PlanningEvent>();
+  for (const row of rows) {
+    const filled = row._count.assignments;
+    const mine = row.assignments[0] ? { assignmentId: row.assignments[0].id } : null;
+    const started = row.startsAt.getTime() <= now.getTime();
+    const health = shiftHealth(
+      {
+        status: row.status,
+        startsAt: row.startsAt,
+        endsAt: row.endsAt,
+        requiredCount: row.requiredCount,
+        filled,
+      },
+      now,
+    );
+    const resource = resourceOf(row.event);
+    const entry = events.get(row.event.id) ?? {
+      eventId: row.event.id,
+      title: row.event.title,
+      startsAt: row.event.startsAt,
+      endsAt: row.event.endsAt,
+      allDay: row.event.allDay,
+      running:
+        row.event.startsAt.getTime() <= now.getTime() && row.event.endsAt.getTime() > now.getTime(),
+      canAssign: can(ctx, "shifts:assign", resource),
+      canManage: can(ctx, "shifts:manage", resource),
+      required: 0,
+      filled: 0,
+      signupFreeSpots: 0,
+      shifts: [],
+    };
+    entry.required += row.requiredCount;
+    entry.filled += Math.min(filled, row.requiredCount);
+    if (row.status === "OPEN" && !started) entry.signupFreeSpots += health.freeSpots;
+    entry.shifts.push({
+      id: row.id,
+      title: row.title,
+      startsAt: row.startsAt,
+      endsAt: row.endsAt,
+      requiredCount: row.requiredCount,
+      minAge: row.minAge,
+      status: row.status,
+      started,
+      filled,
+      health,
+      mine,
+      signup: canSignup
+        ? checkEligibility({
+            shift: {
+              id: row.id,
+              status: row.status,
+              startsAt: row.startsAt,
+              endsAt: row.endsAt,
+              requiredCount: row.requiredCount,
+              minAge: row.minAge,
+            },
+            eventStatus: row.event.status,
+            confirmedCount: filled,
+            alreadyConfirmed: mine !== null,
+            birthDate: own.birthDate,
+            ownShifts: own.ownShifts,
+            now,
+          })
+        : { allowed: false, reason: "Für dich ist die Selbst-Eintragung nicht freigeschaltet." },
+    });
+    events.set(row.event.id, entry);
+  }
+  return [...events.values()].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 }
 
 export interface MyAssignment {

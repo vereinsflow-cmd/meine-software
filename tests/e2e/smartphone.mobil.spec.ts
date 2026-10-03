@@ -56,28 +56,25 @@ test.describe("Smartphone", () => {
     await login(page, USERS.helfer);
     await page.goto("/helferplanung");
 
-    // „Offene Schichten“: „Eintragen“ steht wie auf der Helferplan-Seite unter dem Besetzungsbalken, in normaler Höhe
-    // und so breit wie die Zeile – egal, ob die Schicht ein Abzeichen („Beginnt bald“) trägt.
-    const openShifts = page.getByRole("region", { name: "Offene Schichten" });
-    const row = openShifts
+    // Schichten mit freien Plätzen je Veranstaltung: „Eintragen“ steht rechts neben der Schicht und ist am Handy gut
+    // treffbar (44 px hoch).
+    const freie = page.getByRole("list", { name: "Freie Plätze: Sommerfest 2026" });
+    const quickSignUp = freie
       .getByRole("listitem")
-      .filter({ has: page.getByRole("button", { name: "Eintragen" }) })
-      .first();
-    const quickSignUp = row.getByRole("button", { name: "Eintragen" });
+      .filter({ hasText: "Abbau" })
+      .getByRole("button", { name: "Eintragen" });
     await expect(quickSignUp).toBeVisible();
     const signUpBox = (await quickSignUp.boundingBox())!;
-    const barBox = (await row.getByRole("progressbar", { name: "Besetzung" }).boundingBox())!;
-    const rowBox = (await row.boundingBox())!;
-    expect(signUpBox.height).toBeGreaterThanOrEqual(36);
-    expect(signUpBox.width).toBeGreaterThanOrEqual(rowBox.width - 1);
-    expect(signUpBox.y).toBeGreaterThan(barBox.y + barBox.height);
+    expect(signUpBox.height).toBeGreaterThanOrEqual(44);
+    expect(signUpBox.width).toBeGreaterThanOrEqual(64);
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 
     await page
       .getByRole("link", { name: /Sommerfest 2026/ })
       .first()
       .click();
     await expect(
-      page.getByRole("heading", { level: 1, name: /Helferplan: Sommerfest 2026/ }),
+      page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
     ).toBeVisible();
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 
@@ -85,8 +82,10 @@ test.describe("Smartphone", () => {
     const button = abbau.getByRole("button", { name: "Eintragen" });
     await expect(button).toBeVisible();
     const box = await button.boundingBox();
-    expect(box!.height).toBeGreaterThanOrEqual(32);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(box!.width).toBeGreaterThanOrEqual(64);
+    // Die Zeitleiste fehlt am Handy – die Liste reicht.
+    await expect(page.getByRole("group", { name: "Tagesablauf" })).toBeHidden();
   });
 
   test("Hauptseiten laufen nicht seitlich über den Bildschirm", async ({ page }) => {
