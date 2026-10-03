@@ -16,6 +16,11 @@
      Seitenleiste erreicht, 58 rem z. B. bei 1470 px. */
   --container-bento: 49rem;
   --container-bento-wide: 58rem;
+  /* Schmale, kräftige Plakatschrift für Ausdrucke (Helferplan-Aushang, `font-poster`): nur Schriften, die das System schon
+     mitbringt (macOS: Avenir Next Condensed, Windows: Bahnschrift), sonst die normale Schrift – nichts wird geladen. */
+  --font-poster:
+    "Avenir Next Condensed", "Bahnschrift SemiCondensed", Bahnschrift, "Roboto Condensed",
+    "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {

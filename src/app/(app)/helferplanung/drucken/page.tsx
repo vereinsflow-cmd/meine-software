@@ -9,117 +9,29 @@ import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { PrintButton } from "@/components/shared/print-button";
 import { BackLink } from "@/components/shared/back-link";
-import {
-  addBerlinDays,
-  formatDate,
-  formatDateLong,
-  formatDateTime,
-  formatTimeRange,
-  parseBerlinDateTime,
-} from "@/lib/dates";
+import { addBerlinDays, formatDate, formatDateTime, parseBerlinDateTime } from "@/lib/dates";
 import { clubLogoUrl } from "@/lib/club-logo";
 import { buildPrintPageStyle, type PrintOrientation } from "@/lib/print";
 import { enumParam, param, paramList, type RawSearchParams } from "@/lib/search-params";
-import {
-  getStaffingOverview,
-  listShiftPlanForPrint,
-  type PrintPlanEvent,
-  type PrintShiftDto,
-} from "@/modules/shifts/service";
+import { ShiftPlanSheets } from "@/modules/shifts/components/print-plan";
+import { PRINT_CONTENTS, previewLabel, type PrintContent } from "@/modules/shifts/print-plan";
+import { getStaffingOverview, listShiftPlanForPrint } from "@/modules/shifts/service";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Helferplan drucken" };
+
+const CONTENT_OPTIONS: { value: PrintContent; label: string }[] = [
+  { value: "beides", label: "Aushang und Anwesenheitsliste" },
+  { value: "aushang", label: "Nur Aushang" },
+  { value: "anwesenheit", label: "Nur Anwesenheitsliste" },
+];
 
 /** Datum aus dem URL-Parameter (JJJJ-MM-TT) als Beginn des Tages in Berlin; ungültig → nicht gesetzt. */
 const dayParam = (params: RawSearchParams, key: string) => {
   const raw = param(params, key);
   return raw ? (parseBerlinDateTime(raw, "00:00") ?? undefined) : undefined;
 };
-
-/** Kontaktzeile aus den Ansprechpartner-Feldern der Veranstaltung; `null`, wenn keines gesetzt ist. */
-function contactLine(event: PrintPlanEvent): string | null {
-  const way = [event.contactEmail, event.contactPhone].filter(Boolean).join(" · ");
-  if (!event.contactName && !way) return null;
-  return event.contactName ? `${event.contactName}${way ? ` (${way})` : ""}` : way;
-}
-
-/**
- * Druckbare Helferliste einer Schicht: Kopfzeile mit Aufgabe, Zeit, Treffpunkt und Besetzungsstand; darunter eine
- * Tabelle mit einer Zeile je benötigtem Platz. Freie Plätze stehen als „— frei —“ da; ist noch niemand eingeteilt,
- * steht das zusätzlich deutlich in der Kopfzeile. `break-inside-avoid`, damit eine Schicht nicht mitten im
- * Seitenumbruch zerrissen wird (im Zweifel bleibt lieber Platz frei, als die Tabelle zu zerreißen).
- */
-function ShiftBlock({ shift }: { shift: PrintShiftDto }) {
-  const rows = Array.from({ length: shift.requiredCount }, (_, i) => shift.helperNames[i] ?? null);
-  return (
-    <div className="mb-6 break-inside-avoid">
-      <h3 className="text-base font-semibold">
-        {shift.title}{" "}
-        <span className="text-sm font-normal">
-          — {formatTimeRange(shift.startsAt, shift.endsAt)}
-        </span>
-      </h3>
-      <p className="mb-1 text-sm">
-        {shift.taskName && <>{shift.taskName} · </>}
-        {shift.meetingPoint && <>Treffpunkt: {shift.meetingPoint} · </>}
-        {shift.responsible && <>Verantwortlich: {shift.responsible} · </>}
-        {shift.filled} von {shift.requiredCount} besetzt ({shift.fillLabel})
-        {shift.filled === 0 && <strong> · Noch nicht besetzt</strong>}
-      </p>
-      {shift.requiredCount === 0 ? (
-        <p className="text-sm text-muted-foreground print:text-black">
-          Für diese Schicht sind keine Helfer nötig.
-        </p>
-      ) : (
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b-2 border-black text-left">
-              <th className="w-8 py-1">Nr.</th>
-              <th className="py-1">Name</th>
-              <th className="w-24 py-1">Anwesend</th>
-              <th className="w-32 py-1">Bemerkung</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((name, index) => (
-              <tr key={index} className="[break-inside:avoid] border-b border-gray-400">
-                <td className="py-1.5">{index + 1}</td>
-                <td className="py-1.5">
-                  {name ?? (
-                    <span className="text-muted-foreground italic print:text-black">— frei —</span>
-                  )}
-                </td>
-                <td className="py-1.5">☐</td>
-                <td className="py-1.5"></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-function EventSection({ event }: { event: PrintPlanEvent }) {
-  const location = [event.locationName, event.address].filter(Boolean).join(", ");
-  const contact = contactLine(event);
-  return (
-    <section className="mb-8">
-      <h2 className="mb-1 border-b border-black pb-1 text-xl font-bold">{event.title}</h2>
-      <p className="mb-1 text-sm">
-        {formatDateLong(event.startsAt)} ·{" "}
-        {event.allDay ? "ganztägig" : formatTimeRange(event.startsAt, event.endsAt)}
-      </p>
-      {location && <p className="mb-1 text-sm">Ort: {location}</p>}
-      {contact && <p className="mb-3 text-sm">Ansprechpartner: {contact}</p>}
-      {!location && !contact && <div className="mb-3" />}
-      {event.shifts.map((shift) => (
-        <ShiftBlock key={shift.id} shift={shift} />
-      ))}
-    </section>
-  );
-}
 
 export default async function PrintShiftPlanPage({
   searchParams,
@@ -136,6 +48,7 @@ export default async function PrintShiftPlanPage({
   const onlyOpen = param(params, "nurOffen") === "1";
   const orientation: PrintOrientation =
     enumParam(params, "ausrichtung", ["hoch", "quer"]) ?? "hoch";
+  const content: PrintContent = enumParam(params, "inhalt", PRINT_CONTENTS) ?? "beides";
 
   const [pickerEvents, planEvents] = await Promise.all([
     getStaffingOverview(ctx),
@@ -163,21 +76,22 @@ export default async function PrintShiftPlanPage({
   const backHref = eventIds.length === 1 ? `/helferplanung/${eventIds[0]}` : "/helferplanung";
   const backLabel = eventIds.length === 1 ? "Zurück zum Helferplan" : "Zurück zur Helferplanung";
 
+  const generatedAtLabel = `${formatDateTime(new Date())} Uhr`;
   const pageStyle = buildPrintPageStyle({
     clubName: ctx.club.name,
     documentTitle: "Helferplan",
-    generatedAtLabel: `${formatDateTime(new Date())} Uhr`,
+    generatedAtLabel,
     orientation,
   });
   const logoUrl = clubLogoUrl(ctx.clubId, ctx.club.logoSha256);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="print:hidden">
+    <div>
+      <div className="mx-auto max-w-3xl print:hidden">
         <BackLink href={backHref}>{backLabel}</BackLink>
         <PageHeader
           title="Helferplan drucken"
-          description="Wähle Veranstaltungen oder einen Zeitraum – der Ausdruck ist zum Aushängen gedacht und enthält nur Namen, keine Kontaktdaten."
+          description="Wähle Veranstaltungen oder einen Zeitraum. Je Veranstaltung gibt es einen Aushang zum Eintragen und eine Anwesenheitsliste – mit Namen, aber ohne Kontaktdaten der Helfer."
           actions={<PrintButton />}
         />
 
@@ -216,7 +130,7 @@ export default async function PrintShiftPlanPage({
             )}
           </fieldset>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div className="grid gap-1.5">
               <Label htmlFor="hd-von">Von</Label>
               <Input id="hd-von" type="date" name="von" defaultValue={param(params, "von") ?? ""} />
@@ -237,9 +151,28 @@ export default async function PrintShiftPlanPage({
                 Nur freie Plätze
               </label>
             </div>
-            <fieldset className="grid content-end gap-1.5">
-              <legend className="sr-only">Ausrichtung</legend>
-              <div className="flex h-9 items-center gap-4 text-sm">
+          </div>
+
+          <div className="flex flex-wrap items-start gap-x-10 gap-y-3">
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium">Was drucken?</legend>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                {CONTENT_OPTIONS.map((option) => (
+                  <label key={option.value} className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="inhalt"
+                      value={option.value}
+                      defaultChecked={content === option.value}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium">Ausrichtung</legend>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <label className="flex items-center gap-1.5">
                   <input
                     type="radio"
@@ -274,42 +207,41 @@ export default async function PrintShiftPlanPage({
       </div>
 
       {/* Ab hier: der eigentliche Ausdruck, in einer eigenen Hülle mit `id` (damit Tests ihn eindeutig von der
-          übrigen Seite unterscheiden können – der App-Kopfbereich hat selbst ein `<header>`). `@page` setzt
-          Format/Ränder und eine wiederkehrende Kopf-/Fußzeile mit Vereinsname, Titel, Erstellungsdatum und
-          Seitenzahlen (erscheint auf jeder gedruckten Seite, nicht nur auf der ersten). */}
-      <div id="helferplan-ausdruck">
+          übrigen Seite unterscheiden können). `@page` setzt Format/Ränder und eine wiederkehrende Kopf-/Fußzeile mit
+          Vereinsname, Titel, Erstellungsdatum und Seitenzahlen (auf jeder gedruckten Seite, nicht nur auf der ersten).
+          Die zarten Tönungen sollen mitgedruckt werden, auch wenn „Hintergrundgrafiken“ im Druckfenster aus ist. */}
+      <div
+        id="helferplan-ausdruck"
+        className="[-webkit-print-color-adjust:exact] [print-color-adjust:exact]"
+      >
         <style id="helferplan-seitenstil">{pageStyle}</style>
-        <header className="mb-6 flex items-start justify-between gap-4 border-b-2 border-black pb-3">
-          <div>
-            <h1 className="text-2xl font-bold">{ctx.club.name}</h1>
-            <p className="text-lg font-semibold">Helferplan</p>
-            <p className="text-sm text-muted-foreground print:text-black">
-              {summary || "Alle kommenden Veranstaltungen mit Helferbedarf"}
-            </p>
-            <p className="text-xs text-muted-foreground print:text-black">
-              Erstellt am {formatDateTime(new Date())} Uhr
-            </p>
-          </div>
-          {logoUrl && (
-            // Schlichtes <img> statt Kachel oder next/image: steht sofort im HTML (für schnelles Drucken) und wird
-            // mit Anmeldung geladen; schmückend, der Vereinsname steht daneben. Ohne Logo bleibt der Kopf wie gehabt.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" className="size-16 shrink-0 object-contain" />
-          )}
-        </header>
-
         {planEvents.length === 0 ? (
-          <EmptyState
-            icon={<AREA_ICON.helferplanung />}
-            title="Nichts zum Drucken"
-            description={
-              filtered
-                ? "Für diese Auswahl gibt es keine Schichten. Passe die Filter an."
-                : "Es sind aktuell keine kommenden Veranstaltungen mit Helferschichten geplant."
-            }
-          />
+          <div className="mx-auto max-w-3xl">
+            <EmptyState
+              icon={<AREA_ICON.helferplanung />}
+              title="Nichts zum Drucken"
+              description={
+                filtered
+                  ? "Für diese Auswahl gibt es keine Schichten. Passe die Filter an."
+                  : "Es sind aktuell keine kommenden Veranstaltungen mit Helferschichten geplant."
+              }
+            />
+          </div>
         ) : (
-          planEvents.map((event) => <EventSection key={event.id} event={event} />)
+          <>
+            <p className="mx-auto mb-3 max-w-3xl text-sm text-muted-foreground print:hidden">
+              Vorschau · {summary || "Alle kommenden Veranstaltungen mit Helferbedarf"} ·{" "}
+              {previewLabel(planEvents.length, content)}
+            </p>
+            <ShiftPlanSheets
+              events={planEvents}
+              clubName={ctx.club.name}
+              logoUrl={logoUrl}
+              orientation={orientation}
+              content={content}
+              generatedAtLabel={generatedAtLabel}
+            />
+          </>
         )}
       </div>
     </div>
