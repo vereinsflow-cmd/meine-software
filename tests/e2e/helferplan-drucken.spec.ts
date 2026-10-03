@@ -1,14 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
 import { USERS, login } from "./helpers";
 
 /**
  * Druckansicht des Helferplans (`/helferplanung/drucken`): erreichbar über einen gut sichtbaren Button, mit
  * Veranstaltungen-/Zeitraum-/Schichten-Filtern, und beim Drucken selbst ohne Menü/Formular. Je Veranstaltung ein Aushang
- * zum Eintragen und eine Anwesenheitsliste (seit 03.10.2026). Nutzt die Seed-Daten der E2E-Datenbank (Sommerfest 2026 mit
- * mehreren Schichten, Arbeitseinsatz Vereinsheim mit einer noch unbesetzten Schicht „Malerarbeiten“) – verändert nichts,
- * daher keine Aufräumschritte nötig.
+ * („Helferplan …“, Liste mit Schreiblinien) und eine Anwesenheitsliste (seit 03.10.2026). Nutzt die Seed-Daten der
+ * E2E-Datenbank (Sommerfest 2026 mit mehreren Schichten, Arbeitseinsatz Vereinsheim mit einer noch unbesetzten Schicht
+ * „Malerarbeiten“) – verändert nichts, daher keine Aufräumschritte nötig.
  */
+
+/** Überschrift des Aushangs bzw. der Anwesenheitsliste einer Veranstaltung (genau, sonst träfe „Sommerfest 2026“ beide). */
+const notice = (page: Page, title: string) =>
+  page.getByRole("heading", { name: `Helferplan ${title}`, exact: true });
+const attendance = (page: Page, title: string) =>
+  page.getByRole("heading", { name: `Anwesenheitsliste ${title}`, exact: true });
 
 test.describe("Helferplan drucken", () => {
   test("gut sichtbarer Button auf der Helferplanungs-Übersicht führt zur Druckansicht", async ({
@@ -31,55 +37,49 @@ test.describe("Helferplan drucken", () => {
     // Im Ausdruck suchen (Solange React die gestreamte Seite noch nicht eingeblendet hat, liegt eine unsichtbare Kopie
     // außerhalb des Hauptbereichs – die darf nicht als zweiter Treffer zählen.)
     const printout = page.getByRole("main").locator("#helferplan-ausdruck");
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toBeVisible();
-    // Jeder Aushang trägt Vereinsname und „Helferplan“; die Vorschau deutet Kopf- und Fußzeile des Papiers an.
+    await expect(notice(page, "Sommerfest 2026")).toBeVisible();
+    await expect(notice(page, "Arbeitseinsatz Vereinsheim")).toBeVisible();
+    await expect(attendance(page, "Sommerfest 2026")).toBeVisible();
+    // Die Vorschau deutet Kopf- und Fußzeile des Papiers an (Vereinsname, „Helferplan“, Erstellungsdatum).
     await expect(
       printout.getByText("TSV Musterstadt 1898 e.V.", { exact: true }).first(),
     ).toBeVisible();
     await expect(printout.getByText("Helferplan", { exact: true }).first()).toBeVisible();
     await expect(printout.getByText(/Erstellt am \d{2}\.\d{2}\.\d{4}/).first()).toBeVisible();
 
-    const sommerfest = page.getByRole("region", { name: "Sommerfest 2026" });
-    await expect(sommerfest.getByText(/Wir brauchen noch\s*\d+\s*Helfer/)).toBeVisible();
-    await expect(sommerfest.getByText("So machst du mit")).toBeVisible();
-    // Ansprechpartner der Veranstaltung (im Seed als Mitglied gewählt) und das Mindestalter am Grillstand (18)
-    await expect(sommerfest.getByText("Fragen? Ansprechpartner")).toBeVisible();
-    await expect(sommerfest.getByText("Bernd Vorstand").first()).toBeVisible();
-    await expect(sommerfest.getByRole("article", { name: "Grillstand" })).toContainText(
-      "Mindestalter ab 18 Jahren",
+    // Hinweis mit der Zahl freier Plätze und dem Ansprechpartner (im Seed als Mitglied gewählt); Mindestalter als Satz.
+    const sommerfest = page.getByRole("region", { name: "Helferplan Sommerfest 2026" });
+    await expect(
+      sommerfest.getByText(/Es sind noch \d+ Plätze frei\. Fragen an Bernd Vorstand\./),
+    ).toBeVisible();
+    await expect(sommerfest.getByRole("article", { name: /Grillstand/ })).toContainText(
+      "Ab 18 Jahren.",
     );
     await expect(
-      sommerfest.getByRole("heading", { name: "Anwesenheit (für Verantwortliche)" }),
+      sommerfest.getByText(/Liste bitte nach der Veranstaltung an Bernd Vorstand/),
     ).toBeVisible();
     // Je Veranstaltung ein Aushang und eine Anwesenheitsliste.
-    const events = await page
-      .getByRole("main")
-      .locator("#helferplan-ausdruck")
-      .getByRole("region")
-      .count();
+    const events = await printout.getByRole("region").count();
     await expect(
       page.getByRole("main").getByText(`· ${events} Aushänge und ${events} Anwesenheitslisten`),
     ).toBeVisible();
   });
 
-  test("eine Schicht ohne Helfer trägt den Stempel „Noch nicht besetzt“ und Schreiblinien; die Anwesenheitsliste leere Zeilen", async ({
+  test("eine Schicht ohne Helfer sagt es deutlich und hat leere Schreiblinien; die Anwesenheitsliste leere Zeilen", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
     const main = page.getByRole("main");
-    const tile = main.getByRole("article", { name: "Malerarbeiten" });
-    await expect(tile).toBeVisible();
-    await expect(tile).toContainText("Noch nicht besetzt");
-    await expect(tile.getByText("Name:").first()).toBeVisible();
-    // Schreiblinien sind für Screenreader als „frei“ beschriftet, die Linie selbst ist verborgen.
-    await expect(tile.getByRole("listitem").first()).toContainText("frei");
+    const block = main.getByRole("article", { name: /Malerarbeiten/ });
+    await expect(block).toBeVisible();
+    await expect(block).toContainText("Hier hat sich noch niemand eingetragen.");
+    // Schreiblinien sind für Screenreader als „frei“ beschriftet.
+    await expect(block.getByRole("listitem").first()).toHaveText("frei");
 
     const table = main.getByRole("table", { name: /Malerarbeiten/ });
-    await expect(table).toContainText(/0 von \d+ besetzt/);
     await expect(table.getByRole("cell", { name: "frei", exact: true }).first()).toBeVisible();
-    await expect(table.getByRole("columnheader", { name: "Anwesend" })).toBeVisible();
+    await expect(table.getByRole("columnheader", { name: "Anwesend" })).toHaveCount(1);
   });
 
   test("„Was drucken?“: nur den Aushang oder nur die Anwesenheitsliste", async ({ page }) => {
@@ -89,8 +89,8 @@ test.describe("Helferplan drucken", () => {
     await page.getByRole("radio", { name: "Nur Aushang" }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
     await expect(page).toHaveURL(/inhalt=aushang/);
-    await expect(main.getByText(/Wir brauchen noch/).first()).toBeVisible();
-    await expect(main.getByRole("heading", { name: /Anwesenheit/ })).toHaveCount(0);
+    await expect(notice(page, "Sommerfest 2026")).toBeVisible();
+    await expect(main.getByRole("heading", { name: /Anwesenheitsliste/ })).toHaveCount(0);
     const events = await page
       .getByRole("main")
       .locator("#helferplan-ausdruck")
@@ -103,15 +103,12 @@ test.describe("Helferplan drucken", () => {
     await page.getByRole("radio", { name: "Nur Anwesenheitsliste" }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
     await expect(page).toHaveURL(/inhalt=anwesenheit/);
-    // Ohne Aushang trägt die Liste selbst die Überschrift der Veranstaltung.
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    // Ohne Aushang benennt die Liste selbst den Abschnitt der Veranstaltung.
     await expect(
-      page
-        .getByRole("region", { name: "Sommerfest 2026" })
-        .getByRole("heading", { name: "Anwesenheit (für Verantwortliche)" }),
+      page.getByRole("region", { name: "Anwesenheitsliste Sommerfest 2026" }),
     ).toBeVisible();
     // Erst prüfen, wenn die neue Ansicht da ist – sonst wäre „nicht vorhanden“ schon vor dem Laden wahr.
-    await expect(main.getByText(/Wir brauchen noch/)).toHaveCount(0);
+    await expect(main.getByRole("heading", { name: /^Helferplan Sommerfest/ })).toHaveCount(0);
     await expect(page.getByRole("radio", { name: "Nur Anwesenheitsliste" })).toBeChecked();
   });
 
@@ -122,8 +119,8 @@ test.describe("Helferplan drucken", () => {
     await page.goto("/helferplanung/drucken");
     await page.getByRole("checkbox", { name: /Arbeitseinsatz Vereinsheim/ }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
-    await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toHaveCount(0);
+    await expect(notice(page, "Arbeitseinsatz Vereinsheim")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Sommerfest 2026/ })).toHaveCount(0);
   });
 
   test("Zeitraum grenzt die Veranstaltungen ein", async ({ page }) => {
@@ -137,8 +134,8 @@ test.describe("Helferplan drucken", () => {
     });
     await page.getByLabel("Bis").fill(bis);
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
-    await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toHaveCount(0);
+    await expect(notice(page, "Arbeitseinsatz Vereinsheim")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Sommerfest 2026/ })).toHaveCount(0);
   });
 
   test("„Nur freie Plätze“ blendet voll besetzte Schichten aus", async ({ page }) => {
@@ -195,8 +192,8 @@ test.describe("Helferplan drucken", () => {
     ).toBeVisible();
     await page.getByRole("link", { name: "Drucken" }).click();
     await expect(page).toHaveURL(/\/helferplanung\/drucken\?event=/);
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toHaveCount(0);
+    await expect(notice(page, "Sommerfest 2026")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Arbeitseinsatz Vereinsheim/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Zurück zum Helferplan" })).toBeVisible();
   });
 
@@ -213,13 +210,12 @@ test.describe("Helferplan drucken", () => {
     await expect(page.getByRole("main").getByText(/^Vorschau ·/)).toBeHidden();
     // Der eigentliche Ausdruck bleibt sichtbar; die angedeutete Kopf- und Fußzeile kommt beim Drucken aus `@page`.
     const printout = page.getByRole("main").locator("#helferplan-ausdruck");
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    await expect(notice(page, "Sommerfest 2026")).toBeVisible();
+    await expect(attendance(page, "Sommerfest 2026")).toBeVisible();
     await expect(
-      printout.locator("header").getByText("TSV Musterstadt 1898 e.V.", { exact: true }).first(),
-    ).toBeVisible();
+      printout.getByText("TSV Musterstadt 1898 e.V.", { exact: true }).first(),
+    ).toBeHidden();
     await expect(printout.getByText(/Erstellt am/).first()).toBeHidden();
-    // Zarte Tönungen werden mitgedruckt, auch ohne „Hintergrundgrafiken“ im Druckfenster.
-    expect(await printout.evaluate((el) => getComputedStyle(el).printColorAdjust)).toBe("exact");
   });
 
   test("enthält keine Kontaktdaten der Helfer und keine Bedienelemente in den Ergebniszeilen", async ({
@@ -228,7 +224,7 @@ test.describe("Helferplan drucken", () => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
     const printout = page.getByRole("main").locator("#helferplan-ausdruck");
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    await expect(notice(page, "Sommerfest 2026")).toBeVisible();
     await expect(printout.getByRole("button")).toHaveCount(0);
     await expect(printout.getByRole("link")).toHaveCount(0);
     // Keine E-Mail-Adressen der Helfer (Seed: …@demo-verein.local), obwohl ihre Namen draufstehen.

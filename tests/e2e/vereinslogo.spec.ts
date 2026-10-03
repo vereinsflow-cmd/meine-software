@@ -113,7 +113,7 @@ test("Vereinslogo: hochladen, anzeigen, geschützt ausliefern und wieder entfern
     await expect(item.locator(`img[src="${src}"]`)).toBeVisible();
   });
 
-  // Das Logo steht auch auf dem Helferplan-Aushang, neben dem Vereinsnamen. Dafür braucht der Verein eine Schicht – sie wird
+  // Das Logo steht auch auf dem Helferplan-Aushang. Dafür braucht der Verein eine Schicht – sie wird
   // nur für diese Prüfung angelegt und gleich wieder gelöscht.
   await open(page, "/veranstaltungen");
   await page
@@ -135,9 +135,10 @@ test("Vereinslogo: hochladen, anzeigen, geschützt ausliefern und wieder entfern
   await expect(probe).toBeVisible();
 
   await open(page, `/helferplanung/drucken?event=${eventId}`);
-  const poster = page.getByRole("main").locator("#helferplan-ausdruck header");
-  await expect(poster.locator("img")).toHaveAttribute("src", src);
-  await expect(poster.getByText("Anderer Verein e.V.", { exact: true })).toBeVisible();
+  // Oben rechts neben der Überschrift des Aushangs, wie auf einem Briefkopf
+  const printout = page.getByRole("main").locator("#helferplan-ausdruck");
+  await expect(printout.getByRole("heading", { name: /^Helferplan Vereinsabend/ })).toBeVisible();
+  await expect(printout.locator("img")).toHaveAttribute("src", src);
 
   await open(page, `/helferplanung/${eventId}`);
   await probe.getByRole("button", { name: "Löschen" }).click();
