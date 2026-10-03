@@ -82,7 +82,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <UserMenu name={name} email={ctx.user.email} roleName={ctx.roleName} />
               </div>
             </header>
-            <main id="inhalt" className="mx-auto w-full max-w-[96rem] flex-1 p-4 sm:p-6 xl:p-8">
+            <main
+              id="inhalt"
+              className="mx-auto w-full max-w-[96rem] flex-1 p-4 sm:p-6 xl:p-8 print:max-w-none print:p-0"
+            >
               {children}
             </main>
           </div>

@@ -9,7 +9,7 @@ import {
   toTimeInputValue,
 } from "@/lib/dates";
 import { toCsv } from "@/lib/csv";
-import { FILL_LABEL, shiftHealth, type ShiftHealth, type ShiftUrgency } from "@/lib/shift-health";
+import { shiftHealth, type ShiftHealth, type ShiftUrgency } from "@/lib/shift-health";
 import { loadVisibleEvent } from "@/modules/events/service";
 import { notifyUsers } from "@/modules/notifications/service";
 import { mapDatabaseError } from "@/server/action";
@@ -1276,7 +1276,10 @@ export interface PrintShiftDto {
   meetingPoint: string | null;
   requiredCount: number;
   filled: number;
-  fillLabel: string;
+  /** Geschlossen: Mitglieder können sich nicht selbst eintragen, nur Veranstalter teilen ein (`checkEligibility`). */
+  closed: boolean;
+  /** Mindestalter am Tag der Schicht, sonst `null`. */
+  minAge: number | null;
   responsible: string | null;
   /** Nur Namen – der Ausdruck ist zum Aushängen gedacht, keine Kontaktdaten wie beim CSV-Export für Organisatoren. */
   helperNames: string[];
@@ -1290,6 +1293,7 @@ export interface PrintPlanEvent {
   allDay: boolean;
   locationName: string | null;
   address: string | null;
+  /** Ansprechpartner wie auf der Veranstaltungsseite: das gewählte Mitglied, sonst der frei eingetragene Name. */
   contactName: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
@@ -1347,6 +1351,7 @@ export async function listShiftPlanForPrint(
       locationName: true,
       address: true,
       contactName: true,
+      contactMember: { select: { firstName: true, lastName: true } },
       contactEmail: true,
       contactPhone: true,
       shifts: {
@@ -1361,6 +1366,7 @@ export async function listShiftPlanForPrint(
           meetingPoint: true,
           requiredCount: true,
           status: true,
+          minAge: true,
           responsible: { select: { firstName: true, lastName: true } },
           assignments: {
             where: { status: "CONFIRMED" },
@@ -1377,29 +1383,20 @@ export async function listShiftPlanForPrint(
   return events
     .map((event) => {
       const shifts = event.shifts
-        .map<PrintShiftDto>((row) => {
-          const filled = row.assignments.length;
-          const health = shiftHealth({
-            status: row.status,
-            startsAt: row.startsAt,
-            endsAt: row.endsAt,
-            requiredCount: row.requiredCount,
-            filled,
-          });
-          return {
-            id: row.id,
-            title: row.title,
-            taskName: row.taskName,
-            startsAt: row.startsAt,
-            endsAt: row.endsAt,
-            meetingPoint: row.meetingPoint,
-            requiredCount: row.requiredCount,
-            filled,
-            fillLabel: FILL_LABEL[health.fill],
-            responsible: row.responsible ? fullName(row.responsible) : null,
-            helperNames: row.assignments.map((a) => fullName(a.member)),
-          };
-        })
+        .map<PrintShiftDto>((row) => ({
+          id: row.id,
+          title: row.title,
+          taskName: row.taskName,
+          startsAt: row.startsAt,
+          endsAt: row.endsAt,
+          meetingPoint: row.meetingPoint,
+          requiredCount: row.requiredCount,
+          filled: row.assignments.length,
+          closed: row.status === "CLOSED",
+          minAge: row.minAge,
+          responsible: row.responsible ? fullName(row.responsible) : null,
+          helperNames: row.assignments.map((a) => fullName(a.member)),
+        }))
         .filter((shift) => !filter.onlyOpen || shift.filled < shift.requiredCount);
       return {
         id: event.id,
@@ -1409,7 +1406,7 @@ export async function listShiftPlanForPrint(
         allDay: event.allDay,
         locationName: event.locationName,
         address: event.address,
-        contactName: event.contactName,
+        contactName: event.contactMember ? fullName(event.contactMember) : event.contactName,
         contactEmail: event.contactEmail,
         contactPhone: event.contactPhone,
         shifts,

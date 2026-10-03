@@ -30,14 +30,25 @@ test.describe("Helferplan drucken – mobil", () => {
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
 
+  test("schmales Smartphone (390 px): Aushang und Anwesenheitsliste laufen nicht über den Bildschirm", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page, USERS.admin);
+    await page.goto("/helferplanung/drucken");
+    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    await expect(page.getByRole("table", { name: /Grillstand/ })).toBeVisible();
+    expect(await overflow(page)).toBeLessThanOrEqual(1);
+  });
+
   test("Tablet-Breite (820 px): Formular in mehreren Spalten, Ausdruck bleibt lesbar, nichts läuft über", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    await expect(page.getByRole("heading", { name: "TSV Musterstadt 1898 e.V." })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Grillstand" })).toBeVisible();
     expect(await overflow(page)).toBeLessThanOrEqual(1);
 
     // Von dort lässt sich auch drucken – der Knopf bleibt erreichbar, ohne zu scrollen.

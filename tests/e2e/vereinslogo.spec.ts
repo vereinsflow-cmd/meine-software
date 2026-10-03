@@ -113,14 +113,36 @@ test("Vereinslogo: hochladen, anzeigen, geschützt ausliefern und wieder entfern
     await expect(item.locator(`img[src="${src}"]`)).toBeVisible();
   });
 
-  // Das Logo steht auch auf dem gedruckten Helferplan (neben dem Namen, nicht in der Überschrift)
-  await open(page, "/helferplanung/drucken");
-  await expect(page.locator("#helferplan-ausdruck header img")).toHaveAttribute("src", src);
-  await expect(
-    page
-      .locator("#helferplan-ausdruck")
-      .getByRole("heading", { name: "Anderer Verein e.V.", level: 1 }),
-  ).toBeVisible();
+  // Das Logo steht auch auf dem Helferplan-Aushang, neben dem Vereinsnamen. Dafür braucht der Verein eine Schicht – sie wird
+  // nur für diese Prüfung angelegt und gleich wieder gelöscht.
+  await open(page, "/veranstaltungen");
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: /Vereinsabend \(Anderer Verein\)/ })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/veranstaltungen\/[^/?#]+$/);
+  const eventId = new URL(page.url()).pathname.split("/").pop()!;
+  await open(page, `/helferplanung/${eventId}`);
+  await page.getByRole("button", { name: "Neue Schicht" }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Neue Schicht" });
+  await dialog.getByLabel("Bezeichnung").fill("Logo-Probe");
+  await dialog.getByLabel("Beginn").fill("19:00");
+  await dialog.getByLabel("Ende").fill("20:00");
+  await dialog.getByLabel("Benötigte Helfer").fill("1");
+  await dialog.getByRole("button", { name: "Schicht anlegen" }).click();
+  const probe = page.getByRole("listitem", { name: "Schicht Logo-Probe" });
+  await expect(probe).toBeVisible();
+
+  await open(page, `/helferplanung/drucken?event=${eventId}`);
+  const poster = page.getByRole("main").locator("#helferplan-ausdruck header");
+  await expect(poster.locator("img")).toHaveAttribute("src", src);
+  await expect(poster.getByText("Anderer Verein e.V.", { exact: true })).toBeVisible();
+
+  await open(page, `/helferplanung/${eventId}`);
+  await probe.getByRole("button", { name: "Löschen" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click();
+  await expect(probe).toHaveCount(0);
 
   // Entfernen: wieder Anfangsbuchstaben, kein Bild mehr – die alte Adresse ist „nicht gefunden“
   await open(page, "/einstellungen");

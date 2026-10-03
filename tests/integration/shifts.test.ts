@@ -836,8 +836,33 @@ describe("Ausdruck: Helferplan über mehrere Veranstaltungen", () => {
       filled: 0,
       requiredCount: 1,
       helperNames: [],
-      fillLabel: "Unbesetzt",
+      closed: false,
+      minAge: null,
     });
+  });
+
+  it("geschlossene Schichten und Mindestalter sind erkennbar; der Ansprechpartner kommt auch aus der Mitgliederliste", async () => {
+    const { ctx, event, people } = await printSetup();
+    const grill = await createShift(
+      ctx.board,
+      event.id,
+      shiftInput({ title: "Grill", requiredCount: 2 }),
+    );
+    await prisma.eventShift.update({
+      where: { id: grill.id },
+      data: { status: "CLOSED", minAge: 18 },
+    });
+    // Wie auf der Veranstaltungsseite: Das gewählte Mitglied geht vor einem frei eingetragenen Namen.
+    await prisma.event.update({
+      where: { id: event.id },
+      data: { contactMemberId: people.board.member.id, contactName: "Alter Name" },
+    });
+
+    const [plan] = await listShiftPlanForPrint(ctx.board, { eventIds: [event.id] });
+    expect(plan!.contactName).toBe(
+      `${people.board.member.firstName} ${people.board.member.lastName}`,
+    );
+    expect(plan!.shifts[0]).toMatchObject({ title: "Grill", closed: true, minAge: 18 });
   });
 
   it("ohne Auswahl: nur Kommendes – vergangene, Entwurfs- und abgesagte Veranstaltungen fehlen", async () => {
