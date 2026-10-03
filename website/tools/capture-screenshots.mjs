@@ -41,7 +41,12 @@ const only = flag("only")?.split(",");
 // Die Website ist immer hell; dunkle Aufnahmen gibt es nur auf Wunsch (--scheme dark).
 const schemes = flag("scheme") ? [flag("scheme")] : ["light"];
 
-const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960, 1920] };
+/**
+ * Browserfenster der Website: 960 und 1920 für einfache und doppelte Pixeldichte, dazu 1440 – die meisten Fenster stehen
+ * 600 bis 700 CSS-Pixel breit (bei doppelter Dichte 1200 bis 1400 Pixel, bei 1,5-facher gut 1000), das Einstiegsfenster
+ * bei einfacher Dichte 1120. Ohne die Zwischengröße lüden diese Bildschirme die 1920er-Datei.
+ */
+const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960, 1440, 1920] };
 /**
  * Telefonbilder: je Bild die 1-, 1,5-, 2- und 3-fache Breite des Bildschirms, in dem es auf der Website steht (siehe
  * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Einstieg 221, Kapitel 208 (bzw. 182), Vorführung 312 – dort je Bild eigene
@@ -466,6 +471,13 @@ async function chartFrames(page, snap) {
 }
 
 /**
+ * Sommerfest des Demo-Vereins (tools/demo-vorbereiten.mjs, FEST_DAY 2027-06-12): Link zu seinem Helferplan und ein Tag
+ * in seiner Woche – der Kalender zeigt dessen Monat.
+ */
+const FEST_LINK = /Sommerfest 20\d\d/;
+const FEST_WEEK = "2027-06-09";
+
+/**
  * Bildliste (nur, was die Website tatsächlich zeigt). `path` wird direkt geöffnet; `steps` läuft danach
  * (z. B. Klick auf eine Veranstaltung). `device`: „desktop“ (1280 × 800) oder „phone“ (390 × 844, Touch, mobiles Menü).
  * `crop`: „content“ = Ausschnitt ohne Seitenleiste (siehe DETAIL), „dialog“ = Ausschnitt um den geöffneten Dialog.
@@ -476,7 +488,7 @@ async function chartFrames(page, snap) {
  * Veranstaltung bei 1280 px Breite (der Titel wird dort von den Schaltflächen überdeckt).
  */
 const shots = [
-  // 880/1760: Bildschirm des Laptops in der Vorführung unter dem Einstieg (.laptop-screen, 880 CSS-Pixel breit)
+  // Browserfenster im Einstieg
   {
     name: "dashboard",
     path: "/dashboard",
@@ -485,18 +497,30 @@ const shots = [
       await openNavGroup("Verein")(page);
       await hideText("Noch keine Stunden erfasst")(page);
     },
-    widths: [880, 960, 1760, 1920],
+  },
+  // Bildschirm des Laptops in der Vorführung „Am Rechner“ (.laptop-screen, bis 880 CSS-Pixel breit, am Smartphone gut
+  // 300): der Chat „Alle Mitglieder“ mit der Ankündigung zum Arbeitseinsatz und der Lesestatistik an jeder eigenen
+  // Nachricht (Nachrichten aus tools/demo-vorbereiten.mjs). 880 verlustfrei (erscheint bei 100 % so groß), 960 für das
+  // Smartphone mit dreifacher Pixeldichte, 1320 und 1760 für 1,5- und 2-fache.
+  {
+    name: "nachrichten",
+    path: "/nachrichten?chat=alle",
+    steps: async (page) => {
+      await page.getByText("Arbeitseinsatz am Vereinsheim", { exact: true }).first().waitFor();
+      await page.waitForTimeout(600); // der Verlauf rollt zur jüngsten Nachricht
+    },
+    widths: [880, 960, 1320, 1760],
     crisp: [880],
   },
   // Der Helferplan als Ausschnitt ohne Seitenleiste: Kopf mit „Neue Schicht“ und „Drucken“, darunter „Aufbau“ (voll
   // besetzt) und „Getränkestand“ (teilweise besetzt, hier trägt sich der Mauszeiger ein). 1440 px breit: Titel und
   // Angaben stehen je in einer Zeile, die Karten werden flach – der Ausschnitt ist knapp 3 : 2 statt hochkant. Zusammen
   // mit der Bildfolge für das Live-Fenster aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
-  { name: "schichten", path: "/helferplanung", steps: followLink(/Sommerfest 2026/), viewport: { width: 1440, height: 1000 }, frames: liveFrames },
+  { name: "schichten", path: "/helferplanung", steps: followLink(FEST_LINK), viewport: { width: 1440, height: 1000 }, frames: liveFrames },
   { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content", frames: memberFrames },
   // Monat des Sommerfests (dort legt tools/demo-vorbereiten.mjs Trainings und weitere Termine an); das Datum steht in
-  // der Adresse – nach einem neuen Seed an das Sommerfest anpassen.
-  { name: "kalender", path: "/kalender?ansicht=monat&datum=2026-10-07", viewport: DETAIL, crop: "content", frames: calendarFrames },
+  // der Adresse – bei einem anderen FEST_DAY in tools/demo-vorbereiten.mjs hier mitändern (FEST_WEEK).
+  { name: "kalender", path: `/kalender?ansicht=monat&datum=${FEST_WEEK}`, viewport: DETAIL, crop: "content", frames: calendarFrames },
   // Diagramme („Auswertungen“) liegen weiter unten auf dem Reiter „Mitglieder“: Verlauf statt Donut, und ein
   // niedrigeres Fenster (720 px), damit die Seite weit genug scrollt, um mit der Karte zu beginnen.
   {
@@ -519,7 +543,7 @@ const shots = [
     path: "/helferplanung/drucken",
     viewport: { width: 794, height: 1123 },
     media: "print",
-    widths: [640, 1280],
+    widths: [640, 800, 1280], // 800 für Smartphones mit dreifacher Pixeldichte (das Blatt ist dort gut 230 CSS-Pixel breit)
     schemes: ["light"],
   },
   // Telefon im Einstieg: das Dashboard mit Kennzahlen (Rechner und Telefon zeigen verschiedene Bildschirme)
@@ -550,7 +574,7 @@ const shots = [
     name: "phone-schichten",
     device: "phone",
     path: "/helferplanung",
-    steps: followLink(/Sommerfest 2026/),
+    steps: followLink(FEST_LINK),
     frames: phoneFrames,
     viewport: PHONE_SCREEN,
     widths: [182, 208, 260, 273, 312, 364, 390, 416, 520, 546, 624, 780],
@@ -575,7 +599,7 @@ const shots = [
   {
     name: "phone-kalender",
     device: "phone",
-    path: "/kalender?ansicht=liste&datum=2026-10-07", // Monat wie bei „kalender“
+    path: `/kalender?ansicht=liste&datum=${FEST_WEEK}`, // Monat wie bei „kalender“
     steps: scrollBelowHeader((page) => page.getByRole("button", { name: "Heute" }).or(page.getByRole("link", { name: "Heute" }))),
     viewport: PHONE_SCREEN,
   },

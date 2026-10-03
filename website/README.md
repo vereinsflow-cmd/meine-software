@@ -21,13 +21,13 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
 | `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Karten der Funktionen (rollen bei Bedarf ganz ins Bild, enden am Rand einer Kachelreihe, schließen, wenn der Fokus sie verlässt; Pfeiltasten wechseln zwischen den Kacheln – Öffnen und Schließen selbst laufen als Popover ohne Skript), Reiter „Im Detail“, Ladezustand der Bilder, Kopieren der E-Mail-Adresse im Kontaktbereich, Abdunkelung hinter dem offenen Menü (ohne JavaScript bleibt alles nutzbar; die Themen stehen dann untereinander) |
-| `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je zwei Größen                     |
+| `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je Bild mehrere Größen (siehe „Hinweise zu den Aufnahmen“) |
 | `assets/img/`, `assets/brand/`        | Logo (Seite) und Logo-Vorlagen (Profilbilder, Präsentationen); Vorschaubild `og-image.png`   |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (Domain `https://vereins-flow.com`)                                         |
 | `_headers`, `.htaccess`               | Sicherheits- und Cache-Header für Netlify/Cloudflare Pages bzw. Apache-Webspace              |
 | `Vorschau-starten.cmd`, `.command`    | Windows bzw. Mac: Doppelklick startet die Vorschau und öffnet den Browser                   |
 | `tools/`                              | Werkzeuge (siehe unten); müssen nicht hochgeladen werden                                    |
-| `upload/vereinsflow-website.zip`      | Fertiges Paket zum Hochladen auf den IONOS-Webspace (siehe „Veröffentlichen“)               |
+| `upload/vereinsflow-website.zip`      | Fertiges Paket zum Hochladen auf den IONOS-Webspace (erzeugt von `tools/paket-bauen.mjs`, siehe „Veröffentlichen“) |
 | `upload/entpacken.php`                | Einmal-Helfer, der das Paket auf dem Webspace auspackt und sich danach selbst löscht         |
 | `THIRD-PARTY-NOTICES.md`              | Lizenzhinweise der Symbole (lucide, ISC) – bitte mit veröffentlichen                        |
 
@@ -62,7 +62,9 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
    - Den Namen „VereinsFlow GbR“ überall gleich schreiben (Gewerbeanmeldung, Finanzamt, Rechnungen).
 2. **Domain:** eingetragen (`https://vereins-flow.com` – **mit Bindestrich**, so steht sie im IONOS-Vertrag; `vereinsflow.com`
    ohne Bindestrich gehört euch nicht). Bei IONOS unter „Domains & SSL“ das **SSL-Zertifikat für `vereins-flow.com` aktivieren**
-   (rotes Schloss = noch kein HTTPS); erst danach die HSTS-Zeile in `.htaccess` einschalten. Für eine andere Domain `https://vereins-flow.com` in den Seiten,
+   (rotes Schloss = noch kein HTTPS). `.htaccess` schickt HSTS (`max-age=31536000`, nur für die Domain selbst, ohne
+   `includeSubDomains` und `preload`): Browser rufen die Seite danach ein Jahr lang nur über HTTPS auf – das Zertifikat deshalb
+   nie auslaufen lassen. Für eine andere Domain `https://vereins-flow.com` in den Seiten,
    `robots.txt`, `sitemap.xml` und `.htaccess` (Weiterleitung auf HTTPS ohne „www.“) per Suchen/Ersetzen austauschen – `tools/set-domain.mjs` ersetzt nur die ursprüngliche
    Musterdomain `https://vereinsflow.example`.
 3. **Rechtstexte prüfen lassen.** Impressum und Datenschutzerklärung sind Muster, keine Rechtsberatung. Wer später Statistik,
@@ -71,8 +73,9 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 4. **Aussagen abgleichen.** Alle Aussagen stammen aus dem Stand der Anwendung vom 22.09.2026 (`README.md`, `docs/SECURITY.md`,
    `docs/PRIVACY.md`, `docs/DESIGN.md`, `src/server/permissions/defaults.ts`, `src/lib/search/registry.ts`,
    `src/app/(app)/helferplanung/drucken/page.tsx`, `src/server/jobs/reminders.ts`, `src/modules/dashboard/compare.ts`). Kommen
-   Funktionen hinzu (z. B. Finanzen), die FAQ (auch die Frage zur Planung), die Zahl der Bereiche („12 Bereiche“) und den Stand in der
-   Fußzeile anpassen. Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite.
+   Funktionen hinzu (z. B. Finanzen), die FAQ (auch die Frage zur Planung) und die Zahl der Bereiche („12 Bereiche“)
+   anpassen. Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite. Die Fußzeile nennt Absender, E-Mail und
+   Telefon wie das Impressum – ändern sie sich, alle Kopien der Fußzeile nachziehen (siehe „Seiten des Skripts“).
 5. `node tools/check-site.mjs --strict` muss ohne Meldung durchlaufen.
 
 ## Veröffentlichen
@@ -90,12 +93,19 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   aus (danach liegt `index.html` direkt in `/public`) und löscht sich selbst. Anschließend die ZIP-Datei im Webspace Explorer löschen.
   **Einfacher per SFTP** (einmal bei IONOS unter Hosting → SFTP einen Benutzer anlegen, Verzeichnis „/“): im Ordner `website/`
   `node tools/hochladen.mjs <Server> <Benutzer>` – lädt alles direkt nach `/public`, ohne ZIP und Entpack-Helfer.
-  Nach Änderungen an der Seite das Paket neu packen (im Ordner `website/`):
-  `rm -f upload/vereinsflow-website.zip && zip -r -X upload/vereinsflow-website.zip . -x "tools/*" "upload/*" "README.md" "Vorschau-starten.*" "_headers" "*.DS_Store"`
+  Nach Änderungen an der Seite das Paket neu packen (im Ordner `website/`, ohne zip-Programm, auch unter Windows):
+  `node tools/paket-bauen.mjs` – schreibt `upload/vereinsflow-website.zip` mit denselben Dateien wie früher der Befehl
+  `zip -r -X … -x "tools/*" "upload/*" "README.md" "Vorschau-starten.*" "_headers" "*.DS_Store"` (also mit `.htaccess`).
+  Paket und SFTP-Upload (`tools/hochladen.mjs`) nehmen `assets/css/site.css` **ohne Entwicklerkommentare, Einrückung und
+  Leerzeilen** mit (gut ein Drittel kleiner, gepackt etwa halb so groß) – der kommentierte Quelltext im Ordner bleibt
+  unverändert; Regeln, Werte, Zeichenketten und `url(…)` bleiben gleich, nur Leerraum dazwischen fällt weg (`tools/paket.mjs`).
+  Darum nie die Stildatei vom Webspace zurück in den Ordner kopieren.
   Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
   HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum, z. B.
   `site.css?v=20260926`) – sonst liefern Browser und der Zwischenspeicher von
   IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
+  HTML-Seiten fragt der Browser dagegen bei jedem Aufruf nach (`Cache-Control: no-cache`, unverändert kommt nur „304“) –
+  so kommen auch die neuen `?v=`-Adressen sofort an.
 - **nginx** – Beispiel:
 
   ```nginx
@@ -122,7 +132,8 @@ Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (
 | `node tools/serve.mjs`                     | Vorschau-Server mit Produktions-Headern                                                                   |
 | `node tools/check-site.mjs [--strict]`     | Prüft Verweise, Bilder, Symbole, fremde Server, Inline-Skripte/-Stile und listet offene Platzhalter       |
 | `node tools/set-domain.mjs <https://…>`    | Ersetzt die Musterdomain `https://vereinsflow.example` (bereits erledigt)                                   |
-| `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
+| `node tools/paket-bauen.mjs`               | Baut `upload/vereinsflow-website.zip` für den Webspace Explorer (Stildatei ohne Kommentare; ohne Abhängigkeiten) |
+| `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` – dieselben Dateien wie das Paket, die Stildatei ebenso bereinigt (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/demo-vorbereiten.mjs`          | Füllt den Demo-Verein der Aufnahme-Datenbank `vf_website` für die Bilder auf (siehe unten); `--entfernen` nimmt alles wieder heraus. Arbeitet mit keiner anderen Datenbank |
 | `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`, Demo vorbereitet; `--only dashboard`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
 | `node tools/make-og-image.mjs`             | Erzeugt das Vorschaubild für das Teilen (`tools/og-template.html`, mit `site.css` und den Telefonbildern – nach neuen Aufnahmen neu erzeugen) |
@@ -140,9 +151,15 @@ Hinweise zu den Aufnahmen:
   `postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website`). Es blendet im Dashboard des Demo-Administrators die
   Karten „Erste Schritte“ (Einrichtungs-Checkliste) und „Offene Zahlungen“ (Finanzen gibt es auf der Website noch nicht) aus –
   wie über „Anpassen“ in der Anwendung –, legt rund 210 erfundene Mitglieder mit leichtem Wachstum über zwölf Monate an
-  (Bestand etwa 213 → 232), Trainings und Termine rund um das Sommerfest des Seeds sowie abgeschlossene Einsätze mit
-  Helferstunden. Jeder Lauf ersetzt, was frühere Läufe angelegt haben (feste IDs); `--entfernen` stellt den Seed-Stand
-  wieder her. Die Namen sind zufällig kombinierte, übliche Vor- und Nachnamen (keine mit „hel“ oder „Koch“ – die Bildfolgen
+  (Bestand etwa 213 → 232), wöchentliche Trainings bis nach dem Sommerfest, einzelne Termine rund um das Sommerfest,
+  abgeschlossene Einsätze mit Helferstunden und einige Nachrichten der Seed-Konten (Bild im Laptop). **Termine:** Der Seed
+  legt Sommerfest, Arbeitseinsatz & Co. ein bis zwei Wochen nach seinem Lauf an – auf der Website wären sie nach wenigen
+  Tagen vorbei. Das Skript verschiebt deshalb alle kommenden Termine des Seeds (mit Schichten, Anmeldeschluss und
+  Aufgaben) so, dass das Sommerfest auf `FEST_DAY` fällt (derzeit Samstag, 12. Juni 2027, „Sommerfest 2027“;
+  Arbeitseinsatz Vereinsheim eine Woche davor). Rückt der Tag näher als zwei Monate, bricht es ab: dann `FEST_DAY` und
+  `FEST_TITLE` im Skript, `FEST_WEEK` in `capture-screenshots.mjs` und die Jahreszahl in `index.html` („Helferplan:
+  Sommerfest …“) anpassen. Jeder Lauf ersetzt, was frühere Läufe angelegt haben (feste IDs); `--entfernen` stellt den
+  Seed-Stand wieder her (auch die Termine des Seeds). Die Namen sind zufällig kombinierte, übliche Vor- und Nachnamen (keine mit „hel“ oder „Koch“ – die Bildfolgen
   suchen „Hel“ und filtern „Koch“), Anschriften in „Musterstadt“, E-Mail-Adressen unter `example.org`.
   `capture-screenshots.mjs` bricht ab, solange das Dashboard noch „Erste Schritte“ zeigt.
 - Sie entstehen mit dem Demo-Administrator der Entwicklungsdatenbank. Namen werden **nur im Bild** (nicht in der Datenbank)
@@ -154,7 +171,12 @@ Hinweise zu den Aufnahmen:
   um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt); das
   Kapitelbild Helferschichten ist ebenfalls ein Ausschnitt rechts neben der Seitenleiste (Fenster 1440 px breit, vom Titel des
   Helferplans bis unter die Schicht „Getränkestand“), der Helferplan-Aushang die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
-  (Datum in der Adresse, `kalender` in der Bildliste – nach einem neuen Seed anpassen).
+  (`FEST_WEEK` in `capture-screenshots.mjs`). Der Laptop der Vorführung „Am Rechner“ zeigt `nachrichten` (Chat „Alle
+  Mitglieder“ mit Ankündigung und Lesestatistik), das Browserfenster im Einstieg `dashboard`.
+- Breiten: Browserfenster 960, 1440 und 1920 px (1440 für Fenster um 700 CSS-Pixel bei doppelter Pixeldichte und das
+  Einstiegsfenster bei einfacher), Laptop 880 (verlustfrei, erscheint bei 100 % so groß), 960 (Smartphone, dreifache
+  Dichte), 1320 und 1760, Helferplan-Aushang 640, 800 und 1280. Am Smartphone ist das Einstiegsfenster ausgeblendet; dort
+  lädt das `<picture>` statt des Dashboards nur `assets/img/leer.svg`.
 - Telefonbilder: Einstieg `phone-dashboard`, Vorführung „Unterwegs“ `phone-helferplanung` (ab „Meine Einsätze“, damit
   „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten` (die Schicht „Getränkestand“ nach dem Eintragen, wie das ruhige Bild des
   Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster);
@@ -221,7 +243,8 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   Fußzeile der Startseite alle Kopien nachziehen: `datenschutz.html`, `impressum.html`, `404.html`, `newsletter.php`).
   Der optionale letzte Wert `$symbol` („mail“ oder „circle-check“) setzt ein großes Zeichen über die Überschrift. Nach
   „Fast geschafft“ und „Danke – Sie sind angemeldet“ steht neben „Zur Startseite“ ein zweiter Knopf „Demo anfragen“
-  (`vf_start_demo_links`).
+  (`vf_start_demo_links`). „Fast geschafft“ nennt zum Wiederfinden der E-Mail Absender, Betreff und Frist
+  (`vf_mail_hinweise`; der Betreff steht dort ein zweites Mal – bei einer Änderung in `vf_mail_bestaetigen` mitziehen).
 - **Lokale Vorschau:** `tools/serve.mjs` führt kein PHP aus; ein Absenden zeigt dort nur einen Hinweis. Getestet wurde das
   Skript mit PHP als WebAssembly (`@php-wasm/node`, PHP 7.4 und 8.3).
 

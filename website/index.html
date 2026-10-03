@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VereinsFlow – Vereinsverwaltung mit Helferplanung</title>
-  <meta name="description" content="VereinsFlow bringt Vereinsarbeit in Fluss: Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten an einem Ort – sicher, mobil nutzbar und auf Deutsch.">
+  <meta name="description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt.">
   <link rel="canonical" href="https://vereins-flow.com/">
   <meta name="theme-color" content="#ffffff">
   <meta name="color-scheme" content="light">
@@ -16,29 +16,67 @@
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
   <meta property="og:site_name" content="VereinsFlow">
-  <meta property="og:title" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
-  <meta property="og:description" content="Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten an einem Ort – sicher, mobil nutzbar und auf Deutsch.">
+  <meta property="og:title" content="VereinsFlow – Vereinsverwaltung mit Helferplanung">
+  <meta property="og:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
   <meta property="og:url" content="https://vereins-flow.com/">
-  <meta property="og:image" content="https://vereins-flow.com/assets/img/og-image.png?v=2026100102">
+  <meta property="og:image" content="https://vereins-flow.com/assets/img/og-image.png?v=2026100301">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VereinsFlow – Vereinsverwaltung mit Helferplanung">
+  <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100204">
-  <script src="assets/js/site.js?v=2026100203" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100301">
+  <script src="assets/js/site.js?v=2026100301" defer></script>
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "VereinsFlow",
-    "url": "https://vereins-flow.com/",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
-    "inLanguage": "de",
-    "description": "Webanwendung für die Vereinsverwaltung: Mitglieder, Abteilungen, Veranstaltungen, Helferschichten, Aufgaben, Kalender, Nachrichten und Dokumente mit zentraler Suche, Rollen, Rechten und DSGVO-Funktionen."
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://vereins-flow.com/#website",
+        "name": "VereinsFlow",
+        "url": "https://vereins-flow.com/",
+        "inLanguage": "de",
+        "publisher": { "@id": "https://vereins-flow.com/#organisation" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://vereins-flow.com/#organisation",
+        "name": "VereinsFlow",
+        "legalName": "VereinsFlow GbR",
+        "url": "https://vereins-flow.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://vereins-flow.com/apple-touch-icon.png?v=2026100301",
+          "width": 180,
+          "height": 180
+        },
+        "email": "kontakt@vereins-flow.com",
+        "telephone": "+49 176 56792302",
+        "address": {
+          "@type": "PostalAddress",
+          "postalCode": "45711",
+          "addressLocality": "Datteln",
+          "addressRegion": "Nordrhein-Westfalen",
+          "addressCountry": "DE"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://vereins-flow.com/#software",
+        "name": "VereinsFlow",
+        "url": "https://vereins-flow.com/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "de",
+        "description": "Webanwendung für die Vereinsverwaltung: Mitglieder, Abteilungen, Veranstaltungen, Helferschichten, Aufgaben, Kalender, Nachrichten und Dokumente mit zentraler Suche, Rollen, Rechten und DSGVO-Funktionen.",
+        "publisher": { "@id": "https://vereins-flow.com/#organisation" }
+      }
+    ]
   }
   </script>
 </head>
@@ -82,6 +120,8 @@
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
   
   
   
@@ -111,6 +151,14 @@
         <img src="assets/img/logo.svg" alt="" width="174" height="28">
       </picture>
     </a>
+    <!-- Unter 900 px: „Demo anfragen“ (am Handy kurz „Demo“) neben dem Menüknopf, sobald gescrollt ist. Beide stehen vor der
+         Navigation: So führt die Tabulatortaste vom geöffneten Menüknopf direkt zu den Menüpunkten (sichtbar ändert das
+         nichts – breit ist der Menüknopf ausgeblendet, schmal liegt das geöffnete Menü unter der Kopfzeile). -->
+    <a class="btn btn-primary btn-sm header-cta" href="#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
     <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
       <div class="nav-links">
         <span class="nav-indicator" aria-hidden="true"></span>
@@ -124,12 +172,6 @@
       </div>
       <a class="btn btn-primary btn-sm btn-header" href="#kontakt">Demo anfragen</a>
     </nav>
-    <!-- Unter 900 px: „Demo anfragen“ (am Handy kurz „Demo“) neben dem Menüknopf, sobald gescrollt ist -->
-    <a class="btn btn-primary btn-sm header-cta" href="#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
-      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
-      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
-    </button>
   </div>
   <span class="scroll-progress" aria-hidden="true"></span>
 </header>
@@ -143,15 +185,15 @@
       <div class="hero-copy">
         <p class="eyebrow intro intro-1"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg>Vereinsverwaltung mit Helferplanung</p>
         <h1 id="hero-title"><span class="word word-1">Bringt</span> <span class="word word-2">Vereinsarbeit</span> <span class="word word-3"><span class="flow-word">in Fluss</span></span></h1>
-        <p class="lead intro intro-3">VereinsFlow bündelt Mitglieder, Veranstaltungen, Helferschichten, Aufgaben und Nachrichten in einer Anwendung&nbsp;– damit Vorstand, Abteilungen und Helfer mit demselben Stand arbeiten.</p>
+        <p class="lead intro intro-3">VereinsFlow bündelt Mitglieder, Termine, Helferschichten und Nachrichten an einem Ort. Helfer tragen sich selbst ein, und der Vorstand sieht sofort, wo noch jemand fehlt.</p>
         <div class="hero-actions intro intro-4">
           <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
           <a class="btn btn-secondary btn-lg" href="#benachrichtigen">Beim Start benachrichtigen</a>
         </div>
         <ul class="hero-points intro intro-5">
-          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Zugang nur per Einladung</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Im Browser, ohne Installation</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Den Zugang vergibt Ihr Verein</li>
           <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Daten jedes Vereins strikt getrennt</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Am Rechner und Smartphone nutzbar</li>
         </ul>
       </div>
 
@@ -160,7 +202,10 @@
           <div class="browser">
             <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Dashboard</span></div>
             <picture>
-              <img src="assets/img/app/dashboard-light-960.webp?v=2026100102" srcset="assets/img/app/dashboard-light-960.webp?v=2026100102 960w, assets/img/app/dashboard-light-1920.webp?v=2026100102 1920w" sizes="(max-width: 719px) 1px, (min-width: 1240px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern, Terminen, freien Helferplätzen und Helferstunden mit Mini-Diagramm und Vergleich, darüber ein Hinweis auf noch nicht besetzte Schichten und oben die zentrale Suche">
+              <!-- Unter 720 px ist das Fenster ausgeblendet: dort nur eine winzige Leerdatei statt des Dashboards laden
+                   (die Content-Security-Policy erlaubt keine data:-Adressen) -->
+              <source media="(max-width: 719px)" srcset="assets/img/leer.svg" width="1" height="1">
+              <img src="assets/img/app/dashboard-light-960.webp?v=2026100301" srcset="assets/img/app/dashboard-light-960.webp?v=2026100301 960w, assets/img/app/dashboard-light-1440.webp?v=2026100301 1440w, assets/img/app/dashboard-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1240px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern mit Verlauf und Vergleich zum Vormonat, zu Terminen der nächsten 30 Tage, freien Helferplätzen und Helferstunden, oben die zentrale Suche">
             </picture>
           </div>
         </div>
@@ -169,7 +214,7 @@
           <div class="phone-screen">
             <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
             <picture>
-              <img src="assets/img/app/phone-dashboard-light-221.webp?v=2026100102" srcset="assets/img/app/phone-dashboard-light-221.webp?v=2026100102 221w, assets/img/app/phone-dashboard-light-260.webp?v=2026100102 260w, assets/img/app/phone-dashboard-light-332.webp?v=2026100102 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026100102 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026100102 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026100102 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026100102 780w" sizes="(max-width: 719px) min(260px, 67vw), min(221px, 19.7vw)" width="780" height="1520" decoding="async" alt="Dashboard auf dem Smartphone: Hinweis auf noch nicht besetzte Schichten und die Kennzahl Mitglieder mit Vergleich zum Vormonat und Mini-Diagramm">
+              <img src="assets/img/app/phone-dashboard-light-221.webp?v=2026100301" srcset="assets/img/app/phone-dashboard-light-221.webp?v=2026100301 221w, assets/img/app/phone-dashboard-light-260.webp?v=2026100301 260w, assets/img/app/phone-dashboard-light-332.webp?v=2026100301 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026100301 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026100301 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026100301 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026100301 780w" sizes="(max-width: 719px) min(260px, 67vw), min(221px, 19.7vw)" width="780" height="1520" decoding="async" alt="Dashboard auf dem Smartphone: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und die Kennzahl Mitglieder mit Vergleich zum Vormonat und Verlauf">
             </picture>
           </div>
         </div>
@@ -177,7 +222,7 @@
         <div class="hero-chips" aria-hidden="true">
           <span class="float-chip chip-a"><span class="float-chip-icon tone-green"><svg class="icon"><use href="#i-check"/></svg></span><span><strong>Voll besetzt</strong><small>Aufbau · 5 von 5 Helfern</small></span></span>
           <span class="float-chip chip-b"><span class="float-chip-icon tone-rose"><svg class="icon"><use href="#i-bell"/></svg></span><span><strong>Erinnerung</strong><small>24&nbsp;Stunden vor dem Einsatz</small></span></span>
-          <span class="float-chip chip-c"><span class="float-chip-icon tone-slate"><svg class="icon"><use href="#i-search"/></svg></span><span><strong>Zentrale Suche</strong><small><kbd>Strg</kbd> <kbd>K</kbd></small></span></span>
+          <span class="float-chip chip-c"><span class="float-chip-icon tone-slate"><svg class="icon"><use href="#i-search"/></svg></span><span><strong>Zentrale Suche</strong><small>Mitglieder, Termine, Dokumente</small></span></span>
         </div>
       </div>
     </div>
@@ -208,31 +253,31 @@
           <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
           <h3>Helfer koordinieren</h3>
           <div class="before"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></span><div><small>Bisher</small><p>Chatgruppen, Zettel am Schwarzen Brett und doppelt vergebene Plätze.</p></div></div>
-          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Helfer tragen sich selbst in Schichten ein. Überbuchung und Doppelbelegung sind ausgeschlossen.</p></div></div>
+          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Ein Plan statt Chat und Zettel: Helfer tragen sich selbst ein, und jeder Platz wird nur einmal vergeben.</p></div></div>
         </article>
         <article class="card reveal">
           <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
           <h3>Mitglieder verwalten</h3>
           <div class="before"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></span><div><small>Bisher</small><p>Mehrere Excel-Listen mit unterschiedlichem Stand.</p></div></div>
-          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Eine Mitgliederverwaltung mit Import, Suche, Abteilungen, Einwilligungen und Änderungshistorie.</p></div></div>
+          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Eine Liste, ein Stand&nbsp;– für alle, die damit arbeiten. Vorhandene Excel-Listen lassen sich übernehmen.</p></div></div>
         </article>
         <article class="card reveal">
           <div class="card-icon tone-rose"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
           <h3>Informationen verteilen</h3>
           <div class="before"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></span><div><small>Bisher</small><p>Rundmails an wechselnde Verteiler&nbsp;– und niemand weiß, ob sie ankommen.</p></div></div>
-          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Nachrichten an den ganzen Verein, eine Abteilung oder gezielt an Teilnehmer und Helfer&nbsp;– mit Lesestatistik, die zeigt, wie viele Empfänger die Nachricht gelesen haben.</p></div></div>
+          <div class="after"><span class="mark"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><div><small>Mit VereinsFlow</small><p>Sie sehen, wie viele die Nachricht gelesen haben&nbsp;– ob an den ganzen Verein, eine Abteilung oder nur an die Helfer eines Festes.</p></div></div>
         </article>
       </div>
     </div>
   </section>
 
   <!-- ===== Vorführung am Rechner: Ein Laptop erscheint, dreht sich zum Betrachter und klappt auf – von selbst, sobald er
-       ins Bild kommt (site.js, site.css); auf dem Bildschirm das Dashboard. ===== -->
-  <section class="showcase showcase-laptop" aria-labelledby="rechner-title">
+       ins Bild kommt (site.js, site.css); auf dem Bildschirm die Nachrichten (das Dashboard steht schon im Einstieg). ===== -->
+  <section class="showcase showcase-laptop" id="am-rechner" aria-labelledby="rechner-title">
     <div class="showcase-stage">
       <div class="showcase-copy">
         <p class="eyebrow">Am Rechner</p>
-        <h2 id="rechner-title">Der ganze Verein auf einen Blick</h2>
+        <h2 id="rechner-title">Sie sehen, wie viele gelesen haben</h2>
       </div>
       <div class="showcase-scene">
         <div class="laptop">
@@ -240,7 +285,7 @@
             <div class="laptop-screen">
               <span class="laptop-camera" aria-hidden="true"></span>
               <picture>
-                <img src="assets/img/app/dashboard-light-880.webp?v=2026100102" srcset="assets/img/app/dashboard-light-880.webp?v=2026100102 880w, assets/img/app/dashboard-light-1760.webp?v=2026100102 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.15), calc((100vh - 218px) * 0.98)), min(880px, 80vw, calc((100vh - 218px) * 0.98))" width="1920" height="1200" loading="lazy" decoding="async" alt="Dashboard von VereinsFlow auf dem Laptop: Kennzahlen zu Mitgliedern, Terminen und freien Helferplätzen, darüber ein Hinweis auf noch nicht besetzte Schichten">
+                <img src="assets/img/app/nachrichten-light-880.webp?v=2026100301" srcset="assets/img/app/nachrichten-light-880.webp?v=2026100301 880w, assets/img/app/nachrichten-light-960.webp?v=2026100301 960w, assets/img/app/nachrichten-light-1320.webp?v=2026100301 1320w, assets/img/app/nachrichten-light-1760.webp?v=2026100301 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.15), calc((100vh - 218px) * 0.98)), min(880px, 80vw, calc((100vh - 218px) * 0.98))" width="1920" height="1200" loading="lazy" decoding="async" alt="Nachrichten von VereinsFlow auf dem Laptop: Im Chat „Alle Mitglieder“ steht eine Ankündigung zum Arbeitseinsatz am Vereinsheim; Häkchen und Zahl darunter zeigen, dass 4 von 5 Empfängern sie gelesen haben. Links die Chats für Helfer, Teilnehmer und Abteilungen">
               </picture>
             </div>
             <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark-mirror"/></svg></div>
@@ -316,7 +361,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-helferplanung-light-312.webp?v=2026100102" srcset="assets/img/app/phone-helferplanung-light-260.webp?v=2026100102 260w, assets/img/app/phone-helferplanung-light-312.webp?v=2026100102 312w, assets/img/app/phone-helferplanung-light-468.webp?v=2026100102 468w, assets/img/app/phone-helferplanung-light-520.webp?v=2026100102 520w, assets/img/app/phone-helferplanung-light-624.webp?v=2026100102 624w, assets/img/app/phone-helferplanung-light-780.webp?v=2026100102 780w" sizes="(max-width: 899px) and (orientation: landscape) min(312px, 37vw, calc((100vh - 124px) / 2.161 * 26 / 28)), (max-width: 719px) min(260px, 67vw, calc((100vh - 300px) / 2.16 * 26 / 28)), min(312px, calc((100vh - 174px) / 2.081 * 26 / 28))" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten mit der Schaltfläche „Eintragen“">
+                <img src="assets/img/app/phone-helferplanung-light-312.webp?v=2026100301" srcset="assets/img/app/phone-helferplanung-light-260.webp?v=2026100301 260w, assets/img/app/phone-helferplanung-light-312.webp?v=2026100301 312w, assets/img/app/phone-helferplanung-light-468.webp?v=2026100301 468w, assets/img/app/phone-helferplanung-light-520.webp?v=2026100301 520w, assets/img/app/phone-helferplanung-light-624.webp?v=2026100301 624w, assets/img/app/phone-helferplanung-light-780.webp?v=2026100301 780w" sizes="(max-width: 899px) and (orientation: landscape) min(312px, 37vw, calc((100vh - 124px) / 2.161 * 26 / 28)), (max-width: 719px) min(260px, 67vw, calc((100vh - 300px) / 2.16 * 26 / 28)), min(312px, calc((100vh - 174px) / 2.081 * 26 / 28))" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten mit der Schaltfläche „Eintragen“">
               </picture>
             </div>
             <span class="iphone-glass" aria-hidden="true"></span>
@@ -377,7 +422,7 @@
                 <p class="feat-pop-title" id="f-mitglieder-t">Mitglieder</p>
                 <button class="feat-close" type="button" popovertarget="f-mitglieder" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
-              <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. CSV-Import mit Vorschau, Export, Statistik, Archiv und Papierkorb.</p>
+              <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. Vorhandene Listen übernehmen (aus Excel als CSV gespeichert) mit Vorschau, dazu Export, Statistik, Archiv und Papierkorb.</p>
               <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Mitglieder</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
           </article>
@@ -428,7 +473,7 @@
           <article class="card feat reveal tone-purple">
             <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
             <h3><button class="feat-btn" type="button" popovertarget="f-kalender">Kalender</button></h3>
-            <p class="feat-kurz">Abo im eigenen Kalender</p>
+            <p class="feat-kurz">Im eigenen Kalender</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-kalender" popover role="dialog" aria-labelledby="f-kalender-t" aria-describedby="f-kalender-d">
               <div class="feat-pop-head">
@@ -436,7 +481,7 @@
                 <p class="feat-pop-title" id="f-kalender-t">Kalender</p>
                 <button class="feat-close" type="button" popovertarget="f-kalender" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
-              <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Export je Termin und ein persönlicher Abo-Link für jede Kalender-App.</p>
+              <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Einzelne Termine lassen sich exportieren, und ein persönlicher Abo-Link bringt die Termine automatisch in die eigene Kalender-App.</p>
               <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Kalender</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
           </article>
@@ -452,6 +497,7 @@
                 <button class="feat-close" type="button" popovertarget="f-nachrichten" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-nachrichten-d">An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
+              <a class="feat-link" href="#am-rechner">So sieht es aus<span class="sr-only">: Nachrichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
           </article>
           <article class="card feat reveal tone-rose">
@@ -479,13 +525,13 @@
                 <p class="feat-pop-title" id="f-dokumente-t">Dokumente</p>
                 <button class="feat-close" type="button" popovertarget="f-dokumente" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
-              <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– mit Zugriffsstufen für alle Mitglieder, nur den Vorstand oder nur die Verwaltung.</p>
+              <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– freigegeben für alle Mitglieder, nur für den Vorstand oder nur für die Vereinsadministratoren.</p>
             </div>
           </article>
           <article class="card feat reveal tone-slate">
             <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
             <h3><button class="feat-btn" type="button" popovertarget="f-auswertungen">Auswertungen</button></h3>
-            <p class="feat-kurz">Ein Dashboard je Rolle</p>
+            <p class="feat-kurz">Zahlen passend zur Rolle</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-auswertungen" popover role="dialog" aria-labelledby="f-auswertungen-t" aria-describedby="f-auswertungen-d">
               <div class="feat-pop-head">
@@ -493,14 +539,14 @@
                 <p class="feat-pop-title" id="f-auswertungen-t">Auswertungen</p>
                 <button class="feat-close" type="button" popovertarget="f-auswertungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
-              <p id="f-auswertungen-d">Ein Dashboard je Rolle: Kennzahlen mit Mini-Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
+              <p id="f-auswertungen-d">Eine Übersicht (Dashboard) mit den Zahlen, die die jeweilige Rolle braucht: Kennzahlen mit kleinem Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
               <a class="feat-link" href="#auswertungen">So sieht es aus<span class="sr-only">: Auswertungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
           </article>
           <article class="card feat reveal tone-slate">
             <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></div>
             <h3><button class="feat-btn" type="button" popovertarget="f-suche">Zentrale Suche</button></h3>
-            <p class="feat-kurz">Mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd> alles finden</p>
+            <p class="feat-kurz">Ein Suchfeld für alles</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-suche" popover role="dialog" aria-labelledby="f-suche-t" aria-describedby="f-suche-d">
               <div class="feat-pop-head">
@@ -508,7 +554,7 @@
                 <p class="feat-pop-title" id="f-suche-t">Zentrale Suche</p>
                 <button class="feat-close" type="button" popovertarget="f-suche" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
-              <p id="f-suche-d">Mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd> zu Mitgliedern, Veranstaltungen, Dokumenten und häufigen Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf.</p>
+              <p id="f-suche-d">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente und häufige Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf. Am Rechner öffnet es sich auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd>.</span></p>
               <a class="feat-link" href="#suche">So sieht es aus<span class="sr-only">: Zentrale Suche</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
           </article>
@@ -544,23 +590,27 @@
            davor der gedruckte Plan; darunter die drei Schritte, die das Live-Fenster nacheinander zeigt (site.js hebt den
            gerade gezeigten hervor und hält das Telefon auf demselben Stand, LIVE_SCENES.schichten). Ohne JavaScript und bei
            reduzierter Bewegung: ruhige Bilder, alle Schritte gleich. Unter 720 px steht das Telefon über den Schritten und
-           der Plan unter dem dritten (site.css „Kapitel Helferschichten“). -->
+           der Plan unter dem dritten, am quer gehaltenen Handy stehen beide neben den Schritten – jeweils ohne das
+           Live-Fenster, dafür zeigt das Telefon einmal den Moment des Eintragens (site.css „Kapitel Helferschichten“). -->
       <div class="story" data-story>
         <div class="story-window reveal">
           <div class="browser live" data-live="schichten">
-            <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2026</span></div>
+            <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2027</span></div>
+            <!-- Anhalten/Abspielen (site.js, „Live-Fenster“): nicht in der Leiste, die ist für Screenreader verborgen; erscheint
+                 nur, wenn das Fenster abspielen kann. Gilt für alle Fenster der Seite. -->
+            <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
             <div class="live-screen">
               <picture>
-                <img src="assets/img/app/schichten-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-light-960.webp?v=2026100202 960w, assets/img/app/schichten-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus und Fortschrittsbalken; beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert">
+                <img src="assets/img/app/schichten-light-960.webp?v=2026100301" srcset="assets/img/app/schichten-light-960.webp?v=2026100301 960w, assets/img/app/schichten-light-1440.webp?v=2026100301 1440w, assets/img/app/schichten-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: Schichten mit Ampelstatus und Fortschrittsbalken; beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert">
               </picture>
               <!-- Live-Fenster: Ein Mauszeiger zeigt auf „Neue Schicht“, trägt sich beim Getränkestand ein und klickt auf
                    „Drucken“ – Bildfolge aus der Demo-App (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js -->
               <div class="live-layers" aria-hidden="true">
-                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-1-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-1-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-2-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-2-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-3-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-3-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-4-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-4-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-5-light-960.webp?v=2026100202" srcset="assets/img/app/schichten-live-5-light-960.webp?v=2026100202 960w, assets/img/app/schichten-live-5-light-1920.webp?v=2026100202 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/schichten-live-1-light-960.webp?v=2026100301 960w, assets/img/app/schichten-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/schichten-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/schichten-live-2-light-960.webp?v=2026100301 960w, assets/img/app/schichten-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/schichten-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026100301" srcset="assets/img/app/schichten-live-3-light-960.webp?v=2026100301 960w, assets/img/app/schichten-live-3-light-1440.webp?v=2026100301 1440w, assets/img/app/schichten-live-3-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=2026100301" srcset="assets/img/app/schichten-live-4-light-960.webp?v=2026100301 960w, assets/img/app/schichten-live-4-light-1440.webp?v=2026100301 1440w, assets/img/app/schichten-live-4-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/schichten-live-5-light-960.webp?v=2026100301" srcset="assets/img/app/schichten-live-5-light-960.webp?v=2026100301 960w, assets/img/app/schichten-live-5-light-1440.webp?v=2026100301 1440w, assets/img/app/schichten-live-5-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1296" loading="lazy" decoding="async" alt="">
                 <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
               </div>
             </div>
@@ -572,19 +622,21 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-schichten-light-208.webp?v=2026100202" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026100202 182w, assets/img/app/phone-schichten-light-208.webp?v=2026100202 208w, assets/img/app/phone-schichten-light-260.webp?v=2026100202 260w, assets/img/app/phone-schichten-light-273.webp?v=2026100202 273w, assets/img/app/phone-schichten-light-312.webp?v=2026100202 312w, assets/img/app/phone-schichten-light-364.webp?v=2026100202 364w, assets/img/app/phone-schichten-light-390.webp?v=2026100202 390w, assets/img/app/phone-schichten-light-416.webp?v=2026100202 416w, assets/img/app/phone-schichten-light-520.webp?v=2026100202 520w, assets/img/app/phone-schichten-light-546.webp?v=2026100202 546w, assets/img/app/phone-schichten-light-624.webp?v=2026100202 624w, assets/img/app/phone-schichten-light-780.webp?v=2026100202 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert, 3 von 4 Plätzen sind besetzt; darunter der noch unbesetzte Grillstand">
+                <img src="assets/img/app/phone-schichten-light-208.webp?v=2026100301" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026100301 182w, assets/img/app/phone-schichten-light-208.webp?v=2026100301 208w, assets/img/app/phone-schichten-light-260.webp?v=2026100301 260w, assets/img/app/phone-schichten-light-273.webp?v=2026100301 273w, assets/img/app/phone-schichten-light-312.webp?v=2026100301 312w, assets/img/app/phone-schichten-light-364.webp?v=2026100301 364w, assets/img/app/phone-schichten-light-390.webp?v=2026100301 390w, assets/img/app/phone-schichten-light-416.webp?v=2026100301 416w, assets/img/app/phone-schichten-light-520.webp?v=2026100301 520w, assets/img/app/phone-schichten-light-546.webp?v=2026100301 546w, assets/img/app/phone-schichten-light-624.webp?v=2026100301 624w, assets/img/app/phone-schichten-light-780.webp?v=2026100301 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand ist die eigene Schicht als „Mein Einsatz“ markiert, 3 von 4 Plätzen sind besetzt; darunter der noch unbesetzte Grillstand">
               </picture>
               <!-- Derselbe Ausschnitt vor dem Eintragen (2 von 4, „Eintragen“): site.js blendet ihn ein, solange das
-                   Live-Fenster den Stand vor dem Klick zeigt – Telefon und Fenster zeigen immer dasselbe -->
+                   Live-Fenster den Stand vor dem Klick zeigt – Telefon und Fenster zeigen immer dasselbe. Ohne Fenster
+                   (Smartphone, Handy quer) zeigt es ihn zuerst, dann tippt ein Finger (story-tap) auf „Eintragen“ -->
               <div class="live-layers" aria-hidden="true">
-                <img class="live-frame" src="assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100202" srcset="assets/img/app/phone-schichten-live-1-light-182.webp?v=2026100202 182w, assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100202 208w, assets/img/app/phone-schichten-live-1-light-260.webp?v=2026100202 260w, assets/img/app/phone-schichten-live-1-light-273.webp?v=2026100202 273w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026100202 312w, assets/img/app/phone-schichten-live-1-light-364.webp?v=2026100202 364w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026100202 390w, assets/img/app/phone-schichten-live-1-light-416.webp?v=2026100202 416w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026100202 520w, assets/img/app/phone-schichten-live-1-light-546.webp?v=2026100202 546w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026100202 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026100202 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="">
+                <img class="live-frame" src="assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100301" srcset="assets/img/app/phone-schichten-live-1-light-182.webp?v=2026100301 182w, assets/img/app/phone-schichten-live-1-light-208.webp?v=2026100301 208w, assets/img/app/phone-schichten-live-1-light-260.webp?v=2026100301 260w, assets/img/app/phone-schichten-live-1-light-273.webp?v=2026100301 273w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026100301 312w, assets/img/app/phone-schichten-live-1-light-364.webp?v=2026100301 364w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026100301 390w, assets/img/app/phone-schichten-live-1-light-416.webp?v=2026100301 416w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026100301 520w, assets/img/app/phone-schichten-live-1-light-546.webp?v=2026100301 546w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026100301 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026100301 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="">
+                <span class="story-tap"></span>
               </div>
             </div>
           </div>
         </div>
         <div class="story-paper reveal">
           <figure class="paper plx plx-slow">
-            <img src="assets/img/app/helferplan-druck-light-640.webp?v=2026100102" srcset="assets/img/app/helferplan-druck-light-640.webp?v=2026100102 640w, assets/img/app/helferplan-druck-light-1280.webp?v=2026100102 1280w" sizes="(min-width: 1200px) 236px, (min-width: 1000px) 176px, (min-width: 720px) 210px, 220px" width="1280" height="1810" loading="lazy" decoding="async" alt="Gedruckter Helferplan: Kopf mit Vereinsnamen, darunter je Veranstaltung und Schicht eine Tabelle mit Nummer, Name, Kästchen für „Anwesend“ und Bemerkung; freie Plätze sind als „frei“ markiert">
+            <img src="assets/img/app/helferplan-druck-light-640.webp?v=2026100301" srcset="assets/img/app/helferplan-druck-light-640.webp?v=2026100301 640w, assets/img/app/helferplan-druck-light-800.webp?v=2026100301 800w, assets/img/app/helferplan-druck-light-1280.webp?v=2026100301 1280w" sizes="(min-width: 1200px) 236px, (min-width: 1000px) 176px, (min-width: 720px) 210px, 220px" width="1280" height="1810" loading="lazy" decoding="async" alt="Gedruckter Helferplan: Kopf mit Vereinsnamen, darunter je Veranstaltung und Schicht eine Tabelle mit Nummer, Name, Kästchen für „Anwesend“ und Bemerkung; freie Plätze sind als „frei“ markiert">
           </figure>
         </div>
 
@@ -593,11 +645,10 @@
           <li class="story-step reveal">
             <span class="story-bar" aria-hidden="true"></span>
             <h3><span class="story-num" aria-hidden="true">1</span>Schichten anlegen</h3>
-            <p>Veranstalter planen jede Schicht mit Zeit, Treffpunkt, Plätzen und Verantwortlichen.</p>
+            <p>Vorstand oder Abteilungsleitung planen jede Schicht mit Zeit, Treffpunkt, Plätzen und Verantwortlichen, teilen bei Bedarf Helfer direkt ein und exportieren den Plan für Excel (CSV).</p>
             <ul class="checks">
               <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mindestalter je Schicht:</strong> zum Beispiel für den Getränkestand.</span></li>
-              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Alles drumherum:</strong> Zuweisung durch Veranstalter, CSV-Export und Erinnerungen 24&nbsp;Stunden vor dem Einsatz.</span></li>
-              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Helferstunden im Blick:</strong> Veranstalter tragen die Stunden nach dem Einsatz ein, je Person und Jahr zusammengefasst. Helfer sehen ihre eigenen.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Helferstunden im Blick:</strong> nach dem Einsatz eingetragen, je Person und Jahr zusammengefasst. Helfer sehen ihre eigenen.</span></li>
             </ul>
           </li>
           <li class="story-step reveal">
@@ -606,8 +657,7 @@
             <p>Ein Klick auf „Eintragen“ genügt&nbsp;– am Rechner oder unterwegs auf dem Smartphone.</p>
             <ul class="checks">
               <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Ampel auf einen Blick:</strong> „Unbesetzt“, „Teilweise besetzt“, „Voll besetzt“&nbsp;– dazu der Hinweis „Beginnt bald“.</span></li>
-              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen:</strong> Wählen mehrere Personen gleichzeitig den letzten Platz, bekommt ihn genau eine.</span></li>
-              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Keine Doppelbelegung:</strong> Wer zur gleichen Zeit schon eingetragen ist, kann keine zweite Schicht übernehmen.</span></li>
+              <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kein Überbuchen, keine Doppelbelegung:</strong> Den letzten Platz bekommt genau eine Person, auch wenn mehrere gleichzeitig zugreifen&nbsp;– und niemand übernimmt zwei Schichten zur selben Zeit.</span></li>
             </ul>
           </li>
           <li class="story-step reveal" id="aushang">
@@ -647,29 +697,30 @@
       <div class="spot" id="suche">
         <div class="spot-text reveal">
           <h3>Alles mit einer Suche erreichen</h3>
-          <p class="lead">Die zentrale Suche öffnet sich mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd> <span class="nowrap">(Mac:&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>K</kbd>)</span> oder per Klick in der Kopfzeile, auf dem Smartphone über die Lupe.</p>
+          <p class="lead">Die Suche öffnet sich per Klick oben in der Kopfzeile, auf dem Smartphone über die Lupe&nbsp;– am Rechner auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd></span> <span class="nowrap">(Mac:&nbsp;<kbd>⌘</kbd>&nbsp;<kbd>K</kbd>).</span></p>
           <ul class="checks">
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Direkt zur Aktion:</strong> „Mitglied hinzufügen“, „Nachricht schreiben“ oder „Helferplan öffnen“ ohne Umweg über Menüs.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Schnelle Treffer:</strong> Mitglieder, Veranstaltungen und Dokumente schon ab zwei Buchstaben, übersichtlich nach Gruppen sortiert.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Nur, was die Rolle sehen darf:</strong> Die Treffer durchlaufen dieselben Rechteprüfungen wie die Seiten selbst.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mit der Tastatur bedienbar:</strong> Häufig genutzte Aktionen rücken nach oben.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Nur, was die Rolle sehen darf:</strong> In den Treffern erscheint nichts, was man nicht auch sonst öffnen dürfte.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Das Häufigste zuerst:</strong> Oft genutzte Aktionen rücken nach oben.</span></li>
           </ul>
         </div>
         <div class="spot-media reveal">
           <div class="plx plx-slow">
             <div class="browser live" data-live="suche">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Suche</span></div>
+              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
               <div class="live-screen">
                 <picture>
-                  <img src="assets/img/app/suche-light-960.webp?v=2026100102" srcset="assets/img/app/suche-light-960.webp?v=2026100102 960w, assets/img/app/suche-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
+                  <img src="assets/img/app/suche-light-960.webp?v=2026100301" srcset="assets/img/app/suche-light-960.webp?v=2026100301 960w, assets/img/app/suche-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
                 </picture>
                 <!-- Live-Fenster (Zentrale Suche: Strg K, „Hel“ tippen, Treffer zeigen) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
                 <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/suche-live-1-light-960.webp?v=2026100102" srcset="assets/img/app/suche-live-1-light-960.webp?v=2026100102 960w, assets/img/app/suche-live-1-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-2-light-960.webp?v=2026100102" srcset="assets/img/app/suche-live-2-light-960.webp?v=2026100102 960w, assets/img/app/suche-live-2-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-3-light-960.webp?v=2026100102" srcset="assets/img/app/suche-live-3-light-960.webp?v=2026100102 960w, assets/img/app/suche-live-3-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-4-light-960.webp?v=2026100102" srcset="assets/img/app/suche-live-4-light-960.webp?v=2026100102 960w, assets/img/app/suche-live-4-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-5-light-960.webp?v=2026100102" srcset="assets/img/app/suche-live-5-light-960.webp?v=2026100102 960w, assets/img/app/suche-live-5-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-1-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-2-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-3-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-3-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-3-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-3-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-4-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-4-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-4-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-4-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-5-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-5-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-5-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-5-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
                   <span class="live-keys"><kbd>Strg</kbd><kbd>K</kbd></span>
                   <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
                 </div>
@@ -682,7 +733,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-suche-light-260.webp?v=2026100102" srcset="assets/img/app/phone-suche-light-260.webp?v=2026100102 260w, assets/img/app/phone-suche-light-390.webp?v=2026100102 390w, assets/img/app/phone-suche-light-520.webp?v=2026100102 520w, assets/img/app/phone-suche-light-780.webp?v=2026100102 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone, geöffnet über die Lupe: Treffer für „Hel“ als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten und Mitglieder">
+                <img src="assets/img/app/phone-suche-light-260.webp?v=2026100301" srcset="assets/img/app/phone-suche-light-260.webp?v=2026100301 260w, assets/img/app/phone-suche-light-390.webp?v=2026100301 390w, assets/img/app/phone-suche-light-520.webp?v=2026100301 520w, assets/img/app/phone-suche-light-780.webp?v=2026100301 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone, geöffnet über die Lupe: Treffer für „Hel“ als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten und Mitglieder">
               </picture>
             </div>
           </div>
@@ -692,9 +743,9 @@
       <div class="spot flip" id="mitglieder">
         <div class="spot-text reveal">
           <h3>Mitglieder im Griff, ohne Datenchaos</h3>
-          <p class="lead">Vorhandene Listen lassen sich per CSV übernehmen. Danach lassen sich Mitglieder nach Abteilung, Status oder Namen filtern, und Einwilligungen werden je Mitglied dokumentiert. Jede Änderung bleibt nachvollziehbar.</p>
+          <p class="lead">Vorhandene Listen lassen sich übernehmen&nbsp;– eine Excel-Liste einfach als CSV-Datei speichern. Danach lassen sich Mitglieder nach Abteilung, Status oder Namen filtern, und Einwilligungen werden je Mitglied dokumentiert. Jede Änderung bleibt nachvollziehbar.</p>
           <ul class="checks">
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>CSV-Import mit Vorschau:</strong> erst prüfen, dann übernehmen.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Import mit Vorschau:</strong> erst prüfen, dann übernehmen.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Finden und aufräumen:</strong> Suche, Filter und Sortierung, dazu Archiv und Papierkorb statt endgültigen Löschens.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Abteilungen und Gruppen:</strong> jeweils mit eigenen Leitungen.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Einwilligungen und Notizen:</strong> je Mitglied dokumentiert, samt Änderungshistorie.</span></li>
@@ -704,16 +755,17 @@
           <div class="plx plx-slow">
             <div class="browser live" data-live="mitglieder">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Mitglieder</span></div>
+              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
               <div class="live-screen">
                 <picture>
-                  <img src="assets/img/app/mitglieder-light-960.webp?v=2026100102" srcset="assets/img/app/mitglieder-light-960.webp?v=2026100102 960w, assets/img/app/mitglieder-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
+                  <img src="assets/img/app/mitglieder-light-960.webp?v=2026100301" srcset="assets/img/app/mitglieder-light-960.webp?v=2026100301 960w, assets/img/app/mitglieder-light-1440.webp?v=2026100301 1440w, assets/img/app/mitglieder-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
                 </picture>
                 <!-- Live-Fenster (Mitglieder: „Koch“ suchen und filtern) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
                 <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-1-light-960.webp?v=2026100102" srcset="assets/img/app/mitglieder-live-1-light-960.webp?v=2026100102 960w, assets/img/app/mitglieder-live-1-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-2-light-960.webp?v=2026100102" srcset="assets/img/app/mitglieder-live-2-light-960.webp?v=2026100102 960w, assets/img/app/mitglieder-live-2-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-3-light-960.webp?v=2026100102" srcset="assets/img/app/mitglieder-live-3-light-960.webp?v=2026100102 960w, assets/img/app/mitglieder-live-3-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-4-light-960.webp?v=20260930" srcset="assets/img/app/mitglieder-live-4-light-960.webp?v=20260930 960w, assets/img/app/mitglieder-live-4-light-1920.webp?v=20260930 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/mitglieder-live-1-light-960.webp?v=2026100301 960w, assets/img/app/mitglieder-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/mitglieder-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/mitglieder-live-2-light-960.webp?v=2026100301 960w, assets/img/app/mitglieder-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/mitglieder-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-3-light-960.webp?v=2026100301" srcset="assets/img/app/mitglieder-live-3-light-960.webp?v=2026100301 960w, assets/img/app/mitglieder-live-3-light-1440.webp?v=2026100301 1440w, assets/img/app/mitglieder-live-3-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/mitglieder-live-4-light-960.webp?v=2026100301" srcset="assets/img/app/mitglieder-live-4-light-960.webp?v=2026100301 960w, assets/img/app/mitglieder-live-4-light-1440.webp?v=2026100301 1440w, assets/img/app/mitglieder-live-4-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
                   <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
                 </div>
               </div>
@@ -724,7 +776,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-mitglieder-light-260.webp?v=2026100102" srcset="assets/img/app/phone-mitglieder-light-260.webp?v=2026100102 260w, assets/img/app/phone-mitglieder-light-390.webp?v=2026100102 390w, assets/img/app/phone-mitglieder-light-520.webp?v=2026100102 520w, assets/img/app/phone-mitglieder-light-780.webp?v=2026100102 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Mitgliederliste auf dem Smartphone mit Suchfeld, Filter und dem Status jedes Mitglieds">
+                <img src="assets/img/app/phone-mitglieder-light-260.webp?v=2026100301" srcset="assets/img/app/phone-mitglieder-light-260.webp?v=2026100301 260w, assets/img/app/phone-mitglieder-light-390.webp?v=2026100301 390w, assets/img/app/phone-mitglieder-light-520.webp?v=2026100301 520w, assets/img/app/phone-mitglieder-light-780.webp?v=2026100301 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Mitgliederliste auf dem Smartphone mit Suchfeld, Filter und dem Status jedes Mitglieds">
               </picture>
             </div>
           </div>
@@ -739,22 +791,23 @@
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Anmeldung mit Teilnehmerlimit:</strong> dazu eine Warteliste, falls alle Plätze vergeben sind.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Serientermine und Duplizieren:</strong> Das spart Tipparbeit.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Absage mit Benachrichtigung:</strong> Alle Betroffenen erfahren automatisch davon.</span></li>
-            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kalender-Abo:</strong> ein persönlicher, jederzeit widerrufbarer Link für jede Kalender-App.</span></li>
+            <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kalender-Abo:</strong> Die Termine erscheinen automatisch im eigenen Kalender auf Handy oder Rechner&nbsp;– über einen persönlichen Link, der sich jederzeit sperren lässt.</span></li>
           </ul>
         </div>
         <div class="spot-media reveal">
           <div class="plx plx-slow">
             <div class="browser live" data-live="veranstaltungen">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Kalender</span></div>
+              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
               <div class="live-screen">
                 <picture>
-                  <img src="assets/img/app/kalender-light-960.webp?v=2026100102" srcset="assets/img/app/kalender-light-960.webp?v=2026100102 960w, assets/img/app/kalender-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
+                  <img src="assets/img/app/kalender-light-960.webp?v=2026100301" srcset="assets/img/app/kalender-light-960.webp?v=2026100301 960w, assets/img/app/kalender-light-1440.webp?v=2026100301 1440w, assets/img/app/kalender-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
                 </picture>
                 <!-- Live-Fenster (Kalender: Monat als Liste und zurück) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
                 <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/kalender-live-1-light-960.webp?v=2026100102" srcset="assets/img/app/kalender-live-1-light-960.webp?v=2026100102 960w, assets/img/app/kalender-live-1-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/kalender-live-2-light-960.webp?v=2026100102" srcset="assets/img/app/kalender-live-2-light-960.webp?v=2026100102 960w, assets/img/app/kalender-live-2-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/kalender-live-3-light-960.webp?v=2026100102" srcset="assets/img/app/kalender-live-3-light-960.webp?v=2026100102 960w, assets/img/app/kalender-live-3-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/kalender-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/kalender-live-1-light-960.webp?v=2026100301 960w, assets/img/app/kalender-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/kalender-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/kalender-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/kalender-live-2-light-960.webp?v=2026100301 960w, assets/img/app/kalender-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/kalender-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/kalender-live-3-light-960.webp?v=2026100301" srcset="assets/img/app/kalender-live-3-light-960.webp?v=2026100301 960w, assets/img/app/kalender-live-3-light-1440.webp?v=2026100301 1440w, assets/img/app/kalender-live-3-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
                   <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
                 </div>
               </div>
@@ -765,7 +818,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-kalender-light-260.webp?v=2026100102" srcset="assets/img/app/phone-kalender-light-260.webp?v=2026100102 260w, assets/img/app/phone-kalender-light-390.webp?v=2026100102 390w, assets/img/app/phone-kalender-light-520.webp?v=2026100102 520w, assets/img/app/phone-kalender-light-780.webp?v=2026100102 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone als Liste: die Termine im Oktober nach Tagen, mit Uhrzeit, Art, Abteilung und Ort">
+                <img src="assets/img/app/phone-kalender-light-260.webp?v=2026100301" srcset="assets/img/app/phone-kalender-light-260.webp?v=2026100301 260w, assets/img/app/phone-kalender-light-390.webp?v=2026100301 390w, assets/img/app/phone-kalender-light-520.webp?v=2026100301 520w, assets/img/app/phone-kalender-light-780.webp?v=2026100301 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone als Liste: die Termine im Juni nach Tagen, mit Uhrzeit, Art, Abteilung und Ort">
               </picture>
             </div>
           </div>
@@ -775,7 +828,7 @@
       <div class="spot flip" id="auswertungen">
         <div class="spot-text reveal">
           <h3>Zahlen, die dem Vorstand helfen</h3>
-          <p class="lead">Das Dashboard passt sich der Rolle an: Helfer sehen ihre Einsätze, der Vorstand sieht Mitgliederentwicklung, Termine, Helferstunden und offene Aufgaben.</p>
+          <p class="lead">Die Übersicht passt sich der Rolle an: Helfer sehen ihre Einsätze, der Vorstand sieht Mitgliederentwicklung, Termine, Helferstunden und offene Aufgaben.</p>
           <ul class="checks">
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Kennzahlen mit Verlauf:</strong> Jede Kennzahl zeigt ein Mini-Diagramm und einen kurzen Vergleich&nbsp;– etwa „+2&nbsp;gegenüber dem Vormonat“ oder „Nächster Termin in 3&nbsp;Tagen“.</span></li>
             <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Diagramme oder Tabelle:</strong> Verteilungen und Verläufe, jederzeit auch als Tabelle.</span></li>
@@ -787,14 +840,15 @@
           <div class="plx plx-slow">
             <div class="browser live" data-live="auswertungen">
               <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Auswertungen</span></div>
+              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
               <div class="live-screen">
                 <picture>
-                  <img src="assets/img/app/auswertung-light-960.webp?v=2026100102" srcset="assets/img/app/auswertung-light-960.webp?v=2026100102 960w, assets/img/app/auswertung-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
+                  <img src="assets/img/app/auswertung-light-960.webp?v=2026100301" srcset="assets/img/app/auswertung-light-960.webp?v=2026100301 960w, assets/img/app/auswertung-light-1440.webp?v=2026100301 1440w, assets/img/app/auswertung-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
                 </picture>
                 <!-- Live-Fenster (Auswertungen: Diagramm als Fläche und als Balken) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
                 <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/auswertung-live-1-light-960.webp?v=2026100102" srcset="assets/img/app/auswertung-live-1-light-960.webp?v=2026100102 960w, assets/img/app/auswertung-live-1-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/auswertung-live-2-light-960.webp?v=2026100102" srcset="assets/img/app/auswertung-live-2-light-960.webp?v=2026100102 960w, assets/img/app/auswertung-live-2-light-1920.webp?v=2026100102 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/auswertung-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/auswertung-live-1-light-960.webp?v=2026100301 960w, assets/img/app/auswertung-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/auswertung-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/auswertung-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/auswertung-live-2-light-960.webp?v=2026100301 960w, assets/img/app/auswertung-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/auswertung-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
                   <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
                 </div>
               </div>
@@ -805,7 +859,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-auswertung-light-260.webp?v=2026100102" srcset="assets/img/app/phone-auswertung-light-260.webp?v=2026100102 260w, assets/img/app/phone-auswertung-light-390.webp?v=2026100102 390w, assets/img/app/phone-auswertung-light-520.webp?v=2026100102 520w, assets/img/app/phone-auswertung-light-780.webp?v=2026100102 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Auswertungen auf dem Smartphone: Mitgliederentwicklung der letzten zwölf Monate als Liniendiagramm">
+                <img src="assets/img/app/phone-auswertung-light-260.webp?v=2026100301" srcset="assets/img/app/phone-auswertung-light-260.webp?v=2026100301 260w, assets/img/app/phone-auswertung-light-390.webp?v=2026100301 390w, assets/img/app/phone-auswertung-light-520.webp?v=2026100301 520w, assets/img/app/phone-auswertung-light-780.webp?v=2026100301 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Auswertungen auf dem Smartphone: Mitgliederentwicklung der letzten zwölf Monate als Liniendiagramm">
               </picture>
             </div>
           </div>
@@ -849,17 +903,17 @@
         <article class="role reveal">
           <div class="card-icon tone-green"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
           <h3>Helfer</h3>
-          <p>Sieht Veranstaltungen, trägt sich in Helferschichten ein und sieht die eigenen Aufgaben.</p>
+          <p>Wie ein Mitglied, dazu eigene Aufgaben: sieht, was ihm zugewiesen ist, und hakt es selbst ab.</p>
           <p class="scope scope-own"><small>Mitgliederdaten<span class="sr-only">:</span></small><span>Nur eigene Daten</span></p>
         </article>
         <article class="role reveal">
           <div class="card-icon tone-blue"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></div>
           <h3>Mitglied</h3>
-          <p>Sieht das eigene Profil und die Veranstaltungen und kann sich in Helferschichten eintragen.</p>
+          <p>Sieht das eigene Profil und die Veranstaltungen des Vereins und trägt sich selbst in Helferschichten ein.</p>
           <p class="scope scope-own"><small>Mitgliederdaten<span class="sr-only">:</span></small><span>Nur eigene Daten</span></p>
         </article>
       </div>
-      <p class="note reveal"><span class="note-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></span><span>Dokumente lassen sich zusätzlich in Zugriffsstufen ablegen: für alle Mitglieder, nur für den Vorstand oder nur für die Verwaltung.</span></p>
+      <p class="note reveal"><span class="note-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></span><span>Dokumente lassen sich zusätzlich gezielt freigeben: für alle Mitglieder, nur für den Vorstand oder nur für die Vereinsadministratoren.</span></p>
     </div>
   </section>
 
@@ -881,7 +935,7 @@
         </div>
         <div class="trust-promise reveal">
           <span class="trust-seal" aria-hidden="true"><svg class="icon"><use href="#i-eye-off"/></svg></span>
-          <p class="trust-claim"><strong>Auch die Plattformverwaltung, die neue Vereine anlegt, sieht in&nbsp;der Anwendung keine Mitgliederdaten.</strong></p>
+          <p class="trust-claim"><strong>Auch wir als Betreiber, die Ihren Verein einrichten, sehen in&nbsp;der Anwendung keine Mitgliederdaten.</strong></p>
           <p class="trust-note">Verantwortlich für die Daten bleibt der Verein&nbsp;– VereinsFlow ist das Werkzeug dafür.</p>
         </div>
         <div class="trust-panel reveal">
@@ -894,8 +948,8 @@
             </li>
             <li>
               <details class="trust-item">
-                <summary><span class="trust-icon" aria-hidden="true"><svg class="icon"><use href="#i-lock-keyhole"/></svg></span><span class="trust-title">Sichere Anmeldung<span class="sr-only">:</span></span><span class="trust-line">Passwörter werden mit Argon2id gesichert.</span><svg class="icon trust-chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
-                <p class="trust-detail">Wiederholte Fehlversuche werden gebremst, inaktive Sitzungen laufen automatisch ab. Angemeldete Geräte sieht jede Person selbst und kann sie abmelden.</p>
+                <summary><span class="trust-icon" aria-hidden="true"><svg class="icon"><use href="#i-lock-keyhole"/></svg></span><span class="trust-title">Sichere Anmeldung<span class="sr-only">:</span></span><span class="trust-line">Passwörter sind so gespeichert, dass niemand sie lesen kann&nbsp;– auch wir nicht.</span><svg class="icon trust-chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+                <p class="trust-detail">Gespeichert wird nur ein nicht umkehrbarer „Fingerabdruck“ des Passworts (Argon2id). Wer mehrmals ein falsches Passwort eingibt, muss eine Weile warten. Wer vergisst, sich abzumelden, wird nach einiger Zeit ohne Nutzung automatisch abgemeldet. Jede Person sieht selbst, auf welchen Geräten sie angemeldet ist, und kann einzelne davon abmelden.</p>
               </details>
             </li>
             <li>
@@ -906,8 +960,8 @@
             </li>
             <li>
               <details class="trust-item">
-                <summary><span class="trust-icon" aria-hidden="true"><svg class="icon"><use href="#i-shield-check"/></svg></span><span class="trust-title">Rechte mit Reichweite<span class="sr-only">:</span></span><span class="trust-line">Ganzer Verein, eigene Abteilung oder nur eigene Daten&nbsp;– bei jeder Anfrage auf dem Server geprüft.</span><svg class="icon trust-chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
-                <p class="trust-detail">Was jemand nicht sehen darf, ist nicht nur in der Oberfläche versteckt.</p>
+                <summary><span class="trust-icon" aria-hidden="true"><svg class="icon"><use href="#i-shield-check"/></svg></span><span class="trust-title">Jeder sieht nur seinen Bereich<span class="sr-only">:</span></span><span class="trust-line">Ganzer Verein, eigene Abteilung oder nur die eigenen Daten&nbsp;– je nach Rolle.</span><svg class="icon trust-chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+                <p class="trust-detail">Geprüft wird bei jedem Zugriff auf dem Server: Was jemand nicht sehen darf, schickt VereinsFlow gar nicht erst an sein Gerät&nbsp;– es wird nicht bloß ausgeblendet.</p>
               </details>
             </li>
             <li>
@@ -955,7 +1009,7 @@
         </details>
         <details>
           <summary>Können vorhandene Mitgliederlisten übernommen werden?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
-          <div class="answer"><p>Ja. Der CSV-Import zeigt vorab eine Vorschau, damit Fehler auffallen, bevor etwas gespeichert wird. Eine Vorlage steht bereit. Umgekehrt lassen sich Mitglieder jederzeit als CSV exportieren.</p></div>
+          <div class="answer"><p>Ja. Eine Excel-Liste lässt sich übernehmen, wenn sie als CSV-Datei gespeichert ist (in Excel über „Speichern unter“). Vorab zeigt VereinsFlow eine Vorschau, damit Fehler auffallen, bevor etwas gespeichert wird. Eine Vorlage steht bereit. Umgekehrt lassen sich Mitglieder jederzeit als Liste exportieren, die sich in Excel öffnen lässt.</p></div>
         </details>
         <details>
           <summary>Gibt es eine Finanzverwaltung&nbsp;– und was ist noch geplant?<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
@@ -1003,7 +1057,7 @@
           <h3 class="cta-steps-title" id="ablauf">In drei Schritten startklar</h3>
           <ol class="cta-steps">
             <li><span class="cta-step-no" aria-hidden="true">1</span><span><strong>Verein einrichten.</strong> Neue Vereine werden von uns eingerichtet. Danach übernimmt der Vereinsadministrator: Einstellungen, Abteilungen und Benutzer.</span></li>
-            <li><span class="cta-step-no" aria-hidden="true">2</span><span><strong>Mitglieder übernehmen.</strong> Vorhandene Listen per CSV importieren&nbsp;– mit Vorschau, bevor etwas gespeichert wird. Eine Vorlage liegt bereit.</span></li>
+            <li><span class="cta-step-no" aria-hidden="true">2</span><span><strong>Mitglieder übernehmen.</strong> Vorhandene Listen, etwa aus Excel, übernehmen&nbsp;– mit Vorschau, bevor etwas gespeichert wird. Eine Vorlage liegt bereit.</span></li>
             <li><span class="cta-step-no" aria-hidden="true">3</span><span><strong>Team einladen.</strong> Vorstand, Abteilungsleiter, Helfer und Mitglieder erhalten einen persönlichen Einladungslink per E&#8209;Mail und legen ihr Passwort selbst fest.</span></li>
           </ol>
         </div>
@@ -1050,6 +1104,12 @@
           <img src="assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
         </picture>
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+        <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
+        <address class="footer-contact">
+          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        </address>
       </div>
       <div>
         <h2>Produkt</h2>
@@ -1062,12 +1122,12 @@
         </ul>
       </div>
       <div>
-        <h2>Mehr</h2>
+        <h2>Kontakt</h2>
         <ul>
-          <li><a href="#ablauf">Ablauf</a></li>
-          <li><a href="#faq">Häufige Fragen</a></li>
           <li><a href="#kontakt">Demo anfragen</a></li>
           <li><a href="#benachrichtigen">Zum Start benachrichtigen</a></li>
+          <li><a href="#ablauf">So starten Sie</a></li>
+          <li><a href="#faq">Häufige Fragen</a></li>
         </ul>
       </div>
       <div>
@@ -1079,7 +1139,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow · Funktionsumfang: Stand September 2026</span>
+      <span>© 2026 VereinsFlow GbR</span>
       <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
     </div>
   </div>

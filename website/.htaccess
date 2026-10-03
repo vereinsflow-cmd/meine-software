@@ -21,8 +21,21 @@ ErrorDocument 404 /404.html
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
   Header always set Cross-Origin-Opener-Policy "same-origin"
-  # Erst aktivieren, wenn HTTPS für die Domain zuverlässig läuft:
-  # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  # HSTS: Browser rufen die Domain ein Jahr lang nur noch über HTTPS auf (auch wenn jemand „http://“ tippt). Bewusst nur
+  # für vereins-flow.com selbst – ohne includeSubDomains und ohne preload, damit Subdomains ohne Zertifikat nicht gesperrt
+  # werden. Kommt die Angabe über http:// (Weiterleitung oben), beachten Browser sie nicht – sie schadet dort also nicht.
+  # Das SSL-Zertifikat bei IONOS deshalb nie auslaufen lassen.
+  Header always set Strict-Transport-Security "max-age=31536000"
+
+  # HTML-Seiten: Der Browser darf sie behalten, fragt aber vor jeder Anzeige nach, ob es eine neuere gibt (unveränderte
+  # Seiten kommen als kurze Antwort „304“). So sehen Besucher nach einer Änderung sofort die neue Seite – samt den neuen
+  # ?v=-Adressen von Stil, Skript und Bildern. Gilt auch für die Startseite unter „/“ (Apache liefert dort index.html).
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # Gepackt ausgelieferte Dateien bekommen von mod_deflate ein ETag mit „-gzip“ am Ende, das Apache bei der Nachfrage
+  # nicht wiedererkennt – ohne diese Zeile käme statt „304“ jedes Mal die ganze Datei. Ändert nur die Nachfrage des Browsers.
+  RequestHeader edit "If-None-Match" "^\"(.*)-gzip\"$" "\"$1\""
 </IfModule>
 
 <IfModule mod_expires.c>
@@ -31,6 +44,8 @@ ErrorDocument 404 /404.html
   ExpiresByType image/webp "access plus 7 days"
   ExpiresByType image/png "access plus 7 days"
   ExpiresByType image/svg+xml "access plus 7 days"
+  ExpiresByType image/vnd.microsoft.icon "access plus 7 days"
+  ExpiresByType image/x-icon "access plus 7 days"
   ExpiresByType text/css "access plus 1 day"
   ExpiresByType text/javascript "access plus 1 day"
   ExpiresByType application/javascript "access plus 1 day"
