@@ -13,8 +13,17 @@ async function openSommerfestPlan(page: Page): Promise<void> {
     .first()
     .click();
   await expect(
-    page.getByRole("heading", { level: 1, name: /Helferplan: Sommerfest 2026/ }),
+    page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
   ).toBeVisible();
+}
+
+/** Öffnet das Menü „⋯“ einer Schicht und wählt einen Punkt. */
+async function chooseFromMenu(page: Page, title: string, item: string): Promise<void> {
+  await page
+    .getByRole("listitem", { name: `Schicht ${title}` })
+    .getByRole("button", { name: `Weitere Aktionen für „${title}“` })
+    .click();
+  await page.getByRole("menuitem", { name: item }).click();
 }
 
 async function createShift(
@@ -36,21 +45,31 @@ async function createShift(
 
 async function deleteShift(page: Page, title: string): Promise<void> {
   const card = page.getByRole("listitem", { name: `Schicht ${title}` });
-  await card.getByRole("button", { name: "Löschen" }).click();
+  await chooseFromMenu(page, title, "Schicht löschen");
   await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click();
   await expect(card).toHaveCount(0);
 }
 
 test.describe("Helferplanung – Veranstalter", () => {
-  test("Übersicht zeigt Einsätze, offene Schichten und die Veranstaltung mit Besetzung", async ({
+  test("Übersicht zeigt Einsätze und je Veranstaltung die Besetzung und die Schichten mit freien Plätzen", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung");
     await expect(page.getByRole("heading", { level: 1, name: "Helferplanung" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Meine Einsätze" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Offene Schichten" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Sommerfest 2026/ }).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Veranstaltungen mit Helferplanung" }),
+    ).toBeVisible();
+    // Seed-Sommerfest: 9 von 21 Plätzen besetzt; Aufbau ist voll, der Grillstand hat noch niemanden.
+    const fest = page.getByRole("article", { name: "Sommerfest 2026" });
+    await expect(fest).toContainText("9 von 21 Plätzen besetzt, 12 frei");
+    const freie = fest.getByRole("list", { name: "Freie Plätze: Sommerfest 2026" });
+    await expect(freie.getByRole("listitem").filter({ hasText: "Grillstand" })).toContainText(
+      "0 von 3",
+    );
+    await expect(freie.getByRole("listitem").filter({ hasText: "Aufbau" })).toHaveCount(0);
+    await expect(fest).toContainText("Außerdem voll besetzt: Aufbau");
     // Der Knopf oben auf der Seite führt zu den Helferstunden; der Menüpunkt selbst heißt wie die Seite „Helferplanung“.
     const hours = page.getByRole("main").getByRole("link", { name: "Helferstunden", exact: true });
     await expect(hours).toBeVisible();
@@ -76,19 +95,26 @@ test.describe("Helferplanung – Veranstalter", () => {
     await createShift(page, first, "23:00", "23:30");
     await createShift(page, second, "23:10", "23:50");
     const card1 = page.getByRole("listitem", { name: `Schicht ${first}` });
-    const card2 = page.getByRole("listitem", { name: `Schicht ${second}` });
-    await expect(card1.getByText("Unbesetzt")).toBeVisible();
+    await expect(card1.getByText("0 von 2")).toBeVisible();
+    await expect(card1.getByText("Noch niemand eingetragen")).toBeVisible();
 
-    // Zuweisen: "Helfer, Hans" hat im Seed nur Aufbau/Getränkestand am Vormittag/Mittag.
-    await card1.getByRole("button", { name: "Zuweisen" }).click();
+    // Zuweisen über das Menü „⋯“: "Helfer, Hans" hat im Seed nur Aufbau/Getränkestand am Vormittag/Mittag.
+    await chooseFromMenu(page, first, "Helfer zuweisen");
     await page.getByLabel("Mitglied suchen").fill("Helfer");
     await page.getByRole("option", { name: /Helfer, Hans/ }).click();
     await page.getByRole("button", { name: "Helfer, Hans zuweisen" }).click();
     await expect(card1.getByText(/Hans Helfer/)).toBeVisible();
-    await expect(card1.getByText("Teilweise besetzt")).toBeVisible();
+    await expect(card1.getByText("1 von 2")).toBeVisible();
+
+    // Aufgeklappt (Klick auf den Namen der Schicht): Namen untereinander, freie Plätze mit „Zuweisen“.
+    await card1.getByRole("button", { name: first, exact: true }).click();
+    const names = card1.getByRole("list", { name: "Eingetragen" });
+    await expect(names).toContainText("Hans Helfer");
+    await expect(names).toContainText("1 Platz frei");
+    await expect(names.getByRole("button", { name: "Hans Helfer austragen" })).toBeVisible();
 
     // Zweite, überschneidende Schicht: dieselbe Person ist nicht wählbar – mit Begründung.
-    await card2.getByRole("button", { name: "Zuweisen" }).click();
+    await chooseFromMenu(page, second, "Helfer zuweisen");
     await page.getByLabel("Mitglied suchen").fill("Helfer");
     const option = page.getByRole("option", { name: /Helfer, Hans/ });
     await expect(option).toBeDisabled();
@@ -160,7 +186,7 @@ test.describe("Helferplanung – Helfer und Mitglieder", () => {
 
     // Hans Helfer ist im Seed bei Aufbau (vormittags) und Getränkestand (mittags) eingetragen; der Abbau am Abend ist frei.
     await card.getByRole("button", { name: "Eintragen" }).click();
-    await expect(card.getByText("Mein Einsatz")).toBeVisible();
+    await expect(card.getByText(/Hans Helfer \(du\)/)).toBeVisible();
     await expect(card.getByRole("button", { name: "Austragen" })).toBeVisible();
 
     // Übersicht "Meine Einsätze" führt die Schicht.
@@ -175,7 +201,7 @@ test.describe("Helferplanung – Helfer und Mitglieder", () => {
       .getByRole("button", { name: "Austragen" })
       .click();
     await expect(
-      page.getByRole("listitem", { name: "Schicht Abbau" }).getByText("Mein Einsatz"),
+      page.getByRole("listitem", { name: "Schicht Abbau" }).getByText(/\(du\)/),
     ).toHaveCount(0);
   });
 
@@ -197,6 +223,7 @@ test.describe("Helferplanung – Helfer und Mitglieder", () => {
     await openSommerfestPlan(page);
     await expect(page.getByRole("button", { name: "Neue Schicht" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Zuweisen" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Weitere Aktionen/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "CSV-Export" })).toHaveCount(0);
     const response = await page.request.get(
       `/api/helferplanung/${page.url().split("/").pop()}/export`,
@@ -215,8 +242,9 @@ test.describe("Helferplanung – Helfer und Mitglieder", () => {
     await expect(grill.getByRole("note")).toContainText(
       "Überschneidet sich mit deiner Schicht „Kuchenbuffet“",
     );
-    await expect(
-      page.getByRole("listitem", { name: "Schicht Kuchenbuffet" }).getByText("Mein Einsatz"),
-    ).toBeVisible();
+    // Die eigene Schicht ist aufgeklappt und markiert („Du“).
+    const kuchen = page.getByRole("listitem", { name: "Schicht Kuchenbuffet" });
+    await expect(kuchen.getByRole("list", { name: "Eingetragen" })).toContainText("Maria Mitglied");
+    await expect(kuchen.getByText("Du", { exact: true })).toBeVisible();
   });
 });

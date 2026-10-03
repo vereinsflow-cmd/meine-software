@@ -92,6 +92,19 @@ export function formatDateShort(value: DateInput | null | undefined): string {
   }).format(date);
 }
 
+/** z. B. "Sa., 10. Okt." – Tag mit kurzem Monatsnamen, ruhiger lesbar als "10.10." (Listen der Helferplanung). */
+export function formatDayMonth(value: DateInput | null | undefined): string {
+  if (value == null) return EMPTY;
+  const date = toDate(value);
+  if (!isValid(date)) return EMPTY;
+  return formatter("day-month", {
+    timeZone: APP_TIME_ZONE,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
 /** z. B. "Di., 29.09.2026" – wie `formatDateShort`, aber mit Jahr (Auswahllisten reichen über den Jahreswechsel). */
 export function formatDateWithWeekday(value: DateInput | null | undefined): string {
   if (value == null) return EMPTY;

@@ -163,17 +163,17 @@ export const FAQ: readonly FaqSection[] = [
         id: "als-helfer-eintragen",
         question: "Wie trage ich mich als Helfer in eine Schicht ein?",
         steps: [
-          "Öffne „Helferplanung“ und wähle die Veranstaltung.",
-          "Klicke bei der gewünschten Schicht auf „Eintragen“.",
+          "Öffne „Helferplanung“. Unter jeder Veranstaltung stehen die Schichten mit freien Plätzen.",
+          "Klicke bei der gewünschten Schicht auf „Eintragen“ – dort oder im Helferplan der Veranstaltung.",
         ],
-        tip: "Du siehst sofort eine Bestätigung, und die Schicht erscheint im Dashboard unter „Meine Einsätze“. Vor der Schicht bekommst du eine Erinnerung.",
+        tip: "Du siehst sofort eine Bestätigung, und die Schicht erscheint unter „Meine Einsätze“ (in der Helferplanung und auf dem Dashboard). Vor der Schicht bekommst du eine Erinnerung.",
         link: { href: "/helferplanung", label: "Zur Helferplanung" },
         keywords: "helfen einsatz schicht anmelden",
       },
       {
         id: "eintragen-nicht-moeglich",
         question: "Warum kann ich mich nicht in eine Schicht eintragen?",
-        answer: ["Unter der Schicht steht der Grund. Häufig ist es einer dieser:"],
+        answer: ["Bei der Schicht steht der Grund. Häufig ist es einer dieser:"],
         steps: [
           "Die Schicht ist bereits voll besetzt.",
           "Die Anmeldung ist geschlossen – dann teilt der Veranstalter die Helfer selbst zu.",
@@ -186,7 +186,10 @@ export const FAQ: readonly FaqSection[] = [
       {
         id: "aus-schicht-austragen",
         question: "Wie trage ich mich wieder aus einer Schicht aus?",
-        steps: ["Öffne die Schicht in der Helferplanung.", "Klicke auf „Austragen“."],
+        steps: [
+          "Öffne „Helferplanung“ – unter „Meine Einsätze“ stehen deine Schichten.",
+          "Klicke bei der Schicht auf „Austragen“.",
+        ],
         tip: "Nach Beginn der Schicht ist das nicht mehr möglich – wende dich dann an die verantwortliche Person, die in der Schicht steht.",
         keywords: "abmelden absagen krank verhindert",
       },
@@ -490,7 +493,7 @@ export const FAQ: readonly FaqSection[] = [
           "Gib Bezeichnung, Datum, Beginn, Ende und die Zahl der benötigten Helfer an (optional Mindestalter, Treffpunkt, Verantwortliche).",
           "Klicke auf „Schicht anlegen“.",
         ],
-        tip: "Endet die Schicht nach Mitternacht, wähle eine Endzeit vor dem Beginn (z. B. 22:00 – 02:00 Uhr). Überbuchung und Doppelbelegung schließt das System aus – auch wenn sich mehrere gleichzeitig eintragen. Farben und Hinweise zeigen, wo noch Helfer fehlen.",
+        tip: "Endet die Schicht nach Mitternacht, wähle eine Endzeit vor dem Beginn (z. B. 22:00 – 02:00 Uhr). Überbuchung und Doppelbelegung schließt das System aus – auch wenn sich mehrere gleichzeitig eintragen. Am Computer zeigt der „Tagesablauf“ oben im Helferplan die Schichten eines Tages auf einer Zeitachse; rot heißt dringend (Beginn in weniger als 48 Stunden), orange beginnt bald oder noch niemand eingetragen. Am Handy und bei Schichten über mehrere Tage gibt es nur die Liste.",
         link: { href: "/helferplanung", label: "Zur Helferplanung" },
         keywords: "schicht einteilen dienstplan helferplan erstellen",
       },
@@ -498,7 +501,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "helfer-zuweisen",
         question: "Wie weise ich einen Helfer selbst zu?",
         steps: [
-          "Klicke bei der Schicht auf „Zuweisen“.",
+          "Öffne im Helferplan bei der Schicht das Menü „⋯“ und wähle „Helfer zuweisen“ (oder klicke bei den freien Plätzen einer aufgeklappten Schicht auf „Zuweisen“ – in der Übersicht steht „Zuweisen“ dort, wo du dich nicht selbst eintragen kannst).",
           "Suche die Person und wähle sie aus. Nicht wählbare Personen sind mit dem Grund gekennzeichnet (z. B. Überschneidung oder Mindestalter).",
           "Bestätige mit „… zuweisen“. Die Person wird benachrichtigt.",
         ],
@@ -508,7 +511,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "stunden-erfassen",
         question: "Wie erfasse ich die geleisteten Stunden und drucke den Plan?",
         steps: [
-          "Nach Beginn der Schicht erscheint bei jedem Helfer die Schaltfläche „Stunden“.",
+          "Nach Beginn der Schicht wähle im Menü „⋯“ der Schicht „Stunden erfassen“ – bei jedem Helfer erscheint die Schaltfläche „Stunden“.",
           "Trage die tatsächlich geleistete Zeit ein (z. B. 2,5) und speichere.",
         ],
         tip: "Der Helferplan lässt sich mit „Drucken“ ausdrucken und mit „CSV-Export“ in eine Tabelle übernehmen. Die Auswertung aller Stunden erreichst du über „Helferstunden“ oben auf der Seite Helferplanung.",

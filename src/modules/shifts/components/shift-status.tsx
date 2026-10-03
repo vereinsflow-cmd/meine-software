@@ -1,47 +1,12 @@
-import {
-  BanIcon,
-  CircleCheckIcon,
-  CircleDashedIcon,
-  ContrastIcon,
-  TriangleAlertIcon,
-  type LucideIcon,
-} from "lucide-react";
-import { ToneBadge, type Tone } from "@/components/shared/status-badge";
-import { FILL_LABEL, URGENCY_LABEL, type ShiftHealth } from "@/lib/shift-health";
+import { TriangleAlertIcon } from "lucide-react";
+import { ToneBadge } from "@/components/shared/status-badge";
+import { URGENCY_LABEL, type ShiftHealth } from "@/lib/shift-health";
 import { cn } from "@/lib/utils";
 
 /**
- * Visuelle Darstellung der Besetzung: Fortschrittsbalken, freie Plätze und Warnhinweis. Farbe UND Text/Symbol –
- * die Bedeutung ist auch ohne Farbwahrnehmung und im Schwarzweiß-Ausdruck erkennbar.
+ * Besetzung auf dem Dashboard: Fortschrittsbalken, freie Plätze und Warnhinweis. Farbe UND Text/Symbol – die Bedeutung ist
+ * auch ohne Farbwahrnehmung erkennbar. (Die Helferplanung selbst zeigt die Besetzung als Text, `staffing-text.ts`.)
  */
-const fillTone: Record<ShiftHealth["fill"], Tone> = {
-  CANCELLED: "neutral",
-  EMPTY: "danger",
-  PARTIAL: "warning",
-  FULL: "success",
-};
-
-/**
- * Symbol je Stufe, als Reihe lesbar: leerer (gestrichelter) Kreis → halb gefüllter Kreis → Kreis mit Haken. Abgesagte
- * Schichten tragen das Verbotszeichen wie die Aktion „Absagen“ – ein leerer Kreis sähe aus wie „unbesetzt“.
- */
-const fillIcon: Record<ShiftHealth["fill"], LucideIcon> = {
-  CANCELLED: BanIcon,
-  EMPTY: CircleDashedIcon,
-  PARTIAL: ContrastIcon,
-  FULL: CircleCheckIcon,
-};
-
-export function ShiftFillBadge({ health }: { health: ShiftHealth }) {
-  const Icon = fillIcon[health.fill];
-  return (
-    <ToneBadge tone={fillTone[health.fill]} className="gap-1">
-      <Icon className="size-3" aria-hidden="true" />
-      {FILL_LABEL[health.fill]}
-    </ToneBadge>
-  );
-}
-
 export function UrgencyBadge({ health }: { health: ShiftHealth }) {
   if (health.urgency === "NONE") return null;
   return (

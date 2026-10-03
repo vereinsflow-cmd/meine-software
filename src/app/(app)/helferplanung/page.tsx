@@ -1,51 +1,72 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  FaceSlightlySmilingIcon,
-  PartyPopperIcon,
-  PrinterIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ChevronRightIcon, PrinterIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AREA_ICON } from "@/components/shared/area-icons";
-import { CompactEmpty } from "@/components/shared/compact-empty";
-import { ExpandableList } from "@/components/shared/expandable-list";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
-import { ToneBadge } from "@/components/shared/status-badge";
-import { formatDateShort, formatTimeRange } from "@/lib/dates";
-import { URGENCY_LABEL, shiftHealth } from "@/lib/shift-health";
+import {
+  daysUntil,
+  formatDayMonth,
+  formatTimeRange,
+  inDaysLabel,
+  toDateInputValue,
+} from "@/lib/dates";
+import { URGENCY_LABEL } from "@/lib/shift-health";
 import { cn } from "@/lib/utils";
 import { QuickSignOutButton, QuickSignUpButton } from "@/modules/shifts/components/quick-actions";
-import { FillBar, ShiftFillBadge, UrgencyBadge } from "@/modules/shifts/components/shift-status";
-import { getStaffingOverview, listMyAssignments, listOpenShifts } from "@/modules/shifts/service";
+import { AssignDialog } from "@/modules/shifts/components/shift-dialogs";
+import {
+  listMyAssignments,
+  listUpcomingShiftPlans,
+  type PlanningEvent,
+  type PlanningShift,
+} from "@/modules/shifts/service";
+import { STAFFING_TONE_CLASS, joinTitles, staffingText } from "@/modules/shifts/staffing-text";
 import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Helferplanung" };
 
+/** So viele eigene Einsätze zeigt die Übersicht (die Zahl daneben sagt, ob es mehr sind). */
+const MINE_SHOWN = 20;
+
+/**
+ * Übersicht der Helferplanung (seit 03.10.2026, Entwurf 2 „Tagesablauf“): ein ruhiger Hinweis auf bald unbesetzte
+ * Schichten (nur für Veranstalter), die eigenen Einsätze und je kommender Veranstaltung die Schichten mit freien Plätzen –
+ * mit „Eintragen“ bzw. „Zuweisen“; volle Schichten stehen in einer Zeile darunter. Keine Abzeichen und Balken: Besetzung
+ * als Text („3 von 4 · 1 frei“), Farbe nur, wo sie etwas bedeutet.
+ */
 export default async function HelperPlanningPage() {
   const ctx = await requirePageContext();
   if (!can(ctx, "shifts:read")) return <NoAccess what="die Helferplanung" />;
 
-  const [mine, open, staffing] = await Promise.all([
-    listMyAssignments(ctx, { limit: 20 }),
-    listOpenShifts(ctx, { limit: 30 }),
-    getStaffingOverview(ctx),
+  const [mineAll, events] = await Promise.all([
+    listMyAssignments(ctx, { limit: MINE_SHOWN + 1 }),
+    listUpcomingShiftPlans(ctx),
   ]);
-  const warnings = staffing.filter(
-    (e) => e.worstUrgency === "CRITICAL" || e.worstUrgency === "OVERDUE",
-  );
-  const canManage = can(ctx, "shifts:manage");
+  const mine = mineAll.slice(0, MINE_SHOWN);
+  const mineCount = mineAll.length > MINE_SHOWN ? `mehr als ${MINE_SHOWN}` : String(mine.length);
+  const signupFree = events.reduce((sum, event) => sum + event.signupFreeSpots, 0);
+
+  // Bald (in den nächsten 7 Tagen) und nicht voll besetzt – nur, wo man selbst einteilen kann.
+  const urgent = events
+    .filter((event) => event.canAssign || event.canManage)
+    .map((event) => ({
+      event,
+      shifts: event.shifts.filter(
+        (shift) =>
+          shift.health.fill !== "FULL" &&
+          (shift.health.urgency === "CRITICAL" || shift.health.urgency === "SOON"),
+      ),
+    }))
+    .filter((entry) => entry.shifts.length > 0);
 
   return (
     <>
       <PageHeader
         title="Helferplanung"
-        description="Trage dich in offene Schichten ein und behalte den Überblick über deine Einsätze."
         actions={
           <>
             <Button asChild variant="outline">
@@ -53,7 +74,6 @@ export default async function HelperPlanningPage() {
                 <AREA_ICON.helferstunden /> Helferstunden
               </Link>
             </Button>
-            {/* Umrandet: Die Seite dient dem Eintragen – „Eintragen“ ist hier die Hauptaktion, Drucken Nebensache. */}
             <Button asChild variant="outline">
               <Link href="/helferplanung/drucken">
                 <PrinterIcon /> Helferplan drucken
@@ -63,231 +83,289 @@ export default async function HelperPlanningPage() {
         }
       />
 
-      {canManage && warnings.length > 0 && (
-        // Bernstein wie auf dem Dashboard: ein Hinweis, der zum Handeln auffordert – kein Fehler. „Dringend“ steht im Text.
-        <Alert variant="warning" className="mb-6">
-          <TriangleAlertIcon />
-          <AlertTitle>Dringend: Schichten sind nicht besetzt</AlertTitle>
-          <AlertDescription>
-            <ul className="mt-1 grid gap-1">
-              {warnings.map((event) => (
-                <li key={event.eventId}>
-                  <Link
-                    href={`/helferplanung/${event.eventId}`}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    {event.title}
-                  </Link>{" "}
-                  ({formatDateShort(event.startsAt)}): {event.openShifts}{" "}
-                  {event.openShifts === 1 ? "Schicht" : "Schichten"} nicht voll besetzt –{" "}
-                  {URGENCY_LABEL[event.worstUrgency].toLowerCase()}
+      {urgent.length > 0 && (
+        <section
+          aria-label="Bald und noch nicht besetzt"
+          className="mb-8 grid rounded-xl border bg-card shadow-xs"
+        >
+          {urgent.map(({ event, shifts }) => (
+            <UrgentLine key={event.eventId} event={event} shifts={shifts} />
+          ))}
+        </section>
+      )}
+
+      <section aria-labelledby="meine-einsaetze" className="mb-9">
+        <SectionHeading id="meine-einsaetze" title="Meine Einsätze">
+          {mine.length > 0 && `${mineCount} ${mine.length === 1 ? "kommender" : "kommende"}`}
+        </SectionHeading>
+        <div className="rounded-xl border bg-card shadow-xs">
+          {mine.length === 0 ? (
+            <p className="px-4 py-3.5 text-sm text-muted-foreground sm:px-6">
+              Du bist für keine kommende Schicht eingetragen.
+            </p>
+          ) : (
+            <ul>
+              {mine.map((a) => (
+                <li
+                  key={a.assignmentId}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-0.5 px-4 py-3 sm:px-6 xl:grid-cols-[8rem_9.5rem_minmax(0,1fr)_minmax(0,16rem)_auto] [&+&]:border-t"
+                >
+                  <span className="font-semibold tabular-nums">{formatDayMonth(a.startsAt)}</span>
+                  <span className="text-sm text-muted-foreground tabular-nums max-xl:col-start-1">
+                    {formatTimeRange(a.startsAt, a.endsAt)}
+                  </span>
+                  <span className="min-w-0 max-xl:col-start-1">
+                    <Link
+                      href={`/helferplanung/${a.event.id}`}
+                      className="block font-medium underline-offset-4 hover:underline"
+                    >
+                      {a.title}
+                    </Link>
+                    <span className="block text-sm text-muted-foreground">{a.event.title}</span>
+                  </span>
+                  <span className="text-sm text-muted-foreground max-xl:col-start-1">
+                    {a.meetingPoint && `Treffpunkt: ${a.meetingPoint}`}
+                  </span>
+                  <span className="justify-self-end max-xl:col-start-2 max-xl:row-span-4 max-xl:row-start-1">
+                    {a.canSignOut && (
+                      <QuickSignOutButton
+                        shiftId={a.shiftId}
+                        eventId={a.event.id}
+                        label={a.title}
+                        quiet
+                        className="-mr-2 max-sm:h-11"
+                      />
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+          )}
+        </div>
+      </section>
 
-      {/* Karten nicht auf gleiche Höhe strecken (`items-start`): Eine leere Karte „Meine Einsätze“ war sonst so hoch wie
-          die Liste daneben, und der Überblick darunter rutschte weit unter den Bildrand. */}
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <section aria-labelledby="meine-einsaetze">
-          <Card>
-            <CardHeader>
-              <CardTitle
-                id="meine-einsaetze"
-                role="heading"
-                aria-level={2}
-                className="flex items-center gap-2"
-              >
-                <AREA_ICON.einsaetze className="size-4" aria-hidden="true" /> Meine Einsätze
-              </CardTitle>
-              <CardDescription>Deine kommenden Helferschichten.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {mine.length === 0 ? (
-                <CompactEmpty
-                  icon={<FaceSlightlySmilingIcon />}
-                  accent="emerald"
-                  title="Noch keine Einsätze"
-                >
-                  Du bist aktuell für keine Schicht eingetragen.
-                </CompactEmpty>
-              ) : (
-                <ul className="divide-y">
-                  {mine.map((a) => (
-                    <li
-                      key={a.assignmentId}
-                      className="flex flex-wrap items-center justify-between gap-2 py-3"
-                    >
-                      <div className="min-w-0">
-                        <Link
-                          href={`/helferplanung/${a.event.id}`}
-                          className="font-medium underline-offset-4 hover:underline"
-                        >
-                          {a.title}
-                        </Link>
-                        <p className="text-sm text-muted-foreground">
-                          {a.event.title} · {formatDateShort(a.startsAt)},{" "}
-                          {formatTimeRange(a.startsAt, a.endsAt)}
-                        </p>
-                        {a.meetingPoint && (
-                          <p className="text-xs text-muted-foreground">
-                            Treffpunkt: {a.meetingPoint}
-                          </p>
-                        )}
-                      </div>
-                      {a.canSignOut && (
-                        <QuickSignOutButton
-                          shiftId={a.shiftId}
-                          eventId={a.event.id}
-                          label={a.title}
-                        />
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        <section aria-labelledby="offene-schichten">
-          <Card>
-            <CardHeader>
-              <CardTitle
-                id="offene-schichten"
-                role="heading"
-                aria-level={2}
-                className="flex items-center gap-2"
-              >
-                <AREA_ICON.helferplanung className="size-4" aria-hidden="true" /> Offene Schichten
-              </CardTitle>
-              <CardDescription>Hier werden noch Helfer gesucht.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {open.length === 0 ? (
-                <CompactEmpty
-                  icon={<PartyPopperIcon />}
-                  accent="emerald"
-                  title="Alle Schichten besetzt"
-                >
-                  Im Moment sind alle Schichten besetzt. Danke!
-                </CompactEmpty>
-              ) : (
-                // Zuerst drei, der Rest aufklappbar (wie auf dem Dashboard) – sonst schiebt eine lange Liste den Überblick je
-                // Veranstaltung weit nach unten.
-                <ExpandableList
-                  className="divide-y"
-                  initial={3}
-                  itemNoun="weitere offene Schichten"
-                >
-                  {open.map((item) => (
-                    <li key={item.shiftId} className="grid gap-2 py-3">
-                      <div className="min-w-0">
-                        {/* Abzeichen in der Zeile des Schichtnamens, damit „Eintragen“ immer an derselben Stelle steht. */}
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <Link
-                            href={`/helferplanung/${item.event.id}`}
-                            className="font-medium underline-offset-4 hover:underline"
-                          >
-                            {item.title}
-                          </Link>
-                          <UrgencyBadge health={item.health} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {item.event.title} · {formatDateShort(item.startsAt)},{" "}
-                          {formatTimeRange(item.startsAt, item.endsAt)}
-                        </p>
-                      </div>
-                      <FillBar
-                        filled={item.filled}
-                        required={item.requiredCount}
-                        health={item.health}
-                      />
-                      {/* Wie auf der Helferplan-Seite: unter dem Besetzungsbalken, am Handy so breit wie die Karte,
-                          ab 640 px schmal am rechten Rand. */}
-                      {item.signup.allowed && (
-                        <QuickSignUpButton
-                          shiftId={item.shiftId}
-                          eventId={item.event.id}
-                          size="default"
-                          className="w-full sm:w-auto sm:justify-self-end"
-                        />
-                      )}
-                      {!item.signup.allowed && item.signup.reason && (
-                        <p className="text-xs text-muted-foreground">{item.signup.reason}</p>
-                      )}
-                    </li>
-                  ))}
-                </ExpandableList>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-      </div>
-
-      <section aria-labelledby="veranstaltungen-mit-schichten" className="mt-8">
-        <h2 id="veranstaltungen-mit-schichten" className="mb-3 text-lg font-semibold">
-          Veranstaltungen mit Helferplanung
-        </h2>
-        {staffing.length === 0 ? (
+      <section aria-labelledby="veranstaltungen-mit-schichten">
+        <SectionHeading
+          id="veranstaltungen-mit-schichten"
+          title="Veranstaltungen mit Helferplanung"
+        >
+          {events.length > 0 &&
+            `${events.length} kommende · ${signupFree} ${
+              signupFree === 1 ? "Platz" : "Plätze"
+            } zum Eintragen frei`}
+        </SectionHeading>
+        {events.length === 0 ? (
           <EmptyState
             icon={<AREA_ICON.helferplanung />}
             title="Keine kommenden Schichten"
             description="Sobald für eine veröffentlichte Veranstaltung Schichten geplant sind, erscheinen sie hier."
           />
         ) : (
-          <ul className="grid gap-3 md:grid-cols-2">
-            {staffing.map((event) => {
-              const health = shiftHealth({
-                status: "OPEN",
-                startsAt: event.startsAt,
-                endsAt: event.startsAt,
-                requiredCount: event.required,
-                filled: event.filled,
-              });
-              return (
-                <li key={event.eventId}>
-                  <Link
-                    href={`/helferplanung/${event.eventId}`}
-                    className={cn(
-                      "grid gap-2 rounded-xl border p-4 transition-colors hover:bg-accent/50",
-                      (event.worstUrgency === "CRITICAL" || event.worstUrgency === "OVERDUE") &&
-                        "border-red-300 dark:border-red-900",
-                    )}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium">{event.title}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {formatDateShort(event.startsAt)}
-                      </span>
-                    </div>
-                    <FillBar filled={event.filled} required={event.required} health={health} />
-                    <div className="flex flex-wrap gap-1.5">
-                      <ToneBadge tone="neutral">
-                        {event.shifts} {event.shifts === 1 ? "Schicht" : "Schichten"}
-                      </ToneBadge>
-                      {event.openShifts === 0 ? (
-                        <ShiftFillBadge health={{ ...health, fill: "FULL" }} />
-                      ) : (
-                        <ToneBadge tone={event.worstUrgency === "CRITICAL" ? "danger" : "warning"}>
-                          {event.openShifts} nicht voll besetzt
-                        </ToneBadge>
-                      )}
-                      {event.worstUrgency !== "NONE" && event.openShifts > 0 && (
-                        <ToneBadge tone={event.worstUrgency === "SOON" ? "warning" : "danger"}>
-                          {URGENCY_LABEL[event.worstUrgency]}
-                        </ToneBadge>
-                      )}
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="rounded-xl border bg-card shadow-xs">
+            {events.map((event) => (
+              <EventBlock key={event.eventId} event={event} />
+            ))}
+          </div>
         )}
       </section>
     </>
+  );
+}
+
+function SectionHeading({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+      <h2 id={id} className="text-lg font-semibold">
+        {title}
+      </h2>
+      {children && <span className="text-sm text-muted-foreground tabular-nums">{children}</span>}
+    </div>
+  );
+}
+
+/** „in 2 Tagen“ / „heute“ / „morgen“ – oder „läuft“, wenn die Schicht schon begonnen hat. */
+function whenLabel(shift: Pick<PlanningShift, "startsAt" | "started">) {
+  return shift.started ? "läuft" : inDaysLabel(Math.max(0, daysUntil(shift.startsAt)));
+}
+
+function UrgentLine({ event, shifts }: { event: PlanningEvent; shifts: PlanningShift[] }) {
+  const critical = shifts.some((shift) => shift.health.urgency === "CRITICAL");
+  const allEmpty = shifts.every((shift) => shift.filled === 0);
+  const first = shifts[0]!;
+  // Gleichnamige Schichten (z. B. zwei „Getränkestand“ zu verschiedenen Zeiten) nur einmal nennen.
+  const titles = [...new Set(shifts.map((shift) => shift.title))];
+  return (
+    <p className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-4 py-3 text-sm sm:px-5 [&+&]:border-t">
+      <span
+        aria-hidden="true"
+        className={cn("size-2 shrink-0 rounded-full", critical ? "bg-red-600" : "bg-amber-500")}
+      />
+      <span className="min-w-0 flex-1 basis-[calc(100%-1.5rem)] sm:basis-0">
+        <span
+          className={cn(
+            "font-semibold",
+            critical ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400",
+          )}
+        >
+          {URGENCY_LABEL[critical ? "CRITICAL" : "SOON"]}:
+        </span>{" "}
+        {joinTitles(titles)} bei „{event.title}“ {shifts.length === 1 ? "ist" : "sind"} noch{" "}
+        {allEmpty ? "unbesetzt" : "nicht voll besetzt"} – {formatDayMonth(first.startsAt)},{" "}
+        {whenLabel(first)}.
+      </span>
+      <Link
+        href={`/helferplanung/${event.eventId}`}
+        className="-ml-2.5 inline-flex h-8 items-center rounded-lg px-2.5 font-medium text-primary hover:bg-muted max-sm:ml-3 max-sm:h-11 sm:ml-auto"
+      >
+        Zum Helferplan
+      </Link>
+    </p>
+  );
+}
+
+/** Eine kommende Veranstaltung: Datum links, rechts Name, Eckdaten und die Schichten mit freien Plätzen. */
+function EventBlock({ event }: { event: PlanningEvent }) {
+  const headingId = `veranstaltung-${event.eventId}`;
+  const open = event.shifts.filter((shift) => shift.health.fill !== "FULL");
+  const full = event.shifts.filter((shift) => shift.health.fill === "FULL");
+  const days = daysUntil(event.startsAt);
+  const href = `/helferplanung/${event.eventId}`;
+  // Vor heute begonnen: „läuft“, solange die Veranstaltung dauert – danach nichts (z. B. nur noch der Abbau am Folgetag).
+  const dayLabel = days >= 0 ? inDaysLabel(days) : event.running ? "läuft" : null;
+  return (
+    <article
+      aria-labelledby={headingId}
+      className="grid gap-x-5 gap-y-2 px-4 pt-5 pb-4 sm:px-6 lg:grid-cols-[7.5rem_minmax(0,1fr)] [&+&]:border-t"
+    >
+      <p className="font-semibold tabular-nums">
+        {formatDayMonth(event.startsAt)}
+        {dayLabel && (
+          <span className="ml-2 font-normal text-muted-foreground lg:ml-0 lg:block lg:text-sm">
+            {dayLabel}
+          </span>
+        )}
+      </p>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1">
+          <h3 id={headingId} className="text-base font-semibold">
+            <Link href={href} className="underline-offset-4 hover:underline">
+              {event.title}
+            </Link>
+          </h3>
+          <Link
+            href={href}
+            className="inline-flex items-center gap-0.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Helferplan <span className="sr-only">{event.title}</span>
+            <ChevronRightIcon className="size-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {event.allDay ? "ganztägig" : formatTimeRange(event.startsAt, event.endsAt)} ·{" "}
+          {event.shifts.length} {event.shifts.length === 1 ? "Schicht" : "Schichten"} ·{" "}
+          {event.filled} von {event.required} Plätzen besetzt, {event.required - event.filled} frei
+        </p>
+
+        {open.length > 0 && (
+          <ul className="mt-3" aria-label={`Freie Plätze: ${event.title}`}>
+            {open.map((shift) => (
+              <OpenShiftRow key={shift.id} event={event} shift={shift} />
+            ))}
+          </ul>
+        )}
+        {full.length > 0 && (
+          <p className="mt-0 border-t pt-2.5 text-sm text-muted-foreground">
+            {open.length === 0 ? "Alle Schichten voll besetzt" : "Außerdem voll besetzt"}:{" "}
+            {full.map((shift, index) => (
+              <span key={shift.id}>
+                {index > 0 && ", "}
+                {shift.title}
+                {shift.mine && " (du bist dabei)"}
+              </span>
+            ))}
+          </p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/** Eine Schicht mit freien Plätzen in der Übersicht: Zeit · Name · Besetzung · Eintragen, „Du bist dabei“ oder Zuweisen. */
+function OpenShiftRow({ event, shift }: { event: PlanningEvent; shift: PlanningShift }) {
+  const staffing = staffingText(shift);
+  // Warum man sich nicht eintragen kann – nur, wenn es nicht ohnehin dasteht (läuft, geschlossen).
+  const reason =
+    !shift.signup.allowed && !shift.mine && !shift.started && shift.status === "OPEN"
+      ? shift.signup.reason
+      : null;
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-0.5 border-t py-2 sm:min-h-11 xl:grid-cols-[8.5rem_minmax(0,1fr)_10.5rem_7rem]">
+      <span className="text-sm text-muted-foreground tabular-nums max-xl:col-start-1 max-xl:row-start-2">
+        {/* Schichten an einem anderen Tag als die Veranstaltung beginnt (Aufbau am Vortag …) tragen ihr Datum. */}
+        {toDateInputValue(shift.startsAt) !== toDateInputValue(event.startsAt) &&
+          `${formatDayMonth(shift.startsAt)}, `}
+        {formatTimeRange(shift.startsAt, shift.endsAt)}
+      </span>
+      <span className="min-w-0 max-xl:col-start-1 max-xl:row-start-1">
+        <span className="font-medium">{shift.title}</span>
+        {shift.minAge !== null && (
+          <span className="ml-2 text-sm text-muted-foreground">ab {shift.minAge} Jahren</span>
+        )}
+        {shift.status === "CLOSED" && (
+          <span className="ml-2 text-sm text-muted-foreground">· nur Zuweisung</span>
+        )}
+        {reason && (
+          <span className="block text-sm text-muted-foreground" role="note">
+            {reason}
+          </span>
+        )}
+      </span>
+      <span className="text-sm tabular-nums max-xl:col-start-1 max-xl:row-start-3">
+        <span className={cn(staffing.tone !== "none" && STAFFING_TONE_CLASS[staffing.tone])}>
+          {staffing.count}
+          {staffing.tone !== "none" && ` · ${staffing.note}`}
+        </span>
+        {staffing.tone === "none" && (
+          <span className="text-muted-foreground"> · {staffing.note}</span>
+        )}
+      </span>
+      <span className="justify-self-end max-xl:col-start-2 max-xl:row-span-3 max-xl:row-start-1">
+        {shift.mine ? (
+          <span className="text-sm text-muted-foreground">Du bist dabei</span>
+        ) : shift.signup.allowed ? (
+          <QuickSignUpButton
+            shiftId={shift.id}
+            eventId={event.eventId}
+            variant="ghost"
+            label={shift.title}
+            className="-mr-2 text-primary hover:text-primary max-sm:h-11"
+          />
+        ) : event.canAssign ? (
+          <AssignDialog
+            shiftId={shift.id}
+            eventId={event.eventId}
+            title={shift.title}
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-mr-2 text-primary hover:text-primary max-sm:h-11"
+                aria-label={`Helfer für ${shift.title} zuweisen`}
+              >
+                Zuweisen
+              </Button>
+            }
+          />
+        ) : null}
+      </span>
+    </li>
   );
 }
