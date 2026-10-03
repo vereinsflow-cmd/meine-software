@@ -1,125 +1,160 @@
 import { describe, expect, it } from "vitest";
 import {
+  contactSentence,
+  endSentence,
   eventSpansDays,
+  eventWhenText,
   freePlaces,
-  needRows,
   openPlaces,
   previewLabel,
-  shiftDays,
   shiftEndLabel,
+  shiftStatusText,
+  shiftTimeText,
+  shiftsSpanDays,
+  signUpHint,
   signUpPlaces,
   slotsOf,
 } from "@/modules/shifts/print-plan";
 
-/** Schicht mit `requiredCount` Plätzen und `filled` Eingetragenen; `id` zum Wiedererkennen. */
-const shift = (id: string, requiredCount: number, filled: number, closed = false) => ({
-  id,
+/** Schicht mit `requiredCount` Plätzen und `filled` Eingetragenen. */
+const shift = (
+  requiredCount: number,
+  filled: number,
+  closed = false,
+  minAge: number | null = null,
+) => ({
   requiredCount,
   filled,
   closed,
+  minAge,
 });
 
-describe("freePlaces / openPlaces", () => {
-  it("zählt die freien Plätze und summiert sie für „Wir brauchen noch N Helfer“", () => {
-    expect(freePlaces(shift("a", 5, 2))).toBe(3);
-    expect(openPlaces([shift("a", 5, 2), shift("b", 3, 0), shift("c", 4, 4)])).toBe(6);
+describe("freie Plätze", () => {
+  it("zählt die freien Plätze; mehr Eingetragene als nötig ergeben 0, nicht weniger", () => {
+    expect(freePlaces(shift(5, 2))).toBe(3);
+    expect(freePlaces(shift(2, 3))).toBe(0);
+    expect(openPlaces([shift(5, 2), shift(3, 0), shift(4, 4), shift(2, 3)])).toBe(6);
   });
 
-  it("mehr Eingetragene als nötig ergeben 0 frei, nicht weniger", () => {
-    expect(freePlaces(shift("a", 2, 3))).toBe(0);
-    expect(openPlaces([shift("a", 2, 3), shift("b", 2, 1)])).toBe(1);
-  });
-
-  it("geschlossene Schichten haben freie Plätze, laden aber nicht zum Eintragen ein", () => {
-    const closed = shift("g", 4, 1, true);
-    expect(freePlaces(closed)).toBe(3);
-    expect(signUpPlaces(closed)).toBe(0);
-    expect(openPlaces([closed, shift("b", 2, 0)])).toBe(2);
+  it("geschlossene Schichten haben freie Plätze, zählen aber nicht zum Eintragen", () => {
+    expect(freePlaces(shift(4, 1, true))).toBe(3);
+    expect(signUpPlaces(shift(4, 1, true))).toBe(0);
+    expect(openPlaces([shift(4, 1, true), shift(2, 0)])).toBe(2);
   });
 });
 
-describe("needRows (Kasten „Noch frei“)", () => {
-  it("bis acht Schichten stehen alle da – auch die vollen", () => {
-    const shifts = [shift("a", 2, 2), shift("b", 3, 1), shift("c", 1, 0)];
-    expect(needRows(shifts)).toEqual({
-      shown: shifts,
-      moreOpen: 0,
-      closedFree: 0,
-      withoutNeed: 0,
+describe("shiftStatusText (Stand als Satz)", () => {
+  it("teilweise besetzt, mit Mindestalter", () => {
+    expect(shiftStatusText(shift(4, 2, false, 16))).toEqual({
+      emphasis: null,
+      text: "4 Plätze, noch 2 frei. Ab 16 Jahren.",
     });
   });
 
-  it("bei vielen Schichten nur die mit freien Plätzen, die vollen als Anzahl", () => {
-    const full = Array.from({ length: 6 }, (_, i) => shift(`voll${i}`, 2, 2));
-    const open = Array.from({ length: 4 }, (_, i) => shift(`frei${i}`, 3, 1));
-    const result = needRows([...full, ...open]);
-    expect(result.shown.map((s) => s.id)).toEqual(["frei0", "frei1", "frei2", "frei3"]);
-    expect(result).toMatchObject({ moreOpen: 0, withoutNeed: 6 });
+  it("noch niemand eingetragen: fetter Satz davor", () => {
+    expect(shiftStatusText(shift(3, 0, false, 18))).toEqual({
+      emphasis: "Hier hat sich noch niemand eingetragen.",
+      text: "3 Plätze frei. Ab 18 Jahren.",
+    });
+    expect(shiftStatusText(shift(1, 0)).text).toBe("1 Platz frei.");
   });
 
-  it("mehr offene Schichten als Zeilen: die ersten acht, der Rest als „+ N weitere“", () => {
-    const open = Array.from({ length: 11 }, (_, i) => shift(`frei${i}`, 2, 0));
-    const result = needRows([shift("voll", 1, 1), ...open]);
-    expect(result.shown).toHaveLength(8);
-    expect(result.shown[0]!.id).toBe("frei0");
-    expect(result).toMatchObject({ moreOpen: 3, withoutNeed: 1 });
+  it("voll besetzt (auch überbucht) und ein einzelner Platz", () => {
+    expect(shiftStatusText(shift(5, 5)).text).toBe("5 Plätze, alle besetzt.");
+    expect(shiftStatusText(shift(2, 3)).text).toBe("2 Plätze, alle besetzt.");
+    expect(shiftStatusText(shift(1, 1)).text).toBe("1 Platz, besetzt.");
   });
 
-  it("bei vielen Schichten stehen geschlossene mit freien Plätzen als eigene Anzahl da, nicht als „ohne freie Plätze“", () => {
-    const open = Array.from({ length: 8 }, (_, i) => shift(`frei${i}`, 2, 0));
-    const result = needRows([shift("zu", 5, 0, true), shift("zuVoll", 1, 1, true), ...open]);
-    expect(result.shown.map((s) => s.id)).not.toContain("zu");
-    expect(result).toMatchObject({ moreOpen: 0, closedFree: 1, withoutNeed: 1 });
+  it("geschlossen: kein Aufruf, sondern der Hinweis auf den Veranstalter – auch wenn noch niemand drin ist", () => {
+    const status = shiftStatusText(shift(4, 0, true));
+    expect(status.emphasis).toBeNull();
+    expect(status.text).toBe(
+      "4 Plätze, noch 4 frei. Die Plätze vergibt der Veranstalter, bitte nicht selbst eintragen.",
+    );
   });
 
-  it("die Grenze lässt sich setzen (genau so viele Schichten wie Zeilen: alle)", () => {
-    const shifts = [shift("a", 1, 1), shift("b", 1, 0)];
-    expect(needRows(shifts, 2).shown).toHaveLength(2);
-    expect(needRows(shifts, 1)).toMatchObject({ moreOpen: 0, withoutNeed: 1 });
+  it("ohne Bedarf", () => {
+    expect(shiftStatusText(shift(0, 0)).text).toBe("Für diese Schicht sind keine Helfer nötig.");
+  });
+});
+
+describe("signUpHint / contactSentence", () => {
+  it("nennt die Zahl der freien Plätze (Einzahl und Mehrzahl)", () => {
+    expect(signUpHint([shift(4, 2), shift(3, 0)])).toBe(
+      "Wer helfen kann, trägt sich bitte mit Vor- und Nachnamen in eine freie Zeile ein, eine Zeile pro Person. Es sind noch 5 Plätze frei.",
+    );
+    expect(signUpHint([shift(2, 1)])).toMatch(/Es ist noch 1 Platz frei\.$/);
+  });
+
+  it("nur noch Plätze in geschlossenen Schichten bzw. alles besetzt", () => {
+    expect(signUpHint([shift(3, 1, true), shift(2, 2)])).toBe(
+      "Die freien Plätze vergibt der Veranstalter, bitte nicht selbst eintragen.",
+    );
+    expect(signUpHint([shift(2, 2)])).toBe(
+      "Alle Plätze sind besetzt. Vielen Dank an alle, die helfen.",
+    );
+  });
+
+  it("Ansprechpartner mit Telefon und E-Mail der Veranstaltung; ohne Angaben kein Satz", () => {
+    const none = { contactName: null, contactPhone: null, contactEmail: null };
+    expect(contactSentence({ ...none, contactName: "Bernd Vorstand" })).toBe(
+      "Fragen an Bernd Vorstand.",
+    );
+    expect(
+      contactSentence({
+        contactName: "Bernd Vorstand",
+        contactPhone: "0170 1234567",
+        contactEmail: "bernd@example.org",
+      }),
+    ).toBe("Fragen an Bernd Vorstand (Tel. 0170 1234567, bernd@example.org).");
+    expect(contactSentence({ ...none, contactEmail: "info@example.org" })).toBe(
+      "Fragen: info@example.org.",
+    );
+    expect(contactSentence(none)).toBeNull();
+  });
+
+  it("kein doppelter Punkt, wenn eine Angabe schon mit einem endet („e.V.“, „Lindenstr.“)", () => {
+    expect(
+      contactSentence({
+        contactName: "Förderverein TSV e.V.",
+        contactPhone: null,
+        contactEmail: null,
+      }),
+    ).toBe("Fragen an Förderverein TSV e.V.");
+    expect(endSentence("Treffpunkt: Parkplatz Lindenstr.")).toBe(
+      "Treffpunkt: Parkplatz Lindenstr.",
+    );
+    expect(endSentence("Treffpunkt: Grillzelt")).toBe("Treffpunkt: Grillzelt.");
   });
 });
 
 describe("slotsOf", () => {
-  it("erst die Namen, dann je freiem Platz eine leere Zeile", () => {
+  it("erst die Namen, dann je freiem Platz eine leere Zeile; Überbuchte bleiben sichtbar", () => {
     expect(slotsOf({ requiredCount: 4, helperNames: ["Hans Helfer", "Laura Braun"] })).toEqual([
       "Hans Helfer",
       "Laura Braun",
       null,
       null,
     ]);
-  });
-
-  it("mehr Eingetragene als nötig: alle Namen bleiben sichtbar", () => {
     expect(slotsOf({ requiredCount: 1, helperNames: ["A", "B"] })).toEqual(["A", "B"]);
-  });
-
-  it("ohne Bedarf und ohne Helfer gibt es keine Zeilen", () => {
     expect(slotsOf({ requiredCount: 0, helperNames: [] })).toEqual([]);
   });
 });
 
-describe("shiftDays / shiftEndLabel (Berliner Zeit)", () => {
+describe("Tage und Zeiten (Berliner Zeit)", () => {
   // 03.10.2026 ist Sommerzeit (UTC+2): 22:00 UTC = 00:00 Uhr am 04.10. in Berlin.
+  const start = new Date("2026-10-03T12:00:00Z");
   const event = (shiftStarts: string[]) => ({
-    startsAt: new Date("2026-10-03T12:00:00Z"),
+    startsAt: start,
     shifts: shiftStarts.map((iso) => ({ startsAt: new Date(iso) })),
   });
 
-  it("alle Schichten am Tag der Veranstaltung: kein Tag an den Schichten", () => {
-    expect(shiftDays(event(["2026-10-03T07:00:00Z", "2026-10-03T21:59:00Z"]))).toBe("none");
+  it("Schichten an einem anderen Berliner Tag als die Veranstaltung (auch wenn in UTC noch derselbe)", () => {
+    expect(shiftsSpanDays(event(["2026-10-03T07:00:00Z", "2026-10-03T21:59:00Z"]))).toBe(false);
+    expect(shiftsSpanDays(event(["2026-10-03T22:30:00Z"]))).toBe(true);
   });
 
-  it("eine Schicht am nächsten Berliner Tag (auch wenn in UTC noch derselbe): der Wochentag genügt", () => {
-    expect(shiftDays(event(["2026-10-03T07:00:00Z", "2026-10-03T22:30:00Z"]))).toBe("weekday");
-  });
-
-  it("Schichten eine Woche oder mehr auseinander: das Datum, weil sich Wochentage wiederholen", () => {
-    expect(shiftDays(event(["2026-10-09T07:00:00Z"]))).toBe("weekday"); // 6 Tage
-    expect(shiftDays(event(["2026-10-10T07:00:00Z"]))).toBe("date"); // 7 Tage, wieder Samstag
-  });
-
-  it("mehrtägige Veranstaltung: Beginn und Ende an verschiedenen Berliner Tagen", () => {
-    const start = new Date("2026-10-03T12:00:00Z");
+  it("mehrtägige Veranstaltung", () => {
     expect(eventSpansDays({ startsAt: start, endsAt: new Date("2026-10-03T21:59:00Z") })).toBe(
       false,
     );
@@ -128,19 +163,36 @@ describe("shiftDays / shiftEndLabel (Berliner Zeit)", () => {
     );
   });
 
-  it("Ende am selben Tag nur als Uhrzeit, über Mitternacht mit Tag", () => {
+  it("Zeit der Schicht, über Mitternacht mit Tag", () => {
     expect(
-      shiftEndLabel({
-        startsAt: new Date("2026-10-03T16:00:00Z"),
-        endsAt: new Date("2026-10-03T18:00:00Z"),
+      shiftTimeText({
+        startsAt: new Date("2026-10-03T10:00:00Z"),
+        endsAt: new Date("2026-10-03T13:00:00Z"),
       }),
-    ).toBe("20:00");
+    ).toBe("12:00 – 15:00 Uhr");
     expect(
       shiftEndLabel({
         startsAt: new Date("2026-10-03T19:00:00Z"),
         endsAt: new Date("2026-10-04T00:30:00Z"),
       }),
     ).toBe("So., 04.10. 02:30");
+  });
+
+  it("Datum und Uhrzeit der Veranstaltung: ein Tag, ganztägig, mehrtägig", () => {
+    const end = new Date("2026-10-03T20:00:00Z");
+    expect(eventWhenText({ startsAt: start, endsAt: end, allDay: false })).toBe(
+      "Samstag, 3. Oktober 2026, 14:00 – 22:00 Uhr",
+    );
+    expect(eventWhenText({ startsAt: start, endsAt: end, allDay: true })).toBe(
+      "Samstag, 3. Oktober 2026, ganztägig",
+    );
+    const later = new Date("2026-10-04T16:00:00Z");
+    expect(eventWhenText({ startsAt: start, endsAt: later, allDay: false })).toBe(
+      "Samstag, 3. Oktober 2026, 14:00 Uhr bis Sonntag, 4. Oktober 2026, 18:00 Uhr",
+    );
+    expect(eventWhenText({ startsAt: start, endsAt: later, allDay: true })).toBe(
+      "Samstag, 3. Oktober 2026 bis Sonntag, 4. Oktober 2026",
+    );
   });
 });
 

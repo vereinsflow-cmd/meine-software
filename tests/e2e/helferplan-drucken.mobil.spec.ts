@@ -26,7 +26,9 @@ test.describe("Helferplan drucken – mobil", () => {
 
     await page.getByRole("checkbox", { name: /Arbeitseinsatz Vereinsheim/ }).check();
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
-    await expect(page.getByRole("heading", { name: "Arbeitseinsatz Vereinsheim" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Helferplan Arbeitseinsatz Vereinsheim", exact: true }),
+    ).toBeVisible();
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
 
@@ -36,7 +38,9 @@ test.describe("Helferplan drucken – mobil", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Helferplan Sommerfest 2026", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("table", { name: /Grillstand/ })).toBeVisible();
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
@@ -47,8 +51,10 @@ test.describe("Helferplan drucken – mobil", () => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
-    await expect(page.getByRole("article", { name: "Grillstand" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Helferplan Sommerfest 2026", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("article", { name: /Grillstand/ })).toBeVisible();
     expect(await overflow(page)).toBeLessThanOrEqual(1);
 
     // Von dort lässt sich auch drucken – der Knopf bleibt erreichbar, ohne zu scrollen.

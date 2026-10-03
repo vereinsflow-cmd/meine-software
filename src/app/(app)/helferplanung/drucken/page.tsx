@@ -208,12 +208,8 @@ export default async function PrintShiftPlanPage({
 
       {/* Ab hier: der eigentliche Ausdruck, in einer eigenen Hülle mit `id` (damit Tests ihn eindeutig von der
           übrigen Seite unterscheiden können). `@page` setzt Format/Ränder und eine wiederkehrende Kopf-/Fußzeile mit
-          Vereinsname, Titel, Erstellungsdatum und Seitenzahlen (auf jeder gedruckten Seite, nicht nur auf der ersten).
-          Die zarten Tönungen sollen mitgedruckt werden, auch wenn „Hintergrundgrafiken“ im Druckfenster aus ist. */}
-      <div
-        id="helferplan-ausdruck"
-        className="[-webkit-print-color-adjust:exact] [print-color-adjust:exact]"
-      >
+          Vereinsname, Titel, Erstellungsdatum und Seitenzahlen (auf jeder gedruckten Seite, nicht nur auf der ersten). */}
+      <div id="helferplan-ausdruck">
         <style id="helferplan-seitenstil">{pageStyle}</style>
         {planEvents.length === 0 ? (
           <div className="mx-auto max-w-3xl">

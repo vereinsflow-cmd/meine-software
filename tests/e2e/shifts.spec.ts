@@ -112,7 +112,7 @@ test.describe("Helferplanung – Veranstalter", () => {
     await expect(dialog).toBeVisible(); // Dialog bleibt offen, nichts wurde angelegt
   });
 
-  // Die Druckansicht selbst (Filter, Kopf-/Fußzeile, „Noch nicht besetzt“, print:hidden-Elemente …) hat
+  // Die Druckansicht selbst (Filter, Kopf-/Fußzeile, „Hier hat sich noch niemand eingetragen.“, print:hidden-Elemente …) hat
   // eigene, ausführlichere Tests in helferplan-drucken.spec.ts.
   test("„Drucken“ führt von der Veranstaltung aus in die Druckansicht, bereits auf sie eingegrenzt", async ({
     page,
@@ -121,7 +121,9 @@ test.describe("Helferplanung – Veranstalter", () => {
     await openSommerfestPlan(page);
     await page.getByRole("link", { name: "Drucken" }).click();
     await expect(page).toHaveURL(/\/helferplanung\/drucken\?event=/);
-    await expect(page.getByRole("heading", { name: "Sommerfest 2026" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Helferplan Sommerfest 2026", exact: true }),
+    ).toBeVisible();
   });
 
   test("CSV-Export der Helferplanung", async ({ page }) => {

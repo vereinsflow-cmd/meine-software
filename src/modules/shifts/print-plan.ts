@@ -1,19 +1,27 @@
-import { formatDateShort, formatTime, toDateInputValue } from "@/lib/dates";
+import {
+  formatDateLong,
+  formatDateShort,
+  formatTime,
+  formatTimeRange,
+  toDateInputValue,
+} from "@/lib/dates";
 import type { PrintPlanEvent, PrintShiftDto } from "@/modules/shifts/service";
 
 /**
- * Reine Rechnungen für den Helferplan-Ausdruck (`components/print-plan.tsx`) – ohne Oberfläche, einzeln getestet
- * (`tests/unit/print-plan.test.ts`).
+ * Reine Rechnungen und Sätze für den Helferplan-Ausdruck (`components/print-plan.tsx`) – ohne Oberfläche, einzeln
+ * getestet (`tests/unit/print-plan.test.ts`). Die Sätze sind bewusst schlicht, wie von Hand getippt.
  */
 
 /** Was gedruckt wird: Aushang und Anwesenheitsliste (Standard) oder nur eins von beiden (URL-Parameter `inhalt`). */
 export type PrintContent = "beides" | "aushang" | "anwesenheit";
 export const PRINT_CONTENTS = ["beides", "aushang", "anwesenheit"] as const;
 
-/** Höchstens so viele Zeilen im Kasten „Noch frei“ – sonst wird er länger als der Kopf des Aushangs. */
-export const MAX_NEED_ROWS = 8;
-
 type Places = Pick<PrintShiftDto, "requiredCount" | "filled" | "closed">;
+
+const places = (count: number) => (count === 1 ? "1 Platz" : `${count} Plätze`);
+
+/** Schließt einen Satz mit einem Punkt ab – außer er endet schon mit einem („Lindenstr.“, „e.V.“), sonst stünde „..“ da. */
+export const endSentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`);
 
 /** Freie Plätze einer Schicht; mehr Eingetragene als nötig zählen nicht als „minus frei“. */
 export const freePlaces = (shift: Pick<Places, "requiredCount" | "filled">) =>
@@ -25,31 +33,9 @@ export const freePlaces = (shift: Pick<Places, "requiredCount" | "filled">) =>
  */
 export const signUpPlaces = (shift: Places) => (shift.closed ? 0 : freePlaces(shift));
 
-/** Wie viele Helfer sich noch eintragen können („Wir brauchen noch N Helfer – trag dich ein!“). */
+/** Wie viele Plätze man sich auf dem Aushang noch nehmen kann („Es sind noch 12 Plätze frei.“). */
 export const openPlaces = (shifts: readonly Places[]) =>
   shifts.reduce((sum, shift) => sum + signUpPlaces(shift), 0);
-
-/**
- * Zeilen für den Kasten „Noch frei“: bis `max` Schichten alle (auch volle und geschlossene), sonst nur die, in die man sich
- * eintragen kann – höchstens `max`, der Rest als Anzahl („+ 2 weitere Schichten mit freien Plätzen“, „1 Schicht
- * geschlossen“, „3 Schichten ohne freie Plätze“).
- */
-export function needRows<T extends Places>(
-  shifts: readonly T[],
-  max: number = MAX_NEED_ROWS,
-): { shown: T[]; moreOpen: number; closedFree: number; withoutNeed: number } {
-  const listed =
-    shifts.length <= max ? [...shifts] : shifts.filter((shift) => signUpPlaces(shift) > 0);
-  const shown = listed.slice(0, max);
-  const hidden = shifts.filter((shift) => !listed.includes(shift));
-  const closedFree = hidden.filter((shift) => shift.closed && freePlaces(shift) > 0).length;
-  return {
-    shown,
-    moreOpen: listed.length - shown.length,
-    closedFree,
-    withoutNeed: hidden.length - closedFree,
-  };
-}
 
 /** Belegte Plätze mit Namen, danach die freien (`null`). Mehr Eingetragene als nötig bleiben alle sichtbar. */
 export const slotsOf = (shift: Pick<PrintShiftDto, "requiredCount" | "helperNames">) =>
@@ -58,31 +44,100 @@ export const slotsOf = (shift: Pick<PrintShiftDto, "requiredCount" | "helperName
     (_, index) => shift.helperNames[index] ?? null,
   );
 
-/** Endet die Veranstaltung an einem anderen Tag (Berliner Zeit), als sie beginnt? Dann stehen beide Tage im Kopf. */
+/** Endet die Veranstaltung an einem anderen Tag (Berliner Zeit), als sie beginnt? */
 export const eventSpansDays = (event: Pick<PrintPlanEvent, "startsAt" | "endsAt">) =>
   toDateInputValue(event.startsAt) !== toDateInputValue(event.endsAt);
 
-/** Tag (Berliner Zeit) als fortlaufende Zahl, um Abstände in Tagen zu rechnen. */
-const dayNumber = (value: Date) => Date.parse(`${toDateInputValue(value)}T00:00:00Z`) / 86_400_000;
-
-/**
- * Wie der Tag an den Schichten steht: `"none"`, wenn alle am Tag der Veranstaltung beginnen; sonst `"weekday"` – im
- * Kasten „Noch frei“ reicht dann der Wochentag („Sa 10:00“) – oder `"date"`, sobald die Schichten eine Woche oder mehr
- * auseinanderliegen (zweimal „Mo“ wäre sonst nicht zu unterscheiden). Kacheln und Liste zeigen immer das Datum.
- */
-export function shiftDays(
+/** Beginnt eine Schicht an einem anderen Tag (Berliner Zeit) als die Veranstaltung? Dann steht bei jeder ihr Tag dabei. */
+export const shiftsSpanDays = (
   event: Pick<PrintPlanEvent, "startsAt"> & { shifts: { startsAt: Date }[] },
-): "none" | "weekday" | "date" {
-  const days = [event.startsAt, ...event.shifts.map((shift) => shift.startsAt)].map(dayNumber);
-  const span = Math.max(...days) - Math.min(...days);
-  return span === 0 ? "none" : span < 7 ? "weekday" : "date";
-}
+) => {
+  const day = toDateInputValue(event.startsAt);
+  return event.shifts.some((shift) => toDateInputValue(shift.startsAt) !== day);
+};
 
-/** Ende der Schicht für „bis … Uhr“: nur die Uhrzeit, über Mitternacht hinaus mit Tag („So., 04.10. 02:00“). */
+/** Ende der Schicht: nur die Uhrzeit, über Mitternacht hinaus mit Tag („So., 04.10. 02:00“). */
 export const shiftEndLabel = (shift: Pick<PrintShiftDto, "startsAt" | "endsAt">) =>
   toDateInputValue(shift.startsAt) === toDateInputValue(shift.endsAt)
     ? formatTime(shift.endsAt)
     : `${formatDateShort(shift.endsAt)} ${formatTime(shift.endsAt)}`;
+
+/** „12:00 – 15:00 Uhr“, über Mitternacht „20:00 – So., 11.10. 02:30 Uhr“. */
+export const shiftTimeText = (shift: Pick<PrintShiftDto, "startsAt" | "endsAt">) =>
+  `${formatTime(shift.startsAt)} – ${shiftEndLabel(shift)} Uhr`;
+
+/**
+ * Datum und Uhrzeit der Veranstaltung in einer Zeile: „Samstag, 3. Oktober 2026, 14:00 – 22:00 Uhr“; mehrtägig mit
+ * beiden Tagen, ganztägig ohne Uhrzeit.
+ */
+export function eventWhenText(
+  event: Pick<PrintPlanEvent, "startsAt" | "endsAt" | "allDay">,
+): string {
+  const start = formatDateLong(event.startsAt);
+  const end = formatDateLong(event.endsAt);
+  if (!eventSpansDays(event))
+    return `${start}, ${event.allDay ? "ganztägig" : formatTimeRange(event.startsAt, event.endsAt)}`;
+  if (event.allDay) return `${start} bis ${end}`;
+  return `${start}, ${formatTime(event.startsAt)} Uhr bis ${end}, ${formatTime(event.endsAt)} Uhr`;
+}
+
+/**
+ * Stand einer Schicht für den Aushang, als Satz: „4 Plätze, noch 2 frei. Ab 16 Jahren.“ – ist noch niemand eingetragen,
+ * kommt davor fett „Hier hat sich noch niemand eingetragen.“ (`emphasis`). Geschlossene Schichten sagen, dass der
+ * Veranstalter einteilt.
+ */
+export function shiftStatusText(shift: Places & Pick<PrintShiftDto, "minAge">): {
+  emphasis: string | null;
+  text: string;
+} {
+  const age = shift.minAge !== null ? ` Ab ${shift.minAge} Jahren.` : "";
+  if (shift.requiredCount === 0)
+    return { emphasis: null, text: `Für diese Schicht sind keine Helfer nötig.${age}` };
+  const free = freePlaces(shift);
+  if (free === 0)
+    return {
+      emphasis: null,
+      text: `${places(shift.requiredCount)}, ${shift.requiredCount === 1 ? "besetzt" : "alle besetzt"}.${age}`,
+    };
+  if (shift.closed)
+    return {
+      emphasis: null,
+      text: `${places(shift.requiredCount)}, noch ${free} frei. Die Plätze vergibt der Veranstalter, bitte nicht selbst eintragen.${age}`,
+    };
+  if (shift.filled === 0)
+    return {
+      emphasis: "Hier hat sich noch niemand eingetragen.",
+      text: `${places(free)} frei.${age}`,
+    };
+  return { emphasis: null, text: `${places(shift.requiredCount)}, noch ${free} frei.${age}` };
+}
+
+/** Der Hinweis oben auf dem Aushang: wie man sich einträgt und wie viele Plätze noch frei sind. */
+export function signUpHint(shifts: readonly Places[]): string {
+  const open = openPlaces(shifts);
+  if (open > 0)
+    return `Wer helfen kann, trägt sich bitte mit Vor- und Nachnamen in eine freie Zeile ein, eine Zeile pro Person. ${
+      open === 1 ? "Es ist noch 1 Platz frei." : `Es sind noch ${open} Plätze frei.`
+    }`;
+  if (shifts.some((shift) => freePlaces(shift) > 0))
+    return "Die freien Plätze vergibt der Veranstalter, bitte nicht selbst eintragen.";
+  return "Alle Plätze sind besetzt. Vielen Dank an alle, die helfen.";
+}
+
+/**
+ * „Fragen an Bernd Vorstand (Tel. 0170 1234567, bernd@example.org).“ – nur der Ansprechpartner der Veranstaltung, nie
+ * Kontaktdaten der Helfer. `null`, wenn nichts hinterlegt ist.
+ */
+export function contactSentence(
+  event: Pick<PrintPlanEvent, "contactName" | "contactPhone" | "contactEmail">,
+): string | null {
+  const ways = [event.contactPhone && `Tel. ${event.contactPhone}`, event.contactEmail]
+    .filter(Boolean)
+    .join(", ");
+  if (event.contactName)
+    return endSentence(`Fragen an ${event.contactName}${ways ? ` (${ways})` : ""}`);
+  return ways ? endSentence(`Fragen: ${ways}`) : null;
+}
 
 /**
  * Was die Vorschau zeigt, in Worten: „2 Aushänge und 2 Anwesenheitslisten“. Bewusst keine Seitenzahl – ein langer Plan
