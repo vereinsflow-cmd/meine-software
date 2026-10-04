@@ -15,7 +15,7 @@ export default function NotFound() {
       className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-8 p-6"
     >
       <Link href="/" aria-label="VereinsFlow – zur Startseite" className="rounded-md">
-        <BrandLogo decorative className="w-48" />
+        <BrandLogo decorative className="w-56" />
       </Link>
       <EmptyState
         className="w-full"

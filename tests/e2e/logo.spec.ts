@@ -2,22 +2,24 @@ import { expect, test } from "@playwright/test";
 import { USERS, login, open, openNavGroup } from "./helpers";
 
 test.describe("Logo", () => {
-  test("Anmeldeseite zeigt das gestapelte Logo (Symbol oben, Wortmarke und Slogan darunter) als Link zur Startseite", async ({
+  test("Anmeldeseite zeigt das gestapelte Logo (Symbol oben, Wortmarke darunter) als Link zur Startseite", async ({
     page,
   }) => {
     await open(page, "/anmelden");
     const link = page.getByRole("link", { name: "VereinsFlow – Startseite" });
     await expect(link).toBeVisible();
-    const box = (await link.locator("svg").boundingBox())!;
+    const logo = link.locator("img:visible");
+    await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt.svg");
+    const box = (await logo.boundingBox())!;
     expect(box.width).toBeGreaterThan(200);
-    expect(box.height).toBeGreaterThan(box.width * 0.6); // gestapelt: deutlich höher als die flache Fassung
+    expect(box.height).toBeGreaterThan(box.width * 0.5); // gestapelt: deutlich höher als die flache Fassung (0,22)
   });
 
   test("Seitenleiste zeigt das Logo als Link zum Dashboard", async ({ page }) => {
     await login(page, USERS.admin);
     const link = page.getByRole("link", { name: "VereinsFlow – Startseite" });
     await expect(link).toBeVisible();
-    await expect(link.locator("svg")).toHaveAttribute("aria-hidden", "true"); // der Linkname genügt, kein doppeltes Vorlesen
+    await expect(link.locator("img:visible")).toHaveAttribute("alt", ""); // der Linkname genügt, kein doppeltes Vorlesen
     await open(page, "/mitglieder");
     await link.click();
     await expect(page).toHaveURL(/\/dashboard$/);
@@ -31,7 +33,7 @@ test.describe("Logo", () => {
     // Früher wurde die Kopfzeile bei langer Navigation zusammengedrückt und schnitt das Logo oben an (y = 0).
     const box = (await page
       .getByRole("link", { name: "VereinsFlow – Startseite" })
-      .locator("svg")
+      .locator("img:visible")
       .boundingBox())!;
     expect(box.y).toBeGreaterThanOrEqual(8);
     // Im eingeklappten Grundzustand (alle Untermenüs zu) passt die Navigation in 720 px Höhe; die Gruppe „Persönlich“
@@ -45,24 +47,36 @@ test.describe("Logo", () => {
     await expect(nav.getByRole("link", { name: "Änderungsprotokoll" })).toBeVisible();
   });
 
-  test("dunkle Darstellung: Wortmarke wechselt auf helle Schrift und bleibt lesbar", async ({
+  test("dunkle Darstellung: helle Fassung des Logos (weiße Schrift, Himmelblau) statt der schwarzen", async ({
     page,
   }) => {
-    // Pfade im Logo: 1 = Überschnitt der Kreise, 2 = "Vereins" (Schrift), 3 = "Flow", 4 = Slogan
-    const inkOf = () =>
-      page
-        .locator("header svg path")
-        .nth(1)
-        .evaluate((element) => getComputedStyle(element).fill);
+    const logo = page.locator("header img:visible");
 
     await page.emulateMedia({ colorScheme: "light" });
     await open(page, "/anmelden");
-    expect(await inkOf()).toBe("rgb(18, 37, 59)"); // dunkles Marineblau des Originals
+    await expect(logo).toHaveCount(1);
+    await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt.svg");
 
     await page.emulateMedia({ colorScheme: "dark" });
     await open(page, "/anmelden");
     await expect(page.locator("html")).toHaveClass(/dark/);
-    expect(await inkOf()).toBe("rgb(238, 243, 249)"); // helle Schrift auf dunklem Grund
+    await expect(logo).toHaveCount(1); // die helle Fassung ist ausgeblendet, nicht zusätzlich sichtbar
+    await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt-weiss.svg");
+  });
+
+  test("eingeklappte Seitenleiste zeigt nur das Symbol in der vereinfachten Form für kleine Größen", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await page.getByRole("button", { name: "Seitenleiste einklappen" }).click();
+    const logo = page
+      .getByRole("link", { name: "VereinsFlow – Startseite" })
+      .locator("img:visible");
+    await expect(logo).toHaveAttribute("src", "/brand/symbol-klein.svg");
+    const box = (await logo.boundingBox())!;
+    expect(box.height).toBeLessThanOrEqual(36); // 2 rem – auf großen Bildschirmen wächst die Grundschrift leicht mit
+    await page.getByRole("button", { name: "Seitenleiste ausklappen" }).click();
+    await expect(logo).toHaveAttribute("src", "/brand/logo.svg");
   });
 
   test("Smartphone-Menü: Logo steht oben im ausgeklappten Menü", async ({ page }) => {

@@ -54,4 +54,5 @@ SOFTWARE.
 ## Schrift
 
 Die Website verwendet die Systemschrift des jeweiligen Geräts (keine Webfonts, keine Lizenzpflichten). Die Wortmarke im
-Logo ist als Vektorgrafik hinterlegt (Poppins, SIL Open Font License, siehe `docs/brand/README.md` der Anwendung).
+Logo ist in Pfade umgewandelt und als Vektorgrafik hinterlegt (Manrope ExtraBold, SIL Open Font License 1.1; siehe
+`docs/brand/README.md` der Anwendung).
