@@ -27,7 +27,7 @@ Ruhe vor Vollständigkeit: Zuerst kommt, was man braucht, der Rest ist einen Kli
   | **Mitglieder**           | Geburtstage; Auswertungen Mitglieder (Status, Entwicklung)                                          | Alles, was Mitglieder betrifft; sensible Daten (Geburtstage, Zahlen) nur mit Recht dafür.                                        |
   | **Aufgaben & Aktivität** | Letzte Aktivitäten (Änderungsprotokoll); Auswertung Aufgaben                                        | Was im Verein gearbeitet und erledigt wird. Die persönliche Aufgabenliste bleibt in der Übersicht, hier steht die Vereinssicht.  |
 
-  Ein eigener Reiter „Finanzen“ ist bewusst **nicht** dabei: Bisher gibt es nur eine Karte („Offene Zahlungen“, siehe „Rechnungen und offene Zahlungen“) – sie steht in der Übersicht in einer eigenen Gruppe „Finanzen“ zwischen Kennzahlen und „Für dich“, weil offenes Geld zu dem gehört, was jetzt wichtig ist. Kommen Beiträge und Kassenbuch dazu, wird ein Reiter in `DASHBOARD_TABS` ergänzt.
+  Ein eigener Reiter „Finanzen“ ist bewusst **nicht** dabei: Auf dem Dashboard steht nur die Karte „Offene Zahlungen“ (siehe „Rechnungen und offene Zahlungen“) in einer eigenen Gruppe „Finanzen“ zwischen Kennzahlen und „Für dich“; alles Weitere hat seit 04.10.2026 den eigenen Bereich „Finanzen“ (siehe dort). Ein Reiter in `DASHBOARD_TABS` folgt mit Stufe 20 des Finanz-Bauplans.
 
 - **Nur eine Seite:** Die Seitenleiste zeigt weiter den einen Punkt „Dashboard“, die Reiter gibt es erst auf der Seite. Der Wechsel geschieht im Browser ohne Neuladen und ohne Serveranfrage (der Server liefert alle Reiter mit, angezeigt wird der gewählte; Radix `Tabs`). Die Adresse wird per `replaceState` nachgeführt (`/dashboard?tab=mitglieder`): Der Reiter lässt sich verlinken, Neuladen bleibt darauf, ungültige oder für die Rolle fehlende Werte führen zur Übersicht (`resolveTab`). „Zurück“ verlässt das Dashboard, statt durch alle Reiter zu laufen.
 - **Aktiver Reiter:** Seit 02.10.2026 runde Schiene (Entwürfe 2 und 5) – hinter dem aktiven Reiter liegt eine helle, runde Fläche (hell: weiß wie eine Karte, dunkel: hellgrau durchscheinend mit weißer Schrift), er ist fett; die übrigen sind gedämpft. Die Fläche ist ein eigenes Element (`data-slot="tab-indicator"`, rein optisch), das in 300 ms hinter den neuen Reiter gleitet; beim ersten Zeichnen springt sie ohne Übergang an ihren Platz. Beim Scrollen schwebt die Schiene unter der Kopfzeile (hell deckend, damit die gedämpfte Schrift auch über den farbigen Kennzahlen lesbar bleibt; ab `lg` ist der stehende Bereich nur so breit wie die Schiene, daneben bleibt der Inhalt anklickbar). Im Dunklen hat die Fläche des gewählten Reiters einen hellen Rand, damit sie sich klar abhebt. Vorher: Unterstrich mit 3 px starkem Strich (so weiter auf anderen Seiten, siehe „Reiter“). Zusätzlich `aria-selected`; Pfeiltasten, Pos1 und Ende wechseln den Reiter, der Inhalt ist als Reiterbereich mit dem Reiter verknüpft. Ab `xl` tragen die Reiter ein kleines Symbol – das ihres Bereichs (Dashboard, Veranstaltungen, Mitglieder, Aufgaben; siehe „Symbole“).
@@ -285,6 +285,38 @@ Eingeführt am 27.09.2026 als erster Baustein der Finanzen: „Nur berechtigte M
 - **Texte:** „fällig in N Tagen“, „heute fällig“, „morgen fällig“, „seit gestern überfällig“, „seit N Tagen überfällig“ (`dueText`), Tage immer am Berliner Kalendertag gezählt.
 - **Protokoll:** „Rechnung erfasst“, „Rechnung geändert“ (Betrag, Fälligkeit, Zahlungsstand als Änderungsdetails), „Rechnung als bezahlt markiert“, „Rechnung wieder offen“ – eigener Bereich „Finanzen“ im Änderungsprotokoll.
 - Geprüft in `tests/unit/invoices.test.ts` (Beträge, Namen, Texte, Eingaben), `tests/integration/invoices.test.ts` (Rechte, Mandantentrennung, Summen, Namensfolge, Protokoll) und `tests/e2e/rechnungen.spec.ts` (Karte je Rolle, Hochladen bis „Bezahlt“ und „Rückgängig“, Filter, Bearbeiten). Die Demo-Daten enthalten drei Rechnungen (zwei offen, eine davon überfällig; eine bezahlt).
+
+## Finanzen („Cockpit“)
+
+Seit 04.10.2026 ein eigener Bereich (ORGANISATION › Finanzen), Gestaltung nach Entwurf 3 „Cockpit mit Kennzahlen“ aus fünf
+Bildern (Ben: „nimm nummer 3“). Zugang nur mit `finance:read` **vereinsweit** (`modules/finance/access.ts`; eine Reichweite
+„Abteilung“ oder „eigene Daten“ reicht nicht – Geld kennt keine eigene Abteilung). Bauplan in 22 Stufen siehe docs/ROADMAP.md.
+
+- **Kopf jeder Finanzseite** (`FinanceHeader`): Überschrift „Finanzen“, Untertitel, Knöpfe der Seite (blauer Hauptknopf zuerst),
+  darunter die Leiste der Bereiche (`FinanceTabs`, helle Umschaltleiste wie überall, am Handy waagerecht scrollbar):
+  Übersicht · Kassenbuch · Rechnungen (Beiträge, Lastschrift, Bank, Spenden, Berichte folgen mit ihren Stufen). Eine kleine
+  bernsteinfarbene Zahl zeigt Dringendes (überfällige Rechnungen).
+- **Übersicht** (`app/(app)/finanzen/page.tsx`, Daten `modules/finance/overview.ts`): vier Kennzahlen mit Farbverlauf wie auf
+  dem Dashboard (`FinanceKpiCard` auf `KpiShell`): Kontostand gesamt (blau, Kurs der letzten 12 Monate), Offene Rechnungen
+  (bernstein), Überschuss des Jahres (grün, mit Vorzeichen, Kurs kumuliert), Spenden des Jahres (violett). Verläufe **nur**
+  dort; alles andere weiße Karten: „Einnahmen und Ausgaben“ je Monat (Balken, umschaltbar „Als Tabelle“), „Das steht an“
+  (je Punkt ein Satz, nur der erste mit blauem Knopf, darunter „Demnächst“), „Ausgaben der Abteilungen“, „Konten“.
+- **Kassenbuch** (`/finanzen/kassenbuch`): beim ersten Besuch „Kassenbuch einrichten“ (Beginn, Girokonto, Barkasse,
+  Anfangsbestände). Dann Kontokarten (Klick filtert), Filterleiste (Konto, Monat, Kategorie, Suche auch nach „2026-0042“),
+  Tabelle Nr./Datum · Beschreibung/Gegenüber · Kategorie mit Bereich klein darunter · Konto · Betrag mit echtem Minuszeichen
+  (Einnahmen grün, Ausgaben in Normalfarbe; „Einnahme“/„Ausgabe“ für Screenreader). „Neue Buchung“: Einnahme | Ausgabe als
+  Umschalter, Betrag immer positiv, „Auf mehrere Kategorien aufteilen“ mit laufender Summe, Abteilung oder Veranstaltung.
+  „⋯“ je Buchung: **Korrigieren** (Storno + neue Buchung in einem Schritt, vorausgefüllt) und **Stornieren** (mit Grund).
+  Nichts wird geändert oder gelöscht; Storno und Original nennen einander („storniert durch Nr. …“, „Storno zu Nr. …“).
+  „Umbuchung“ zwischen eigenen Konten (weder Einnahme noch Ausgabe).
+- **Rechnungen** (`/finanzen/rechnungen`): Umschalter Offen | Bezahlt | Alle, Suche, Tabelle mit Betrag, Fälligkeit und Stand
+  (überfällig rot), grüner Knopf „Bezahlt“ mit „Rückgängig“; „Rechnung hochladen“ öffnet das Hochladen gleich als Rechnung
+  (`UploadDialog invoiceOnly`). Die Dashboard-Karte „Offene Zahlungen“ führt hierher.
+- **Kategorien** in Alltagssprache mit Bereich (`default-categories.ts`): z. B. „Hallen- und Platzmiete“ (ideeller Bereich),
+  „Verkauf Speisen und Getränke“ (wirtschaftlicher Geschäftsbetrieb) – als Vorschlag, im Zweifel Steuerberater fragen.
+- **Regeln der Datenbank** (Migration `finance_ledger`): unveränderliche Buchungen, Storno nur als exakte Gegenbuchung,
+  lückenlose Nummern je Jahr, Barkasse am Ende keines Tages im Minus und nie in der Zukunft, abgeschlossene Zeiträume gesperrt.
+  Fehlermeldungen kommen als deutscher Satz („Die Barkasse wäre am 02.09.2026 im Minus (−40,00 €).“).
 
 ## Ansichten prüfen
 

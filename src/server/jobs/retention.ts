@@ -1,5 +1,6 @@
 import "server-only";
 import { readRetention } from "@/lib/club-settings";
+import { berlinParts, startOfBerlinDate } from "@/lib/dates";
 import {
   APPLICATION_DECIDED_RETENTION_DAYS,
   APPLICATION_PENDING_RETENTION_DAYS,
@@ -182,10 +183,21 @@ export async function applyRetention(now: Date = new Date()): Promise<RetentionR
     }
 
     const auditCutoff = subtractMonths(now, retention.auditMonths);
+    // Einträge der Finanzen gehören zu den Büchern (§ 147 AO: 10 Jahre ab Ende des Kalenderjahres) – sie bleiben so lange.
+    const financeCutoff = startOfBerlinDate(berlinParts(now).year - 10, 1, 1);
     result.auditDeleted += await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('vereinsflow.audit_purge', 'on', true)`;
       return (
-        await tx.auditLog.deleteMany({ where: { clubId: club.id, createdAt: { lt: auditCutoff } } })
+        await tx.auditLog.deleteMany({
+          where: {
+            clubId: club.id,
+            createdAt: { lt: auditCutoff },
+            OR: [
+              { action: { not: { startsWith: "finance." } } },
+              { createdAt: { lt: financeCutoff } },
+            ],
+          },
+        })
       ).count;
     });
   }

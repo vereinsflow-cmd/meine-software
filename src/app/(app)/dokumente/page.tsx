@@ -45,6 +45,7 @@ import {
   listDocuments,
   listUploadEvents,
 } from "@/modules/documents/service";
+import { canFinance } from "@/modules/finance/access";
 import { InvoiceBadge } from "@/modules/finance/components/invoice-badge";
 import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
 import { invoiceBaseName } from "@/modules/finance/invoice-format";
@@ -74,8 +75,8 @@ export default async function DocumentsPage({
   const eventId = param(params, "veranstaltung");
   const canUpload = can(ctx, "documents:upload");
   // Rechnungen: Betrag und Zahlungsstand sehen nur Berechtigte; erfassen und als bezahlt markieren, wer sie verwaltet.
-  const financeRead = can(ctx, "finance:read");
-  const financeManage = can(ctx, "finance:manage");
+  const financeRead = canFinance(ctx, "finance:read");
+  const financeManage = canFinance(ctx, "finance:manage");
   const invoices = financeRead
     ? enumParam(params, "rechnungen", ["offen", "alle"] as const)
     : undefined;

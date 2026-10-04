@@ -1,10 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { assertFinance, canFinance } from "@/modules/finance/access";
 import type { InvoiceStatus } from "@/generated/prisma/enums";
 import { formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
 import { allowedAccessLevels, invoiceDto, type DocumentInvoice } from "@/modules/documents/service";
 import { recordAudit } from "@/server/audit/audit";
 import { notFound, validationFailed } from "@/server/errors";
-import { assertCan, can } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 
 /**
@@ -39,7 +39,7 @@ export async function getOpenPayments(
   ctx: TenantContext,
   { limit = 5 }: { limit?: number } = {},
 ): Promise<OpenPayments> {
-  assertCan(ctx, "finance:read");
+  assertFinance(ctx, "finance:read");
   const today = todayCalendarDate();
   const [sum, overdueCount, rows] = await Promise.all([
     ctx.db.invoice.aggregate({
@@ -60,7 +60,7 @@ export async function getOpenPayments(
     totalCents: sum._sum.amountCents ?? 0,
     count: sum._count._all,
     overdueCount,
-    canManage: can(ctx, "finance:manage"),
+    canManage: canFinance(ctx, "finance:manage"),
     items: rows.map((row) => ({
       ...invoiceDto(row, today),
       documentId: row.document.id,
@@ -76,7 +76,7 @@ export async function setInvoiceStatus(
   id: string,
   status: InvoiceStatus,
 ): Promise<void> {
-  assertCan(ctx, "finance:manage");
+  assertFinance(ctx, "finance:manage");
   const invoice = await ctx.db.invoice.findFirst({
     where: { id, document: { is: { deletedAt: null } } },
     include: { document: { select: { name: true } } },
@@ -109,4 +109,76 @@ export async function setInvoiceStatus(
           : `Rechnung „${invoice.document.name}“${amount} wieder als offen markiert`,
     });
   });
+}
+
+export type InvoiceFilter = "offen" | "bezahlt" | "alle";
+
+export interface InvoiceListItem extends OpenInvoice {
+  createdAt: Date;
+}
+
+/** Rechnungen für „Finanzen › Rechnungen“: offen (fällige zuerst), bezahlt (zuletzt bezahlte zuerst) oder alle. */
+export async function listInvoices(
+  ctx: TenantContext,
+  query: { stand?: InvoiceFilter; q?: string; page?: number; pageSize?: number } = {},
+): Promise<{
+  items: InvoiceListItem[];
+  total: number;
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  openTotalCents: number;
+  /** Überfällige offene Rechnungen insgesamt (nicht nur auf dieser Seite). */
+  overdueCount: number;
+  canManage: boolean;
+}> {
+  assertFinance(ctx, "finance:read");
+  const stand = query.stand ?? "offen";
+  const pageSize = Math.min(Math.max(query.pageSize ?? 20, 1), 100);
+  const q = query.q?.trim();
+  const where: Prisma.InvoiceWhereInput = {
+    document: {
+      is: {
+        deletedAt: null,
+        archivedAt: null,
+        ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
+      },
+    },
+    ...(stand === "offen" ? { status: "OPEN" } : stand === "bezahlt" ? { status: "PAID" } : {}),
+  };
+  const [total, open, overdueCount] = await Promise.all([
+    ctx.db.invoice.count({ where }),
+    ctx.db.invoice.aggregate({ where: openWhere, _sum: { amountCents: true } }),
+    ctx.db.invoice.count({ where: { AND: [openWhere, { dueDate: { lt: todayCalendarDate() } }] } }),
+  ]);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(query.page ?? 1, 1), pageCount);
+  const rows = await ctx.db.invoice.findMany({
+    where,
+    include: { document: { select: { id: true, name: true, access: true } } },
+    orderBy:
+      stand === "offen"
+        ? [{ dueDate: { sort: "asc", nulls: "last" } }, { invoiceDate: "asc" }, { id: "asc" }]
+        : [{ paidAt: { sort: "desc", nulls: "last" } }, { invoiceDate: "desc" }, { id: "desc" }],
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  });
+  const today = todayCalendarDate();
+  const visible = allowedAccessLevels(ctx);
+  return {
+    items: rows.map((row) => ({
+      ...invoiceDto(row, today),
+      documentId: row.document.id,
+      name: row.document.name,
+      canOpen: visible.includes(row.document.access),
+      createdAt: row.createdAt,
+    })),
+    total,
+    page,
+    pageCount,
+    pageSize,
+    openTotalCents: open._sum.amountCents ?? 0,
+    overdueCount,
+    canManage: canFinance(ctx, "finance:manage"),
+  };
 }

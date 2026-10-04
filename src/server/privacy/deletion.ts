@@ -263,6 +263,8 @@ export async function executeDeletionRequest(
         where: { authorUserId: user.id },
         data: { authorUserId: null },
       });
+      // Kassenbuch (LedgerEntry/LedgerLine): unveränderlich und aufbewahrungspflichtig (10 Jahre, § 147 AO) – „erfasst von“
+      // bleibt wie im Änderungsprotokoll als reine Herkunftsangabe stehen (Art. 17 Abs. 3 lit. b DSGVO).
       // Rechnungen gehören dem Verein (Aufbewahrungspflichten) und bleiben; nur die Verweise auf das Konto werden gelöst.
       await tx.invoice.updateMany({ where: { createdById: user.id }, data: { createdById: null } });
       await tx.invoice.updateMany({ where: { paidById: user.id }, data: { paidById: null } });

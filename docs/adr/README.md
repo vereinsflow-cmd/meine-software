@@ -14,5 +14,6 @@ Abweichungen von den üblichen Standardlösungen. Eine Entscheidung wird nicht g
 | 0007 | [Versionen: Next.js 16, TypeScript 5.9, `proxy.ts`, CSP mit Nonce](0007-versionen-und-csp.md)                 | gültig |
 | 0008 | [UTF-8 überall (Windows-Falle bei der Datenbank)](0008-utf8-ueberall.md)                                      | gültig |
 | 0009 | [Vereinslogo: Rasterbild am Verein, geprüfte Route mit Mitgliedschaftsprüfung](0009-vereinslogo.md)           | gültig |
+| 0010 | [Kassenbuch: Kopf und Zeilen, nur hinzufügen, Storno, Abschluss](0010-finanzen-kassenbuch.md)                 | gültig |
 
 Vorlage für neue Einträge: Titel, Status, Kontext, Entscheidung, Folgen (Vor- und Nachteile, was nun zu beachten ist).

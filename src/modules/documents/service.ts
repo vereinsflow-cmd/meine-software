@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { assertFinance, canFinance } from "@/modules/finance/access";
 import type { DocumentAccess, InvoiceStatus } from "@/generated/prisma/enums";
 import { formatEuroFromCents, parseCalendarDate, todayCalendarDate } from "@/lib/dates";
 import { parseEuroToCents } from "@/lib/money";
@@ -108,7 +109,7 @@ async function toDtos(ctx: TenantContext, rows: DocumentRow[]): Promise<Document
       })
     : [];
   const names = new Map(people.map((p) => [p.userId, `${p.user.firstName} ${p.user.lastName}`]));
-  const finance = can(ctx, "finance:read");
+  const finance = canFinance(ctx, "finance:read");
   const today = todayCalendarDate();
   return rows.map((row) => ({
     id: row.id,
@@ -172,7 +173,7 @@ export async function listDocuments(
       visibleWhere(ctx),
       query.category ? { category: query.category } : {},
       query.eventId ? { eventId: query.eventId } : {},
-      query.invoices && can(ctx, "finance:read")
+      query.invoices && canFinance(ctx, "finance:read")
         ? query.invoices === "open"
           ? { invoice: { is: { status: "OPEN" } } }
           : { invoice: { isNot: null } }
@@ -274,7 +275,7 @@ export async function uploadDocument(
 ): Promise<{ id: string }> {
   assertCan(ctx, "documents:upload");
   // Rechnungen erfasst nur, wer die Finanzen verwaltet – geprüft vor allem anderen, auch vor dem Speichern der Datei.
-  if (input.invoice) assertCan(ctx, "finance:manage");
+  if (input.invoice) assertFinance(ctx, "finance:manage");
   await enforceRateLimit(`document-upload:${ctx.userId}`, 30, 3600);
 
   const maxBytes = env.MAX_UPLOAD_MB * 1024 * 1024;
@@ -429,7 +430,7 @@ export async function updateDocument(
   assertAccessAllowed(ctx, input.access);
   // Rechnungsangaben ändert nur, wer die Finanzen verwaltet – und nur an einer Rechnung.
   if (input.invoice) {
-    assertCan(ctx, "finance:manage");
+    assertFinance(ctx, "finance:manage");
     if (!row.invoice) throw badRequest("Dieses Dokument ist keine Rechnung.");
   }
   // Die Endung bestimmt den Typ – umbenennen darf sie nicht ändern (sonst passen Name und Inhalt nicht mehr zusammen).

@@ -73,11 +73,15 @@ export const PERMISSIONS = {
   "documents:upload": { module: "Dokumente", label: "Dokumente hochladen" },
   "documents:manage": { module: "Dokumente", label: "Dokumente verwalten und löschen" },
 
-  // Finanzen (erster Baustein: Rechnungen und offene Zahlungen)
-  "finance:read": { module: "Finanzen", label: "Offene Zahlungen und Rechnungen ansehen" },
+  // Finanzen (Kassenwart): nur vereinsweit wirksam (`src/modules/finance/access.ts`) – Geld kennt keine „eigene Abteilung“.
+  "finance:read": { module: "Finanzen", label: "Finanzen ansehen" },
   "finance:manage": {
     module: "Finanzen",
-    label: "Rechnungen erfassen und als bezahlt markieren",
+    label: "Finanzen bearbeiten (buchen, Rechnungen, Beiträge, Lastschrift)",
+  },
+  "finance:export": {
+    module: "Finanzen",
+    label: "Finanzdaten exportieren (Berichte, Steuerberater, Kassenprüfung)",
   },
 } as const satisfies Record<string, { module: string; label: string }>;
 

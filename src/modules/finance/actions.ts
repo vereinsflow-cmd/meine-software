@@ -13,6 +13,7 @@ export async function setInvoiceStatusAction(input: unknown): Promise<ActionResu
     await setInvoiceStatus(await requireTenantContext(), id, status);
     revalidatePath("/dashboard");
     revalidatePath("/dokumente");
+    revalidatePath("/finanzen", "layout");
     return undefined;
   }, "invoice-status");
 }
