@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 /**
  * Web-App-Manifest: Name und Symbol, wenn jemand VereinsFlow auf dem Smartphone zum Startbildschirm hinzufügt
- * (Android/Chrome; iPhone und iPad nehmen `apple-icon.png`). Die Symbole erzeugt docs/brand/generate-app-icons.mjs.
+ * (Android/Chrome; iPhone und iPad nehmen `apple-icon.png`). Die Symbole stammen aus dem Logo-Paket (docs/brand/README.md).
  *
  * `display: "browser"`: Das Symbol öffnet VereinsFlow wie gewohnt im Browser. Eine eigenständige App-Ansicht („standalone“)
  * wäre eine eigene Entscheidung – dort fehlen z. B. Adresszeile und Zurück-Knopf des Browsers.

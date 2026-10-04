@@ -1,55 +1,73 @@
 # Logo
 
-| Datei                                                                                          | Inhalt                                                                                           |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| [`vereinsflow-logo-original.png`](vereinsflow-logo-original.png)                               | Das Original-Logo (1760 × 1120 Pixel, cremefarbener Hintergrund) – die Vorlage für alles Weitere |
-| [`generate-logo-paths.mjs`](generate-logo-paths.mjs)                                           | Erzeugt die Schrift-Umrisse für die Vektorfassung (siehe unten)                                  |
-| [`generate-app-icons.mjs`](generate-app-icons.mjs)                                             | Erzeugt die App-Symbole für Browser-Tab und Startbildschirm (siehe unten)                        |
-| [`src/components/shared/brand-logo.tsx`](../../src/components/shared/brand-logo.tsx)           | Die Vektorfassung als React-Komponente (`BrandLogo`), verwendet über `Brand`                     |
-| [`src/components/shared/brand-logo-paths.ts`](../../src/components/shared/brand-logo-paths.ts) | Pfaddaten von Wortmarke und Slogan (erzeugt)                                                     |
+Das VereinsFlow-Logo (seit Oktober 2026): ein „V“ aus drei Etappen – links Schwarz, rechts Vereinsblau –, unten ein orangefarbener Punkt
+mit Tempo-Strichen; daneben bzw. darunter die Wortmarke „VereinsFlow“ in Manrope ExtraBold, 9° geneigt und orange unterstrichen.
+Alle Dateien stammen aus dem Logo-Paket der Gestaltung (`vereinsflow-logo-paket`, Ordner `03-software`; Anleitung in dessen
+`LIESMICH.md`) und sind unverändert übernommen. Die Schrift ist dort bereits in Pfade umgewandelt – es muss keine Schriftdatei
+geladen werden. Das frühere Logo (zwei sich überschneidende Kreise) ist vollständig ersetzt; es liegt nur noch in der Git-Historie.
+
+## Farben
+
+| Name         | Wert      | Verwendung                                              |
+| ------------ | --------- | ------------------------------------------------------- |
+| Schwarz      | `#1A1A1A` | linke Etappen und „Vereins“ auf hellem Grund            |
+| Vereinsblau  | `#3A6BEA` | rechte Etappen und „Flow“ auf hellem Grund              |
+| Himmel       | `#8FB0FF` | Blau auf dunklem Grund                                  |
+| Signalorange | `#FF8A5E` | Punkt, Tempo-Striche, Unterstrich (hell wie dunkel)     |
+| Tinte        | `#0F1C2E` | dunkler Hintergrund der App-Symbole                     |
+| Weiß         | `#FFFFFF` | linke Etappen und „Vereins“ auf dunklem Grund (`weiss`) |
+
+Die Farben gehören nur zum Logo; die Farbpalette der Oberfläche (`src/app/globals.css`) ist davon unabhängig.
+
+## Logo in der Oberfläche (`public/brand/`)
+
+| Datei                                             | Wofür                                                                              |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `logo.svg`, `logo-weiss.svg`                      | horizontal (Symbol links, Name rechts) – Seitenleiste, Smartphone-Menü, Kopfzeilen |
+| `logo-gestapelt.svg`, `logo-gestapelt-weiss.svg`  | gestapelt (Symbol über dem Namen) – Anmelde- und Hinweisseiten                     |
+| `symbol.svg`, `symbol-weiss.svg`                  | nur das V                                                                          |
+| `symbol-klein.svg`, `symbol-klein-weiss.svg` (\*) | nur das V, vereinfacht für bis 32 px – eingeklappte Seitenleiste                   |
+
+`-weiss` ist jeweils die Fassung für dunklen Grund (Schwarz → Weiß, Vereinsblau → Himmel).
+
+(\*) Das Paket enthält die vereinfachte Form (zwei statt drei Etappen, ohne Tempo-Striche) nur als Favicon mit dunkler Kachel
+(`src/app/icon.svg`). Die beiden `symbol-klein`-Dateien sind daraus abgeleitet: dieselbe Datei ohne die Kachel, für hellen Grund mit
+denselben Farbtauschen wie zwischen `symbol-weiss.svg` und `symbol.svg` (`#FFFFFF` → `#1A1A1A`, `#8FB0FF` → `#3A6BEA`).
+
+Eingebunden werden die Dateien über die Komponente `BrandLogo` ([`src/components/shared/brand-logo.tsx`](../../src/components/shared/brand-logo.tsx)),
+meist über `Brand` ([`brand.tsx`](../../src/components/shared/brand.tsx)) als Link zur Startseite:
+
+- `variant`: `horizontal` (Standard), `stacked` (gestapelt) oder `icon` (nur das Symbol); bei `icon` wählt `small` die vereinfachte Form.
+- Hell und dunkel: Beide Bilder stehen im HTML, CSS zeigt je nach Darstellung (`.dark`) das passende – ohne Nachladen beim Umschalten.
+- Beschriftung: `alt="VereinsFlow"`; mit `decorative` (wenn z. B. der umgebende Link schon „VereinsFlow – Startseite“ heißt) leer.
+
+Wo das Logo steht:
+
+- **Anmelde- und Hinweisseiten** (Anmeldung, Passwort vergessen/zurücksetzen, Einladung): gestapelte Fassung, mittig über der Karte.
+- **Seitenleiste, Smartphone-Menü, Impressum, Datenschutzerklärung, Einrichtung, Plattformverwaltung, Seite „nicht gefunden“:**
+  horizontale Fassung. Die eingeklappte Seitenleiste zeigt nur das Symbol (2 rem, vereinfachte Form).
+- E-Mails und Ausdrucke (Helferplan, Aushang „Mitglied werden“) zeigen kein VereinsFlow-Logo, nur das Vereinslogo.
 
 ## App-Symbole (Browser-Tab, Lesezeichen, Startbildschirm)
 
-Die beiden Kreise des Logos in der dunklen Farbfassung auf dunklem Marineblau (`#12253b`) – dieselbe Gestaltung wie das Favicon der Website (`website/favicon.svg`), damit man App und Website im Browser gleich erkennt. Der dunkle Grund hält das Symbol auf hellen wie dunklen Tab-Leisten sichtbar.
+Das Symbol in Weiß/Himmel/Orange auf der dunklen Kachel (Tinte) – auf hellen wie dunklen Tab-Leisten gut sichtbar.
 
-| Datei                              | Wofür                                                                                    |
-| ---------------------------------- | ---------------------------------------------------------------------------------------- |
-| `src/app/icon.svg`                 | Browser-Tab in aktuellen Browsern (Vektor, scharf in jeder Größe)                        |
-| `src/app/favicon.ico`              | Safari, Windows, ältere Browser – 16, 32 und 48 px; in 16 px ist das Symbol etwas größer |
-| `src/app/apple-icon.png`           | Home-Bildschirm von iPhone und iPad (180 px, randlos – iOS rundet die Ecken selbst ab)   |
-| `public/app-icon-192.png`, `-512`  | Android und Chrome, über das Web-App-Manifest (`src/app/manifest.ts`)                    |
-| `public/app-icon-maskable-512.png` | Android-Startbildschirme mit runden oder tropfenförmigen Symbolen (randlos)              |
+| Datei                              | Wofür                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/app/icon.svg`                 | Browser-Tab in aktuellen Browsern (Vektor, vereinfachte Form für kleine Größen)        |
+| `src/app/favicon.ico`              | Safari, Windows, ältere Browser – 16, 32 und 48 px                                     |
+| `src/app/apple-icon.png`           | Home-Bildschirm von iPhone und iPad (180 px, randlos – iOS rundet die Ecken selbst ab) |
+| `public/app-icon-192.png`, `-512`  | Android und Chrome, über das Web-App-Manifest (`src/app/manifest.ts`)                  |
+| `public/app-icon-maskable-512.png` | Android-Startbildschirme mit runden oder tropfenförmigen Symbolen (randlos)            |
 
-Alle Dateien erzeugt `node docs/brand/generate-app-icons.mjs` (mit sharp, das Next.js mitbringt). Next.js bindet sie über die Dateinamen selbst in jede Seite ein; der Name unter dem Symbol auf dem iPhone ist „VereinsFlow“ (`src/app/layout.tsx`). Das Manifest öffnet VereinsFlow vom Startbildschirm aus bewusst im Browser (`display: "browser"`), nicht als eigenständige App ohne Adresszeile. Symbole und Manifest sind ohne Anmeldung abrufbar (`src/proxy.ts`), geprüft in `tests/e2e/app-symbol.spec.ts`.
+Next.js bindet sie über die Dateinamen selbst in jede Seite ein; der Name unter dem Symbol auf dem iPhone ist „VereinsFlow“
+(`src/app/layout.tsx`). Das Manifest öffnet VereinsFlow vom Startbildschirm aus bewusst im Browser (`display: "browser"`), nicht als
+eigenständige App ohne Adresszeile. Symbole, Logo-Dateien und Manifest sind ohne Anmeldung abrufbar (`src/proxy.ts`), geprüft in
+`tests/e2e/app-symbol.spec.ts`.
 
-## Wo das Logo in der Anwendung steht
+## Änderungen am Logo
 
-- **Anmelde- und Hinweisseiten** (Anmeldung, Passwort vergessen/zurücksetzen, Einladung): gestapelte Fassung mit Slogan, mittig über der Karte.
-- **Seitenleiste, Smartphone-Menü, Impressum, Datenschutzerklärung, Plattformverwaltung:** horizontale Fassung (Symbol links, Wortmarke rechts), als Link zur Startseite.
-
-## Vektorfassung
-
-Die Anwendung nutzt nicht das PNG, sondern eine Vektorgrafik (scharf in jeder Größe, mit transparentem Hintergrund, in der dunklen Darstellung anpassbar). Die Schrift des Logos ist
-**Poppins** (SIL Open Font License); Wortmarke und Slogan sind aus den Schriftdateien in Pfade umgewandelt und am Original ausgerichtet („Vereins“ Regular, „Flow“ SemiBold,
-Slogan Medium mit leichtem Zeichenabstand). Ein Pixelvergleich mit dem Original ergab, dass nur die Kanten (Anti-Aliasing) abweichen. Die Kreise sind zwei Kreise mit Radius 130,5
-im Abstand von 190 Pixeln; der Überschnitt (Linse) hat eine eigene Farbe.
-
-### Farben
-
-| Verwendung              | Hell (Original) | Dunkel    |
-| ----------------------- | --------------- | --------- |
-| Linker Kreis und „Flow“ | `#1c4a7a`       | `#4a8ccf` |
-| Rechter Kreis           | `#5b9cd6`       | `#8dbbe8` |
-| Überschnitt             | `#112e4f`       | `#2b5f98` |
-| „Vereins“ (Schrift)     | `#12253b`       | `#eef3f9` |
-| Slogan                  | `#78827a`       | `#9aa5a0` |
-
-Die Werte stehen als CSS-Variablen `--logo-*` in `src/app/globals.css`. Die dunkle Fassung ist eine Ableitung (das Original kennt nur den hellen Grund).
-
-### Änderungen am Logo
-
-1. Neues Original ablegen und die Maße im Kopf von `generate-logo-paths.mjs` anpassen (Schrift, Größe, Position).
-2. `npm install --no-save @fontsource/poppins opentype.js`, dann `node docs/brand/generate-logo-paths.mjs` und `npx prettier --write src/components/shared/brand-logo-paths.ts`.
-3. Kreise und Anordnung stehen direkt in `brand-logo.tsx`.
-
-Der Test `tests/e2e/logo.spec.ts` prüft, dass das Logo erscheint, beschriftet ist und in der dunklen Darstellung lesbar bleibt.
+Neue Fassungen kommen als Paket aus der Gestaltung: die Dateien aus `03-software` an dieselben Pfade kopieren (Dateinamen wie oben)
+und die beiden `symbol-klein`-Dateien wie beschrieben neu ableiten. Ändert sich das Seitenverhältnis, die Maße (`width`/`height`) in
+`brand-logo.tsx` anpassen. Der Test `tests/e2e/logo.spec.ts` prüft, dass das Logo erscheint, beschriftet ist und in der dunklen
+Darstellung die helle Fassung zeigt.
