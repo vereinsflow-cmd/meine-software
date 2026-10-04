@@ -1144,7 +1144,7 @@ html:not(.js) .nav ul a:hover {
   letter-spacing: -0.012em;
 }
 
-/* Drei Punkte mit fetten Schlüsselwörtern, schlichte runde Aufzählungszeichen */
+/* Drei kurze Aussagen mit fetten Schlüsselwörtern, schlichte runde Aufzählungszeichen */
 .hero-points {
   display: grid;
   gap: 10px;
@@ -1342,6 +1342,11 @@ html:not(.js) .nav ul a:hover {
 
   .hero-note {
     margin-top: 12px;
+  }
+
+  /* Der Text ist hier niedriger: Das Bild darf bis quadratisch werden, damit es unten bündig mit ihm abschließt */
+  .hero-visual {
+    aspect-ratio: 1;
   }
 }
 
@@ -7862,12 +7867,26 @@ html:not(.js) .nav ul a:hover {
     animation-delay: 0.42s;
   }
 
-  .intro-4 {
-    animation-delay: 0.52s;
-  }
-
   .intro-5 {
     animation-delay: 0.6s;
+  }
+
+  /* Die drei Punkte erscheinen nach der Einleitung einzeln nacheinander, jeder gleitet von links herein (mit seinem
+     Aufzählungszeichen) – im Abstand von 0,3 s, damit man das Nacheinander sieht */
+  .hero-points li {
+    animation: point-in 0.7s var(--ease-out) both;
+  }
+
+  .hero-points li:nth-child(1) {
+    animation-delay: 0.75s;
+  }
+
+  .hero-points li:nth-child(2) {
+    animation-delay: 1.05s;
+  }
+
+  .hero-points li:nth-child(3) {
+    animation-delay: 1.35s;
   }
 
   /* Das Bild rechts: ruhig, nur etwas Anstieg – ohne Einblenden: Es ist das größte Element im ersten Bild (Largest
@@ -8582,6 +8601,13 @@ html:not(.js) .nav ul a:hover {
   from {
     opacity: 0;
     translate: 0 24px;
+  }
+}
+
+@keyframes point-in {
+  from {
+    opacity: 0;
+    translate: -20px 0;
   }
 }
 
