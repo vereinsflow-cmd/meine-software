@@ -2,13 +2,15 @@ import { z } from "zod";
 import { parseEuroToCents } from "@/lib/money";
 import { amountText, checkAmount, dueDateText, invoiceEditSchema } from "@/modules/finance/schemas";
 
-export const ACCESS_LEVELS = ["ALL_MEMBERS", "BOARD", "ADMIN"] as const;
+export const ACCESS_LEVELS = ["ALL_MEMBERS", "BOARD", "ADMIN", "FINANCE"] as const;
 export type AccessLevel = (typeof ACCESS_LEVELS)[number];
 
 export const ACCESS_LABEL: Record<AccessLevel, string> = {
   ALL_MEMBERS: "Alle Mitglieder",
   BOARD: "Nur Vorstand",
   ADMIN: "Nur Verwaltung",
+  // Belege im Kassenbuch: sieht, wer die Finanzen ansehen darf (Kassenwart, Vorstand, Verwaltung).
+  FINANCE: "Nur Finanzen",
 };
 
 const optionalText = (max: number, label: string) =>

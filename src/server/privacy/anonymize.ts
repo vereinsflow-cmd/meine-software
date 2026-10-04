@@ -1,5 +1,6 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
+import { todayCalendarDate } from "@/lib/dates";
 
 /**
  * Anonymisierung von Personendaten (Art. 17 DSGVO, Speicherbegrenzung).
@@ -80,8 +81,14 @@ export async function anonymizeMemberData(
   await tx.shiftAssignment.updateMany({ where: { clubId, memberId }, data: { note: null } });
   await tx.messageRecipient.updateMany({ where: { clubId, memberId }, data: { userId: null } });
   // Dokumente, die zu dieser Person gehören (z. B. Aufnahmeantrag): in den Papierkorb; der Aufbewahrungsjob entfernt die Dateien.
+  // Belege im Kassenbuch mit laufender Aufbewahrungsfrist bleiben (Art. 17 Abs. 3 lit. b DSGVO; die Datenbank sperrt sie).
   await tx.document.updateMany({
-    where: { clubId, memberId, deletedAt: null },
+    where: {
+      clubId,
+      memberId,
+      deletedAt: null,
+      OR: [{ retainUntil: null }, { retainUntil: { lt: todayCalendarDate(now) } }],
+    },
     data: { deletedAt: now },
   });
 

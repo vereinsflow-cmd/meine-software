@@ -1,6 +1,6 @@
 import "server-only";
 import { readRetention } from "@/lib/club-settings";
-import { berlinParts, startOfBerlinDate } from "@/lib/dates";
+import { berlinParts, startOfBerlinDate, todayCalendarDate } from "@/lib/dates";
 import {
   APPLICATION_DECIDED_RETENTION_DAYS,
   APPLICATION_PENDING_RETENTION_DAYS,
@@ -81,7 +81,16 @@ export async function purgeOldTickets(now: Date = new Date()): Promise<number> {
  */
 export async function purgeDeletedDocuments(now: Date = new Date()): Promise<number> {
   const due = await prisma.document.findMany({
-    where: { deletedAt: { lt: new Date(now.getTime() - DOCUMENT_TRASH_DAYS * DAY) } },
+    where: {
+      deletedAt: { lt: new Date(now.getTime() - DOCUMENT_TRASH_DAYS * DAY) },
+      // Belege im Kassenbuch bleiben, solange eine Buchung auf sie verweist (Frist läuft bzw. Kassenbuch noch nicht bereinigt) –
+      // sonst wäre die Datei weg, der Datensatz aber nicht löschbar.
+      AND: [
+        { OR: [{ retainUntil: null }, { retainUntil: { lt: todayCalendarDate(now) } }] },
+        { OR: [{ invoice: { is: null } }, { invoice: { is: { ledgerLines: { none: {} } } } }] },
+      ],
+      ledgerAttachments: { none: {} },
+    },
     select: { id: true, clubId: true, storageKey: true },
     take: 500,
   });

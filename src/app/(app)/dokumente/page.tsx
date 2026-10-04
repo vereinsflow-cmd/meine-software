@@ -26,7 +26,12 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
-import { calendarDateToInputValue, formatDate, todayCalendarDate } from "@/lib/dates";
+import {
+  calendarDateToInputValue,
+  formatCalendarDate,
+  formatDate,
+  todayCalendarDate,
+} from "@/lib/dates";
 import { eventOptions } from "@/lib/event-options";
 import { centsToInput } from "@/lib/money";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
@@ -59,6 +64,7 @@ const accessTone: Record<AccessLevel, "neutral" | "warning" | "danger"> = {
   ALL_MEMBERS: "neutral",
   BOARD: "warning",
   ADMIN: "danger",
+  FINANCE: "warning",
 };
 
 export default async function DocumentsPage({
@@ -232,6 +238,12 @@ export default async function DocumentsPage({
                           <InvoiceBadge invoice={document.invoice} />
                         </span>
                       )}
+                      {document.retainedUntil && (
+                        <span className="block text-xs text-muted-foreground">
+                          Beleg im Kassenbuch, aufbewahrt bis{" "}
+                          {formatCalendarDate(document.retainedUntil)}
+                        </span>
+                      )}
                       {document.event && (
                         <span className="block text-xs text-muted-foreground">
                           Zu:{" "}
@@ -301,7 +313,9 @@ export default async function DocumentsPage({
                                 : {}),
                             }}
                           />
-                          <DeleteDocumentButton id={document.id} name={document.name} />
+                          {document.can.delete && (
+                            <DeleteDocumentButton id={document.id} name={document.name} />
+                          )}
                         </div>
                       )}
                     </TableCell>

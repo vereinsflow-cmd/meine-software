@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useFieldArray, useWatch } from "react-hook-form";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatEuroFromCents } from "@/lib/dates";
 import { parseEuroToCents } from "@/lib/money";
+import { ALLOWED_EXTENSIONS_TEXT, clientFileError } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 import type { EntryFormOptions } from "../ledger";
 import { correctEntryAction, createEntryAction } from "../ledger-actions";
@@ -31,6 +33,8 @@ import {
   type EntryInput,
 } from "../ledger-schemas";
 import { AMOUNT_HINT } from "../schemas";
+import { ReceiptPicker } from "./receipt-picker";
+import { uploadReceipt } from "./receipts-dialog";
 
 /**
  * „Neue Buchung“ bzw. „Korrigieren“: Einnahme oder Ausgabe mit Betrag, Datum, Konto, Kategorie und Beschreibung, auf Wunsch
@@ -43,6 +47,7 @@ export function EntryDialog({
   trigger,
   defaults,
   correct,
+  invoice,
   open: openProp,
   onOpenChange,
   onCloseAutoFocus,
@@ -54,6 +59,8 @@ export function EntryDialog({
   defaults?: Partial<EntryInput>;
   /** Korrektur einer vorhandenen Buchung (Storno + neue Buchung). */
   correct?: { id: string; label: string };
+  /** Bezahlte Rechnung ins Kassenbuch übernehmen (`defaults.invoiceId` verweist auf sie). */
+  invoice?: { name: string };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   /** Wohin der Fokus nach dem Schließen geht (aus `useMoreActions`, wenn ein Menü das Fenster öffnet). */
@@ -81,12 +88,18 @@ export function EntryDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {correct ? `Buchung ${correct.label} korrigieren` : "Neue Buchung"}
+            {correct
+              ? `Buchung ${correct.label} korrigieren`
+              : invoice
+                ? "Rechnung ins Kassenbuch"
+                : "Neue Buchung"}
           </DialogTitle>
           <DialogDescription>
             {correct
               ? "Die alte Buchung wird storniert und die korrigierte neu angelegt – so bleibt alles nachvollziehbar."
-              : "Einnahmen und Ausgaben werden nicht geändert, sondern bei Bedarf storniert – so bleibt alles nachvollziehbar."}
+              : invoice
+                ? `„${invoice.name}“ wird als Ausgabe gebucht und hängt als Beleg an der Buchung.`
+                : "Einnahmen und Ausgaben werden nicht geändert, sondern bei Bedarf storniert – so bleibt alles nachvollziehbar."}
           </DialogDescription>
         </DialogHeader>
         {/* Das Formular entsteht bei jedem Öffnen neu – nach dem Speichern beginnt die nächste Buchung leer. */}
@@ -94,6 +107,7 @@ export function EntryDialog({
           options={options}
           defaults={defaults}
           correct={correct}
+          withInvoice={Boolean(invoice)}
           onDone={() => {
             onSaved?.();
             setOpen(false);
@@ -108,20 +122,27 @@ function EntryForm({
   options,
   defaults,
   correct,
+  withInvoice,
   onDone,
 }: {
   options: EntryFormOptions;
   defaults?: Partial<EntryInput>;
   correct?: { id: string; label: string };
+  /** Die Rechnung ist schon der Beleg – kein eigenes Belegfeld. */
+  withInvoice: boolean;
   onDone: () => void;
 }) {
   const router = useRouter();
+  // Beleg (freiwillig): wird nach dem Buchen hochgeladen und an die neue Buchung gehängt.
+  const [receipt, setReceipt] = useState<File | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
   const initial: CorrectionFormInput = {
     kind: defaults?.kind ?? "EXPENSE",
     accountId: defaults?.accountId ?? options.accounts[0]?.value ?? "",
     bookingDate: defaults?.bookingDate ?? options.today,
     description: defaults?.description ?? "",
     counterparty: defaults?.counterparty ?? "",
+    invoiceId: defaults?.invoiceId,
     lines: defaults?.lines?.length
       ? defaults.lines
       : [{ categoryId: "", amount: "", target: "", note: "" }],
@@ -133,14 +154,29 @@ function EntryForm({
       ? correctionFormSchema
       : (entrySchema as unknown as typeof correctionFormSchema),
     defaultValues: initial,
-    action: (values) =>
-      correct ? correctEntryAction(correct.id, values.reason, values) : createEntryAction(values),
+    action: async (values) => {
+      const result = correct
+        ? await correctEntryAction(correct.id, values.reason, values)
+        : await createEntryAction(values);
+      if (!result.ok) return result;
+      // Eine Meldung, die stehen bleibt, wenn der Beleg nicht hochging – sonst verdeckte „Gebucht.“ den Hinweis.
+      const upload = receipt ? await uploadReceipt(result.data.id, receipt) : null;
+      if (upload && !upload.ok)
+        toast.warning(`Gebucht als Nr. ${result.data.label} – der Beleg fehlt aber noch.`, {
+          description: `${upload.message} Nachreichen über „⋯“ → „Beleg anhängen“.`,
+          duration: Infinity,
+          closeButton: true,
+        });
+      else toast.success(correct ? "Buchung korrigiert." : `Gebucht als Nr. ${result.data.label}.`);
+      return result;
+    },
     onSuccess: () => {
       onDone();
       router.refresh();
     },
-    successMessage: correct ? "Buchung korrigiert." : "Gebucht.",
   });
+  // Rechnung („Ins Kassenbuch“, auch beim Korrigieren einer solchen Buchung): immer eine Ausgabe.
+  const invoiceLocked = Boolean(initial.invoiceId);
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "lines" });
   const kind = useWatch({ control: form.control, name: "kind" });
   const lines = useWatch({ control: form.control, name: "lines" });
@@ -177,7 +213,7 @@ function EntryForm({
 
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
-      <fieldset>
+      <fieldset hidden={invoiceLocked}>
         <legend className="mb-1.5 text-sm font-medium">Art</legend>
         {/* Echte Auswahlknöpfe einer Gruppe (Pfeiltasten wechseln); der Fokusrahmen sitzt an der sichtbaren Kachel. */}
         <div className={SEGMENT_BAR}>
@@ -201,6 +237,11 @@ function EntryForm({
             </label>
           ))}
         </div>
+        {form.formState.errors.kind?.message && (
+          <p role="alert" className="mt-1.5 text-sm text-destructive">
+            {form.formState.errors.kind.message}
+          </p>
+        )}
       </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -323,6 +364,54 @@ function EntryForm({
         >
           <PlusIcon /> {split ? "Weitere Kategorie" : "Auf mehrere Kategorien aufteilen"}
         </Button>
+      )}
+
+      {!withInvoice && (
+        <div className="grid gap-1.5">
+          <p id="buchung-beleg-titel" className="text-sm font-medium">
+            Beleg (freiwillig)
+          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <ReceiptPicker
+              id="buchung-beleg"
+              label={receipt ? "Andere Datei" : "Datei auswählen"}
+              labelledBy="buchung-beleg-titel"
+              describedBy={receiptError ? "buchung-beleg-fehler" : "buchung-beleg-hinweis"}
+              invalid={Boolean(receiptError)}
+              disabled={isPending}
+              onFile={(file) => {
+                const problem = clientFileError(file, options.maxUploadMb);
+                setReceiptError(problem);
+                setReceipt(problem ? null : file);
+              }}
+            />
+            {receipt && (
+              <span className="flex min-w-0 items-center gap-1 text-sm">
+                <span className="min-w-0 break-all">{receipt.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  disabled={isPending}
+                  onClick={() => setReceipt(null)}
+                >
+                  Entfernen
+                </Button>
+              </span>
+            )}
+          </div>
+          {receiptError ? (
+            <p id="buchung-beleg-fehler" role="alert" className="text-sm text-destructive">
+              {receiptError}
+            </p>
+          ) : (
+            <p id="buchung-beleg-hinweis" className="text-xs text-muted-foreground">
+              Foto der Quittung oder PDF ({ALLOWED_EXTENSIONS_TEXT}, höchstens {options.maxUploadMb}{" "}
+              MB). Geht auch später über „⋯“.
+            </p>
+          )}
+        </div>
       )}
 
       {correct && (

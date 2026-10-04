@@ -7,10 +7,19 @@ import { USERS, login, open, openNavGroup } from "./helpers";
  * ist dort anfangs nicht eingerichtet; der erste Test richtet es ein, die folgenden nutzen es (Tests laufen nacheinander).
  */
 
+/** „JJJJ-MM-TT“ vor `days` Tagen (Berlin). */
+function isoDaysAgo(days: number): string {
+  const date = new Date(Date.now() - days * 86_400_000);
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(date);
+}
+
 async function ensureLedger(page: Page): Promise<void> {
   await open(page, "/finanzen/kassenbuch");
   const setup = page.getByRole("button", { name: "Kassenbuch einrichten" });
   if (await setup.isVisible()) {
+    // Beginn vor 60 Tagen statt am 1. Januar: Die bezahlte Seed-Rechnung (vor 40 Tagen) liegt so zu jeder Jahreszeit im
+    // Kassenbuch – auch im Januar.
+    await page.getByLabel("Kassenbuch beginnt am").fill(isoDaysAgo(60));
     await page.getByLabel("Bank").fill("Sparkasse Musterstadt");
     await page.getByLabel("Anfangsbestand in €").first().fill("11.200,00");
     await page.getByLabel("Anfangsbestand in €").nth(1).fill("239,80");
@@ -178,6 +187,87 @@ test.describe("Finanzen – Anfangsbestand", () => {
     await expect(dialog).toHaveCount(0);
     await expect(row(page, "Anfangsbestand korrigiert").first()).toContainText(/−11\.2\d0,00\s€/);
     await expect(row(page, "Anfangsbestand Girokonto").first()).toContainText("+11.250,00 €");
+  });
+});
+
+const PDF = (text: string) =>
+  Buffer.from(
+    `%PDF-1.4\n% ${text}\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n`,
+  );
+
+test.describe("Finanzen – Belege", () => {
+  test("Beleg beim Buchen hochladen; ohne Beleg: Hinweis, Filter und Eigenbeleg", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+
+    // Mit Beleg: Foto/PDF gleich im Fenster „Neue Buchung“.
+    await page.getByRole("button", { name: "Neue Buchung" }).click();
+    const dialog = page.getByRole("dialog", { name: "Neue Buchung" });
+    await dialog.getByLabel("Betrag in €").fill("18,50");
+    await dialog.getByLabel("Beschreibung").fill("E2E Tape mit Beleg");
+    await dialog.getByLabel("Kategorie").selectOption({ label: "Sportmaterial" });
+    await dialog.getByLabel("Beleg (freiwillig)").setInputFiles({
+      name: "kassenbon-tape.pdf",
+      mimeType: "application/pdf",
+      buffer: PDF("Kassenbon Tape"),
+    });
+    await dialog.getByRole("button", { name: "Ausgabe buchen" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(row(page, "E2E Tape mit Beleg").first()).toContainText("kassenbon-tape.pdf");
+    await expect(row(page, "E2E Tape mit Beleg").first()).not.toContainText("Beleg fehlt");
+
+    // Ohne Beleg: „Beleg fehlt“, Filter „Ohne Beleg“, dann Eigenbeleg über „⋯“.
+    await book(page, {
+      kind: "Ausgabe",
+      amount: "4,00",
+      description: "E2E Parkgebühr",
+      category: "Fahrtkosten",
+    });
+    await expect(row(page, "E2E Parkgebühr").first()).toContainText("Beleg fehlt");
+    await open(page, "/finanzen/kassenbuch?beleg=fehlt");
+    await expect(row(page, "E2E Parkgebühr").first()).toBeVisible();
+    await expect(row(page, "E2E Tape mit Beleg")).toHaveCount(0);
+
+    await row(page, "E2E Parkgebühr")
+      .first()
+      .getByRole("button", { name: /Weitere Aktionen/ })
+      .click();
+    await page.getByRole("menuitem", { name: "Beleg anhängen" }).click();
+    const receipts = page.getByRole("dialog", { name: /Belege zu Buchung/ });
+    await receipts.getByLabel(/Eigenbeleg/).fill("Parkautomat am Turnier, keine Quittung");
+    await receipts.getByRole("button", { name: "Eigenbeleg speichern" }).click();
+    // Das Fenster schließt; in der Ansicht „Ohne Beleg“ verschwindet die Buchung.
+    await expect(receipts).toHaveCount(0);
+    await expect(row(page, "E2E Parkgebühr")).toHaveCount(0);
+    await open(page, "/finanzen/kassenbuch");
+    await expect(row(page, "E2E Parkgebühr").first()).toContainText("Eigenbeleg: Parkautomat");
+    await expect(row(page, "E2E Parkgebühr").first()).not.toContainText("Beleg fehlt");
+  });
+
+  test("Bezahlte Rechnung ins Kassenbuch übernehmen – danach mit Nummer verknüpft", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+    await open(page, "/finanzen/rechnungen?stand=bezahlt");
+    // Seed: „Pokale Jugendturnier“ (89,90 €), vor 40 Tagen bezahlt.
+    const paid = page.getByRole("row").filter({ hasText: "89,90 €" }).first();
+    await paid.getByRole("button", { name: /ins Kassenbuch übernehmen/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Rechnung ins Kassenbuch" });
+    await expect(dialog.getByLabel("Betrag in €")).toHaveValue("89,90");
+    await dialog.getByLabel("Kategorie").selectOption({ label: "Sportmaterial" });
+    await dialog.getByRole("button", { name: "Ausgabe buchen" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(paid).toContainText(/im Kassenbuch Nr\. \d{4}-\d{4}/);
+    await paid
+      .getByRole("link", { name: /im Kassenbuch Nr\./ })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/finanzen\/kassenbuch\?q=/);
+    await expect(page.getByRole("row").nth(1)).toContainText("Rechnung vom");
+    await expect(page.getByRole("row").nth(1)).toContainText("−89,90 €");
   });
 });
 

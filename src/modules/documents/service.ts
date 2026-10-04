@@ -1,14 +1,19 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { assertFinance, canFinance } from "@/modules/finance/access";
 import type { DocumentAccess, InvoiceStatus } from "@/generated/prisma/enums";
-import { formatEuroFromCents, parseCalendarDate, todayCalendarDate } from "@/lib/dates";
+import {
+  formatCalendarDate,
+  formatEuroFromCents,
+  parseCalendarDate,
+  todayCalendarDate,
+} from "@/lib/dates";
 import { parseEuroToCents } from "@/lib/money";
 import { checkUpload, extensionOf, sanitizeFileName } from "@/lib/uploads";
 import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import { recordAudit } from "@/server/audit/audit";
-import type { TenantDb } from "@/server/db/tenant";
+import { lockUntilCommit, type TenantDb, type TenantTx } from "@/server/db/tenant";
 import { env } from "@/server/env";
-import { badRequest, forbidden, notFound, validationFailed } from "@/server/errors";
+import { badRequest, conflict, forbidden, notFound, validationFailed } from "@/server/errors";
 import { assertCan, can, scopeOf } from "@/server/permissions/policy";
 import { enforceRateLimit } from "@/server/security/rate-limit";
 import { deleteFile, openFile, saveFile } from "@/server/storage/files";
@@ -32,6 +37,9 @@ import type { DocumentInput } from "./schemas";
  * Rechnungen: Ein Dokument kann eine Rechnung sein (`Invoice`, 1:1). Erfassen und ändern darf das nur, wer
  * `finance:manage` hat; Betrag und Zahlungsstand sieht nur, wer `finance:read` hat – alle anderen sehen ein gewöhnliches
  * Dokument. Rechnungen heißen nach dem Tag des Hochladens („Rechnung vom 27.09.2026.pdf“, am selben Tag „(2)“ …).
+ *
+ * Belege im Kassenbuch: Stufe „Nur Finanzen“ (sieht, wer `finance:read` hat). Hängt ein Dokument an einer Buchung, setzt die
+ * Datenbank `retainUntil` (Ende der Aufbewahrungsfrist) und verweigert bis dahin Papierkorb, Archiv und Löschen.
  */
 export interface DocumentDto {
   id: string;
@@ -45,7 +53,9 @@ export interface DocumentDto {
   event: { id: string; title: string; startsAt: Date } | null;
   /** Nur für Berechtigte (`finance:read`), sonst immer `null`. */
   invoice: DocumentInvoice | null;
-  can: { manage: boolean };
+  /** Beleg im Kassenbuch: aufbewahrt bis (Löschen bis dahin gesperrt), sonst `null`. */
+  retainedUntil: Date | null;
+  can: { manage: boolean; delete: boolean };
 }
 
 export interface DocumentInvoice {
@@ -64,6 +74,7 @@ export interface DocumentInvoice {
 const include = {
   event: { select: { id: true, title: true, startsAt: true } },
   invoice: true,
+  _count: { select: { ledgerAttachments: true } },
 } satisfies Prisma.DocumentInclude;
 type DocumentRow = Prisma.DocumentGetPayload<{ include: typeof include }>;
 
@@ -71,6 +82,7 @@ export function allowedAccessLevels(ctx: TenantContext): DocumentAccess[] {
   const levels: DocumentAccess[] = ["ALL_MEMBERS"];
   if (can(ctx, "documents:manage")) levels.push("BOARD");
   if (can(ctx, "club:update")) levels.push("ADMIN");
+  if (canFinance(ctx, "finance:read")) levels.push("FINANCE");
   return levels;
 }
 
@@ -122,7 +134,13 @@ async function toDtos(ctx: TenantContext, rows: DocumentRow[]): Promise<Document
     createdAt: row.createdAt,
     event: row.event,
     invoice: finance && row.invoice ? invoiceDto(row.invoice, today) : null,
-    can: { manage: canManageDocument(ctx, row) },
+    retainedUntil:
+      row.retainUntil && row.retainUntil.getTime() >= today.getTime() ? row.retainUntil : null,
+    // Hängt das Dokument an einer Buchung, bleibt es (Frist läuft; danach bereinigt die Aufbewahrung des Kassenbuchs).
+    can: {
+      manage: canManageDocument(ctx, row),
+      delete: canManageDocument(ctx, row) && row._count.ledgerAttachments === 0,
+    },
   }));
 }
 
@@ -269,14 +287,26 @@ export interface UploadInput {
   } | null;
 }
 
+export interface UploadOptions {
+  /**
+   * Beleg im Kassenbuch: Hochladen dürfen dann alle mit „Finanzen bearbeiten“ (statt „Dokumente hochladen“). Läuft in der
+   * Transaktion des neuen Dokuments – hängt es an die Buchung; schlägt das fehl, entsteht auch kein Dokument.
+   */
+  receipt?: (tx: TenantTx, document: { id: string; name: string }) => Promise<void>;
+}
+
 export async function uploadDocument(
   ctx: TenantContext,
   input: UploadInput,
+  options: UploadOptions = {},
 ): Promise<{ id: string }> {
-  assertCan(ctx, "documents:upload");
+  if (options.receipt) assertFinance(ctx, "finance:manage");
+  else assertCan(ctx, "documents:upload");
   // Rechnungen erfasst nur, wer die Finanzen verwaltet – geprüft vor allem anderen, auch vor dem Speichern der Datei.
   if (input.invoice) assertFinance(ctx, "finance:manage");
-  await enforceRateLimit(`document-upload:${ctx.userId}`, 30, 3600);
+  // Belege eigener Topf mit mehr Luft: Nach einem Fest werden schnell 40 Kassenbons nachgereicht.
+  if (options.receipt) await enforceRateLimit(`receipt-upload:${ctx.userId}`, 200, 3600);
+  else await enforceRateLimit(`document-upload:${ctx.userId}`, 30, 3600);
 
   const maxBytes = env.MAX_UPLOAD_MB * 1024 * 1024;
   if (input.bytes.length > maxBytes)
@@ -295,7 +325,7 @@ export async function uploadDocument(
     : null;
   if (input.eventId && !event)
     throw validationFailed({ eventId: ["Diese Veranstaltung ist nicht verfügbar."] });
-  if (scopeOf(ctx, "documents:upload") === "DEPARTMENT") {
+  if (!options.receipt && scopeOf(ctx, "documents:upload") === "DEPARTMENT") {
     if (!event || !event.departmentId || !ctx.ledDepartmentIds.includes(event.departmentId)) {
       throw validationFailed({
         eventId: [
@@ -383,6 +413,7 @@ export async function uploadDocument(
               : `Rechnung „${document.name}“ erfasst (bereits bezahlt)`,
         });
       }
+      if (options.receipt) await options.receipt(tx, { id: document.id, name: document.name });
       return { id: document.id };
     });
   } catch (error) {
@@ -439,6 +470,9 @@ export async function updateDocument(
   if (ext && extensionOf(name) !== ext) name = `${name}.${ext}`;
 
   await ctx.db.$transaction(async (tx) => {
+    // Rechnung, die gerade ins Kassenbuch gebucht wird: abwarten (die Datenbank prüft danach Betrag und Zahlungsstand).
+    if (input.invoice && row.invoice)
+      await lockUntilCommit(tx, ctx.clubId, `invoice:${row.invoice.id}`);
     await tx.document.update({
       where: { id },
       data: { name, category: input.category ?? null, access: input.access },
@@ -506,6 +540,13 @@ export async function updateDocument(
 export async function deleteDocument(ctx: TenantContext, id: string): Promise<void> {
   const row = await loadVisible(ctx, id);
   if (!canManageDocument(ctx, row)) throw forbidden();
+  // Beleg im Kassenbuch: freundlich ablehnen (die Datenbank verweigert es ohnehin, solange die Frist läuft).
+  if (row._count.ledgerAttachments > 0)
+    throw conflict(
+      row.retainUntil && row.retainUntil.getTime() >= todayCalendarDate().getTime()
+        ? `„${row.name}“ ist ein Beleg im Kassenbuch und wird bis ${formatCalendarDate(row.retainUntil)} aufbewahrt – löschen geht erst danach.`
+        : `„${row.name}“ ist ein Beleg im Kassenbuch und bleibt dort angehängt.`,
+    );
   await ctx.db.$transaction(async (tx) => {
     await tx.document.update({ where: { id }, data: { deletedAt: new Date() } });
     await recordAudit(tx, auditActor(ctx), {

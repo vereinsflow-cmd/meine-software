@@ -24,10 +24,13 @@ export function MarkPaidButton({
   name,
   className,
   compact = false,
+  hint,
 }: {
   invoiceId: string;
   name: string;
   className?: string;
+  /** Zweite Zeile der Meldung (z. B. wo es weitergeht: „ins Kassenbuch übernehmen“). */
+  hint?: string;
   /** In Tabellen: auf kleinen Bildschirmen nur das Häkchen (die volle Beschriftung trägt `aria-label`). */
   compact?: boolean;
 }) {
@@ -42,6 +45,7 @@ export function MarkPaidButton({
         return;
       }
       toast.success(`„${name}“ ist als bezahlt markiert.`, {
+        description: hint,
         action: { label: "Rückgängig", onClick: () => reopen() },
       });
       router.refresh();

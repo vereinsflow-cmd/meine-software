@@ -47,6 +47,8 @@ const FINANCE_CODES = [
   "CASH_NEGATIVE",
   "FUTURE_DATE",
   "CATEGORY_IN_USE",
+  "DOCUMENT_RETAINED",
+  "INVOICE_BOOKED",
 ] as const;
 const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"]+)`);
 

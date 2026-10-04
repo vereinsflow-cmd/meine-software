@@ -6,12 +6,13 @@ import {
   balanceHistory,
   getLedgerSetup,
   listAccounts,
+  missingReceiptCount,
   yearSummary,
   type FinanceAccountDto,
   type LedgerSetup,
   type YearSummary,
 } from "./ledger";
-import { getOpenPayments, type OpenPayments } from "./service";
+import { getOpenPayments, unbookedPaidInvoiceCount, type OpenPayments } from "./service";
 
 /**
  * Daten der Finanz-Übersicht („Cockpit“): Kennzahlen, Monatszahlen, „Das steht an“, Konten und Ausgaben je Abteilung.
@@ -138,6 +139,16 @@ async function donationsAndDepartments(
   };
 }
 
+/** Erster Tag, an dem noch gebucht werden kann (Beginn des Kassenbuchs bzw. Tag nach dem letzten Abschluss). */
+function firstOpenDay(setup: LedgerSetup): Date {
+  const afterClose = setup.closedThrough
+    ? new Date(setup.closedThrough.getTime() + 86_400_000)
+    : setup.ledgerStartDate;
+  return afterClose.getTime() > setup.ledgerStartDate.getTime()
+    ? afterClose
+    : setup.ledgerStartDate;
+}
+
 /** Rechnungen: überfällige oben (dringend), bald fällige unter „Demnächst“. */
 function invoiceItems(payments: OpenPayments, canManage: boolean): DueItem[] {
   const items: DueItem[] = [];
@@ -213,12 +224,39 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
     };
   }
 
-  const [accounts, balancePoints, year, extra] = await Promise.all([
-    listAccounts(ctx),
-    balanceHistory(ctx, 12),
-    yearSummary(ctx, thisYear),
-    donationsAndDepartments(ctx, thisYear),
-  ]);
+  const [accounts, balancePoints, year, extra, missingReceipts, unbookedInvoices] =
+    await Promise.all([
+      listAccounts(ctx),
+      balanceHistory(ctx, 12),
+      yearSummary(ctx, thisYear),
+      donationsAndDepartments(ctx, thisYear),
+      missingReceiptCount(ctx),
+      unbookedPaidInvoiceCount(ctx, firstOpenDay(setup)),
+    ]);
+  if (unbookedInvoices > 0)
+    due.push({
+      key: "invoices-unbooked",
+      urgency: 30,
+      title:
+        unbookedInvoices === 1
+          ? "1 bezahlte Rechnung ins Kassenbuch übernehmen"
+          : `${unbookedInvoices} bezahlte Rechnungen ins Kassenbuch übernehmen`,
+      detail: "Bezahlt, aber noch nicht gebucht – ein Klick, die Rechnung hängt dann als Beleg an.",
+      tone: "neutral",
+      href: "/finanzen/rechnungen?stand=bezahlt",
+      actionLabel: canManage ? "Rechnungen buchen" : "Ansehen",
+    });
+  if (missingReceipts > 0)
+    due.push({
+      key: "receipts-missing",
+      urgency: 40,
+      title:
+        missingReceipts === 1 ? "1 Buchung ohne Beleg" : `${missingReceipts} Buchungen ohne Beleg`,
+      detail: "Zu jeder Einnahme und Ausgabe gehört ein Beleg – ein Foto der Quittung genügt.",
+      tone: "warning",
+      href: "/finanzen/kassenbuch?beleg=fehlt",
+      actionLabel: canManage ? "Belege nachreichen" : "Ansehen",
+    });
   const surplusPoints: number[] = [];
   year.months.reduce((sum, month) => {
     const next = sum + month.incomeCents - month.expenseCents;

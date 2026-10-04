@@ -96,6 +96,8 @@ const entryObject = z.object({
     .max(200),
   counterparty: z.string().trim().max(140).optional(),
   counterpartyMemberId: optionalId,
+  /** Bezahlte Rechnung („Ins Kassenbuch“): Zeilen verweisen auf sie, die Rechnung wird als Beleg angehängt. */
+  invoiceId: optionalId,
   lines: z.array(lineSchema).min(1).max(20),
 });
 
@@ -158,6 +160,19 @@ export function parseTarget(target: string | undefined): {
   if (target?.startsWith("v:")) return { departmentId: null, eventId: target.slice(2) };
   return { departmentId: null, eventId: null };
 }
+
+/** Eigenbeleg: Es gibt keinen Beleg – kurz festhalten, was bezahlt wurde und warum. */
+export const receiptNoteSchema = z.object({
+  entryId: id,
+  note: z
+    .string()
+    .trim()
+    .min(3, "Bitte beschreibe kurz, was bezahlt wurde und warum es keinen Beleg gibt.")
+    .max(500, "Bitte fasse dich kürzer (höchstens 500 Zeichen)."),
+});
+
+/** Einen angehängten Beleg entfernen. */
+export const attachmentIdSchema = z.object({ id });
 
 /** „Anfangsbestand korrigieren“ (nur solange der Beginn des Kassenbuchs nicht abgeschlossen ist). */
 export const openingSchema = z

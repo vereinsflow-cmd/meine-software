@@ -177,6 +177,8 @@ enum DocumentAccess {
   ALL_MEMBERS
   BOARD
   ADMIN
+  /// Belege im Kassenbuch: sichtbar nur mit dem Recht „Finanzen ansehen“.
+  FINANCE
 }
 
 /// Zahlungsstand einer Rechnung: offen (muss noch bezahlt werden) oder bezahlt.
@@ -402,6 +404,7 @@ model Club {
   financeCounters        FinanceCounter[]
   ledgerEntries          LedgerEntry[]
   ledgerLines            LedgerLine[]
+  ledgerAttachments      LedgerAttachment[]
   folders                DocumentFolder[]
   invitations            Invitation[]
   sessions               Session[]
@@ -1049,16 +1052,19 @@ model Document {
   uploadedById String?
   archivedAt   DateTime?      @db.Timestamptz(3)
   deletedAt    DateTime?      @db.Timestamptz(3)
+  /// Beleg im Kassenbuch: aufbewahren bis zu diesem Tag (setzt die Datenbank beim Anhängen; Löschen bis dahin gesperrt).
+  retainUntil  DateTime?      @db.Date
   createdAt    DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime       @updatedAt @db.Timestamptz(3)
 
-  club    Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  folder  DocumentFolder? @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
-  event   Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
-  member  Member?         @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
-  task    Task?           @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
+  club              Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  folder            DocumentFolder?    @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
+  event             Event?             @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  member            Member?            @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  task              Task?              @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
   /// Ist das Dokument eine Rechnung, stehen Betrag und Zahlungsstand hier.
-  invoice Invoice?
+  invoice           Invoice?
+  ledgerAttachments LedgerAttachment[]
 
   @@unique([clubId, id])
   @@index([clubId, folderId])
@@ -1086,8 +1092,10 @@ model Invoice {
   createdAt   DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime      @updatedAt @db.Timestamptz(3)
 
-  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  document Document @relation(fields: [clubId, documentId], references: [clubId, id], onDelete: Cascade)
+  club        Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  document    Document     @relation(fields: [clubId, documentId], references: [clubId, id], onDelete: Cascade)
+  /// Buchungen im Kassenbuch, die diese Rechnung bezahlen.
+  ledgerLines LedgerLine[]
 
   @@unique([clubId, id])
   @@unique([clubId, documentId])
@@ -1201,12 +1209,13 @@ model LedgerEntry {
   recordedAt           DateTime        @default(now()) @db.Timestamptz(3)
   createdById          String
 
-  club               Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  account            FinanceAccount @relation(fields: [clubId, accountId], references: [clubId, id], onDelete: Restrict)
-  counterpartyMember Member?        @relation(fields: [clubId, counterpartyMemberId], references: [clubId, id], onDelete: Restrict)
-  reversalOf         LedgerEntry?   @relation("LedgerReversal", fields: [clubId, reversalOfId], references: [clubId, id], onDelete: Restrict)
-  reversedBy         LedgerEntry?   @relation("LedgerReversal")
+  club               Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  account            FinanceAccount     @relation(fields: [clubId, accountId], references: [clubId, id], onDelete: Restrict)
+  counterpartyMember Member?            @relation(fields: [clubId, counterpartyMemberId], references: [clubId, id], onDelete: Restrict)
+  reversalOf         LedgerEntry?       @relation("LedgerReversal", fields: [clubId, reversalOfId], references: [clubId, id], onDelete: Restrict)
+  reversedBy         LedgerEntry?       @relation("LedgerReversal")
   lines              LedgerLine[]
+  attachments        LedgerAttachment[]
 
   @@unique([clubId, id])
   @@unique([clubId, year, number])
@@ -1233,12 +1242,15 @@ model LedgerLine {
   note         String?
   bookingDate  DateTime @db.Date
   accountId    String
+  /// Bezahlte Rechnung (Eingangsrechnung) – höchstens eine geltende Buchung je Rechnung.
+  invoiceId    String?
 
   club       Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   entry      LedgerEntry     @relation(fields: [clubId, entryId], references: [clubId, id], onDelete: Restrict)
   category   FinanceCategory @relation(fields: [clubId, categoryId], references: [clubId, id], onDelete: Restrict)
   department Department?     @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
   event      Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Restrict)
+  invoice    Invoice?        @relation(fields: [clubId, invoiceId], references: [clubId, id], onDelete: Restrict)
 
   @@unique([clubId, id])
   @@unique([clubId, entryId, position])
@@ -1246,6 +1258,28 @@ model LedgerLine {
   @@index([clubId, categoryId, bookingDate])
   @@index([clubId, departmentId, bookingDate])
   @@index([clubId, eventId])
+  @@index([clubId, invoiceId])
+}
+
+/// Beleg einer Buchung: eine Datei (Dokument „Nur Finanzen“, Rechnung …) oder ein Eigenbeleg als Text. Nicht änderbar;
+/// entfernen nur, solange der Zeitraum offen ist (Trigger der Migration finance_receipts).
+model LedgerAttachment {
+  id           String   @id @default(uuid(7))
+  clubId       String
+  entryId      String
+  documentId   String?
+  /// Eigenbeleg: was bezahlt wurde und warum es keinen Beleg gibt.
+  note         String?
+  attachedAt   DateTime @default(now()) @db.Timestamptz(3)
+  attachedById String?
+
+  club     Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entry    LedgerEntry @relation(fields: [clubId, entryId], references: [clubId, id], onDelete: Restrict)
+  document Document?   @relation(fields: [clubId, documentId], references: [clubId, id], onDelete: Restrict)
+
+  @@unique([clubId, id])
+  @@unique([clubId, entryId, documentId])
+  @@index([clubId, documentId])
 }
 
 // ----------------------------------------------------------------------------
