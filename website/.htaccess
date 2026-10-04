@@ -3,6 +3,11 @@
 
 ErrorDocument 404 /404.html
 
+<IfModule mod_mime.c>
+  # Web-Manifest (Name und Symbole, wenn jemand die Seite auf den Startbildschirm legt) mit dem richtigen Typ
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
 <IfModule mod_rewrite.c>
   # Immer https://vereins-flow.com (ohne „www.“, so lautet auch die kanonische Adresse). Die Prüfung über den Port
   # entspricht der IONOS-Anleitung. Bei einer anderen Domain auch die Adresse hier anpassen.
@@ -49,11 +54,12 @@ ErrorDocument 404 /404.html
   ExpiresByType text/css "access plus 1 day"
   ExpiresByType text/javascript "access plus 1 day"
   ExpiresByType application/javascript "access plus 1 day"
+  ExpiresByType application/manifest+json "access plus 1 day"
 </IfModule>
 
 <IfModule mod_deflate.c>
   # AddOutputFilterByType gehört zu mod_filter – ohne diesen Block gäbe es sonst einen 500-Fehler, falls mod_filter fehlt
   <IfModule mod_filter.c>
-    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript image/svg+xml application/json text/xml application/xml
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript image/svg+xml application/json application/manifest+json text/xml application/xml
   </IfModule>
 </IfModule>

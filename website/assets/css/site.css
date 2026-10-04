@@ -29,9 +29,12 @@
   --line: #e6ebf1;
   --line-strong: #d3dbe5;
 
-  /* Marke (Schrift-Akzente, Logo) und Aktion (Schaltflächen) – die Aktionsfarbe ist die der Anwendung */
-  --brand: #1c4a7a;
-  --brand-2: #5b9cd6;
+  /* Marke: Farben des Logos (Logo-Paket) – für das Zeichen im Einstieg, „in Fluss“ und kleine Akzente; Aktion
+     (Schaltflächen, Links) – die Aktionsfarbe ist die der Anwendung */
+  --brand: #3a6bea; /* Vereinsblau */
+  --brand-2: #8fb0ff; /* Himmel: das Blau des Logos auf dunklem Grund, hier für helle Verläufe */
+  --brand-ink: #1a1a1a; /* Schwarz des Zeichens */
+  --brand-orange: #ff8a5e; /* Signalorange: Punkt und Tempo-Striche */
   --accent: #0555b7;
   --accent-hover: #04479a;
   --on-accent: #ffffff;
@@ -302,7 +305,7 @@ html:not(.js) .site-header,
 .brand {
   display: inline-flex;
   align-items: center;
-  min-height: 44px; /* Tippfläche: das Logo selbst ist nur 26 px hoch */
+  min-height: 44px; /* Tippfläche: das Logo ist 40 px hoch (samt Schutzraum, der in der Datei steckt) */
   border-radius: 8px;
   transition: opacity 0.2s;
 }
@@ -311,9 +314,12 @@ html:not(.js) .site-header,
   opacity: 0.8;
 }
 
+/* Das Logo (assets/img/logo.svg aus dem Logo-Paket) bringt rundum einen schmalen Schutzraum mit; 178 px breit ist das
+   Zeichen gut 30 px hoch und die Wortmarke so groß wie die Navigation. Auf sehr schmalen Geräten (320 px) wird es kleiner,
+   bevor ein Knopf unter 44 px schrumpft (siehe .header-cta). */
 .brand img {
   display: block;
-  width: 164px;
+  width: 178px;
   height: auto;
 }
 
@@ -885,7 +891,7 @@ html:not(.js) .nav ul a:hover {
   pointer-events: none;
 }
 
-/* Weicher Lichtschein in den Farben des Logos (links dunkler, rechts heller) */
+/* Weicher Lichtschein in den Blautönen des Logos (links Vereinsblau, rechts das hellere Himmel) */
 .hero-glow {
   position: absolute;
   z-index: -1;
@@ -905,12 +911,12 @@ html:not(.js) .nav ul a:hover {
 
 .hero-glow::before {
   left: calc(50% - min(680px, 84vw) * 0.86);
-  background: radial-gradient(closest-side, rgb(47 116 184 / 20%), rgb(47 116 184 / 0%));
+  background: radial-gradient(closest-side, rgb(58 107 234 / 15%), rgb(58 107 234 / 0%));
 }
 
 .hero-glow::after {
   left: calc(50% - min(680px, 84vw) * 0.14);
-  background: radial-gradient(closest-side, rgb(91 156 214 / 26%), rgb(91 156 214 / 0%));
+  background: radial-gradient(closest-side, rgb(143 176 255 / 30%), rgb(143 176 255 / 0%));
 }
 
 .hero-copy {
@@ -923,38 +929,50 @@ html:not(.js) .nav ul a:hover {
   margin-inline: auto;
 }
 
-/* Das Logo hinter der Überschrift: zwei Kreise in den Logofarben, kräftig genug, um als Logo zu wirken, und so hell, dass
-   die Schrift davor gut lesbar bleibt (Überschrift über 9 : 1, „in Fluss“ über 3 : 1, Lead über 4,5 : 1).
-   Wo sie sich überdecken, entsteht von selbst die dunklere Mitte des Logos. Maße wie im Logo: Abstand der
-   Mittelpunkte = 0,728 × Durchmesser. Beim Aufruf gleiten sie von links und rechts herein (siehe „Bewegung“). */
-.hero h1 {
-  --mark: clamp(170px, 18vw + 110px, 380px);
+/* Das Zeichen von VereinsFlow hinter der Überschrift (svg.hero-mark in index.html, Formen aus dem Logo-Paket): groß und
+   blass in den Farben des Logos – die schwarzen Etappen links, die blauen rechts, unten der orange Punkt mit den
+   Tempo-Strichen. So hell, dass die Schrift davor gut lesbar bleibt (Überschrift über 7 : 1, „in Fluss“ über 3 : 1, Lead
+   über 4,5 : 1, gemessen über dem Zeichen). Die Blässe kommt aus opacity an den Gruppen, nicht aus halbdurchsichtigen
+   Farben: Fläche und Kontur (die runden Ecken wie im Logo) lägen sonst doppelt übereinander. Beim Aufruf gleiten die
+   Etappen von links und rechts herein, zuletzt der Punkt (siehe „Bewegung“); --mark ist die Höhe des Zeichens. */
+.hero-title {
+  --mark: min(clamp(190px, 19vw + 110px, 390px), 54vh);
   position: relative;
   isolation: isolate;
 }
 
-.hero h1::before,
-.hero h1::after {
-  content: "";
+.hero-mark {
   position: absolute;
   z-index: -1;
   top: 50%;
   left: 50%;
-  width: var(--mark);
-  aspect-ratio: 1;
-  margin: calc(var(--mark) / -2) 0 0 calc(var(--mark) / -2);
-  border-radius: 50%;
+  width: calc(var(--mark) * 1.0253); /* Seitenverhältnis des viewBox (246,81 : 240,72) */
+  height: var(--mark);
+  overflow: visible;
+  translate: -50% -50%;
   pointer-events: none;
 }
 
-.hero h1::before {
-  translate: calc(var(--mark) * -0.364) 0;
-  background: rgb(28 74 122 / 20%);
+.hero-mark path {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
 }
 
-.hero h1::after {
-  translate: calc(var(--mark) * 0.364) 0;
-  background: rgb(91 156 214 / 34%);
+.hero-mark-l {
+  color: var(--brand-ink);
+  opacity: 0.09;
+}
+
+.hero-mark-r {
+  color: var(--brand);
+  opacity: 0.18;
+}
+
+.hero-mark-dot {
+  fill: var(--brand-orange);
+  opacity: 0.26; /* der Punkt liegt unter der ersten Zeile des Leads */
 }
 
 .flow-word {
@@ -965,7 +983,7 @@ html:not(.js) .nav ul a:hover {
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .flow-word {
-    background: linear-gradient(100deg, var(--brand) 5%, var(--accent) 55%, #2563a6 100%);
+    background: linear-gradient(100deg, #2346bd 5%, var(--brand) 55%, #2a55d3 100%); /* Vereinsblau, an den Enden tiefer */
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -980,15 +998,15 @@ html:not(.js) .nav ul a:hover {
   bottom: -0.03em;
   height: 0.09em;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--brand-2), var(--accent));
-  opacity: 0.55;
+  background: linear-gradient(90deg, var(--brand-2), var(--brand));
+  opacity: 0.6;
   transform-origin: left;
 }
 
 .hero .lead {
   max-width: 42rem;
   margin: 28px auto 0;
-  color: var(--text); /* dunkler als sonst bei Leads: steht teils über den Logo-Kreisen */
+  color: var(--text); /* dunkler als sonst bei Leads: steht teils über dem Zeichen */
   text-wrap: balance;
 }
 
@@ -1093,7 +1111,7 @@ html:not(.js) .nav ul a:hover {
   }
 
   .brand img {
-    width: 136px;
+    width: 152px;
   }
 
   .hero {
@@ -6409,7 +6427,7 @@ html:not(.js) .nav ul a:hover {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(150deg, #2c74cc 0%, var(--accent) 45%, var(--brand) 100%);
+  background: linear-gradient(150deg, #2c74cc 0%, var(--accent) 45%, #1c4a7a 100%); /* dunkles Blau der Seite (nicht das Logo) */
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 22%),
     0 1px 1px rgb(5 85 183 / 20%),
@@ -7285,9 +7303,9 @@ html:not(.js) .nav ul a:hover {
 
 .footer-brand img {
   display: block;
-  width: 180px;
+  width: 200px;
   height: auto;
-  margin-bottom: 16px;
+  margin-bottom: 12px; /* das Logo bringt unten selbst etwa 4 px Schutzraum mit */
 }
 
 .footer-brand p {
@@ -7804,13 +7822,31 @@ html:not(.js) .nav ul a:hover {
     animation: underline-in 0.9s var(--ease-out) 0.9s both;
   }
 
-  /* Logo hinter der Überschrift: Die Kreise gleiten von links und rechts herein und fügen sich zum Logo */
-  .hero h1::before {
-    animation: mark-in-left 1.6s var(--ease-out) 0.1s both;
+  /* Zeichen hinter der Überschrift: Die schwarzen Etappen gleiten von links, die blauen von rechts herein – je Seite von
+     oben nach unten kurz nacheinander – und fügen sich zum V; zuletzt rollt der Punkt mit den Tempo-Strichen an. Bewegt
+     wird nur transform (in Einheiten des viewBox, wächst also mit dem Zeichen) und opacity. */
+  .hero-mark-l path {
+    animation: mark-in-left 1.4s var(--ease-out) both;
   }
 
-  .hero h1::after {
-    animation: mark-in-right 1.6s var(--ease-out) 0.1s both;
+  .hero-mark-r path {
+    animation: mark-in-right 1.4s var(--ease-out) both;
+  }
+
+  .hero-mark .hm-1 {
+    animation-delay: 0.1s;
+  }
+
+  .hero-mark .hm-2 {
+    animation-delay: 0.19s;
+  }
+
+  .hero-mark .hm-3 {
+    animation-delay: 0.28s;
+  }
+
+  .hero-mark-dot {
+    animation: mark-dot-in 0.8s var(--ease-out) 1.2s both;
   }
 
   .hero-glow::before {
@@ -8509,10 +8545,10 @@ html:not(.js) .nav ul a:hover {
 @keyframes mark-in-left {
   from {
     opacity: 0;
-    translate: calc(var(--mark) * -0.364 - 55vw) 0;
+    transform: translateX(-420px);
   }
 
-  35% {
+  40% {
     opacity: 1;
   }
 }
@@ -8520,11 +8556,19 @@ html:not(.js) .nav ul a:hover {
 @keyframes mark-in-right {
   from {
     opacity: 0;
-    translate: calc(var(--mark) * 0.364 + 55vw) 0;
+    transform: translateX(420px);
   }
 
-  35% {
+  40% {
     opacity: 1;
+  }
+}
+
+/* Endwert der Deckkraft ist die Blässe des Punkts (.hero-mark-dot), deshalb kein Zwischenwert */
+@keyframes mark-dot-in {
+  from {
+    opacity: 0;
+    transform: translateX(-70px);
   }
 }
 

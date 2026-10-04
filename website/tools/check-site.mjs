@@ -135,10 +135,10 @@ for (const file of textFiles) {
 
 // Nicht verwendete Bilder
 const isAsset = (f) => /assets[\\/]img[\\/]/.test(f) && /\.(webp|png|jpe?g|svg)$/.test(f);
-// og-image.png: Vorschaubild beim Teilen (nur in <meta>); logo-dark.svg: helle Wortmarke für dunkle Hintergründe,
-// erzeugt von make-logo-assets.mjs – die Website selbst ist immer weiß und nutzt sie derzeit nicht; logo-mail.png: Logo in der
-// Bestätigungs-E-Mail von newsletter.php (E-Mail-Programme laden es von der Website).
-const referencedElsewhere = new Set(["og-image.png", "logo-dark.svg", "logo-mail.png"]);
+// og-image.png: Vorschaubild beim Teilen (nur in <meta>); logo-dark.svg: helles Logo für dunkle Hintergründe aus dem
+// Logo-Paket (siehe make-logo-assets.mjs) – die Website selbst ist immer weiß und nutzt es derzeit nicht; logo-mail.png und
+// logo-mail@2x.png: Logo in der Bestätigungs-E-Mail von newsletter.php (E-Mail-Programme laden es von der Website).
+const referencedElsewhere = new Set(["og-image.png", "logo-dark.svg", "logo-mail.png", "logo-mail@2x.png"]);
 for (const file of files.filter(isAsset)) {
   if (usedFiles.has(path.normalize(file))) continue;
   if (referencedElsewhere.has(path.basename(file))) continue;

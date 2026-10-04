@@ -22,7 +22,8 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
 | `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Karten der Funktionen (rollen bei Bedarf ganz ins Bild, enden am Rand einer Kachelreihe, schließen, wenn der Fokus sie verlässt; Pfeiltasten wechseln zwischen den Kacheln – Öffnen und Schließen selbst laufen als Popover ohne Skript), Reiter „Im Detail“, Ladezustand der Bilder, Kopieren der E-Mail-Adresse im Kontaktbereich, Abdunkelung hinter dem offenen Menü (ohne JavaScript bleibt alles nutzbar; die Themen stehen dann untereinander) |
 | `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je Bild mehrere Größen (siehe „Hinweise zu den Aufnahmen“) |
-| `assets/img/`, `assets/brand/`        | Logo (Seite) und Logo-Vorlagen (Profilbilder, Präsentationen); Vorschaubild `og-image.png`   |
+| `assets/img/`, `assets/brand/`        | Logo (Seite, `logo.svg`), Logo für die Bestätigungs-E-Mail (`logo-mail.png`, `@2x`), Logo-Vorlagen (Presse, Präsentationen) und Vorschaubild `og-image.png` – alles aus dem Logo-Paket (siehe „Logo“) |
+| `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `android-chrome-*.png`, `site.webmanifest` | Symbole für Browser-Tab, Lesezeichen und Startbildschirm (aus dem Logo-Paket); das Web-Manifest nennt Name und Symbole |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (Domain `https://vereins-flow.com`)                                         |
 | `_headers`, `.htaccess`               | Sicherheits- und Cache-Header für Netlify/Cloudflare Pages bzw. Apache-Webspace              |
 | `Vorschau-starten.cmd`, `.command`    | Windows bzw. Mac: Doppelklick startet die Vorschau und öffnet den Browser                   |
@@ -136,22 +137,23 @@ Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (
 | `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` – dieselben Dateien wie das Paket, die Stildatei ebenso bereinigt (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/demo-vorbereiten.mjs`          | Füllt den Demo-Verein der Aufnahme-Datenbank `vf_website` für die Bilder auf (siehe unten); `--entfernen` nimmt alles wieder heraus. Arbeitet mit keiner anderen Datenbank |
 | `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`, Demo vorbereitet; `--only dashboard`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
-| `node tools/make-og-image.mjs`             | Erzeugt das Vorschaubild für das Teilen (`tools/og-template.html`, mit `site.css` und den Telefonbildern – nach neuen Aufnahmen neu erzeugen) |
-| `node tools/make-logo-assets.mjs`          | Erzeugt Logo-Dateien und Favicons aus den Vektordaten der Anwendung                                       |
+| `node tools/make-logo-assets.mjs <Logo-Paket>` | Übernimmt Logo-Dateien, Favicons, Vorschaubild und Mail-Logo aus dem Logo-Paket (Ordner `02-website`) und prüft Bildgrößen und die `width`/`height` der Logo-`<img>` (siehe „Logo“); `--pruefen` nur prüfen; ohne Abhängigkeiten |
+| `node tools/make-og-image.mjs <ziel.png>`  | Erzeugt eine zweite Fassung des Vorschaubilds mit den beiden Telefonen (`tools/og-template.html`, mit `site.css`, dem Logo und den Telefonbildern); `--ersetzen` statt eines Ziels ersetzt `assets/img/og-image.png` aus dem Logo-Paket |
 | `node tools/make-showcase-keyframes.mjs`   | Erzeugt die Keyframes der Vorführungen (Laptop und Telefon drehen sich beim Scrollen) aus den Bewegungsformeln und ersetzt sie am Ende von `assets/css/site.css`; ohne Abhängigkeiten |
 
 Hinweise zu den Aufnahmen:
 
 - **Reihenfolge:** Demo-App mit eigener Datenbank starten (siehe unten), `node tools/demo-vorbereiten.mjs`, dann
-  `node tools/capture-screenshots.mjs`, die beiden Nacharbeiten weiter unten (Positionen, `?v=`) und zuletzt
-  `node tools/make-og-image.mjs`. Für Bilder in genau dem Stand der Website am selben Tag vorbereiten und aufnehmen
+  `node tools/capture-screenshots.mjs` und die beiden Nacharbeiten weiter unten (Positionen, `?v=`). Das Vorschaubild
+  `og-image.png` kommt aus dem Logo-Paket und zeigt keine Aufnahmen; nur wer die Fassung mit den Telefonen nutzt
+  (`node tools/make-og-image.mjs --ersetzen`), erzeugt es danach neu. Für Bilder in genau dem Stand der Website am selben Tag vorbereiten und aufnehmen
   (Eintritte, Helferstunden und Hinweise wie „dringend“ rechnet die Anwendung vom heutigen Tag aus).
 - **`tools/demo-vorbereiten.mjs`** macht aus dem kleinen Seed einen lebendigen Verein und arbeitet nur mit der Datenbank
   `vf_website` (bricht bei jedem anderen Namen ab; Verbindung über `VF_DATABASE_URL`, Standard
   `postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website`). Es blendet im Dashboard des Demo-Administrators die
   Karten „Erste Schritte“ (Einrichtungs-Checkliste) und „Offene Zahlungen“ (Finanzen gibt es auf der Website noch nicht) aus –
   wie über „Anpassen“ in der Anwendung –, legt rund 210 erfundene Mitglieder mit leichtem Wachstum über zwölf Monate an
-  (Bestand etwa 213 → 232), wöchentliche Trainings bis nach dem Sommerfest, einzelne Termine rund um das Sommerfest,
+  (Bestand etwa 213 → 232), wöchentliche Trainings seit gut drei Monaten bis nach dem Sommerfest (sonst zeigte der Verlauf der Kennzahl „Termine in 30 Tagen“ einen Sprung von 1 auf 16), einzelne Termine rund um das Sommerfest,
   abgeschlossene Einsätze mit Helferstunden und einige Nachrichten der Seed-Konten (Bild im Laptop). **Termine:** Der Seed
   legt Sommerfest, Arbeitseinsatz & Co. ein bis zwei Wochen nach seinem Lauf an – auf der Website wären sie nach wenigen
   Tagen vorbei. Das Skript verschiebt deshalb alle kommenden Termine des Seeds (mit Schichten, Anmeldeschluss und
@@ -198,6 +200,32 @@ Hinweise zu den Aufnahmen:
 - Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo. Parallel laufende E2E-Tests der Anwendung nicht
   stören: Aufnahme und Tests belasten denselben Rechner.
 
+## Logo
+
+Das Logo (seit Oktober 2026): ein „V“ aus drei schwarzen (`#1A1A1A`) Etappen links und drei blauen (Vereinsblau `#3A6BEA`)
+rechts, darunter ein oranger Punkt (Signalorange `#FF8A5E`) mit Tempo-Strichen; daneben die Wortmarke „VereinsFlow“ (Manrope
+ExtraBold, geneigt) mit orangem Unterstrich. Für dunkle Flächen gibt es eine weiße Fassung mit Himmel-Blau (`#8FB0FF`), für
+kleine Größen bis 32 px eine ruhigere Form (zwei Etappen je Seite, ohne Tempo-Striche).
+
+- **Quelle aller Logo-Dateien ist das Logo-Paket** der Gestaltung (Ordner `02-website`, Dateien mit denselben Namen wie hier):
+  `favicon.svg`/`.ico`, `apple-touch-icon.png`, `android-chrome-192/512.png`, `assets/img/logo.svg`, `logo-dark.svg`,
+  `og-image.png`, `logo-mail.png` (+ `@2x`) und `assets/brand/*`. Nicht selbst nachzeichnen oder umfärben; ein neues Paket
+  übernimmt `node tools/make-logo-assets.mjs <Ordner des Pakets>` (prüft auch Bildgrößen und die `<img>`-Angaben). Danach
+  `?v=` an den Links erhöhen.
+- **Kopf- und Fußzeile:** `assets/img/logo.svg` mit `width="178" height="40"` (Kopf) bzw. `200 × 45` (Fuß); die Datei bringt
+  rundum etwas Schutzraum mit. Auf sehr schmalen Handys (320 px) wird das Logo in der Kopfzeile kleiner, bevor „Demo“ oder
+  der Menüknopf unter 44 px schrumpfen. Kopien: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`.
+- **Einstieg:** Das Zeichen steht groß und blass hinter der Überschrift (`svg.hero-mark` in `index.html`, Formen aus
+  `01-logo/svg/vereinsflow-symbol.svg` des Pakets; Farben, Größe und Bewegung in `site.css` unter `.hero-mark`). Beim Aufruf
+  gleiten die schwarzen Etappen von links, die blauen von rechts herein, zuletzt der Punkt; mit „Bewegung reduzieren“ steht
+  sofort das fertige Zeichen. Gemessener Kontrast der Schrift über dem Zeichen (Endzustand, 320 bis 1920 px): Überschrift
+  mindestens 10,8 : 1, „in Fluss“ 3,1 : 1, Lead 6,6 : 1, Kennzeile 4,8 : 1 – wer Deckkraft oder Größe ändert, misst neu.
+- **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen das V in der ruhigeren Form, spiegelpoliert bzw. als
+  glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
+  Regeln von `.device-mark` in `site.css`).
+- **Aufnahmen der Anwendung** zeigen das Logo der Anwendung (Seitenleiste im Dashboard und im Laptop) – ändert es sich dort,
+  die Bilder neu aufnehmen (siehe „Hinweise zu den Aufnahmen“).
+
 ## Benachrichtigung zum Start (`newsletter.php`)
 
 Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start und bei wichtigen Neuigkeiten anmelden
@@ -210,8 +238,9 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   in bereits verschickten E-Mails nicht mehr; das Skript bricht dann bewusst mit einer Fehlerseite ab. Den ganzen Ordner
   `/vereinsflow-daten` mitsichern und bei einem Umzug mitnehmen. ZIP-Paket, Entpack-Helfer und SFTP-Upload berühren ihn nicht.
 - **Bestätigungs-E-Mail:** gestaltet (HTML) und zusätzlich als reiner Text für Programme ohne HTML; Texte in
-  `vf_mail_bestaetigen` und `vf_mail_bestaetigen_html`. Das Logo darin ist `assets/img/logo-mail.png` (erzeugt von
-  `tools/make-logo-assets.mjs`) und wird von der Website geladen – die Datei nicht umbenennen oder löschen, sonst fehlt es auch in
+  `vf_mail_bestaetigen` und `vf_mail_bestaetigen_html`. Das Logo darin ist `assets/img/logo-mail.png` aus dem Logo-Paket
+  (570 × 87 mit dem Logo in der Mitte, gezeigt 300 px breit und mittig; für hohe Pixeldichte `logo-mail@2x.png` per `srcset`)
+  und wird von der Website geladen – die Dateien nicht umbenennen oder löschen, sonst fehlt das Logo auch in
   bereits verschickten E-Mails. Die Mail enthält bewusst nichts aus dem Formular (auch nicht den Vereinsnamen).
 - **Hinweis ans Team:** Je bestätigter Anmeldung geht eine kurze E-Mail an `kontakt@vereins-flow.com` – bewusst ohne Adresse,
   nur mit der Gesamtzahl.
@@ -254,11 +283,13 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
 - **Handlungsaufforderung:** „Demo anfragen“ per E-Mail – die Plattform ist geschlossen, neue Vereine richtet der Betreiber ein
   (siehe `/registrieren` der Anwendung). Ein Kontaktformular gibt es bewusst nicht; das einzige Formular ist die Anmeldung
   „Beim Start benachrichtigen“ (siehe unten).
-- **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Poppins)
-  liegt als Vektorgrafik vor.
-- **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen in deren Hauptfarbe (`--accent`), das Logo-Blau
-  (`--brand`) für Schrift-Akzente. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
-- **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
+- **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Manrope
+  ExtraBold, geneigt) liegt als Vektorgrafik vor.
+- **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen und Links in deren Hauptfarbe (`--accent`). Die Farben
+  des Logos (`--brand` Vereinsblau, `--brand-2` Himmel, `--brand-ink` Schwarz, `--brand-orange` Signalorange) nur für das
+  Zeichen im Einstieg, „in Fluss“ samt Unterstrich, den Lichtschein und den Fortschrittsbalken unter der Kopfzeile. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
+- **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS; hinter der Überschrift gleiten die Etappen des Logo-Zeichens
+  von links und rechts herein und fügen sich zum V, zuletzt der orange Punkt), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
   von `site.js`), leichte Parallaxe der Bilder (`.plx`), Live-Fenster im Kapitel „Helferschichten“ und in den vier Reitern „Im Detail“ (ein Mauszeiger bedient die Anwendung – Bildfolgen aus der Demo-App, aufgenommen mit `tools/capture-screenshots.mjs --only schichten,suche,mitglieder,kalender,auswertung`; die Abläufe stehen in `site.js`, `LIVE_SCENES`; bei den Helferschichten hebt der Ablauf zugleich den gerade gezeigten der drei Schritte darunter hervor, hält das Telefon daneben auf demselben Stand und hebt nach „Drucken“ den gedruckten Plan vom Stapel) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
   Unterstützung zeigen feste Bilder. Bewegt werden nur Transparenz und Transformationen, nie das Layout. Mit „Bewegung
   reduzieren“ im Betriebssystem ist alles sofort und ohne Animation sichtbar.
