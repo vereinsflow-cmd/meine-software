@@ -106,11 +106,13 @@ test.describe("Helferplanung – Veranstalter", () => {
     await expect(card1.getByText(/Hans Helfer/)).toBeVisible();
     await expect(card1.getByText("1 von 2")).toBeVisible();
 
-    // Aufgeklappt (Klick auf den Namen der Schicht): Namen untereinander, freie Plätze mit „Zuweisen“.
+    // Aufgeklappt (Klick auf den Namen der Schicht): Namen untereinander, darunter die freien Plätze mit „Zuweisen“.
     await card1.getByRole("button", { name: first, exact: true }).click();
     const names = card1.getByRole("list", { name: "Eingetragen" });
     await expect(names).toContainText("Hans Helfer");
-    await expect(names).toContainText("1 Platz frei");
+    await expect(names).not.toContainText("frei"); // die Liste nennt nur Personen
+    await expect(card1).toContainText("1 Platz frei");
+    await expect(card1.getByRole("button", { name: `Helfer für ${first} zuweisen` })).toBeVisible();
     await expect(names.getByRole("button", { name: "Hans Helfer austragen" })).toBeVisible();
 
     // Zweite, überschneidende Schicht: dieselbe Person ist nicht wählbar – mit Begründung.
@@ -121,9 +123,37 @@ test.describe("Helferplanung – Veranstalter", () => {
     await expect(option).toContainText(`Überschneidet sich mit der Schicht „${first}“`);
     await page.keyboard.press("Escape");
 
-    // Aufräumen
+    // Verklickt: „×“ trägt aus, „Rückgängig“ in der Meldung trägt wieder ein; der Fokus bleibt beim Namen der Schicht.
+    await names.getByRole("button", { name: "Hans Helfer austragen" }).click();
+    await expect(page.getByText("Hans Helfer ausgetragen.")).toBeVisible();
+    await expect(card1.getByText("0 von 2")).toBeVisible();
+    await expect(card1.getByRole("button", { name: first, exact: true })).toBeFocused();
+    await page.getByRole("button", { name: "Rückgängig" }).click();
+    await expect(page.getByText("Hans Helfer ist wieder eingetragen.")).toBeVisible();
+    await expect(card1.getByText("1 von 2")).toBeVisible();
+
+    // Aufräumen – danach steht der Fokus auf „Tagesablauf“ (die Zeile ist weg).
     await deleteShift(page, second);
     await deleteShift(page, first);
+    await expect(page.getByRole("heading", { level: 2, name: "Tagesablauf" })).toBeFocused();
+  });
+
+  test("Vorbeie Veranstaltung: Stunden über das Menü; Zuweisen und Löschen gibt es dort nicht mehr", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await page.goto("/veranstaltungen?zeitraum=vergangen");
+    const href = await page
+      .getByRole("link", { name: /Jahreshauptversammlung 2026/ })
+      .first()
+      .getAttribute("href");
+    await page.goto(`/helferplanung/${href!.split("/").pop()}`);
+    const row = page.getByRole("listitem", { name: "Schicht Bewirtung" });
+    await row.getByRole("button", { name: "Weitere Aktionen für „Bewirtung“" }).click();
+    await expect(page.getByRole("menuitem")).toHaveText(["Stunden erfassen", "Schicht bearbeiten"]);
+    await page.getByRole("menuitem", { name: "Stunden erfassen" }).click();
+    // Die Schicht klappt auf, der Fokus springt zum ersten Stunden-Knopf.
+    await expect(row.locator("[data-hours]").first()).toBeFocused();
   });
 
   test("Schicht mit Pflichtfeldern: Validierungsfehler statt Absturz", async ({ page }) => {

@@ -502,6 +502,36 @@ describe("Zuweisen durch Veranstalter", () => {
     expect(actions).toEqual(["shift.created", "shift.assigned", "shift.unassigned"]);
   });
 
+  it("„Rückgängig“ nach dem Austragen: wieder eingetragen, am alten Platz und ohne doppelte Nachricht", async () => {
+    const { ctx, event, people } = await setup();
+    const { id } = await createShift(ctx.board, event.id, shiftInput());
+    const maria = people.member;
+    await assignMember(ctx.board, { shiftId: id, memberId: maria.member.id });
+    await assignMember(ctx.board, { shiftId: id, memberId: people.helper.member.id });
+
+    await unassignMember(ctx.board, { shiftId: id, memberId: maria.member.id });
+    await assignMember(ctx.board, { shiftId: id, memberId: maria.member.id }, { undo: true });
+    // Die Nachricht „ausgetragen“ (noch ohne E-Mail) ist zurückgenommen, eine neue gibt es nicht.
+    expect((await notes(maria.user.id)).map((n) => n.type)).toEqual(["SHIFT_ASSIGNED"]);
+    const plan = await listShiftsForEvent(ctx.board, event.id);
+    expect(plan.shifts[0]!.assignments.map((a) => a.memberId)).toEqual([
+      maria.member.id,
+      people.helper.member.id,
+    ]);
+
+    // Hat sie die Nachricht schon gelesen, erfährt sie auch, dass sie wieder eingeteilt ist.
+    await unassignMember(ctx.board, { shiftId: id, memberId: maria.member.id });
+    await prisma.notification.updateMany({
+      where: { userId: maria.user.id, type: "SHIFT_CANCELLED" },
+      data: { readAt: new Date() },
+    });
+    await assignMember(ctx.board, { shiftId: id, memberId: maria.member.id }, { undo: true });
+    expect((await notes(maria.user.id)).map((n) => n.type)).toEqual([
+      "SHIFT_ASSIGNED",
+      "SHIFT_ASSIGNED",
+    ]);
+  });
+
   it("überschreitet die Helferzahl auch für Veranstalter nicht", async () => {
     const { ctx, event, people } = await setup();
     const { id } = await createShift(ctx.board, event.id, shiftInput({ requiredCount: 1 }));
@@ -669,6 +699,85 @@ describe("Helferstunden", () => {
 
     const dept = await getHoursOverview(ctx.lead, year);
     expect(dept.rows.map((r) => r.name)).toEqual(["Helfer, Hanna"]); // nur Fußball-Einsätze
+  });
+});
+
+describe("Helferplan: was geht wann", () => {
+  it("kennt vorbeie Schichten; Zuweisen nur, wo es geht; Löschen nicht mehr nach Beginn mit Helfern", async () => {
+    const { ctx, club, event, people } = await setup();
+    const past = await createShiftRow(club.id, event.id, {
+      title: "Aufbau",
+      startsAt: new Date(Date.now() - 4 * H),
+      endsAt: new Date(Date.now() - H),
+      requiredCount: 3,
+    });
+    await prisma.shiftAssignment.create({
+      data: { clubId: club.id, shiftId: past.id, memberId: people.helper.member.id },
+    });
+    const emptyPast = await createShiftRow(club.id, event.id, {
+      title: "Kasse",
+      startsAt: new Date(Date.now() - 3 * H),
+      endsAt: new Date(Date.now() - 2 * H),
+    });
+    const full = await createShiftRow(club.id, event.id, { title: "Voll", requiredCount: 1 });
+    await assignMember(ctx.board, { shiftId: full.id, memberId: people.helper2.member.id });
+    await createShiftRow(club.id, event.id, {
+      title: "Offen",
+      startsAt: new Date(Date.now() + 60 * H),
+    });
+
+    const byTitle = async (c = ctx.board) =>
+      new Map((await listShiftsForEvent(c, event.id)).shifts.map((s) => [s.title, s]));
+    const plan = await byTitle();
+    expect(plan.get("Aufbau")).toMatchObject({
+      ended: true,
+      started: true,
+      can: { assign: true, assignMore: false, delete: false },
+    });
+    expect(plan.get("Voll")).toMatchObject({ ended: false, can: { assignMore: false } });
+    expect(plan.get("Offen")).toMatchObject({
+      ended: false,
+      can: { assignMore: true, delete: true },
+    });
+    expect(plan.get("Kasse")).toMatchObject({ can: { delete: true } }); // begonnen, aber ohne Helfer
+
+    await expect(deleteShift(ctx.board, past.id)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringContaining("Helferstunden erhalten"),
+    });
+    await deleteShift(ctx.board, emptyPast.id);
+
+    // Entwurf: niemand lässt sich zuweisen (im Dialog wäre jede Person gesperrt).
+    await prisma.event.update({ where: { id: event.id }, data: { status: "DRAFT" } });
+    expect((await byTitle()).get("Offen")).toMatchObject({ can: { assignMore: false } });
+    await prisma.event.update({ where: { id: event.id }, data: { status: "PUBLISHED" } });
+
+    // Abgesagte Schicht: kein „Austragen“ mehr für die Eingetragene.
+    await prisma.eventShift.update({ where: { id: full.id }, data: { status: "CANCELLED" } });
+    expect((await byTitle(ctx.helper2)).get("Voll")).toMatchObject({ can: { signOut: false } });
+  });
+
+  it("Meine Einsätze: nur veröffentlichte und abgeschlossene Veranstaltungen; die Übersicht zählt beendete Schichten", async () => {
+    const { ctx, club, event } = await setup();
+    const { id } = await createShift(ctx.board, event.id, shiftInput());
+    await signUp(ctx.helper, id);
+    expect((await listMyAssignments(ctx.helper)).map((a) => a.title)).toEqual(["Getränkestand"]);
+    for (const status of ["DRAFT", "ARCHIVED"] as const) {
+      await prisma.event.update({ where: { id: event.id }, data: { status } });
+      expect(await listMyAssignments(ctx.helper)).toEqual([]);
+    }
+    await prisma.event.update({ where: { id: event.id }, data: { status: "PUBLISHED" } });
+
+    await createShiftRow(club.id, event.id, {
+      title: "Aufbau",
+      startsAt: new Date(Date.now() - 4 * H),
+      endsAt: new Date(Date.now() - H),
+    });
+    const plans = await listUpcomingShiftPlans(ctx.board);
+    expect(plans.find((p) => p.eventId === event.id)).toMatchObject({
+      endedShifts: 1,
+      shifts: [expect.objectContaining({ title: "Getränkestand" })],
+    });
   });
 });
 

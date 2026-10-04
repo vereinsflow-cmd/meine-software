@@ -55,12 +55,39 @@ describe("buildTimeline", () => {
     expect(timeline.ticks).toHaveLength(10); // 18 Stunden, jede zweite beschriftet
   });
 
+  it("Veranstaltung länger als die Achse (Zeltlager): Achse nur aus den Schichten, ohne Band", () => {
+    const lager = {
+      startsAt: at("17:00", "2026-10-16"),
+      endsAt: at("13:00", "2026-10-18"),
+      allDay: false,
+    };
+    const timeline = buildTimeline(lager, [shift("10:00", "12:00"), shift("14:00", "18:00")])!;
+    expect(timeline.ticks[0]!.label).toBe("10:00");
+    expect(timeline.ticks.at(-1)!.label).toBe("18:00");
+    expect(timeline.band).toBeNull();
+  });
+
+  it("markiert „jetzt“, solange es auf der Achse liegt", () => {
+    const shifts = [shift("09:00", "11:00"), shift("18:00", "20:00")];
+    // 09:00–22:00 (13 Stunden); 17:30 Uhr liegt bei 8,5 Stunden
+    expect(buildTimeline(fest, shifts, at("17:30").getTime())!.now).toBeCloseTo((8.5 / 13) * 100);
+    expect(buildTimeline(fest, shifts, at("08:00").getTime())!.now).toBeNull();
+    expect(buildTimeline(fest, shifts, at("23:00").getTime())!.now).toBeNull();
+  });
+
   it("nichts zu zeigen: ohne Schichten oder über mehr als einen Tag verteilt", () => {
     expect(buildTimeline(fest, [])).toBeNull();
     expect(
       buildTimeline({ ...fest, allDay: true }, [
         shift("09:00", "11:00"),
         { startsAt: at("09:00", "2026-10-18"), endsAt: at("12:00", "2026-10-18") },
+      ]),
+    ).toBeNull();
+    // Aufbau am Vorabend: zusammen keine 24 Stunden, aber an zwei Tagen – ohne Tag an der Achse wäre das missverständlich.
+    expect(
+      buildTimeline(fest, [
+        { startsAt: at("18:00", "2026-10-16"), endsAt: at("22:00", "2026-10-16") },
+        shift("14:00", "16:00"),
       ]),
     ).toBeNull();
   });

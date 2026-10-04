@@ -98,6 +98,16 @@ export async function assignMemberAction(input: unknown): Promise<ActionResult> 
   }, "shift-assign");
 }
 
+/** „Rückgängig“ nach „×“: wieder zuweisen, ohne die Person zweimal zu benachrichtigen (siehe `assignMember`). */
+export async function undoUnassignAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const data = parseInput(assignSchema.extend({ eventId: idSchema.shape.id.optional() }), input);
+    await assignMember(await requireTenantContext(), data, { undo: true });
+    refresh(data.eventId);
+    return undefined;
+  }, "shift-assign");
+}
+
 /** Lädt die Zuweisungsliste erst beim Öffnen des Dialogs (spart Abfragen, solange niemand zuweist). */
 export async function listAssignableAction(
   input: unknown,

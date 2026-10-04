@@ -60,6 +60,15 @@ export default async function PrintShiftPlanPage({
     }),
   ]);
 
+  // Auswahl: kommende Veranstaltungen mit Helferbedarf – dazu die gewählten, die dort fehlen (z. B. alle Schichten schon vorbei),
+  // sonst fiele die Veranstaltung beim nächsten „Auswahl anwenden“ stillschweigend aus der Auswahl.
+  const pickerIds = new Set(pickerEvents.map((event) => event.eventId));
+  const choices = [
+    ...pickerEvents.map(({ eventId, title, startsAt }) => ({ eventId, title, startsAt })),
+    ...planEvents
+      .filter((event) => eventIds.includes(event.id) && !pickerIds.has(event.id))
+      .map(({ id, title, startsAt }) => ({ eventId: id, title, startsAt })),
+  ];
   const filtered = eventIds.length > 0 || Boolean(from) || Boolean(untilDay) || onlyOpen;
   const summary = [
     eventIds.length > 0
@@ -107,13 +116,13 @@ export default async function PrintShiftPlanPage({
             <legend className="text-sm font-medium">
               Veranstaltungen (ohne Auswahl: alle kommenden mit Helferbedarf)
             </legend>
-            {pickerEvents.length === 0 ? (
+            {choices.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Keine kommenden Veranstaltungen mit Helferbedarf.
               </p>
             ) : (
               <div className="grid gap-1.5 sm:grid-cols-2">
-                {pickerEvents.map((event) => (
+                {choices.map((event) => (
                   <label key={event.eventId} className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
