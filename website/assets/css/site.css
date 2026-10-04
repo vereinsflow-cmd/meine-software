@@ -8321,12 +8321,12 @@ html:not(.js) .nav ul a:hover {
   }
 
   /* Smartphone und Handy quer: Fingertipp auf „Eintragen“ im Telefon der Helferschichten, kurz bevor es auf den Stand
-     danach überblendet (site.js). Lage: Mitte des Knopfs im Bild „vorher“ (waagerecht mittig, 54,3 % der Bildhöhe) –
-     nach einer neuen Aufnahme prüfen. */
+     danach überblendet (site.js). Lage: Mitte des Knopfs im Bild „vorher“ (69,9 % der Bildbreite, 13,3 % der Bildhöhe) –
+     nach einer neuen Aufnahme prüfen (tools/capture-screenshots.mjs meldet sie unter „Positionen“). */
   .js .story-tap {
     position: absolute;
-    top: 54.3%;
-    left: 50%;
+    top: 13.31%;
+    left: 69.88%;
     width: 48px;
     aspect-ratio: 1;
     border: 2px solid rgb(255 255 255 / 92%);

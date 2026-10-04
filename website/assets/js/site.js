@@ -162,8 +162,8 @@
       steps: [
         ["step", 1], ["frame", 1], ["phone", 1], ["show"], ["wait", 700],
         ["move", "63.6% 4.75%", 1150], ["frame", 5, 150], ["wait", 1700],
-        ["step", 2], ["frame", 1, 150], ["move", "82.53% 74.08%", 1200], ["frame", 2, 150], ["wait", 450], ["click"], ["frame", 3], ["phone", 0, 150], ["wait", 2300],
-        ["step", 3], ["frame", 0, 150], ["move", "91.33% 4.75%", 1150], ["frame", 4, 150], ["wait", 400], ["click"], ["print", true], ["wait", 2800],
+        ["step", 2], ["frame", 1, 150], ["move", "87.28% 85.6%", 1200], ["frame", 2, 150], ["wait", 450], ["click"], ["frame", 3], ["phone", 0, 150], ["wait", 2300],
+        ["step", 3], ["frame", 0, 150], ["move", "77.2% 4.75%", 1150], ["frame", 4, 150], ["wait", 400], ["click"], ["print", true], ["wait", 2800],
         ["print", false], ["frame", 0, 150], ["move", "50% 96%", 1000], ["hide"], ["step", 0], ["wait", 1100],
       ],
     },
@@ -393,7 +393,7 @@
       // Smartphone und quer gehaltenes Handy: Dort fehlt das Fenster (site.css), dem Telefon gehört dann allein der
       // Moment, der überzeugt – einmal je Aufruf. Kurz bevor es ins Bild kommt, legt sich sein Bild „vorher“ darüber
       // (2 von 4, „Eintragen“). Steht es zur Hälfte im Bild, ist Schritt 1 hervorgehoben; nach einer kurzen Weile tippt
-      // ein Finger auf „Eintragen“, das Bild blendet auf den Stand danach über (3 von 4, „Mein Einsatz“), Schritt 2 ist
+      // ein Finger auf „Eintragen“, das Bild blendet auf den Stand danach über (3 von 4, eigener Name), Schritt 2 ist
       // hervorgehoben. Verlässt es vorher das Bild, beginnt die Weile beim nächsten Mal neu. Ohne JavaScript und bei
       // reduzierter Bewegung zeigt das Telefon gleich den Stand danach.
       const storyPhone = story?.querySelector(".story-phone");
