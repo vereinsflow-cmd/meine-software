@@ -78,9 +78,13 @@ test.describe("Dashboard selbst einstellen", () => {
     const check = async () => {
       await expect(kpis).toHaveAttribute("data-size", "s");
       await expect(group.locator('[data-slot="quote-chart"]')).toHaveCount(0); // kein Kursverlauf
-      const tops = await group
-        .getByRole("link")
-        .evaluateAll((links) => links.map((link) => Math.round(link.getBoundingClientRect().top)));
+      // Gemessen werden die Zellen des Rasters, nicht die Karten: Eine Karte unter dem Mauszeiger hebt sich beim Überfahren
+      // um 2 px an (`hover:-translate-y-0.5`) – und nach „Speichern“ steht der Zeiger dort, wo eben der Knopf war, oft über
+      // einer Kennzahl (auch nach dem Neuladen).
+      const tops = await group.evaluate((carousel) =>
+        [...carousel.children].map((cell) => Math.round(cell.getBoundingClientRect().top)),
+      );
+      expect(tops).toHaveLength(4);
       expect(new Set(tops).size).toBe(1); // eine Reihe
       // „Meine Aufgaben“ über die volle Breite, die beiden übrigen „Für dich“-Karten darunter nebeneinander
       const tasks = (await page.getByRole("region", { name: "Meine Aufgaben" }).boundingBox())!;

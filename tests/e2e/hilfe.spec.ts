@@ -122,6 +122,9 @@ test.describe("Hilfe & Support – Problem melden und bearbeiten", () => {
     page,
     browser,
   }) => {
+    // Drei Anmeldungen (jede lädt danach das Dashboard) und viele Seitenaufrufe: Auf einem ausgelasteten Rechner reichen die
+    // üblichen 45 s nicht – wie bei den Beitritts-Tests mehr Zeit.
+    test.setTimeout(90_000);
     const subject = unique("E2E Problem");
     const answer = "Wir kümmern uns darum – danke für den Hinweis!";
     const dialogs: string[] = [];
@@ -224,6 +227,7 @@ test.describe("Hilfe & Support – Problem melden und bearbeiten", () => {
     page,
     browser,
   }) => {
+    test.setTimeout(90_000); // vier Anmeldungen nacheinander (siehe oben)
     for (const email of [USERS.mitglied, USERS.helfer, USERS.vorstand]) {
       await login(page, email);
       await open(page, "/hilfe/meldungen");
