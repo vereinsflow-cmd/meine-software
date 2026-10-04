@@ -38,8 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026100301';
-const VF_SKRIPT = '/assets/js/site.js?v=2026100301'; // Menü der Kopfzeile auf dem Smartphone
+const VF_STYLESHEET = '/assets/css/site.css?v=2026100402';
+const VF_SKRIPT = '/assets/js/site.js?v=2026100402'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
@@ -82,7 +82,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <title>' . vf_h($titel) . ' – VereinsFlow</title>
   <meta name="robots" content="noindex">
   <meta name="color-scheme" content="light">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg?v=2026100401" type="image/svg+xml">
   <link rel="stylesheet" href="' . vf_h(VF_STYLESHEET) . '">
   <script src="' . vf_h(VF_SKRIPT) . '" defer></script>
 </head>
@@ -102,7 +102,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <div class="container header-inner">
     <a class="brand" href="/" aria-label="VereinsFlow – zur Startseite">
       <picture>
-        <img src="/assets/img/logo.svg" alt="" width="174" height="28">
+        <img src="/assets/img/logo.svg?v=2026100401" alt="" width="178" height="40">
       </picture>
     </a>
     <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
@@ -136,7 +136,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
     <div class="footer-grid">
       <div class="footer-brand">
         <picture>
-          <img src="/assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
+          <img src="/assets/img/logo.svg?v=2026100401" alt="VereinsFlow" width="200" height="45">
         </picture>
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
         <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
@@ -635,7 +635,11 @@ function vf_mail_bestaetigen_html(string $link, string $abmeldelink, string $fri
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
 <tr>
 <td class="vf-karte" style="background-color:#ffffff;border:1px solid #e1e7ef;border-radius:16px;padding:36px 40px 34px;font-family:{{schrift}};font-size:16px;line-height:1.6;color:#354559;">
-<a href="{{start}}" style="text-decoration:none;"><img src="{{logo}}" width="190" height="29" alt="VereinsFlow" style="display:block;width:190px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;font-family:{{schrift}};font-size:22px;font-weight:700;line-height:29px;color:#1c4a7a;"></a>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center" style="text-align:center;"><a href="{{start}}" style="text-decoration:none;"><img src="{{logo}}" srcset="{{logo}} 1x, {{logo2x}} 2x" width="300" height="46" alt="VereinsFlow" style="display:block;width:300px;max-width:100%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;font-family:{{schrift}};font-size:22px;font-weight:700;line-height:46px;color:#1a1a1a;"></a></td>
+</tr>
+</table>
 <h1 class="vf-titel" style="margin:30px 0 14px;font-family:{{schrift}};font-size:24px;line-height:1.3;font-weight:700;color:#0e1a2b;">Bitte bestätigen Sie Ihre Anmeldung</h1>
 <p style="margin:0 0 14px;">Guten Tag,</p>
 <p style="margin:0 0 26px;">vielen Dank für Ihr Interesse an VereinsFlow! Sie haben sich auf <a href="{{start}}" target="_blank" style="color:#0555b7;text-decoration:none;white-space:nowrap;">vereins-flow.com</a> eingetragen, um zum Start und bei wichtigen Neuigkeiten eine <span style="white-space:nowrap;">E-Mail</span> von uns zu bekommen. Dafür brauchen wir noch Ihre Bestätigung:</p>
@@ -686,7 +690,10 @@ HTML;
         // Füllzeichen nach dem Vorschautext, damit die Vorschau im Posteingang nicht mit dem Seitentext weiterläuft
         '{{fuellung}}' => str_repeat('&#8199;&#65279;&#847;', 40),
         '{{start}}' => vf_h(VF_BASIS_URL . '/'),
+        // Kopfbild aus dem Logo-Paket: 570 × 87 mit dem Logo in der Mitte (rundum weißer Rand), gezeigt 300 px breit und
+        // deshalb mittig; @2x für Bildschirme mit hoher Pixeldichte (Programme ohne srcset nehmen src)
         '{{logo}}' => vf_h(VF_BASIS_URL . '/assets/img/logo-mail.png'),
+        '{{logo2x}}' => vf_h(VF_BASIS_URL . '/assets/img/logo-mail@2x.png'),
         '{{link}}' => vf_h($link),
         '{{frist}}' => vf_h($frist),
         '{{tage}}' => (string) VF_FRIST_TAGE,

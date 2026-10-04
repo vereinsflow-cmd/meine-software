@@ -9,9 +9,10 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="color-scheme" content="light">
 
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="favicon.ico" sizes="48x48">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="favicon.svg?v=2026100401" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico?v=2026100401" sizes="48x48">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026100401">
+  <link rel="manifest" href="site.webmanifest?v=2026100401">
 
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
@@ -19,7 +20,7 @@
   <meta property="og:title" content="VereinsFlow – Vereinsverwaltung mit Helferplanung">
   <meta property="og:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
   <meta property="og:url" content="https://vereins-flow.com/">
-  <meta property="og:image" content="https://vereins-flow.com/assets/img/og-image.png?v=2026100301">
+  <meta property="og:image" content="https://vereins-flow.com/assets/img/og-image.png?v=2026100401">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="VereinsFlow – Bringt Vereinsarbeit in Fluss">
@@ -28,8 +29,8 @@
   <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100401">
-  <script src="assets/js/site.js?v=2026100401" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100402">
+  <script src="assets/js/site.js?v=2026100402" defer></script>
 
   <script type="application/ld+json">
   {
@@ -51,7 +52,7 @@
         "url": "https://vereins-flow.com/",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://vereins-flow.com/apple-touch-icon.png?v=2026100301",
+          "url": "https://vereins-flow.com/apple-touch-icon.png?v=2026100401",
           "width": 180,
           "height": 180
         },
@@ -126,20 +127,22 @@
   
   
   
-  <!-- Zeichen von VereinsFlow (die beiden Kreise aus dem Logo) spiegelpoliert für den Deckel des Laptops: ein gemeinsamer,
-       weicher Metallverlauf über beide Kreise, die Schnittfläche dunkler, am Rand eine feine Lichtkante. Kanten weich über
-       die Masken (m-mark-*) statt einer Kontur: Schräg gesehen wird der Deckel verkürzt gezeichnet, eine harte Kante
-       zerfiele dabei in Punkte. -->
-  <linearGradient id="g-mirror" gradientUnits="userSpaceOnUse" x1="700" y1="300" x2="860" y2="560"><stop offset="0" stop-color="#f7f7f8"/><stop offset=".3" stop-color="#d9dbdd"/><stop offset=".55" stop-color="#bec1c4"/><stop offset=".8" stop-color="#cbcdd0"/><stop offset="1" stop-color="#9fa2a6"/></linearGradient>
-  <radialGradient id="g-mark-edge"><stop offset=".9" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-  <radialGradient id="g-mark-rim"><stop offset=".84" stop-color="#fff" stop-opacity="0"/><stop offset=".935" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-  <mask id="m-mark-l"><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mark-edge)"/></mask>
-  <mask id="m-mark-r"><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mark-edge)"/></mask>
-  <symbol id="i-mark-mirror" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mirror)" mask="url(#m-mark-l)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mirror)" fill-opacity="0.7" mask="url(#m-mark-r)"/><g mask="url(#m-mark-l)"><circle cx="975.5" cy="420.5" r="131" fill="#7b7e83" mask="url(#m-mark-r)"/></g><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/></symbol>
+  <!-- Zeichen von VereinsFlow: das V aus dem Logo-Paket in der ruhigeren Form für kleine Größen (wie favicon.svg: je Seite
+       zwei Etappen, ohne Tempo-Striche, darunter der Punkt) – auf Deckel und Rückseite ist es nur etwa 15 bis 55 px hoch.
+       Spiegelpoliert für den Deckel des Laptops: ein gemeinsamer Metallverlauf mit dunklerem Band (sonst verschwänden die
+       schmalen Etappen im hellen Aluminium), der Punkt dunkler, an den Rändern eine feine Lichtkante. Kanten weich über eine
+       leichte Unschärfe im Zeichen (f-mark-soft) statt einer harten Kontur: Schräg gesehen wird der Deckel verkürzt
+       gezeichnet, eine harte Kante zerfiele dabei in Punkte. viewBox im Seitenverhältnis von .device-mark (451 : 261), das
+       V füllt die Höhe; Koordinaten wie im Logo-Paket. -->
+  <defs><path id="p-mark-l" d="M42.32 -40L91.4 -40L109.69 46.08L60.62 46.08ZM62.53 55.08L111.61 55.08L127.16 128.25L78.09 128.25Z"/><path id="p-mark-r" d="M286.49 -52L232.13 -52L179.98 46.08L234.34 46.08ZM229.55 55.08L175.19 55.08L136.29 128.25L190.65 128.25Z"/><path id="p-mark-dot" d="M126.68 137.47a25 25 0 1 1 0 50a25 25 0 1 1 0-50Z"/></defs>
+  <filter id="f-mark-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.8"/></filter>
+  <clipPath id="c-mark"><use href="#p-mark-l"/><use href="#p-mark-r"/><use href="#p-mark-dot"/></clipPath>
+  <linearGradient id="g-mirror" gradientUnits="userSpaceOnUse" x1="65.7" y1="-44" x2="153.1" y2="196"><stop offset="0" stop-color="#f4f5f6"/><stop offset=".28" stop-color="#c3c6ca"/><stop offset=".5" stop-color="#9a9ea4"/><stop offset=".72" stop-color="#babdc1"/><stop offset="1" stop-color="#85898f"/></linearGradient>
+  <symbol id="i-mark-mirror" viewBox="-51.59 -57.27 431.99 250"><g filter="url(#f-mark-soft)"><use href="#p-mark-l" fill="url(#g-mirror)" stroke="url(#g-mirror)" stroke-width="2.5" stroke-linejoin="round"/><use href="#p-mark-r" fill="url(#g-mirror)" stroke="url(#g-mirror)" stroke-width="2.5" stroke-linejoin="round"/><use href="#p-mark-dot" fill="#7b7e83"/></g><g clip-path="url(#c-mark)"><g filter="url(#f-mark-soft)" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8" stroke-linejoin="round"><use href="#p-mark-l"/><use href="#p-mark-r"/><use href="#p-mark-dot"/></g></g></symbol>
   <!-- Dasselbe Zeichen als glänzende Einlage im matten Rückglas des Telefons: polierter Verlauf im warmen Ton des Glases
-       (je nach Licht heller oder dunkler als die matte Fläche), Schnittfläche dunkler, weiche Kanten wie oben -->
-  <linearGradient id="g-gloss-warm" gradientUnits="userSpaceOnUse" x1="700" y1="300" x2="860" y2="560"><stop offset="0" stop-color="#f8f0e6"/><stop offset=".35" stop-color="#dac8b3"/><stop offset=".6" stop-color="#b9a38b"/><stop offset=".85" stop-color="#d3c0aa"/><stop offset="1" stop-color="#a38c74"/></linearGradient>
-  <symbol id="i-mark-gloss" viewBox="655 290 451 261"><circle cx="785.5" cy="420.5" r="131" fill="url(#g-gloss-warm)" mask="url(#m-mark-l)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-gloss-warm)" fill-opacity="0.7" mask="url(#m-mark-r)"/><g mask="url(#m-mark-l)"><circle cx="975.5" cy="420.5" r="131" fill="#927c66" mask="url(#m-mark-r)"/></g><circle cx="785.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/><circle cx="975.5" cy="420.5" r="131" fill="url(#g-mark-rim)"/></symbol>
+       (je nach Licht heller oder dunkler als die matte Fläche), Punkt dunkler, weiche Kanten wie oben -->
+  <linearGradient id="g-gloss-warm" gradientUnits="userSpaceOnUse" x1="65.7" y1="-44" x2="153.1" y2="196"><stop offset="0" stop-color="#fbf5ee"/><stop offset=".28" stop-color="#d6c3ad"/><stop offset=".5" stop-color="#ad967d"/><stop offset=".72" stop-color="#cdb9a2"/><stop offset="1" stop-color="#957d65"/></linearGradient>
+  <symbol id="i-mark-gloss" viewBox="-51.59 -57.27 431.99 250"><g filter="url(#f-mark-soft)"><use href="#p-mark-l" fill="url(#g-gloss-warm)" stroke="url(#g-gloss-warm)" stroke-width="2.5" stroke-linejoin="round"/><use href="#p-mark-r" fill="url(#g-gloss-warm)" stroke="url(#g-gloss-warm)" stroke-width="2.5" stroke-linejoin="round"/><use href="#p-mark-dot" fill="#927c66"/></g><g clip-path="url(#c-mark)"><g filter="url(#f-mark-soft)" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="8" stroke-linejoin="round"><use href="#p-mark-l"/><use href="#p-mark-r"/><use href="#p-mark-dot"/></g></g></symbol>
   <!-- Statusleiste der Telefon-Rahmen: Mobilfunk, WLAN, Akku (eigene Zeichnung, gefüllt statt Linien) -->
   <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
 </svg>
@@ -148,7 +151,7 @@
   <div class="container header-inner">
     <a class="brand" href="#top" aria-label="VereinsFlow – zum Seitenanfang">
       <picture>
-        <img src="assets/img/logo.svg" alt="" width="174" height="28">
+        <img src="assets/img/logo.svg?v=2026100401" alt="" width="178" height="40">
       </picture>
     </a>
     <!-- Unter 900 px: „Demo anfragen“ (am Handy kurz „Demo“) neben dem Menüknopf, sobald gescrollt ist. Beide stehen vor der
@@ -184,7 +187,30 @@
     <div class="container">
       <div class="hero-copy">
         <p class="eyebrow intro intro-1"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg>Vereinsverwaltung mit Helferplanung</p>
-        <h1 id="hero-title"><span class="word word-1">Bringt</span> <span class="word word-2">Vereinsarbeit</span> <span class="word word-3"><span class="flow-word">in Fluss</span></span></h1>
+        <!-- Das Zeichen von VereinsFlow groß und blass hinter der Überschrift (nur Schmuck): Beim Aufruf gleiten die drei
+             schwarzen Etappen von links und die drei blauen von rechts herein und fügen sich zum V, zuletzt rollt der orange
+             Punkt mit den Tempo-Strichen an. Formen wie im Logo-Paket (01-logo/svg/vereinsflow-symbol.svg); Farben,
+             Größe und Bewegung in site.css (.hero-mark). width/height 0: ohne Stildatei bleibt es unsichtbar. -->
+        <div class="hero-title">
+          <svg class="hero-mark" viewBox="40.93 -53.25 246.81 240.72" width="0" height="0" aria-hidden="true" focusable="false">
+            <g class="hero-mark-l">
+              <path class="hm-1" d="M42.32 -40.00 L91.40 -40.00 L104.49 21.58 L55.41 21.58 Z"/>
+              <path class="hm-2" d="M57.33 30.58 L106.40 30.58 L116.87 79.84 L67.80 79.84 Z"/>
+              <path class="hm-3" d="M69.71 88.84 L118.78 88.84 L127.16 128.25 L78.09 128.25 Z"/>
+            </g>
+            <g class="hero-mark-r">
+              <path class="hm-1" d="M286.49 -52.00 L232.13 -52.00 L193.00 21.58 L247.37 21.58 Z"/>
+              <path class="hm-2" d="M242.58 30.58 L188.22 30.58 L162.03 79.84 L216.39 79.84 Z"/>
+              <path class="hm-3" d="M211.60 88.84 L157.24 88.84 L136.29 128.25 L190.65 128.25 Z"/>
+            </g>
+            <g class="hero-mark-dot">
+              <rect x="64.93" y="157.22" width="26.25" height="10.50" rx="5.25"/>
+              <rect x="40.93" y="157.22" width="15.00" height="10.50" rx="5.25"/>
+              <circle cx="126.68" cy="162.47" r="25.00"/>
+            </g>
+          </svg>
+          <h1 id="hero-title"><span class="word word-1">Bringt</span> <span class="word word-2">Vereinsarbeit</span> <span class="word word-3"><span class="flow-word">in Fluss</span></span></h1>
+        </div>
         <p class="lead intro intro-3">VereinsFlow bündelt Mitglieder, Termine, Helferschichten und Nachrichten an einem Ort. Helfer tragen sich selbst ein, und der Vorstand sieht sofort, wo noch jemand fehlt.</p>
         <div class="hero-actions intro intro-4">
           <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
@@ -205,7 +231,7 @@
               <!-- Unter 720 px ist das Fenster ausgeblendet: dort nur eine winzige Leerdatei statt des Dashboards laden
                    (die Content-Security-Policy erlaubt keine data:-Adressen) -->
               <source media="(max-width: 719px)" srcset="assets/img/leer.svg" width="1" height="1">
-              <img src="assets/img/app/dashboard-light-960.webp?v=2026100301" srcset="assets/img/app/dashboard-light-960.webp?v=2026100301 960w, assets/img/app/dashboard-light-1440.webp?v=2026100301 1440w, assets/img/app/dashboard-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1240px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern mit Verlauf und Vergleich zum Vormonat, zu Terminen der nächsten 30 Tage, freien Helferplätzen und Helferstunden, oben die zentrale Suche">
+              <img src="assets/img/app/dashboard-light-960.webp?v=2026100401" srcset="assets/img/app/dashboard-light-960.webp?v=2026100401 960w, assets/img/app/dashboard-light-1440.webp?v=2026100401 1440w, assets/img/app/dashboard-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1240px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern mit Verlauf und Vergleich zum Vormonat, zu Terminen der nächsten 30 Tage, freien Helferplätzen und Helferstunden, oben die zentrale Suche">
             </picture>
           </div>
         </div>
@@ -214,7 +240,7 @@
           <div class="phone-screen">
             <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
             <picture>
-              <img src="assets/img/app/phone-dashboard-light-221.webp?v=2026100301" srcset="assets/img/app/phone-dashboard-light-221.webp?v=2026100301 221w, assets/img/app/phone-dashboard-light-260.webp?v=2026100301 260w, assets/img/app/phone-dashboard-light-332.webp?v=2026100301 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026100301 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026100301 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026100301 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026100301 780w" sizes="(max-width: 719px) min(260px, 67vw), min(221px, 19.7vw)" width="780" height="1520" decoding="async" alt="Dashboard auf dem Smartphone: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und die Kennzahl Mitglieder mit Vergleich zum Vormonat und Verlauf">
+              <img src="assets/img/app/phone-dashboard-light-221.webp?v=2026100401" srcset="assets/img/app/phone-dashboard-light-221.webp?v=2026100401 221w, assets/img/app/phone-dashboard-light-260.webp?v=2026100401 260w, assets/img/app/phone-dashboard-light-332.webp?v=2026100401 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026100401 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026100401 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026100401 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026100401 780w" sizes="(max-width: 719px) min(260px, 67vw), min(221px, 19.7vw)" width="780" height="1520" decoding="async" alt="Dashboard auf dem Smartphone: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und die Kennzahl Mitglieder mit Vergleich zum Vormonat und Verlauf">
             </picture>
           </div>
         </div>
@@ -285,7 +311,7 @@
             <div class="laptop-screen">
               <span class="laptop-camera" aria-hidden="true"></span>
               <picture>
-                <img src="assets/img/app/nachrichten-light-880.webp?v=2026100301" srcset="assets/img/app/nachrichten-light-880.webp?v=2026100301 880w, assets/img/app/nachrichten-light-960.webp?v=2026100301 960w, assets/img/app/nachrichten-light-1320.webp?v=2026100301 1320w, assets/img/app/nachrichten-light-1760.webp?v=2026100301 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.15), calc((100vh - 218px) * 0.98)), min(880px, 80vw, calc((100vh - 218px) * 0.98))" width="1920" height="1200" loading="lazy" decoding="async" alt="Nachrichten von VereinsFlow auf dem Laptop: Im Chat „Alle Mitglieder“ steht eine Ankündigung zum Arbeitseinsatz am Vereinsheim; Häkchen und Zahl darunter zeigen, dass 4 von 5 Empfängern sie gelesen haben. Links die Chats für Helfer, Teilnehmer und Abteilungen">
+                <img src="assets/img/app/nachrichten-light-880.webp?v=2026100401" srcset="assets/img/app/nachrichten-light-880.webp?v=2026100401 880w, assets/img/app/nachrichten-light-960.webp?v=2026100401 960w, assets/img/app/nachrichten-light-1320.webp?v=2026100401 1320w, assets/img/app/nachrichten-light-1760.webp?v=2026100401 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.15), calc((100vh - 218px) * 0.98)), min(880px, 80vw, calc((100vh - 218px) * 0.98))" width="1920" height="1200" loading="lazy" decoding="async" alt="Nachrichten von VereinsFlow auf dem Laptop: Im Chat „Alle Mitglieder“ steht eine Ankündigung zum Arbeitseinsatz am Vereinsheim; Häkchen und Zahl darunter zeigen, dass 4 von 5 Empfängern sie gelesen haben. Links die Chats für Helfer, Teilnehmer und Abteilungen">
               </picture>
             </div>
             <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark-mirror"/></svg></div>
@@ -712,15 +738,15 @@
               <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
               <div class="live-screen">
                 <picture>
-                  <img src="assets/img/app/suche-light-960.webp?v=2026100301" srcset="assets/img/app/suche-light-960.webp?v=2026100301 960w, assets/img/app/suche-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
+                  <img src="assets/img/app/suche-light-960.webp?v=2026100401" srcset="assets/img/app/suche-light-960.webp?v=2026100401 960w, assets/img/app/suche-light-1440.webp?v=2026100401 1440w, assets/img/app/suche-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
                 </picture>
                 <!-- Live-Fenster (Zentrale Suche: Strg K, „Hel“ tippen, Treffer zeigen) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
                 <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/suche-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-1-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-2-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-3-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-3-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-3-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-3-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-4-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-4-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-4-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-4-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-5-light-960.webp?v=2026100301" srcset="assets/img/app/suche-live-5-light-960.webp?v=2026100301 960w, assets/img/app/suche-live-5-light-1440.webp?v=2026100301 1440w, assets/img/app/suche-live-5-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-1-light-960.webp?v=2026100401" srcset="assets/img/app/suche-live-1-light-960.webp?v=2026100401 960w, assets/img/app/suche-live-1-light-1440.webp?v=2026100401 1440w, assets/img/app/suche-live-1-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-2-light-960.webp?v=2026100401" srcset="assets/img/app/suche-live-2-light-960.webp?v=2026100401 960w, assets/img/app/suche-live-2-light-1440.webp?v=2026100401 1440w, assets/img/app/suche-live-2-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-3-light-960.webp?v=2026100401" srcset="assets/img/app/suche-live-3-light-960.webp?v=2026100401 960w, assets/img/app/suche-live-3-light-1440.webp?v=2026100401 1440w, assets/img/app/suche-live-3-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-4-light-960.webp?v=2026100401" srcset="assets/img/app/suche-live-4-light-960.webp?v=2026100401 960w, assets/img/app/suche-live-4-light-1440.webp?v=2026100401 1440w, assets/img/app/suche-live-4-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/suche-live-5-light-960.webp?v=2026100401" srcset="assets/img/app/suche-live-5-light-960.webp?v=2026100401 960w, assets/img/app/suche-live-5-light-1440.webp?v=2026100401 1440w, assets/img/app/suche-live-5-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
                   <span class="live-keys"><kbd>Strg</kbd><kbd>K</kbd></span>
                   <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
                 </div>
@@ -733,7 +759,7 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-suche-light-260.webp?v=2026100301" srcset="assets/img/app/phone-suche-light-260.webp?v=2026100301 260w, assets/img/app/phone-suche-light-390.webp?v=2026100301 390w, assets/img/app/phone-suche-light-520.webp?v=2026100301 520w, assets/img/app/phone-suche-light-780.webp?v=2026100301 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone, geöffnet über die Lupe: Treffer für „Hel“ als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten und Mitglieder">
+                <img src="assets/img/app/phone-suche-light-260.webp?v=2026100401" srcset="assets/img/app/phone-suche-light-260.webp?v=2026100401 260w, assets/img/app/phone-suche-light-390.webp?v=2026100401 390w, assets/img/app/phone-suche-light-520.webp?v=2026100401 520w, assets/img/app/phone-suche-light-780.webp?v=2026100401 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone, geöffnet über die Lupe: Treffer für „Hel“ als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten und Mitglieder">
               </picture>
             </div>
           </div>
@@ -843,12 +869,12 @@
               <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
               <div class="live-screen">
                 <picture>
-                  <img src="assets/img/app/auswertung-light-960.webp?v=2026100301" srcset="assets/img/app/auswertung-light-960.webp?v=2026100301 960w, assets/img/app/auswertung-light-1440.webp?v=2026100301 1440w, assets/img/app/auswertung-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
+                  <img src="assets/img/app/auswertung-light-960.webp?v=2026100401" srcset="assets/img/app/auswertung-light-960.webp?v=2026100401 960w, assets/img/app/auswertung-light-1440.webp?v=2026100401 1440w, assets/img/app/auswertung-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
                 </picture>
                 <!-- Live-Fenster (Auswertungen: Diagramm als Fläche und als Balken) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
                 <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/auswertung-live-1-light-960.webp?v=2026100301" srcset="assets/img/app/auswertung-live-1-light-960.webp?v=2026100301 960w, assets/img/app/auswertung-live-1-light-1440.webp?v=2026100301 1440w, assets/img/app/auswertung-live-1-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/auswertung-live-2-light-960.webp?v=2026100301" srcset="assets/img/app/auswertung-live-2-light-960.webp?v=2026100301 960w, assets/img/app/auswertung-live-2-light-1440.webp?v=2026100301 1440w, assets/img/app/auswertung-live-2-light-1920.webp?v=2026100301 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/auswertung-live-1-light-960.webp?v=2026100401" srcset="assets/img/app/auswertung-live-1-light-960.webp?v=2026100401 960w, assets/img/app/auswertung-live-1-light-1440.webp?v=2026100401 1440w, assets/img/app/auswertung-live-1-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
+                  <img class="live-frame" src="assets/img/app/auswertung-live-2-light-960.webp?v=2026100401" srcset="assets/img/app/auswertung-live-2-light-960.webp?v=2026100401 960w, assets/img/app/auswertung-live-2-light-1440.webp?v=2026100401 1440w, assets/img/app/auswertung-live-2-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
                   <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
                 </div>
               </div>
@@ -1101,7 +1127,7 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <picture>
-          <img src="assets/img/logo.svg" alt="VereinsFlow" width="190" height="31">
+          <img src="assets/img/logo.svg?v=2026100401" alt="VereinsFlow" width="200" height="45">
         </picture>
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
         <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->

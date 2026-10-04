@@ -16,9 +16,9 @@
 //   (ein Samstag weit nach dem Start der Website), samt Schichten, Anmeldeschluss und Fälligkeit der Sommerfest-Aufgaben;
 //   Wochentage und Uhrzeiten bleiben. „Sommerfest 2026“ heißt danach FEST_TITLE (auch in den Benachrichtigungen).
 //   Vergangenes (Jahreshauptversammlung) bleibt, wo es ist.
-// - Kalender: Trainings (Fußball Herren, Tischtennis, Jugend, Handball) jede Woche von heute bis einige Wochen nach dem
-//   Sommerfest – so stimmen die Kennzahl „Termine in 30 Tagen“ und der Monat des Sommerfests im Kalender –, dazu einzelne
-//   Termine rund um das Sommerfest.
+// - Kalender: Trainings (Fußball Herren, Tischtennis, Jugend, Handball) jede Woche seit gut drei Monaten bis einige Wochen
+//   nach dem Sommerfest – so stimmen die Kennzahl „Termine in 30 Tagen“ samt ihrem Verlauf über zwölf Wochen und der Monat
+//   des Sommerfests im Kalender –, dazu einzelne Termine rund um das Sommerfest.
 // - Helferstunden: abgeschlossene Einsätze der letzten Wochen mit eingetragenen Stunden (Verlauf der Kennzahl).
 // - Nachrichten: einige gesendete Nachrichten der Seed-Konten (Bild „nachrichten“ im Laptop der Website: der Chat „Alle
 //   Mitglieder“ mit einer Ankündigung zum Arbeitseinsatz und der Lesestatistik). Empfänger sind wie beim echten Versand
@@ -277,18 +277,26 @@ function buildMembers(today, seedNames) {
 // ---------------------------------------------------------------------------------------------------------------------
 
 /**
- * Termine: Trainingsreihen jede Woche von heute bis vier Wochen nach dem Sommerfest (Samstag `fest`), einige einzelne
+ * Wie weit die Trainingsreihen zurückreichen: Die Kennzahl „Termine in 30 Tagen“ zeigt ihren Verlauf über zwölf Wochen
+ * (die Anwendung zählt zu jedem Zeitpunkt die Termine der folgenden 30 Tage). Begännen die Trainings erst heute, stünde
+ * dort „+15 (+1.500 %)“ statt eines ruhigen Verlaufs wie in einem echten Verein.
+ */
+const PAST_TRAINING_WEEKS = 13;
+
+/**
+ * Termine: Trainingsreihen jede Woche von 13 Wochen vor heute bis vier Wochen nach dem Sommerfest (Samstag `fest`), einige einzelne
  * Termine rund um das Sommerfest und abgeschlossene Einsätze mit Helferstunden (vom heutigen Tag aus). `herren`: Tage, an
  * denen schon ein Fußball-Training Herren des Seeds liegt (die Reihe des Seeds wird nur ergänzt).
  */
 function buildEvents(fest, today, herren) {
   const week = addDays(fest, -5); // Montag der Sommerfest-Woche
   const weeksAhead = Math.ceil(daysBetween(addDays(today, -weekday(today)), week) / 7); // so viele Wochen ab dieser
+  const firstDay = addDays(today, -7 * PAST_TRAINING_WEEKS);
   const events = [];
   const series = (key, title, dept, weekdayIndex, from, to, location, skip = new Set()) => {
-    for (let w = -weeksAhead; w <= 4; w++) {
+    for (let w = -weeksAhead - PAST_TRAINING_WEEKS; w <= 4; w++) {
       const day = addDays(week, w * 7 + weekdayIndex);
-      if (day < today || skip.has(day)) continue;
+      if (day < firstDay || skip.has(day)) continue;
       events.push({ key, title, type: "TRAINING", dept, day, from, to, location, status: "PUBLISHED" });
     }
   };

@@ -1,9 +1,12 @@
 <!doctype html>
-<!-- Vorlage für das Vorschaubild beim Teilen der Website (1200 × 630). Erzeugt wird es mit: node tools/make-og-image.mjs
-     Gestaltet wie der Einstieg der Website (weiß, Lichtschein und Blau des Logos, Überschrift mit Unterstrich) und mit den
-     Stilen der Website (site.css) für Kennzeile, Überschrift und Telefonrahmen. Logo und Kernaussage stehen im mittleren
-     Quadrat (630 × 630): Messenger schneiden das Bild in kleinen Vorschauen oft quadratisch aus der Mitte. Links und rechts
-     je ein Telefon mit echten Aufnahmen (Dashboard, Helferplanung mit „Eintragen“). -->
+<!-- Vorlage für eine zweite Fassung des Vorschaubilds beim Teilen der Website (1200 × 630), mit den beiden Telefonen.
+     Das Vorschaubild assets/img/og-image.png stammt seit dem neuen Logo aus dem Logo-Paket (Markenbild: Logo und „Bringt
+     Vereinsarbeit in Fluss“). Wer lieber diese Fassung zeigen will: node tools/make-og-image.mjs --ersetzen
+     Gestaltet wie der Einstieg der Website (weiß, Lichtschein in den Blautönen des Logos, Überschrift mit Unterstrich) und
+     mit den Stilen der Website (site.css) für Kennzeile, Überschrift und Telefonrahmen; das Logo ist assets/img/logo.svg aus
+     dem Logo-Paket. Logo und Kernaussage stehen im mittleren Quadrat (630 × 630): Messenger schneiden das Bild in kleinen
+     Vorschauen oft quadratisch aus der Mitte. Links und rechts je ein Telefon mit echten Aufnahmen (Dashboard,
+     Helferplanung mit „Eintragen“). -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -39,7 +42,8 @@
     justify-content: center;
     text-align: center;
   }
-  .logo { width: 236px; height: auto; margin-bottom: 30px; }
+  /* Das Logo bringt rundum etwas Schutzraum mit (unten gut 10 px bei dieser Breite) */
+  .logo { width: 270px; height: auto; margin-bottom: 20px; }
   .copy .eyebrow { margin-bottom: 22px; padding: 6px 15px 6px 12px; font-size: 17px; }
   .copy .eyebrow .icon { width: 18px; height: 18px; }
   h1 { margin: 0; font-size: 58px; line-height: 1.04; }

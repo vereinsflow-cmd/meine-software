@@ -1,113 +1,111 @@
-// Erzeugt Logo- und Favicon-Dateien aus den Vektordaten der App (src/components/shared/brand-logo*.ts[x]).
-// Die Maße und Farben stammen aus docs/brand/README.md der App; ändert sich das Logo dort, dieses Skript erneut ausführen:
+// Übernimmt die Logo-Dateien der Website aus dem Logo-Paket (Ordner „02-website“ des Pakets, das die Gestaltung liefert –
+// Stand: neues Logo vom Oktober 2026). Die Dateien sind dort fertig gezeichnet (Schrift in Pfade umgewandelt, Favicons in
+// der ruhigeren Form für kleine Größen); dieses Skript erzeugt deshalb nichts mehr selbst, sondern kopiert sie an ihren
+// Platz, prüft die Bildgrößen und meldet <img>-Angaben, die nicht zum Seitenverhältnis des Logos passen.
 //
-//   node tools/make-logo-assets.mjs
-import { createRequire } from "node:module";
-import fs from "node:fs/promises";
+//   node tools/make-logo-assets.mjs <Ordner des Logo-Pakets>    kopieren und prüfen (oder VF_LOGO_PAKET setzen)
+//   node tools/make-logo-assets.mjs --pruefen [<Ordner>]         nur prüfen; mit Ordner auch, ob alles dem Paket entspricht
+//
+// Danach an den geänderten Dateien `?v=` erhöhen (siehe README „Veröffentlichen“), sonst zeigen Browser bis zu 7 Tage die
+// alten Bilder. Ohne Abhängigkeiten (kein sharp, kein Playwright).
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const APP_DIR = process.env.VF_APP_DIR ?? path.resolve(root, ".."); // Repository-Hauptordner (Anwendung)
-const sharp = createRequire(path.join(APP_DIR, "package.json"))("sharp");
+const args = process.argv.slice(2);
+const nurPruefen = args.includes("--pruefen");
+const paketArg = args.find((a) => !a.startsWith("--")) ?? process.env.VF_LOGO_PAKET;
+const paket = paketArg ? path.resolve(paketArg) : null;
+if (!paket && !nurPruefen) {
+  console.error("Aufruf: node tools/make-logo-assets.mjs <Ordner des Logo-Pakets>   (oder --pruefen)");
+  process.exit(2);
+}
+// Der Ordner „02-website“ darf direkt oder über den Paketordner angegeben werden
+const quelle = paket && fs.existsSync(path.join(paket, "02-website")) ? path.join(paket, "02-website") : paket;
 
-const source = await fs.readFile(path.join(APP_DIR, "src/components/shared/brand-logo-paths.ts"), "utf8");
-const pathData = (key) => {
-  const match = source.match(new RegExp(`\\b${key}\\s*:\\s*(["'\`])([\\s\\S]*?)\\1`));
-  if (!match) throw new Error(`Pfad „${key}“ nicht in brand-logo-paths.ts gefunden`);
-  return match[2].replace(/\s+/g, " ").trim();
+/** Dateien der Website aus dem Paket – mit Pixelmaßen, wo es auf sie ankommt. */
+const DATEIEN = {
+  "favicon.svg": null,
+  "favicon.ico": null,
+  "apple-touch-icon.png": [180, 180],
+  "android-chrome-192.png": [192, 192], // Web-Manifest (site.webmanifest)
+  "android-chrome-512.png": [512, 512],
+  "assets/img/logo.svg": null, // Kopf- und Fußzeile aller Seiten (auch newsletter.php)
+  "assets/img/logo-dark.svg": null,
+  "assets/img/og-image.png": [1200, 630], // Vorschaubild beim Teilen (og:image)
+  "assets/img/logo-mail.png": [570, 87], // Kopf der Bestätigungs-E-Mail (newsletter.php) – Adresse nie ändern
+  "assets/img/logo-mail@2x.png": [1140, 174],
+  "assets/brand/logo-horizontal.svg": null, // Vorlagen (Presse, Präsentationen)
+  "assets/brand/logo-horizontal-dark.svg": null,
+  "assets/brand/logo-stacked.svg": null,
+  "assets/brand/logo-stacked-dark.svg": null,
+  "assets/brand/logo-stacked.png": null,
 };
-const paths = { vereins: pathData("vereins"), flow: pathData("flow"), tagline: pathData("tagline") };
 
-// Farben wie in globals.css (--logo-*), hell und dunkel
-const palettes = {
-  light: { dark: "#1c4a7a", light: "#5b9cd6", overlap: "#112e4f", ink: "#12253b", muted: "#78827a" },
-  dark: { dark: "#4a8ccf", light: "#8dbbe8", overlap: "#2b5f98", ink: "#eef3f9", muted: "#9aa5a0" },
+const pngMasse = (datei) => {
+  const b = fs.readFileSync(datei);
+  if (b.length < 24 || b.toString("latin1", 1, 4) !== "PNG") return null;
+  return [b.readUInt32BE(16), b.readUInt32BE(20)];
 };
 
-const symbol = (c) => `<circle cx="785.5" cy="420.5" r="130.5" fill="${c.dark}"/>
-    <circle cx="975.5" cy="420.5" r="130.5" fill="${c.light}"/>
-    <path d="M880.5 331.03A130.5 130.5 0 0 0 880.5 509.97A130.5 130.5 0 0 0 880.5 331.03Z" fill="${c.overlap}"/>`;
-const wordmark = (c) => `<path d="${paths.vereins}" fill="${c.ink}"/>
-    <path d="${paths.flow}" fill="${c.dark}"/>`;
+let hinweise = 0;
+const melde = (text) => {
+  hinweise++;
+  console.log(`  ✗ ${text}`);
+};
 
-const TITLE = "VereinsFlow – Bringt Vereinsarbeit in Fluss";
-const horizontal = (c) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1005 162" role="img" aria-label="${TITLE}">
-  <title>${TITLE}</title>
-  <g transform="scale(0.62) translate(-655 -290)">
-    ${symbol(c)}
-  </g>
-  <g transform="translate(-216.4 -613.4)">
-    ${wordmark(c)}
-  </g>
-</svg>
-`;
-const stacked = (c) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="536 286 689 515" role="img" aria-label="${TITLE}">
-  <title>${TITLE}</title>
-  ${symbol(c)}
-  ${wordmark(c)}
-  <path d="${paths.tagline}" fill="${c.muted}"/>
-</svg>
-`;
+if (quelle) {
+  if (!fs.existsSync(path.join(quelle, "assets", "img", "logo.svg"))) {
+    console.error(`Kein Logo-Paket gefunden: ${quelle} (erwartet 02-website/assets/img/logo.svg)`);
+    process.exit(2);
+  }
+  console.log(nurPruefen ? `Vergleiche mit ${quelle}` : `Übernehme aus ${quelle}`);
+  for (const rel of Object.keys(DATEIEN)) {
+    const von = path.join(quelle, rel);
+    const nach = path.join(root, rel);
+    if (!fs.existsSync(von)) {
+      melde(`${rel} fehlt im Paket`);
+      continue;
+    }
+    if (nurPruefen) {
+      if (!fs.existsSync(nach) || !fs.readFileSync(von).equals(fs.readFileSync(nach))) melde(`${rel} weicht vom Paket ab`);
+      continue;
+    }
+    fs.mkdirSync(path.dirname(nach), { recursive: true });
+    fs.copyFileSync(von, nach);
+    console.log(`  ${rel}`);
+  }
+}
 
-// Favicon: Symbol auf dunklem, abgerundetem Grund – auch in 16 px noch lesbar. Skaliert vom Original (Radius 130,5; Abstand 190).
-const s = 44 / 451;
-const r = 130.5 * s;
-const half = (190 * s) / 2;
-const lens = 89.47 * s;
-const iconBody = (c) => `<circle cx="${(32 - half).toFixed(2)}" cy="32" r="${r.toFixed(2)}" fill="${c.dark}"/>
-  <circle cx="${(32 + half).toFixed(2)}" cy="32" r="${r.toFixed(2)}" fill="${c.light}"/>
-  <path d="M32 ${(32 - lens).toFixed(2)}A${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 32 ${(32 + lens).toFixed(2)}A${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 32 ${(32 - lens).toFixed(2)}Z" fill="${c.overlap}"/>`;
-const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#12253b"/>
-  ${iconBody(palettes.dark)}
-</svg>
-`;
-const touchIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="180" height="180">
-  <rect width="64" height="64" fill="#12253b"/>
-  ${iconBody(palettes.dark)}
-</svg>`;
+// Bildgrößen
+for (const [rel, masse] of Object.entries(DATEIEN)) {
+  const datei = path.join(root, rel);
+  if (!fs.existsSync(datei)) {
+    melde(`${rel} fehlt in der Website`);
+    continue;
+  }
+  if (!masse) continue;
+  const ist = pngMasse(datei);
+  if (!ist || ist[0] !== masse[0] || ist[1] !== masse[1]) melde(`${rel}: ${ist?.join(" × ") ?? "kein PNG"} statt ${masse.join(" × ")}`);
+}
 
-const img = path.join(root, "assets", "img"); // von den Seiten verwendet
-const brand = path.join(root, "assets", "brand"); // Vorlagen für Profilbilder, Präsentationen, Pressematerial
-await fs.mkdir(img, { recursive: true });
-await fs.mkdir(brand, { recursive: true });
-const write = (file, data) => fs.writeFile(file, data, "utf8");
+// <img>-Angaben des Logos: width/height müssen zum Seitenverhältnis von logo.svg passen (sonst springt die Seite beim Laden)
+const svg = fs.readFileSync(path.join(root, "assets", "img", "logo.svg"), "utf8");
+const vb = svg.match(/viewBox="([^"]+)"/)?.[1].trim().split(/[\s,]+/).map(Number);
+const verhaeltnis = vb ? vb[2] / vb[3] : null;
+const seiten = fs.readdirSync(root).filter((f) => f.endsWith(".html") || f === "newsletter.php");
+for (const seite of seiten) {
+  const text = fs.readFileSync(path.join(root, seite), "utf8");
+  for (const [tag] of text.matchAll(/<img\b[^>]*\blogo\.svg[^>]*>/g)) {
+    const w = Number(tag.match(/\bwidth="(\d+)"/)?.[1]);
+    const h = Number(tag.match(/\bheight="(\d+)"/)?.[1]);
+    if (!w || !h) melde(`${seite}: Logo ohne width/height`);
+    else if (verhaeltnis && Math.abs(w / verhaeltnis - h) > 1) {
+      melde(`${seite}: Logo ${w} × ${h} – passend wäre ${w} × ${Math.round(w / verhaeltnis)}`);
+    }
+  }
+}
 
-await write(path.join(img, "logo.svg"), horizontal(palettes.light));
-await write(path.join(img, "logo-dark.svg"), horizontal(palettes.dark));
-await write(path.join(brand, "logo-horizontal.svg"), horizontal(palettes.light));
-await write(path.join(brand, "logo-horizontal-dark.svg"), horizontal(palettes.dark));
-await write(path.join(brand, "logo-stacked.svg"), stacked(palettes.light));
-await write(path.join(brand, "logo-stacked-dark.svg"), stacked(palettes.dark));
-await sharp(Buffer.from(stacked(palettes.light)), { density: 144 }).resize({ width: 1200 }).png().toFile(path.join(brand, "logo-stacked.png"));
-await write(path.join(root, "favicon.svg"), favicon);
-
-// Für E-Mails (newsletter.php): PNG, weil Gmail und Outlook kein SVG anzeigen; dreifache Auflösung für 190 × 29 px. Das Logo liegt
-// auf einer weißen Pille mit transparenten Ecken: Färbt ein E-Mail-Programm im dunklen Modus den Hintergrund um, bleibt die Schrift
-// lesbar und das Logo wirkt wie ein Abzeichen statt wie ein abgeschnittenes Rechteck (der linke Kreis bildet das runde Ende).
-const mailLogo = await sharp(Buffer.from(horizontal(palettes.light)), { density: 144 }).resize({ width: 540 }).flatten({ background: "#ffffff" }).png().toBuffer();
-const { width: mailW, height: mailH } = await sharp(mailLogo).metadata();
-const pille = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${mailW + 30}" height="${mailH}"><rect width="${mailW + 30}" height="${mailH}" rx="${mailH / 2}" fill="#fff"/></svg>`);
-await sharp({ create: { width: mailW + 30, height: mailH, channels: 4, background: "#ffffff" } })
-  .composite([{ input: mailLogo, left: 0, top: 0 }, { input: pille, blend: "dest-in" }])
-  .png()
-  .toFile(path.join(img, "logo-mail.png"));
-
-await sharp(Buffer.from(touchIcon)).resize(180, 180).png().toFile(path.join(root, "apple-touch-icon.png"));
-
-// favicon.ico: ein ICO-Container mit einem eingebetteten 48-px-PNG (Browser und Crawler, die /favicon.ico anfragen)
-const png = await sharp(Buffer.from(favicon)).resize(48, 48).png().toBuffer();
-const header = Buffer.alloc(22);
-header.writeUInt16LE(0, 0); // reserviert
-header.writeUInt16LE(1, 2); // Typ: Symbol
-header.writeUInt16LE(1, 4); // Anzahl Bilder
-header.writeUInt8(48, 6); // Breite
-header.writeUInt8(48, 7); // Höhe
-header.writeUInt16LE(1, 10); // Farbebenen
-header.writeUInt16LE(32, 12); // Bit pro Pixel
-header.writeUInt32LE(png.length, 14); // Größe der Bilddaten
-header.writeUInt32LE(22, 18); // Offset der Bilddaten
-await fs.writeFile(path.join(root, "favicon.ico"), Buffer.concat([header, png]));
-
-console.log("Logo- und Favicon-Dateien geschrieben: assets/img/logo(.svg|-dark.svg|-mail.png), assets/brand/*, favicon.svg/.ico, apple-touch-icon.png");
+console.log(hinweise ? `${hinweise} Hinweis(e)` : "Logo-Dateien vollständig, Größen und <img>-Angaben stimmen.");
+process.exit(hinweise ? 1 : 0);
