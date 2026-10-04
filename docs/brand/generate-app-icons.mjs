@@ -7,8 +7,6 @@
  *   public/app-icon-192.png           Android und Chrome (Web-App-Manifest, src/app/manifest.ts)
  *   public/app-icon-512.png
  *   public/app-icon-maskable-512.png  randlos, für Android-Startbildschirme mit runden oder tropfenförmigen Symbolen
- *   public/push-badge.png             96 px, einfarbig (weiß auf durchsichtig): kleines Symbol in der Statusleiste von Android,
- *                                     wenn eine Push-Benachrichtigung eintrifft (nur die Deckkraft zählt, Android färbt es selbst)
  *
  * Gestaltung wie das Favicon der Website (website/tools/make-logo-assets.mjs): die beiden Kreise des Logos in der dunklen
  * Farbfassung auf dunklem Marineblau – so bleibt das Symbol auf hellen wie dunklen Tab-Leisten erkennbar. Kreise und Farben
@@ -78,20 +76,6 @@ function ico(images) {
   return Buffer.concat([header, ...images.map((image) => image.data)]);
 }
 
-/**
- * Einfarbiges Symbol für die Statusleiste: die beiden Kreise des Logos als weiße Fläche, der Überschnitt bleibt durchsichtig
- * (`evenodd`) – so ist auch ohne Farben noch das Logo zu erkennen.
- */
-function badge() {
-  const scale = 76 / 451; // Breite der Kreise zusammen: 76 von 96 px
-  const r = 130.5 * scale;
-  const offset = 95 * scale;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <path fill="#fff" fill-rule="evenodd" d="M${(48 - offset - r).toFixed(2)} 48a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0ZM${(48 + offset - r).toFixed(2)} 48a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(2 * r).toFixed(2)} 0a${r.toFixed(2)} ${r.toFixed(2)} 0 1 0 ${(-2 * r).toFixed(2)} 0Z"/>
-</svg>
-`;
-}
-
 const app = path.join(root, "src", "app");
 const pub = path.join(root, "public");
 const written = [];
@@ -115,6 +99,5 @@ await write(path.join(pub, "app-icon-512.png"), await png(tile(), 512));
 // Randlos: Android stanzt selbst Kreis, Tropfen oder Quadrat aus. Die Kreise reichen bis 34 % vom Mittelpunkt und liegen damit
 // sicher in der Schutzzone (Kreis mit 40 % Radius), die jede dieser Formen stehen lässt.
 await write(path.join(pub, "app-icon-maskable-512.png"), await png(tile({ rounded: false }), 512));
-await write(path.join(pub, "push-badge.png"), await png(badge(), 96));
 
 console.log(`geschrieben:\n  ${written.join("\n  ")}`);

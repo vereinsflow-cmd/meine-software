@@ -23,7 +23,7 @@ const OFFLINE_URL = "/offline.html";
  * sw.js lässt den Browser den Service Worker neu installieren und die Seite neu ablegen. tests/unit/service-worker.test.ts
  * prüft das und nennt den richtigen Wert.
  */
-const OFFLINE_REVISION = "849d78a8b118";
+const OFFLINE_REVISION = "74d79e88c909";
 const OFFLINE_CACHE = `vf-offline-${OFFLINE_REVISION}`;
 
 // --- Installation und Aktualisierung ----------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ async function loadPage(request) {
 // dem Sperrbildschirm und laufen über den Push-Dienst des Browser-Herstellers. Geöffnet wird ausschließlich die eigene Adresse.
 
 const PUSH_ICON = "/app-icon-192.png";
-/** Einfarbiges Symbol für die Statusleiste von Android (nur die Deckkraft zählt); erzeugt von docs/brand/generate-app-icons.mjs. */
+/** Einfarbiges Symbol für die Statusleiste von Android (nur die Deckkraft zählt); erzeugt von android/symbole.mjs. */
 const PUSH_BADGE = "/push-badge.png";
 const NOTIFICATIONS_PATH = "/benachrichtigungen";
 const FALLBACK_PUSH = {

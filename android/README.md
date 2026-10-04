@@ -5,13 +5,14 @@ Adresszeile. Die App enthält VereinsFlow nicht selbst – Updates der Web-Anwen
 Push-Nachrichten kommen per Web Push; Chrome leitet sie an die App weiter (Notification Delegation), sie erscheinen unter dem
 Namen und Symbol der App.
 
-| Wert                | Stand                                                                  |
-| ------------------- | ---------------------------------------------------------------------- |
-| Paketname           | `com.vereinsflow.app` (in der Play Console später nicht mehr änderbar) |
-| Zielversion         | Android 16 (API 36), wie Google Play es seit 31.08.2026 verlangt       |
-| Mindestversion      | Android 7 (API 24)                                                     |
-| Erzeugt mit         | Bubblewrap 1.25.0 aus [`twa-manifest.json`](twa-manifest.json)         |
-| Symbol Statusleiste | `public/app-icon-monochrome-512.png` (weiß auf transparent)            |
+| Wert                | Stand                                                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| Paketname           | `com.vereinsflow.app` (in der Play Console später nicht mehr änderbar)                    |
+| Zielversion         | Android 16 (API 36), wie Google Play es seit 31.08.2026 verlangt                          |
+| Mindestversion      | Android 7 (API 24)                                                                        |
+| Erzeugt mit         | Bubblewrap 1.25.0 aus [`twa-manifest.json`](twa-manifest.json)                            |
+| Startsymbol         | aus dem Logo-Paket (klassisch, rund und adaptiv), siehe [Symbole](#symbole-und-startbild) |
+| Symbol Statusleiste | `ic_notification_icon` bzw. `public/app-icon-monochrome-512.png` (weiß auf transparent)   |
 
 Die Freigabe zwischen App und Website (Digital Asset Links) liefert der Server unter `/.well-known/assetlinks.json`; Einstellung
 siehe [docs/OPERATIONS.md](../docs/OPERATIONS.md#app-ansicht-android-app-und-iphone). Ohne passenden Fingerabdruck zeigt die App
@@ -57,6 +58,27 @@ Geht der Upload-Schlüssel verloren, lässt er sich in der Play Console zurücks
 Nach dem ersten Hochladen den SHA-256-Fingerabdruck des **App-Signaturschlüssels** aus der Play Console („App-Integrität“)
 **zusätzlich** in `ANDROID_APP_CERT_SHA256` eintragen (kommagetrennt) – auf den Handys läuft die von Google signierte App.
 
+## Symbole und Startbild
+
+Die Symbole stammen aus dem Logo-Paket der Gestalter (Ordner `vereinsflow-logo-paket`, Aufbau in dessen `LIESMICH.md`). Das Skript
+[`symbole.mjs`](symbole.mjs) übernimmt sie und erzeugt, was das Paket nicht fertig liefert, aus dessen SVG-Dateien:
+
+```bash
+node android/symbole.mjs ~/Downloads/vereinsflow-logo-paket   # im Ordner der Anwendung; ohne Pfad: ~/Downloads/vereinsflow-logo-paket
+```
+
+| Datei                                                         | Herkunft                                                                             |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `res/mipmap-*/ic_launcher*.png`, `mipmap-anydpi-v26/`         | unverändert aus `05-app-android/res`: klassisch, rund, adaptiv (Vordergrund + Tinte) |
+| `res/values/ic_launcher_background.xml`                       | unverändert aus dem Paket: Hintergrund des adaptiven Symbols, Tinte `#0F1C2E`        |
+| `res/drawable-*/splash.png`                                   | Startbild: Symbol in Weiß/Himmel auf einer Kachel in Tinte, wie `ic_launcher.png`    |
+| `res/drawable-*/ic_notification_icon.png`                     | Statusleiste: kleine Form des Symbols (zwei Etappen, ohne Tempo-Striche), nur Weiß   |
+| `public/app-icon-monochrome-512.png`, `public/push-badge.png` | dasselbe in 512 px (für Bubblewrap) und 96 px (Web Push im Browser, `public/sw.js`)  |
+| `docs/store/grafiken/icon-512.png`                            | `05-app-android/play-store-icon-512.png` (als 32-Bit-PNG gespeichert)                |
+
+Im `AndroidManifest.xml` steht zusätzlich `android:roundIcon="@mipmap/ic_launcher_round"` (für Startbildschirme, die runde
+Symbole verlangen).
+
 ## Projekt neu erzeugen oder Version erhöhen
 
 Werte (Farben, Name, Version, Symbole) stehen in `twa-manifest.json`. Danach die Projektdateien neu erzeugen – Bubblewrap lädt dafür
@@ -66,7 +88,10 @@ die Symbole und das Web-Manifest von der Website, der Server muss also laufen:
 npx @bubblewrap/cli@1.25.0 update --skipVersionUpgrade   # oder ohne --skipVersionUpgrade: Version automatisch erhöhen
 ```
 
-Das überschreibt die erzeugten Dateien unter `app/`. Für jede neue Store-Version muss `appVersionCode` steigen.
+Das überschreibt die erzeugten Dateien unter `app/` – auch die Symbole, das Startbild und `AndroidManifest.xml`. Danach
+`node android/symbole.mjs` erneut ausführen und die Zeile `android:roundIcon` im Manifest wieder eintragen (siehe
+[Symbole](#symbole-und-startbild)); die nicht mehr gebrauchten `ic_maskable.png` entfernt das Skript selbst. Für jede neue
+Store-Version muss `appVersionCode` steigen.
 
 ## Testen
 

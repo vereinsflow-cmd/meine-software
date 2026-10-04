@@ -118,11 +118,11 @@ Erste Veröffentlichung von VereinsFlow für Android: Termine und Kalender, Helf
 
 Alle Dateien liegen in [`grafiken/`](grafiken/) und erfüllen die Vorgaben der Konsole (geprüft am 30.09.2026 gegen die Hilfeseiten von Google).
 
-| Feld in der Konsole                                    | Datei                                                                                                     | Format                                             |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| App-Symbol                                             | [`grafiken/icon-512.png`](grafiken/icon-512.png)                                                          | 512 × 512, 32-Bit-PNG, vollflächiges Quadrat, 9 KB |
-| Feature-Grafik                                         | [`grafiken/feature-grafik-1024x500.png`](grafiken/feature-grafik-1024x500.png)                            | 1024 × 500, 24-Bit-PNG ohne Alpha, 172 KB          |
-| Screenshots (Telefon), in dieser Reihenfolge hochladen | [`grafiken/screenshots/01-dashboard.png`](grafiken/screenshots/01-dashboard.png) bis `08-datenschutz.png` | je 1080 × 1920, 24-Bit-PNG ohne Alpha, 119–166 KB  |
+| Feld in der Konsole                                    | Datei                                                                                                     | Format                                              |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| App-Symbol                                             | [`grafiken/icon-512.png`](grafiken/icon-512.png)                                                          | 512 × 512, 32-Bit-PNG, vollflächiges Quadrat, 11 KB |
+| Feature-Grafik                                         | [`grafiken/feature-grafik-1024x500.png`](grafiken/feature-grafik-1024x500.png)                            | 1024 × 500, 24-Bit-PNG ohne Alpha, 171 KB           |
+| Screenshots (Telefon), in dieser Reihenfolge hochladen | [`grafiken/screenshots/01-dashboard.png`](grafiken/screenshots/01-dashboard.png) bis `08-datenschutz.png` | je 1080 × 1920, 24-Bit-PNG ohne Alpha, 119–166 KB   |
 
 Die Screenshots zeigen die echte App mit den Demo-Daten des „TSV Musterstadt 1898 e.V.“ (deutsche Oberfläche, hell, ohne Rahmen und Einblendungen; Namen der Demo-Personen sind gewöhnlich gewählt):
 
@@ -139,7 +139,7 @@ Die Screenshots zeigen die echte App mit den Demo-Daten des „TSV Musterstadt 1
 
 Google verlangt mindestens **zwei** Screenshots je unterstütztem Gerätetyp und erlaubt bis zu **acht**; ab **vier** Screenshots mit mindestens 1080 Pixeln kommt die App für Empfehlungen in Frage. Vorhanden sind acht Telefon-Screenshots. Tablet-Screenshots (7 und 10 Zoll) und ein Video sind freiwillig – die App läuft auf Tablets, die Konsole weist dann nur auf fehlende Großbild-Screenshots hin. Wie die Bilder entstanden sind und wie man sie neu erzeugt: [README](README.md#screenshots-neu-erzeugen).
 
-**Symbol:** Nicht `public/app-icon-512.png`, sondern die vollflächige Fassung `public/app-icon-maskable-512.png` (byte-gleich als `icon-512.png` abgelegt). Google verlangt „Full square“ ohne eigene Rundung und ohne Schatten, weil die Konsole die Ecken (30 % Radius) und einen Schatten selbst anlegt; `app-icon-512.png` hat abgerundete, durchsichtige Ecken und würde doppelt gerundet aussehen. Die Kreise liegen weit genug innen, die Maske schneidet nichts ab.
+**Symbol:** Die Fassung für den Play Store aus dem Logo-Paket (`05-app-android/play-store-icon-512.png`: das „V“ in Weiß und Himmelblau mit orangem Punkt auf Tinte `#0F1C2E`), pixelgleich als 32-Bit-PNG mit undurchsichtigem Alpha-Kanal abgelegt (übernommen von `android/symbole.mjs`). Google verlangt „Full square“ ohne eigene Rundung und ohne Schatten, weil die Konsole die Ecken (30 % Radius) und einen Schatten selbst anlegt – die Datei ist ein randloses Quadrat. Das Symbol liegt weit genug innen (mindestens 67 px vom Rand), die Maske schneidet nichts ab.
 
 ## Datenschutzerklärung – offener Punkt
 

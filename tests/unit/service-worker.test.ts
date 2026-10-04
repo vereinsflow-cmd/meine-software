@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { describe, expect, it, vi } from "vitest";
-import { LOGO_PATHS } from "@/components/shared/brand-logo-paths";
 
 /**
  * Service Worker (public/sw.js) und Offline-Seite (public/offline.html). Der Service Worker läuft hier in einer
@@ -351,10 +350,12 @@ describe("Offline-Seite", () => {
     expect(OFFLINE_HTML).toContain("Erneut versuchen");
     expect(OFFLINE_HTML).not.toMatch(/<script|<link|<img|<iframe|url\(|@import/i);
     expect(OFFLINE_HTML).not.toMatch(/(?:src|href)="(?!")/); // einziger Link: href="" (dieselbe Adresse neu laden)
-    // Sichere Bereiche der App-Ansicht und das echte Logo (Pfade wie in der Anwendung).
+    // Sichere Bereiche der App-Ansicht und das Logo aus dem Logo-Paket (erste Etappe des „V“ in den Pfaden des Pakets),
+    // nicht mehr das alte mit den zwei Kreisen.
     expect(OFFLINE_HTML).toContain("viewport-fit=cover");
     expect(OFFLINE_HTML).toContain("env(safe-area-inset-bottom");
-    expect(OFFLINE_HTML).toContain(LOGO_PATHS.vereins);
-    expect(OFFLINE_HTML).toContain(LOGO_PATHS.flow);
+    expect(OFFLINE_HTML).toMatch(/<svg\s+class="logo"[^>]*role="img"[^>]*aria-label="VereinsFlow"/);
+    expect(OFFLINE_HTML).toContain('d="M42.32 -40.00 L91.40 -40.00 L104.49 21.58 L55.41 21.58 Z"');
+    expect(OFFLINE_HTML).not.toMatch(/<circle cx="785\.5"|#1c4a7a|#5b9cd6/i);
   });
 });
