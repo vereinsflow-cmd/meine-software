@@ -175,11 +175,14 @@ Hinweise zu den Aufnahmen:
   Helferplans über die Zeitleiste „Tagesablauf“ bis zum Ende der Schicht „Getränkestand“; alle Schichten zugeklappt, der
   eigene Name steht dort als „Name (du)“, an seinem Balken in der Zeitleiste ein „Du“), der Helferplan-Aushang die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
   (`FEST_WEEK` in `capture-screenshots.mjs`). Der Laptop der Vorführung „Am Rechner“ zeigt `nachrichten` (Chat „Alle
-  Mitglieder“ mit Ankündigung und Lesestatistik), das Browserfenster im Einstieg `dashboard`.
-- Breiten: Browserfenster 960, 1440 und 1920 px (1440 für Fenster um 700 CSS-Pixel bei doppelter Pixeldichte und das
-  Einstiegsfenster bei einfacher), Laptop 880 (verlustfrei, erscheint bei 100 % so groß), 960 (Smartphone, dreifache
-  Dichte), 1320 und 1760, Helferplan-Aushang 640, 800 und 1280. Am Smartphone ist das Einstiegsfenster ausgeblendet; dort
-  lädt das `<picture>` statt des Dashboards nur `assets/img/leer.svg`.
+  Mitglieder“ mit Ankündigung und Lesestatistik). Das Bild im Einstieg ist das Dashboard, wie ein Foto zugeschnitten: im
+  hohen Rahmen neben dem Text (ab 900 px) `einstieg-dashboard` (Tablet-Breite 768, die vier Kennzahl-Karten zwei mal zwei,
+  unten weich ausgeblendet), am Smartphone hochkant `phone-dashboard`, dazwischen (560 bis 899 px, breit unter dem Text)
+  `dashboard` ohne Seitenleiste. Die Bildpunkte der Ausschnitte stehen bei `.hero-visual` in `site.css` – nach einer
+  Neuaufnahme prüfen. Montags blendet `einstieg-dashboard` den leeren Wochenvergleich „−100 % gegenüber letzter Woche“ aus.
+- Breiten: Einstieg neben dem Text 490, 660, 980, 1280 und 1536 px, Browserfenster 960, 1440 und 1920 px (1440 für Fenster um 700 CSS-Pixel bei doppelter Pixeldichte), Laptop 880
+  (verlustfrei, erscheint bei 100 % so groß), 960 (Smartphone, dreifache Dichte), 1320 und 1760, Helferplan-Aushang 640,
+  800 und 1280. Das große Bild am Rechner lädt nur auf Tablet und Handy quer.
 - Telefonbilder: Einstieg `phone-dashboard`, Vorführung „Unterwegs“ `phone-helferplanung` (ab „Meine Einsätze“, damit
   „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten` (die Schicht „Getränkestand“ nach dem Eintragen, wie das ruhige Bild des
   Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster;
@@ -220,11 +223,14 @@ kleine Größen bis 32 px eine ruhigere Form (zwei Etappen je Seite, ohne Tempo-
 - **Kopf- und Fußzeile:** `assets/img/logo.svg` mit `width="178" height="40"` (Kopf) bzw. `200 × 45` (Fuß); die Datei bringt
   rundum etwas Schutzraum mit. Auf sehr schmalen Handys (320 px) wird das Logo in der Kopfzeile kleiner, bevor „Demo“ oder
   der Menüknopf unter 44 px schrumpfen. Kopien: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`.
-- **Einstieg:** Das Zeichen steht groß und blass hinter der Überschrift (`svg.hero-mark` in `index.html`, Formen aus
+- **Einstieg:** Links die linksbündige Überschrift (immer drei Zeilen) mit Einleitung, drei Punkten, schwarzem Knopf und
+  grauer Zeile, rechts das Dashboard als großes Bild mit runden Ecken, oben und unten bündig mit dem Text; schmal
+  untereinander. Kopfzeile und Einstieg haben dieselbe Breite wie die übrigen Abschnitte. Das Zeichen steht groß und
+  blass hinter dem linken Teil der Überschrift, die Einleitung hält Abstand zu seinem Punkt (`svg.hero-mark` in `index.html`, Formen aus
   `01-logo/svg/vereinsflow-symbol.svg` des Pakets; Farben, Größe und Bewegung in `site.css` unter `.hero-mark`). Beim Aufruf
   gleiten die schwarzen Etappen von links, die blauen von rechts herein, zuletzt der Punkt; mit „Bewegung reduzieren“ steht
   sofort das fertige Zeichen. Gemessener Kontrast der Schrift über dem Zeichen (Endzustand, 320 bis 1920 px): Überschrift
-  mindestens 10,8 : 1, „in Fluss“ 3,1 : 1, Lead 6,6 : 1, Kennzeile 4,8 : 1 – wer Deckkraft oder Größe ändert, misst neu.
+  mindestens 13,5 : 1, „in Fluss“ 3,9 : 1, Einleitung und Punkte 13 : 1 – wer Deckkraft oder Größe ändert, misst neu.
 - **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen das V in der ruhigeren Form, spiegelpoliert bzw. als
   glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
   Regeln von `.device-mark` in `site.css`).
@@ -290,11 +296,12 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   „Beim Start benachrichtigen“ (siehe unten).
 - **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Manrope
   ExtraBold, geneigt) liegt als Vektorgrafik vor.
-- **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen und Links in deren Hauptfarbe (`--accent`). Die Farben
+- **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen und Links in deren Hauptfarbe (`--accent`) – außer
+  in Kopfzeile und Einstieg: dort neutrales Schwarz und Grau und schwarze Knöpfe (`--brand-ink`). Die Farben
   des Logos (`--brand` Vereinsblau, `--brand-2` Himmel, `--brand-ink` Schwarz, `--brand-orange` Signalorange) nur für das
-  Zeichen im Einstieg, „in Fluss“ samt Unterstrich, den Lichtschein und den Fortschrittsbalken unter der Kopfzeile. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
+  Zeichen im Einstieg, „in Fluss“, die Knöpfe oben und den Fortschrittsbalken unter der Kopfzeile. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
 - **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS; hinter der Überschrift gleiten die Etappen des Logo-Zeichens
   von links und rechts herein und fügen sich zum V, zuletzt der orange Punkt), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
-  von `site.js`), leichte Parallaxe der Bilder (`.plx`), Live-Fenster im Kapitel „Helferschichten“ und in den vier Reitern „Im Detail“ (ein Mauszeiger bedient die Anwendung – Bildfolgen aus der Demo-App, aufgenommen mit `tools/capture-screenshots.mjs --only schichten,suche,mitglieder,kalender,auswertung`; die Abläufe stehen in `site.js`, `LIVE_SCENES`; bei den Helferschichten hebt der Ablauf zugleich den gerade gezeigten der drei Schritte darunter hervor, hält das Telefon daneben auf demselben Stand und hebt nach „Drucken“ den gedruckten Plan vom Stapel) und Scroll-Effekte im Einstieg über CSS-Scroll-Timelines – Browser ohne
+  von `site.js`), leichte Parallaxe der Bilder (`.plx`), Live-Fenster im Kapitel „Helferschichten“ und in den vier Reitern „Im Detail“ (ein Mauszeiger bedient die Anwendung – Bildfolgen aus der Demo-App, aufgenommen mit `tools/capture-screenshots.mjs --only schichten,suche,mitglieder,kalender,auswertung`; die Abläufe stehen in `site.js`, `LIVE_SCENES`; bei den Helferschichten hebt der Ablauf zugleich den gerade gezeigten der drei Schritte darunter hervor, hält das Telefon daneben auf demselben Stand und hebt nach „Drucken“ den gedruckten Plan vom Stapel) und Scroll-Effekte (Fortschrittsbalken, Parallaxe) über CSS-Scroll-Timelines – Browser ohne
   Unterstützung zeigen feste Bilder. Bewegt werden nur Transparenz und Transformationen, nie das Layout. Mit „Bewegung
   reduzieren“ im Betriebssystem ist alles sofort und ohne Animation sichtbar.

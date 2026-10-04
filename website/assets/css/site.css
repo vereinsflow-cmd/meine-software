@@ -2,13 +2,14 @@
    VereinsFlow – Website
    Reines CSS: keine Bibliotheken, keine Webfonts, keine externen Ressourcen (Systemschrift).
    Weißes Design: helle Flächen, feine Kanten, weiche Schatten; Aktionsfarbe = Hauptfarbe der Anwendung (--accent).
+   Kopfzeile und Einstieg sind noch ruhiger: neutrales Schwarz und Grau, schwarze Knöpfe (--brand-ink), keine Schatten.
    Die Seite ist bewusst immer hell (auch bei dunkel eingestelltem Gerät).
 
    Bewegung (Abschnitt „Bewegung“ am Ende):
-   - Einstieg: kurze Ladeanimation (Wörter, Text, Bild, schwebende Hinweise) – rein per CSS, kein Aufblitzen.
+   - Einstieg: kurze Ladeanimation (Zeichen, Wörter, Text, Bild) – rein per CSS, kein Aufblitzen.
    - Beim Scrollen (.reveal): site.js schaltet .is-pending; Überschriften blenden aus der Unschärfe ein, Häkchen
      zeichnen sich, Symbole und Kennzahlen erscheinen nacheinander.
-   - Parallaxe (.plx), Fortschrittsbalken und Scroll-Effekte im Einstieg: CSS-Scroll-Timelines bzw.
+   - Parallaxe (.plx) und Fortschrittsbalken: CSS-Scroll-Timelines bzw.
      Transformationen, laufen ohne JavaScript auf dem Compositor – außer bei den Telefonen: Ihre Verschiebung
      (--phone-shift) berechnet der Hauptthread, damit sie nur um ganze Pixel wandern.
    - Vorführungen (Laptop, Telefon nach der Ausgangslage): Aufklappen und Drehen als Animationen an einer Scroll-Timeline,
@@ -268,8 +269,11 @@ kbd {
 
 /* ---------- Kopfzeile ---------- */
 
-/* Ganz oben ist die Kopfzeile durchsichtig; nach dem Scrollen (Skript setzt „is-scrolled“) bekommt sie einen
-   durchscheinenden weißen Grund mit Weichzeichner. Ohne JavaScript bleibt sie immer deckend. */
+/* Ruhig und weiß: links das Logo und gleich daneben die Menüpunkte, rechts ein schlichter Textlink und der schwarze Knopf.
+   Keine Schatten. Ganz oben ist die Kopfzeile durchsichtig (darunter liegt der weiße Einstieg); nach dem Scrollen (Skript
+   setzt „is-scrolled“) bekommt sie einen deckend weißen Grund und eine feine Linie – nichts von der Seite scheint durch.
+   Ohne JavaScript bleibt sie immer deckend. Logo und Knopf fluchten mit dem Inhalt darunter (gleiche Breite wie alle
+   Abschnitte und die Unterseiten). */
 .site-header {
   position: sticky;
   top: 0;
@@ -286,12 +290,12 @@ html:not(.js) .site-header,
   border-bottom-color: var(--line);
 }
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  html:not(.js) .site-header,
-  .site-header.is-scrolled {
-    background: rgb(255 255 255 / 76%);
-    -webkit-backdrop-filter: saturate(1.8) blur(20px);
-    backdrop-filter: saturate(1.8) blur(20px);
+/* Breit großzügiger: 72 statt 64 px hoch. --header-h gilt dafür nur in der Kopfzeile – die übrige Seite (Einstieg,
+   Sprungziele, Vorführungen) rechnet weiter mit 64 px; Sprungziele bleiben 8 px unter der Kopfzeile. Nicht bei Handys
+   quer (niedrige Fenster, dort ist sie schmaler). */
+@media (min-width: 900px) and (min-height: 501px) {
+  .site-header {
+    --header-h: 72px;
   }
 }
 
@@ -323,16 +327,18 @@ html:not(.js) .site-header,
   height: auto;
 }
 
+/* Die Navigation füllt den Rest der Zeile: Menüpunkte links (gleich neben dem Logo), Textlink und Knopf rechts */
 .nav {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
-  gap: 20px;
-  margin-left: auto;
+  gap: 24px;
 }
 
 .nav-links {
   position: relative;
   isolation: isolate;
+  margin-right: auto;
 }
 
 .nav ul {
@@ -346,22 +352,22 @@ html:not(.js) .site-header,
 .nav ul a {
   position: relative;
   display: block;
-  padding: 8px 14px;
-  border-radius: 999px;
-  color: var(--text);
-  font-size: 0.94rem;
-  font-weight: 520;
+  padding: 8px 13px;
+  border-radius: 10px;
+  color: var(--brand-ink);
+  font-size: 1rem;
+  font-weight: 500;
   text-decoration: none;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .nav ul a:hover,
 .nav ul a.is-active {
-  color: var(--ink);
+  color: var(--brand-ink);
 }
 
-/* Gleitende Markierung hinter dem aktiven bzw. überfahrenen Menüpunkt (site.js setzt --x und --w).
-   Ohne JavaScript übernimmt ein einfacher Hintergrund beim Überfahren. */
+/* Gleitende Markierung hinter dem aktiven bzw. überfahrenen Menüpunkt (site.js setzt --x und --w): ein heller grauer
+   Grund statt einer Farbe. Ohne JavaScript übernimmt ein einfacher Hintergrund beim Überfahren. */
 .nav-indicator {
   position: absolute;
   z-index: -1;
@@ -369,8 +375,8 @@ html:not(.js) .site-header,
   left: 0;
   width: var(--w, 0px);
   height: 100%;
-  border-radius: 999px;
-  background: var(--accent-soft);
+  border-radius: 10px;
+  background: rgb(26 26 26 / 6%);
   opacity: 0;
   translate: var(--x, 0px) 0;
   pointer-events: none;
@@ -386,17 +392,70 @@ html:not(.js) .site-header,
 }
 
 html:not(.js) .nav ul a:hover {
-  background: var(--accent-soft);
+  background: rgb(26 26 26 / 6%);
 }
 
-/* Knapp über 900 px wird es eng: Menüpunkte etwas dichter, damit „Demo anfragen“ einzeilig bleibt */
-@media (min-width: 900px) and (max-width: 999px) {
+/* Schlichter Textlink links neben dem Knopf: die Benachrichtigung zum Start. Nur, wenn die Zeile ihn sicher fasst (siehe
+   Container „kopf“ unten; sonst fehlt er ganz, ohne Lücke – er steht auch im Einstieg); im Handy-Menü steht er unter den
+   Menüpunkten (siehe unten). */
+.header-link {
+  display: none;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 4px;
+  border-radius: 8px;
+  color: var(--brand-ink);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.header-link:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+}
+
+/* Breit: etwas mehr Luft zwischen Logo und Menü */
+@media (min-width: 1100px) {
+  .header-inner {
+    gap: 36px;
+  }
+}
+
+/* Ab 900 px richtet sich die Zeile nach ihrer eigenen Breite (Container „kopf“, höchstens 1160 px): Was hineinpasst,
+   hängt auch von der Grundschrift des Browsers ab – Menü, Textlink und Knopf wachsen mit ihr, Logo und Abstände nicht.
+   Jede Schwelle steht deshalb zweimal da: in px für die übliche Grundschrift von 16 px (und kleinere), in rem für eine
+   größere (Browser-Einstellung „Groß“, Textskalierung). */
+@media (min-width: 900px) {
+  .header-inner {
+    container: kopf / inline-size;
+  }
+}
+
+/* Der Textlink braucht samt Logo, Menü und Knopf 1118 px bei 16 px Grundschrift: ab 1136 px (Fenster ab 1200 px), bei
+   größerer Schrift erst ab 71 rem – bei 20 px und mehr also nie. So verschwindet nie das Logo. */
+@container kopf (min-width: 1136px) and (min-width: 71rem) {
+  .header-link {
+    display: inline-flex;
+  }
+}
+
+/* Knapp (bei 16 px Grundschrift unter 1000 px Fensterbreite, bei größerer Schrift auch breiter): Menüpunkte und Knopf
+   etwas dichter und kleiner, damit alles in die Zeile passt und „Demo anfragen“ einzeilig bleibt */
+@container kopf (max-width: 935px) or (max-width: 56rem) {
   .nav {
     gap: 14px;
   }
 
   .nav ul a {
     padding-inline: 10px;
+    font-size: 0.94rem;
+  }
+
+  .site-header .nav .btn-header {
+    padding-inline: 1.05em;
+    font-size: 0.92rem;
   }
 }
 
@@ -404,18 +463,30 @@ html:not(.js) .nav ul a:hover {
   display: none;
 }
 
+/* Menüknopf: ohne Rahmen, nur das Symbol (Tippfläche 44 px); grauer Grund beim Überfahren und solange das Menü offen ist
+   (so ist der geöffnete Knopf auch ohne Maus als aktiv zu erkennen) */
 .nav-toggle {
   display: none;
   width: 44px;
   height: 44px;
   margin-left: auto;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--brand-ink);
   cursor: pointer;
   place-items: center;
   transition: background-color 0.2s, transform 0.15s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .nav-toggle:hover {
+    background: rgb(26 26 26 / 6%);
+  }
+}
+
+.nav-toggle[aria-expanded="true"] {
+  background: rgb(26 26 26 / 6%);
 }
 
 .nav-toggle:active {
@@ -423,8 +494,8 @@ html:not(.js) .nav ul a:hover {
 }
 
 .nav-toggle .icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 .nav-toggle .icon-close,
@@ -475,6 +546,10 @@ html:not(.js) .nav ul a:hover {
     scrollbar-gutter: stable;
   }
 
+  .nav.is-open .nav-links {
+    margin-right: 0;
+  }
+
   .nav.is-open ul {
     flex-direction: column;
   }
@@ -482,12 +557,23 @@ html:not(.js) .nav ul a:hover {
   .nav.is-open ul a {
     padding: 14px 12px;
     font-size: 1.1rem;
-    border-radius: 14px;
+    border-radius: 12px;
   }
 
   .nav.is-open ul a:hover,
   .nav.is-open ul a.is-active {
-    background: var(--accent-soft);
+    background: rgb(26 26 26 / 6%);
+  }
+
+  /* Der Textlink unter einer feinen Linie, so groß wie die Menüpunkte */
+  .nav.is-open .header-link {
+    display: flex;
+    min-height: 50px;
+    margin-top: -8px;
+    padding: 12px 12px 4px;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    font-size: 1.1rem;
   }
 
   .nav.is-open .btn-header {
@@ -529,9 +615,56 @@ html:not(.js) .nav ul a:hover {
     padding-block: 11px;
   }
 
+  .nav.is-open .header-link {
+    min-height: 44px;
+    margin-top: -4px;
+    padding-top: 8px;
+  }
+
   .nav.is-open .btn-header {
     min-height: 46px;
   }
+}
+
+/* Knöpfe in Kopfzeile und Einstieg: schwarz mit weißer Schrift, kleine Rundung, ohne Schatten und ohne Lichtstreifen;
+   beim Überfahren nur etwas heller, kein Anheben. Alle anderen Knöpfe der Seite bleiben, wie sie sind. */
+.site-header .btn-primary,
+.hero .btn-primary {
+  border-radius: 10px;
+  background: var(--brand-ink);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* Der Knopf in der Kopfzeile etwas kräftiger als die übrigen kleinen Knöpfe (im Handy-Menü 50 px, siehe oben) */
+.site-header .btn-header {
+  min-height: 42px;
+  padding-inline: 1.2em;
+  font-size: 0.95rem;
+}
+
+.site-header .btn-primary:hover,
+.hero .btn-primary:hover {
+  background: #3d3d3d;
+  box-shadow: none;
+  transform: none;
+}
+
+.site-header .btn-primary:active,
+.hero .btn-primary:active {
+  transform: scale(0.98);
+}
+
+.site-header .btn-primary::after,
+.hero .btn-primary::after {
+  content: none;
+}
+
+/* Deutlich sichtbarer Fokusrahmen mit Abstand – auf Weiß wie auf dem schwarzen Knopf gut zu erkennen */
+.site-header .btn-primary:focus-visible,
+.hero .btn-primary:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
 }
 
 /* ---------- Schaltflächen ---------- */
@@ -868,86 +1001,96 @@ html:not(.js) .nav ul a:hover {
 
 /* ---------- Einstieg ---------- */
 
-/* Die Kopfzeile liegt über dem Einstieg (negativer Rand), damit der Lichtschein bis an den oberen Rand reicht */
+/* Weißer Grund, viel Luft, nichts Verspieltes: links groß und linksbündig die Überschrift, darunter Einleitung, drei
+   Punkte mit fetten Schlüsselwörtern, der schwarze Knopf (siehe Kopfzeile) und eine kleine graue Zeile; rechts ein großes
+   Bild der Anwendung mit runden Ecken, oben und unten bündig mit dem Text. Ab 900 px zwei Spalten, schmaler untereinander.
+   Dieselbe Breite wie die übrigen Abschnitte: Überschrift, Logo und Inhalt darunter fluchten.
+   Die Kopfzeile liegt über dem Einstieg (negativer Rand) – ganz oben ist sie durchsichtig, darunter derselbe Grund.
+   Schrift in neutralem Schwarz und Grau (wie Logo und Knöpfe) statt der kühlen Töne der übrigen Seite.
+   --h1: Größe der Überschrift; nach ihr richten sich auch das Zeichen dahinter und der Abstand zur Einleitung. Am Handy
+   höchstens so groß, dass das längste Wort („Vereinsarbeit“, gut 5,4 em) in die Zeile passt – das greift nur bei
+   vergrößerter Grundschrift des Browsers. */
 .hero {
+  --h1: min(clamp(2.75rem, 4.4vw + 1rem, 5.25rem), (100vw - 2 * var(--gutter)) / 5.5);
+  --hero-ink: var(--brand-ink);
+  --hero-text: #2e2e2e;
+  --hero-muted: #616161;
   position: relative;
   isolation: isolate;
   overflow: clip;
   margin-top: calc(var(--header-h) * -1);
-  padding: calc(var(--header-h) + clamp(48px, 8vw, 112px)) 0 clamp(64px, 8vw, 112px);
-  text-align: center;
+  padding: calc(var(--header-h) + clamp(32px, 3.5vw, 48px)) 0 clamp(56px, 7vw, 96px);
+  background: var(--bg);
 }
 
-/* Feines Punkteraster, das zu den Rändern hin ausläuft */
-.hero::before {
-  content: "";
-  position: absolute;
-  z-index: -2;
-  inset: 0;
-  background-image: radial-gradient(rgb(15 30 50 / 9%) 1px, transparent 1.5px);
-  background-size: 26px 26px;
-  -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 26%, #000 20%, transparent 72%);
-  mask-image: radial-gradient(ellipse 70% 50% at 50% 26%, #000 20%, transparent 72%);
-  pointer-events: none;
+.hero > .container {
+  display: grid;
+  gap: clamp(40px, 7vw, 56px);
 }
 
-/* Weicher Lichtschein in den Blautönen des Logos (links Vereinsblau, rechts das hellere Himmel) */
-.hero-glow {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
+/* Eine Spalte: nie breiter als der Bildschirm – auch nicht, wenn eine vergrößerte Grundschrift einen langen Satz breiter
+   macht (sonst schnitte overflow: clip den Text rechts ab) */
+@media (max-width: 899px) {
+  .hero > .container {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
-.hero-glow::before,
-.hero-glow::after {
-  content: "";
-  position: absolute;
-  top: calc(min(680px, 84vw) * -0.36);
-  width: min(680px, 84vw);
-  aspect-ratio: 1;
-  border-radius: 50%;
+@media (min-width: 900px) {
+  .hero > .container {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.84fr);
+    align-items: start;
+    column-gap: clamp(48px, 7vw, 104px);
+  }
 }
 
-.hero-glow::before {
-  left: calc(50% - min(680px, 84vw) * 0.86);
-  background: radial-gradient(closest-side, rgb(58 107 234 / 15%), rgb(58 107 234 / 0%));
+/* Überschrift: sehr groß, fett, linksbündig; in em gemessen gilt ihre Größe auch für das Zeichen dahinter */
+.hero-title {
+  position: relative;
+  isolation: isolate;
+  font-size: var(--h1);
 }
 
-.hero-glow::after {
-  left: calc(50% - min(680px, 84vw) * 0.14);
-  background: radial-gradient(closest-side, rgb(143 176 255 / 30%), rgb(143 176 255 / 0%));
+/* Tablet (eine Spalte, volle Breite): etwas größer, sonst wirkt die schmale Überschrift neben der leeren Fläche verloren */
+@media (min-width: 720px) and (max-width: 899px) {
+  .hero {
+    --h1: 8.4vw;
+  }
 }
 
-.hero-copy {
-  max-width: 900px;
-  margin-inline: auto;
+/* Auf niedrigen Bildschirmen (Laptops mit 720 bis 800 px Höhe) etwas kleiner, damit der Knopf im ersten Bild bleibt */
+@media (min-width: 900px) {
+  .hero {
+    --h1: min(clamp(2.75rem, 4.4vw + 1rem, 5.25rem), 9vh);
+  }
 }
 
+/* Höchstens 7 em breit: In jeder Breite stehen „Bringt“, „Vereinsarbeit“ und „in Fluss“ in drei Zeilen untereinander –
+   ein ruhiger Block, gleich groß neben dem Bild, und das Zeichen dahinter behält seine Proportion */
 .hero h1 {
-  max-width: 17ch;
-  margin-inline: auto;
+  max-width: 7em;
+  font-size: 1em;
+  color: var(--hero-ink);
+  letter-spacing: -0.038em;
+  line-height: 1.02;
 }
 
 /* Das Zeichen von VereinsFlow hinter der Überschrift (svg.hero-mark in index.html, Formen aus dem Logo-Paket): groß und
    blass in den Farben des Logos – die schwarzen Etappen links, die blauen rechts, unten der orange Punkt mit den
-   Tempo-Strichen. So hell, dass die Schrift davor gut lesbar bleibt (Überschrift über 7 : 1, „in Fluss“ über 3 : 1, Lead
-   über 4,5 : 1, gemessen über dem Zeichen). Die Blässe kommt aus opacity an den Gruppen, nicht aus halbdurchsichtigen
+   Tempo-Strichen. Es steht hinter dem linken Teil der Überschrift (Mitte knapp 3 em vom Zeilenanfang) und ist 1,35-mal
+   so hoch wie sie (drei Zeilen zu 1,02 em): Es ragt also 0,175 · 3,06 em ≈ 0,54 em über und unter sie hinaus, unten mit
+   dem Punkt. Die Einleitung hält davon Abstand (siehe .hero .lead). So hell, dass die Schrift davor gut lesbar
+   bleibt (Werte in README, „Einstieg“). Die Blässe kommt aus opacity an den Gruppen, nicht aus halbdurchsichtigen
    Farben: Fläche und Kontur (die runden Ecken wie im Logo) lägen sonst doppelt übereinander. Beim Aufruf gleiten die
-   Etappen von links und rechts herein, zuletzt der Punkt (siehe „Bewegung“); --mark ist die Höhe des Zeichens. */
-.hero-title {
-  --mark: min(clamp(190px, 19vw + 110px, 390px), 54vh);
-  position: relative;
-  isolation: isolate;
-}
-
+   Etappen von links und rechts herein, zuletzt der Punkt (siehe „Bewegung“). */
 .hero-mark {
   position: absolute;
   z-index: -1;
   top: 50%;
-  left: 50%;
-  width: calc(var(--mark) * 1.0253); /* Seitenverhältnis des viewBox (246,81 : 240,72) */
-  height: var(--mark);
+  left: 2.9em;
+  width: auto;
+  height: 135%;
+  aspect-ratio: 246.81 / 240.72; /* wie der viewBox */
   overflow: visible;
   translate: -50% -50%;
   pointer-events: none;
@@ -962,144 +1105,243 @@ html:not(.js) .nav ul a:hover {
 
 .hero-mark-l {
   color: var(--brand-ink);
-  opacity: 0.09;
+  opacity: 0.08;
 }
 
 .hero-mark-r {
   color: var(--brand);
-  opacity: 0.18;
+  opacity: 0.16;
 }
 
 .hero-mark-dot {
   fill: var(--brand-orange);
-  opacity: 0.26; /* der Punkt liegt unter der ersten Zeile des Leads */
+  opacity: 0.24;
 }
 
+/* „in Fluss“ im Vereinsblau des Logos, an den Enden etwas tiefer */
 .flow-word {
-  position: relative;
   white-space: nowrap;
   color: var(--accent);
 }
 
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .flow-word {
-    background: linear-gradient(100deg, #2346bd 5%, var(--brand) 55%, #2a55d3 100%); /* Vereinsblau, an den Enden tiefer */
+    background: linear-gradient(100deg, #2346bd 5%, var(--brand) 55%, #2a55d3 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 }
 
-.flow-word::after {
-  content: "";
-  position: absolute;
-  left: 0.02em;
-  right: 0.02em;
-  bottom: -0.03em;
-  height: 0.09em;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--brand-2), var(--brand));
-  opacity: 0.6;
-  transform-origin: left;
-}
-
+/* Abstand zur Überschrift: so weit, wie das Zeichen unter sie hinausragt (0,54 · --h1), und 18 px Luft – der Punkt
+   berührt die Einleitung in keiner Breite. Wie bei Qonto ein deutlicher Absatz zwischen Überschrift und Text. */
 .hero .lead {
-  max-width: 42rem;
-  margin: 28px auto 0;
-  color: var(--text); /* dunkler als sonst bei Leads: steht teils über dem Zeichen */
-  text-wrap: balance;
+  max-width: 36rem;
+  margin: calc(var(--h1) * 0.54 + 18px) 0 0;
+  color: var(--hero-text);
+  font-size: clamp(1.0625rem, 0.25vw + 1rem, 1.1875rem);
+  line-height: 1.55;
+  letter-spacing: -0.012em;
 }
 
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 36px;
-}
-
+/* Drei Punkte mit fetten Schlüsselwörtern, schlichte runde Aufzählungszeichen */
 .hero-points {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 28px;
-  margin: 30px 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--text);
-  font-size: 1.0625rem;
+  display: grid;
+  gap: 10px;
+  max-width: 36rem;
+  margin: 20px 0 0;
+  padding-left: 1.3em;
+  color: var(--hero-text);
+  font-size: clamp(1.0625rem, 0.25vw + 1rem, 1.1875rem);
+  line-height: 1.55;
+  letter-spacing: -0.012em;
+  list-style: disc;
 }
 
 .hero-points li {
+  padding-left: 0.15em;
+  text-wrap: pretty;
+}
+
+.hero-points li::marker {
+  color: var(--hero-ink);
+}
+
+.hero-points strong {
+  color: var(--hero-ink);
+  font-weight: 650;
+}
+
+/* Knopf und daneben der Textlink zur Benachrichtigung; darunter klein und grau, was die Demo ist */
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  margin-top: clamp(28px, 3vw, 40px);
+}
+
+.hero .btn-lg {
+  min-height: 54px;
+  padding: 0 1.6em;
+  font-size: 1.0625rem;
+}
+
+.hero-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  min-height: 48px;
+  padding-inline: 2px;
+  border-radius: 8px;
+  color: var(--hero-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgb(26 26 26 / 35%);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  transition: text-decoration-color 0.2s;
 }
 
-.hero-points .icon {
-  color: var(--ok);
+.hero-link:hover {
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
 }
 
-@media (max-width: 479px) {
+.hero-note {
+  margin-top: 16px;
+  color: var(--hero-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Zwei kurze Sätze: umbrochen wird zuerst zwischen ihnen (jeder passt ab 320 px in eine Zeile); ist ein Satz bei
+   vergrößerter Grundschrift breiter als die Zeile, bricht er in sich um */
+.hero-note span {
+  display: inline-block;
+}
+
+/* Smartphone: Knopf in voller Breite, der Textlink mittig darunter */
+@media (max-width: 719px) {
   .hero-actions {
     flex-direction: column;
     align-items: stretch;
-    max-width: 340px;
-    margin-inline: auto;
+    gap: 4px;
+  }
+
+  .hero-link {
+    justify-content: center;
+  }
+
+  .hero-note {
+    margin-top: 12px;
   }
 }
 
-/* Die Kennzeile nennt, worum es geht: etwas größer und mit Symbol */
-.hero .eyebrow {
-  padding: 6px 15px 6px 12px;
-  font-size: 0.92rem;
+/* Bild der Anwendung: großer Rahmen mit runden Ecken, das Bildschirmfoto darin wie ein Foto zugeschnitten. Werte in
+   Bildpunkten der größten Dateien – nach einer Neuaufnahme der Bilder prüfen:
+   - Ab 900 px neben dem Text: das Dashboard in Tablet-Breite (einstieg-dashboard, 1536 × 3200; die vier Kennzahl-Karten
+     zwei mal zwei, nichts gekürzt), volle Breite, von oben. Der Rahmen ist so hoch wie der Text daneben (align-self:
+     stretch; je nach Breite, Fensterhöhe und Schrift etwa 0,5 bis 0,86) und schneidet das Bild unten irgendwo unter den
+     Karten ab – dort läuft es weich in den Grund der Anwendung (#f4f6fa) aus, damit kein Rand mitten durch eine Zeile geht.
+   - Unter 560 px darunter: die Ansicht fürs Smartphone (phone-dashboard, 1170 × 2280), volle Breite, von oben, fest 8 : 11
+     – endet bei 1170 · 11/8 = 1609 in der Karte „Mitglieder“ zwischen dem Hinweis „+5 gegenüber dem Vormonat“ (endet bei
+     1529) und der Zeitleiste „6 M · 12 M · 5 J“ (ab 1835).
+   - Breit (560 bis 899 px, unter dem Text): das Dashboard am Rechner ohne Seitenleiste, 5 : 4 – links ab 490 (der Rand der
+     Seitenleiste liegt bei 488, die Inhalte beginnen bei 540), rechts bis zum Bildrand 1920 (die dritte Karte endet bei
+     1866), unten bis 1144: unter „Helferstunden 2026“ (endet bei 1135), über „128 Std“ (beginnt bei 1158).
+   Grau als Platzhalter, bis das Bild da ist; die feine Linie (::after, über dem Bild) hebt die weiße Leiste der
+   Anwendung vom weißen Grund ab. */
+.hero-visual {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 8 / 11;
+  border-radius: 24px;
+  background: var(--bg-alt);
 }
 
-.hero .eyebrow .icon {
-  width: 17px;
-  height: 17px;
+@media (min-width: 900px) {
+  .hero-visual {
+    align-self: stretch;
+    width: 100%; /* die Spalte bestimmt die Breite, die Zeile die Höhe; das Seitenverhältnis ist nur die Untergrenze */
+    aspect-ratio: 43 / 50;
+  }
 }
 
-/* Sehr schmale Telefone (320 px): wie bisher, damit die Kennzeile einzeilig bleibt */
-@media (max-width: 359px) {
-  .hero .eyebrow {
-    padding: 5px 13px;
-    font-size: 0.84rem;
+.hero-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(26 26 26 / 8%);
+  pointer-events: none;
+}
+
+/* Neben dem Text: unten weich in den Grund der Anwendung auslaufen (siehe oben) */
+@media (min-width: 900px) {
+  .hero-visual::after {
+    background: linear-gradient(rgb(244 246 250 / 0%) calc(100% - 112px), #f4f6fa calc(100% - 8px));
+  }
+}
+
+.hero-visual picture {
+  display: block;
+  height: 100%;
+}
+
+.hero-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0;
+}
+
+/* Breit: das Bild 1920 / 1430 = 134,27 % so breit wie der Rahmen und um 490 / 1430 = 34,27 % nach links verschoben; die
+   Höhe folgt aus width/height im HTML, der Rahmen (5 : 4) schneidet unten bei 1430 · 4/5 = 1144 ab */
+@media (min-width: 560px) and (max-width: 899px) {
+  .hero-visual {
+    aspect-ratio: 5 / 4;
   }
 
-  .hero .eyebrow .icon {
-    display: none;
+  .hero-visual img {
+    width: 134.27%;
+    max-width: none;
+    height: auto;
+    margin-left: -34.27%;
   }
 }
 
-/* Ab Tablet-Breite: Luft über der Kennzeile und vor dem Bild richtet sich auch nach der Fensterhöhe, auf niedrigen
-   Bildschirmen (Laptops mit 768 oder 800 px) wird die Überschrift kleiner – so ist schon im ersten Bild der obere Teil
-   des Dashboards zu sehen. Auf hohen Bildschirmen bleibt alles wie bisher. */
-@media (min-width: 720px) {
+@media (max-width: 559px) {
+  .hero-visual {
+    border-radius: 20px;
+  }
+}
+
+/* Niedrige Laptop-Bildschirme (1024 × 768, 1280 × 720, 1366 × 768, 1440 × 800): etwas dichter und die Schrift etwas
+   kleiner, damit der ganze Einstieg samt grauer Zeile im ersten Bild steht. Das Bild daneben folgt der Höhe des Textes. */
+@media (min-width: 900px) and (max-height: 820px) {
   .hero {
-    padding-top: calc(var(--header-h) + clamp(48px, min(8vw, 7vh), 112px));
+    --h1: min(clamp(2.75rem, 4.4vw + 1rem, 5.25rem), 8.5vh);
+    padding-top: calc(var(--header-h) + 32px);
   }
 
-  .hero h1 {
-    font-size: min(clamp(2.5rem, 5.6vw + 0.6rem, 5.25rem), 9.5vh);
-  }
-
-  .hero .hero-visual {
-    margin-top: clamp(40px, min(7vw, 5.5vh), 88px);
-  }
-}
-
-@media (min-width: 720px) and (max-height: 860px) {
-  .hero .lead {
-    margin-top: 22px;
-  }
-
-  .hero-actions {
-    margin-top: 28px;
+  .hero .lead,
+  .hero-points {
+    font-size: 1.0625rem;
+    line-height: 1.5;
   }
 
   .hero-points {
-    margin-top: 22px;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .hero-actions {
+    margin-top: 24px;
+  }
+
+  .hero-note {
+    margin-top: 12px;
   }
 }
 
@@ -1115,15 +1357,15 @@ html:not(.js) .nav ul a:hover {
   }
 
   .hero {
-    padding-top: calc(var(--header-h) + 12px);
+    padding-top: calc(var(--header-h) + 16px);
   }
 
-  .hero h1 {
-    font-size: min(clamp(2.5rem, 5.6vw + 0.6rem, 5.25rem), 9.5vh); /* wie ab 720 px, auch für schmalere Handys quer */
+  .hero {
+    --h1: min(clamp(2.5rem, 4.4vw + 1rem, 5.25rem), 11vh);
   }
 
   .hero .lead {
-    margin-top: 16px;
+    margin-top: calc(var(--h1) * 0.54 + 10px); /* knapper, aber weiter frei vom Zeichen */
   }
 
   .hero-actions {
@@ -1139,120 +1381,7 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-/* Schwebende Hinweise rund um das Dashboard (nur Schmuck). --rise: wie weit sie beim Scrollen steigen (Bewegung) – in
-   schmaleren Fenstern ist die freie Stelle in der Seitenleiste niedriger und das gekippte Dashboard schon früh zu sehen:
-   Dort steigen sie nicht, sonst rutschte „Voll besetzt“ über „Persönlich“. */
-.hero-chips {
-  --rise: 48px;
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.float-chip {
-  position: absolute;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 18px 10px 10px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: var(--shadow-md);
-  text-align: left;
-  white-space: nowrap;
-}
-
-.float-chip strong {
-  display: block;
-  color: var(--ink);
-  font-size: 0.9rem;
-  font-weight: 650;
-  line-height: 1.25;
-}
-
-.float-chip small {
-  display: block;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
-.float-chip-icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--tone-bg);
-  color: var(--tone-fg);
-}
-
-.float-chip-icon .icon {
-  width: 18px;
-  height: 18px;
-  stroke-width: 2.4;
-}
-
-/* Die Hinweise liegen auf freien Stellen und verdecken weder Text noch Navigation im Bild: „Voll besetzt“ in der leeren
-   Seitenleiste zwischen „Einstellungen“ und „Persönlich“ (ragt links über den Rahmen), „Erinnerung“ auf der Leiste des
-   Fensters, „Zentrale Suche“ unter dem unteren Rand. Lage in Prozent der Höhe plus festem Anteil (Leiste des Fensters):
-   So treffen sie in jeder Breite dieselbe Stelle des Dashboards. Mit Bewegung starten sie etwas tiefer (siehe Bewegung). */
-.chip-a {
-  left: -5%;
-  top: calc(56.25% + 30px);
-}
-
-.chip-b {
-  right: 16%;
-  top: -3.5%;
-}
-
-.chip-c {
-  left: 4%;
-  bottom: -6.5%;
-}
-
-@media (max-width: 1239px) {
-  .hero-chips {
-    --rise: 0px;
-  }
-
-  .chip-a {
-    left: -1%;
-  }
-}
-
-@media (max-width: 899px) {
-  .hero-chips {
-    display: none;
-  }
-}
-
 /* ---------- Bildschirmfotos in Rahmen ---------- */
-
-.hero-visual {
-  position: relative;
-  isolation: isolate;
-  max-width: 1120px;
-  margin: clamp(52px, 7vw, 88px) auto 0;
-}
-
-.hero-stage {
-  perspective: 2000px;
-}
-
-/* Dezenter Lichtschein hinter den großen Bildschirmfotos (Verlauf statt Weichzeichner-Filter: kostet beim Scrollen nichts) */
-.hero-visual::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 6% 0;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(91 156 214 / 22%), transparent);
-  pointer-events: none;
-}
 
 .browser {
   position: relative;
@@ -1503,54 +1632,6 @@ html:not(.js) .nav ul a:hover {
   inset: 0;
   background: linear-gradient(118deg, rgb(255 255 255 / 9%) 0%, rgb(255 255 255 / 0%) 16%);
   pointer-events: none;
-}
-
-/* Telefon im Einstieg, über dem Dashboard: liegt ganz unter der Reiterleiste und deckt die vierte Kennzahlenkarte
-   vollständig ab. Die Oberkante steht zwischen der Beschriftung „Aufgaben & Aktivität“ (Unterkante bei 41 % der
-   Bildhöhe; sie reicht nach rechts über den Rand der Karte hinaus) und der Oberkante der Karte (47 %), die linke Kante
-   samt Seitentasten links vom Rand der Karte (81,5 % der Bildbreite) und rechts der dritten Karte (79,5 %). So schneidet
-   es keine Textzeile an und lässt keinen Streifen der Karte stehen – auch nicht während der Scroll-Animation, dort folgt
-   das Telefon dem sich aufrichtenden Dashboard (siehe Bewegung). Die Werte gelten für das Dashboard-Bild – nach einer
-   Neuaufnahme prüfen, am besten im Browser über den ganzen Scrollweg gemessen. */
-.hero-phone {
-  position: absolute;
-  z-index: 1;
-  right: -1.55%;
-  bottom: -13.63%;
-  width: clamp(120px, 21.25%, 238px);
-}
-
-/* Schmaler als 1240 px ist der Seitenrand nur 32 px breit: etwas kleiner, damit das Telefon samt Tasten nicht über den
-   Rand ragt; dieselbe Lage, umgerechnet auf die geringere Größe (der feste Anteil gleicht die Leiste des Fensters aus) */
-@media (max-width: 1239px) {
-  .hero-phone {
-    right: 0.4%;
-    bottom: calc(-8.62% + 3.7px);
-    width: 19.5%;
-  }
-}
-
-/* Ab 1240 px ragt das größere Telefon weiter unter dem Bild hervor: etwas mehr Luft bis zur Kennzahlenleiste, sonst
-   schnitte der Einstieg (overflow: clip) seinen Schatten ab */
-@media (min-width: 1240px) {
-  .hero {
-    padding-bottom: 136px;
-  }
-}
-
-@media (max-width: 719px) {
-  .hero-visual .hero-stage {
-    display: none;
-  }
-
-  /* Auf dem Smartphone steht nur der Telefonrahmen, mittig und ohne Überlagerung */
-  .hero-phone {
-    position: relative;
-    right: auto;
-    bottom: auto;
-    width: min(280px, 72vw);
-    margin: 0 auto;
-  }
 }
 
 /* Papierbogen (gedruckter Helferplan) mit einem zweiten Blatt dahinter */
@@ -7448,14 +7529,15 @@ html:not(.js) .nav ul a:hover {
   flex: 1 0 auto;
 }
 
+/* Kopfzeile der Unterseiten: von Anfang an deckend weiß (darunter liegt kein Einstieg), die feine Linie erst nach dem
+   Scrollen – oben sieht sie aus wie auf der Startseite */
 .subpage .site-header {
   background: var(--bg);
-  border-bottom-color: var(--line);
 }
 
 /* Ohne gleitende Markierung (die gehört zu den Abschnitten der Startseite): Hintergrund beim Überfahren */
 .subpage .nav ul a:hover {
-  background: var(--accent-soft);
+  background: rgb(26 26 26 / 6%);
 }
 
 .page-head {
@@ -7776,10 +7858,6 @@ html:not(.js) .nav ul a:hover {
     animation: intro-in 0.9s var(--ease-out) both;
   }
 
-  .intro-1 {
-    animation-delay: 0.05s;
-  }
-
   .intro-3 {
     animation-delay: 0.42s;
   }
@@ -7792,8 +7870,10 @@ html:not(.js) .nav ul a:hover {
     animation-delay: 0.6s;
   }
 
+  /* Das Bild rechts: ruhig, nur etwas Anstieg – ohne Einblenden: Es ist das größte Element im ersten Bild (Largest
+     Contentful Paint), und was mit Deckkraft 0 beginnt, zählt der Browser dafür nicht */
   .intro-6 {
-    animation: intro-visual 1.2s var(--ease-out) 0.5s both;
+    animation: intro-rise 1.1s var(--ease-out) 0.1s both;
   }
 
   /* Überschrift Wort für Wort, aus der Unschärfe */
@@ -7816,10 +7896,6 @@ html:not(.js) .nav ul a:hover {
 
   .site-header {
     animation: header-in 0.6s var(--ease-out) both;
-  }
-
-  .flow-word::after {
-    animation: underline-in 0.9s var(--ease-out) 0.9s both;
   }
 
   /* Zeichen hinter der Überschrift: Die schwarzen Etappen gleiten von links, die blauen von rechts herein – je Seite von
@@ -7847,31 +7923,6 @@ html:not(.js) .nav ul a:hover {
 
   .hero-mark-dot {
     animation: mark-dot-in 0.8s var(--ease-out) 1.2s both;
-  }
-
-  .hero-glow::before {
-    animation: drift-left 16s ease-in-out infinite alternate;
-  }
-
-  .hero-glow::after {
-    animation: drift-right 18s ease-in-out infinite alternate;
-  }
-
-  /* Schwebende Hinweise: erscheinen einmal nach dem Bild und stehen dann still (keine Dauerbewegung neben dem Text) */
-  .float-chip {
-    animation: chip-in 0.8s var(--ease-out) both;
-  }
-
-  .chip-a {
-    animation-delay: 1.05s;
-  }
-
-  .chip-b {
-    animation-delay: 1.2s;
-  }
-
-  .chip-c {
-    animation-delay: 1.35s;
   }
 
   .cta::before {
@@ -8534,11 +8585,9 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-@keyframes intro-visual {
+@keyframes intro-rise {
   from {
-    opacity: 0;
-    translate: 0 64px;
-    scale: 0.96;
+    translate: 0 32px;
   }
 }
 
@@ -8580,24 +8629,10 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-@keyframes chip-in {
-  from {
-    opacity: 0;
-    scale: 0.8;
-    translate: 0 16px;
-  }
-}
-
 @keyframes header-in {
   from {
     opacity: 0;
     translate: 0 -10px;
-  }
-}
-
-@keyframes underline-in {
-  from {
-    transform: scaleX(0);
   }
 }
 
@@ -8630,62 +8665,6 @@ html:not(.js) .nav ul a:hover {
       animation-timeline: scroll(root);
     }
 
-    /* Einstieg: Das Dashboard richtet sich beim Scrollen auf und wird voll groß; die Hinweise steigen schneller */
-    .hero-stage .browser {
-      transform-origin: 50% 0;
-      animation: hero-tilt linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 62vh;
-    }
-
-    /* Das Telefon steigt am Smartphone (dort steht es allein) etwas schneller als die Seite */
-    .hero-phone {
-      translate: 0 var(--phone-shift);
-      animation: hero-phone linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 90vh;
-    }
-
-    /* Über dem Dashboard folgt es dagegen dessen Aufrichten (hero-tilt): Gekippt liegen Reiterleiste und Kennzahlen um
-       gut 2 % der Bildbreite höher, das Telefon startet um ebenso viel höher und sinkt im selben Scrollweg in seine Lage.
-       So bleibt es zwischen „Aufgaben & Aktivität“ und der Oberkante der vierten Karte, statt über die Beschriftung zu
-       steigen. */
-    @media (min-width: 720px) {
-      .hero-phone {
-        --phone-follow: calc(min(1120px, 100vw - 2 * var(--gutter)) * 0.0232);
-        animation-name: hero-phone-follow;
-        animation-range: 0 62vh;
-      }
-    }
-
-    .hero-chips {
-      animation: chips-rise linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 90vh;
-    }
-
-    /* Die Hinweise im Bild starten um den Anstieg (chips-rise) tiefer und kommen genau an ihrer freien Stelle an;
-       „Erinnerung“ beginnt auf der Leiste des Fensters und steigt darüber hinaus */
-    .chip-a {
-      top: calc(56.25% + 30px + var(--rise));
-    }
-
-    .chip-c {
-      bottom: calc(-6.5% - var(--rise));
-    }
-
-    .hero-copy {
-      animation: hero-copy-out linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 70vh;
-    }
-
-    .hero-glow {
-      animation: glow-out linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 100vh;
-    }
-
     /* Parallaxe: Bilder wandern beim Durchscrollen leicht gegen die Seite; Telefone stärker als Bildschirme */
     .plx {
       animation: plx linear both;
@@ -8713,7 +8692,6 @@ html:not(.js) .nav ul a:hover {
        Deklaration mit var() taugt nicht als Rückfall: Sie gilt beim Einlesen immer als gültig und würde ohne round()
        erst beim Berechnen ungültig – dann stünde translate auf none.) */
     @supports (translate: 0 round(1px, 1px)) {
-      .hero-phone,
       .phone.plx {
         translate: 0 round(var(--phone-shift), 1px);
       }
@@ -8769,16 +8747,6 @@ html:not(.js) .nav ul a:hover {
   }
 }
 
-@keyframes hero-tilt {
-  from {
-    transform: rotateX(12deg) scale(0.95);
-  }
-
-  to {
-    transform: none;
-  }
-}
-
 /* Telefone verschieben sich beim Scrollen nur um ganze Pixel: Die Verschiebung läuft über eine registrierte Eigenschaft
    und wird beim Berechnen gerundet (round() im @supports-Block oben). Bei Bruchteilen von Pixeln rechnet der Browser das
    ganze Telefon weich – die Schrift im Bildschirm verschwimmt. Ältere Browser ohne round() verschieben ungerundet. */
@@ -8788,22 +8756,6 @@ html:not(.js) .nav ul a:hover {
   initial-value: 0px;
 }
 
-@keyframes hero-phone {
-  to {
-    --phone-shift: -64px;
-  }
-}
-
-@keyframes hero-phone-follow {
-  from {
-    --phone-shift: calc(var(--phone-follow) * -1);
-  }
-
-  to {
-    --phone-shift: 0px;
-  }
-}
-
 @keyframes phone-plx {
   from {
     --phone-shift: var(--plx);
@@ -8811,26 +8763,6 @@ html:not(.js) .nav ul a:hover {
 
   to {
     --phone-shift: calc(var(--plx) * -1);
-  }
-}
-
-@keyframes chips-rise {
-  to {
-    translate: 0 calc(var(--rise) * -1);
-  }
-}
-
-/* Nur Verschiebung, keine Transparenz: halb durchsichtige Schaltflächen sähen deaktiviert aus */
-@keyframes hero-copy-out {
-  to {
-    translate: 0 -48px;
-  }
-}
-
-@keyframes glow-out {
-  to {
-    opacity: 0.25;
-    translate: 0 -120px;
   }
 }
 
@@ -9067,9 +8999,7 @@ html:not(.js) .nav ul a:hover {
 @media print {
   .site-header,
   .nav-toggle,
-  .cta,
-  .hero-glow,
-  .hero-chips {
+  .cta {
     display: none !important;
   }
 
@@ -9085,12 +9015,6 @@ html:not(.js) .nav ul a:hover {
     translate: none !important;
     scale: none !important;
     filter: none !important;
-  }
-
-  /* Absolut platzierte Telefone mit Prozentbreite und cqw-Maßen (Uhr, Symbole) lassen Chrome leere Seiten drucken –
-     im Druck deshalb eine feste Breite (entspricht ungefähr der Druckbreite) */
-  .hero-phone {
-    width: 150px;
   }
 
   /* Helferschichten: die Schritte ohne Hervorhebung durch das Live-Fenster, das gedruckte Blatt an seinem Platz */

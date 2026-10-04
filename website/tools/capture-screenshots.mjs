@@ -49,7 +49,7 @@ const schemes = flag("scheme") ? [flag("scheme")] : ["light"];
 const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960, 1440, 1920] };
 /**
  * Telefonbilder: je Bild die 1-, 1,5-, 2- und 3-fache Breite des Bildschirms, in dem es auf der Website steht (siehe
- * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Einstieg 221, Kapitel 208 (bzw. 182), Vorführung 312 – dort je Bild eigene
+ * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Kapitel 208 (bzw. 182), Vorführung 312 – dort je Bild eigene
  * `widths`), dazu 260, 520 und 780 für das Smartphone (dort sind die Bildschirme 260 px breit). So zeichnet der Browser das
  * Bild Pixel für Pixel, statt es selbst unscharf umzurechnen. Geänderte Größen hier, in site.css und in „sizes“ im HTML
  * angleichen. `crisp`: die Breiten, in denen das Bild bei 100 % Skalierung erscheint (siehe encode).
@@ -519,6 +519,28 @@ const shots = [
       await hideText("Noch keine Stunden erfasst")(page);
     },
   },
+  // Einstieg ab 900 px: das Dashboard in Tablet-Breite (768) als hohes Bild neben dem Text. In dieser Breite stehen die
+  // vier Kennzahl-Karten zwei mal zwei und nichts wird gekürzt (schmaler kürzt die Anwendung den Vereinsnamen, breiter
+  // erscheint die Seitenleiste). Der Rahmen zeigt es von oben und schneidet je nach Höhe unten ab (bis 1600 = 768 / 0,48);
+  // auf der Website 330 bis 490 CSS-Pixel breit, daher 490 bis 1536 (einfache bis dreifache Pixeldichte).
+  {
+    name: "einstieg-dashboard",
+    path: "/dashboard",
+    steps: async (page) => {
+      await assertPreparedDashboard(page);
+      // montags stehen in der laufenden Woche noch keine Helferstunden – der Vergleich „−100 % gegenüber letzter Woche“
+      // sagt dann nichts und fiele im großen Bild auf
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll("p, span, div")) {
+          if (el.children.length === 0 && /^[−-]100\s*%\s*gegenüber letzter Woche$/.test(el.textContent?.trim() ?? "")) {
+            el.style.setProperty("visibility", "hidden");
+          }
+        }
+      });
+    },
+    viewport: { width: 768, height: 1600 },
+    widths: [490, 660, 980, 1280, 1536],
+  },
   // Bildschirm des Laptops in der Vorführung „Am Rechner“ (.laptop-screen, bis 880 CSS-Pixel breit, am Smartphone gut
   // 300): der Chat „Alle Mitglieder“ mit der Ankündigung zum Arbeitseinsatz und der Lesestatistik an jeder eigenen
   // Nachricht (Nachrichten aus tools/demo-vorbereiten.mjs). 880 verlustfrei (erscheint bei 100 % so groß), 960 für das
@@ -568,15 +590,15 @@ const shots = [
     widths: [640, 800, 1280], // 800 für Smartphones mit dreifacher Pixeldichte (das Blatt ist dort gut 230 CSS-Pixel breit)
     schemes: ["light"],
   },
-  // Telefon im Einstieg: das Dashboard mit Kennzahlen (Rechner und Telefon zeigen verschiedene Bildschirme)
+  // Einstieg am Smartphone (unter 560 px): das Dashboard in der Ansicht fürs Smartphone, ohne Telefonrahmen als großes
+  // Bild unter dem Text (288 bis 527 CSS-Pixel breit, Ausschnitt in site.css bei .hero-visual); 1170 für dreifache Dichte
   {
     name: "phone-dashboard",
     device: "phone",
     path: "/dashboard",
     steps: assertPreparedDashboard,
     viewport: PHONE_SCREEN,
-    widths: [221, 260, 332, 442, 520, 663, 780],
-    crisp: [221, 260],
+    widths: [332, 442, 520, 663, 780, 1170],
   },
   // Vorführung „Unterwegs“: ab „Meine Einsätze“, damit die Schaltfläche „Eintragen“ der ersten offenen Schicht ganz zu
   // sehen ist (über ihr stehen je nach Datum noch Hinweise auf unbesetzte Schichten)
