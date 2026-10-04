@@ -29,7 +29,7 @@
   <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100402">
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100403">
   <script src="assets/js/site.js?v=2026100402" defer></script>
 
   <script type="application/ld+json">
@@ -116,7 +116,6 @@
   <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
-  <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
@@ -173,6 +172,8 @@
           <li><a href="#faq">Fragen</a></li>
         </ul>
       </div>
+      <!-- Rechts wie ein schlichter Textlink neben dem schwarzen Knopf (ab 1200 px; im Handy-Menü unter den Menüpunkten) -->
+      <a class="header-link" href="#benachrichtigen">Beim Start benachrichtigen</a>
       <a class="btn btn-primary btn-sm btn-header" href="#kontakt">Demo anfragen</a>
     </nav>
   </div>
@@ -182,11 +183,12 @@
 <main id="inhalt">
 
   <!-- ===== Einstieg ===== -->
+  <!-- Ruhig und aufgeräumt: links groß die Überschrift, darunter Einleitung, drei Punkte, der schwarze Knopf und eine
+       kleine graue Zeile; rechts ein großes Bild der Anwendung (das echte Dashboard), so hoch wie der Text daneben.
+       Schmal steht alles untereinander, das Bild zuletzt. -->
   <section class="hero" aria-labelledby="hero-title">
-    <div class="hero-glow" aria-hidden="true"></div>
     <div class="container">
       <div class="hero-copy">
-        <p class="eyebrow intro intro-1"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg>Vereinsverwaltung mit Helferplanung</p>
         <!-- Das Zeichen von VereinsFlow groß und blass hinter der Überschrift (nur Schmuck): Beim Aufruf gleiten die drei
              schwarzen Etappen von links und die drei blauen von rechts herein und fügen sich zum V, zuletzt rollt der orange
              Punkt mit den Tempo-Strichen an. Formen wie im Logo-Paket (01-logo/svg/vereinsflow-symbol.svg); Farben,
@@ -211,45 +213,31 @@
           </svg>
           <h1 id="hero-title"><span class="word word-1">Bringt</span> <span class="word word-2">Vereinsarbeit</span> <span class="word word-3"><span class="flow-word">in Fluss</span></span></h1>
         </div>
-        <p class="lead intro intro-3">VereinsFlow bündelt Mitglieder, Termine, Helferschichten und Nachrichten an einem Ort. Helfer tragen sich selbst ein, und der Vorstand sieht sofort, wo noch jemand fehlt.</p>
-        <div class="hero-actions intro intro-4">
-          <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-          <a class="btn btn-secondary btn-lg" href="#benachrichtigen">Beim Start benachrichtigen</a>
-        </div>
-        <ul class="hero-points intro intro-5">
-          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Im Browser, ohne Installation</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Den Zugang vergibt Ihr Verein</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-circle-check"/></svg>Daten jedes Vereins strikt getrennt</li>
+        <p class="lead intro intro-3">Vereinsverwaltung mit Helferplanung: VereinsFlow bündelt Mitglieder, Termine, Helferschichten und Nachrichten an einem Ort.</p>
+        <ul class="hero-points intro intro-4">
+          <li>Helfer <strong>tragen sich selbst ein</strong>, und der Vorstand sieht sofort, wo noch jemand fehlt.</li>
+          <li>Läuft <strong>im Browser, ohne Installation</strong>&nbsp;– am Rechner, Tablet und Smartphone.</li>
+          <li><strong>Den Zugang vergibt Ihr Verein</strong>, und die Daten jedes Vereins bleiben <strong>strikt getrennt</strong>.</li>
         </ul>
+        <div class="hero-actions intro intro-5">
+          <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen</a>
+          <a class="hero-link" href="#benachrichtigen">Beim Start benachrichtigen</a>
+        </div>
+        <!-- Zwei kurze Sätze; umgebrochen wird nur zwischen ihnen -->
+        <p class="hero-note intro intro-5"><span>Die Demo ist persönlich und unverbindlich.</span> <span>Passend zu den Fragen Ihres Vereins.</span></p>
       </div>
 
+      <!-- Bild der Anwendung, zugeschnitten wie ein Foto (Ausschnitte in site.css, .hero-visual): Neben der Überschrift
+           (ab 900 px) das Dashboard in Tablet-Breite als hohes Bild, am Smartphone (unter 560 px) die Ansicht fürs
+           Smartphone. Dazwischen (Tablet, Handy quer) steht das Bild breit unter dem Text – nur dort das Dashboard am
+           Rechner, die große Datei lädt sonst gar nicht erst. sizes nach der gezeichneten Breite (hochkant so breit wie der
+           Rahmen; am Rechner zugeschnitten 1,343-mal so breit). -->
       <div class="hero-visual intro intro-6">
-        <div class="hero-stage">
-          <div class="browser">
-            <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Dashboard</span></div>
-            <picture>
-              <!-- Unter 720 px ist das Fenster ausgeblendet: dort nur eine winzige Leerdatei statt des Dashboards laden
-                   (die Content-Security-Policy erlaubt keine data:-Adressen) -->
-              <source media="(max-width: 719px)" srcset="assets/img/leer.svg" width="1" height="1">
-              <img src="assets/img/app/dashboard-light-960.webp?v=2026100401" srcset="assets/img/app/dashboard-light-960.webp?v=2026100401 960w, assets/img/app/dashboard-light-1440.webp?v=2026100401 1440w, assets/img/app/dashboard-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 1240px) 1120px, 92vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Kennzahlen zu Mitgliedern mit Verlauf und Vergleich zum Vormonat, zu Terminen der nächsten 30 Tage, freien Helferplätzen und Helferstunden, oben die zentrale Suche">
-            </picture>
-          </div>
-        </div>
-        <div class="phone hero-phone">
-          <span class="phone-hw" aria-hidden="true"></span>
-          <div class="phone-screen">
-            <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-            <picture>
-              <img src="assets/img/app/phone-dashboard-light-221.webp?v=2026100401" srcset="assets/img/app/phone-dashboard-light-221.webp?v=2026100401 221w, assets/img/app/phone-dashboard-light-260.webp?v=2026100401 260w, assets/img/app/phone-dashboard-light-332.webp?v=2026100401 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026100401 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026100401 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026100401 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026100401 780w" sizes="(max-width: 719px) min(260px, 67vw), min(221px, 19.7vw)" width="780" height="1520" decoding="async" alt="Dashboard auf dem Smartphone: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und die Kennzahl Mitglieder mit Vergleich zum Vormonat und Verlauf">
-            </picture>
-          </div>
-        </div>
-        <!-- Schwebende Hinweise: nur Schmuck (Inhalte stehen weiter unten ausführlich), deshalb aria-hidden -->
-        <div class="hero-chips" aria-hidden="true">
-          <span class="float-chip chip-a"><span class="float-chip-icon tone-green"><svg class="icon"><use href="#i-check"/></svg></span><span><strong>Voll besetzt</strong><small>Aufbau · 5 von 5 Helfern</small></span></span>
-          <span class="float-chip chip-b"><span class="float-chip-icon tone-rose"><svg class="icon"><use href="#i-bell"/></svg></span><span><strong>Erinnerung</strong><small>24&nbsp;Stunden vor dem Einsatz</small></span></span>
-          <span class="float-chip chip-c"><span class="float-chip-icon tone-slate"><svg class="icon"><use href="#i-search"/></svg></span><span><strong>Zentrale Suche</strong><small>Mitglieder, Termine, Dokumente</small></span></span>
-        </div>
+        <picture>
+          <source media="(min-width: 900px)" srcset="assets/img/app/einstieg-dashboard-light-490.webp?v=2026100403 490w, assets/img/app/einstieg-dashboard-light-660.webp?v=2026100403 660w, assets/img/app/einstieg-dashboard-light-980.webp?v=2026100403 980w, assets/img/app/einstieg-dashboard-light-1280.webp?v=2026100403 1280w, assets/img/app/einstieg-dashboard-light-1536.webp?v=2026100403 1536w" sizes="(min-width: 1224px) 490px, calc(42.5vw - 29px)" width="1536" height="3200">
+          <source media="(max-width: 559px)" srcset="assets/img/app/phone-dashboard-light-332.webp?v=2026100403 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026100403 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026100403 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026100403 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026100403 780w, assets/img/app/phone-dashboard-light-1170.webp?v=2026100403 1170w" sizes="calc(100vw - 32px)" width="1170" height="2280">
+          <img src="assets/img/app/dashboard-light-960.webp?v=2026100401" srcset="assets/img/app/dashboard-light-960.webp?v=2026100401 960w, assets/img/app/dashboard-light-1440.webp?v=2026100401 1440w, assets/img/app/dashboard-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 800px) calc(134.3vw - 86px), 123.5vw" width="1920" height="1200" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und Kennzahlen, etwa zu den Mitgliedern mit Vergleich zum Vormonat">
+        </picture>
       </div>
     </div>
   </section>
