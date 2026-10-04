@@ -42,7 +42,17 @@ const resourceOf = (event: { departmentId: string | null }): ResourceRef => ({
   departmentIds: event.departmentId ? [event.departmentId] : [],
 });
 const fullName = (m: { firstName: string; lastName: string }) => `${m.firstName} ${m.lastName}`;
-const shiftLink = (eventId: string) => `/helferplanung/${eventId}`;
+/** Link in den Helferplan; mit Schicht öffnet der Plan genau diese Schicht (aufgeklappt). */
+const shiftLink = (eventId: string, shiftId?: string) =>
+  `/helferplanung/${eventId}${shiftId ? `?schicht=${shiftId}` : ""}`;
+/** Ohne Mitglied (z. B. reines Verwaltungskonto) gibt es keine Selbst-Eintragung – mit dem richtigen Grund. */
+const noSignup = (ctx: TenantContext): Eligibility => ({
+  allowed: false,
+  reason:
+    can(ctx, "shifts:signup") && ctx.memberId === null
+      ? "Dein Benutzerkonto ist keinem Mitglied zugeordnet – bitte wende dich an den Vorstand."
+      : "Für dich ist die Selbst-Eintragung nicht freigeschaltet.",
+});
 
 // ---------------------------------------------------------------------------------------------
 // Lesen: Schichten einer Veranstaltung
@@ -73,14 +83,39 @@ export interface ShiftDto {
   status: ShiftStatus;
   /** Die Schicht hat begonnen (Zeitpunkt der Abfrage). Nach dem Beginn lassen sich Stunden erfassen, aber niemand mehr austragen. */
   started: boolean;
+  /** Die Schicht ist vorbei (Ende erreicht). Dann lässt sich niemand mehr zuweisen. */
+  ended: boolean;
   responsible: { id: string; name: string } | null;
   filled: number;
   health: ShiftHealth;
   assignments: ShiftAssignmentDto[];
   mine: { assignmentId: string } | null;
   signup: Eligibility;
-  can: { manage: boolean; assign: boolean; hours: boolean; signOut: boolean };
+  can: {
+    manage: boolean;
+    /** Darf Eingetragene austragen (Abteilung der Veranstaltung). */
+    assign: boolean;
+    /**
+     * „Zuweisen“ ergibt Sinn: wie `assign`, aber nur, solange die Schicht nicht voll und nicht vorbei ist und die
+     * Veranstaltung veröffentlicht ist – sonst wäre im Dialog jede Person gesperrt (`checkEligibility` mit `asManager`).
+     */
+    assignMore: boolean;
+    hours: boolean;
+    signOut: boolean;
+    /** Löschen geht nicht mehr, sobald eine begonnene Schicht Eingetragene hat – ihre Helferstunden blieben sonst weg. */
+    delete: boolean;
+  };
 }
+
+/**
+ * Veranstaltungen, deren Schichten für die eigenen Einsätze zählen: veröffentlicht oder schon abgeschlossen. Entwürfe
+ * (auch wiederhergestellte) und archivierte sehen normale Mitglieder nicht – ihr Link führte ins Leere, und sie sollen
+ * auch keine Eintragung woanders sperren.
+ */
+const ACTIVE_EVENT = {
+  deletedAt: null,
+  status: { in: ["PUBLISHED", "COMPLETED"] },
+} satisfies Prisma.EventWhereInput;
 
 async function ownContext(ctx: TenantContext) {
   if (!ctx.memberId)
@@ -100,7 +135,12 @@ async function ownContext(ctx: TenantContext) {
       where: {
         memberId: ctx.memberId,
         status: "CONFIRMED",
-        shift: { deletedAt: null, status: { not: "CANCELLED" }, endsAt: { gte: new Date() } },
+        shift: {
+          deletedAt: null,
+          status: { not: "CANCELLED" },
+          endsAt: { gte: new Date() },
+          event: ACTIVE_EVENT,
+        },
       },
       select: {
         shiftId: true,
@@ -140,6 +180,7 @@ export interface EventShiftPlan {
     endsAt: Date;
     allDay: boolean;
     locationName: string | null;
+    cancelReason: string | null;
     departmentId: string | null;
   };
   canManage: boolean;
@@ -189,7 +230,10 @@ export async function listShiftsForEvent(
           ownShifts: own.ownShifts,
           now,
         })
-      : { allowed: false, reason: "Für dich ist die Selbst-Eintragung nicht freigeschaltet." };
+      : noSignup(ctx);
+    const started = row.startsAt.getTime() <= now.getTime();
+    const ended = row.endsAt.getTime() <= now.getTime();
+    const cancelled = row.status === "CANCELLED";
     return {
       id: row.id,
       eventId: row.eventId,
@@ -204,7 +248,8 @@ export async function listShiftsForEvent(
       requirements: row.requirements,
       internalNotes: canManage || canAssign ? row.internalNotes : null,
       status: row.status,
-      started: row.startsAt.getTime() <= now.getTime(),
+      started,
+      ended,
       responsible: row.responsible
         ? { id: row.responsible.id, name: fullName(row.responsible) }
         : null,
@@ -232,8 +277,15 @@ export async function listShiftsForEvent(
       can: {
         manage: canManage,
         assign: canAssign,
+        assignMore:
+          canAssign &&
+          event.status === "PUBLISHED" &&
+          !cancelled &&
+          !ended &&
+          filled < row.requiredCount,
         hours: canHours,
-        signOut: !!mineRow && row.startsAt.getTime() > now.getTime(),
+        signOut: !!mineRow && !cancelled && !started,
+        delete: canManage && !(started && filled > 0),
       },
     };
   });
@@ -247,6 +299,7 @@ export async function listShiftsForEvent(
       endsAt: event.endsAt,
       allDay: event.allDay,
       locationName: event.locationName,
+      cancelReason: event.cancelReason,
       departmentId: event.departmentId,
     },
     canManage,
@@ -470,7 +523,7 @@ export async function updateShift(
           type: "SHIFT_CHANGED",
           title: `Schicht geändert: ${input.title}`,
           body: `${event.title} – ${formatDateShort(times.startsAt)}, ${formatTimeRange(times.startsAt, times.endsAt)}${input.meetingPoint ? `, Treffpunkt: ${input.meetingPoint}` : ""}`,
-          linkUrl: shiftLink(event.id),
+          linkUrl: shiftLink(event.id, shiftId),
           email: true,
         });
       }
@@ -494,6 +547,12 @@ async function userIdsOf(
 export async function deleteShift(ctx: TenantContext, shiftId: string): Promise<void> {
   const { shift, event } = await loadShift(ctx, shiftId);
   if (!can(ctx, "shifts:manage", resourceOf(event))) throw forbidden();
+  // Eine begonnene oder gelaufene Schicht mit Helfern bleibt: Gelöscht verschwänden ihre Helferstunden, und alle bekämen
+  // „Schicht entfällt“ für eine Schicht, die sie schon geleistet haben.
+  if (shift.assignments.length > 0 && shift.startsAt.getTime() <= Date.now())
+    throw conflict(
+      "Die Schicht hat bereits begonnen. Damit die Helferstunden erhalten bleiben, lässt sie sich nicht mehr löschen.",
+    );
   await ctx.db.$transaction(async (tx) => {
     const users = await userIdsOf(
       tx,
@@ -535,6 +594,8 @@ async function upsertAssignment(
   ctx: TenantContext,
   shiftId: string,
   memberId: string,
+  /** „Rückgängig“: Die Person behält ihren alten Platz in der Reihenfolge der Namen. */
+  keepAssignedAt = false,
 ): Promise<void> {
   await tx.shiftAssignment.upsert({
     where: { shiftId_memberId: { shiftId, memberId } },
@@ -548,7 +609,7 @@ async function upsertAssignment(
     update: {
       status: "CONFIRMED",
       cancelledAt: null,
-      assignedAt: new Date(),
+      ...(keepAssignedAt ? {} : { assignedAt: new Date() }),
       assignedByUserId: ctx.userId,
       workedMinutes: null,
       hoursApprovedAt: null,
@@ -598,7 +659,7 @@ export async function signUp(ctx: TenantContext, shiftId: string): Promise<void>
             type: "SHIFT_CHANGED",
             title: `Neue Eintragung: ${shift.title}`,
             body: `${fullName(ctx.user)} hat sich für „${shift.title}“ (${event.title}) eingetragen.`,
-            linkUrl: shiftLink(event.id),
+            linkUrl: shiftLink(event.id, shift.id),
           });
         }
       }
@@ -632,7 +693,7 @@ export async function signOut(ctx: TenantContext, shiftId: string): Promise<void
           type: "SHIFT_CHANGED",
           title: `Abmeldung: ${shift.title}`,
           body: `${fullName(ctx.user)} hat sich aus „${shift.title}“ (${event.title}) ausgetragen – ein Platz ist wieder frei.`,
-          linkUrl: shiftLink(event.id),
+          linkUrl: shiftLink(event.id, shift.id),
         });
       }
     }
@@ -712,10 +773,19 @@ export async function listAssignableMembers(
   });
 }
 
-/** Veranstalter weisen ein Mitglied manuell zu (Konflikte und Mindestalter werden geprüft). */
+/** So lange nach dem Austragen gilt „Rückgängig“ als Korrektur, von der die Person nichts merken soll. */
+const UNDO_WINDOW_MS = 10 * 60_000;
+
+/**
+ * Veranstalter weisen ein Mitglied manuell zu (Konflikte und Mindestalter werden geprüft). Mit `undo` (Knopf
+ * „Rückgängig“ nach „×“) ist es eine Korrektur: Ist die Nachricht „Du wurdest ausgetragen“ noch nicht per E-Mail
+ * verschickt, wird sie zurückgenommen und die Person bekommt auch keine neue – sonst erführe sie zweimal von einem
+ * Verklicken.
+ */
 export async function assignMember(
   ctx: TenantContext,
   input: { shiftId: string; memberId: string },
+  options: { undo?: boolean } = {},
 ): Promise<void> {
   const { shift, event } = await loadShift(ctx, input.shiftId);
   if (!can(ctx, "shifts:assign", resourceOf(event))) throw forbidden();
@@ -769,20 +839,39 @@ export async function assignMember(
 
   await guard(() =>
     ctx.db.$transaction(async (tx) => {
-      await upsertAssignment(tx, ctx, shift.id, member.id);
+      await upsertAssignment(tx, ctx, shift.id, member.id, options.undo === true);
       await recordAudit(tx, auditActor(ctx), {
         action: "shift.assigned",
         entityType: "EventShift",
         entityId: shift.id,
-        summary: `${fullName(member)} der Schicht „${shift.title}“ zugewiesen`,
+        summary: options.undo
+          ? `${fullName(member)} wieder der Schicht „${shift.title}“ zugewiesen (Rückgängig)`
+          : `${fullName(member)} der Schicht „${shift.title}“ zugewiesen`,
       });
+      if (options.undo && member.userId) {
+        const pending = await tx.notification.findMany({
+          where: {
+            userId: member.userId,
+            type: "SHIFT_CANCELLED",
+            linkUrl: shiftLink(event.id, shift.id),
+            emailStatus: { in: ["PENDING", "NONE"] },
+            createdAt: { gte: new Date(Date.now() - UNDO_WINDOW_MS) },
+          },
+          select: { id: true, readAt: true },
+        });
+        if (pending.length > 0) {
+          await tx.notification.deleteMany({ where: { id: { in: pending.map((n) => n.id) } } });
+          // Ungelesen und ohne E-Mail: Die Person hat nichts mitbekommen – dann auch keine neue Nachricht.
+          if (pending.every((n) => n.readAt === null)) return;
+        }
+      }
       if (member.userId && member.userId !== ctx.userId) {
         await notifyUsers(tx, ctx.clubId, {
           userIds: [member.userId],
           type: "SHIFT_ASSIGNED",
           title: `Du wurdest eingeteilt: ${shift.title}`,
           body: `${event.title} – ${formatDateShort(shift.startsAt)}, ${formatTimeRange(shift.startsAt, shift.endsAt)}${shift.meetingPoint ? `, Treffpunkt: ${shift.meetingPoint}` : ""}`,
-          linkUrl: shiftLink(event.id),
+          linkUrl: shiftLink(event.id, shift.id),
           email: true,
         });
       }
@@ -816,7 +905,7 @@ export async function unassignMember(
         type: "SHIFT_CANCELLED",
         title: `Du wurdest ausgetragen: ${shift.title}`,
         body: `${event.title} – ${formatDateShort(shift.startsAt)}, ${formatTimeRange(shift.startsAt, shift.endsAt)}`,
-        linkUrl: shiftLink(event.id),
+        linkUrl: shiftLink(event.id, shift.id),
         email: true,
       });
     }
@@ -1197,7 +1286,7 @@ export async function listOpenShifts(
             ownShifts: own.ownShifts,
             now,
           })
-        : { allowed: false, reason: "Für dich ist die Selbst-Eintragung nicht freigeschaltet." },
+        : noSignup(ctx),
     }));
 }
 
@@ -1233,6 +1322,11 @@ export interface PlanningEvent {
   filled: number;
   /** Freie Plätze, in die man sich selbst eintragen kann: offene Schichten, die noch nicht begonnen haben. */
   signupFreeSpots: number;
+  /**
+   * Schon beendete Schichten der Veranstaltung (nicht abgesagt). Sie fehlen in `shifts` und in den Summen – die Übersicht
+   * sagt dann „noch 1 Schicht“, damit ihre Zahlen nicht wie ein Widerspruch zum Helferplan aussehen.
+   */
+  endedShifts: number;
   shifts: PlanningShift[];
 }
 
@@ -1313,6 +1407,7 @@ export async function listUpcomingShiftPlans(ctx: TenantContext): Promise<Planni
       required: 0,
       filled: 0,
       signupFreeSpots: 0,
+      endedShifts: 0,
       shifts: [],
     };
     entry.required += row.requiredCount;
@@ -1347,9 +1442,25 @@ export async function listUpcomingShiftPlans(ctx: TenantContext): Promise<Planni
             ownShifts: own.ownShifts,
             now,
           })
-        : { allowed: false, reason: "Für dich ist die Selbst-Eintragung nicht freigeschaltet." },
+        : noSignup(ctx),
     });
     events.set(row.event.id, entry);
+  }
+  if (events.size > 0) {
+    const ended = await ctx.db.eventShift.groupBy({
+      by: ["eventId"],
+      where: {
+        eventId: { in: [...events.keys()] },
+        deletedAt: null,
+        status: { not: "CANCELLED" },
+        endsAt: { lt: now },
+      },
+      _count: { _all: true },
+    });
+    for (const group of ended) {
+      const entry = events.get(group.eventId);
+      if (entry) entry.endedShifts = group._count._all;
+    }
   }
   return [...events.values()].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 }
@@ -1379,7 +1490,7 @@ export async function listMyAssignments(
       shift: {
         deletedAt: null,
         status: { not: "CANCELLED" },
-        event: { deletedAt: null, status: { not: "CANCELLED" } },
+        event: ACTIVE_EVENT,
         ...(options.includePast ? {} : { endsAt: { gte: new Date() } }),
       },
     },

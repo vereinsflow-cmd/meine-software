@@ -114,13 +114,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <span className="text-2xl font-semibold tabular-nums">{event.shiftSummary.filled}</span>
             <span className="text-muted-foreground">
               {" "}
-              von {event.shiftSummary.required} Helfern in {event.shiftSummary.shifts} Schichten
+              von {event.shiftSummary.required} Helfern in {event.shiftSummary.shifts}{" "}
+              {event.shiftSummary.shifts === 1 ? "Schicht" : "Schichten"}
             </span>
           </p>
         )}
         {openShifts > 0 && event.status === "PUBLISHED" && (
           <ToneBadge tone="warning" className="w-fit">
-            {openShifts} Plätze noch frei
+            {openShifts} {openShifts === 1 ? "Platz" : "Plätze"} noch frei
           </ToneBadge>
         )}
         <Button asChild variant="outline">

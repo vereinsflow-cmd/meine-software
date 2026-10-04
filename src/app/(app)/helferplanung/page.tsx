@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import {
   daysUntil,
   formatDayMonth,
+  formatTime,
   formatTimeRange,
   inDaysLabel,
   toDateInputValue,
@@ -95,7 +96,7 @@ export default async function HelperPlanningPage() {
       )}
 
       <section aria-labelledby="meine-einsaetze" className="mb-9">
-        <SectionHeading id="meine-einsaetze" title="Meine Einsätze">
+        <SectionHeading id="meine-einsaetze" title="Meine Einsätze" focusable>
           {mine.length > 0 && `${mineCount} ${mine.length === 1 ? "kommender" : "kommende"}`}
         </SectionHeading>
         <div className="rounded-xl border bg-card shadow-xs">
@@ -116,7 +117,7 @@ export default async function HelperPlanningPage() {
                   </span>
                   <span className="min-w-0 max-xl:col-start-1">
                     <Link
-                      href={`/helferplanung/${a.event.id}`}
+                      href={`/helferplanung/${a.event.id}?schicht=${a.shiftId}`}
                       className="block font-medium underline-offset-4 hover:underline"
                     >
                       {a.title}
@@ -127,14 +128,18 @@ export default async function HelperPlanningPage() {
                     {a.meetingPoint && `Treffpunkt: ${a.meetingPoint}`}
                   </span>
                   <span className="justify-self-end max-xl:col-start-2 max-xl:row-span-4 max-xl:row-start-1">
-                    {a.canSignOut && (
+                    {a.canSignOut ? (
                       <QuickSignOutButton
                         shiftId={a.shiftId}
                         eventId={a.event.id}
                         label={a.title}
                         quiet
+                        focusAfter="meine-einsaetze"
                         className="-mr-2 max-sm:h-11"
                       />
+                    ) : (
+                      // Hat schon begonnen (vorbei ist hier nichts): Austragen geht nicht mehr.
+                      <span className="text-sm text-muted-foreground">läuft</span>
                     )}
                   </span>
                 </li>
@@ -175,15 +180,22 @@ export default async function HelperPlanningPage() {
 function SectionHeading({
   id,
   title,
+  focusable = false,
   children,
 }: {
   id: string;
   title: string;
+  /** Fokus-Ziel nach einer Aktion, deren Knopf danach verschwindet (z. B. „Austragen“ in „Meine Einsätze“). */
+  focusable?: boolean;
   children?: React.ReactNode;
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-      <h2 id={id} className="text-lg font-semibold">
+      <h2
+        id={id}
+        tabIndex={focusable ? -1 : undefined}
+        className="text-lg font-semibold outline-none"
+      >
         {title}
       </h2>
       {children && <span className="text-sm text-muted-foreground tabular-nums">{children}</span>}
@@ -191,9 +203,13 @@ function SectionHeading({
   );
 }
 
-/** „in 2 Tagen“ / „heute“ / „morgen“ – oder „läuft“, wenn die Schicht schon begonnen hat. */
-function whenLabel(shift: Pick<PlanningShift, "startsAt" | "started">) {
-  return shift.started ? "läuft" : inDaysLabel(Math.max(0, daysUntil(shift.startsAt)));
+/** „heute um 18:00 Uhr“, „morgen um 9:00 Uhr“, „Sa., 10. Okt. (in 7 Tagen)“ – oder „läuft seit 12:00 Uhr“. */
+function whenText(shift: Pick<PlanningShift, "startsAt" | "started">) {
+  const time = `${formatTime(shift.startsAt)} Uhr`;
+  if (shift.started) return `läuft seit ${time}`;
+  const days = Math.max(0, daysUntil(shift.startsAt));
+  if (days <= 1) return `${inDaysLabel(days)} um ${time}`;
+  return `${formatDayMonth(shift.startsAt)} (${inDaysLabel(days)})`;
 }
 
 function UrgentLine({ event, shifts }: { event: PlanningEvent; shifts: PlanningShift[] }) {
@@ -204,11 +220,15 @@ function UrgentLine({ event, shifts }: { event: PlanningEvent; shifts: PlanningS
   const titles = [...new Set(shifts.map((shift) => shift.title))];
   return (
     <p className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-4 py-3 text-sm sm:px-5 [&+&]:border-t">
-      <span
-        aria-hidden="true"
-        className={cn("size-2 shrink-0 rounded-full", critical ? "bg-red-600" : "bg-amber-500")}
-      />
-      <span className="min-w-0 flex-1 basis-[calc(100%-1.5rem)] sm:basis-0">
+      <span className="min-w-0 flex-1 basis-full sm:basis-0">
+        {/* Der Punkt steht im Text – so bleibt er bei mehrzeiligen Hinweisen auf der ersten Zeile. */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "mr-2.5 inline-block size-2 rounded-full align-[0.0625rem]",
+            critical ? "bg-red-600" : "bg-amber-500",
+          )}
+        />
         <span
           className={cn(
             "font-semibold",
@@ -217,13 +237,12 @@ function UrgentLine({ event, shifts }: { event: PlanningEvent; shifts: PlanningS
         >
           {URGENCY_LABEL[critical ? "CRITICAL" : "SOON"]}:
         </span>{" "}
-        {joinTitles(titles)} bei „{event.title}“ {shifts.length === 1 ? "ist" : "sind"} noch{" "}
-        {allEmpty ? "unbesetzt" : "nicht voll besetzt"} – {formatDayMonth(first.startsAt)},{" "}
-        {whenLabel(first)}.
+        {joinTitles(titles)} bei „{event.title}“ {titles.length === 1 ? "ist" : "sind"} noch{" "}
+        {allEmpty ? "unbesetzt" : "nicht voll besetzt"} – {whenText(first)}.
       </span>
       <Link
         href={`/helferplanung/${event.eventId}`}
-        className="-ml-2.5 inline-flex h-8 items-center rounded-lg px-2.5 font-medium text-primary hover:bg-muted max-sm:ml-3 max-sm:h-11 sm:ml-auto"
+        className="-ml-2.5 inline-flex h-8 items-center rounded-lg px-2.5 font-medium text-primary hover:bg-muted max-sm:h-11 sm:ml-auto"
       >
         Zum Helferplan
       </Link>
@@ -255,7 +274,8 @@ function EventBlock({ event }: { event: PlanningEvent }) {
       </p>
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1">
-          <h3 id={headingId} className="text-base font-semibold">
+          {/* tabIndex -1: Fokus-Ziel nach „Eintragen“/„Zuweisen“ in den Zeilen darunter (deren Knopf dann verschwindet). */}
+          <h3 id={headingId} tabIndex={-1} className="text-base font-semibold outline-none">
             <Link href={href} className="underline-offset-4 hover:underline">
               {event.title}
             </Link>
@@ -270,8 +290,11 @@ function EventBlock({ event }: { event: PlanningEvent }) {
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">
           {event.allDay ? "ganztägig" : formatTimeRange(event.startsAt, event.endsAt)} ·{" "}
+          {/* Sind schon Schichten vorbei, zählt die Übersicht nur die übrigen – „noch“ sagt das (der Helferplan zählt alle). */}
+          {event.endedShifts > 0 && "noch "}
           {event.shifts.length} {event.shifts.length === 1 ? "Schicht" : "Schichten"} ·{" "}
-          {event.filled} von {event.required} Plätzen besetzt, {event.required - event.filled} frei
+          {event.filled} von {event.required} {event.required === 1 ? "Platz" : "Plätzen"} besetzt
+          {event.required > event.filled && `, ${event.required - event.filled} frei`}
         </p>
 
         {open.length > 0 && (
@@ -282,7 +305,12 @@ function EventBlock({ event }: { event: PlanningEvent }) {
           </ul>
         )}
         {full.length > 0 && (
-          <p className="mt-0 border-t pt-2.5 text-sm text-muted-foreground">
+          <p
+            className={cn(
+              "border-t pt-2.5 text-sm text-muted-foreground",
+              open.length === 0 && "mt-3",
+            )}
+          >
             {open.length === 0 ? "Alle Schichten voll besetzt" : "Außerdem voll besetzt"}:{" "}
             {full.map((shift, index) => (
               <span key={shift.id}>
@@ -339,13 +367,15 @@ function OpenShiftRow({ event, shift }: { event: PlanningEvent; shift: PlanningS
       </span>
       <span className="justify-self-end max-xl:col-start-2 max-xl:row-span-3 max-xl:row-start-1">
         {shift.mine ? (
-          <span className="text-sm text-muted-foreground">Du bist dabei</span>
+          // Bündig mit dem Text der Knöpfe darüber und darunter (die haben Innenabstand und -mr-2).
+          <span className="pr-1 text-sm text-muted-foreground">Du bist dabei</span>
         ) : shift.signup.allowed ? (
           <QuickSignUpButton
             shiftId={shift.id}
             eventId={event.eventId}
             variant="ghost"
             label={shift.title}
+            focusAfter={`veranstaltung-${event.eventId}`}
             className="-mr-2 text-primary hover:text-primary max-sm:h-11"
           />
         ) : event.canAssign ? (
@@ -353,6 +383,7 @@ function OpenShiftRow({ event, shift }: { event: PlanningEvent; shift: PlanningS
             shiftId={shift.id}
             eventId={event.eventId}
             title={shift.title}
+            focusAfter={`veranstaltung-${event.eventId}`}
             trigger={
               <Button
                 variant="ghost"

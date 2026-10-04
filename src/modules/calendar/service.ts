@@ -163,7 +163,7 @@ export async function listCalendarEntries(
       color: shift.event.department?.color ?? null,
       location: shift.meetingPoint,
       departmentName: null,
-      href: `/helferplanung/${shift.event.id}`,
+      href: `/helferplanung/${shift.event.id}?schicht=${assignment.shiftId}`,
       myStatus: null,
       subtitle: shift.event.title,
     });

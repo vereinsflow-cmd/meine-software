@@ -65,7 +65,7 @@ describe("Schicht-Erinnerungen", () => {
     expect(reminder).toMatchObject({
       type: "SHIFT_REMINDER",
       title: "Erinnerung: Aufbau – Sommerfest",
-      linkUrl: `/helferplanung/${event.id}`,
+      linkUrl: `/helferplanung/${event.id}?schicht=${shift.id}`,
       emailStatus: "PENDING",
     });
     expect(reminder!.body).toContain("Treffpunkt: Vereinsheim");

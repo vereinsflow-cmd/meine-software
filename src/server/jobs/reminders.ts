@@ -63,7 +63,7 @@ export async function sendShiftReminders(now: Date = new Date()): Promise<number
       type: "SHIFT_REMINDER",
       title: `Erinnerung: ${shift.title} – ${shift.event.title}`,
       body: `${formatDateShort(shift.startsAt)}, ${formatTimeRange(shift.startsAt, shift.endsAt)}${shift.meetingPoint ? `. Treffpunkt: ${shift.meetingPoint}` : ""}`,
-      linkUrl: `/helferplanung/${shift.event.id}`,
+      linkUrl: `/helferplanung/${shift.event.id}?schicht=${first.shiftId}`,
       email: true,
       dedupeKey: (userId) => `shift-reminder:${assignmentByUser.get(userId)}:24h`,
     });

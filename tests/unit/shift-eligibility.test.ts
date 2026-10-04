@@ -98,6 +98,16 @@ describe("Berechtigung zur Anmeldung (checkEligibility)", () => {
       ).toBe(true);
     });
 
+    it("zählt den Berliner Kalendertag: Schicht um 0:30 Uhr am 18. Geburtstag ist erlaubt", () => {
+      // 04.10.2026, 0:30 Uhr in Berlin = 03.10.2026, 22:30 Uhr UTC
+      const startsAt = parseBerlinDateTime("2026-10-04", "00:30")!;
+      const input = base(
+        { birthDate: parseCalendarDate("2008-10-04")! },
+        { minAge: 18, startsAt, endsAt: new Date(startsAt.getTime() + 3 * H) },
+      );
+      expect(checkEligibility(input).allowed).toBe(true);
+    });
+
     it("prüft nichts, wenn kein Mindestalter gilt – auch ohne Geburtsdatum", () => {
       expect(checkEligibility(base({ birthDate: null }, { minAge: null })).allowed).toBe(true);
     });

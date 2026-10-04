@@ -68,14 +68,9 @@ export function checkEligibility(input: EligibilityInput): Eligibility {
           : `Für diese Schicht gilt ein Mindestalter von ${shift.minAge} Jahren. Es ist kein Geburtsdatum hinterlegt – bitte wende dich an den Vorstand.`,
       );
     }
-    // Maßgeblich ist das Alter am Tag der Schicht.
-    const shiftDay = new Date(
-      Date.UTC(
-        shift.startsAt.getUTCFullYear(),
-        shift.startsAt.getUTCMonth(),
-        shift.startsAt.getUTCDate(),
-      ),
-    );
+    // Maßgeblich ist das Alter am Tag der Schicht – dem Berliner Kalendertag (eine Schicht um 0:30 Uhr liegt in UTC
+    // noch am Vortag).
+    const shiftDay = todayCalendarDate(shift.startsAt);
     const age = ageOn(
       input.birthDate,
       shiftDay > todayCalendarDate(now) ? shiftDay : todayCalendarDate(now),

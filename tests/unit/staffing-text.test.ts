@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatDayMonth } from "@/lib/dates";
-import { joinTitles, staffingText } from "@/modules/shifts/staffing-text";
+import { joinTitles, staffingText, staffingTotals } from "@/modules/shifts/staffing-text";
 
 const shift = (
   filled: number,
@@ -65,6 +65,38 @@ describe("staffingText", () => {
 
   it("abgesagt", () => {
     expect(staffingText(shift(2, 3, { status: "CANCELLED" })).note).toBe("abgesagt");
+  });
+});
+
+describe("staffingTotals", () => {
+  const row = (filled: number, requiredCount: number, ended = false, status = "OPEN" as const) => ({
+    ...shift(filled, requiredCount, { status }),
+    ended,
+  });
+
+  it("zählt alle nicht abgesagten Schichten; frei nur, was noch nicht vorbei ist", () => {
+    expect(staffingTotals([row(5, 5), row(2, 4), row(1, 6)])).toMatchObject({
+      label: "8 von 15 Plätzen besetzt",
+      free: "7 frei",
+    });
+    // Am Tag der Veranstaltung: Aufbau und Getränkestand vorbei – frei ist nur noch der Abbau.
+    expect(staffingTotals([row(5, 5, true), row(2, 4, true), row(1, 6)])).toMatchObject({
+      label: "8 von 15 Plätzen besetzt",
+      free: "5 noch frei",
+    });
+  });
+
+  it("nichts frei: kein Zusatz, wenn alles besetzt oder vorbei ist", () => {
+    expect(staffingTotals([row(1, 1)])).toMatchObject({
+      label: "1 von 1 Platz besetzt",
+      free: null,
+    });
+    expect(staffingTotals([row(1, 3, true)]).free).toBeNull();
+    expect(staffingTotals([row(1, 3, true), row(2, 2)]).free).toBe("kein Platz mehr frei");
+    expect(staffingTotals([{ ...row(2, 3), status: "CANCELLED" as const }])).toMatchObject({
+      required: 0,
+      free: null,
+    });
   });
 });
 

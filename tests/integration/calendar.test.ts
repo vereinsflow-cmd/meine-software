@@ -287,7 +287,7 @@ describe("Kalender: eigene Helferschichten", () => {
     expect(shifts[0]).toMatchObject({
       title: "Schicht: Aufbau",
       subtitle: "Sommerfest",
-      href: `/helferplanung/${event.id}`,
+      href: `/helferplanung/${event.id}?schicht=${mine.id}`, // öffnet genau diese Schicht
       id: mine.id,
     });
 

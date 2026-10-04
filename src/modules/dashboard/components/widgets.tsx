@@ -324,7 +324,7 @@ export function MyShifts({
             >
               <DateTile value={assignment.startsAt} accent="emerald" />
               <Link
-                href={`/helferplanung/${assignment.event.id}`}
+                href={`/helferplanung/${assignment.event.id}?schicht=${assignment.shiftId}`}
                 className="grid min-w-0 flex-1 gap-0.5 underline-offset-4 hover:underline"
               >
                 <span className="text-base font-semibold">{assignment.title}</span>
@@ -380,7 +380,7 @@ export function OpenShifts({
                     derselben Stelle, mit oder ohne Abzeichen. */}
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Link
-                    href={`/helferplanung/${shift.event.id}`}
+                    href={`/helferplanung/${shift.event.id}?schicht=${shift.shiftId}`}
                     className="text-base font-semibold underline-offset-4 hover:underline"
                   >
                     {shift.title}

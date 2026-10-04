@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ClockIcon, EllipsisIcon, PencilIcon, TrashIcon, UserPlusIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +17,7 @@ import { IconButton } from "@/components/shared/icon-button";
 import { useMoreActions } from "@/components/shared/more-actions";
 import { formatDateShort, formatDuration, formatTimeRange, toDateInputValue } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { assignMemberAction, deleteShiftAction, unassignMemberAction } from "../actions";
+import { deleteShiftAction, undoUnassignAction, unassignMemberAction } from "../actions";
 import type { ShiftFormInput } from "../schemas";
 import type { ShiftDto } from "../service";
 import { STAFFING_TONE_CLASS, staffingText } from "../staffing-text";
@@ -27,10 +27,10 @@ import { AssignDialog, HoursDialog, ShiftFormDialog } from "./shift-dialogs";
 
 /**
  * Helferplan einer Veranstaltung (seit 03.10.2026, Entwurf 2 „Tagesablauf“): oben eine Zeitleiste, in der jede Schicht als
- * Balken an ihrer Uhrzeit steht (parallele Schichten auf eigenen Bahnen), darunter die Liste aller Schichten. Ein Klick auf
- * einen Balken oder einen Schichtnamen klappt die Schicht auf – mit allen Namen, „×“ zum Austragen, Stunden und
- * „Zuweisen“. Je Schicht ein Hauptknopf (Eintragen/Austragen), alles Weitere im Menü „⋯“. Am Handy fehlt die Zeitleiste;
- * die Liste reicht dort.
+ * Balken an ihrer Uhrzeit steht (parallele Schichten auf eigenen Bahnen, Vorbeies blass, eine Linie für „jetzt“), darunter
+ * die Liste aller Schichten. Ein Klick auf einen Balken oder einen Schichtnamen klappt die Schicht auf (ein zweiter wieder
+ * zu) – mit allen Namen, „×“ zum Austragen, Stunden und „Zuweisen“. Je Schicht ein Hauptknopf (Eintragen/Austragen),
+ * alles Weitere im Menü „⋯“. Am Handy fehlt die Zeitleiste; die Liste reicht dort.
  */
 
 export interface PlanTimeline extends Omit<Timeline, "bars"> {
@@ -41,6 +41,9 @@ export interface PlanTimeline extends Omit<Timeline, "bars"> {
 
 const rowId = (shiftId: string) => `schicht-${shiftId}`;
 const panelId = (shiftId: string) => `schicht-${shiftId}-helfer`;
+/** Der Name der Schicht in der Liste – fester Platz für den Fokus, wenn ein Knopf nach einer Aktion verschwindet. */
+const titleId = (shiftId: string) => `schicht-${shiftId}-titel`;
+const focusById = (id: string) => document.getElementById(id)?.focus();
 
 /** Höhe einer Bahn der Zeitleiste und Platz für das Band der Veranstaltung darüber. */
 const LANE = 2.6; // rem
@@ -54,6 +57,7 @@ export function ShiftPlan({
   timeline,
   editDefaults,
   members,
+  linkedShiftId,
 }: {
   eventId: string;
   /** Beginn der Veranstaltung – liegt eine Schicht an einem anderen Tag, steht bei jeder ihr Tag. */
@@ -64,12 +68,26 @@ export function ShiftPlan({
   /** Werte für „Schicht bearbeiten“ je Schicht (`null` = darf nicht bearbeitet werden). */
   editDefaults: Record<string, ShiftFormInput | null>;
   members: { id: string; name: string }[];
+  /** Aus einem Link mit `?schicht=` – diese Schicht ist aufgeklappt und wird angezeigt. */
+  linkedShiftId?: string;
 }) {
-  // Aufgeklappt ist anfangs die eigene Schicht – sie interessiert am meisten.
-  const [selectedId, setSelectedId] = useState<string | null>(
-    () => shifts.find((shift) => shift.mine)?.id ?? null,
-  );
   const byId = new Map(shifts.map((shift) => [shift.id, shift]));
+  const linked = linkedShiftId && byId.has(linkedShiftId) ? linkedShiftId : null;
+  // Aufgeklappt ist anfangs die verlinkte Schicht, sonst die nächste eigene, die noch nicht vorbei ist.
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => linked ?? shifts.find((shift) => shift.mine && !shift.ended)?.id ?? null,
+  );
+  // Nach einem Klick auf einen Balken: erst aufklappen, dann (nach dem Zeichnen) die ganze Zeile ins Bild holen.
+  const scrollTo = useRef<string | null>(linked);
+  useEffect(() => {
+    const id = scrollTo.current;
+    if (!id || id !== selectedId) return;
+    scrollTo.current = null;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById(rowId(id))
+      ?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  }, [selectedId]);
   // Liegen Schichten an einem anderen Tag als die Veranstaltung beginnt (oder an verschiedenen), steht bei jeder ihr Tag.
   const multiDay =
     new Set([
@@ -77,23 +95,21 @@ export function ShiftPlan({
       ...shifts.map((shift) => toDateInputValue(shift.startsAt)),
     ]).size > 1;
 
-  function select(shiftId: string, scroll: boolean) {
+  /** Balken: auf- und wieder zuklappen; beim Aufklappen geht der Fokus zur Zeile (sie liegt meist weiter unten). */
+  function toggleFromBar(shiftId: string) {
+    if (selectedId === shiftId) {
+      setSelectedId(null);
+      return;
+    }
+    scrollTo.current = shiftId;
     setSelectedId(shiftId);
-    if (!scroll) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document
-      .getElementById(rowId(shiftId))
-      ?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    document.getElementById(titleId(shiftId))?.focus({ preventScroll: true });
   }
 
   return (
     <>
       {timeline && (
-        <div
-          role="group"
-          aria-label="Tagesablauf"
-          className="hidden px-6 pt-3 pb-5 md:block lg:px-10"
-        >
+        <div role="group" aria-label="Tagesablauf" className="hidden px-6 pb-5 md:block lg:px-10">
           <div
             aria-hidden="true"
             className="relative h-5 text-xs text-muted-foreground tabular-nums"
@@ -112,7 +128,7 @@ export function ShiftPlan({
           <div
             className="relative"
             style={{
-              height: `${(timeline.band ? BAND : 0.5) + timeline.lanes * LANE + 0.5}rem`,
+              height: `${(timeline.band ? BAND : 0.5) + timeline.lanes * LANE + (timeline.now === null ? 0.5 : 1.5)}rem`,
             }}
           >
             {timeline.ticks.map((tick) => (
@@ -123,12 +139,25 @@ export function ShiftPlan({
                 style={{ left: `${tick.left}%` }}
               />
             ))}
+            {timeline.now !== null && (
+              // Hinter den Balken (sie sind deckend): sichtbar zwischen den Schichten, ohne Text zu durchstreichen.
+              <span
+                aria-hidden="true"
+                className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground/70"
+                style={{ left: `${timeline.now}%` }}
+              >
+                <span className="absolute bottom-0 left-1.5 text-xs leading-4 font-medium text-foreground">
+                  jetzt
+                </span>
+              </span>
+            )}
             {timeline.band && (
               <span
                 className="absolute top-1.5 h-6 truncate border-b-2 border-primary pl-2 text-xs font-medium text-primary before:absolute before:bottom-[-2px] before:left-0 before:h-3 before:border-l-2 before:border-primary"
                 style={{ left: `${timeline.band.left}%`, width: `${timeline.band.width}%` }}
               >
-                {timeline.bandLabel}
+                {/* Grund hinter dem Text: Rasterlinien und „jetzt“ laufen nicht durch die Beschriftung. */}
+                <span className="bg-card pr-1.5">{timeline.bandLabel}</span>
               </span>
             )}
             {timeline.bars.map((bar) => {
@@ -143,11 +172,15 @@ export function ShiftPlan({
                   aria-expanded={selected}
                   aria-controls={panelId(shift.id)}
                   aria-label={`${shift.title}, ${formatTimeRange(shift.startsAt, shift.endsAt)}, ${staffing.count} besetzt, ${staffing.note}${shift.mine ? ", du bist dabei" : ""}`}
-                  onClick={() => select(shift.id, true)}
+                  title={shift.title}
+                  onClick={() => toggleFromBar(shift.id)}
                   className={cn(
-                    "@container/bar absolute flex h-9 items-center gap-1.5 overflow-hidden rounded-lg border bg-card px-2.5 text-left text-sm whitespace-nowrap shadow-xs transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+                    // Was nicht mehr neben den Namen passt, rutscht in eine zweite, abgeschnittene Zeile: erst die Zahl, dann
+                    // „Du“ – der Name bleibt am längsten lesbar.
+                    "absolute flex h-9 flex-wrap content-start items-center gap-x-1.5 overflow-hidden rounded-lg border bg-card px-2.5 text-left text-sm shadow-xs transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+                    shift.ended && "bg-muted text-muted-foreground shadow-none",
                     selected &&
-                      "border-primary bg-primary/5 ring-1 ring-primary hover:bg-primary/5",
+                      "border-primary bg-[color-mix(in_oklab,var(--color-primary)_6%,var(--color-card))] ring-1 ring-primary hover:bg-[color-mix(in_oklab,var(--color-primary)_6%,var(--color-card))]",
                   )}
                   style={{
                     left: `calc(${bar.left}% + 2px)`,
@@ -155,16 +188,16 @@ export function ShiftPlan({
                     top: `${(timeline.band ? BAND : 0.5) + bar.lane * LANE}rem`,
                   }}
                 >
-                  <span className="truncate font-semibold">{shift.title}</span>
+                  <span className="max-w-full min-w-0 truncate leading-[2.125rem] font-semibold whitespace-nowrap">
+                    {shift.title}
+                  </span>
                   {shift.mine && <YouChip />}
                   <span
                     className={cn(
-                      // Schmale Balken zeigen nur den Namen (die Zahl steht in der Liste und im Namen des Knopfs).
-                      "ml-auto hidden shrink-0 tabular-nums @min-[9rem]/bar:inline",
+                      "ml-auto shrink-0 leading-[2.125rem] whitespace-nowrap tabular-nums",
                       staffing.tone === "none"
                         ? "text-muted-foreground"
-                        : STAFFING_TONE_CLASS[staffing.tone],
-                      staffing.tone !== "none" && "font-medium",
+                        : cn(STAFFING_TONE_CLASS[staffing.tone], "font-medium"),
                     )}
                   >
                     {staffing.note === "voll" ? "voll" : staffing.count}
@@ -186,7 +219,7 @@ export function ShiftPlan({
             multiDay={multiDay}
             selected={selectedId === shift.id}
             onToggle={() => setSelectedId((current) => (current === shift.id ? null : shift.id))}
-            onSelect={() => select(shift.id, false)}
+            onSelect={() => setSelectedId(shift.id)}
             editDefaults={editDefaults[shift.id] ?? null}
             members={members}
           />
@@ -198,7 +231,7 @@ export function ShiftPlan({
 
 function YouChip() {
   return (
-    <span className="rounded-md bg-primary/10 px-1.5 text-xs leading-5 font-semibold text-primary">
+    <span className="shrink-0 rounded-md bg-primary/10 px-1.5 text-xs leading-5 font-semibold text-primary">
       Du
     </span>
   );
@@ -236,22 +269,32 @@ function ShiftRow({
   const staffing = staffingText(shift);
   const planned = Math.round((shift.endsAt.getTime() - shift.startsAt.getTime()) / 60_000);
   const free = shift.health.freeSpots;
-  const canAssign = shift.can.assign && !cancelled;
-  const canHours = shift.can.hours && shift.started;
+  const published = eventStatus === "PUBLISHED";
+  const ownTitleId = titleId(shift.id);
+  // Austragen („×“) bis zum Beginn; „Zuweisen“ nur, solange es geht (nicht voll, nicht vorbei, veröffentlicht).
+  const canUnassign = shift.can.assign && !shift.started && !cancelled;
+  const canAssignMore = shift.can.assignMore;
+  const canHours = shift.can.hours && shift.started && !cancelled && shift.assignments.length > 0;
   const canEdit = shift.can.manage && editDefaults !== null && !cancelled;
-  const hasMenu = canAssign || canHours || canEdit || shift.can.manage;
+  const canDelete = shift.can.delete;
+  const hasMenu = canAssignMore || canHours || canEdit || canDelete;
+  const emptyText = cancelled ? "Die Schicht wurde abgesagt." : "Noch niemand eingetragen";
   // Warum man sich nicht eintragen kann – nur, wenn es nicht ohnehin dasteht (voll, läuft, geschlossen, abgesagt).
   const showReason =
     !shift.signup.allowed &&
     !shift.mine &&
     shift.signup.reason &&
-    eventStatus === "PUBLISHED" &&
+    published &&
     shift.health.fill !== "FULL" &&
     !shift.started &&
     shift.status === "OPEN";
+  const helpers = shift.assignments.length;
 
   type Run = () => Promise<{ ok: boolean; error?: { message: string } }>;
-  /** Führt die Aktion aus und meldet das Ergebnis; mit `undo` bietet die Meldung „Rückgängig“ an. */
+  /**
+   * Führt die Aktion aus und meldet das Ergebnis; mit `undo` bietet die Meldung „Rückgängig“ an. Danach steht der Fokus auf
+   * dem Namen der Schicht – der Knopf, der ihn hatte (z. B. „×“), ist dann womöglich weg.
+   */
   function run(action: Run, success: string, undo?: { action: Run; success: string }) {
     startTransition(async () => {
       const result = await action();
@@ -260,6 +303,7 @@ function ShiftRow({
         toast.success(success, {
           action: undo && { label: "Rückgängig", onClick: () => run(undo.action, undo.success) },
         });
+      focusById(ownTitleId);
       router.refresh();
     });
   }
@@ -271,6 +315,9 @@ function ShiftRow({
     focusHours.current = true;
     onSelect();
   }
+  // Nach dem Löschen ist die Zeile samt „⋯“ weg – der Fokus geht zur Überschrift „Tagesablauf“.
+  const deleted = useRef(false);
+  const deleteDialog = dialog("delete");
 
   return (
     <li
@@ -279,10 +326,10 @@ function ShiftRow({
       className={cn(
         "grid scroll-mt-24 grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-4 sm:px-6 xl:grid-cols-[8.5rem_minmax(10rem,1fr)_minmax(0,16rem)_9.5rem] xl:gap-x-6 [&+&]:border-t",
         selected && "bg-primary/5",
-        cancelled && "text-muted-foreground",
+        (cancelled || shift.ended) && "text-muted-foreground",
       )}
     >
-      <p className="col-start-1 row-start-1 text-sm tabular-nums xl:pt-0.5">
+      <p className="col-start-1 row-start-1 self-center text-sm tabular-nums xl:self-start xl:pt-0.5">
         {multiDay && <span className="block">{formatDateShort(shift.startsAt)}</span>}
         {formatTimeRange(shift.startsAt, shift.endsAt)}
       </p>
@@ -290,11 +337,13 @@ function ShiftRow({
       <div className="col-span-2 min-w-0 xl:col-span-1 xl:col-start-2 xl:row-start-1">
         <h3 className={cn("text-base font-semibold", cancelled && "line-through")}>
           <button
+            id={ownTitleId}
             type="button"
             aria-expanded={selected}
             aria-controls={panelId(shift.id)}
             onClick={onToggle}
-            className="rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
+            // Am Handy 44 px hoch treffbar, ohne die Zeile höher zu machen (unsichtbare Fläche ober- und unterhalb).
+            className="relative rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 max-sm:before:absolute max-sm:before:inset-x-0 max-sm:before:-inset-y-2.5"
           >
             {shift.title}
           </button>
@@ -303,11 +352,15 @@ function ShiftRow({
               ab {shift.minAge} Jahren
             </span>
           )}
-          {shift.status === "CLOSED" && (
+          {shift.status === "CLOSED" && !shift.ended && (
             <span className="ml-2 text-sm font-normal text-muted-foreground">· nur Zuweisung</span>
           )}
         </h3>
-        {shift.taskName && <p className="text-sm text-foreground/80">{shift.taskName}</p>}
+        {shift.taskName && (
+          <p className={cn("text-sm", !shift.ended && !cancelled && "text-foreground/80")}>
+            {shift.taskName}
+          </p>
+        )}
         {(shift.meetingPoint || shift.responsible) && (
           <p className="mt-1.5 text-sm text-muted-foreground">
             {shift.meetingPoint && <span className="block">Treffpunkt: {shift.meetingPoint}</span>}
@@ -347,9 +400,9 @@ function ShiftRow({
         </p>
         <div id={panelId(shift.id)}>
           {!selected ? (
-            <p className="mt-0.5 text-sm text-foreground/80">
-              {shift.assignments.length === 0 ? (
-                <span className="text-muted-foreground">Noch niemand eingetragen</span>
+            <p className={cn("mt-0.5 text-sm", !shift.ended && !cancelled && "text-foreground/80")}>
+              {helpers === 0 ? (
+                <span className="text-muted-foreground">{emptyText}</span>
               ) : (
                 shift.assignments.map((a, index) => (
                   <span key={a.id}>
@@ -361,73 +414,86 @@ function ShiftRow({
               )}
             </p>
           ) : (
-            <ul aria-label="Eingetragen" className="mt-2">
-              {shift.assignments.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex min-h-10 items-center gap-2 border-t border-primary/15 text-sm"
-                >
-                  <span className="flex flex-1 items-center gap-2">
-                    {a.name}
-                    {a.isMe && <YouChip />}
-                    {!canHours && a.isMe && a.workedMinutes !== null && (
-                      <span className="text-muted-foreground">
-                        · {formatDuration(a.workedMinutes)}
-                      </span>
-                    )}
-                  </span>
-                  {canHours && (
-                    <HoursDialog
-                      assignmentId={a.id}
-                      eventId={eventId}
-                      name={a.name}
-                      plannedMinutes={planned}
-                      currentMinutes={a.workedMinutes}
-                    />
-                  )}
-                  {shift.can.assign && !shift.started && !cancelled && (
-                    // Trefferfläche 32 px; verklickt? „Rückgängig“ in der Meldung.
-                    <IconButton
-                      className="-mr-1.5 size-8 text-muted-foreground max-sm:size-11"
-                      disabled={pending}
-                      label={`${a.name} austragen`}
-                      onClick={() =>
-                        run(
-                          () =>
-                            unassignMemberAction({
-                              shiftId: shift.id,
-                              memberId: a.memberId,
-                              eventId,
-                            }),
-                          `${a.name} ausgetragen.`,
-                          {
-                            action: () =>
-                              assignMemberAction({
-                                shiftId: shift.id,
-                                memberId: a.memberId,
-                                eventId,
-                              }),
-                            success: `${a.name} ist wieder eingetragen.`,
-                          },
-                        )
-                      }
+            <div className="mt-2">
+              {helpers === 0 ? (
+                <p className="border-t border-primary/15 py-2 text-sm text-muted-foreground">
+                  {emptyText}
+                </p>
+              ) : (
+                <ul aria-label="Eingetragen">
+                  {shift.assignments.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex min-h-10 items-center gap-2 border-t border-primary/15 text-sm"
                     >
-                      <XIcon />
-                    </IconButton>
-                  )}
-                </li>
-              ))}
-              {free > 0 && !cancelled && (
-                <li className="flex min-h-10 items-center gap-2 border-t border-primary/15 text-sm">
+                      <span className="flex flex-1 items-center gap-2">
+                        {a.name}
+                        {a.isMe && <YouChip />}
+                        {!canHours && a.isMe && a.workedMinutes !== null && (
+                          <span className="text-muted-foreground">
+                            · {formatDuration(a.workedMinutes)}
+                          </span>
+                        )}
+                      </span>
+                      {canHours && (
+                        <HoursDialog
+                          assignmentId={a.id}
+                          eventId={eventId}
+                          name={a.name}
+                          plannedMinutes={planned}
+                          currentMinutes={a.workedMinutes}
+                        />
+                      )}
+                      {canUnassign && (
+                        // Trefferfläche 32 px; verklickt? „Rückgängig“ in der Meldung.
+                        <IconButton
+                          className="-mr-1.5 size-8 text-muted-foreground max-sm:size-11"
+                          disabled={pending}
+                          label={`${a.name} austragen`}
+                          onClick={() =>
+                            run(
+                              () =>
+                                unassignMemberAction({
+                                  shiftId: shift.id,
+                                  memberId: a.memberId,
+                                  eventId,
+                                }),
+                              `${a.name} ausgetragen.`,
+                              // Rückgängig geht nur, wo auch Zuweisen geht (veröffentlichte Veranstaltung).
+                              published
+                                ? {
+                                    action: () =>
+                                      undoUnassignAction({
+                                        shiftId: shift.id,
+                                        memberId: a.memberId,
+                                        eventId,
+                                      }),
+                                    success: `${a.name} ist wieder eingetragen.`,
+                                  }
+                                : undefined,
+                            )
+                          }
+                        >
+                          <XIcon />
+                        </IconButton>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {/* Freie Plätze nur, solange sie sich noch füllen lassen (nicht bei vorbeien oder abgesagten Schichten). */}
+              {free > 0 && !cancelled && !shift.ended && (
+                <div className="flex min-h-10 items-center gap-2 border-t border-primary/15 text-sm">
                   <span className="flex-1 text-muted-foreground">
                     {free === 1 ? "1 Platz frei" : `${free} Plätze frei`}
                   </span>
-                  {canAssign && (
+                  {canAssignMore && (
                     // Eigener Dialog mit eigenem Knopf: Nach dem Schließen kehrt der Fokus hierher zurück (nicht zu „⋯“).
                     <AssignDialog
                       shiftId={shift.id}
                       eventId={eventId}
                       title={shift.title}
+                      focusAfter={ownTitleId}
                       trigger={
                         <Button
                           variant="ghost"
@@ -440,25 +506,21 @@ function ShiftRow({
                       }
                     />
                   )}
-                </li>
+                </div>
               )}
-              {shift.assignments.length === 0 && free === 0 && (
-                <li className="border-t border-primary/15 py-2 text-sm text-muted-foreground">
-                  Für diese Schicht sind keine Helfer nötig.
-                </li>
-              )}
-            </ul>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="col-start-2 row-start-1 -mt-1 -mr-2 flex items-start justify-end gap-0.5 xl:col-start-4">
+      <div className="col-start-2 row-start-1 -mt-1 -mr-2 flex items-start justify-end gap-0.5 max-sm:-my-1.5 xl:col-start-4">
         {shift.signup.allowed && !shift.mine && (
           <QuickSignUpButton
             shiftId={shift.id}
             eventId={eventId}
             variant="ghost"
             label={shift.title}
+            focusAfter={ownTitleId}
             className="text-primary hover:text-primary max-sm:h-11"
           />
         )}
@@ -468,6 +530,7 @@ function ShiftRow({
             eventId={eventId}
             label={shift.title}
             quiet
+            focusAfter={ownTitleId}
             className="max-sm:h-11"
           />
         )}
@@ -490,14 +553,16 @@ function ShiftRow({
               onCloseAutoFocus={(event) => {
                 if (!focusHours.current) return;
                 focusHours.current = false;
+                const target = document.querySelector<HTMLElement>(
+                  `#${CSS.escape(panelId(shift.id))} [data-hours]`,
+                );
+                if (!target) return;
                 event.preventDefault();
-                document
-                  .querySelector<HTMLElement>(`#${CSS.escape(panelId(shift.id))} [data-hours]`)
-                  ?.focus();
+                target.focus();
               }}
               className="min-w-52 [&>[data-slot=dropdown-menu-item]]:gap-2 [&>[data-slot=dropdown-menu-item]]:py-2"
             >
-              {canAssign && (
+              {canAssignMore && (
                 <DropdownMenuItem onSelect={() => show("assign")}>
                   <UserPlusIcon /> Helfer zuweisen
                 </DropdownMenuItem>
@@ -512,9 +577,9 @@ function ShiftRow({
                   <PencilIcon /> Schicht bearbeiten
                 </DropdownMenuItem>
               )}
-              {shift.can.manage && (
+              {canDelete && (
                 <>
-                  {(canAssign || canHours || canEdit) && <DropdownMenuSeparator />}
+                  {(canAssignMore || canHours || canEdit) && <DropdownMenuSeparator />}
                   <DropdownMenuItem variant="destructive" onSelect={() => show("delete")}>
                     <TrashIcon /> Schicht löschen
                   </DropdownMenuItem>
@@ -525,11 +590,12 @@ function ShiftRow({
         )}
       </div>
 
-      {canAssign && (
+      {canAssignMore && (
         <AssignDialog
           shiftId={shift.id}
           eventId={eventId}
           title={shift.title}
+          focusAfter={ownTitleId}
           {...dialog("assign")}
         />
       )}
@@ -542,20 +608,28 @@ function ShiftRow({
           {...dialog("edit")}
         />
       )}
-      {shift.can.manage && (
+      {canDelete && (
         <ConfirmAction
           destructive
-          {...dialog("delete")}
-          title="Schicht löschen?"
+          {...deleteDialog}
+          onCloseAutoFocus={(event) => {
+            if (!deleted.current) return deleteDialog.onCloseAutoFocus(event);
+            event.preventDefault();
+            focusById("tagesablauf");
+          }}
+          title={`„${shift.title}“ löschen?`}
           description={
-            shift.assignments.length > 0
-              ? `Die ${shift.assignments.length} Eingetragenen werden ausgetragen und benachrichtigt.`
-              : "Die Schicht wird gelöscht."
+            helpers === 0
+              ? "Die Schicht wird gelöscht."
+              : `${helpers === 1 ? "Die eingetragene Person wird" : `Die ${helpers} Eingetragenen werden`} ausgetragen${published ? " und benachrichtigt" : ""}.`
           }
           confirmLabel="Löschen"
           action={() => deleteShiftAction({ id: shift.id, eventId })}
           successMessage="Schicht gelöscht."
-          onSuccess={() => router.refresh()}
+          onSuccess={() => {
+            deleted.current = true;
+            router.refresh();
+          }}
         />
       )}
     </li>
