@@ -16,6 +16,7 @@ import { parseEuroToCents, parseSignedEuroToCents } from "@/lib/money";
 import { parseInput } from "@/server/action";
 import { recordAudit } from "@/server/audit/audit";
 import { lockUntilCommit, type TenantTx } from "@/server/db/tenant";
+import { env } from "@/server/env";
 import { badRequest, conflict, notFound, validationFailed } from "@/server/errors";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance, canFinance } from "./access";
@@ -276,6 +277,7 @@ interface NewLine {
   departmentId?: string | null;
   eventId?: string | null;
   note?: string | null;
+  invoiceId?: string | null;
 }
 
 interface NewEntry {
@@ -331,6 +333,7 @@ async function insertEntry(
       departmentId: line.departmentId ?? null,
       eventId: line.eventId ?? null,
       note: line.note || null,
+      invoiceId: line.invoiceId ?? null,
     })),
   });
   return { id: created.id, year, number: number!, amountCents };
@@ -372,6 +375,7 @@ async function prepareEntry(tx: TenantTx, data: EntryData): Promise<NewEntry> {
       departmentId,
       eventId,
       note: line.note,
+      invoiceId: data.invoiceId ?? null,
     };
   });
   return {
@@ -390,12 +394,82 @@ export interface CreatedEntry {
   label: string;
 }
 
-/** Neue Einnahme oder Ausgabe. */
+/**
+ * Rechnung zur neuen Buchung („Ins Kassenbuch“): gesperrt bis zum Ende der Transaktion, damit sie nicht zweimal gleichzeitig
+ * gebucht wird (die Datenbank prüft es zusätzlich). Eine Eingangsrechnung ist immer eine Ausgabe.
+ */
+async function invoiceForEntry(tx: TenantTx, ctx: TenantContext, data: EntryData) {
+  if (!data.invoiceId) return null;
+  if (data.kind !== "EXPENSE")
+    throw validationFailed({ kind: ["Eine Rechnung, die der Verein bezahlt, ist eine Ausgabe."] });
+  await lockUntilCommit(tx, ctx.clubId, `invoice:${data.invoiceId}`);
+  const invoice = await tx.invoice.findFirst({
+    where: { id: data.invoiceId, document: { is: { deletedAt: null } } },
+    include: { document: { select: { id: true, name: true } } },
+  });
+  if (!invoice) throw notFound("Die Rechnung");
+  return invoice;
+}
+
+type BookedInvoice = NonNullable<Awaited<ReturnType<typeof invoiceForEntry>>>;
+
+/**
+ * Vor dem Buchen einer Rechnung: als bezahlt vermerken (falls noch offen) und – fehlt ihr Betrag (beim Hochladen „schon
+ * bezahlt“) – den gebuchten Betrag eintragen. Danach hält die Datenbank beides fest, solange die Buchung gilt.
+ */
+async function settleInvoice(
+  tx: TenantTx,
+  ctx: TenantContext,
+  invoice: BookedInvoice,
+  entry: NewEntry,
+): Promise<void> {
+  const totalCents = Math.abs(entry.lines.reduce((sum, line) => sum + line.amountCents, 0));
+  if (invoice.status === "PAID" && invoice.amountCents !== null) return;
+  await tx.invoice.update({
+    where: { id: invoice.id },
+    data: {
+      ...(invoice.status !== "PAID"
+        ? { status: "PAID", paidAt: new Date(), paidById: ctx.userId }
+        : {}),
+      ...(invoice.amountCents === null ? { amountCents: totalCents } : {}),
+    },
+  });
+}
+
+/** Nach dem Buchen einer Rechnung: als Beleg anhängen. */
+async function linkInvoice(
+  tx: TenantTx,
+  ctx: TenantContext,
+  invoice: BookedInvoice,
+  entry: { id: string; label: string },
+): Promise<void> {
+  await tx.ledgerAttachment.createMany({
+    data: [
+      {
+        clubId: ctx.clubId,
+        entryId: entry.id,
+        documentId: invoice.document.id,
+        attachedById: ctx.userId,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  await recordAudit(tx, auditActor(ctx), {
+    action: "finance.invoice_booked",
+    entityType: "Invoice",
+    entityId: invoice.id,
+    summary: `Rechnung „${invoice.document.name}“ im Kassenbuch gebucht (Nr. ${entry.label})`,
+  });
+}
+
+/** Neue Einnahme oder Ausgabe (auf Wunsch zu einer bezahlten Rechnung). */
 export async function createEntry(ctx: TenantContext, input: unknown): Promise<CreatedEntry> {
   assertFinance(ctx, "finance:manage");
   const data = parseInput(entrySchema, input);
   return ctx.db.$transaction(async (tx) => {
+    const invoice = await invoiceForEntry(tx, ctx, data);
     const entry = await prepareEntry(tx, data);
+    if (invoice) await settleInvoice(tx, ctx, invoice, entry);
     const created = await insertEntry(tx, ctx, entry);
     const label = entryNumber(created.year, created.number);
     await recordAudit(tx, auditActor(ctx), {
@@ -404,6 +478,7 @@ export async function createEntry(ctx: TenantContext, input: unknown): Promise<C
       entityId: created.id,
       summary: `Buchung ${label}: ${entry.description} (${formatEuroFromCents(created.amountCents)})`,
     });
+    if (invoice) await linkInvoice(tx, ctx, invoice, { id: created.id, label });
     return { id: created.id, label };
   }, LONG_TX);
 }
@@ -474,6 +549,7 @@ async function reverseInTx(
         departmentId: line.departmentId,
         eventId: line.eventId,
         note: line.note,
+        invoiceId: line.invoiceId,
       })),
     });
     labels.push(entryNumber(created.year, created.number));
@@ -504,15 +580,34 @@ export async function correctEntry(
   const data = parseInput(entrySchema, input.entry);
   return ctx.db.$transaction(async (tx) => {
     const reversed = await reverseInTx(tx, ctx, id, reason);
+    const invoice = await invoiceForEntry(tx, ctx, data);
     const entry = await prepareEntry(tx, data);
+    if (invoice) await settleInvoice(tx, ctx, invoice, entry);
     const created = await insertEntry(tx, ctx, entry);
     const label = entryNumber(created.year, created.number);
+    // Die Belege der alten Buchung gehören zur korrigierten.
+    const attachments = await tx.ledgerAttachment.findMany({
+      where: { entryId: id },
+      select: { documentId: true, note: true },
+    });
+    if (attachments.length > 0)
+      await tx.ledgerAttachment.createMany({
+        data: attachments.map((attachment) => ({
+          clubId: ctx.clubId,
+          entryId: created.id,
+          documentId: attachment.documentId,
+          note: attachment.note,
+          attachedById: ctx.userId,
+        })),
+        skipDuplicates: true,
+      });
     await recordAudit(tx, auditActor(ctx), {
       action: "finance.entry_corrected",
       entityType: "LedgerEntry",
       entityId: created.id,
       summary: `Buchung ${reversed.original} korrigiert: neu ${label} (${formatEuroFromCents(created.amountCents)})`,
     });
+    if (invoice) await linkInvoice(tx, ctx, invoice, { id: created.id, label });
     return { id: created.id, label };
   }, LONG_TX);
 }
@@ -646,6 +741,17 @@ export interface LedgerLineDto {
   department: { id: string; name: string } | null;
   event: { id: string; title: string } | null;
   note: string | null;
+  invoiceId: string | null;
+}
+
+/** Beleg einer Buchung: Datei (`documentId`, `name`) oder Eigenbeleg (`note`). */
+export interface LedgerAttachmentDto {
+  id: string;
+  documentId: string | null;
+  name: string | null;
+  note: string | null;
+  /** Die Rechnung, die diese Buchung bezahlt – bleibt angehängt (kein „Entfernen“). */
+  locked: boolean;
 }
 
 export interface LedgerEntryDto {
@@ -668,6 +774,9 @@ export interface LedgerEntryDto {
   recordedAt: Date;
   /** Darf storniert/korrigiert werden (Rechte, kein Storno, nicht schon storniert, kein Anfangsbestand). */
   canReverse: boolean;
+  attachments: LedgerAttachmentDto[];
+  /** Geltende Einnahme oder Ausgabe ohne Beleg (Umbuchungen, Stornos und Anfangsbestände brauchen keinen). */
+  needsReceipt: boolean;
 }
 
 export interface LedgerFilter {
@@ -677,6 +786,8 @@ export interface LedgerFilter {
   categoryId?: string;
   departmentId?: string;
   eventId?: string;
+  /** „missing“: nur geltende Einnahmen und Ausgaben ohne Beleg. */
+  receipt?: "missing";
   q?: string;
   page?: number;
   pageSize?: number;
@@ -694,6 +805,12 @@ const entryInclude = {
   },
   reversedBy: { select: { id: true, year: true, number: true } },
   reversalOf: { select: { id: true, year: true, number: true } },
+  attachments: {
+    orderBy: { attachedAt: "asc" },
+    include: {
+      document: { select: { id: true, name: true, invoice: { select: { id: true } } } },
+    },
+  },
 } satisfies Prisma.LedgerEntryInclude;
 
 type EntryRow = Prisma.LedgerEntryGetPayload<{ include: typeof entryInclude }>;
@@ -723,6 +840,7 @@ function entryDto(row: EntryRow, canManage: boolean): LedgerEntryDto {
       department: line.department,
       event: line.event,
       note: line.note,
+      invoiceId: line.invoiceId,
     })),
     reversedBy: row.reversedBy && {
       id: row.reversedBy.id,
@@ -734,6 +852,17 @@ function entryDto(row: EntryRow, canManage: boolean): LedgerEntryDto {
     },
     recordedAt: row.recordedAt,
     canReverse: canManage && row.kind !== "REVERSAL" && row.kind !== "OPENING" && !row.reversedBy,
+    attachments: row.attachments.map((attachment) => ({
+      id: attachment.id,
+      documentId: attachment.document?.id ?? null,
+      name: attachment.document?.name ?? null,
+      note: attachment.note,
+      locked: Boolean(
+        attachment.document?.invoice &&
+        row.lines.some((line) => line.invoiceId === attachment.document!.invoice!.id),
+      ),
+    })),
+    needsReceipt: row.kind === "STANDARD" && !row.reversedBy && row.attachments.length === 0,
   };
 }
 
@@ -744,6 +873,19 @@ function monthRange(month: string | undefined): { gte: Date; lt: Date } | undefi
   const m = Number(match[2]);
   if (m < 1 || m > 12) return undefined;
   return { gte: new Date(Date.UTC(year, m - 1, 1)), lt: new Date(Date.UTC(year, m, 1)) };
+}
+
+/** Geltende Einnahmen und Ausgaben ohne Beleg. */
+const MISSING_RECEIPT = {
+  kind: "STANDARD",
+  reversedBy: { is: null },
+  attachments: { none: {} },
+} satisfies Prisma.LedgerEntryWhereInput;
+
+/** Wie viele Buchungen noch keinen Beleg haben (Übersicht „Das steht an“). */
+export async function missingReceiptCount(ctx: TenantContext): Promise<number> {
+  assertFinance(ctx, "finance:read");
+  return ctx.db.ledgerEntry.count({ where: MISSING_RECEIPT });
 }
 
 export interface LedgerPage {
@@ -772,6 +914,7 @@ export async function listEntries(
     ...(filter.accountId ? { accountId: filter.accountId } : {}),
     ...(monthRange(filter.month) ? { bookingDate: monthRange(filter.month) } : {}),
     ...(Object.keys(lineWhere).length > 0 ? { lines: { some: lineWhere } } : {}),
+    ...(filter.receipt === "missing" ? MISSING_RECEIPT : {}),
     ...(q
       ? {
           OR: [
@@ -943,6 +1086,8 @@ export interface EntryFormOptions {
   today: string;
   /** Frühestes Buchungsdatum (Beginn bzw. Tag nach dem letzten Abschluss), „JJJJ-MM-TT“. */
   minDate: string;
+  /** Größte erlaubte Belegdatei in MB (Vorprüfung im Browser). */
+  maxUploadMb: number;
 }
 
 export async function entryFormOptions(ctx: TenantContext): Promise<EntryFormOptions | null> {
@@ -994,6 +1139,7 @@ export async function entryFormOptions(ctx: TenantContext): Promise<EntryFormOpt
     ],
     today: iso(today),
     minDate: iso(minDate),
+    maxUploadMb: env.MAX_UPLOAD_MB,
   };
 }
 

@@ -570,6 +570,18 @@ export const FAQ: readonly FaqSection[] = [
         keywords: "buchung einnahme ausgabe storno korrektur fehler umbuchung kasse bank",
       },
       {
+        id: "belege",
+        question: "Wohin mit Quittungen und Rechnungen zu einer Buchung?",
+        steps: [
+          "Beim Buchen wählst du unter „Beleg“ ein Foto der Quittung oder ein PDF aus – es hängt dann an der Buchung.",
+          "Später geht es über „⋯“ → „Beleg anhängen“. Gibt es keinen Beleg (z. B. Parkautomat), schreibst du dort einen Eigenbeleg: was bezahlt wurde und warum es keinen Beleg gibt.",
+          "Bezahlte Rechnungen übernimmst du unter „Finanzen“ → „Rechnungen“ → „Bezahlt“ mit „Ins Kassenbuch“ – die Rechnung ist dann gleich der Beleg.",
+        ],
+        tip: "Belege werden 8 Jahre aufbewahrt und lassen sich bis dahin nicht löschen. Der Filter „Ohne Beleg“ im Kassenbuch zeigt, was noch fehlt.",
+        link: { href: "/finanzen/kassenbuch", label: "Zum Kassenbuch" },
+        keywords: "beleg quittung kassenbon rechnung foto eigenbeleg aufbewahrung nachreichen",
+      },
+      {
         id: "rechnung-erfassen",
         question: "Wie lege ich eine Rechnung ab, die noch bezahlt werden muss?",
         steps: [

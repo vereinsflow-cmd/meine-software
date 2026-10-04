@@ -1,11 +1,13 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { assertFinance, canFinance } from "@/modules/finance/access";
 import type { InvoiceStatus } from "@/generated/prisma/enums";
-import { formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
+import { formatEuroFromCents, startOfBerlinDate, todayCalendarDate } from "@/lib/dates";
 import { allowedAccessLevels, invoiceDto, type DocumentInvoice } from "@/modules/documents/service";
 import { recordAudit } from "@/server/audit/audit";
 import { notFound, validationFailed } from "@/server/errors";
+import { lockUntilCommit } from "@/server/db/tenant";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
+import { entryNumber } from "./ledger-format";
 
 /**
  * Finanzen – erster Baustein: Rechnungen, die der Verein bezahlen muss, und die offenen Zahlungen.
@@ -90,6 +92,8 @@ export async function setInvoiceStatus(
     );
 
   await ctx.db.$transaction(async (tx) => {
+    // Gleiche Sperre wie „Ins Kassenbuch“: Wird die Rechnung gerade gebucht, wartet „wieder offen“ und scheitert dann klar.
+    await lockUntilCommit(tx, ctx.clubId, `invoice:${id}`);
     await tx.invoice.update({
       where: { id },
       data:
@@ -115,6 +119,51 @@ export type InvoiceFilter = "offen" | "bezahlt" | "alle";
 
 export interface InvoiceListItem extends OpenInvoice {
   createdAt: Date;
+  /** Geltende Buchung im Kassenbuch, die diese Rechnung bezahlt („im Kassenbuch Nr. 2026-0042“). */
+  booking: { id: string; label: string } | null;
+}
+
+/** Geltende (nicht stornierte) Buchungen zu Rechnungen: Rechnung → Buchung. */
+async function invoiceBookings(
+  ctx: TenantContext,
+  invoiceIds: string[],
+): Promise<Map<string, { id: string; label: string }>> {
+  if (invoiceIds.length === 0) return new Map();
+  const lines = await ctx.db.ledgerLine.findMany({
+    where: {
+      invoiceId: { in: invoiceIds },
+      entry: { kind: "STANDARD", reversedBy: { is: null } },
+    },
+    select: { invoiceId: true, entry: { select: { id: true, year: true, number: true } } },
+  });
+  return new Map(
+    lines.map((line) => [
+      line.invoiceId!,
+      { id: line.entry.id, label: entryNumber(line.entry.year, line.entry.number) },
+    ]),
+  );
+}
+
+/**
+ * Bezahlte Rechnungen, die noch ins Kassenbuch gehören (Übersicht „Das steht an“): bezahlt ab `since` (erster offener Tag,
+ * Kalendertag) – ohne Zahlungsdatum („beim Hochladen schon bezahlt“) zählt das Rechnungsdatum. Dieselbe Regel wie der Knopf
+ * „Ins Kassenbuch“ auf der Rechnungsseite.
+ */
+export async function unbookedPaidInvoiceCount(ctx: TenantContext, since: Date): Promise<number> {
+  assertFinance(ctx, "finance:read");
+  const sinceInstant = startOfBerlinDate(
+    since.getUTCFullYear(),
+    since.getUTCMonth() + 1,
+    since.getUTCDate(),
+  );
+  return ctx.db.invoice.count({
+    where: {
+      status: "PAID",
+      OR: [{ paidAt: { gte: sinceInstant } }, { paidAt: null, invoiceDate: { gte: since } }],
+      document: { is: { deletedAt: null, archivedAt: null } },
+      ledgerLines: { none: { entry: { kind: "STANDARD", reversedBy: { is: null } } } },
+    },
+  });
 }
 
 /** Rechnungen für „Finanzen › Rechnungen“: offen (fällige zuerst), bezahlt (zuletzt bezahlte zuerst) oder alle. */
@@ -165,6 +214,10 @@ export async function listInvoices(
   });
   const today = todayCalendarDate();
   const visible = allowedAccessLevels(ctx);
+  const bookings = await invoiceBookings(
+    ctx,
+    rows.map((row) => row.id),
+  );
   return {
     items: rows.map((row) => ({
       ...invoiceDto(row, today),
@@ -172,6 +225,7 @@ export async function listInvoices(
       name: row.document.name,
       canOpen: visible.includes(row.document.access),
       createdAt: row.createdAt,
+      booking: bookings.get(row.id) ?? null,
     })),
     total,
     page,

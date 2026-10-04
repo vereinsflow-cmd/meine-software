@@ -53,6 +53,7 @@ import {
 } from "@/modules/finance/ledger-format";
 import type { EntryInput } from "@/modules/finance/ledger-schemas";
 import { financeTabCounts } from "@/modules/finance/overview";
+import { env } from "@/server/env";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Kassenbuch" };
@@ -97,6 +98,7 @@ function correctionDefaults(entry: LedgerEntryDto, date: Date): Partial<EntryInp
     bookingDate: date.toISOString().slice(0, 10),
     description: entry.description,
     counterparty: entry.counterpartyName ?? "",
+    invoiceId: entry.lines.find((line) => line.invoiceId)?.invoiceId ?? undefined,
     lines: entry.lines.map((line) => ({
       categoryId: line.categoryId,
       amount: centsToInput(Math.abs(line.amountCents)),
@@ -162,16 +164,20 @@ export default async function LedgerPage({
   const accountId = param(params, "konto");
   const month = param(params, "monat");
   const categoryId = param(params, "kategorie");
+  const receipt = param(params, "beleg") === "fehlt" ? ("missing" as const) : undefined;
   const q = param(params, "q");
   const { page, pageSize } = pageRequest(params, 25);
   const [accounts, categories, result, options, openings] = await Promise.all([
     listAccounts(ctx),
     listCategories(ctx),
-    listEntries(ctx, { accountId, month, categoryId, q, page, pageSize }),
+    listEntries(ctx, { accountId, month, categoryId, receipt, q, page, pageSize }),
     canManage ? entryFormOptions(ctx) : Promise.resolve(null),
     openingBalances(ctx),
   ]);
-  const filtered = Boolean(accountId || month || categoryId || q);
+  const filtered = Boolean(accountId || month || categoryId || receipt || q);
+  // Belege entfernen geht nur, solange der Zeitraum der Buchung offen ist (das prüft auch die Datenbank).
+  const periodOpen = (date: Date) =>
+    !setup.closedThrough || date.getTime() > setup.closedThrough.getTime();
   // Den Anfangsbestand ändern geht, solange der Beginn des Kassenbuchs nicht abgeschlossen ist.
   const openingEditable =
     canManage &&
@@ -253,7 +259,7 @@ export default async function LedgerPage({
         />
         <FilterToggle
           id="kassenbuch-filter"
-          active={[accountId, month, categoryId].filter(Boolean).length}
+          active={[accountId, month, categoryId, receipt].filter(Boolean).length}
         />
         <FilterFields id="kassenbuch-filter">
           <NativeSelect
@@ -295,6 +301,15 @@ export default async function LedgerPage({
               </option>
             ))}
           </NativeSelect>
+          <NativeSelect
+            className={FILTER_SELECT}
+            name="beleg"
+            defaultValue={receipt ? "fehlt" : ""}
+            aria-label="Nach Beleg filtern"
+          >
+            <option value="">Mit und ohne Beleg</option>
+            <option value="fehlt">Ohne Beleg</option>
+          </NativeSelect>
           <div className="flex gap-2">
             <Button type="submit" variant="outline">
               Filtern
@@ -311,13 +326,21 @@ export default async function LedgerPage({
       {result.entries.length === 0 ? (
         <EmptyState
           icon={<AREA_ICON.finanzen />}
-          title={filtered ? "Keine passenden Buchungen" : "Noch keine Buchungen"}
+          title={
+            receipt && !accountId && !month && !categoryId && !q
+              ? "Alle Buchungen haben einen Beleg"
+              : filtered
+                ? "Keine passenden Buchungen"
+                : "Noch keine Buchungen"
+          }
           description={
-            filtered
-              ? "Passe die Suche oder den Filter an."
-              : canManage
-                ? "Erfasse die erste Einnahme oder Ausgabe mit „Neue Buchung“."
-                : "Sobald der Kassenwart bucht, stehen die Buchungen hier."
+            receipt && !accountId && !month && !categoryId && !q
+              ? "Nichts nachzureichen."
+              : filtered
+                ? "Passe die Suche oder den Filter an."
+                : canManage
+                  ? "Erfasse die erste Einnahme oder Ausgabe mit „Neue Buchung“."
+                  : "Sobald der Kassenwart bucht, stehen die Buchungen hier."
           }
         />
       ) : (
@@ -371,8 +394,11 @@ export default async function LedgerPage({
                               reversalDate: date,
                               transfer: entry.kind === "TRANSFER",
                               defaults: correctionDefaults(entry, date),
+                              attachments: entry.attachments,
+                              receiptsRemovable: periodOpen(entry.bookingDate),
                             }}
                             options={entry.kind === "TRANSFER" ? null : options}
+                            maxUploadMb={env.MAX_UPLOAD_MB}
                           />
                         ) : null
                       }
@@ -447,6 +473,27 @@ function EntryRow({
           <span className="block text-sm">storniert durch Nr. {entry.reversedBy.label}</span>
         )}
         {/* „Storno zu Nr. …“ steht schon in der Beschreibung des Stornos. */}
+        {entry.attachments.map((attachment) =>
+          attachment.documentId ? (
+            <a
+              key={attachment.id}
+              href={`/api/finanzen/belege/${attachment.id}`}
+              className="block text-sm break-words text-primary underline-offset-4 hover:underline"
+            >
+              <span className="sr-only">Beleg herunterladen: </span>
+              {attachment.name}
+            </a>
+          ) : (
+            <span key={attachment.id} className="block text-sm text-muted-foreground">
+              Eigenbeleg: {attachment.note}
+            </span>
+          ),
+        )}
+        {entry.needsReceipt && (
+          <span className="block text-sm font-medium text-amber-700 dark:text-amber-400">
+            Beleg fehlt
+          </span>
+        )}
       </TableCell>
       <TableCell className="hidden align-top whitespace-normal lg:table-cell">
         <span className="block">{categories.join(", ")}</span>

@@ -13,17 +13,21 @@ import {
   type CreatedEntry,
 } from "./ledger";
 import {
+  attachmentIdSchema,
   entrySchema,
   ledgerSetupSchema,
   openingSchema,
+  receiptNoteSchema,
   reverseSchema,
   transferSchema,
 } from "./ledger-schemas";
+import { attachReceiptNote, removeAttachment } from "./receipts";
 
-/** Alle Finanzseiten zeigen nach einer Buchung den neuen Stand (Übersicht, Kassenbuch, Dashboard). */
+/** Alle Finanzseiten zeigen nach einer Buchung den neuen Stand (Übersicht, Kassenbuch, Rechnungen, Dashboard, Dokumente). */
 function refresh() {
   revalidatePath("/finanzen", "layout");
   revalidatePath("/dashboard");
+  revalidatePath("/dokumente");
 }
 
 export async function setupLedgerAction(input: unknown): Promise<ActionResult> {
@@ -92,4 +96,20 @@ export async function correctOpeningAction(
     refresh();
     return result;
   }, "finance-opening");
+}
+
+export async function attachReceiptNoteAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    await attachReceiptNote(await requireTenantContext(), parseInput(receiptNoteSchema, input));
+    refresh();
+    return undefined;
+  }, "finance-receipt");
+}
+
+export async function removeAttachmentAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    await removeAttachment(await requireTenantContext(), parseInput(attachmentIdSchema, input));
+    refresh();
+    return undefined;
+  }, "finance-receipt");
 }

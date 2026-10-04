@@ -105,9 +105,11 @@ export default async function FinancePage() {
           valueCents={payments.totalCents}
           href="/finanzen/rechnungen?stand=offen"
           lines={[
-            payments.count === 1
-              ? "1 Rechnung zu bezahlen"
-              : `${payments.count} Rechnungen zu bezahlen`,
+            payments.count === 0
+              ? "Nichts zu bezahlen"
+              : payments.count === 1
+                ? "1 Rechnung zu bezahlen"
+                : `${payments.count} Rechnungen zu bezahlen`,
             payments.overdueCount > 0
               ? `davon ${payments.overdueCount} überfällig`
               : payments.count > 0

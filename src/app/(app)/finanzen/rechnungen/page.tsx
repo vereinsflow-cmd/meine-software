@@ -17,7 +17,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { Pagination } from "@/components/shared/pagination";
 import { TableCard } from "@/components/shared/table-card";
-import { formatCalendarDate, formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
+import {
+  formatCalendarDate,
+  formatEuroFromCents,
+  toDateInputValue,
+  todayCalendarDate,
+} from "@/lib/dates";
+import { centsToInput } from "@/lib/money";
 import { eventOptions } from "@/lib/event-options";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
@@ -27,7 +33,13 @@ import { canFinance } from "@/modules/finance/access";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
 import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
 import { dueText, invoiceBaseName } from "@/modules/finance/invoice-format";
-import { listInvoices, type InvoiceFilter } from "@/modules/finance/service";
+import {
+  BookInvoiceButton,
+  INVOICE_LIST_FOCUS_ID,
+} from "@/modules/finance/components/book-invoice-button";
+import { entryFormOptions } from "@/modules/finance/ledger";
+import type { EntryInput } from "@/modules/finance/ledger-schemas";
+import { listInvoices, type InvoiceFilter, type InvoiceListItem } from "@/modules/finance/service";
 import { env } from "@/server/env";
 import { can, scopeOf } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -56,11 +68,34 @@ export default async function InvoicesPage({
   const q = param(params, "q");
   const { page, pageSize } = pageRequest(params, 20);
   const canUpload = canFinance(ctx, "finance:manage") && can(ctx, "documents:upload");
-  const [result, categories, events] = await Promise.all([
+  const [result, categories, events, options] = await Promise.all([
     listInvoices(ctx, { stand, q, page, pageSize }),
     canUpload ? listCategories(ctx) : Promise.resolve([]),
     canUpload ? listUploadEvents(ctx) : Promise.resolve([]),
+    canFinance(ctx, "finance:manage") ? entryFormOptions(ctx) : Promise.resolve(null),
   ]);
+  /** „Ins Kassenbuch“: bezahlte Rechnung als Ausgabe vom Girokonto, am Tag der Zahlung (nicht vor Beginn des Kassenbuchs). */
+  const bookingDefaults = (invoice: InvoiceListItem): Partial<EntryInput> | null => {
+    if (!options || invoice.status !== "PAID" || invoice.booking) return null;
+    const paidOn = toDateInputValue(invoice.paidAt ?? invoice.invoiceDate);
+    if (paidOn < options.minDate) return null; // gehört in die Unterlagen vor dem Kassenbuch
+    const bank = options.accounts.find((a) => a.kind === "BANK") ?? options.accounts[0];
+    return {
+      kind: "EXPENSE",
+      accountId: bank?.value ?? "",
+      bookingDate: paidOn > options.today ? options.today : paidOn,
+      description: invoice.name.replace(/\.[a-z0-9]+$/i, ""),
+      invoiceId: invoice.id,
+      lines: [
+        {
+          categoryId: "",
+          amount: invoice.amountCents === null ? "" : centsToInput(invoice.amountCents),
+          target: "",
+          note: "",
+        },
+      ],
+    };
+  };
   const query = (next: InvoiceFilter) =>
     `/finanzen/rechnungen?stand=${next}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
 
@@ -105,7 +140,7 @@ export default async function InvoicesPage({
           method="get"
           action="/finanzen/rechnungen"
           role="search"
-          className="flex min-w-0 flex-1 gap-2 sm:max-w-sm"
+          className="flex min-w-0 flex-1 basis-full gap-2 sm:max-w-sm sm:basis-auto"
         >
           <input type="hidden" name="stand" value={stand} />
           <Input
@@ -151,7 +186,8 @@ export default async function InvoicesPage({
                 : `${result.overdueCount} Rechnungen sind überfällig.`}
             </p>
           )}
-          <TableCard>
+          {/* tabIndex -1: Nach „Ins Kassenbuch“ landet der Fokus hier (der Knopf verschwindet mit der Buchung). */}
+          <TableCard id={INVOICE_LIST_FOCUS_ID} tabIndex={-1} className="outline-none">
             <Table>
               <caption className="sr-only">
                 Rechnungen ({FILTERS.find((f) => f.value === stand)!.label})
@@ -207,6 +243,9 @@ export default async function InvoicesPage({
                         >
                           {state}
                         </span>
+                        {invoice.booking && (
+                          <BookingLink booking={invoice.booking} className="md:hidden" />
+                        )}
                       </TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">
                         {invoice.amountCents === null
@@ -225,10 +264,27 @@ export default async function InvoicesPage({
                         )}
                       >
                         {state}
+                        {invoice.booking && <BookingLink booking={invoice.booking} />}
                       </TableCell>
                       <TableCell className="text-right">
                         {result.canManage && invoice.status === "OPEN" && (
-                          <MarkPaidButton invoiceId={invoice.id} name={invoice.name} compact />
+                          <MarkPaidButton
+                            invoiceId={invoice.id}
+                            name={invoice.name}
+                            compact
+                            hint={
+                              options
+                                ? "Unter „Bezahlt“ kannst du sie ins Kassenbuch übernehmen."
+                                : undefined
+                            }
+                          />
+                        )}
+                        {options && bookingDefaults(invoice) && (
+                          <BookInvoiceButton
+                            options={options}
+                            invoice={{ name: invoice.name }}
+                            defaults={bookingDefaults(invoice)!}
+                          />
                         )}
                       </TableCell>
                     </TableRow>
@@ -241,5 +297,17 @@ export default async function InvoicesPage({
         </>
       )}
     </>
+  );
+}
+
+/** „im Kassenbuch Nr. 2026-0042“ – führt zur Buchung (Suche nach der Nummer). */
+function BookingLink({ booking, className }: { booking: { label: string }; className?: string }) {
+  return (
+    <Link
+      href={`/finanzen/kassenbuch?q=${booking.label}`}
+      className={cn("block text-sm text-primary underline-offset-4 hover:underline", className)}
+    >
+      im Kassenbuch Nr. {booking.label}
+    </Link>
   );
 }

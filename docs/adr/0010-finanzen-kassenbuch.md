@@ -33,6 +33,14 @@ Ehrenamtliche ohne Buchhaltungswissen.
   Fremdschlüssel-Sperren). Keine Buchung auf irgendeinem Konto in der Zukunft (`FUTURE_DATE`).
 - **Abschluss:** `FinanceSettings.closedThrough` sperrt Buchungen bis zu diesem Tag (geprüft beim Anlegen mit `FOR SHARE`;
   der Monatsabschluss setzt den Wert nur nach vorn). Ein Abschluss wird nie zurückgenommen.
+- **Belege** (`LedgerAttachment`): mehrere Dateien je Buchung oder ein Eigenbeleg als Text. Hochgeladene Belege sind
+  Dokumente der Stufe „Nur Finanzen“. Beim Anhängen setzt die Datenbank `Document.retainUntil` auf das Ende der
+  Aufbewahrungsfrist (31.12. des Buchungsjahres + 8, § 147 Abs. 3 AO) und verweigert bis dahin Papierkorb, Archiv und
+  Löschen (`DOCUMENT_RETAINED`). Anhänge sind unveränderlich; entfernen nur im offenen Zeitraum (dann entfällt die Frist).
+  Beim Korrigieren wandern die Belege zur neuen Buchung.
+- **Rechnungen im Kassenbuch:** Zeilen verweisen auf die bezahlte Rechnung (`LedgerLine.invoiceId`), die Rechnung hängt als
+  Beleg an. Eine Rechnung hat höchstens eine geltende Buchung; solange sie gilt, bleibt die Rechnung bezahlt und ihr Betrag
+  fest (`INVOICE_BOOKED`) – erst das Storno gibt sie frei.
 - **Kategorien in Alltagssprache** mit Bereich (ideeller Bereich, Vermögensverwaltung, Zweckbetrieb, wirtschaftlicher
   Geschäftsbetrieb, neutral) – als Vorschlag; Art (Einnahme/Ausgabe) und Systemkennung stehen fest, sobald gebucht wurde.
 - **Rechte:** `finance:read`/`finance:manage`/`finance:export` wirken nur vereinsweit (`modules/finance/access.ts`).

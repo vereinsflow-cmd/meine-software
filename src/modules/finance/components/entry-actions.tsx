@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { EllipsisIcon, PencilIcon, Undo2Icon } from "lucide-react";
+import { EllipsisIcon, PaperclipIcon, PencilIcon, Undo2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,21 +23,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMoreActions } from "@/components/shared/more-actions";
 import { formatCalendarDate } from "@/lib/dates";
-import type { EntryFormOptions } from "../ledger";
+import type { EntryFormOptions, LedgerAttachmentDto } from "../ledger";
 import { reverseEntryAction } from "../ledger-actions";
 import type { EntryInput } from "../ledger-schemas";
 import { EntryDialog } from "./entry-dialog";
+import { ReceiptsDialog } from "./receipts-dialog";
 
 /** Ziel des Fokus, nachdem eine Buchung storniert oder korrigiert wurde (ihr „⋯“ gibt es danach nicht mehr). */
 export const LEDGER_FOCUS_ID = "kassenbuch-anzahl";
 
 /**
- * Menü „⋯“ einer Buchung: „Korrigieren“ (Storno und neue Buchung, vorausgefüllt) und „Stornieren“ (mit Grund). Gelöscht
- * wird nie – das Kassenbuch bleibt lückenlos.
+ * Menü „⋯“ einer Buchung: „Belege“ (ansehen, anhängen, Eigenbeleg), „Korrigieren“ (Storno und neue Buchung, vorausgefüllt)
+ * und „Stornieren“ (mit Grund). Gelöscht wird nie – das Kassenbuch bleibt lückenlos.
  */
 export function EntryActions({
   entry,
   options,
+  maxUploadMb,
 }: {
   entry: {
     id: string;
@@ -47,17 +49,24 @@ export function EntryActions({
     reversalDate: Date;
     transfer: boolean;
     defaults: Partial<EntryInput>;
+    attachments: LedgerAttachmentDto[];
+    /** Belege dürfen entfernt werden (Zeitraum der Buchung offen). */
+    receiptsRemovable: boolean;
   };
   options: EntryFormOptions | null;
+  maxUploadMb: number;
 }) {
-  const { triggerRef, show, dialog } = useMoreActions<"reverse" | "correct">();
-  // Nach Erfolg verschwindet „⋯“ (die Buchung ist storniert) – der Fokus geht dann zur Zeile über der Tabelle.
+  const { triggerRef, show, dialog } = useMoreActions<"receipts" | "reverse" | "correct">();
+  // Nach Erfolg verschwindet „⋯“ (die Buchung ist storniert bzw. fällt aus „Ohne Beleg“) – der Fokus geht dann zur Zeile
+  // über der Tabelle. Bleibt die Zeile stehen, ist das genauso gut erreichbar.
   const done = useRef(false);
   const closeFocus = (fallback: (event: Event) => void) => (event: Event) => {
     if (!done.current) return fallback(event);
+    done.current = false;
     event.preventDefault();
     document.getElementById(LEDGER_FOCUS_ID)?.focus();
   };
+  const receipts = dialog("receipts");
   const reverse = dialog("reverse");
   const correct = dialog("correct");
   return (
@@ -78,6 +87,12 @@ export function EntryActions({
           collisionPadding={16}
           className="min-w-52 [&>[data-slot=dropdown-menu-item]]:gap-2 [&>[data-slot=dropdown-menu-item]]:py-2"
         >
+          <DropdownMenuItem onSelect={() => show("receipts")}>
+            <PaperclipIcon />{" "}
+            {entry.attachments.length > 0
+              ? `Belege (${entry.attachments.length})`
+              : "Beleg anhängen"}
+          </DropdownMenuItem>
           {options && (
             <DropdownMenuItem onSelect={() => show("correct")}>
               <PencilIcon /> Korrigieren
@@ -88,6 +103,16 @@ export function EntryActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <ReceiptsDialog
+        entry={entry}
+        attachments={entry.attachments}
+        removable={entry.receiptsRemovable}
+        maxMb={maxUploadMb}
+        open={receipts.open}
+        onOpenChange={receipts.onOpenChange}
+        onCloseAutoFocus={closeFocus(receipts.onCloseAutoFocus)}
+        onAdded={() => (done.current = true)}
+      />
       <ReverseDialog
         entry={entry}
         open={reverse.open}
