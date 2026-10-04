@@ -143,12 +143,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.47 0.17 258);
-  /* Logo (siehe components/shared/brand-logo.tsx): Farben des Originals */
-  --logo-dark: #1c4a7a;
-  --logo-light: #5b9cd6;
-  --logo-overlap: #112e4f;
-  --logo-ink: #12253b;
-  --logo-muted: #78827a;
   /* Kachel hinter dem Vereinslogo (siehe components/shared/club-logo.tsx): hell, damit auch dunkle Logos mit
      durchsichtigem Hintergrund sichtbar bleiben */
   --club-logo-bg: oklch(1 0 0);
@@ -214,12 +208,6 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.72 0.14 258);
-  /* Logo in der dunklen Darstellung: hellere Blautöne und helle Schrift, damit es auf dunklem Grund lesbar bleibt */
-  --logo-dark: #4a8ccf;
-  --logo-light: #8dbbe8;
-  --logo-overlap: #2b5f98;
-  --logo-ink: #eef3f9;
-  --logo-muted: #9aa5a0;
   /* Vereinslogos sind für helle Flächen gestaltet – auch im Dunkeln auf heller Kachel */
   --club-logo-bg: oklch(0.97 0 0);
 }

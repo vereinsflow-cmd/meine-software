@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * App-Symbol im Browser-Tab, in Lesezeichen und auf dem Startbildschirm (erzeugt mit docs/brand/generate-app-icons.mjs).
+ * App-Symbol im Browser-Tab, in Lesezeichen und auf dem Startbildschirm (aus dem Logo-Paket, siehe docs/brand/README.md).
  * Browser laden Symbole und Manifest ohne Anmelde-Cookie – sie dürfen deshalb nicht zur Anmeldung umgeleitet werden.
  */
 test.describe("App-Symbol", () => {
@@ -34,7 +34,14 @@ test.describe("App-Symbol", () => {
     const svg = await get("/icon.svg");
     expect(svg.status()).toBe(200);
     expect(svg.headers()["content-type"]).toContain("image/svg+xml");
-    expect(await svg.text()).toContain('fill="#12253b"'); // dunkle Kachel wie das Favicon der Website
+    expect(await svg.text()).toContain('fill="#0F1C2E"'); // dunkle Kachel (Tinte) wie das Favicon der Website
+
+    // Die Logo-Dateien der Oberfläche stehen schon auf der Anmeldeseite – auch sie brauchen keine Anmeldung.
+    for (const file of ["logo.svg", "logo-weiss.svg", "logo-gestapelt.svg", "symbol-klein.svg"]) {
+      const logo = await get(`/brand/${file}`);
+      expect(logo.status(), file).toBe(200);
+      expect(logo.headers()["content-type"], file).toContain("image/svg+xml");
+    }
 
     expect((await get("/apple-icon.png")).status()).toBe(200);
 

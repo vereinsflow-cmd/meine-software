@@ -20,10 +20,13 @@ export function Sidebar({ groups }: { groups: NavGroup[] }) {
           collapsed ? "justify-center px-2" : "px-5",
         )}
       >
+        {/* Eingeklappt nur das Symbol – 2 rem groß, deshalb in der vereinfachten Form für kleine Größen. Auf niedrigen
+            Bildschirmen ist der Kopf flacher; dort etwas kleiner, damit das Logo nicht am oberen Rand klebt. */}
         <Brand
           href="/dashboard"
           variant={collapsed ? "icon" : "horizontal"}
-          logoClassName={collapsed ? "h-8" : undefined}
+          small={collapsed}
+          logoClassName={collapsed ? undefined : "[@media(max-height:820px)]:h-10"}
         />
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pt-5 [@media(max-height:820px)]:pt-3">
