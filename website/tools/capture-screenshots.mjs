@@ -207,17 +207,38 @@ const openSearch = (query, { viaButton = false } = {}) => async (page) => {
 };
 
 /**
+ * Die Schicht „Getränkestand“ im Helferplan (seit 03.10.2026 „Tagesablauf“: Zeitleiste und darunter eine Liste mit
+ * einem Eintrag je Schicht), ihre Knöpfe und ein einheitlicher Ausgangszustand für die Bilder.
+ */
+const GETRAENKE = { row: "Schicht Getränkestand", join: "In Getränkestand eintragen", leave: "Aus Getränkestand austragen" };
+const drinksRow = (page) => page.getByRole("listitem", { name: GETRAENKE.row, exact: true });
+const drinksButton = (page, name) => drinksRow(page).getByRole("button", { name, exact: true });
+/**
+ * Klappt zu, was der Helferplan beim Laden aufklappt (die nächste eigene Schicht – je nach Stand Aufbau oder
+ * Getränkestand). Zugeklappt sind alle Einträge vorher und nachher gleich hoch, die Bilder passen übereinander; der
+ * eigene Name steht dann als „Name (du)“ in der Zeile (aufgeklappt stünde er mit einem Schild „Du“ untereinander).
+ */
+const collapseShifts = async (page) => {
+  const open = page.locator("main ul > li h3 button[aria-expanded='true']");
+  while (await open.count()) {
+    await open.first().click();
+    await page.waitForTimeout(100);
+  }
+};
+
+/**
  * Bildfolge für das Live-Fenster im Kapitel „Helferschichten“ (site.css „Live-Fenster“): Ein Mauszeiger zeigt auf
  * „Neue Schicht“, trägt sich beim Getränkestand ein und geht zu „Drucken“. Aufgenommen werden
- *   schichten-live-1  vorher (Getränkestand 2 von 4, Schaltfläche „Eintragen“)
+ *   schichten-live-1  vorher (Getränkestand „2 von 4“, Schaltfläche „Eintragen“)
  *   schichten-live-5  vorher, Zeiger über „Neue Schicht“ (Schritt 1 „Schichten anlegen“)
  *   schichten-live-2  vorher, Zeiger über „Eintragen“
- *   schichten-live-3  nachher (3 von 4, „Mein Einsatz“, eigener Name), Zeiger über „Austragen“ (steht an derselben Stelle)
+ *   schichten-live-3  nachher („3 von 4“, eigener Name als „Name (du)“, „Du“ am Balken der Zeitleiste), Zeiger über
+ *                     „Austragen“ (steht an derselben Stelle)
  *   schichten-live-4  nachher, Zeiger über „Drucken“
  *   schichten         nachher ohne Zeiger – das bekannte Kapitelbild (ohne JavaScript, bei reduzierter Bewegung)
  * Alle als derselbe Ausschnitt rechts neben der Seitenleiste: vom Kopf des Helferplans (Titel, „Neue Schicht“,
- * „Drucken“) bis unter die Schicht „Getränkestand“ (planArea) – so zeigt das Fenster auf der Website nur, worum es
- * geht, statt Seitenleiste und leerer Fläche.
+ * „Drucken“) über die Zeitleiste bis unter die Schicht „Getränkestand“ (planArea) – so zeigt das Fenster auf der Website
+ * nur, worum es geht, statt Seitenleiste und leerer Fläche. Alle Schichten sind zugeklappt (collapseShifts).
  * Die Demo-Datenbank ändert sich dabei nur kurz: Der Administrator trägt sich aus und wieder ein, am Ende ist alles wie
  * vorher. Nach jedem Klick wird die Seite neu geladen – das Umbenennen im Bild (normalizeDemoNames) verändert die Seite,
  * die Anwendung soll danach nichts mehr darauf aufbauen. Die Positionen der Schaltflächen (in Prozent des Ausschnitts)
@@ -225,15 +246,12 @@ const openSearch = (query, { viaButton = false } = {}) => async (page) => {
  */
 async function liveFrames(page, snap) {
   const url = page.url();
-  const card = () =>
-    page
-      .locator("h3", { hasText: /^Getränkestand$/ })
-      .locator("xpath=ancestor::*[.//button[normalize-space()='Austragen' or normalize-space()='Eintragen']][1]");
-  const button = (name) => card().getByRole("button", { name, exact: true });
+  const button = (name) => drinksButton(page, name);
   const action = (name) => page.getByRole("button", { name, exact: true }).or(page.getByRole("link", { name, exact: true })).first();
   const fresh = async () => {
     await page.goto(url, { waitUntil: "networkidle" });
-    await card().waitFor();
+    await drinksRow(page).waitFor();
+    await collapseShifts(page);
   };
   const toggle = async (from, to) => {
     await fresh();
@@ -242,18 +260,16 @@ async function liveFrames(page, snap) {
     await page.waitForLoadState("networkidle");
     await fresh();
   };
-  // Ausschnitt: rechts neben der Seitenleiste bis zum Fensterrand, vom Titel bis unter die Karte „Getränkestand“ (die
-  // Karte samt Rahmen, nicht nur ihr Inhalt). Oben nichts vom Rücklink „Helferplanung“ (der unterste Link über dem Titel).
+  // Ausschnitt: rechts neben der Seitenleiste bis zum Fensterrand, vom Titel bis zum Ende des Eintrags „Getränkestand“
+  // in der Karte „Tagesablauf“. Oben nichts vom Rücklink „Helferplanung“ (der unterste Link über dem Titel).
   const planArea = async () => {
     const x = await page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? 0));
     const title = await page.locator("main h1").first().boundingBox();
-    const shift = await page.locator("h3", { hasText: /^Getränkestand$/ }).first().evaluate((heading) => {
-      const box = (heading.closest("li") ?? heading.parentElement).getBoundingClientRect(); // jede Schicht ist ein Listeneintrag
-      return { top: box.top, bottom: box.bottom };
-    });
+    const shift = await drinksRow(page).boundingBox();
     if (!title) throw new Error("Titel des Helferplans nicht gefunden");
-    // oben 16 px Luft über dem Titel, aber nichts vom Rücklink „Helferplanung“ darüber; unten 16 px – die nächste Karte
-    // beginnt 18 px tiefer und bleibt so ganz draußen
+    if (!shift) throw new Error("Schicht „Getränkestand“ nicht gefunden");
+    // oben 16 px Luft über dem Titel, aber nichts vom Rücklink „Helferplanung“ darüber; unten genau bis zum Ende des
+    // Eintrags – die Trennlinie zur nächsten Schicht bleibt draußen, die Karte läuft unten offen aus
     const back = await page.evaluate(
       ([left, top]) =>
         Math.max(
@@ -266,16 +282,16 @@ async function liveFrames(page, snap) {
       [x, title.y],
     ).catch(() => 0);
     const y = Math.max(0, Math.floor(title.y - 16), Math.ceil(back + 1));
-    return { x, y, width: page.viewportSize().width - x, height: Math.ceil(shift.bottom + 16) - y };
+    return { x, y, width: page.viewportSize().width - x, height: Math.floor(shift.y + shift.height) - y };
   };
   // Ausgangslage: nicht eingetragen
-  if (await button("Austragen").count()) await toggle("Austragen", "Eintragen");
+  if (await button(GETRAENKE.leave).count()) await toggle(GETRAENKE.leave, GETRAENKE.join);
   else await fresh();
   const clip = await planArea();
-  // Leerer Rand des Ausschnitts neben Titel und Karten: Nur so weit dürfen Telefon und Blatt auf der Website über das
+  // Leerer Rand des Ausschnitts neben Titel und Karte: Nur so weit dürfen Telefon und Blatt auf der Website über das
   // Fenster reichen (site.css, --story-lap und --story-tuck, ausgelegt auf gut 3 % je Seite)
-  const margin = await page.locator("h3", { hasText: /^Getränkestand$/ }).first().evaluate((heading, area) => {
-    const card = (heading.closest("li") ?? heading.parentElement).getBoundingClientRect();
+  const margin = await drinksRow(page).evaluate((row, area) => {
+    const card = (row.closest("section") ?? row).getBoundingClientRect(); // die Karte „Tagesablauf“
     const title = document.querySelector("main h1")?.getBoundingClientRect() ?? card;
     const left = Math.min(card.left, title.left) - area.x;
     const right = area.x + area.width - card.right;
@@ -286,17 +302,17 @@ async function liveFrames(page, snap) {
   const add = await spot(page, action("Neue Schicht"), clip);
   await page.mouse.move(add.x, add.y);
   await snap("schichten-live-5", { clip });
-  const join = await spot(page, button("Eintragen"), clip);
+  const join = await spot(page, button(GETRAENKE.join), clip);
   await page.mouse.move(join.x, join.y);
   await snap("schichten-live-2", { clip });
   // Eintragen – danach steht „Austragen“ an derselben Stelle unter dem Zeiger
-  await toggle("Eintragen", "Austragen");
+  await toggle(GETRAENKE.join, GETRAENKE.leave);
   const after = await planArea();
   if (JSON.stringify(after) !== JSON.stringify(clip)) {
     console.error(`WARNUNG schichten: Ausschnitt nachher ${JSON.stringify(after)} statt ${JSON.stringify(clip)} – die Bilder passen nicht übereinander`);
     process.exitCode = 1;
   }
-  const leave = await spot(page, button("Austragen"), clip);
+  const leave = await spot(page, button(GETRAENKE.leave), clip);
   await page.mouse.move(leave.x, leave.y);
   await snap("schichten-live-3", { clip });
   const print = await spot(page, action("Drucken"), clip);
@@ -314,18 +330,20 @@ async function liveFrames(page, snap) {
  * Telefon im Kapitel „Helferschichten“: dieselbe Schicht „Getränkestand“ wie im Live-Fenster daneben, vorher und
  * nachher – site.js blendet im Telefon um, sobald der Mauszeiger im Fenster auf „Eintragen“ klickt, damit beide immer
  * denselben Stand zeigen:
- *   phone-schichten-live-1  vorher (2 von 4, „Eintragen“)
- *   phone-schichten         nachher („Mein Einsatz“, eigener Name, 3 von 4, „Austragen“) – das ruhige Bild
- * Beide ab der Karte direkt unter der Kopfzeile. Wie bei liveFrames trägt sich der Administrator kurz aus und wieder
- * ein; am Ende ist er eingetragen.
+ *   phone-schichten-live-1  vorher („2 von 4“, „Eintragen“)
+ *   phone-schichten         nachher („3 von 4“, eigener Name als „Name (du)“, „Austragen“) – das ruhige Bild
+ * Beide ab der Schicht direkt unter der Kopfzeile, alle Schichten zugeklappt (collapseShifts). Wie bei liveFrames trägt
+ * sich der Administrator kurz aus und wieder ein; am Ende ist er eingetragen. Die Ausgabe nennt, wo „Eintragen“ im Bild
+ * „vorher“ liegt – dort tippt auf dem Smartphone der Finger (site.css, .story-tap).
  */
 async function phoneFrames(page, snap) {
   const url = page.url();
-  const shift = () => page.locator("h3", { hasText: /^Getränkestand$/ }).locator("xpath=ancestor::li[1]");
-  const button = (name) => shift().getByRole("button", { name, exact: true });
+  const shift = () => drinksRow(page);
+  const button = (name) => drinksButton(page, name);
   const fresh = async () => {
     await page.goto(url, { waitUntil: "networkidle" });
     await shift().waitFor();
+    await collapseShifts(page);
   };
   const toggle = async (from, to) => {
     await fresh();
@@ -337,12 +355,15 @@ async function phoneFrames(page, snap) {
     await fresh();
     await scrollBelowHeader(() => shift(), { gap: 12 })(page);
     await solidHeader(page);
+    const join = (await button(GETRAENKE.join).count()) ? await spot(page, button(GETRAENKE.join)) : null;
     await snap(name);
+    return join;
   };
-  if (await button("Austragen").count()) await toggle("Austragen", "Eintragen");
-  await frame("phone-schichten-live-1");
-  await toggle("Eintragen", "Austragen");
+  if (await button(GETRAENKE.leave).count()) await toggle(GETRAENKE.leave, GETRAENKE.join);
+  const join = await frame("phone-schichten-live-1");
+  await toggle(GETRAENKE.join, GETRAENKE.leave);
   await frame("phone-schichten");
+  if (join) console.log(`      Positionen: Eintragen ${join.at} (Fingertipp, .story-tap in site.css)`);
 }
 
 /** Mittelpunkt eines Elements in Prozent des Ausschnitts (für die Zielpunkte in site.js, LIVE_SCENES). */
@@ -512,10 +533,11 @@ const shots = [
     widths: [880, 960, 1320, 1760],
     crisp: [880],
   },
-  // Der Helferplan als Ausschnitt ohne Seitenleiste: Kopf mit „Neue Schicht“ und „Drucken“, darunter „Aufbau“ (voll
-  // besetzt) und „Getränkestand“ (teilweise besetzt, hier trägt sich der Mauszeiger ein). 1440 px breit: Titel und
-  // Angaben stehen je in einer Zeile, die Karten werden flach – der Ausschnitt ist knapp 3 : 2 statt hochkant. Zusammen
-  // mit der Bildfolge für das Live-Fenster aufgenommen (siehe liveFrames) – beide müssen denselben Stand zeigen.
+  // Der Helferplan als Ausschnitt ohne Seitenleiste: Kopf mit „Neue Schicht“ und „Drucken“, darunter die Zeitleiste
+  // „Tagesablauf“ und aus der Liste „Aufbau“ (voll besetzt) und „Getränkestand“ (teilweise besetzt, hier trägt sich der
+  // Mauszeiger ein). 1440 px breit: Die Liste steht in vier Spalten (ab 1280 px), die Einträge werden flach – der
+  // Ausschnitt ist knapp 3 : 2 statt hochkant. Zusammen mit der Bildfolge für das Live-Fenster aufgenommen (siehe
+  // liveFrames) – beide müssen denselben Stand zeigen.
   { name: "schichten", path: "/helferplanung", steps: followLink(FEST_LINK), viewport: { width: 1440, height: 1000 }, frames: liveFrames },
   { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content", frames: memberFrames },
   // Monat des Sommerfests (dort legt tools/demo-vorbereiten.mjs Trainings und weitere Termine an); das Datum steht in

@@ -170,7 +170,8 @@ Hinweise zu den Aufnahmen:
 - Die Detailbilder (Mitglieder, Kalender, Auswertungen) sind Ausschnitte rechts neben der Seitenleiste, die Suche ein Ausschnitt
   um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt); das
   Kapitelbild Helferschichten ist ebenfalls ein Ausschnitt rechts neben der Seitenleiste (Fenster 1440 px breit, vom Titel des
-  Helferplans bis unter die Schicht „Getränkestand“), der Helferplan-Aushang die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
+  Helferplans über die Zeitleiste „Tagesablauf“ bis zum Ende der Schicht „Getränkestand“; alle Schichten zugeklappt, der
+  eigene Name steht dort als „Name (du)“, an seinem Balken in der Zeitleiste ein „Du“), der Helferplan-Aushang die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
   (`FEST_WEEK` in `capture-screenshots.mjs`). Der Laptop der Vorführung „Am Rechner“ zeigt `nachrichten` (Chat „Alle
   Mitglieder“ mit Ankündigung und Lesestatistik), das Browserfenster im Einstieg `dashboard`.
 - Breiten: Browserfenster 960, 1440 und 1920 px (1440 für Fenster um 700 CSS-Pixel bei doppelter Pixeldichte und das
@@ -179,7 +180,9 @@ Hinweise zu den Aufnahmen:
   lädt das `<picture>` statt des Dashboards nur `assets/img/leer.svg`.
 - Telefonbilder: Einstieg `phone-dashboard`, Vorführung „Unterwegs“ `phone-helferplanung` (ab „Meine Einsätze“, damit
   „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten` (die Schicht „Getränkestand“ nach dem Eintragen, wie das ruhige Bild des
-  Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster);
+  Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster;
+  gefunden über den Listeneintrag „Schicht Getränkestand“ und die Knöpfe „In Getränkestand eintragen“ bzw. „Aus
+  Getränkestand austragen“);
   unter 720 px Breite zeigen die vier Reiter
   „Im Detail“ statt der Browserfenster eigene Telefonbilder (`phone-suche` über die Lupe, `phone-mitglieder`,
   `phone-kalender` als Liste, `phone-auswertung`). Neue Telefonbilder sind 390 × 760 Punkte groß – genau der sichtbare
@@ -189,9 +192,11 @@ Hinweise zu den Aufnahmen:
   gleicht die Breiten im Skript (`PHONE.widths` bzw. `widths` am Bild) und `srcset`/`sizes` im HTML an.
 - Nach neuen Aufnahmen zwei Dinge nachziehen: (1) Die Bildfolgen melden `Positionen:` (wo Knöpfe und Felder liegen) – diese
   Werte in `LIVE_SCENES` in `assets/js/site.js` übernehmen, sonst klickt der Mauszeiger daneben, wenn sich die Oberfläche
-  verschoben hat (danach `site.js?v=` erhöhen). Beim Helferplan meldet sie außerdem den leeren Rand neben den Karten; ist er
+  verschoben hat (danach `site.js?v=` erhöhen). Beim Helferplan meldet sie außerdem den leeren Rand neben der Karte; ist er
   deutlich schmaler als gut 3 %, `--story-lap` und `--story-tuck` in `site.css` verkleinern (so weit liegen Telefon und
-  Blatt über dem Fenster). (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
+  Blatt über dem Fenster). Beim Telefon der Helferschichten meldet sie, wo „Eintragen“ liegt – dort tippt am Smartphone
+  der Finger (`.story-tap` in `site.css`, `top`/`left`). Hat sich die Höhe des Ausschnitts geändert, auch `width`/`height`
+  der Bilder in `index.html` angleichen. (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
   Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst noch die alten.
 - Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
   `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`
