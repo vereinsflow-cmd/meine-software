@@ -185,6 +185,48 @@ enum InvoiceStatus {
   PAID
 }
 
+/// Art eines Geldkontos im Kassenbuch: Bankkonto (Girokonto), Barkasse oder sonstiges (z. B. PayPal).
+enum FinanceAccountKind {
+  BANK
+  CASH
+  OTHER
+}
+
+/// Steuerlicher Bereich einer Einnahme/Ausgabe (gemeinnütziger Verein): neutral (Umbuchung, Anfangsbestand) · ideeller
+/// Bereich · Vermögensverwaltung · Zweckbetrieb · wirtschaftlicher Geschäftsbetrieb.
+enum Sphere {
+  NEUTRAL
+  NON_PROFIT
+  ASSET_MANAGEMENT
+  PURPOSE_OPERATION
+  COMMERCIAL
+}
+
+/// Wofür eine Kategorie gedacht ist: Einnahmen, Ausgaben oder beides.
+enum CategoryDirection {
+  INCOME
+  EXPENSE
+  BOTH
+}
+
+/// Art einer Buchung: gewöhnlich, Storno (Gegenbuchung), Anfangsbestand eines Kontos oder Umbuchung zwischen Konten.
+enum LedgerEntryKind {
+  STANDARD
+  REVERSAL
+  OPENING
+  TRANSFER
+}
+
+/// Lückenlose Nummernkreise je Verein (und meist je Jahr).
+enum CounterKind {
+  LEDGER
+  CHARGE
+  FEE_RUN
+  SEPA_BATCH
+  RECEIPT
+  MANDATE
+}
+
 enum SupportCategory {
   PROBLEM
   QUESTION
@@ -354,6 +396,12 @@ model Club {
   messages               Message[]
   documents              Document[]
   invoices               Invoice[]
+  financeSettings        FinanceSettings?
+  financeAccounts        FinanceAccount[]
+  financeCategories      FinanceCategory[]
+  financeCounters        FinanceCounter[]
+  ledgerEntries          LedgerEntry[]
+  ledgerLines            LedgerLine[]
   folders                DocumentFolder[]
   invitations            Invitation[]
   sessions               Session[]
@@ -495,6 +543,8 @@ model Member {
   messageRecipients      MessageRecipient[]
   /// Beitrittsantrag, aus dem das Mitglied angelegt wurde.
   membershipApplications MembershipApplication[]
+  /// Buchungen, bei denen das Mitglied Zahler oder Empfänger war (Kassenbuch).
+  ledgerEntries          LedgerEntry[]
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -520,6 +570,8 @@ model Department {
   events                 Event[]
   messages               Message[]
   membershipApplications MembershipApplication[]
+  /// Buchungszeilen, die dieser Abteilung zugeordnet sind (Töpfe, Auswertungen).
+  ledgerLines            LedgerLine[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -685,6 +737,8 @@ model Event {
   checklists    Checklist[]
   documents     Document[]
   messages      Message[]
+  /// Buchungszeilen dieser Veranstaltung (Ergebnis z. B. des Sommerfests).
+  ledgerLines   LedgerLine[]
 
   @@unique([clubId, id])
   @@index([clubId, startsAt])
@@ -1038,6 +1092,160 @@ model Invoice {
   @@unique([clubId, id])
   @@unique([clubId, documentId])
   @@index([clubId, status, dueDate])
+}
+
+// ----------------------------------------------------------------------------
+// Finanzen: Kassenbuch (nur hinzufügen – Korrekturen als Storno, siehe docs/adr/0010-finanzen-kassenbuch.md)
+// ----------------------------------------------------------------------------
+
+/// Grundeinstellungen der Finanzen je Verein (1:1). Wird beim Einrichten des Kassenbuchs angelegt.
+model FinanceSettings {
+  id              String    @id @default(uuid(7))
+  clubId          String    @unique
+  /// Ab diesem Tag führt der Verein das Kassenbuch in VereinsFlow; die Anfangsbestände tragen dieses Datum.
+  ledgerStartDate DateTime  @db.Date
+  /// Bis einschließlich zu diesem Tag ist abgeschlossen (festgeschrieben). Nur der Monatsabschluss setzt es – und nur nach vorn.
+  closedThrough   DateTime? @db.Date
+  updatedById     String?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+}
+
+/// Geldkonto: Girokonto, Barkasse, PayPal … Der Kontostand ergibt sich aus den Buchungen.
+model FinanceAccount {
+  id          String             @id @default(uuid(7))
+  clubId      String
+  kind        FinanceAccountKind
+  name        String
+  /// Bank bzw. kurze Beschreibung („Sparkasse Musterstadt“, „Vereinsheim“).
+  bankName    String?
+  /// Das Bankkonto, das der Verein für Beiträge und Lastschrift nutzt (höchstens eins, siehe Migration).
+  isDefault   Boolean            @default(false)
+  sortOrder   Int                @default(0)
+  archivedAt  DateTime?          @db.Timestamptz(3)
+  createdById String?
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
+
+  club    Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entries LedgerEntry[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, name])
+}
+
+/// Kategorie einer Einnahme oder Ausgabe in Alltagssprache („Hallen- und Platzmiete“) mit ihrem steuerlichen Bereich.
+/// Die Buchungszeilen merken sich Name und Bereich zum Zeitpunkt der Buchung (Änderungen gelten nur für neue Buchungen).
+model FinanceCategory {
+  id         String            @id @default(uuid(7))
+  clubId     String
+  name       String
+  direction  CategoryDirection
+  sphere     Sphere
+  /// Feste Kategorien, auf die sich das Programm verlässt (Beiträge, Spenden, Umbuchung, Anfangsbestand …).
+  systemKey  String?
+  /// Kurze Erklärung im Auswahlfeld, z. B. „ideeller Bereich“.
+  hint       String?
+  sortOrder  Int               @default(0)
+  archivedAt DateTime?         @db.Timestamptz(3)
+  createdAt  DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
+
+  club  Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  lines LedgerLine[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, name])
+  @@unique([clubId, systemKey])
+}
+
+/// Lückenloser Nummernkreis (Buchungsnummern 2026-0042, Beitragsnummern …). Nur aufwärts, nie gelöscht.
+model FinanceCounter {
+  clubId    String
+  kind      CounterKind
+  /// Jahr des Nummernkreises (0 = nicht jährlich).
+  year      Int
+  lastValue Int         @default(0)
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@id([clubId, kind, year])
+}
+
+/// Buchung im Kassenbuch (Kopf): ein Geschäftsvorfall auf einem Geldkonto. Betrag mit Vorzeichen (+ Einnahme, − Ausgabe),
+/// aufgeteilt auf eine oder mehrere Zeilen (Kategorien). Unveränderlich – Korrektur nur durch Storno (Gegenbuchung).
+model LedgerEntry {
+  id                   String          @id @default(uuid(7))
+  clubId               String
+  /// Nummer innerhalb des Buchungsjahres, angezeigt als „2026-0042“.
+  year                 Int
+  number               Int
+  accountId            String
+  bookingDate          DateTime        @db.Date
+  /// Datum des Belegs (Rechnung, Quittung), falls abweichend.
+  documentDate         DateTime?       @db.Date
+  kind                 LedgerEntryKind @default(STANDARD)
+  amountCents          Int
+  description          String
+  /// Name des Zahlers bzw. Empfängers zum Zeitpunkt der Buchung.
+  counterpartyName     String?
+  counterpartyMemberId String?
+  /// Storno: die Buchung, die hiermit aufgehoben wird.
+  reversalOfId         String?
+  /// Umbuchung: beide Hälften (Bank → Kasse) tragen dieselbe Kennung.
+  transferGroupId      String?
+  recordedAt           DateTime        @default(now()) @db.Timestamptz(3)
+  createdById          String
+
+  club               Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  account            FinanceAccount @relation(fields: [clubId, accountId], references: [clubId, id], onDelete: Restrict)
+  counterpartyMember Member?        @relation(fields: [clubId, counterpartyMemberId], references: [clubId, id], onDelete: Restrict)
+  reversalOf         LedgerEntry?   @relation("LedgerReversal", fields: [clubId, reversalOfId], references: [clubId, id], onDelete: Restrict)
+  reversedBy         LedgerEntry?   @relation("LedgerReversal")
+  lines              LedgerLine[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, year, number])
+  @@unique([clubId, reversalOfId])
+  @@index([clubId, accountId, bookingDate])
+  @@index([clubId, bookingDate])
+  @@index([clubId, counterpartyMemberId])
+  @@index([clubId, transferGroupId])
+}
+
+/// Zeile einer Buchung: Betrag je Kategorie, optional mit Abteilung oder Veranstaltung. Bereich, Kategoriename, Datum und
+/// Konto sind Momentaufnahmen (die Datenbank setzt sie beim Anlegen). Unveränderlich.
+model LedgerLine {
+  id           String   @id @default(uuid(7))
+  clubId       String
+  entryId      String
+  position     Int
+  amountCents  Int
+  categoryId   String
+  sphere       Sphere
+  categoryName String
+  departmentId String?
+  eventId      String?
+  note         String?
+  bookingDate  DateTime @db.Date
+  accountId    String
+
+  club       Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entry      LedgerEntry     @relation(fields: [clubId, entryId], references: [clubId, id], onDelete: Restrict)
+  category   FinanceCategory @relation(fields: [clubId, categoryId], references: [clubId, id], onDelete: Restrict)
+  department Department?     @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
+  event      Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Restrict)
+
+  @@unique([clubId, id])
+  @@unique([clubId, entryId, position])
+  @@index([clubId, bookingDate])
+  @@index([clubId, categoryId, bookingDate])
+  @@index([clubId, departmentId, bookingDate])
+  @@index([clubId, eventId])
 }
 
 // ----------------------------------------------------------------------------

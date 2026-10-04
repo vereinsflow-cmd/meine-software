@@ -33,5 +33,18 @@ export function parseEuroToCents(input: string): number | null {
 /** Cent als Eingabetext für ein Formularfeld, z. B. 123456 → „1234,56“ (ohne Tausenderpunkt, gut zu bearbeiten). */
 export function centsToInput(cents: number | null | undefined): string {
   if (cents === null || cents === undefined) return "";
-  return `${Math.floor(cents / 100)},${String(cents % 100).padStart(2, "0")}`;
+  const abs = Math.abs(cents);
+  return `${cents < 0 ? "-" : ""}${Math.floor(abs / 100)},${String(abs % 100).padStart(2, "0")}`;
+}
+
+/**
+ * Wie `parseEuroToCents`, erlaubt aber ein Minus davor („-250,00“ oder „−250,00“) – z. B. für den Anfangsbestand eines
+ * überzogenen Girokontos. `null`, wenn es kein gültiger Betrag ist.
+ */
+export function parseSignedEuroToCents(input: string): number | null {
+  const text = input.trim();
+  const negative = /^[-−]/.test(text);
+  const cents = parseEuroToCents(negative ? text.slice(1) : text);
+  if (cents === null) return null;
+  return negative ? -cents : cents;
 }

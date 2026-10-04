@@ -320,6 +320,6 @@ describe("Die Datenbank lehnt ungültige Rechnungen ab", () => {
     const keys = (await prisma.permission.findMany({ where: { module: "Finanzen" } })).map(
       (entry) => entry.key,
     );
-    expect(keys.sort()).toEqual(["finance:manage", "finance:read"]);
+    expect(keys.sort()).toEqual(["finance:export", "finance:manage", "finance:read"]);
   });
 });

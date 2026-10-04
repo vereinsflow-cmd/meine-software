@@ -111,7 +111,14 @@ function CompareLine({ compare, className }: { compare: Compare; className?: str
 }
 
 /** Die große Zahl einer Kennzahlenkarte – wie der Kurs einer Aktie. */
-function KpiValue({ children, className }: { children: React.ReactNode; className?: string }) {
+/** Große Zahl einer Kennzahlenkarte (auch für andere Bereiche, z. B. die Finanzen). */
+export function KpiValue({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <p
       data-slot="kpi-value"
@@ -285,7 +292,7 @@ function QuoteStats({ quote, period }: { quote: Quote; period: QuotePeriod }) {
  * selben Ziel (`QuoteLink`). Der Fokusrahmen sitzt an der Karte selbst (`has-…:focus-visible`), der Rand der Karte schnitte
  * ihn sonst ab. Beim Überfahren hebt die Karte sich leicht an und leuchtet stärker (ohne Bewegung bei „Bewegung reduzieren“).
  */
-function KpiShell({
+export function KpiShell({
   label,
   accent,
   href,

@@ -89,7 +89,9 @@ const organisation: NavDefinition[] = [
     href: "/finanzen",
     label: "Finanzen",
     area: "finanzen",
-    permission: "club:update",
+    permission: "finance:read",
+    // Finanzen gibt es nur vereinsweit (`modules/finance/access.ts`).
+    notOwnOnly: true,
   },
 ];
 

@@ -1,4 +1,5 @@
 import type { MemberStatus } from "@/generated/prisma/enums";
+import { canFinance } from "@/modules/finance/access";
 import { sumPerBucket } from "@/lib/charts/aggregate";
 import { eventsQuote, hoursQuote, membersQuote, staffingQuote, type Quote } from "./quote";
 import { buildBuckets } from "@/lib/charts/time-buckets";
@@ -229,7 +230,7 @@ export async function getDashboard(
         ? listUpcomingBirthdays(ctx, { now, days: 14, limit: 6 })
         : Promise.resolve(null),
       can(ctx, "audit:read") ? listRecentActivity(ctx, 6) : Promise.resolve(null),
-      can(ctx, "finance:read") ? getOpenPayments(ctx, { limit: 6 }) : Promise.resolve(null),
+      canFinance(ctx, "finance:read") ? getOpenPayments(ctx, { limit: 6 }) : Promise.resolve(null),
     ]);
   return {
     members,

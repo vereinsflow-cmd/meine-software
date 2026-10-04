@@ -102,6 +102,7 @@ export function UploadDialog({
   requireEvent,
   defaultEventId,
   invoiceName = null,
+  invoiceOnly = false,
 }: {
   categories: string[];
   events: { id: string; label: string }[];
@@ -115,6 +116,8 @@ export function UploadDialog({
    * (`finance:manage`); sonst `null`, und die Rechnungs-Angaben fehlen im Fenster.
    */
   invoiceName?: string | null;
+  /** Nur Rechnungen (Seite „Finanzen › Rechnungen“): ohne Kästchen „Das ist eine Rechnung“, zunächst „Nur Vorstand“. */
+  invoiceOnly?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -126,11 +129,13 @@ export function UploadDialog({
   const nextKey = useRef(0);
   const categoryRef = useRef<HTMLInputElement>(null);
   // Rechnung: Der Name entsteht auf dem Server; Rechnungen sind zunächst „Nur Vorstand“ (Beträge, Kontodaten).
-  const [isInvoice, setIsInvoice] = useState(false);
+  const invoiceAccess: AccessLevel =
+    invoiceOnly && accessLevels.includes("BOARD") ? "BOARD" : "ALL_MEMBERS";
+  const [isInvoice, setIsInvoice] = useState(invoiceOnly);
   const [paymentDue, setPaymentDue] = useState(true);
-  const [access, setAccess] = useState<AccessLevel>("ALL_MEMBERS");
+  const [access, setAccess] = useState<AccessLevel>(invoiceAccess);
   // Hat das Häkchen „Rechnung“ die Zugriffsstufe angehoben? Dann nimmt es sie beim Abwählen wieder zurück.
-  const [accessRaised, setAccessRaised] = useState(false);
+  const [accessRaised, setAccessRaised] = useState(invoiceOnly && invoiceAccess === "BOARD");
 
   const presetEvent = events.some((event) => event.id === defaultEventId) ? defaultEventId : "";
   const ready = files.filter((entry) => !entry.error);
@@ -140,16 +145,18 @@ export function UploadDialog({
     setFiles([]);
     setErrors({});
     setFormError(null);
-    setIsInvoice(false);
+    setIsInvoice(invoiceOnly);
     setPaymentDue(true);
-    setAccess("ALL_MEMBERS");
-    setAccessRaised(false);
+    setAccess(invoiceAccess);
+    setAccessRaised(invoiceOnly && invoiceAccess === "BOARD");
   }
 
   function choose(list: File[]) {
     if (pending) return;
+    // Rechnungen einzeln (jede hat ihren Betrag) – auch wenn mehrere auf die Seite gezogen werden.
+    const chosen = invoiceOnly ? list.slice(0, 1) : list;
     setFiles(
-      list.map((file) => ({ key: nextKey.current++, file, error: clientFileError(file, maxMb) })),
+      chosen.map((file) => ({ key: nextKey.current++, file, error: clientFileError(file, maxMb) })),
     );
     setErrors({});
     setFormError(null);
@@ -247,7 +254,7 @@ export function UploadDialog({
       >
         <DialogTrigger asChild>
           <Button>
-            <UploadIcon /> Dokument hochladen
+            <UploadIcon /> {invoiceOnly ? "Rechnung hochladen" : "Dokument hochladen"}
           </Button>
         </DialogTrigger>
         <DialogContent
@@ -261,7 +268,7 @@ export function UploadDialog({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Dokument hochladen</DialogTitle>
+            <DialogTitle>{invoiceOnly ? "Rechnung hochladen" : "Dokument hochladen"}</DialogTitle>
             <DialogDescription>
               Erlaubt: {ALLOWED_EXTENSIONS_TEXT}. Jede Datei wird auf Inhalt und Typ geprüft.
             </DialogDescription>
@@ -279,7 +286,7 @@ export function UploadDialog({
               <FormError message={formError} />
               <div className="grid gap-1.5">
                 <Label id="upload-datei-titel" htmlFor="upload-datei">
-                  Dateien{" "}
+                  {invoiceOnly ? "Datei" : "Dateien"}{" "}
                   <span aria-hidden="true" className="text-destructive">
                     *
                   </span>
@@ -290,7 +297,7 @@ export function UploadDialog({
                   invalid={Boolean(errors.file)}
                   disabled={pending}
                   accept={ACCEPT}
-                  multiple
+                  multiple={!invoiceOnly}
                   labelledBy="upload-datei-titel"
                   describedBy={errors.file ? "upload-datei-fehler" : "upload-datei-hinweis"}
                   onFiles={choose}
@@ -365,35 +372,48 @@ export function UploadDialog({
               {invoiceName && (
                 <fieldset className="grid gap-3 rounded-lg border p-3">
                   <legend className="sr-only">Rechnung</legend>
-                  <label className="flex items-start gap-2.5 text-sm">
-                    <input
-                      type="checkbox"
-                      name="isInvoice"
-                      checked={isInvoice}
-                      onChange={(event) => {
-                        const checked = event.target.checked;
-                        setIsInvoice(checked);
-                        // Rechnungen enthalten Beträge und oft Kontodaten: zunächst nur für den Vorstand – aber nur
-                        // statt „Alle Mitglieder“, eine engere Wahl („Nur Verwaltung“) bleibt stehen.
-                        if (checked && access === "ALL_MEMBERS" && accessLevels.includes("BOARD")) {
-                          setAccess("BOARD");
-                          setAccessRaised(true);
-                        } else if (!checked && accessRaised) {
-                          if (access === "BOARD") setAccess("ALL_MEMBERS");
-                          setAccessRaised(false);
-                        }
-                        setErrors({});
-                        setFormError(null);
-                      }}
-                      className="mt-0.5 size-4 shrink-0 accent-primary"
-                    />
-                    <span>
-                      <span className="font-medium">Das ist eine Rechnung</span>
-                      <span className="block text-muted-foreground">
-                        Sie heißt dann automatisch „{invoiceName}“.
+                  {invoiceOnly ? (
+                    <>
+                      <input type="hidden" name="isInvoice" value="on" />
+                      <p className="text-sm text-muted-foreground">
+                        Die Rechnung heißt automatisch „{invoiceName}“.
+                      </p>
+                    </>
+                  ) : (
+                    <label className="flex items-start gap-2.5 text-sm">
+                      <input
+                        type="checkbox"
+                        name="isInvoice"
+                        checked={isInvoice}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setIsInvoice(checked);
+                          // Rechnungen enthalten Beträge und oft Kontodaten: zunächst nur für den Vorstand – aber nur
+                          // statt „Alle Mitglieder“, eine engere Wahl („Nur Verwaltung“) bleibt stehen.
+                          if (
+                            checked &&
+                            access === "ALL_MEMBERS" &&
+                            accessLevels.includes("BOARD")
+                          ) {
+                            setAccess("BOARD");
+                            setAccessRaised(true);
+                          } else if (!checked && accessRaised) {
+                            if (access === "BOARD") setAccess("ALL_MEMBERS");
+                            setAccessRaised(false);
+                          }
+                          setErrors({});
+                          setFormError(null);
+                        }}
+                        className="mt-0.5 size-4 shrink-0 accent-primary"
+                      />
+                      <span>
+                        <span className="font-medium">Das ist eine Rechnung</span>
+                        <span className="block text-muted-foreground">
+                          Sie heißt dann automatisch „{invoiceName}“.
+                        </span>
                       </span>
-                    </span>
-                  </label>
+                    </label>
+                  )}
                   {isInvoice && (
                     <>
                       {/* Zwei Antworten statt eines vorab angehakten Kästchens: Ein Klick auf die gewünschte Antwort wählt sie

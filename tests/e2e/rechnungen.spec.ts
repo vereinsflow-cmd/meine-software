@@ -41,7 +41,7 @@ test("Dashboard: nur Vorstand und Verwaltung sehen die offenen Zahlungen – Sum
   await expect(rows.nth(1)).toContainText("fällig in 14 Tagen");
   await expect(card.getByRole("link", { name: /Alle offenen Rechnungen/ })).toHaveAttribute(
     "href",
-    "/dokumente?rechnungen=offen",
+    "/finanzen/rechnungen?stand=offen",
   );
 
   for (const who of [USERS.mitglied, USERS.abteilung, USERS.helfer]) {

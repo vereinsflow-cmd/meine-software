@@ -35,6 +35,8 @@ const adminPages = [
   "/einrichtung?schritt=abschluss",
   "/protokoll",
   "/finanzen",
+  "/finanzen/kassenbuch",
+  "/finanzen/rechnungen",
   "/hilfe",
   "/hilfe/meldungen",
   "/profil",

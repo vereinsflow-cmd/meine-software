@@ -438,7 +438,7 @@ export function OpenPayments({
       description="Rechnungen, die der Verein noch bezahlen muss"
       more={
         payments.count > 0
-          ? { href: "/dokumente?rechnungen=offen", label: "Alle offenen Rechnungen" }
+          ? { href: "/finanzen/rechnungen?stand=offen", label: "Alle offenen Rechnungen" }
           : undefined
       }
     >

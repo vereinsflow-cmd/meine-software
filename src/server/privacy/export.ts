@@ -68,6 +68,21 @@ export async function buildUserDataExport(
             orderBy: { createdAt: "asc" },
             take: LIMIT,
           },
+          // Kassenbuch: Buchungen, bei denen das Mitglied Zahler oder Empfänger war.
+          ledgerEntries: {
+            select: {
+              id: true,
+              year: true,
+              number: true,
+              bookingDate: true,
+              amountCents: true,
+              description: true,
+              kind: true,
+              account: { select: { name: true } },
+            },
+            orderBy: [{ year: "asc" }, { number: "asc" }],
+            take: LIMIT,
+          },
           shiftAssignments: {
             include: {
               shift: {
@@ -190,6 +205,52 @@ export async function buildUserDataExport(
   const inClub = <T extends { clubId: string }>(rows: T[], clubId: string) =>
     rows.filter((row) => row.clubId === clubId);
 
+  // Kassenbuch: Buchungen mit dem Mitglied als Gegenüber – und solche, in denen sein Name nur als Text steht („Spende Hans
+  // Müller“), denn auch das sind seine Daten (Art. 15 DSGVO).
+  const ledgerByName = new Map<
+    string,
+    {
+      id: string;
+      year: number;
+      number: number;
+      bookingDate: Date;
+      amountCents: number;
+      description: string;
+      kind: string;
+      account: { name: string };
+    }[]
+  >();
+  await Promise.all(
+    memberships.map(async (membership) => {
+      const member = membership.member;
+      if (!member) return;
+      const fullName = `${member.firstName} ${member.lastName}`.trim();
+      if (fullName.length < 5) return;
+      const rows = await prisma.ledgerEntry.findMany({
+        where: {
+          clubId: membership.clubId,
+          OR: [
+            { counterpartyName: { contains: fullName, mode: "insensitive" } },
+            { description: { contains: fullName, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          id: true,
+          year: true,
+          number: true,
+          bookingDate: true,
+          amountCents: true,
+          description: true,
+          kind: true,
+          account: { select: { name: true } },
+        },
+        orderBy: [{ year: "asc" }, { number: "asc" }],
+        take: LIMIT,
+      });
+      ledgerByName.set(membership.id, rows);
+    }),
+  );
+
   const vereine = memberships.map((membership) => {
     const member = membership.member;
     return {
@@ -242,6 +303,19 @@ export async function buildUserDataExport(
               geleisteteMinuten: a.workedMinutes,
               notiz: a.note,
               eingetragenAm: iso(a.assignedAt),
+            })),
+            buchungen: [
+              ...member.ledgerEntries,
+              ...(ledgerByName.get(membership.id) ?? []).filter(
+                (row) => !member.ledgerEntries.some((own) => own.id === row.id),
+              ),
+            ].map((e) => ({
+              nummer: `${e.year}-${String(e.number).padStart(4, "0")}`,
+              datum: day(e.bookingDate),
+              konto: e.account.name,
+              betragCent: e.amountCents,
+              text: e.description,
+              art: e.kind,
             })),
             aufgaben: member.assignedTasks.map((t) => ({
               titel: t.title,

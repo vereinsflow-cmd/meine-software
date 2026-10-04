@@ -542,20 +542,43 @@ export const FAQ: readonly FaqSection[] = [
   },
   {
     id: "verwaltung-finanzen",
-    title: "Für Vorstand: Rechnungen und offene Zahlungen",
-    description: "Rechnungen ablegen, offene Beträge im Blick behalten, als bezahlt markieren.",
+    title: "Für Vorstand: Finanzen",
+    description: "Kassenbuch führen, Rechnungen ablegen und bezahlen, Zahlen im Blick behalten.",
     requires: "finance:read",
     items: [
+      {
+        id: "kassenbuch-einrichten",
+        question: "Wie fange ich mit dem Kassenbuch an?",
+        steps: [
+          "Öffne „Finanzen“ und dort „Kassenbuch“.",
+          "Gib an, ab wann du in VereinsFlow buchst (meist der 1. Januar), den Namen des Girokontos und seinen Anfangsbestand. Hat der Verein eine Barkasse, trage auch ihren Anfangsbestand ein.",
+          "Klicke auf „Kassenbuch einrichten“. Kategorien in Alltagssprache (Mitgliedsbeiträge, Hallenmiete, Spenden …) kommen als Vorschlag dazu.",
+        ],
+        tip: "Den Anfangsbestand findest du auf dem Kontoauszug vom Vortag bzw. durch Zählen der Kasse. Vertippt? In der Zeile des Anfangsbestands im Kassenbuch kannst du ihn über den Stift korrigieren.",
+        link: { href: "/finanzen/kassenbuch", label: "Zum Kassenbuch" },
+        keywords: "kasse konto anfangsbestand einrichten kassenwart girokonto barkasse",
+      },
+      {
+        id: "buchen",
+        question: "Wie buche ich eine Einnahme oder Ausgabe – und was, wenn ich mich vertan habe?",
+        steps: [
+          "Klicke im Kassenbuch auf „Neue Buchung“, wähle „Einnahme“ oder „Ausgabe“ und trage Betrag, Datum, Konto, Beschreibung und Kategorie ein. Auf Wunsch ordnest du sie einer Abteilung oder Veranstaltung zu oder teilst sie auf mehrere Kategorien auf.",
+          "Vertippt? Öffne bei der Buchung das Menü „⋯“ und wähle „Korrigieren“ (die alte Buchung wird storniert, die richtige neu angelegt) oder „Stornieren“ (mit Grund).",
+        ],
+        tip: "Buchungen werden nie geändert oder gelöscht, sondern storniert – so bleibt alles nachvollziehbar, wie es die Regeln für eine ordentliche Buchführung verlangen. Die Barkasse kann nicht ins Minus rutschen; Bargeld zur Bank bringen ist eine „Umbuchung“.",
+        link: { href: "/finanzen/kassenbuch", label: "Zum Kassenbuch" },
+        keywords: "buchung einnahme ausgabe storno korrektur fehler umbuchung kasse bank",
+      },
       {
         id: "rechnung-erfassen",
         question: "Wie lege ich eine Rechnung ab, die noch bezahlt werden muss?",
         steps: [
-          "Öffne „Dokumente“ und ziehe die Rechnung auf die Seite – oder klicke auf „Dokument hochladen“ und wähle sie aus.",
-          "Hake „Das ist eine Rechnung“ an. Sie heißt dann automatisch nach dem heutigen Tag, z. B. „Rechnung vom 27.09.2026“.",
+          "Öffne „Finanzen“ › „Rechnungen“ und klicke auf „Rechnung hochladen“ (oder bei „Dokumente“ hochladen und „Das ist eine Rechnung“ anhaken).",
+          "Sie heißt automatisch nach dem heutigen Tag, z. B. „Rechnung vom 27.09.2026“.",
           "„Muss noch bezahlt werden“ ist schon ausgewählt: Trage den Betrag ein (z. B. 149,90) und, wenn bekannt, das Fälligkeitsdatum. Klicke auf „Hochladen“.",
         ],
         tip: "Rechnungen sind zunächst „Nur Vorstand“. Ist eine Rechnung schon bezahlt, wähle „Ist schon bezahlt“ – dann wird sie nur abgelegt. Rechnungen lädst du einzeln hoch, damit jede ihren eigenen Betrag bekommt.",
-        link: { href: "/dokumente", label: "Zu den Dokumenten" },
+        link: { href: "/finanzen/rechnungen", label: "Zu den Rechnungen" },
         keywords: "rechnung beleg quittung kosten betrag zahlung kassenwart",
       },
       {
@@ -563,9 +586,9 @@ export const FAQ: readonly FaqSection[] = [
         question: "Wo sehe ich, wie viel Geld noch offen ist?",
         answer: [
           "Auf dem Dashboard unter „Finanzen“: Die Karte „Offene Zahlungen“ zeigt die Summe aller offenen Rechnungen und die dringendsten einzeln – überfällige rot, bald fällige gelb. Ist eine Rechnung bezahlt, klicke daneben auf „Bezahlt“; ein Klick auf „Rückgängig“ in der Meldung macht das rückgängig.",
-          "Alle Rechnungen findest du unter „Dokumente“ mit dem Filter „Nur Rechnungen“, die noch zu bezahlenden mit „Nur offene Rechnungen“. Betrag, Fälligkeit und Zahlungsstand änderst du dort mit dem Stift („Dokument bearbeiten“).",
+          "In „Finanzen“ siehst du Kontostand, offene Rechnungen, Überschuss und Spenden des Jahres auf einen Blick, dazu „Das steht an“. Alle Rechnungen stehen unter „Finanzen“ › „Rechnungen“ (offen, bezahlt, alle). Betrag, Fälligkeit und Zahlungsstand änderst du bei „Dokumente“ mit dem Stift („Dokument bearbeiten“).",
         ],
-        link: { href: "/dashboard", label: "Zum Dashboard" },
+        link: { href: "/finanzen", label: "Zu den Finanzen" },
         keywords: "offene posten schulden ausgaben kasse finanzen überfällig bezahlt",
       },
     ],
