@@ -8,8 +8,8 @@
   <meta name="color-scheme" content="light">
   <link rel="icon" href="/favicon.svg?v=2026100401" type="image/svg+xml">
   <!-- Wurzelpfade (mit / am Anfang), weil diese Seite unter beliebigen Adressen ausgeliefert wird -->
-  <link rel="stylesheet" href="/assets/css/site.css?v=2026100502">
-  <script src="/assets/js/site.js?v=2026100502" defer></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=2026100504">
+  <script src="/assets/js/site.js?v=2026100504" defer></script>
 </head>
 <body class="subpage">
 <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
@@ -53,20 +53,22 @@
 </header>
 
 <main id="inhalt" class="not-found">
-  <p class="big" aria-hidden="true">404</p>
-  <h1>Diese Seite gibt es nicht.</h1>
-  <p class="lead">Der Link ist veraltet oder wurde falsch eingegeben.</p>
-  <p><a class="btn btn-primary btn-lg" href="/">Zur Startseite</a></p>
-  <!-- Rückwege zu den meistgesuchten Stellen der Startseite -->
-  <nav class="page-links" aria-labelledby="vielleicht-gesucht">
-    <p id="vielleicht-gesucht">Vielleicht suchen Sie:</p>
-    <ul>
-      <li><a href="/#funktionen">Funktionen<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
-      <li><a href="/#helferschichten">Helferschichten<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
-      <li><a href="/#faq">Häufige Fragen<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
-      <li><a href="/#kontakt">Demo anfragen<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
-    </ul>
-  </nav>
+  <!-- Linksbündig wie der Einstieg: die Überschrift allein (ohne Kennzeile darüber, der Fehlercode steht im Satz), ein
+       Satz, der schwarze Knopf; darunter die meistgesuchten Stellen der Startseite als ruhige Zeilen mit Pfeil -->
+  <div class="container">
+    <h1>Diese Seite gibt es nicht.</h1>
+    <p class="lead">Der Link ist veraltet oder wurde falsch eingegeben (Fehler&nbsp;404).</p>
+    <p class="page-actions"><a class="btn btn-primary btn-lg" href="/">Zur Startseite</a></p>
+    <nav class="page-links" aria-labelledby="vielleicht-gesucht">
+      <p id="vielleicht-gesucht">Vielleicht suchen Sie:</p>
+      <ul class="rows">
+        <li><a class="text-link" href="/#funktionen">Funktionen<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+        <li><a class="text-link" href="/#helferschichten">Helferschichten<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+        <li><a class="text-link" href="/#faq">Häufige Fragen<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+        <li><a class="text-link" href="/#kontakt">Demo anfragen<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+      </ul>
+    </nav>
+  </div>
 </main>
 
 <footer class="site-footer">
@@ -88,7 +90,7 @@
         <h2>Produkt</h2>
         <ul>
           <li><a href="/#funktionen">Funktionen</a></li>
-          <li><a href="/#helferschichten">Helferschichten</a></li>
+          <li><a href="/#helferschichten">Helfer&shy;schichten</a></li>
           <li><a href="/#suche">Zentrale Suche</a></li>
           <li><a href="/#rollen">Rollen und Rechte</a></li>
           <li><a href="/#sicherheit">Sicherheit</a></li>
@@ -98,22 +100,16 @@
         <h2>Kontakt</h2>
         <ul>
           <li><a href="/#kontakt">Demo anfragen</a></li>
-          <li><a href="/#benachrichtigen">Zum Start benachrichtigen</a></li>
+          <li><a href="/#benachrichtigen">Beim Start benachrichtigen</a></li>
           <li><a href="/#ablauf">So starten Sie</a></li>
           <li><a href="/#faq">Häufige Fragen</a></li>
         </ul>
       </div>
-      <div>
-        <h2>Rechtliches</h2>
-        <ul>
-          <li><a href="/impressum.html">Impressum</a></li>
-          <li><a href="/datenschutz.html">Datenschutz</a></li>
-        </ul>
-      </div>
     </div>
+    <!-- Unterste Zeile: © mit Impressum und Datenschutz (die Rechtstexte), daneben der Hinweis zur Website -->
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow GbR</span>
-      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
+      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="/impressum.html">Impressum</a> <a href="/datenschutz.html">Datenschutz</a></p>
+      <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
     </div>
   </div>
 </footer>

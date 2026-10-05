@@ -1,14 +1,12 @@
 // VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// Karten der Funktionen, Reiter, hochzählende Kennzahlen, Lichtschein auf Karten, Ladezustand der Bilder und Start der
-// Vorführungen.
+// Karten der Funktionen, Reiter, Ladezustand der Bilder, Live-Fenster und Start der Vorführungen.
 // Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
-// Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Mausposition setzt das
+// Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Lage der Markierung setzt das
 // Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
 (() => {
   const root = document.documentElement;
   root.classList.add("js");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const canHover = window.matchMedia("(hover: hover)").matches;
   const canObserve = "IntersectionObserver" in window;
   const header = document.querySelector(".site-header");
 
@@ -463,22 +461,6 @@
     }
   }
 
-  // Kennzahlen zählen beim ersten Erscheinen hoch (nur, was beim Laden noch nicht zu sehen ist – sonst stünde kurz „0“ da).
-  // Am Ende steht die Endzahl wieder in ihrer natürlichen Breite (die vorgehaltene Breite entfällt).
-  const armed = new Set();
-  const countUp = (element) => {
-    const target = Number(element.dataset.count);
-    const start = performance.now();
-    const duration = 1200;
-    const frame = (now) => {
-      const progress = Math.min(1, (now - start) / duration);
-      element.textContent = String(Math.round(target * (1 - (1 - progress) ** 3)));
-      if (progress < 1) requestAnimationFrame(frame);
-      else element.style.removeProperty("min-width");
-    };
-    requestAnimationFrame(frame);
-  };
-
   // Sanftes Ein- und Ausblenden beim Scrollen. Versteckt wird nur, was gerade nicht zu sehen ist: beim Laden alles
   // außerhalb des Fensters, später alles, was das Fenster ganz verlassen hat. Kommt es zurück, gleitet es aus der
   // Richtung herein, aus der es kommt. Was gleichzeitig erscheint, folgt kurz nacheinander (Zeile für Zeile).
@@ -492,10 +474,6 @@
     const show = (element, index) => {
       element.style.setProperty("--reveal-delay", `${Math.min(index, 6) * 70}ms`);
       element.classList.remove("is-pending");
-      for (const counter of element.querySelectorAll(".count")) {
-        if (!armed.delete(counter)) continue;
-        setTimeout(() => countUp(counter), Math.min(index, 6) * 70 + 150);
-      }
     };
     const observer = new IntersectionObserver(
       (entries) => {
@@ -517,16 +495,7 @@
     const limit = window.innerHeight * 0.93;
     for (const element of items) {
       const box = element.getBoundingClientRect();
-      if (box.top > limit || box.bottom < 0) {
-        for (const counter of element.querySelectorAll(".count")) {
-          // Breite der Endzahl vorhalten (gemessen, bevor das Ausblenden sie verkleinert – nicht in ch: die Ziffern sind
-          // verschieden breit und enger gesetzt), damit beim Hochzählen nichts springt
-          counter.style.setProperty("min-width", `${counter.getBoundingClientRect().width}px`);
-          counter.textContent = "0";
-          armed.add(counter);
-        }
-        hide(element, box.bottom < 0);
-      }
+      if (box.top > limit || box.bottom < 0) hide(element, box.bottom < 0);
       observer.observe(element);
     }
   }
@@ -681,11 +650,12 @@
   // Reiter („Im Detail“): Ohne JavaScript stehen die Themen untereinander. Mit JavaScript erscheint die Reiterleiste,
   // immer ein Thema ist sichtbar. Bedienung wie bei Reitern üblich: Klick, Pfeiltasten (wählen sofort), Pos1/Ende.
   // Führt ein Link auf ein Thema (#suche aus der Fußzeile), wird dessen Reiter gewählt.
-  // Der gewählte Reiter liegt auf einer weißen Fläche (.tabs::before), die beim Wechsel zum neuen Reiter gleitet und
-  // ihre Breite anpasst – Lage und Maße setzt das Skript als Variablen. Beim Wechsel gleitet das bisherige Thema kurz
-  // gegen die Laufrichtung hinaus, das gewählte kommt aus der Laufrichtung herein: erst der Text, dann das Bild mit
-  // leichtem Zoom. Dafür Web Animations statt CSS-Übergängen – so lässt sich jeder Wechsel sauber abbrechen, wenn schnell
-  // hintereinander geklickt wird. Bei reduzierter Bewegung wechselt alles sofort.
+  // Unter dem gewählten Reiter liegt ein blauer Strich (.tabs::before), der beim Wechsel zum neuen Reiter gleitet und
+  // seine Breite anpasst – Lage und Maße setzt das Skript als Variablen. Beim Wechsel per Klick blendet das bisherige
+  // Thema kurz aus, das gewählte ruhig ein (Deckkraft und 12 px aus der Laufrichtung, erst der Text, dann das Bild) – so
+  // still wie die übrigen Abschnitte. Dafür Web Animations statt CSS-Übergängen – so lässt sich jeder Wechsel sauber
+  // abbrechen, wenn schnell hintereinander geklickt wird. Per Pfeiltaste und bei reduzierter Bewegung wechselt alles
+  // sofort.
   // Auf dem Smartphone klebt die Reiterleiste unter der Kopfzeile (site.css); ist ein Thema dort schon ein Stück gelesen,
   // rollt ein Tipp auf einen anderen Reiter an den Anfang des neuen Themas zurück, wo direkt unter der Leiste sein Bild
   // steht.
@@ -715,35 +685,29 @@
       list.classList.add("has-pill");
       requestAnimationFrame(() => requestAnimationFrame(() => list.classList.remove("is-instant")));
     };
-    const swap = (from, to, dir) => {
+    const swap = (from, to, dir, instant) => {
       for (const animation of running) animation.cancel();
       running = [];
       for (const panel of panels) panel.classList.remove("is-leaving");
-      if (motion.matches) return;
-      from.classList.add("is-leaving"); // bleibt sichtbar, bis es hinausgeglitten ist
-      const out = from.animate(
-        [
-          { opacity: 1, transform: "none" },
-          { opacity: 0, transform: `translateX(${dir * -24}px)` },
-        ],
-        { duration: 170, easing: "cubic-bezier(0.4, 0, 1, 1)" },
-      );
+      if (instant || motion.matches) return;
+      from.classList.add("is-leaving"); // bleibt sichtbar, bis es ausgeblendet ist
+      const out = from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
       out.addEventListener("finish", () => from.classList.remove("is-leaving"));
       running.push(out);
-      const enter = (element, distance, delay, zoom) => {
+      const enter = (element, delay) => {
         if (!element) return;
         running.push(
           element.animate(
             [
-              { opacity: 0, transform: `translateX(${dir * distance}px)${zoom ? " scale(0.97)" : ""}` },
+              { opacity: 0, transform: `translateX(${dir * 12}px)` },
               { opacity: 1, transform: "none" },
             ],
-            { duration: 600, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
+            { duration: 280, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
           ),
         );
       };
-      enter(to.querySelector(".spot-text"), 28, 160, false); // erst, wenn das bisherige fast verschwunden ist
-      enter(to.querySelector(".spot-media"), 44, 220, true);
+      enter(to.querySelector(".spot-text"), 60); // kurz nach dem Ausblenden des bisherigen
+      enter(to.querySelector(".spot-media"), 100);
     };
     const parked = []; // [Bild, src, srcset] der Bilder, die noch nicht laden sollen
     const park = (panel) => {
@@ -782,8 +746,10 @@
         panels[i].classList.toggle("is-active", on);
         panels[i].toggleAttribute("inert", !on); // unsichtbare Themen: weder Fokus noch Vorlesen
       });
-      placePill();
-      if (previous >= 0 && previous !== index) swap(panels[previous], panels[index], index > previous ? 1 : -1);
+      // Per Pfeiltaste (focus) ohne Bewegung: Der Strich springt, das Thema wechselt sofort
+      if (focus) settlePill();
+      else placePill();
+      if (previous >= 0 && previous !== index) swap(panels[previous], panels[index], index > previous ? 1 : -1, focus);
       if (focus) tabs[index].focus();
       document.dispatchEvent(new CustomEvent("vf:tabs")); // Live-Fenster: nur das sichtbare Thema läuft
     };
@@ -882,27 +848,5 @@
       { rootMargin: "-45% 0px -50% 0px" },
     );
     for (const section of sections) spy.observe(section);
-  }
-
-  // Lichtschein auf Karten folgt dem Mauszeiger (nur mit Maus, nicht bei reduzierter Bewegung)
-  if (canHover && !reduceMotion) {
-    let pending = null;
-    let point = null;
-    document.addEventListener(
-      "pointermove",
-      (event) => {
-        const card = event.target instanceof Element ? event.target.closest(".card, .role") : null;
-        if (!card) return;
-        point = { card, x: event.clientX, y: event.clientY };
-        if (pending) return;
-        pending = requestAnimationFrame(() => {
-          pending = null;
-          const box = point.card.getBoundingClientRect();
-          point.card.style.setProperty("--mx", `${point.x - box.left}px`);
-          point.card.style.setProperty("--my", `${point.y - box.top}px`);
-        });
-      },
-      { passive: true },
-    );
   }
 })();

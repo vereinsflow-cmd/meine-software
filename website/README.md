@@ -16,7 +16,7 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `index.html`                          | Startseite (Abschnitte: Einstieg, Kennzahlen, Ausgangslage, Laptop- und Telefon-Vorführung, Funktionen, Helferschichten als geführter Ablauf in drei Schritten samt Helferplan-Aushang, Im Detail mit Suche/Mitglieder/Veranstaltungen/Auswertungen als Reiter, Rollen, Sicherheit, FAQ mit Ausblick, Kontakt mit den drei Schritten zum Start) |
+| `index.html`                          | Startseite (Abschnitte: Einstieg, Kennzahlen, Ausgangslage, Laptop-Vorführung, Funktionen, Helferschichten als geführter Ablauf in drei Schritten samt Helferplan-Aushang, Im Detail mit Suche/Mitglieder/Veranstaltungen/Auswertungen als Reiter, Rollen, Telefon-Vorführung, Sicherheit, FAQ mit Ausblick, Kontakt mit den drei Schritten zum Start) |
 | `impressum.html`, `datenschutz.html`  | Rechtstexte (ausgefüllt, Stand 26.09.2026)                                                 |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
@@ -282,7 +282,7 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
 - **Seiten des Skripts** (`vf_seite`): dieselbe Kopf- und Fußzeile wie Impressum und Datenschutz (bei Änderungen an der
   Fußzeile der Startseite alle Kopien nachziehen: `datenschutz.html`, `impressum.html`, `404.html`, `newsletter.php`).
   Der optionale letzte Wert `$symbol` („mail“ oder „circle-check“) setzt ein großes Zeichen über die Überschrift. Nach
-  „Fast geschafft“ und „Danke – Sie sind angemeldet“ steht neben „Zur Startseite“ ein zweiter Knopf „Demo anfragen“
+  „Fast geschafft“ und „Danke, Sie sind angemeldet“ steht neben „Zur Startseite“ ein zweiter Knopf „Demo anfragen“
   (`vf_start_demo_links`). „Fast geschafft“ nennt zum Wiederfinden der E-Mail Absender, Betreff und Frist
   (`vf_mail_hinweise`; der Betreff steht dort ein zweites Mal – bei einer Änderung in `vf_mail_bestaetigen` mitziehen).
 - **Lokale Vorschau:** `tools/serve.mjs` führt kein PHP aus; ein Absenden zeigt dort nur einen Hinweis. Getestet wurde das

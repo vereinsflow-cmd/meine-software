@@ -38,8 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026100502';
-const VF_SKRIPT = '/assets/js/site.js?v=2026100502'; // Menü der Kopfzeile auf dem Smartphone
+const VF_STYLESHEET = '/assets/css/site.css?v=2026100504';
+const VF_SKRIPT = '/assets/js/site.js?v=2026100504'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
@@ -62,9 +62,10 @@ function vf_h(string $text): string
     return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-/** Eine Seite im Stil der Fehlerseite (404.html): volle Kopf- und Fußzeile wie auf den übrigen Seiten, Meldung in der
- *  Mitte. $symbol (optional, „mail“ oder „circle-check“) setzt ein großes Zeichen über die Überschrift – Brief bei
- *  „Fast geschafft“, Häkchen bei erfolgreicher Anmeldung –, damit Ergebnisseiten nicht wie eine Fehlerseite aussehen. */
+/** Eine Seite im Stil der Fehlerseite (404.html): volle Kopf- und Fußzeile wie auf den übrigen Seiten, die Meldung
+ *  linksbündig wie im Einstieg. $symbol (optional, „mail“ oder „circle-check“) setzt ein Linien-Zeichen über die
+ *  Überschrift – Brief bei „Fast geschafft“, Häkchen bei erfolgreicher Anmeldung –, damit Ergebnisseiten nicht wie eine
+ *  Fehlerseite aussehen. */
 function vf_seite(int $status, string $titel, string $text, string $zusatz = '', string $symbol = ''): void
 {
     http_response_code($status);
@@ -73,7 +74,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
     header('X-Robots-Tag: noindex, nofollow');
     $zeichen = $symbol === '' ? '' : '<span class="page-symbol page-symbol-' . vf_h($symbol) . '" aria-hidden="true">'
         . '<svg class="icon"><use href="#i-' . vf_h($symbol) . '"/></svg></span>
-  ';
+    ';
     echo '<!doctype html>
 <html lang="de">
 <head>
@@ -127,9 +128,11 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
 </header>
 
 <main id="inhalt" class="not-found notify-page">
-  ' . $zeichen . '<h1>' . vf_h($titel) . '</h1>
-  <p class="lead">' . $text . '</p>
-  ' . $zusatz . '
+  <div class="container">
+    ' . $zeichen . '<h1>' . vf_h($titel) . '</h1>
+    <p class="lead">' . $text . '</p>
+    ' . $zusatz . '
+  </div>
 </main>
 
 <footer class="site-footer">
@@ -151,7 +154,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
         <h2>Produkt</h2>
         <ul>
           <li><a href="/#funktionen">Funktionen</a></li>
-          <li><a href="/#helferschichten">Helferschichten</a></li>
+          <li><a href="/#helferschichten">Helfer&shy;schichten</a></li>
           <li><a href="/#suche">Zentrale Suche</a></li>
           <li><a href="/#rollen">Rollen und Rechte</a></li>
           <li><a href="/#sicherheit">Sicherheit</a></li>
@@ -161,22 +164,16 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
         <h2>Kontakt</h2>
         <ul>
           <li><a href="/#kontakt">Demo anfragen</a></li>
-          <li><a href="/#benachrichtigen">Zum Start benachrichtigen</a></li>
+          <li><a href="/#benachrichtigen">Beim Start benachrichtigen</a></li>
           <li><a href="/#ablauf">So starten Sie</a></li>
           <li><a href="/#faq">Häufige Fragen</a></li>
         </ul>
       </div>
-      <div>
-        <h2>Rechtliches</h2>
-        <ul>
-          <li><a href="/impressum.html">Impressum</a></li>
-          <li><a href="/datenschutz.html">Datenschutz</a></li>
-        </ul>
-      </div>
     </div>
+    <!-- Unterste Zeile: © mit Impressum und Datenschutz (die Rechtstexte), daneben der Hinweis zur Website -->
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow GbR</span>
-      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
+      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="/impressum.html">Impressum</a> <a href="/datenschutz.html">Datenschutz</a></p>
+      <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
     </div>
   </div>
 </footer>
@@ -1031,7 +1028,7 @@ try {
             vf_mail_hinweise() . vf_start_demo_links(), 'mail');
     }
     if ($status === 'bestaetigt') {
-        vf_seite(200, 'Danke – Sie sind angemeldet',
+        vf_seite(200, 'Danke, Sie sind angemeldet',
             'Wir melden uns, sobald VereinsFlow startet, und bei wichtigen Neuigkeiten. Abmelden können Sie sich '
                 . 'jederzeit über den Link in unseren E&#8209;Mails.',
             vf_start_demo_links(), 'circle-check');

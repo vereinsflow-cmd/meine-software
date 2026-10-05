@@ -13,8 +13,8 @@
   <link rel="icon" href="favicon.ico?v=2026100401" sizes="48x48">
   <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026100401">
   <link rel="manifest" href="site.webmanifest?v=2026100401">
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100502">
-  <script src="assets/js/site.js?v=2026100502" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100504">
+  <script src="assets/js/site.js?v=2026100504" defer></script>
 </head>
 <body class="subpage">
 <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
@@ -23,6 +23,8 @@
 <svg class="sprite" aria-hidden="true" focusable="false">
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <!-- Rücklink zur Startseite -->
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
   <!-- Fußzeile: E-Mail und Telefon -->
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
@@ -59,11 +61,12 @@
 <main id="inhalt">
   <div class="container">
     <div class="page-head">
-      <p><a href="index.html">← Zur Startseite</a></p>
+      <p><a class="text-link back-link" href="index.html"><svg class="icon icon-back" aria-hidden="true"><use href="#i-arrow-left"/></svg>Zur Startseite</a></p>
       <h1>Impressum</h1>
     </div>
 
-    <div class="prose">
+    <!-- Angaben als ruhige Zeilen: ab 720 px links die Überschrift, rechts der Inhalt, dazwischen feine Linien -->
+    <div class="prose imprint">
       <h2>Angaben gemäß §&nbsp;5 DDG</h2>
       <p>
         VereinsFlow GbR<br>
@@ -104,7 +107,7 @@
         <h2>Produkt</h2>
         <ul>
           <li><a href="index.html#funktionen">Funktionen</a></li>
-          <li><a href="index.html#helferschichten">Helferschichten</a></li>
+          <li><a href="index.html#helferschichten">Helfer&shy;schichten</a></li>
           <li><a href="index.html#suche">Zentrale Suche</a></li>
           <li><a href="index.html#rollen">Rollen und Rechte</a></li>
           <li><a href="index.html#sicherheit">Sicherheit</a></li>
@@ -114,22 +117,16 @@
         <h2>Kontakt</h2>
         <ul>
           <li><a href="index.html#kontakt">Demo anfragen</a></li>
-          <li><a href="index.html#benachrichtigen">Zum Start benachrichtigen</a></li>
+          <li><a href="index.html#benachrichtigen">Beim Start benachrichtigen</a></li>
           <li><a href="index.html#ablauf">So starten Sie</a></li>
           <li><a href="index.html#faq">Häufige Fragen</a></li>
         </ul>
       </div>
-      <div>
-        <h2>Rechtliches</h2>
-        <ul>
-          <li><a href="impressum.html">Impressum</a></li>
-          <li><a href="datenschutz.html">Datenschutz</a></li>
-        </ul>
-      </div>
     </div>
+    <!-- Unterste Zeile: © mit Impressum und Datenschutz (die Rechtstexte), daneben der Hinweis zur Website -->
     <div class="footer-bottom">
-      <span>© 2026 VereinsFlow GbR</span>
-      <span>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</span>
+      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="impressum.html">Impressum</a> <a href="datenschutz.html">Datenschutz</a></p>
+      <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
     </div>
   </div>
 </footer>
