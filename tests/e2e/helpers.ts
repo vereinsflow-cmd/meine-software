@@ -139,3 +139,28 @@ export function outboxMailsTo(address: string): OutboxMail[] {
     })
     .filter((mail): mail is OutboxMail => mail !== null && mail.to === address);
 }
+
+/**
+ * Kassenbuch einrichten, falls noch nicht geschehen (die E2E-Datenbank startet ohne). Mehrere Testdateien brauchen es –
+ * alle mit denselben Werten, damit Kontostände überall gleich sind.
+ */
+/** „JJJJ-MM-TT“ vor `days` Tagen (Berlin). */
+export function isoDaysAgo(days: number): string {
+  const date = new Date(Date.now() - days * 86_400_000);
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(date);
+}
+
+export async function ensureLedger(page: Page): Promise<void> {
+  await open(page, "/finanzen/kassenbuch");
+  const setup = page.getByRole("button", { name: "Kassenbuch einrichten" });
+  if (await setup.isVisible()) {
+    // Beginn vor 60 Tagen statt am 1. Januar: Die bezahlte Seed-Rechnung (vor 40 Tagen) liegt so zu jeder Jahreszeit im
+    // Kassenbuch – auch im Januar.
+    await page.getByLabel("Kassenbuch beginnt am").fill(isoDaysAgo(60));
+    await page.getByLabel("Bank").fill("Sparkasse Musterstadt");
+    await page.getByLabel("Anfangsbestand in €").first().fill("11.200,00");
+    await page.getByLabel("Anfangsbestand in €").nth(1).fill("239,80");
+    await setup.click();
+  }
+  await expect(page.getByRole("button", { name: "Neue Buchung" })).toBeVisible({ timeout: 20_000 });
+}

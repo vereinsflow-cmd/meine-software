@@ -13,22 +13,25 @@ import {
   ZERO,
   type Rational,
 } from "@/lib/finance/rational";
-import type {
-  ChargeLinePreview,
-  ChargePreview,
-  CoveredPreview,
-  EngineAssignment,
-  EngineFamily,
-  EngineFeeType,
-  EngineInput,
-  EngineMember,
-  EnginePreview,
-  EngineSettings,
-  EngineWarning,
-  ExemptPreview,
-  FeeIntervalValue,
-  MemberStatusValue,
-  WarningCode,
+import {
+  BASE_FEE_GROUP,
+  COVERAGE_ALWAYS,
+  type ChargeLinePreview,
+  type ChargePreview,
+  type CoveragePreview,
+  type CoveredPreview,
+  type EngineAssignment,
+  type EngineFamily,
+  type EngineFeeType,
+  type EngineInput,
+  type EngineMember,
+  type EnginePreview,
+  type EngineSettings,
+  type EngineWarning,
+  type ExemptPreview,
+  type FeeIntervalValue,
+  type MemberStatusValue,
+  type WarningCode,
 } from "./engine-types";
 import { monthsOfInterval } from "./periods";
 
@@ -204,6 +207,8 @@ interface Catalog {
   additional: PreparedType[];
   /** Beitragsarten mit Altersgrenze (für den Hinweis „Altersgrenze im Zeitraum“). */
   ageBounded: PreparedType[];
+  /** Aufnahmegebühren (einmalig beim Eintritt). */
+  admission: PreparedType[];
 }
 
 function prepareCatalog(feeTypes: EngineFeeType[]): Catalog {
@@ -218,6 +223,7 @@ function prepareCatalog(feeTypes: EngineFeeType[]): Catalog {
     base,
     additional,
     ageBounded: [...base, ...additional].filter((t) => hasAgeBounds(t.type)),
+    admission: active.filter((t) => t.type.kind === "ADMISSION").sort(byRank),
   };
 }
 
@@ -245,6 +251,8 @@ interface FreeDay {
   reason: string;
   /** Nur bei „family“. */
   familyId?: string;
+  /** „schon berechnet“ über den Familienbeitrag dieser Familie (in einem früheren Lauf). */
+  billedFamilyId?: string;
   /** Für den Erklärungssatz. */
   label: string;
   phase: string;
@@ -265,6 +273,10 @@ interface DraftLine {
   to: DayNo;
   exact: Rational;
   text: string;
+  /** Gruppe der Abdeckung (`null` bei Ermäßigungen: die decken die Tage ihres Grundbeitrags nicht noch einmal ab). */
+  group: string | null;
+  /** Aufnahmegebühr: deckt „immer“ ab (einmal je Mitglied). */
+  always?: boolean;
 }
 
 type MemberResult =
@@ -288,6 +300,10 @@ interface MemberDays {
   noneCounts: Map<string, number>;
   /** Tag, an dem die Altersgrenze wechselt (nur „genau ab dem Geburtstag“) – dort steht im Text nur der Monat. */
   ageDay: DayNo | null;
+  /** Gruppen, für die schon abgerechnet wurde (Aufnahmegebühr: einmal je Mitglied). */
+  coveredGroups: ReadonlySet<string>;
+  /** Erster Beitragstag nach der Eintrittsregel – in seinem Zeitraum kommt die Aufnahmegebühr (`null` ohne Eintritt). */
+  admissionDay: DayNo | null;
 }
 
 interface Run<T> {
@@ -523,10 +539,41 @@ function memberDays(
     else noRate.set(type.id, { count: 1, first: day, name: type.name });
   };
 
+  // Schon abgerechnete Tage (aus früheren Beitragsläufen) – je Gruppe: „BASE“ für Grund- und Familienbeitrag, sonst die
+  // Beitragsart. So rechnet ein weiterer Lauf (Nachlauf) nur, was noch fehlt, und kein Tag kommt zweimal dran.
+  const coverage = (member.coverage ?? []).map((c) => ({
+    group: c.feeGroup,
+    from: dayNo(c.from),
+    to: dayNo(c.to),
+    familyId: c.familyId ?? null,
+  }));
+  const coverOn = (group: string, day: DayNo) =>
+    coverage.find((c) => c.group === group && c.from <= day && c.to >= day) ?? null;
+  const coveredOn = (group: string, day: DayNo) => coverOn(group, day) !== null;
+  /** „schon berechnet“ über einen Familienbeitrag: je Familie ein eigener Tag (die Familie erkennt ihre Tage daran). */
+  const familyBilled = new Map<string, FreeDay>();
+  const billedDay = (familyId: string | null): FreeDay => {
+    if (familyId === null) return freeDay("none", "schon berechnet", "schon berechnet");
+    let day = familyBilled.get(familyId);
+    if (!day) {
+      day = {
+        kind: "none",
+        reason: "schon berechnet",
+        label: "schon berechnet",
+        phase: "none:schon berechnet",
+        billedFamilyId: familyId,
+      };
+      familyBilled.set(familyId, day);
+    }
+    return day;
+  };
+
   for (let i = 0; i < length; i++) {
     const day = ws + i;
     // Vor dem Eintritt / nach dem Austritt (nach der Regel trotzdem Beitragstage) gilt der Stand von Ein- bzw. Austritt.
     const stateDay = Math.min(Math.max(day, joinDay ?? -Infinity), leftDay ?? Infinity);
+    // Schon abgerechnete Tage geben keine Hinweise mehr (Status-Verlauf, Altersgrenze) – sie werden nicht neu gerechnet.
+    const baseCover = coverage.length > 0 ? coverOn("BASE", day) : null;
 
     let status: MemberStatusValue | null = null;
     for (let h = history.length - 1; h >= 0; h--) {
@@ -537,7 +584,7 @@ function memberDays(
     }
     if (status === null) {
       status = fallbackStatus;
-      historyGap = true;
+      if (!baseCover) historyGap = true;
     }
 
     if (status === "LEFT") {
@@ -559,7 +606,9 @@ function memberDays(
       other?.a.kind === "FIXED_AMOUNT" && other.a.amountCents !== null ? other.a : null;
 
     let base: BaseDay;
-    if (other?.a.kind === "EXEMPT") {
+    if (baseCover) {
+      base = billedDay(baseCover.familyId);
+    } else if (other?.a.kind === "EXEMPT") {
       const why = other.a.reason;
       base = freeDay(
         "exempt",
@@ -667,6 +716,7 @@ function memberDays(
     if (other?.a.kind !== "EXEMPT") {
       for (const type of catalog.additional) {
         if (!fitsRules(type, status, age, stateDay)) continue;
+        if (coverage.length > 0 && coveredOn(type.id, day)) continue;
         const rate = rateOn(type, day);
         if (!rate) {
           noteNoRate(type, day);
@@ -686,7 +736,9 @@ function memberDays(
       }
     }
 
-    // Altersgrenze im Zeitraum (z. B. 18. Geburtstag): welche Beitragsarten passen vom Alter her?
+    // Altersgrenze im Zeitraum (z. B. 18. Geburtstag): welche Beitragsarten passen vom Alter her? Nicht an schon
+    // abgerechneten Tagen (sonst hieße es „statt „schon berechnet““).
+    if (baseCover) continue;
     const ageRelevant =
       assign === null && other?.a.kind !== "EXEMPT"
         ? catalog.ageBounded.filter((t) => fitsExceptAge(t, status, stateDay))
@@ -761,6 +813,8 @@ function memberDays(
     noneCounts,
     // Nur beim Alter „genau ab dem Geburtstag“ fällt eine Grenze auf den Geburtstag (nach Jahrgang ist es der 01.01.).
     ageDay: ctx.settings.ageRule === "EXACT_DAY" ? (ageChange?.day ?? null) : null,
+    coveredGroups: new Set(coverage.map((c) => c.group)),
+    admissionDay: joinDay === null ? null : Math.max(joinDay, start),
   };
 }
 
@@ -838,6 +892,7 @@ function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResu
       to: run.to,
       exact,
       text: `${day.type.name}${fixedText}${range}`,
+      group: BASE_FEE_GROUP,
     });
     if (day.discount) {
       const bp = day.discount.percentBp!;
@@ -849,6 +904,7 @@ function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResu
         to: run.to,
         exact: neg(divInt(mulInt(exact, bp), 10_000)),
         text: `${percentText(bp)} % ermäßigt${paren(day.discount.reason)}${range}`,
+        group: null,
       });
     }
   }
@@ -866,6 +922,7 @@ function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResu
         to: run.to,
         exact: segmentValue(run.value.monthly, run.from, run.to),
         text: `${type.name}${rangeText(run.from, run.to)}`,
+        group: type.id,
       });
     }
     // Zusammenhängende Abschnitte (nur Satzwechsel) für die Erklärung zusammenfassen.
@@ -874,6 +931,45 @@ function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResu
     extraSummaries.push(
       whole ? type.name : `${type.name} (${spans.map((s) => spanText(s.from, s.to)).join(", ")})`,
     );
+  }
+  // Aufnahmegebühr: einmal, im Zeitraum des Eintritts (ein Nachlauf für diesen Zeitraum holt sie nach) – nicht, wenn das
+  // Mitglied am Eintrittstag beitragsfrei ist, und nur für Eintritte ab dem ersten Betrag der Gebühr.
+  const admissionDay = days.admissionDay;
+  if (
+    joinDay !== null &&
+    admissionDay !== null &&
+    admissionDay >= periodStart &&
+    admissionDay <= periodEnd
+  ) {
+    // Beitragsfrei am ersten Beitragstag (Befreiung, Ehrenmitglied, fester Betrag 0 €): keine Aufnahmegebühr.
+    const firstDay = admissionDay >= ws && admissionDay <= we ? baseDays[admissionDay - ws] : null;
+    const exemptOnJoin =
+      firstDay?.kind === "exempt" ||
+      member.assignments.some(
+        (a) =>
+          a.kind === "EXEMPT" &&
+          dayNo(a.validFrom) <= joinDay &&
+          (a.validTo === null || dayNo(a.validTo) >= joinDay),
+      );
+    for (const type of catalog.admission) {
+      if (exemptOnJoin || days.coveredGroups.has(type.id)) continue;
+      const first = type.rates[0];
+      const rate = rateOn(type, joinDay);
+      if (!first || joinDay < first.from || !rate || rate.interval !== "ONCE") continue;
+      if (rate.amountCents <= 0) continue;
+      drafts.push({
+        feeTypeId: type.id,
+        feeRateId: rate.id,
+        assignmentId: null,
+        from: joinDay,
+        to: joinDay,
+        exact: fromInt(rate.amountCents),
+        text: `${type.name} (Eintritt am ${fullDate(joinDay)})`,
+        group: type.id,
+        always: true,
+      });
+      extraSummaries.push(`${type.name} ${formatEuroFromCents(rate.amountCents)}`);
+    }
   }
 
   // Schritt 5: runden und centgenau verteilen.
@@ -1009,6 +1105,20 @@ function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResu
     }
   }
 
+  const coverage: CoveragePreview[] = drafts.flatMap((line, i) =>
+    line.group === null
+      ? []
+      : [
+          {
+            memberId: member.id,
+            feeGroup: line.group,
+            from: line.always ? COVERAGE_ALWAYS.from : dayDate(line.from),
+            to: line.always ? COVERAGE_ALWAYS.to : dayDate(line.to),
+            line: i,
+          },
+        ],
+  );
+
   return {
     kind: "charge",
     charge: {
@@ -1022,6 +1132,7 @@ function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResu
       amountCents: total,
       lines,
       explanation,
+      coverage,
       mainFeeTypeName: catalog.byId.get(mainTypeId)?.name ?? "",
     },
   };
@@ -1059,6 +1170,8 @@ function calculateFamily(
   }));
   const length = periodEnd - periodStart + 1;
   const familyDays: (FamilyDay | null)[] = new Array<FamilyDay | null>(length).fill(null);
+  /** Je Tag: wessen Grundbeitrag der Familienbeitrag abdeckt. */
+  const coveredBy: string[][] = Array.from({ length }, () => []);
   const covered = new Set<string>();
   let daysWithMembers = 0;
   /** Zahlt an irgendeinem Tag überhaupt ein Familienmitglied einen Grundbeitrag? (Sonst ist die Familie hier leer.) */
@@ -1078,6 +1191,10 @@ function calculateFamily(
     const day = periodStart + i;
     const paying: MemberDays[] = [];
     let inRange = 0;
+    /** Den Familienbeitrag für diesen Tag hat schon ein früherer Lauf berechnet. */
+    let familyBilled = false;
+    /** Mitglieder, deren Grundbeitrag an diesem Tag schon einzeln berechnet ist. */
+    let billedAlone = 0;
     for (const range of ranges) {
       const days = daysById.get(range.memberId);
       // Tage vor dem Eintritt bzw. nach dem Austritt (nach der Regel noch Beitragstage) zählen mit dem Stand des Ein-
@@ -1089,11 +1206,24 @@ function calculateFamily(
       inRange += 1;
       if (!days || day < days.ws || day > days.we) continue;
       const base = days.baseDays[day - days.ws]!;
+      if (base.kind === "none" && base.reason === "schon berechnet") {
+        if (base.billedFamilyId === family.id) familyBilled = true;
+        else billedAlone += 1;
+        continue;
+      }
       // Wer an dem Tag nichts zahlen würde (auch 100 % ermäßigt), zählt nicht mit.
       if (base.kind === "fee" && !(base.discount && base.discount.percentBp! >= 10_000))
         paying.push(days);
     }
     if (inRange === 0) continue;
+    // Schon über den Familienbeitrag berechnet (Nachlauf): Wer jetzt dazukommt, zahlt an dem Tag ebenfalls über die
+    // Familie – kein eigener Grundbeitrag und kein zweiter Familienbeitrag.
+    if (familyBilled) {
+      for (const days of paying) days.baseDays[day - days.ws] = freeDay;
+      continue;
+    }
+    // Alle schon einzeln berechnet: nichts mehr zu tun (das ist kein „zu wenige Mitglieder“).
+    if (paying.length === 0 && billedAlone > 0) continue;
     daysWithMembers += 1;
     if (paying.length > 0) anyPaying = true;
     if (paying.length < min) {
@@ -1117,6 +1247,7 @@ function calculateFamily(
     for (const days of paying) {
       days.baseDays[day - days.ws] = freeDay;
       covered.add(days.member.id);
+      coveredBy[i]!.push(days.member.id);
     }
   }
 
@@ -1175,7 +1306,33 @@ function calculateFamily(
     to: run.to,
     exact: segmentValue(run.value.monthly, run.from, run.to),
     text: `${type!.name}${rangeText(run.from, run.to)}`,
+    group: BASE_FEE_GROUP,
   }));
+  // Abdeckung: je Zeile und Mitglied die zusammenhängenden Tage, die der Familienbeitrag für es abdeckt.
+  const coverage: CoveragePreview[] = [];
+  runs.forEach((run, line) => {
+    for (const memberId of covered) {
+      let start: DayNo | null = null;
+      for (let day = run.from; day <= run.to + 1; day++) {
+        const isCovered = day <= run.to && coveredBy[day - periodStart]!.includes(memberId);
+        if (isCovered && start === null) start = day;
+        if (!isCovered && start !== null) {
+          coverage.push({
+            memberId,
+            feeGroup: BASE_FEE_GROUP,
+            from: dayDate(start),
+            to: dayDate(day - 1),
+            line,
+          });
+          start = null;
+        }
+      }
+    }
+  });
+  coverage.sort(
+    (a, b) =>
+      a.line - b.line || compareIds(a.memberId, b.memberId) || a.from.getTime() - b.from.getTime(),
+  );
   const total = roundHalfAwayFromZero(sum(drafts.map((line) => line.exact)));
   // Der Zahler zuerst („für Sophie, Lena und Mia“), dann nach Namen.
   const members = [...covered]
@@ -1245,6 +1402,7 @@ function calculateFamily(
         exact: formatRational(line.exact),
       })),
       explanation,
+      coverage,
       mainFeeTypeName: type!.name,
     },
   };
@@ -1313,11 +1471,27 @@ export function calculateFees(input: EngineInput): EnginePreview {
 
   // Schritt 1 und 2 für alle, dann die Familien (sie brauchen die Tage aller ihrer Mitglieder), dann Schritt 3 bis 7.
   const daysById = new Map<string, MemberDays>();
+  // Hinweise je Mitglied erst sammeln: Ist es am Ende ganz „schon berechnet“, betreffen sie keinen neuen Beitrag.
+  const pending = new Map<string, EngineWarning[]>();
+  const bufferFor =
+    (memberId: string): Warn =>
+    (code, text, familyId) => {
+      const list = pending.get(memberId) ?? [];
+      const warning: EngineWarning = { code, memberId, text };
+      if (familyId) warning.familyId = familyId;
+      list.push(warning);
+      pending.set(memberId, list);
+    };
+  const flush = (memberId: string, keep: boolean) => {
+    if (keep) preview.warnings.push(...(pending.get(memberId) ?? []));
+    pending.delete(memberId);
+  };
   for (const member of members) {
-    const days = memberDays(member, ctx, warnFor(member.id));
-    if ("kind" in days)
+    const days = memberDays(member, ctx, bufferFor(member.id));
+    if ("kind" in days) {
       preview.skipped.push({ memberId: member.id, memberName: member.name, reason: days.reason });
-    else daysById.set(member.id, days);
+      flush(member.id, true);
+    } else daysById.set(member.id, days);
   }
   // Geburtstage, auf die eine Grenze fallen kann: der eigene und die aller Familienmitglieder (der Familienbeitrag kann am
   // Geburtstag eines Kindes beginnen – dann wechselt dort auch der Beitrag der übrigen).
@@ -1347,7 +1521,8 @@ export function calculateFees(input: EngineInput): EnginePreview {
   for (const member of members) {
     const days = daysById.get(member.id);
     if (!days) continue;
-    const result = finishMember(days, ctx, warnFor(member.id));
+    const result = finishMember(days, ctx, bufferFor(member.id));
+    flush(member.id, !(result.kind === "skipped" && result.reason === "schon berechnet"));
     if (result.kind === "charge") {
       preview.charges.push(result.charge);
       preview.totalCents += result.charge.amountCents;

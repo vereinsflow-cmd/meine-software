@@ -1,4 +1,9 @@
-import { formatCalendarDate, formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
+import {
+  formatCalendarDate,
+  formatEuroFromCents,
+  toDateInputValue,
+  todayCalendarDate,
+} from "@/lib/dates";
 import type { TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance, canFinance } from "./access";
 import { dueText } from "./invoice-format";
@@ -14,6 +19,7 @@ import {
 } from "./ledger";
 import { overdueClose } from "./closing";
 import { monthLabel } from "./ledger-format";
+import { feeRunDue } from "@/modules/fees/run";
 import { whoPays } from "@/modules/fees/service";
 import { getOpenPayments, unbookedPaidInvoiceCount, type OpenPayments } from "./service";
 
@@ -185,12 +191,25 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
   assertFinance(ctx, "finance:read");
   const canManage = canFinance(ctx, "finance:manage");
   const thisYear = todayCalendarDate().getUTCFullYear();
-  const [setup, payments, fees] = await Promise.all([
+  const [setup, payments, fees, runDue] = await Promise.all([
     getLedgerSetup(ctx),
     getOpenPayments(ctx, { limit: 20 }),
     whoPays(ctx),
+    feeRunDue(ctx),
   ]);
   const due: DueItem[] = invoiceItems(payments, canManage);
+  // Beitragslauf: für den laufenden Zeitraum noch keiner – bzw. der nächste beginnt in höchstens drei Wochen.
+  if (runDue && canManage)
+    due.push({
+      key: "fee-run",
+      urgency: runDue.next ? 60 : 30,
+      title: `Beitragslauf ${runDue.period.label} ist bereit`,
+      detail: "Erst prüfen, dann die Vorschau ansehen, dann die Beiträge erstellen.",
+      tone: runDue.next ? "neutral" : "warning",
+      href: `/finanzen/beitraege/lauf?zeitraum=${toDateInputValue(runDue.period.start)}`,
+      actionLabel: "Vorschau ansehen",
+      later: runDue.next,
+    });
   // Beiträge: Hinweise der Vorschau (ohne Geburtsdatum, keine passende Beitragsart …), bevor Geld angefordert wird.
   // Nur, was sich beheben lässt (ein Geburtstag im Zeitraum ist bloß ein Hinweis, keine Aufgabe).
   const actionable = new Set([

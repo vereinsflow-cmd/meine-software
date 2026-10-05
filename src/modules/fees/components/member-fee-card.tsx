@@ -129,6 +129,19 @@ export function MemberFeeCard({
               </dd>
             </div>
           )}
+          {info.openCharges.count > 0 && (
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Offene Beiträge</dt>
+              <dd className="text-right">
+                <Link
+                  href={`/finanzen/beitraege/offen?q=${encodeURIComponent(memberName)}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  {info.openCharges.count} · {formatEuroFromCents(info.openCharges.cents)}
+                </Link>
+              </dd>
+            </div>
+          )}
           {(info.paysFor.length > 0 || info.paysForFamilies.length > 0) && (
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Zahlt für</dt>

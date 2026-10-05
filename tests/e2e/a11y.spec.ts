@@ -40,6 +40,8 @@ const adminPages = [
   "/finanzen/beitraege",
   "/finanzen/beitraege/arten",
   "/finanzen/beitraege/familien",
+  "/finanzen/beitraege/lauf",
+  "/finanzen/beitraege/offen",
   "/finanzen/abschluss",
   "/finanzen/einstellungen",
   "/hilfe",

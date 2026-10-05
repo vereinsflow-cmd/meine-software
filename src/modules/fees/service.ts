@@ -8,7 +8,7 @@ import {
 import { parseEuroToCents } from "@/lib/money";
 import { parseInput } from "@/server/action";
 import { recordAudit } from "@/server/audit/audit";
-import { type TenantTx } from "@/server/db/tenant";
+import { lockUntilCommit, type TenantTx } from "@/server/db/tenant";
 import { conflict, notFound, validationFailed } from "@/server/errors";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance, canFinance } from "@/modules/finance/access";
@@ -488,6 +488,23 @@ export async function addFeeRate(ctx: TenantContext, input: unknown): Promise<vo
   });
 }
 
+/**
+ * Mit diesem Betrag bzw. dieser Regel schon erstellte (nicht gestrichene) Beiträge? Dann bleibt er/sie erhalten. Unter der
+ * Sperre des Beitragslaufs, damit ein gleichzeitig laufender Lauf nicht ungesehen Zeilen dazu anlegt.
+ */
+async function assertNotBilled(
+  tx: TenantTx,
+  clubId: string,
+  where: { feeRateId: string } | { assignmentId: string },
+  message: string,
+) {
+  await lockUntilCommit(tx, clubId, "finance:fee-run");
+  const billed = await tx.chargeLine.count({
+    where: { ...where, charge: { status: { not: "VOID" } } },
+  });
+  if (billed > 0) throw conflict(message);
+}
+
 /** Zurücknehmen geht, solange ein Betrag bzw. eine Regel noch nicht gilt – oder am Tag der Eingabe (vertippt). */
 export function rateRemovable(row: { validFrom: Date; createdAt: Date }, today: Date): boolean {
   return (
@@ -512,6 +529,12 @@ export async function deleteFeeRate(ctx: TenantContext, input: unknown): Promise
       );
     const others = await tx.feeRate.count({ where: { feeTypeId: rate.feeType.id, NOT: { id } } });
     if (others === 0) throw conflict("Eine Beitragsart braucht mindestens einen Betrag.");
+    await assertNotBilled(
+      tx,
+      ctx.clubId,
+      { feeRateId: rate.id },
+      "Mit diesem Betrag wurden schon Beiträge erstellt – lege stattdessen einen neuen ab einem Datum an.",
+    );
     await tx.feeRate.delete({ where: { id } });
     await recordAudit(tx, auditActor(ctx), {
       action: "finance.fee_rate_deleted",
@@ -657,6 +680,12 @@ export async function endAssignment(ctx: TenantContext, input: unknown): Promise
     const validTo = parseCalendarDate(data.validTo)!;
     const today = todayCalendarDate();
     if (row.validFrom.getTime() > today.getTime() && validTo.getTime() < row.validFrom.getTime()) {
+      await assertNotBilled(
+        tx,
+        ctx.clubId,
+        { assignmentId: row.id },
+        "Mit dieser Regel wurden schon Beiträge erstellt – streiche zuerst diese Beiträge oder lass die Regel am Tag ihres Beginns enden.",
+      );
       await tx.memberFeeAssignment.delete({ where: { id: row.id } });
     } else {
       if (validTo.getTime() < row.validFrom.getTime())
@@ -689,6 +718,12 @@ export async function deleteAssignment(ctx: TenantContext, input: unknown): Prom
     if (!row) throw notFound("Die Regel");
     if (!rateRemovable(row, todayCalendarDate()))
       throw conflict("Diese Regel gilt schon länger – beende sie stattdessen.");
+    await assertNotBilled(
+      tx,
+      ctx.clubId,
+      { assignmentId: row.id },
+      "Mit dieser Regel wurden schon Beiträge erstellt – beende sie stattdessen.",
+    );
     await tx.memberFeeAssignment.delete({ where: { id: row.id } });
     await recordAudit(tx, auditActor(ctx), {
       action: "finance.assignment_deleted",
@@ -827,8 +862,22 @@ export async function whoPays(
   assertFinance(ctx, "finance:read");
   const settings = await getFeeSettings(ctx);
   const period = options.period ?? billingPeriod(settings.feeInterval);
+  const { preview, feeTypeCount } = await calculatePreview(ctx.db, settings, period, options);
+  return { ...preview, period, settings, feeTypeCount };
+}
+
+/**
+ * Rechnet „Wer zahlt was“ für einen Zeitraum – auch innerhalb einer Transaktion (Beitragslauf). `withCoverage`: schon
+ * abgerechnete Tage aus früheren Läufen fallen weg (Beitragslauf, Nachlauf); ohne zeigt es den ganzen Zeitraum.
+ */
+export async function calculatePreview(
+  db: Pick<TenantTx, "feeFamily" | "feeType" | "member" | "chargeCoverage">,
+  settings: FeeSettings,
+  period: FeePeriod,
+  options: { memberId?: string; withCoverage?: boolean } = {},
+): Promise<{ preview: EnginePreview; feeTypeCount: number }> {
   // Familien, die den Zeitraum berühren (bei einem einzelnen Mitglied nur seine).
-  const familyRows = await ctx.db.feeFamily.findMany({
+  const familyRows = await db.feeFamily.findMany({
     where: {
       ...(options.memberId ? { members: { some: { memberId: options.memberId } } } : {}),
     },
@@ -853,8 +902,8 @@ export async function whoPays(
       ]
     : null;
   const [feeTypes, members] = await Promise.all([
-    ctx.db.feeType.findMany({ include: feeTypeInclude }),
-    ctx.db.member.findMany({
+    db.feeType.findMany({ include: feeTypeInclude }),
+    db.member.findMany({
       where: memberIds ? { id: { in: memberIds } } : {},
       select: memberSelect,
     }),
@@ -864,7 +913,7 @@ export async function whoPays(
     ...new Set(members.map((m) => m.finance?.payerMemberId).filter((id): id is string => !!id)),
   ].filter((id) => !members.some((m) => m.id === id));
   const payers = payerIds.length
-    ? await ctx.db.member.findMany({
+    ? await db.member.findMany({
         where: { id: { in: payerIds } },
         select: {
           id: true,
@@ -890,6 +939,36 @@ export async function whoPays(
     ...members.map((m) => [m.id, m.finance?.paymentMethod ?? "TRANSFER"] as const),
     ...payers.map((p) => [p.id, p.finance?.paymentMethod ?? "TRANSFER"] as const),
   ]);
+  // Schon abgerechnete Tage (nur im Beitragslauf): je Mitglied die geltenden Abdeckungen, die den Zeitraum berühren.
+  const coverageRows = options.withCoverage
+    ? await db.chargeCoverage.findMany({
+        where: {
+          active: true,
+          coversFrom: { lte: period.end },
+          coversTo: { gte: period.start },
+          ...(memberIds ? { memberId: { in: memberIds } } : {}),
+        },
+        select: {
+          memberId: true,
+          feeGroup: true,
+          coversFrom: true,
+          coversTo: true,
+          line: { select: { charge: { select: { familyId: true } } } },
+        },
+      })
+    : [];
+  const coverageOf = new Map<string, EngineMember["coverage"]>();
+  for (const row of coverageRows) {
+    const list = coverageOf.get(row.memberId) ?? [];
+    list.push({
+      feeGroup: row.feeGroup,
+      from: row.coversFrom,
+      to: row.coversTo,
+      // Über einen Familienbeitrag abgedeckt: Wer später in die Familie kommt, zahlt dort nicht noch einmal.
+      familyId: row.line.charge.familyId,
+    });
+    coverageOf.set(row.memberId, list);
+  }
   const families: EngineFamily[] = familyRows
     .filter((f) => f.members.length > 0)
     .map((f) => ({
@@ -904,7 +983,10 @@ export async function whoPays(
     periodEnd: period.end,
     feeTypes: engineFeeTypes(feeTypes),
     settings,
-    members: members.map((row) => engineMember(row, methodOf, inactivePayers)),
+    members: members.map((row) => ({
+      ...engineMember(row, methodOf, inactivePayers),
+      coverage: coverageOf.get(row.id) ?? [],
+    })),
     families,
     payerNames: Object.fromEntries(payers.map((p) => [p.id, `${p.firstName} ${p.lastName}`])),
   };
@@ -933,12 +1015,7 @@ export async function whoPays(
       .map((f) => f.id);
     preview = onlyMember(preview, options.memberId, ownFamilies);
   }
-  return {
-    ...preview,
-    period,
-    settings,
-    feeTypeCount: feeTypes.filter((t) => t.archivedAt === null).length,
-  };
+  return { preview, feeTypeCount: feeTypes.filter((t) => t.archivedAt === null).length };
 }
 
 /** Aus einer Vorschau mit Familienmitgliedern nur das, was ein Mitglied betrifft (eigene Zeile, seine Familie). */
@@ -993,6 +1070,8 @@ export interface MemberFeeInfo {
   paysFor: { id: string; name: string }[];
   /** Familien, für die dieses Mitglied zahlt. */
   paysForFamilies: { id: string; name: string }[];
+  /** Offene Beiträge, die das Mitglied betreffen oder die es zahlt. */
+  openCharges: { count: number; cents: number };
   note: string | null;
   assignments: {
     id: string;
@@ -1095,7 +1174,14 @@ export async function getMemberFee(
     },
   });
   if (!member) return null;
-  const result = await whoPays(ctx, { memberId });
+  const [result, open] = await Promise.all([
+    whoPays(ctx, { memberId }),
+    ctx.db.charge.aggregate({
+      where: { status: "OPEN", OR: [{ memberId }, { payerMemberId: memberId }] },
+      _count: { _all: true },
+      _sum: { amountCents: true, paidCents: true },
+    }),
+  ]);
   const today = todayCalendarDate();
   const charge = result.charges.find((c) => c.family === null) ?? null;
   const familyCharges = result.charges.filter((c) => c.family !== null);
@@ -1130,6 +1216,10 @@ export async function getMemberFee(
       name: `${f.member.firstName} ${f.member.lastName}`,
     })),
     paysForFamilies: member.paysForFamilies,
+    openCharges: {
+      count: open._count._all,
+      cents: (open._sum.amountCents ?? 0) - (open._sum.paidCents ?? 0),
+    },
     note: member.finance?.note ?? null,
     assignments: member.feeAssignments.map((a) => ({
       id: a.id,

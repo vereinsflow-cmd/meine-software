@@ -16,6 +16,20 @@ export const EXPORT_FORMAT = "VereinsFlow-Datenexport";
 export const EXPORT_VERSION = 1;
 const LIMIT = 1000;
 
+/** Beiträge (Forderungen) für die Auskunft: Nummer, wofür, Betrag, Stand. */
+const chargeExportSelect = {
+  id: true,
+  year: true,
+  number: true,
+  title: true,
+  debtorName: true,
+  payerName: true,
+  amountCents: true,
+  paidCents: true,
+  dueDate: true,
+  status: true,
+} as const;
+
 const iso = (value: Date | null | undefined): string | null => (value ? value.toISOString() : null);
 const day = (value: Date | null | undefined): string | null =>
   value ? calendarDateToInputValue(value) : null;
@@ -98,6 +112,21 @@ export async function buildUserDataExport(
           feeFamilies: {
             include: { family: { select: { name: true } } },
             orderBy: { validFrom: "asc" },
+          },
+          charges: {
+            select: chargeExportSelect,
+            orderBy: [{ year: "asc" }, { number: "asc" }],
+            take: LIMIT,
+          },
+          chargesPaid: {
+            select: chargeExportSelect,
+            orderBy: [{ year: "asc" }, { number: "asc" }],
+            take: LIMIT,
+          },
+          // Familienbeiträge, die den Grundbeitrag des Mitglieds abgedeckt haben (Beitrag steht auf dem Zahler).
+          chargeCoverages: {
+            select: { line: { select: { charge: { select: chargeExportSelect } } } },
+            take: LIMIT,
           },
           paysForFamilies: {
             select: {
@@ -353,6 +382,25 @@ export async function buildUserDataExport(
                 familie: f.family.name,
                 ab: day(f.validFrom),
                 bis: day(f.validTo),
+              })),
+              // Eigene Beiträge und die, die das Mitglied für andere zahlt (jeder einmal).
+              beitraege: [
+                ...new Map(
+                  [
+                    ...member.charges,
+                    ...member.chargesPaid,
+                    ...member.chargeCoverages.map((c) => c.line.charge),
+                  ].map((c) => [c.id, c] as const),
+                ).values(),
+              ].map((c) => ({
+                nummer: `B-${c.year}-${String(c.number).padStart(4, "0")}`,
+                titel: c.title,
+                fuer: c.debtorName,
+                zahler: c.payerName,
+                betragCent: c.amountCents,
+                bezahltCent: c.paidCents,
+                faelligAm: day(c.dueDate),
+                status: c.status,
               })),
               zahltFuerFamilien: member.paysForFamilies.map((f) => ({
                 familie: f.name,
