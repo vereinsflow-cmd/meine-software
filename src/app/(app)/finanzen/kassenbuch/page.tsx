@@ -222,7 +222,7 @@ export default async function LedgerPage({
           <div
             key={account.id}
             className={cn(
-              "relative rounded-xl border bg-card p-4 shadow-xs transition-colors has-[a:hover]:border-primary/40",
+              "relative rounded-xl border bg-card p-4 shadow-xs transition-colors [@media(hover:hover)]:has-[a:hover]:border-primary/40",
               accountId === account.id && "border-primary ring-1 ring-primary",
             )}
           >

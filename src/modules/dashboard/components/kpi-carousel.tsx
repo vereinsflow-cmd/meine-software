@@ -101,7 +101,7 @@ export function KpiCarousel({
             >
               <span
                 className={cn(
-                  "h-2 rounded-full transition-all duration-200 motion-reduce:transition-none",
+                  "h-2 rounded-full transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
                   index === page ? "w-5 bg-primary" : "w-2 bg-muted-foreground/40",
                 )}
               />

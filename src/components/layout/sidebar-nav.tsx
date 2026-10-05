@@ -30,9 +30,9 @@ function activeCollapsibleGroup(groups: NavGroup[], pathname: string): string | 
 /**
  * Navigationsliste mit Hervorhebung der aktuellen Seite (aria-current). Wird in Sidebar und mobilem Menü verwendet.
  *
- * Bewegung ist dezent und immer optional: Beim Überfahren oder Fokussieren hebt sich das Symbol leicht (kleiner Sprung
- * nach oben, leichte Vergrößerung, Farbe und heller Grund) und der Text rückt einen Hauch nach rechts; beim Drücken
- * federt es kurz ein. Im ausklappenden Menü (`animateIn`) blenden die Einträge gestaffelt ein. Alle Bewegungen stehen unter
+ * Bewegung ist dezent und immer optional: Beim Überfahren oder Fokussieren bekommt das Symbol Farbe und einen hellen
+ * Grund, beim Drücken federt es kurz ein. Mehr nicht – die Liste wird dutzende Male am Tag benutzt. Im ausklappenden Menü
+ * (`animateIn`) blenden die ersten Einträge kurz gestaffelt ein. Alle Bewegungen stehen unter
  * `motion-safe:` – wer „Bewegung reduzieren“ eingestellt hat, sieht nur die Farbänderungen. Es gibt keine Bewegung beim Laden.
  *
  * Gruppen mit `collapsible: true` (Verein, Organisation, Kommunikation, Einstellungen) klappen sich als Akkordeon auf –
@@ -148,7 +148,7 @@ export function SidebarNav({
             sheet={sheet}
             style={
               animateIn
-                ? { animationDelay: `${(offsets[groupIndex]! + itemIndex) * 22}ms` }
+                ? { animationDelay: `${Math.min(offsets[groupIndex]! + itemIndex, 6) * 22}ms` }
                 : undefined
             }
           />
@@ -268,15 +268,15 @@ function NavLink({
           ? "bg-primary font-semibold text-primary-foreground shadow-sm"
           : "text-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         animateIn &&
-          "motion-safe:animate-in motion-safe:duration-300 motion-safe:fill-mode-backwards motion-safe:fade-in motion-safe:slide-in-from-left-3",
+          "motion-safe:animate-in motion-safe:duration-200 motion-safe:fill-mode-backwards motion-safe:fade-in",
       )}
     >
       {/* Symbolfläche: 28 px um das 21-px-Symbol, ragt ohne Höhenzuwachs über die Zeile hinaus (negativer Rand). */}
       <span
         aria-hidden="true"
         className={cn(
-          "-my-1 -ml-1 grid size-7 shrink-0 place-items-center rounded-lg transition-[translate,scale,background-color,color] duration-200 ease-out motion-reduce:transition-none",
-          "motion-safe:group-hover/nav:-translate-y-px motion-safe:group-hover/nav:scale-110 motion-safe:group-focus-visible/nav:-translate-y-px motion-safe:group-focus-visible/nav:scale-110 motion-safe:group-active/nav:scale-95",
+          "-my-1 -ml-1 grid size-7 shrink-0 place-items-center rounded-lg transition-[scale,background-color,color] duration-150 ease-out motion-reduce:transition-none",
+          "motion-safe:group-active/nav:scale-95",
           active
             ? "bg-primary-foreground/15"
             : "group-hover/nav:bg-primary/12 group-hover/nav:text-primary group-focus-visible/nav:bg-primary/12 group-focus-visible/nav:text-primary",
@@ -284,9 +284,7 @@ function NavLink({
       >
         {item.icon}
       </span>
-      <span className="min-w-0 flex-1 truncate transition-transform duration-200 ease-out motion-safe:group-hover/nav:translate-x-0.5 motion-reduce:transition-none">
-        {item.label}
-      </span>
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
       {!!item.badge && (
         <span
           aria-hidden="true"

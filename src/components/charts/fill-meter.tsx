@@ -42,7 +42,7 @@ export function FillRing({
         data-slot="fill-meter"
         aria-hidden="true"
         viewBox="0 0 100 100"
-        className="absolute inset-0 size-full -rotate-90 overflow-visible motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in"
+        className="absolute inset-0 size-full -rotate-90 overflow-visible motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in"
       >
         <circle cx="50" cy="50" r={R - 8} fill="currentColor" fillOpacity="0.07" />
         <circle

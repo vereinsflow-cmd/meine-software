@@ -132,7 +132,7 @@ function JoinLinkCard({ link }: { link: JoinLink | null }) {
                     id="beitritt-link"
                     readOnly
                     value={link.url}
-                    className="font-mono text-sm md:text-sm"
+                    className="font-mono text-base md:text-sm"
                   />
                   <CopyJoinLinkButton url={link.url} />
                 </div>

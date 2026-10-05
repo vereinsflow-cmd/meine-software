@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { ThemeProvider } from "next-themes";
+import { ThemeColorSync } from "@/components/layout/theme-color-sync";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -20,9 +21,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Android: Die Tastatur verkleinert die Seite, damit das Eingabefeld im Chat sichtbar bleibt.
+  interactiveWidget: "resizes-content",
+  colorScheme: "light dark",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1220" },
+    { media: "(prefers-color-scheme: dark)", color: "#121a25" },
   ],
 };
 
@@ -47,7 +51,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           nonce={nonce}
         >
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
-          <Toaster richColors closeButton position="top-right" />
+          <ThemeColorSync />
+          {/* Auf dem Handy erscheinen Hinweise unter der Kopfzeile statt über Menü- und Profilknopf. */}
+          <Toaster
+            richColors
+            closeButton
+            position="top-right"
+            mobileOffset={{
+              top: "calc(var(--app-header-height) + 8px)",
+              left: "16px",
+              right: "16px",
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

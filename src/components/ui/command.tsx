@@ -34,7 +34,10 @@ function CommandDialog({
     <Dialog {...dialogProps}>
       <DialogContent
         showCloseButton={false}
-        className={cn("gap-0 overflow-hidden p-0 sm:max-w-lg md:max-w-xl", className)}
+        className={cn(
+          "gap-0 overflow-hidden p-0 sm:max-w-lg md:max-w-xl data-open:animate-none data-closed:animate-none",
+          className,
+        )}
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <DialogDescription className="sr-only">{description}</DialogDescription>
@@ -75,7 +78,7 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
     <CommandPrimitive.List
       data-slot="command-list"
       className={cn(
-        "max-h-[60vh] overflow-x-hidden overflow-y-auto overscroll-contain p-1.5 motion-safe:animate-in motion-safe:duration-150 motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-reduce:transition-none",
+        "max-h-[60dvh] overflow-x-hidden overflow-y-auto overscroll-contain p-1.5",
         className,
       )}
       {...props}
@@ -127,7 +130,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "relative flex cursor-default items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground motion-safe:transition-colors motion-safe:duration-150 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex cursor-default items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

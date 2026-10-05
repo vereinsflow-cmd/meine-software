@@ -94,6 +94,7 @@ html {
   scroll-padding-top: calc(var(--header-h) + 16px);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -385,7 +386,7 @@ html:not(.js) .site-header,
   opacity: 0;
   translate: var(--x, 0px) 0;
   pointer-events: none;
-  transition: translate 0.45s var(--ease-out), width 0.45s var(--ease-out), opacity 0.25s;
+  transition: translate 0.25s var(--ease-out), width 0.25s var(--ease-out), opacity 0.2s;
 }
 
 .nav-indicator.is-visible {
@@ -396,8 +397,10 @@ html:not(.js) .site-header,
   transition: opacity 0.25s;
 }
 
-html:not(.js) .nav ul a:hover {
-  background: rgb(26 26 26 / 6%);
+@media (hover: hover) and (pointer: fine) {
+  html:not(.js) .nav ul a:hover {
+    background: rgb(26 26 26 / 6%);
+  }
 }
 
 /* Schlichter Textlink links neben dem Knopf: die Benachrichtigung zum Start. Nur, wenn die Zeile ihn sicher fasst (siehe
@@ -484,7 +487,7 @@ html:not(.js) .nav ul a:hover {
   transition: background-color 0.2s, transform 0.15s var(--ease-out);
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .nav-toggle:hover {
     background: rgb(26 26 26 / 6%);
   }
@@ -650,11 +653,13 @@ html:not(.js) .nav ul a:hover {
   font-size: 0.95rem;
 }
 
-.site-header .btn-primary:hover,
-.hero .btn-primary:hover {
-  background: #3d3d3d;
-  box-shadow: none;
-  transform: none;
+@media (hover: hover) and (pointer: fine) {
+  .site-header .btn-primary:hover,
+  .hero .btn-primary:hover {
+    background: #3d3d3d;
+    box-shadow: none;
+    transform: none;
+  }
 }
 
 .site-header .btn-primary:active,
@@ -703,8 +708,11 @@ html:not(.js) .nav ul a:hover {
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   transition:
-    transform 0.28s var(--ease-out),
+    transform 0.16s var(--ease-out),
     background-color 0.2s,
     border-color 0.2s,
     color 0.2s,
@@ -727,8 +735,10 @@ html:not(.js) .nav ul a:hover {
   box-shadow: none;
 }
 
-.btn-primary:hover {
-  background: #3d3d3d;
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: #3d3d3d;
+  }
 }
 
 .btn-secondary,
@@ -739,11 +749,13 @@ html:not(.js) .nav ul a:hover {
   box-shadow: none;
 }
 
-.btn-secondary:hover,
-.btn-quiet:hover {
-  background: var(--bg-alt);
-  border-color: var(--frame-strong);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover,
+  .btn-quiet:hover {
+    background: var(--bg-alt);
+    border-color: var(--frame-strong);
+    color: var(--ink);
+  }
 }
 
 .btn-lg {
@@ -781,7 +793,7 @@ html:not(.js) .nav ul a:hover {
       opacity 0.25s var(--ease-soft),
       translate 0.35s var(--ease-out),
       visibility 0s,
-      transform 0.28s var(--ease-out),
+      transform 0.16s var(--ease-out),
       background-color 0.2s,
       box-shadow 0.28s var(--ease-out);
   }
@@ -826,8 +838,10 @@ html:not(.js) .nav ul a:hover {
   transition: transform 0.3s var(--ease-out);
 }
 
-.btn:hover .icon-arrow {
-  transform: translateX(4px);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover .icon-arrow {
+    transform: translateX(4px);
+  }
 }
 
 /* ---------- Abschnitte ----------
@@ -925,8 +939,10 @@ html:not(.js) .nav ul a:hover {
   transition: transform 0.3s var(--ease-out);
 }
 
-.section-more a:hover .icon {
-  transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+  .section-more a:hover .icon {
+    transform: translateX(3px);
+  }
 }
 
 /* ---------- Bausteine ----------
@@ -976,8 +992,10 @@ html:not(.js) .nav ul a:hover {
   transition: translate 0.3s var(--ease-out);
 }
 
-.text-link:hover .icon-arrow {
-  translate: 3px 0;
+@media (hover: hover) and (pointer: fine) {
+  .text-link:hover .icon-arrow {
+    translate: 3px 0;
+  }
 }
 
 /* Die eine ruhige Fläche: neutral, 24 px Rundung, ohne Rand und ohne Schatten (z. B. Benachrichtigung, „Kurz gesagt“).
@@ -6024,9 +6042,11 @@ details[open] > summary .toggle,
   color: var(--ink);
 }
 
-.live-toggle:hover::before {
-  background: var(--bg-alt);
-  box-shadow: inset 0 0 0 1px var(--line);
+@media (hover: hover) and (pointer: fine) {
+  .live-toggle:hover::before {
+    background: var(--bg-alt);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
 }
 
 .live-toggle:focus-visible {
@@ -6899,8 +6919,10 @@ details[open] > summary .toggle,
 
 /* Auf der grauen Fläche bleibt der Knopf beim Überfahren weiß (sonst verschwände er im Grund); mit der Maus wird der
    Rand schwarz */
-.notify .btn-quiet:hover {
-  background: var(--bg);
+@media (hover: hover) and (pointer: fine) {
+  .notify .btn-quiet:hover {
+    background: var(--bg);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -7194,8 +7216,10 @@ details[open] > summary .toggle,
 }
 
 /* Ohne gleitende Markierung (die gehört zu den Abschnitten der Startseite): Hintergrund beim Überfahren */
-.subpage .nav ul a:hover {
-  background: rgb(26 26 26 / 6%);
+@media (hover: hover) and (pointer: fine) {
+  .subpage .nav ul a:hover {
+    background: rgb(26 26 26 / 6%);
+  }
 }
 
 /* Kopf der Rechtstexte wie ein Abschnittskopf der Startseite: oben der Rückweg als Textlink mit Pfeil, darunter die
