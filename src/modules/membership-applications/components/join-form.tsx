@@ -90,7 +90,7 @@ export function JoinApplicationCard({
               className="size-10 text-emerald-600 dark:text-emerald-400"
               aria-hidden="true"
             />
-            <p className="text-lg font-semibold">Danke! Dein Antrag ist beim Verein angekommen.</p>
+            <p className="text-lg font-semibold">Danke, dein Antrag ist beim Verein angekommen.</p>
             <p className="text-base text-muted-foreground">
               Sobald der Vorstand ihn bestätigt, bekommst du eine E-Mail mit deiner Einladung.
             </p>

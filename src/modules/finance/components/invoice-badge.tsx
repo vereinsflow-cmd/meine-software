@@ -8,7 +8,7 @@ import { dueText } from "../invoice-format";
  * Die Bedeutung steht immer im Text, die Farbe hilft nur beim Erkennen.
  */
 /** Lange Hinweise („… seit 3 Tagen überfällig“) dürfen umbrechen, statt in die Nachbarspalte zu ragen. */
-const WRAP = "h-auto justify-start rounded-xl py-0.5 text-left whitespace-normal";
+const WRAP = "h-auto justify-start rounded-xl py-0.5 text-left tabular-nums whitespace-normal";
 
 export function InvoiceBadge({ invoice }: { invoice: DocumentInvoice }) {
   if (invoice.status === "PAID")

@@ -35,7 +35,7 @@ export function ReportDialog({ pagePath }: { pagePath: string | null }) {
     schema: ticketFormSchema,
     defaultValues: { category: "PROBLEM", subject: "", description: "", pagePath: pagePath ?? "" },
     action: (values) => createTicketAction(values),
-    successMessage: "Danke! Deine Meldung wurde an die Vereinsverwaltung gesendet.",
+    successMessage: "Danke, deine Meldung wurde an die Vereinsverwaltung gesendet.",
     resetOnSuccess: true,
     onSuccess: () => {
       setOpen(false);

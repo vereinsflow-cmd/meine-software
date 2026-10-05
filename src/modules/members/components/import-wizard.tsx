@@ -162,7 +162,7 @@ export function ImportWizard() {
               <TableBody>
                 {preview.rows.map((row) => (
                   <TableRow key={row.line}>
-                    <TableCell className="text-muted-foreground">{row.line}</TableCell>
+                    <TableCell className="text-muted-foreground tabular-nums">{row.line}</TableCell>
                     <TableCell className="font-medium">{row.label}</TableCell>
                     <TableCell>
                       <ToneBadge tone={STATUS[row.status].tone}>

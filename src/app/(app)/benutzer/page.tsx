@@ -150,7 +150,7 @@ export default async function UsersPage({
                       <ToneBadge tone="danger">Gesperrt</ToneBadge>
                     )}
                   </TableCell>
-                  <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
+                  <TableCell className="hidden text-sm text-muted-foreground tabular-nums lg:table-cell">
                     {user.lastLoginAt ? `${formatDateTime(user.lastLoginAt)} Uhr` : "–"}
                   </TableCell>
                   <TableCell>
@@ -202,7 +202,7 @@ export default async function UsersPage({
                       )}
                     </TableCell>
                     <TableCell>{invitation.roleName}</TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden tabular-nums md:table-cell">
                       {formatDate(invitation.expiresAt)}{" "}
                       {invitation.expired && <ToneBadge tone="warning">abgelaufen</ToneBadge>}
                     </TableCell>

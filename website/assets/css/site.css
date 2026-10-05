@@ -186,7 +186,6 @@ a:hover {
 :focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
-  border-radius: 8px;
 }
 
 ::selection {
@@ -598,6 +597,7 @@ html:not(.js) .nav ul a:hover {
     left: 0;
     right: 0;
     height: 100vh;
+    height: 100dvh;
     background: rgb(15 30 50 / 25%);
   }
 

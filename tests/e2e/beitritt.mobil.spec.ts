@@ -85,7 +85,7 @@ test("Antragsformular am Handy: passt auf den Bildschirm, 16-px-Felder, Absenden
   await guest.waitForLoadState("networkidle");
   await fill();
   await submit.click();
-  await expect(guest.getByText("Danke! Dein Antrag ist beim Verein angekommen.")).toBeVisible();
+  await expect(guest.getByText("Danke, dein Antrag ist beim Verein angekommen.")).toBeVisible();
   expect(await overflow(guest)).toBeLessThanOrEqual(1);
   await guestContext.close();
 });

@@ -297,7 +297,7 @@ export default async function MembersPage({
                         </ToneBadge>
                       )}
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">
+                    <TableCell className="hidden text-muted-foreground tabular-nums md:table-cell">
                       {member.memberNumber ?? "–"}
                     </TableCell>
                     <TableCell>
@@ -318,7 +318,7 @@ export default async function MembersPage({
                         {member.phone && <p className="text-muted-foreground">{member.phone}</p>}
                       </TableCell>
                     )}
-                    <TableCell className="hidden text-muted-foreground md:table-cell">
+                    <TableCell className="hidden text-muted-foreground tabular-nums md:table-cell">
                       {formatCalendarDate(member.joinedAt)}
                     </TableCell>
                   </TableRow>
