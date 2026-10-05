@@ -110,6 +110,8 @@ test.describe("Smartphone", () => {
       "/finanzen",
       "/finanzen/kassenbuch",
       "/finanzen/rechnungen",
+      "/finanzen/abschluss",
+      "/finanzen/einstellungen",
       "/hilfe",
       "/hilfe/meldungen",
       "/protokoll",

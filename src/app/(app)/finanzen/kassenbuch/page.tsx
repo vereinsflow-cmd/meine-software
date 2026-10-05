@@ -32,6 +32,7 @@ import { canFinance } from "@/modules/finance/access";
 import { EntryActions, LEDGER_FOCUS_ID } from "@/modules/finance/components/entry-actions";
 import { EntryDialog } from "@/modules/finance/components/entry-dialog";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
+import { LedgerMoreMenu } from "@/modules/finance/components/ledger-more-menu";
 import { LedgerSetupForm } from "@/modules/finance/components/ledger-setup-form";
 import { OpeningDialog } from "@/modules/finance/components/opening-dialog";
 import { TransferDialog } from "@/modules/finance/components/transfer-dialog";
@@ -201,6 +202,16 @@ export default async function LedgerPage({
             <>
               <EntryDialog options={options} />
               <TransferDialog options={options} />
+              <LedgerMoreMenu
+                cashAccounts={accounts
+                  .filter((account) => account.kind === "CASH")
+                  .map((account) => ({
+                    id: account.id,
+                    name: account.name,
+                    bookCents: account.balanceCents,
+                  }))}
+                openCashCount={param(params, "kassensturz") ?? null}
+              />
             </>
           ) : undefined
         }

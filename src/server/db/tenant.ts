@@ -69,6 +69,8 @@ export const MODEL_SCOPE = {
   LedgerEntry: "tenant",
   LedgerLine: "tenant",
   LedgerAttachment: "tenant",
+  FinancePeriodClose: "tenant",
+  CashCount: "tenant",
   SupportTicket: "tenant",
   CalendarFeedToken: "tenant",
   AuditLog: "tenant",

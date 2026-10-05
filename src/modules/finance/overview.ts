@@ -12,6 +12,8 @@ import {
   type LedgerSetup,
   type YearSummary,
 } from "./ledger";
+import { overdueClose } from "./closing";
+import { monthLabel } from "./ledger-format";
 import { getOpenPayments, unbookedPaidInvoiceCount, type OpenPayments } from "./service";
 
 /**
@@ -139,16 +141,6 @@ async function donationsAndDepartments(
   };
 }
 
-/** Erster Tag, an dem noch gebucht werden kann (Beginn des Kassenbuchs bzw. Tag nach dem letzten Abschluss). */
-function firstOpenDay(setup: LedgerSetup): Date {
-  const afterClose = setup.closedThrough
-    ? new Date(setup.closedThrough.getTime() + 86_400_000)
-    : setup.ledgerStartDate;
-  return afterClose.getTime() > setup.ledgerStartDate.getTime()
-    ? afterClose
-    : setup.ledgerStartDate;
-}
-
 /** Rechnungen: überfällige oben (dringend), bald fällige unter „Demnächst“. */
 function invoiceItems(payments: OpenPayments, canManage: boolean): DueItem[] {
   const items: DueItem[] = [];
@@ -231,7 +223,8 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
       yearSummary(ctx, thisYear),
       donationsAndDepartments(ctx, thisYear),
       missingReceiptCount(ctx),
-      unbookedPaidInvoiceCount(ctx, firstOpenDay(setup)),
+      // Seit Beginn des Kassenbuchs – auch Zahlungen aus abgeschlossenen Monaten (die bucht „Ins Kassenbuch“ im offenen Zeitraum).
+      unbookedPaidInvoiceCount(ctx, setup.ledgerStartDate),
     ]);
   if (unbookedInvoices > 0)
     due.push({
@@ -245,6 +238,18 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
       tone: "neutral",
       href: "/finanzen/rechnungen?stand=bezahlt",
       actionLabel: canManage ? "Rechnungen buchen" : "Ansehen",
+    });
+  const closeMonth = overdueClose(setup);
+  if (closeMonth)
+    due.push({
+      key: "close",
+      urgency: 20,
+      title: `${monthLabel(closeMonth)} abschließen`,
+      detail:
+        "Der Monat ist vorbei: Checkliste durchgehen und festschreiben – danach bleibt er, wie er ist.",
+      tone: "warning",
+      href: "/finanzen/abschluss",
+      actionLabel: canManage ? "Zum Monatsabschluss" : "Ansehen",
     });
   if (missingReceipts > 0)
     due.push({
@@ -282,12 +287,19 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
 export async function financeTabCounts(
   ctx: TenantContext,
 ): Promise<Partial<Record<string, number>>> {
-  const overdue = await ctx.db.invoice.count({
-    where: {
-      status: "OPEN",
-      dueDate: { lt: todayCalendarDate() },
-      document: { is: { deletedAt: null, archivedAt: null } },
-    },
-  });
-  return { "/finanzen/rechnungen": overdue };
+  const [overdue, setup] = await Promise.all([
+    ctx.db.invoice.count({
+      where: {
+        status: "OPEN",
+        dueDate: { lt: todayCalendarDate() },
+        document: { is: { deletedAt: null, archivedAt: null } },
+      },
+    }),
+    getLedgerSetup(ctx),
+  ]);
+  return {
+    "/finanzen/rechnungen": overdue,
+    // Ein Monat, der seit dem 10. des Folgemonats auf den Abschluss wartet.
+    "/finanzen/abschluss": setup && overdueClose(setup) ? 1 : 0,
+  };
 }

@@ -186,3 +186,80 @@ export const openingSchema = z
       });
   });
 export type OpeningInput = z.input<typeof openingSchema>;
+
+/** Monatsabschluss: welcher Monat („2026-09“) – zur Sicherheit gegen doppeltes Klicken – und eine freiwillige Notiz. */
+export const closePeriodSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Bitte wähle einen Monat."),
+  note: z.string().trim().max(500).optional(),
+});
+
+/** Kassensturz: gezählter Betrag, optional die Zählhilfe (Anzahl je Schein/Münze), Grund bei einer Differenz. */
+export const cashCountSchema = z.object({
+  accountId: accountRef,
+  counted: z
+    .string()
+    .trim()
+    .min(1, "Bitte gib den gezählten Betrag ein.")
+    .max(30)
+    .refine((value) => {
+      const cents = parseEuroToCents(value);
+      return cents !== null && cents >= 0 && cents <= 100_000_000;
+    }, "Bitte gib einen gültigen Betrag ein (z. B. 239,80)."),
+  denominations: z
+    .record(z.string().regex(/^\d{1,5}$/), z.number().int().min(0).max(100_000))
+    .optional(),
+  note: z.string().trim().max(500).optional(),
+});
+export type CashCountInput = z.input<typeof cashCountSchema>;
+
+const SPHERES = ["NON_PROFIT", "ASSET_MANAGEMENT", "PURPOSE_OPERATION", "COMMERCIAL"] as const;
+const ACCOUNT_KINDS = ["BANK", "CASH", "OTHER"] as const;
+const accountName = z.string().trim().min(1, "Bitte gib dem Konto einen Namen.").max(60);
+const categoryName = z.string().trim().min(1, "Bitte gib der Kategorie einen Namen.").max(60);
+
+/** „Konto hinzufügen“ – mit Anfangsbestand, solange der Beginn des Kassenbuchs offen ist. */
+export const accountCreateSchema = z
+  .object({
+    name: accountName,
+    kind: z.enum(ACCOUNT_KINDS),
+    bankName: z.string().trim().max(60).optional(),
+    opening: openingAmountText,
+  })
+  .superRefine((data, ctx) => {
+    if (data.kind === "CASH" && data.opening && (parseSignedEuroToCents(data.opening) ?? 0) < 0)
+      ctx.addIssue({
+        code: "custom",
+        path: ["opening"],
+        message: "Eine Barkasse kann nicht im Minus sein.",
+      });
+  });
+export type AccountCreateInput = z.input<typeof accountCreateSchema>;
+
+/** Konto umbenennen bzw. Bank ändern. */
+export const accountUpdateSchema = z.object({
+  id,
+  name: accountName,
+  bankName: z.string().trim().max(60).optional(),
+});
+export type AccountUpdateInput = z.input<typeof accountUpdateSchema>;
+
+/** Kategorie anlegen (Art steht danach fest). */
+export const categoryCreateSchema = z.object({
+  name: categoryName,
+  direction: z.enum(["INCOME", "EXPENSE"]),
+  sphere: z.enum(SPHERES),
+  hint: z.string().trim().max(60).optional(),
+});
+export type CategoryCreateInput = z.input<typeof categoryCreateSchema>;
+
+/** Kategorie umbenennen, Bereich ändern (gilt für neue Buchungen), Hinweis. */
+export const categoryUpdateSchema = z.object({
+  id,
+  name: categoryName,
+  sphere: z.enum(SPHERES),
+  hint: z.string().trim().max(60).optional(),
+});
+export type CategoryUpdateInput = z.input<typeof categoryUpdateSchema>;
+
+/** Archivieren bzw. wieder aktivieren. */
+export const archiveSchema = z.object({ id, archived: z.boolean() });

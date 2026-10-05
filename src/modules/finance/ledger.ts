@@ -44,7 +44,7 @@ import {
  * (+ Einnahme, − Ausgabe). Lesen braucht `finance:read`, Buchen `finance:manage` – beides nur vereinsweit.
  */
 
-const LONG_TX = { timeout: 30_000 } as const;
+export const LONG_TX = { timeout: 30_000 } as const;
 
 // ---------------------------------------------------------------------------------------------
 // Nummernkreise
@@ -67,6 +67,24 @@ export async function nextNumbers(
     update: { lastValue: { increment: count } },
   });
   return Array.from({ length: count }, (_, i) => counter.lastValue - count + 1 + i);
+}
+
+/**
+ * Sperrt den Nummernkreis bis zum Ende der Transaktion, ohne eine Nummer zu verbrauchen. Für Abläufe, die erst danach
+ * entscheiden, ob sie buchen (Kassensturz): So nehmen sie ihre Sperren in derselben Reihenfolge wie jede Buchung
+ * (erst Nummernkreis, dann Barkasse) – sonst könnten sich beide gegenseitig blockieren.
+ */
+export async function lockNumbers(
+  tx: TenantTx,
+  clubId: string,
+  kind: CounterKind,
+  year: number,
+): Promise<void> {
+  await tx.financeCounter.upsert({
+    where: { clubId_kind_year: { clubId, kind, year } },
+    create: { clubId, kind, year, lastValue: 0 },
+    update: { lastValue: { increment: 0 } },
+  });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -131,7 +149,7 @@ async function ensureDefaultCategories(tx: TenantTx, clubId: string): Promise<vo
   });
 }
 
-async function systemCategoryId(tx: TenantTx, key: SystemCategoryKey): Promise<string> {
+export async function systemCategoryId(tx: TenantTx, key: SystemCategoryKey): Promise<string> {
   const category = await tx.financeCategory.findFirst({
     where: { systemKey: key },
     select: { id: true },
@@ -293,7 +311,7 @@ interface NewEntry {
 }
 
 /** Schreibt eine Buchung mit Nummer und Zeilen (die Datenbank prüft Zeitraum, Summen, Barkasse, Storno). */
-async function insertEntry(
+export async function insertEntry(
   tx: TenantTx,
   ctx: TenantContext,
   entry: NewEntry,
@@ -1088,6 +1106,8 @@ export interface EntryFormOptions {
   minDate: string;
   /** Größte erlaubte Belegdatei in MB (Vorprüfung im Browser). */
   maxUploadMb: number;
+  /** Beginn des Kassenbuchs, „JJJJ-MM-TT“. */
+  ledgerStart: string;
 }
 
 export async function entryFormOptions(ctx: TenantContext): Promise<EntryFormOptions | null> {
@@ -1140,6 +1160,7 @@ export async function entryFormOptions(ctx: TenantContext): Promise<EntryFormOpt
     today: iso(today),
     minDate: iso(minDate),
     maxUploadMb: env.MAX_UPLOAD_MB,
+    ledgerStart: iso(setup.ledgerStartDate),
   };
 }
 

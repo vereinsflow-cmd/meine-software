@@ -39,6 +39,7 @@ import {
 } from "@/modules/finance/components/book-invoice-button";
 import { entryFormOptions } from "@/modules/finance/ledger";
 import type { EntryInput } from "@/modules/finance/ledger-schemas";
+import { financeTabCounts } from "@/modules/finance/overview";
 import { listInvoices, type InvoiceFilter, type InvoiceListItem } from "@/modules/finance/service";
 import { env } from "@/server/env";
 import { can, scopeOf } from "@/server/permissions/policy";
@@ -68,22 +69,27 @@ export default async function InvoicesPage({
   const q = param(params, "q");
   const { page, pageSize } = pageRequest(params, 20);
   const canUpload = canFinance(ctx, "finance:manage") && can(ctx, "documents:upload");
-  const [result, categories, events, options] = await Promise.all([
+  const [result, categories, events, options, counts] = await Promise.all([
     listInvoices(ctx, { stand, q, page, pageSize }),
     canUpload ? listCategories(ctx) : Promise.resolve([]),
     canUpload ? listUploadEvents(ctx) : Promise.resolve([]),
     canFinance(ctx, "finance:manage") ? entryFormOptions(ctx) : Promise.resolve(null),
+    financeTabCounts(ctx),
   ]);
-  /** „Ins Kassenbuch“: bezahlte Rechnung als Ausgabe vom Girokonto, am Tag der Zahlung (nicht vor Beginn des Kassenbuchs). */
+  /**
+   * „Ins Kassenbuch“: bezahlte Rechnung als Ausgabe vom Girokonto, am Tag der Zahlung. Vor Beginn des Kassenbuchs bezahlt:
+   * gehört in die alten Unterlagen. In einem schon abgeschlossenen Monat bezahlt: am ersten offenen Tag nachbuchen.
+   */
   const bookingDefaults = (invoice: InvoiceListItem): Partial<EntryInput> | null => {
     if (!options || invoice.status !== "PAID" || invoice.booking) return null;
     const paidOn = toDateInputValue(invoice.paidAt ?? invoice.invoiceDate);
-    if (paidOn < options.minDate) return null; // gehört in die Unterlagen vor dem Kassenbuch
+    if (paidOn < options.ledgerStart) return null;
+    const bookOn = paidOn < options.minDate ? options.minDate : paidOn;
     const bank = options.accounts.find((a) => a.kind === "BANK") ?? options.accounts[0];
     return {
       kind: "EXPENSE",
       accountId: bank?.value ?? "",
-      bookingDate: paidOn > options.today ? options.today : paidOn,
+      bookingDate: bookOn > options.today ? options.today : bookOn,
       description: invoice.name.replace(/\.[a-z0-9]+$/i, ""),
       invoiceId: invoice.id,
       lines: [
@@ -107,7 +113,7 @@ export default async function InvoicesPage({
             ? `Offen zu bezahlen: ${formatEuroFromCents(result.openTotalCents)}`
             : "Rechnungen, die der Verein bezahlen muss"
         }
-        counts={{ "/finanzen/rechnungen": result.overdueCount }}
+        counts={counts}
         actions={
           canUpload ? (
             <UploadDialog

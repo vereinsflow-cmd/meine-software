@@ -37,8 +37,9 @@ Ziel: Mitgliedsbeiträge, Kassenbuch und Spendenbescheinigungen, mandantenfähig
 04.10.2026 der eigene Bereich **Finanzen** mit Übersicht („Cockpit“), **Kassenbuch** (Konten, Kategorien mit Bereich, Buchungen mit
 Aufteilung, Storno/Korrektur, Umbuchung, Barkasse nie im Minus – Regeln in der Datenbank, siehe
 [ADR-0010](adr/0010-finanzen-kassenbuch.md)) und Rechnungsliste (siehe [DESIGN.md](DESIGN.md#finanzen-cockpit)); dazu **Belege** an
-Buchungen (Datei oder Eigenbeleg, 8 Jahre gesperrt, Filter „Ohne Beleg“) und bezahlte Rechnungen „Ins Kassenbuch“. Der weitere Bauplan
-(22 Stufen: Monatsabschluss, Beiträge, Beitragslauf, Kontoauszug und automatische Zuordnung, Lastschrift, Rücklastschriften,
+Buchungen (Datei oder Eigenbeleg, 8 Jahre gesperrt, Filter „Ohne Beleg“), bezahlte Rechnungen „Ins Kassenbuch“, **Monatsabschluss**
+mit Checkliste und verketteter Prüfsumme, **Kassensturz** mit Zählhilfe sowie Konten und Kategorien verwalten. Der weitere Bauplan
+(22 Stufen: Beiträge, Beitragslauf, Kontoauszug und automatische Zuordnung, Lastschrift, Rücklastschriften,
 Erinnerungen, Spenden und Zuwendungsbestätigungen, Berichte, Export, Töpfe, „Mein Beitrag“) folgt Schritt für Schritt. Der Rest dieses Entwurfs hält die Entscheidungen fest, damit sie später
 nicht neu erfunden werden. Rechnungen sind dabei ausdrücklich **keine** Buchungen: Sie lassen sich ändern und auf „wieder offen“ setzen; das
 Kassenbuch mit Stornoregel und Abschlusssperre kommt erst mit Schritt 4 und kann bezahlte Rechnungen als Belege übernehmen.
