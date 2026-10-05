@@ -48,7 +48,10 @@ export function FillBar({
         className="h-2 overflow-hidden rounded-full bg-muted"
       >
         <div
-          className={cn("h-full rounded-full transition-all", color)}
+          className={cn(
+            "h-full rounded-full transition-[width,background-color] motion-reduce:transition-none",
+            color,
+          )}
           style={{ width: `${health.ratio * 100}%` }}
         />
       </div>

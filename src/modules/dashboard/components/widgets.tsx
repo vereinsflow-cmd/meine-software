@@ -359,7 +359,7 @@ export function OpenShifts({
     >
       {shifts.open.length === 0 ? (
         <Empty icon={<PartyPopperIcon />} accent="emerald" title="Alle Schichten besetzt">
-          Im Moment sind alle Schichten besetzt. Danke!
+          Im Moment sind alle Schichten besetzt. Danke.
         </Empty>
       ) : (
         <ExpandableList

@@ -208,7 +208,7 @@ export function ChecklistCard({ list }: { list: ChecklistDto }) {
       </div>
       <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted" role="presentation">
         <div
-          className="h-full rounded-full bg-primary transition-all"
+          className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
           style={{ width: `${total === 0 ? 0 : Math.round((list.done / total) * 100)}%` }}
         />
       </div>

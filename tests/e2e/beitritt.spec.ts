@@ -72,7 +72,7 @@ test.describe("Beitritt per QR-Code", () => {
 
     await fillApplication(guest, person);
     await guest.getByRole("button", { name: "Antrag senden" }).click();
-    await expect(guest.getByText("Danke! Dein Antrag ist beim Verein angekommen.")).toBeVisible();
+    await expect(guest.getByText("Danke, dein Antrag ist beim Verein angekommen.")).toBeVisible();
     await expect(
       guest.getByText(
         "Sobald der Vorstand ihn bestätigt, bekommst du eine E-Mail mit deiner Einladung.",
@@ -240,7 +240,7 @@ test.describe("Beitritt per QR-Code", () => {
     await guest.goto(link);
     await fillApplication(guest, person);
     await guest.getByRole("button", { name: "Antrag senden" }).click();
-    await expect(guest.getByText("Danke! Dein Antrag ist beim Verein angekommen.")).toBeVisible();
+    await expect(guest.getByText("Danke, dein Antrag ist beim Verein angekommen.")).toBeVisible();
 
     // Wer jetzt scannt, kann keinen Antrag mehr stellen
     await guest.goto(link);

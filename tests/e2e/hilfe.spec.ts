@@ -155,7 +155,7 @@ test.describe("Hilfe & Support – Problem melden und bearbeiten", () => {
       .fill("Ich komme nicht weiter.\n<img src=x onerror=alert(1)> Das Bild fehlt.");
     await dialog.getByRole("button", { name: "Meldung senden" }).click();
     await expect(
-      page.getByText("Danke! Deine Meldung wurde an die Vereinsverwaltung gesendet."),
+      page.getByText("Danke, deine Meldung wurde an die Vereinsverwaltung gesendet."),
     ).toBeVisible();
     await expect(dialog).toHaveCount(0);
 

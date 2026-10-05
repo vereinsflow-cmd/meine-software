@@ -91,7 +91,7 @@ export function NotificationList({ items }: { items: Item[] }) {
                     </span>
                   )}
                 </button>
-                <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
                   <ClockIcon className="size-3.5" aria-hidden="true" />
                   {formatDateTime(item.createdAt)} Uhr
                   {unread && (
