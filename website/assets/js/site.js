@@ -534,34 +534,59 @@
   // Bewegung reduzieren – für die Reiter jedes Mal neu abgefragt (die Einstellung kann sich während des Besuchs ändern)
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  // Funktionen: Jede Kachel öffnet ihre ganze Beschreibung als Karte (Popover – Öffnen, Schließen mit × und Esc, Klick
-  // daneben und der Fokus laufen ohne Skript). Das Skript ergänzt:
-  // - Die Karte über der Kachel wächst immer nach unten (site.css); ihr unterer Rand reicht bis ans Ende der Reihe, die er
-  //   sonst anschnitte (--feat-bis). Passt sie so nicht ganz ins Bild, rollt die Seite gerade so weit, dass Kachel und
-  //   Karte zu sehen sind – weich, bei reduzierter Bewegung sofort (scroll-behavior).
+  // Funktionen: Jeder Eintrag der Liste (.fkt-liste, hier „Kachel“) klappt zu seiner Karte mit der ganzen Beschreibung
+  // auf (Popover – Öffnen, Schließen mit × und Esc, Klick daneben und der Fokus laufen ohne Skript). Das Skript ergänzt:
+  // - Die Karte über der Kachel wächst immer nach unten, so hoch wie ihr Inhalt (site.css). Kacheln, die sie dabei
+  //   teilweise verdeckt, blendet sie ganz aus (is-verdeckt) – sonst läse man unter ihrem Rand halbe Zeilen; die übrigen
+  //   treten per CSS zurück. Passt die Karte nicht ganz ins Bild, rollt die Seite gerade so weit, dass Kachel und Karte
+  //   zu sehen sind – weich, bei reduzierter Bewegung sofort (scroll-behavior).
   // - Verlässt der Fokus die Karte mit der Tabulatortaste, schließt sie (sie läge sonst über den nächsten Kacheln, deren
   //   Fokusrahmen verdeckt wäre). Ein Link darin schließt sie ebenfalls, bevor die Seite zum Abschnitt springt; steht
   //   sein Ziel schon in der Adresse, meldet der Browser keinen Wechsel – dann wählt ein eigenes Signal den Reiter.
   // - Das Blatt von unten (Smartphone, niedrige Bildschirme) sperrt die Seite dahinter per CSS; rollt sie doch (ältere
   //   Browser), schließt es, statt über bewegtem Inhalt zu stehen.
+  // - Nach Esc oder × steht der Fokus wieder auf der Kachel. Das erledigt sonst der Browser – Safari aber fokussiert
+  //   Knöpfe beim Klick nicht und gäbe den Fokus an body zurück; die nächste Tabulatortaste spränge dann hinter den
+  //   Abschnitt. Ein Klick daneben, Tab und Links lassen den Fokus, wo er ist (wie ohne Skript).
   // - Pfeiltasten wechseln zwischen den Kacheln, wie sie stehen: links/rechts zur vorigen bzw. nächsten, hoch/runter zur
   //   Kachel darüber bzw. darunter, Pos1/Ende zur ersten bzw. letzten. Die Tabulatortaste geht wie gewohnt alle durch.
   const sheet = window.matchMedia("(max-width: 719px), (max-height: 499px)");
   const anchored = window.CSS?.supports?.("anchor-name: --a") ?? false; // sonst steht die Karte mittig im Fenster
-  const tiles = [...document.querySelectorAll(".bento-kacheln > .feat")];
+  const tiles = [...document.querySelectorAll(".fkt-liste > .feat")];
   for (const card of document.querySelectorAll(".feat-pop")) {
     if (typeof card.hidePopover !== "function") continue;
     const tile = card.closest(".feat");
+    const button = tile?.querySelector(".feat-btn");
     const close = () => {
       if (card.matches(":popover-open")) card.hidePopover();
     };
     let openedAt = 0;
+    let covered = [];
+    let restore = false; // mit Esc oder × geschlossen
     const closeOnScroll = () => {
       if (Math.abs(window.scrollY - openedAt) > 40) close();
     };
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape" && card.matches(":popover-open")) restore = true;
+      },
+      true,
+    );
     card.addEventListener("toggle", (event) => {
       window.removeEventListener("scroll", closeOnScroll);
-      if (event.newState !== "open" || !tile) return;
+      for (const other of covered) other.classList.remove("is-verdeckt");
+      covered = [];
+      if (event.newState !== "open") {
+        const active = document.activeElement;
+        if (restore && button && (!active || active === document.body || card.contains(active))) {
+          button.focus({ preventScroll: true });
+        }
+        restore = false;
+        return;
+      }
+      restore = false;
+      if (!tile) return;
       openedAt = window.scrollY;
       if (sheet.matches) {
         window.addEventListener("scroll", closeOnScroll, { passive: true });
@@ -579,27 +604,20 @@
           }
         }
       }
-      // Unterer Rand nicht mitten durch eine Kachel: reicht bis ans Ende der Reihe, die er sonst anschnitte – sofern das
-      // höchstens 56 px mehr sind (sonst stünde unten eine leere Fläche). Gemessen in Lagen relativ zur eigenen Kachel
-      // (offsetTop/-Left) – Kacheln weiter unten, die noch auf ihr Einblenden warten, sind dort schon an ihrem Platz.
-      card.style.removeProperty("--feat-bis");
-      const box = card.getBoundingClientRect(); // beim Aufblenden noch leicht verkleinert – Maße daher ohne Transformation
+      // Lage der Karte: genau über ihrer Kachel, so breit wie sie; die Höhe ohne die Transformation des Aufblendens
+      // (offsetHeight). Darunter teilweise verdeckte Kacheln ausblenden (gemessen, bevor die Seite rollt – Karte und
+      // Kacheln rollen gemeinsam).
+      const box = card.getBoundingClientRect();
       const own = tile.getBoundingClientRect();
-      const toRight = Math.abs(box.right - own.right) < Math.abs(box.left - own.left); // rechtsbündig über der Kachel
-      const left = toRight ? tile.offsetWidth - card.offsetWidth : 0;
-      const right = left + card.offsetWidth;
-      const natural = card.offsetHeight;
-      let end = natural;
-      for (const other of tiles) {
-        const x = other.offsetLeft - tile.offsetLeft;
-        const y = other.offsetTop - tile.offsetTop;
-        const below = x < right - 10 && x + other.offsetWidth > left + 10; // liegt unter der Karte
-        if (other !== tile && below && y < end - 1 && y + other.offsetHeight > end + 1) end = y + other.offsetHeight;
-      }
-      if (end - natural > 56) end = natural;
-      if (end > natural + 1) card.style.setProperty("--feat-bis", `${Math.ceil(end)}px`);
       const top = Math.min(box.top, own.top);
-      const bottom = Math.max(box.top + end, own.bottom);
+      const bottom = Math.max(box.top + card.offsetHeight, own.bottom);
+      for (const other of tiles) {
+        if (other === tile) continue;
+        const r = other.getBoundingClientRect();
+        const across = Math.min(r.right, box.right) - Math.max(r.left, box.left) > 10;
+        if (across && r.top < bottom - 1 && r.bottom > top + 1) covered.push(other);
+      }
+      for (const other of covered) other.classList.add("is-verdeckt");
       const minTop = (header?.getBoundingClientRect().bottom ?? 0) + 12;
       const maxBottom = window.innerHeight - 12;
       let delta = Math.max(0, bottom - maxBottom);
@@ -611,13 +629,14 @@
       if (next instanceof Node && !card.contains(next)) close();
     });
     card.addEventListener("click", (event) => {
+      if (event.target instanceof Element && event.target.closest(".feat-close")) restore = true;
       const link = event.target instanceof Element ? event.target.closest("a") : null;
       if (!link) return;
       close();
       if (link.hash && link.hash === location.hash) window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
   }
-  const featGrid = document.querySelector(".bento-kacheln");
+  const featGrid = document.querySelector(".fkt-liste");
   featGrid?.addEventListener("keydown", (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const from = event.target;

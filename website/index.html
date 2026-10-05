@@ -29,8 +29,8 @@
   <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026100501">
-  <script src="assets/js/site.js?v=2026100402" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100502">
+  <script src="assets/js/site.js?v=2026100502" defer></script>
 
   <script type="application/ld+json">
   {
@@ -388,206 +388,212 @@
   </section>
 
   <!-- ===== Funktionen ===== -->
+  <!-- In der Formensprache des Einstiegs: weißer Grund, links groß die Überschrift in drei Zeilen und die Einleitung,
+       darunter ein Bild der Anwendung mit runden Ecken (ein Ausschnitt aus dem Kalender, 1 : 1); rechts die zwölf
+       Bereiche als ruhige Liste mit Symbol, Titel, einer Zeile Text und Plus (site.css, „Funktionen (Liste)“). Von 720
+       bis 1199 px steht das Bild rechts neben Überschrift und Einleitung und die Liste darunter, auf dem Smartphone
+       entfällt es. Helferschichten steht als erster Eintrag über die ganze Breite in einem Rahmen, mit den drei
+       Schichten der Ampel; „Hilfe &amp; Support“ schließt die Liste über die ganze Breite ab. Zwei Spalten ab 720 px,
+       auf dem Smartphone eine. Jede Zeile klappt zu ihrer Karte mit der ganzen Beschreibung auf (Popover – geht ohne
+       Skript): genau über der Zeile, das × an der Stelle des Plus; auf dem Smartphone als Blatt von unten. Bedingte
+       Trennstellen (&shy;) in langen Wörtern der Titel – getrennt wird nur bei großer eingestellter Schrift, wenn ein
+       Wort allein nicht in die Zeile passt. -->
   <section class="section section-alt" id="funktionen" aria-labelledby="funktionen-title">
     <div class="container">
-      <!-- Bento: Kopf und zwölf Kacheln in einem Raster (site.css, „Funktionen (Bento)“). Breit stehen neben und unter dem
-           Kopf die beiden großen Kacheln Helferschichten und Mitglieder mit kleinem Bild, dann die kompakten mit Symbol,
-           Titel und einem Satz; auf dem Smartphone eine zweispaltige Liste. Jede Kachel öffnet ihre ganze Beschreibung als
-           Karte (Popover – geht ohne Skript). Die Farbe des Bereichs (tone-*) steht an der Kachel und gilt so auch für ihre
-           Karte. Bedingte Trennstelle (&shy;) nur in „Benachrichtigungen“ – die anderen Titel passen ungetrennt. -->
-      <div class="bento">
-        <div class="section-head center reveal">
-          <p class="eyebrow">Funktionen</p>
+      <div class="fkt">
+        <div class="section-head fkt-kopf reveal">
           <h2 id="funktionen-title">Alles, was Vereinsarbeit braucht</h2>
-          <p class="lead">Zwölf Bereiche, die zusammenarbeiten&nbsp;– statt zwölf einzelner Werkzeuge.</p>
+          <p class="fkt-lead">Zwölf Bereiche, die zusammenarbeiten&nbsp;– statt zwölf einzelner Werkzeuge.</p>
+          <!-- Ausschnitt aus dem Kalender (Donnerstag bis Samstag zweier Juniwochen), ab 900 px 1 : 1 – Bildpunkte in
+               site.css (.fkt-bild). Erst ab 720 px zu sehen und erst dann geladen; sizes: so breit ist das ganze Bild
+               (ab 900 px 960 px, darunter mit dem Rahmen etwas schmaler) -->
+          <div class="fkt-bild">
+            <img src="assets/img/app/kalender-light-960.webp?v=2026100401" srcset="assets/img/app/kalender-light-960.webp?v=2026100401 960w, assets/img/app/kalender-light-1440.webp?v=2026100401 1440w, assets/img/app/kalender-light-1920.webp?v=2026100401 1920w" sizes="(min-width: 900px) 960px, 112vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Ausschnitt aus dem Kalender von VereinsFlow: Donnerstag bis Samstag zweier Juniwochen mit Trainings, der Sitzung der Abteilungsleitungen, dem Arbeitseinsatz am Vereinsheim, der Schicht am Getränkestand und dem Sommerfest 2027">
+          </div>
         </div>
-        <div class="bento-kacheln">
-          <article class="card feat reveal feat-a tone-green">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-helfer">Helferschichten</button></h3>
+        <ul class="fkt-liste" role="list">
+          <li class="feat feat-a reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-hand-heart"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-helfer">Helfer&shy;schich&shy;ten</button></h3>
             <p class="feat-kurz">Selbst eintragen, mit Ampel</p>
-            <div class="feat-art art-shifts" aria-hidden="true">
-              <span class="shift is-full"><b>Aufbau</b><i>5/5</i><span class="shift-bar"></span></span>
-              <span class="shift is-part"><b>Theke</b><i>2/4</i><span class="shift-bar"></span></span>
-              <span class="shift is-open"><b>Abbau</b><i>0/3</i><span class="shift-bar"></span></span>
-            </div>
+            <span class="feat-ampel" aria-hidden="true">
+              <span class="amp amp-voll"><b>Aufbau</b><i>5/5</i><span class="amp-plaetze"><span></span><span></span><span></span><span></span><span></span></span></span>
+              <span class="amp amp-teil"><b>Theke</b><i>2/4</i><span class="amp-plaetze"><span></span><span></span><span class="frei"></span><span class="frei"></span></span></span>
+              <span class="amp amp-offen"><b>Abbau</b><i>0/3</i><span class="amp-plaetze"><span class="frei"></span><span class="frei"></span><span class="frei"></span></span></span>
+            </span>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-helfer" popover role="dialog" aria-labelledby="f-helfer-t" aria-describedby="f-helfer-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-hand-heart"/></svg></div>
-                <p class="feat-pop-title" id="f-helfer-t">Helferschichten</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-hand-heart"/></svg></span>
+                <p class="feat-pop-title" id="f-helfer-t">Helfer&shy;schich&shy;ten</p>
                 <button class="feat-close" type="button" popovertarget="f-helfer" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-helfer-d">Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Erinnerungen und ein druckfertiger Helferplan&nbsp;– für eine oder mehrere Veranstaltungen.</p>
               <a class="feat-link" href="#helferschichten">So sieht es aus<span class="sr-only">: Helferschichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal feat-b tone-blue">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-mitglieder">Mitglieder</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-users"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-mitglieder">Mit&shy;glieder</button></h3>
             <p class="feat-kurz">Stammdaten, Import, Historie</p>
-            <div class="feat-art art-people" aria-hidden="true">
-              <span class="faces"><i class="tone-blue">CA</i><i class="tone-green">AA</i><i class="tone-purple">DA</i><i class="tone-amber">KB</i><i class="tone-rose">MB</i></span>
-              <span class="people-tag"><b></b>Aktiv</span>
-            </div>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-mitglieder" popover role="dialog" aria-labelledby="f-mitglieder-t" aria-describedby="f-mitglieder-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></div>
-                <p class="feat-pop-title" id="f-mitglieder-t">Mitglieder</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-users"/></svg></span>
+                <p class="feat-pop-title" id="f-mitglieder-t">Mit&shy;glieder</p>
                 <button class="feat-close" type="button" popovertarget="f-mitglieder" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. Vorhandene Listen übernehmen (aus Excel als CSV gespeichert) mit Vorschau, dazu Export, Statistik, Archiv und Papierkorb.</p>
               <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Mitglieder</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-blue">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-abteilungen">Abteilungen und Gruppen</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-network"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-abteilungen">Abtei&shy;lungen und Gruppen</button></h3>
             <p class="feat-kurz">Mit eigenen Leitungen</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-abteilungen" popover role="dialog" aria-labelledby="f-abteilungen-t" aria-describedby="f-abteilungen-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-network"/></svg></div>
-                <p class="feat-pop-title" id="f-abteilungen-t">Abteilungen und Gruppen</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-network"/></svg></span>
+                <p class="feat-pop-title" id="f-abteilungen-t">Abtei&shy;lungen und Gruppen</p>
                 <button class="feat-close" type="button" popovertarget="f-abteilungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-abteilungen-d">Abteilungen und Gruppen mit eigenen Leitungen. Rechte und Nachrichten lassen sich auf eine Abteilung beschränken.</p>
               <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Abteilungen und Gruppen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-amber">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-aufgaben">Aufgaben und Checklisten</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-list-checks"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-aufgaben">Aufgaben und Check&shy;listen</button></h3>
             <p class="feat-kurz">Wer macht was, bis wann</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-aufgaben" popover role="dialog" aria-labelledby="f-aufgaben-t" aria-describedby="f-aufgaben-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg></div>
-                <p class="feat-pop-title" id="f-aufgaben-t">Aufgaben und Checklisten</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-list-checks"/></svg></span>
+                <p class="feat-pop-title" id="f-aufgaben-t">Aufgaben und Check&shy;listen</p>
                 <button class="feat-close" type="button" popovertarget="f-aufgaben" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-aufgaben-d">Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status&nbsp;– auch als Checkliste je Veranstaltung.</p>
             </div>
-          </article>
-          <article class="card feat reveal tone-purple">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-veranstaltungen">Veranstaltungen</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-calendar-days"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-veranstaltungen">Veran&shy;stal&shy;tungen</button></h3>
             <p class="feat-kurz">Anmeldung mit Warteliste</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-veranstaltungen" popover role="dialog" aria-labelledby="f-veranstaltungen-t" aria-describedby="f-veranstaltungen-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg></div>
-                <p class="feat-pop-title" id="f-veranstaltungen-t">Veranstaltungen</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-days"/></svg></span>
+                <p class="feat-pop-title" id="f-veranstaltungen-t">Veran&shy;stal&shy;tungen</p>
                 <button class="feat-close" type="button" popovertarget="f-veranstaltungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-veranstaltungen-d">Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
               <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Veranstaltungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-purple">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-calendar-sync"/></svg>
             <h3><button class="feat-btn" type="button" popovertarget="f-kalender">Kalender</button></h3>
             <p class="feat-kurz">Im eigenen Kalender</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-kalender" popover role="dialog" aria-labelledby="f-kalender-t" aria-describedby="f-kalender-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-sync"/></svg></div>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-sync"/></svg></span>
                 <p class="feat-pop-title" id="f-kalender-t">Kalender</p>
                 <button class="feat-close" type="button" popovertarget="f-kalender" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Einzelne Termine lassen sich exportieren, und ein persönlicher Abo-Link bringt die Termine automatisch in die eigene Kalender-App.</p>
               <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Kalender</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-rose">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-nachrichten">Nachrichten</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-message-square"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-nachrichten">Nach&shy;richten</button></h3>
             <p class="feat-kurz">Gezielt, mit Lesestatistik</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-nachrichten" popover role="dialog" aria-labelledby="f-nachrichten-t" aria-describedby="f-nachrichten-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg></div>
-                <p class="feat-pop-title" id="f-nachrichten-t">Nachrichten</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-message-square"/></svg></span>
+                <p class="feat-pop-title" id="f-nachrichten-t">Nach&shy;richten</p>
                 <button class="feat-close" type="button" popovertarget="f-nachrichten" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-nachrichten-d">An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
               <a class="feat-link" href="#am-rechner">So sieht es aus<span class="sr-only">: Nachrichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-rose">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-hinweise">Benachrich&shy;tigungen</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-bell"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-hinweise">Benach&shy;rich&shy;tigungen</button></h3>
             <p class="feat-kurz">Erinnerung 24&nbsp;Std. vorher</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-hinweise" popover role="dialog" aria-labelledby="f-hinweise-t" aria-describedby="f-hinweise-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg></div>
-                <p class="feat-pop-title" id="f-hinweise-t">Benachrich&shy;tigungen</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></span>
+                <p class="feat-pop-title" id="f-hinweise-t">Benach&shy;rich&shy;tigungen</p>
                 <button class="feat-close" type="button" popovertarget="f-hinweise" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-hinweise-d">Alle Hinweise an einem Ort, auf Wunsch auch per E&#8209;Mail. Erinnerung 24&nbsp;Stunden vor jedem Einsatz und jeder zugesagten Veranstaltung.</p>
             </div>
-          </article>
-          <article class="card feat reveal tone-slate">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-dokumente">Dokumente</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-folder-open"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-dokumente">Doku&shy;mente</button></h3>
             <p class="feat-kurz">Ablage mit Zugriffsstufen</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-dokumente" popover role="dialog" aria-labelledby="f-dokumente-t" aria-describedby="f-dokumente-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder-open"/></svg></div>
-                <p class="feat-pop-title" id="f-dokumente-t">Dokumente</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-folder-open"/></svg></span>
+                <p class="feat-pop-title" id="f-dokumente-t">Doku&shy;mente</p>
                 <button class="feat-close" type="button" popovertarget="f-dokumente" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– freigegeben für alle Mitglieder, nur für den Vorstand oder nur für die Vereinsadministratoren.</p>
             </div>
-          </article>
-          <article class="card feat reveal tone-slate">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
-            <h3><button class="feat-btn" type="button" popovertarget="f-auswertungen">Auswertungen</button></h3>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-chart-column"/></svg>
+            <h3><button class="feat-btn" type="button" popovertarget="f-auswertungen">Auswer&shy;tungen</button></h3>
             <p class="feat-kurz">Zahlen passend zur Rolle</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-auswertungen" popover role="dialog" aria-labelledby="f-auswertungen-t" aria-describedby="f-auswertungen-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart-column"/></svg></div>
-                <p class="feat-pop-title" id="f-auswertungen-t">Auswertungen</p>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-chart-column"/></svg></span>
+                <p class="feat-pop-title" id="f-auswertungen-t">Auswer&shy;tungen</p>
                 <button class="feat-close" type="button" popovertarget="f-auswertungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-auswertungen-d">Eine Übersicht (Dashboard) mit den Zahlen, die die jeweilige Rolle braucht: Kennzahlen mit kleinem Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
               <a class="feat-link" href="#auswertungen">So sieht es aus<span class="sr-only">: Auswertungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-slate">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></div>
+          </li>
+          <li class="feat reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-search"/></svg>
             <h3><button class="feat-btn" type="button" popovertarget="f-suche">Zentrale Suche</button></h3>
             <p class="feat-kurz">Ein Suchfeld für alles</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-suche" popover role="dialog" aria-labelledby="f-suche-t" aria-describedby="f-suche-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></div>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-search"/></svg></span>
                 <p class="feat-pop-title" id="f-suche-t">Zentrale Suche</p>
                 <button class="feat-close" type="button" popovertarget="f-suche" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-suche-d">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente und häufige Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf. Am Rechner öffnet es sich auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd>.</span></p>
               <a class="feat-link" href="#suche">So sieht es aus<span class="sr-only">: Zentrale Suche</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
             </div>
-          </article>
-          <article class="card feat reveal tone-slate">
-            <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-life-buoy"/></svg></div>
+          </li>
+          <li class="feat feat-z reveal">
+            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-life-buoy"/></svg>
             <h3><button class="feat-btn" type="button" popovertarget="f-hilfe">Hilfe &amp; Support</button></h3>
             <p class="feat-kurz">Anleitung, Meldeformular</p>
             <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
             <div class="feat-pop" id="f-hilfe" popover role="dialog" aria-labelledby="f-hilfe-t" aria-describedby="f-hilfe-d">
               <div class="feat-pop-head">
-                <div class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-life-buoy"/></svg></div>
+                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-life-buoy"/></svg></span>
                 <p class="feat-pop-title" id="f-hilfe-t">Hilfe &amp; Support</p>
                 <button class="feat-close" type="button" popovertarget="f-hilfe" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
               </div>
               <p id="f-hilfe-d">Anleitung passend zur Rolle, Ansprechpartner des Vereins und ein Meldeformular für Fehler, Fragen und Vorschläge&nbsp;– mit Antwort und Status.</p>
             </div>
-          </article>
-        </div>
+          </li>
+        </ul>
       </div>
     </div>
   </section>
