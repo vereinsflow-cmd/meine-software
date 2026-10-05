@@ -18,7 +18,7 @@ import { FinanceKpiCard } from "@/modules/finance/components/finance-kpi-card";
 import { MonthChart } from "@/modules/finance/components/month-chart";
 import { entryFormOptions } from "@/modules/finance/ledger";
 import { ACCOUNT_KIND_LABEL } from "@/modules/finance/ledger-format";
-import { getFinanceOverview, type DueItem } from "@/modules/finance/overview";
+import { financeTabCounts, getFinanceOverview, type DueItem } from "@/modules/finance/overview";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Finanzen" };
@@ -48,9 +48,10 @@ export default async function FinancePage() {
   const ctx = await requirePageContext();
   if (!canFinance(ctx, "finance:read")) return <NoAccess what="die Finanzen" />;
 
-  const [overview, options] = await Promise.all([
+  const [overview, options, counts] = await Promise.all([
     getFinanceOverview(ctx),
     canFinance(ctx, "finance:manage") ? entryFormOptions(ctx) : Promise.resolve(null),
+    financeTabCounts(ctx),
   ]);
   const today = todayCalendarDate();
   const year = today.getUTCFullYear();
@@ -69,7 +70,7 @@ export default async function FinancePage() {
     <>
       <FinanceHeader
         description={`Geschäftsjahr ${year} · Stand ${formatCalendarDate(today)}`}
-        counts={{ "/finanzen/rechnungen": payments.overdueCount }}
+        counts={counts}
         actions={
           overview.canManage && options ? (
             <EntryDialog
@@ -307,6 +308,14 @@ export default async function FinancePage() {
               <Button asChild variant="outline" className="mt-1">
                 <Link href="/finanzen/kassenbuch">Kassenbuch öffnen</Link>
               </Button>
+              {overview.canManage && (
+                <Link
+                  href="/finanzen/einstellungen"
+                  className="justify-self-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Konten und Kategorien verwalten
+                </Link>
+              )}
             </CardContent>
           </Card>
         </div>

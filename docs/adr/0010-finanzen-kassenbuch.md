@@ -32,7 +32,13 @@ Ehrenamtliche ohne Buchhaltungswissen.
   Kasse, damit gleichzeitige Ausgaben nacheinander geprüft werden – eine Zeilensperre auf dem Konto verklemmte sich mit den
   Fremdschlüssel-Sperren). Keine Buchung auf irgendeinem Konto in der Zukunft (`FUTURE_DATE`).
 - **Abschluss:** `FinanceSettings.closedThrough` sperrt Buchungen bis zu diesem Tag (geprüft beim Anlegen mit `FOR SHARE`;
-  der Monatsabschluss setzt den Wert nur nach vorn). Ein Abschluss wird nie zurückgenommen.
+  der Monatsabschluss setzt den Wert nur nach vorn). Ein Abschluss wird nie zurückgenommen. Abgeschlossen wird Monat für
+  Monat der Reihe nach und nur, wenn der Monat vorbei ist (`FinancePeriodClose`, Trigger mit `FOR UPDATE` auf die
+  Einstellungen – gleichzeitige Buchungen warten bzw. werden abgewartet). Die Datenbank speichert Kontostände, Zahl der
+  Buchungen und eine SHA-256-Prüfsumme über alle Buchungen und Zeilen des Monats, verkettet mit der des Vormonats
+  (`finance_close_content`, `finance_close_hash`); die Seite rechnet sie nach. Dezember ist der Jahresabschluss.
+- **Kassensturz** (`CashCount`): gezählter Bestand der Barkasse gegen den Buchstand; eine Differenz wird mit Grund als
+  Buchung „Kassendifferenz“ festgehalten (der Kassensturz hängt als Eigenbeleg daran). Unveränderlich.
 - **Belege** (`LedgerAttachment`): mehrere Dateien je Buchung oder ein Eigenbeleg als Text. Hochgeladene Belege sind
   Dokumente der Stufe „Nur Finanzen“. Beim Anhängen setzt die Datenbank `Document.retainUntil` auf das Ende der
   Aufbewahrungsfrist (31.12. des Buchungsjahres + 8, § 147 Abs. 3 AO) und verweigert bis dahin Papierkorb, Archiv und
@@ -53,4 +59,5 @@ Ehrenamtliche ohne Buchhaltungswissen.
 - Ein Verein mit Kassenbuch lässt sich nicht still komplett löschen (die Triggers verweigern das Löschen der Buchungen) – gewollt.
 - Datenschutz: Bei Löschung oder Anonymisierung bleiben Buchungen samt Namen des Gegenübers bis zum Ende der Aufbewahrungsfrist
   (Art. 17 Abs. 3 lit. b DSGVO); Einträge der Finanzen im Änderungsprotokoll bleiben 10 volle Jahre.
-- Die Verfahrensdokumentation (GoBD Rz. 151 ff.) folgt mit dem Monatsabschluss; die Begriffe sollte ein Steuerberater prüfen.
+- Verfahrensdokumentation (GoBD Rz. 151 ff.): [docs/VERFAHRENSDOKUMENTATION.md](../VERFAHRENSDOKUMENTATION.md); die Begriffe
+  sollte ein Steuerberater prüfen.

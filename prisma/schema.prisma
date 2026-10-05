@@ -220,6 +220,12 @@ enum LedgerEntryKind {
 }
 
 /// Lückenlose Nummernkreise je Verein (und meist je Jahr).
+/// Monatsabschluss bzw. Jahresabschluss (Dezember).
+enum PeriodCloseKind {
+  MONTH
+  YEAR
+}
+
 enum CounterKind {
   LEDGER
   CHARGE
@@ -405,6 +411,8 @@ model Club {
   ledgerEntries          LedgerEntry[]
   ledgerLines            LedgerLine[]
   ledgerAttachments      LedgerAttachment[]
+  financePeriodCloses    FinancePeriodClose[]
+  cashCounts             CashCount[]
   folders                DocumentFolder[]
   invitations            Invitation[]
   sessions               Session[]
@@ -1139,8 +1147,9 @@ model FinanceAccount {
   createdAt   DateTime           @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
 
-  club    Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  entries LedgerEntry[]
+  club       Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  entries    LedgerEntry[]
+  cashCounts CashCount[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1216,6 +1225,8 @@ model LedgerEntry {
   reversedBy         LedgerEntry?       @relation("LedgerReversal")
   lines              LedgerLine[]
   attachments        LedgerAttachment[]
+  /// Kassensturz, dessen Differenz diese Buchung festhält.
+  cashCount          CashCount?
 
   @@unique([clubId, id])
   @@unique([clubId, year, number])
@@ -1343,4 +1354,56 @@ model AuditLog {
   @@index([clubId, createdAt])
   @@index([clubId, entityType, entityId, createdAt])
   @@index([actorUserId, createdAt])
+}
+
+/// Monatsabschluss: bis `closedThrough` festgeschrieben. Kontostände, Zahl der Buchungen und Prüfsumme setzt die
+/// Datenbank (Migration finance_closing); die Prüfsumme ist mit der des Vormonats verkettet. Unveränderlich.
+model FinancePeriodClose {
+  id            String          @id @default(uuid(7))
+  clubId        String
+  closedThrough DateTime        @db.Date
+  kind          PeriodCloseKind
+  /// Kontostand je Konto am Ende des Zeitraums: { "<kontoId>": Cent }.
+  balances      Json
+  /// Buchungen in diesem Zeitraum.
+  entryCount    Int
+  /// Höchste Buchungsnummer bis dahin („2026-0042“).
+  lastNumber    String?
+  contentHash   String
+  previousHash  String?
+  note          String?
+  closedAt      DateTime        @default(now()) @db.Timestamptz(3)
+  closedById    String?
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@unique([clubId, closedThrough])
+}
+
+/// Kassensturz: Bargeld gezählt und mit dem Kassenbuch verglichen. Eine Differenz ist als Buchung „Kassendifferenz“
+/// festgehalten (`entryId`) und begründet (`note`). Unveränderlich.
+model CashCount {
+  id              String   @id @default(uuid(7))
+  clubId          String
+  accountId       String
+  countedOn       DateTime @db.Date
+  countedCents    Int
+  /// Stand laut Kassenbuch beim Zählen.
+  bookCents       Int
+  differenceCents Int
+  /// Zählhilfe: Anzahl je Schein/Münze in Cent, z. B. { "5000": 2, "200": 7 }.
+  denominations   Json?
+  note            String?
+  entryId         String?
+  countedAt       DateTime @default(now()) @db.Timestamptz(3)
+  countedById     String?
+
+  club    Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  account FinanceAccount @relation(fields: [clubId, accountId], references: [clubId, id], onDelete: Restrict)
+  entry   LedgerEntry?   @relation(fields: [clubId, entryId], references: [clubId, id], onDelete: Restrict)
+
+  @@unique([clubId, id])
+  @@unique([clubId, entryId])
+  @@index([clubId, accountId, countedOn])
 }

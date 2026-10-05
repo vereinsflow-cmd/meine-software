@@ -10,6 +10,7 @@ export const FINANCE_TABS = [
   { href: "/finanzen", label: "Übersicht", exact: true },
   { href: "/finanzen/kassenbuch", label: "Kassenbuch" },
   { href: "/finanzen/rechnungen", label: "Rechnungen" },
+  { href: "/finanzen/abschluss", label: "Abschluss" },
 ] as const;
 
 /**
@@ -39,7 +40,9 @@ export function FinanceTabs({ counts = {} }: { counts?: Partial<Record<string, n
             {count !== undefined && count > 0 && (
               <span className="min-w-5 rounded-full bg-amber-100 px-1.5 text-center text-xs font-semibold text-amber-800 tabular-nums dark:bg-amber-400/20 dark:text-amber-200">
                 {count}
-                <span className="sr-only"> überfällig</span>
+                <span className="sr-only">
+                  {tab.href === "/finanzen/abschluss" ? " Monat abzuschließen" : " überfällig"}
+                </span>
               </span>
             )}
           </Link>

@@ -582,6 +582,40 @@ export const FAQ: readonly FaqSection[] = [
         keywords: "beleg quittung kassenbon rechnung foto eigenbeleg aufbewahrung nachreichen",
       },
       {
+        id: "monatsabschluss",
+        question: "Was ist der Monatsabschluss und wann mache ich ihn?",
+        steps: [
+          "Ist ein Monat vorbei, öffne „Finanzen“ → „Abschluss“. Dort steht der nächste offene Monat mit einer kurzen Checkliste: Fehlen Belege, wurde die Barkasse gezählt, sind bezahlte Rechnungen gebucht?",
+          "Klicke auf „… abschließen“ und bestätige. Danach ist der Monat festgeschrieben: Neue Buchungen und das Entfernen von Belegen gehen dort nicht mehr; ein Storno landet automatisch im nächsten offenen Monat.",
+        ],
+        tip: "Monate werden der Reihe nach abgeschlossen, am besten bis zum 10. des Folgemonats – die Übersicht erinnert daran. Jeder Abschluss bekommt eine Prüfsumme, mit der sich später zeigen lässt, dass nichts verändert wurde.",
+        link: { href: "/finanzen/abschluss", label: "Zum Monatsabschluss" },
+        keywords: "abschluss monat jahresabschluss festschreiben prüfsumme",
+      },
+      {
+        id: "kassensturz",
+        question: "Wie mache ich einen Kassensturz?",
+        steps: [
+          "Im Kassenbuch: „Weitere Aktionen“ → „Kassensturz“.",
+          "Zähl das Bargeld und trag den Betrag ein – oder nutze die Zählhilfe und tipp nur die Anzahl je Schein und Münze ein.",
+          "Weicht der Betrag vom Kassenbuch ab, schreib kurz, woran es liegen könnte. Die Differenz wird als Buchung „Kassendifferenz“ festgehalten.",
+        ],
+        tip: "Einmal im Monat zählen genügt – vor dem Monatsabschluss ist ein guter Zeitpunkt.",
+        link: { href: "/finanzen/kassenbuch", label: "Zum Kassenbuch" },
+        keywords: "kassensturz barkasse zählen bargeld differenz kassendifferenz",
+      },
+      {
+        id: "konten-kategorien",
+        question: "Wie lege ich ein weiteres Konto oder eine eigene Kategorie an?",
+        steps: [
+          "Öffne im Kassenbuch „Weitere Aktionen“ → „Konten und Kategorien“.",
+          "„Konto hinzufügen“ für z. B. ein Tagesgeldkonto oder eine zweite Kasse; „Kategorie hinzufügen“ für eigene Einnahmen oder Ausgaben mit ihrem Bereich.",
+        ],
+        tip: "Konten lassen sich archivieren, sobald ihr Kontostand 0,00 € ist. Ändert sich der Bereich einer Kategorie, gilt das für neue Buchungen – frühere behalten ihren.",
+        link: { href: "/finanzen/einstellungen", label: "Zu Konten und Kategorien" },
+        keywords: "konto kategorie anlegen bereich zweckbetrieb ideeller bereich archivieren",
+      },
+      {
         id: "rechnung-erfassen",
         question: "Wie lege ich eine Rechnung ab, die noch bezahlt werden muss?",
         steps: [

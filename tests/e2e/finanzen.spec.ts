@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { violations } from "./axe";
 import { USERS, login, open, openNavGroup } from "./helpers";
 
 /**
@@ -281,11 +282,97 @@ test.describe("Finanzen – ohne Berechtigung", () => {
           .first()
           .getByRole("link", { name: "Finanzen" }),
       ).toHaveCount(0);
-      for (const path of ["/finanzen", "/finanzen/kassenbuch", "/finanzen/rechnungen"]) {
+      for (const path of [
+        "/finanzen",
+        "/finanzen/kassenbuch",
+        "/finanzen/rechnungen",
+        "/finanzen/abschluss",
+        "/finanzen/einstellungen",
+      ]) {
         await open(page, path);
         await expect(page.getByText("Kein Zugriff")).toBeVisible();
       }
       await page.context().clearCookies();
+    }
+  });
+});
+
+// Zuletzt: Der Monatsabschluss schreibt Monate fest – die Tests davor buchen noch frei.
+test.describe("Finanzen – Kassensturz, Konten, Abschluss", () => {
+  test("Kassensturz mit Differenz: Grund nötig, danach eine Buchung „Kassendifferenz“", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+    await page.getByRole("button", { name: "Weitere Aktionen", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Kassensturz" }).click();
+    const dialog = page.getByRole("dialog", { name: "Kassensturz" });
+    // Gezählt = Stand laut Kassenbuch + 1,23 € – so gibt es immer eine Differenz (auch bei einem zweiten Versuch).
+    const bookText = (await dialog.getByText(/Laut Kassenbuch/).textContent()) ?? "";
+    const [euros, cents] = bookText.replace(/[^\d,]/g, "").split(",");
+    const counted = Number(euros) * 100 + Number(cents) + 123;
+    const countedText = `${Math.floor(counted / 100)},${String(counted % 100).padStart(2, "0")}`;
+    await dialog.getByLabel("Gezählt in €").fill(countedText);
+    await expect(dialog.getByRole("status")).toContainText("Differenz");
+    await dialog.getByRole("button", { name: "Kassensturz speichern" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("woran die Differenz");
+    await dialog.getByLabel("Woran könnte es liegen?").fill("E2E Testzählung");
+    await dialog.getByRole("button", { name: "Kassensturz speichern" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(row(page, "Kassendifferenz beim Kassensturz").first()).toContainText("+1,23 €");
+  });
+
+  test("Kategorie anlegen und archivieren", async ({ page }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+    await open(page, "/finanzen/einstellungen");
+    await page.getByRole("button", { name: "Kategorie hinzufügen" }).click();
+    const dialog = page.getByRole("dialog", { name: "Kategorie hinzufügen" });
+    await dialog.getByLabel("Name").fill("E2E Schiedsrichterkosten");
+    await dialog.getByRole("button", { name: "Kategorie anlegen" }).click();
+    await expect(dialog).toHaveCount(0);
+    const category = row(page, "E2E Schiedsrichterkosten");
+    await expect(category).toHaveCount(1);
+    await category.getByRole("button", { name: "Archivieren" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Archivieren" }).click();
+    await expect(category).toContainText("archiviert");
+  });
+
+  test("Monatsabschluss: Checkliste, Abschluss mit Prüfsumme, danach ist der Monat gesperrt", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+    await open(page, "/finanzen/abschluss");
+    // Das Kassenbuch beginnt vor 60 Tagen – sein erster Monat ist vorbei.
+    const close = page.getByRole("button", { name: / abschließen$/ });
+    await expect(close).toBeVisible();
+    const label = ((await close.textContent()) ?? "").replace(" abschließen", "").trim();
+    await close.click();
+    const confirm = page.getByRole("alertdialog", { name: `${label} abschließen?` });
+    await expect(confirm).toContainText("nicht rückgängig");
+    await confirm.getByRole("button", { name: "Endgültig abschließen" }).click();
+    await expect(confirm).toHaveCount(0);
+    const history = page.getByRole("region", { name: "Bisherige Abschlüsse" });
+    await expect(history.getByRole("row").filter({ hasText: label })).toHaveCount(1);
+    await expect(history).toContainText("Alle Abschlüsse stimmen");
+
+    // Rückwirkend in den abgeschlossenen Monat buchen: klare Meldung.
+    await open(page, "/finanzen/kassenbuch");
+    await page.getByRole("button", { name: "Neue Buchung" }).click();
+    const dialog = page.getByRole("dialog", { name: "Neue Buchung" });
+    await dialog.getByLabel("Betrag in €").fill("5,00");
+    await dialog.getByLabel("Datum").fill(isoDaysAgo(60)); // Beginn des Kassenbuchs – im abgeschlossenen Monat
+    await dialog.getByLabel("Beschreibung").fill("E2E zu spät");
+    await dialog.getByLabel("Kategorie").selectOption({ label: "Sportmaterial" });
+    await dialog.getByRole("button", { name: "Ausgabe buchen" }).click();
+    await expect(dialog.getByText(/abgeschlossen/)).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // Barrierefreiheit der Seiten mit Inhalt (a11y.spec sieht sie nur vor dem Einrichten).
+    for (const path of ["/finanzen/abschluss", "/finanzen/einstellungen", "/finanzen/kassenbuch"]) {
+      await open(page, path);
+      expect(await violations(page), path).toEqual([]);
     }
   });
 });
