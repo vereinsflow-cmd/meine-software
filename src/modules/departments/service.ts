@@ -244,13 +244,19 @@ export async function deleteDepartment(ctx: TenantContext, id: string): Promise<
   const department = await loadManageable(ctx, id);
   if (!isClubWide(ctx)) throw forbidden("Abteilungen kann nur der Vorstand löschen.");
 
-  const [members, events, groups, messages, bookings] = await Promise.all([
+  const [members, events, groups, messages, bookings, feeTypes] = await Promise.all([
     ctx.db.memberDepartment.count({ where: { departmentId: id } }),
     ctx.db.event.count({ where: { departmentId: id } }),
     ctx.db.group.count({ where: { departmentId: id } }),
     ctx.db.message.count({ where: { departmentId: id } }),
     ctx.db.ledgerLine.count({ where: { departmentId: id } }),
+    ctx.db.feeType.count({ where: { departmentId: id } }),
   ]);
+  if (feeTypes > 0) {
+    throw conflict(
+      "Die Abteilung hat eine eigene Beitragsart (Finanzen → Beiträge). Bitte deaktiviere die Abteilung stattdessen.",
+    );
+  }
   if (bookings > 0) {
     throw conflict(
       "Die Abteilung kommt im Kassenbuch vor (Buchungen müssen erhalten bleiben). Bitte deaktiviere sie stattdessen.",

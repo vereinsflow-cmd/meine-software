@@ -11,6 +11,8 @@ import { phoneHref } from "@/lib/phone";
 import { ConsentPanel } from "@/modules/members/components/consent-panel";
 import { MemberActions } from "@/modules/members/components/member-actions";
 import { getMember, getMemberHistory } from "@/modules/members/service";
+import { MemberFeeCard } from "@/modules/fees/components/member-fee-card";
+import { getMemberFee, memberFeeOptions } from "@/modules/fees/service";
 import { isAppError } from "@/server/errors";
 import { requirePageContext } from "@/server/tenancy/context";
 import type { ConsentType } from "@/generated/prisma/enums";
@@ -30,7 +32,11 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   });
   if (!member) notFound();
 
-  const history = member.private ? await getMemberHistory(ctx, id) : [];
+  const [history, fee] = await Promise.all([
+    member.private ? getMemberHistory(ctx, id) : Promise.resolve([]),
+    getMemberFee(ctx, id),
+  ]);
+  const feeOptions = fee?.canManage ? await memberFeeOptions(ctx, id) : null;
   const name = `${member.firstName} ${member.lastName}`;
   const consentRows = CONSENT_ORDER.map((type) => {
     const state = member.private?.consents.find((c) => c.type === type);
@@ -168,6 +174,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
         </div>
 
         <div className="grid content-start gap-6">
+          {fee && <MemberFeeCard memberId={id} memberName={name} info={fee} options={feeOptions} />}
           <Card>
             <CardHeader>
               <CardTitle role="heading" aria-level={2}>

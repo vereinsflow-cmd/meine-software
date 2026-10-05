@@ -15,5 +15,6 @@ Abweichungen von den üblichen Standardlösungen. Eine Entscheidung wird nicht g
 | 0008 | [UTF-8 überall (Windows-Falle bei der Datenbank)](0008-utf8-ueberall.md)                                      | gültig |
 | 0009 | [Vereinslogo: Rasterbild am Verein, geprüfte Route mit Mitgliedschaftsprüfung](0009-vereinslogo.md)           | gültig |
 | 0010 | [Kassenbuch: Kopf und Zeilen, nur hinzufügen, Storno, Abschluss](0010-finanzen-kassenbuch.md)                 | gültig |
+| 0011 | [Mitgliedsbeiträge: Regeln mit Verlauf, tagesgenau und exakt gerechnet](0011-mitgliedsbeitraege.md)           | gültig |
 
 Vorlage für neue Einträge: Titel, Status, Kontext, Entscheidung, Folgen (Vor- und Nachteile, was nun zu beachten ist).

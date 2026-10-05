@@ -220,6 +220,60 @@ enum LedgerEntryKind {
 }
 
 /// Lückenlose Nummernkreise je Verein (und meist je Jahr).
+/// Beitragsart: Grundbeitrag (nach Regeln: Status, Alter, Abteilung), Zusatzbeitrag einer Abteilung, Aufnahmegebühr,
+/// Familienbeitrag.
+enum FeeTypeKind {
+  BASE
+  ADDITIONAL
+  ADMISSION
+  FAMILY
+}
+
+/// Zeitraum, für den ein Beitragssatz gilt (bzw. der Beitragslauf rechnet).
+enum FeeInterval {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  ONCE
+}
+
+enum PaymentMethod {
+  TRANSFER
+  DIRECT_DEBIT
+  CASH
+}
+
+/// Feste Beitragsart, Befreiung, Ermäßigung in Prozent oder fester Betrag je Monat.
+enum FeeAssignmentKind {
+  ASSIGN
+  EXEMPT
+  DISCOUNT_PERCENT
+  FIXED_AMOUNT
+}
+
+/// Beitrag beim Eintritt: ab dem Tag, ab Monatsanfang, ab dem Folgemonat oder für den ganzen Zeitraum.
+enum ProRataEntry {
+  DAY
+  MONTH_START
+  NEXT_MONTH
+  NONE
+}
+
+/// Beitrag beim Austritt: bis zum Tag, bis Monatsende oder bis Ende des Zeitraums.
+enum ProRataExit {
+  DAY
+  MONTH_END
+  PERIOD_END
+}
+
+/// Alter für die Beitragsart: genau am Tag, zu Beginn des Zeitraums oder nach Jahrgang.
+enum AgeRule {
+  EXACT_DAY
+  PERIOD_START
+  CALENDAR_YEAR
+}
+
 /// Monatsabschluss bzw. Jahresabschluss (Dezember).
 enum PeriodCloseKind {
   MONTH
@@ -412,6 +466,11 @@ model Club {
   ledgerLines            LedgerLine[]
   ledgerAttachments      LedgerAttachment[]
   financePeriodCloses    FinancePeriodClose[]
+  memberStatusChanges    MemberStatusChange[]
+  feeTypes               FeeType[]
+  feeRates               FeeRate[]
+  memberFinances         MemberFinance[]
+  memberFeeAssignments   MemberFeeAssignment[]
   cashCounts             CashCount[]
   folders                DocumentFolder[]
   invitations            Invitation[]
@@ -556,6 +615,11 @@ model Member {
   membershipApplications MembershipApplication[]
   /// Buchungen, bei denen das Mitglied Zahler oder Empfänger war (Kassenbuch).
   ledgerEntries          LedgerEntry[]
+  statusChanges          MemberStatusChange[]
+  finance                MemberFinance?          @relation("MemberFinanceOf")
+  /// Mitglieder, für die dieses Mitglied zahlt.
+  paysFor                MemberFinance[]         @relation("MemberFinancePayer")
+  feeAssignments         MemberFeeAssignment[]
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -583,6 +647,7 @@ model Department {
   membershipApplications MembershipApplication[]
   /// Buchungszeilen, die dieser Abteilung zugeordnet sind (Töpfe, Auswertungen).
   ledgerLines            LedgerLine[]
+  feeTypes               FeeType[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1116,15 +1181,23 @@ model Invoice {
 
 /// Grundeinstellungen der Finanzen je Verein (1:1). Wird beim Einrichten des Kassenbuchs angelegt.
 model FinanceSettings {
-  id              String    @id @default(uuid(7))
-  clubId          String    @unique
+  id                      String       @id @default(uuid(7))
+  clubId                  String       @unique
   /// Ab diesem Tag führt der Verein das Kassenbuch in VereinsFlow; die Anfangsbestände tragen dieses Datum.
-  ledgerStartDate DateTime  @db.Date
+  ledgerStartDate         DateTime     @db.Date
   /// Bis einschließlich zu diesem Tag ist abgeschlossen (festgeschrieben). Nur der Monatsabschluss setzt es – und nur nach vorn.
-  closedThrough   DateTime? @db.Date
-  updatedById     String?
-  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+  closedThrough           DateTime?    @db.Date
+  /// Beiträge: Rhythmus des Beitragslaufs, Fälligkeit (Tag im ersten Monat), anteilige Berechnung, Altersregel.
+  feeInterval             FeeInterval  @default(QUARTERLY)
+  dueDay                  Int          @default(15)
+  proRataEntry            ProRataEntry @default(DAY)
+  proRataExit             ProRataExit  @default(DAY)
+  ageRule                 AgeRule      @default(EXACT_DAY)
+  missingBirthDateAsAdult Boolean      @default(true)
+  minDebitCents           Int          @default(500)
+  updatedById             String?
+  createdAt               DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime     @updatedAt @db.Timestamptz(3)
 
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
@@ -1172,8 +1245,9 @@ model FinanceCategory {
   createdAt  DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
 
-  club  Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  lines LedgerLine[]
+  club     Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  lines    LedgerLine[]
+  feeTypes FeeType[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1406,4 +1480,120 @@ model CashCount {
   @@unique([clubId, id])
   @@unique([clubId, entryId])
   @@index([clubId, accountId, countedOn])
+}
+
+/// Status-Verlauf eines Mitglieds (für Beiträge tageweise richtig). Schreibt die Datenbank selbst bei jeder Anlage und
+/// Statusänderung (Trigger Member_status_history); Einträge werden nicht geändert.
+model MemberStatusChange {
+  id        String       @id @default(uuid(7))
+  clubId    String
+  memberId  String
+  status    MemberStatus
+  validFrom DateTime     @db.Date
+  /// Zeitpunkt der Erfassung auf die Mikrosekunde (legt die Reihenfolge fest; JavaScript sieht nur Millisekunden).
+  createdAt DateTime     @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(6)
+
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@index([clubId, memberId, validFrom])
+}
+
+/// Beitragsart mit ihren Regeln; die Beträge stehen als Sätze mit „gilt ab“ in FeeRate.
+model FeeType {
+  id               String         @id @default(uuid(7))
+  clubId           String
+  name             String
+  kind             FeeTypeKind
+  /// Kategorie im Kassenbuch für Zahlungen (leer = „Mitgliedsbeiträge“).
+  categoryId       String?
+  /// Grundbeitrag: nur für Mitglieder dieser Abteilung; Zusatzbeitrag: Beitrag der Abteilung.
+  departmentId     String?
+  /// Für welche Status (leer = aktiv, passiv, gesperrt).
+  statuses         MemberStatus[] @default([])
+  minAge           Int?
+  maxAge           Int?
+  familyMinMembers Int?
+  /// Grundbeiträge werden in dieser Reihenfolge geprüft (eindeutig, kleiner zuerst).
+  priority         Int            @default(100)
+  description      String?
+  archivedAt       DateTime?      @db.Timestamptz(3)
+  createdAt        DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @db.Timestamptz(3)
+
+  club        Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  category    FinanceCategory?      @relation(fields: [clubId, categoryId], references: [clubId, id], onDelete: Restrict)
+  department  Department?           @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
+  rates       FeeRate[]
+  assignments MemberFeeAssignment[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, name])
+}
+
+/// Beitragssatz ab einem Tag. Nicht änderbar; löschen nur, solange er noch nicht gilt.
+model FeeRate {
+  id          String      @id @default(uuid(7))
+  clubId      String
+  feeTypeId   String
+  validFrom   DateTime    @db.Date
+  amountCents Int
+  interval    FeeInterval
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  createdById String?
+
+  club    Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  feeType FeeType @relation(fields: [clubId, feeTypeId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@unique([clubId, feeTypeId, validFrom])
+}
+
+/// Beitragsangaben eines Mitglieds: wer zahlt (z. B. ein Elternteil) und wie.
+model MemberFinance {
+  id            String        @id @default(uuid(7))
+  clubId        String
+  memberId      String
+  payerMemberId String?
+  paymentMethod PaymentMethod @default(TRANSFER)
+  note          String?
+  updatedById   String?
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
+
+  club   Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  member Member  @relation("MemberFinanceOf", fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  payer  Member? @relation("MemberFinancePayer", fields: [clubId, payerMemberId], references: [clubId, id], onDelete: Restrict)
+
+  @@unique([clubId, id])
+  @@unique([clubId, memberId])
+  @@index([clubId, payerMemberId])
+}
+
+/// Feste Beitragsart, Befreiung, Ermäßigung oder fester Betrag – mit Zeitraum und Grund. Je Tag höchstens eine feste
+/// Beitragsart und eine andere Regel (Ausschlussbedingung in der Datenbank).
+model MemberFeeAssignment {
+  id          String            @id @default(uuid(7))
+  clubId      String
+  memberId    String
+  kind        FeeAssignmentKind
+  feeTypeId   String?
+  /// Ermäßigung in Basispunkten (5000 = 50 %).
+  percentBp   Int?
+  /// Fester Betrag je Monat in Cent.
+  amountCents Int?
+  validFrom   DateTime          @db.Date
+  validTo     DateTime?         @db.Date
+  reason      String?
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  createdById String?
+  endedById   String?
+
+  club    Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  member  Member   @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  feeType FeeType? @relation(fields: [clubId, feeTypeId], references: [clubId, id], onDelete: Restrict)
+
+  @@unique([clubId, id])
+  @@index([clubId, memberId, validFrom])
 }

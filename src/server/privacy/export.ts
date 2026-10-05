@@ -83,6 +83,18 @@ export async function buildUserDataExport(
             orderBy: [{ year: "asc" }, { number: "asc" }],
             take: LIMIT,
           },
+          finance: {
+            select: {
+              paymentMethod: true,
+              note: true,
+              payer: { select: { firstName: true, lastName: true } },
+            },
+          },
+          paysFor: { select: { member: { select: { firstName: true, lastName: true } } } },
+          feeAssignments: {
+            include: { feeType: { select: { name: true } } },
+            orderBy: { validFrom: "asc" },
+          },
           shiftAssignments: {
             include: {
               shift: {
@@ -317,6 +329,23 @@ export async function buildUserDataExport(
               text: e.description,
               art: e.kind,
             })),
+            beitragseinstellungen: {
+              zahlweg: member.finance?.paymentMethod ?? null,
+              zahler: member.finance?.payer
+                ? `${member.finance.payer.firstName} ${member.finance.payer.lastName}`
+                : null,
+              notiz: member.finance?.note ?? null,
+              zahltFuer: member.paysFor.map((f) => `${f.member.firstName} ${f.member.lastName}`),
+              regeln: member.feeAssignments.map((a) => ({
+                art: a.kind,
+                beitragsart: a.feeType?.name ?? null,
+                prozent: a.percentBp === null ? null : a.percentBp / 100,
+                betragCentJeMonat: a.amountCents,
+                ab: day(a.validFrom),
+                bis: day(a.validTo),
+                grund: a.reason,
+              })),
+            },
             aufgaben: member.assignedTasks.map((t) => ({
               titel: t.title,
               status: t.status,

@@ -582,6 +582,33 @@ export const FAQ: readonly FaqSection[] = [
         keywords: "beleg quittung kassenbon rechnung foto eigenbeleg aufbewahrung nachreichen",
       },
       {
+        id: "beitraege-einrichten",
+        question: "Wie lege ich unsere Beitragsordnung an?",
+        steps: [
+          "Öffne „Finanzen“ → „Beiträge“ → „Beitragsarten“ und klicke auf „Beitragsart anlegen“.",
+          "Gib Name, für wen sie gilt (Status, Alter, auf Wunsch eine Abteilung) und den Betrag mit „gilt ab“ an – zum Beispiel „Jugend bis 17 Jahre“, 6,00 € im Monat.",
+          "Grundbeiträge werden von oben nach unten geprüft; die erste passende gilt. Die Reihenfolge änderst du über „⋯“ → „Früher prüfen“.",
+        ],
+        tip: "Wird ein Beitrag teurer, lege über „⋯“ → „Neuer Betrag ab …“ den neuen Betrag an – frühere Zeiträume bleiben, wie sie waren. Ehrenmitglieder ohne eigene Beitragsart sind beitragsfrei.",
+        link: { href: "/finanzen/beitraege/arten", label: "Zu den Beitragsarten" },
+        keywords:
+          "beitrag beitragsordnung beitragsart jugend erwachsene passiv aufnahmegebühr betrag",
+      },
+      {
+        id: "beitrag-mitglied",
+        question:
+          "Ein Mitglied zahlt weniger, gar nichts oder die Eltern zahlen – wo stelle ich das ein?",
+        steps: [
+          "Öffne das Mitglied. Die Karte „Beitrag“ zeigt den Betrag im laufenden Zeitraum und warum.",
+          "„Ermäßigung oder Befreiung“: z. B. 50 % für Übungsleiter, beitragsfrei bei Härtefall, ein fester Betrag oder eine feste Beitragsart – jeweils ab einem Tag und mit Grund.",
+          "„Zahler und Zahlweg“: wer bezahlt (z. B. ein Elternteil, das selbst Mitglied ist) und ob per Überweisung, Lastschrift oder bar.",
+        ],
+        tip: "Unter „Beiträge“ → „Wer zahlt was“ siehst du alle Mitglieder mit Betrag und Hinweisen, etwa wenn ein Geburtsdatum fehlt.",
+        link: { href: "/finanzen/beitraege", label: "Wer zahlt was" },
+        keywords:
+          "ermäßigung befreiung beitragsfrei übungsleiter eltern zahler lastschrift überweisung",
+      },
+      {
         id: "monatsabschluss",
         question: "Was ist der Monatsabschluss und wann mache ich ihn?",
         steps: [

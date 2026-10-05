@@ -14,6 +14,7 @@ import {
 } from "./ledger";
 import { overdueClose } from "./closing";
 import { monthLabel } from "./ledger-format";
+import { whoPays } from "@/modules/fees/service";
 import { getOpenPayments, unbookedPaidInvoiceCount, type OpenPayments } from "./service";
 
 /**
@@ -184,11 +185,38 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
   assertFinance(ctx, "finance:read");
   const canManage = canFinance(ctx, "finance:manage");
   const thisYear = todayCalendarDate().getUTCFullYear();
-  const [setup, payments] = await Promise.all([
+  const [setup, payments, fees] = await Promise.all([
     getLedgerSetup(ctx),
     getOpenPayments(ctx, { limit: 20 }),
+    whoPays(ctx),
   ]);
   const due: DueItem[] = invoiceItems(payments, canManage);
+  // Beiträge: Hinweise der Vorschau (ohne Geburtsdatum, keine passende Beitragsart …), bevor Geld angefordert wird.
+  // Nur, was sich beheben lässt (ein Geburtstag im Zeitraum ist bloß ein Hinweis, keine Aufgabe).
+  const actionable = new Set([
+    "NO_BIRTH_DATE",
+    "NO_BIRTH_DATE_SKIPPED",
+    "NO_FEE_TYPE",
+    "NO_JOIN_DATE",
+    "LEFT_WITHOUT_DATE",
+    "PAYER_NOT_MEMBER",
+  ]);
+  const feeWarnings = new Set(
+    fees.warnings.filter((w) => actionable.has(w.code)).map((w) => w.memberId),
+  ).size;
+  if (fees.feeTypeCount > 0 && feeWarnings > 0)
+    due.push({
+      key: "fee-warnings",
+      urgency: 35,
+      title:
+        feeWarnings === 1
+          ? "Beiträge: 1 Mitglied prüfen"
+          : `Beiträge: ${feeWarnings} Mitglieder prüfen`,
+      detail: "Zum Beispiel fehlt ein Geburtsdatum oder es passt keine Beitragsart.",
+      tone: "warning",
+      href: "/finanzen/beitraege",
+      actionLabel: "Hinweise ansehen",
+    });
 
   if (!setup) {
     due.push({
