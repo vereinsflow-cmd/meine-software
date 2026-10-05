@@ -22,6 +22,14 @@ sich in einem Satz erklären lassen, und frühere Zeiträume dürfen sich durch 
 - **Zahler und Zahlweg** (`MemberFinance`): Der Zahlweg des Zahlers gilt; keine Ketten (Trigger).
 - **Status-Verlauf** (`MemberStatusChange`): schreibt die Datenbank selbst bei Anlage und jedem Statuswechsel
   (Trigger `Member_status_history`), egal über welchen Weg (Formular, Import, Antrag, Anonymisierung).
+- **Familien** (`FeeFamily`, `FeeFamilyMember`, Etappe 6): feste Gruppen, die der Kassenwart pflegt (keine Regel „wer
+  wohnt zusammen“). Mitglieder mit Zeitraum (ab/bis), je Mitglied und Tag höchstens eine Familie (Ausschlussbedingung);
+  austragen statt löschen (Trigger `fee_family_member_guard`). An jedem Tag, an dem mindestens so viele
+  Familienmitglieder einen Grundbeitrag zahlen würden, wie der Familienbeitrag verlangt (`familyMinMembers`), zahlt die
+  Familie einmal den Familienbeitrag statt dieser Grundbeiträge – sonst jedes einzeln. Zusatzbeiträge bleiben beim
+  Mitglied. Der Zahler der Familie zahlt auch die übrigen Beiträge ihrer Mitglieder, solange beim Mitglied kein anderer
+  Zahler eingestellt ist; er hat selbst keinen abweichenden Zahler (Trigger, gleiche Sperre wie bei „Zahler und
+  Zahlweg“). Eltern, die nicht Mitglied sind, kommen mit der Lastschrift (Kontoinhaber im Mandat, Etappe 11).
 - **Rechenkern rein und exakt** (`src/modules/fees/engine.ts`): Tag für Tag Status, Alter und Regel bestimmen, daraus
   Abschnitte bilden, je Monat anteilig (Tage/Monatstage) mit Brüchen rechnen, erst am Ende kaufmännisch runden und die
   Cent auf die Zeilen verteilen (größter Rest). Jede Zeile und jeder Betrag hat einen erklärenden Satz.
@@ -40,3 +48,12 @@ sich in einem Satz erklären lassen, und frühere Zeiträume dürfen sich durch 
   Zuordnung weg – im laufenden Zeitraum entfällt der Zusatzbeitrag dann ganz. Abgerechnete Zeiträume hält der Beitragslauf
   fest (Etappe 7); ein Ende je Abteilung kommt bei Bedarf dazu.
 - Eine Beitragsart gilt erst mit ihrem ersten Betrag; bis dahin greift die nächste passende.
+- Familien: Ob der Familienbeitrag gilt, hängt von allen Mitgliedern ab – die Karte „Beitrag“ eines Mitglieds rechnet
+  deshalb mit der ganzen Familie. Ein Familienbeitrag kann teurer sein als die Einzelbeiträge; das entscheidet der Verein
+  mit seiner Beitragsordnung, nicht die Software. Name, Familienbeitrag und Zahler einer Familie lassen sich ändern und
+  wirken auf die Vorschau aller noch nicht abgerechneten Zeiträume; abgerechnete hält der Beitragslauf fest.
+- Familien: Wer an einem Tag nichts zahlen würde (beitragsfrei, Ehrenmitglied, 100 % ermäßigt), zählt nicht mit. Der Zahler
+  der Familie zahlt die übrigen Beiträge eines Mitglieds nur, wenn es am letzten Beitragstag des Zeitraums noch in der
+  Familie ist. Auflösen zu einem künftigen Tag lässt die Familie bis dahin laufen; „aufgelöst“ ist sie danach. Beginnt oder
+  endet der Familienbeitrag am Geburtstag eines Familienmitglieds, steht auch dort nur „Geburtstag im November“. Sind alle
+  anonymisiert, heißt die Familie „Familie (anonymisiert)“ und ihre Einträge im Änderungsprotokoll werden geleert.

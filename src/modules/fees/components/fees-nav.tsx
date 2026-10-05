@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 const FEES_TABS = [
   { href: "/finanzen/beitraege", label: "Wer zahlt was", exact: true },
   { href: "/finanzen/beitraege/arten", label: "Beitragsarten" },
+  { href: "/finanzen/beitraege/familien", label: "Familien" },
 ] as const;
 
-/** Unterbereiche der Beiträge (weitere folgen: Familien, Beitragslauf, offene Beiträge). */
+/** Unterbereiche der Beiträge (weitere folgen: Beitragslauf, offene Beiträge). */
 export function FeesNav() {
   const pathname = usePathname();
   return (

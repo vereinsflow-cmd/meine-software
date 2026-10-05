@@ -58,6 +58,37 @@ test.describe("Beiträge – Kassenwart", () => {
   });
 });
 
+test.describe("Familien – Kassenwart", () => {
+  test("Familie Krüger steht als eine Zeile da, Zahler Sophie", async ({ page }) => {
+    await login(page, USERS.vorstand);
+    await open(page, "/finanzen/beitraege");
+    const row = page.getByRole("row").filter({ hasText: "Familie Krüger" });
+    await expect(row).toContainText(/Familienbeitrag für Sophie und Lena/);
+    await expect(row).toContainText("zahlt: Sophie Krüger");
+    await expect(page.getByRole("row").filter({ hasText: /^Lena Krüger/ })).toHaveCount(0);
+  });
+
+  test("Familie anlegen: die Koch-Brüder zahlen zusammen, Ben Koch zahlt", async ({ page }) => {
+    await login(page, USERS.vorstand);
+    await open(page, "/finanzen/beitraege/familien");
+    await expect(page.getByRole("heading", { name: "Familie Krüger" })).toBeVisible();
+    await page.getByRole("button", { name: "Familie anlegen" }).click();
+    const dialog = page.getByRole("dialog", { name: "Familie anlegen" });
+    await dialog.getByLabel("Mitglied hinzufügen").selectOption({ label: "Koch, Lukas" });
+    await dialog.getByLabel("Mitglied hinzufügen").selectOption({ label: "Koch, Paul" });
+    // Name aus dem ersten Mitglied vorgeschlagen.
+    await expect(dialog.getByLabel("Name")).toHaveValue("Familie Koch");
+    await dialog.getByLabel("Wer zahlt?").selectOption({ label: "Koch, Ben" });
+    await dialog.getByRole("button", { name: "Familie anlegen" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Familie Koch" })).toBeVisible();
+    await open(page, "/finanzen/beitraege");
+    const row = page.getByRole("row").filter({ hasText: "Familie Koch" });
+    await expect(row).toContainText("zahlt: Ben Koch");
+    await expect(row).toContainText(/Familienbeitrag für Lukas und Paul/);
+  });
+});
+
 test.describe("Beiträge – ohne Finanzrecht", () => {
   test("Mitglied sieht weder Beiträge noch die Karte „Beitrag“", async ({ page }) => {
     await login(page, USERS.mitglied);

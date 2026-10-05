@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useWatch } from "react-hook-form";
+import { useWatch, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
 import { ArrowDownIcon, ArrowUpIcon, EllipsisIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import {
   feeRateSchema,
   feeTypeCreateSchema,
   feeTypeUpdateSchema,
+  kindWithoutRules,
   MEMBER_STATUSES,
   type FeeTypeCreateInput,
 } from "../schemas";
@@ -97,6 +98,21 @@ function StatusChoice({
   );
 }
 
+/** Familienbeitrag: ab wie vielen zahlenden Familienmitgliedern er statt der einzelnen Grundbeiträge gilt. */
+function FamilyMinField<T extends FieldValues>({ form }: { form: UseFormReturn<T> }) {
+  return (
+    <TextField
+      form={form}
+      name={"familyMinMembers" as Path<T>}
+      label="Gilt ab wie vielen Mitgliedern?"
+      inputMode="numeric"
+      required
+      inputClassName="sm:max-w-24"
+      hint="Sobald so viele Familienmitglieder einen Grundbeitrag zahlen würden, zahlt die Familie stattdessen diesen Betrag – sonst jedes einzeln."
+    />
+  );
+}
+
 /** „Beitragsart anlegen“: Art, Name, für wen (Status, Alter, Abteilung), erster Betrag ab einem Tag. */
 export function CreateFeeTypeDialog({
   departments,
@@ -144,6 +160,7 @@ function CreateFeeTypeForm({
     statuses: [],
     minAge: "",
     maxAge: "",
+    familyMinMembers: "3",
     description: "",
     amount: "",
     interval: "MONTHLY",
@@ -161,16 +178,18 @@ function CreateFeeTypeForm({
   });
   const kind = useWatch({ control: form.control, name: "kind" });
   const statuses = useWatch({ control: form.control, name: "statuses" }) ?? [];
+  const noRules = kindWithoutRules(kind);
   // Aufnahmegebühr ist einmalig; bei den anderen Arten gibt es „einmalig“ nicht.
   useEffect(() => {
-    if (kind === "ADMISSION") {
+    if (kindWithoutRules(kind)) {
       // Ausgeblendete Felder leeren – sonst würden sie unsichtbar mitgespeichert.
-      form.setValue("interval", "ONCE");
       form.setValue("departmentId", "");
       form.setValue("statuses", []);
       form.setValue("minAge", "");
       form.setValue("maxAge", "");
-    } else if (form.getValues("interval") === "ONCE") form.setValue("interval", "MONTHLY");
+    }
+    if (kind === "ADMISSION") form.setValue("interval", "ONCE");
+    else if (form.getValues("interval") === "ONCE") form.setValue("interval", "MONTHLY");
   }, [form, kind]);
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
@@ -181,8 +200,15 @@ function CreateFeeTypeForm({
         options={FEE_KINDS.map((value) => ({ value, label: FEE_KIND_LABEL[value] }))}
         required
       />
-      <TextField form={form} name="name" label="Name" required placeholder="z. B. Erwachsene" />
-      {kind !== "ADMISSION" && (
+      <TextField
+        form={form}
+        name="name"
+        label="Name"
+        required
+        placeholder={kind === "FAMILY" ? "z. B. Familienbeitrag" : "z. B. Erwachsene"}
+      />
+      {kind === "FAMILY" && <FamilyMinField form={form} />}
+      {!noRules && (
         <>
           <StatusChoice
             value={statuses}
@@ -194,7 +220,7 @@ function CreateFeeTypeForm({
           </div>
         </>
       )}
-      {kind !== "ADMISSION" && (
+      {!noRules && (
         <SelectField
           form={form}
           name="departmentId"
@@ -246,6 +272,7 @@ export interface FeeTypeRow {
   statuses: string[];
   minAge: number | null;
   maxAge: number | null;
+  familyMinMembers: number | null;
   description: string | null;
   archived: boolean;
   /** Sätze, die sich zurücknehmen lassen (noch nicht gültig oder heute eingegeben, und nicht der einzige). */
@@ -404,6 +431,7 @@ function EditFeeTypeForm({
       statuses: type.statuses as (typeof MEMBER_STATUSES)[number][],
       minAge: type.minAge === null ? "" : String(type.minAge),
       maxAge: type.maxAge === null ? "" : String(type.maxAge),
+      familyMinMembers: type.familyMinMembers === null ? "" : String(type.familyMinMembers),
       description: type.description ?? "",
     },
     action: updateFeeTypeAction,
@@ -417,7 +445,8 @@ function EditFeeTypeForm({
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <TextField form={form} name="name" label="Name" required />
-      {type.kind !== "ADMISSION" && (
+      {type.kind === "FAMILY" && <FamilyMinField form={form} />}
+      {!kindWithoutRules(type.kind) && (
         <>
           <StatusChoice
             value={statuses}

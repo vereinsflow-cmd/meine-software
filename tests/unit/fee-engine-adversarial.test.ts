@@ -1748,10 +1748,18 @@ describe("Gegenprobe: Überspringen und Hinweise", () => {
 
 describe("Gegenprobe: Reihenfolge, Determinismus, leere Eingabe", () => {
   it("leere Eingabe", () => {
-    expect(run([])).toEqual({ charges: [], exempt: [], skipped: [], warnings: [], totalCents: 0 });
+    expect(run([])).toEqual({
+      charges: [],
+      exempt: [],
+      covered: [],
+      skipped: [],
+      warnings: [],
+      totalCents: 0,
+    });
     expect(run([], { feeTypes: [] })).toEqual({
       charges: [],
       exempt: [],
+      covered: [],
       skipped: [],
       warnings: [],
       totalCents: 0,

@@ -37,11 +37,14 @@ type Option = { value: string; label: string };
 export function MemberFinanceDialog({
   memberId,
   memberName,
+  familyPayerName,
   defaults,
   payers,
 }: {
   memberId: string;
   memberName: string;
+  /** In einer Familie: ihr Zahler – ohne andere Wahl zahlt er auch die übrigen Beiträge. */
+  familyPayerName: string | null;
   defaults: {
     payerMemberId: string;
     paymentMethod: (typeof PAYMENT_METHODS)[number];
@@ -67,6 +70,7 @@ export function MemberFinanceDialog({
         </DialogHeader>
         <MemberFinanceForm
           memberId={memberId}
+          familyPayerName={familyPayerName}
           defaults={defaults}
           payers={payers}
           onDone={() => setOpen(false)}
@@ -78,11 +82,13 @@ export function MemberFinanceDialog({
 
 function MemberFinanceForm({
   memberId,
+  familyPayerName,
   defaults,
   payers,
   onDone,
 }: {
   memberId: string;
+  familyPayerName: string | null;
   defaults: {
     payerMemberId: string;
     paymentMethod: (typeof PAYMENT_METHODS)[number];
@@ -108,7 +114,14 @@ function MemberFinanceForm({
         form={form}
         name="payerMemberId"
         label="Wer zahlt?"
-        placeholder="Das Mitglied selbst"
+        placeholder={
+          familyPayerName ? `Der Zahler der Familie (${familyPayerName})` : "Das Mitglied selbst"
+        }
+        hint={
+          familyPayerName
+            ? "In einer Familie zahlt ohne andere Wahl deren Zahler auch die übrigen Beiträge."
+            : undefined
+        }
         options={payers}
       />
       <SelectField

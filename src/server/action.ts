@@ -53,6 +53,7 @@ const FINANCE_CODES = [
   "FEE_RATE_LOCKED",
   "FEE_HISTORY_LOCKED",
   "PAYER_CHAIN",
+  "FAMILY_TYPE",
 ] as const;
 const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"]+)`);
 
@@ -65,6 +66,10 @@ export function mapDatabaseError(error: unknown): AppError | null {
     return conflict("Die Änderung kollidierte mit einer anderen. Bitte versuche es erneut.");
   if (text.includes("MemberFeeAssignment_no_overlap"))
     return conflict("Für diesen Zeitraum gibt es schon eine solche Regel – beende sie zuerst.");
+  if (text.includes("FeeFamilyMember_no_overlap"))
+    return conflict(
+      "Das Mitglied ist in diesem Zeitraum schon in einer Familie – trage es dort zuerst aus.",
+    );
   if (text.includes("FeeType_one_priority_per_base"))
     return conflict("Die Reihenfolge hat sich gerade geändert. Bitte versuche es erneut.");
   if (text.includes("SHIFT_FULL")) return conflict("Diese Schicht ist bereits voll besetzt.");

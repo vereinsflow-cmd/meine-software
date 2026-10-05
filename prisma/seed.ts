@@ -827,6 +827,65 @@ async function main() {
     },
   });
 
+  // Familie Krüger zahlt den Familienbeitrag statt zweier Grundbeiträge (15 € statt 12 € + 6 €), Sophie per Lastschrift.
+  // Für die Koch-Brüder Lukas und Paul zahlt Ben Koch.
+  const familyType = await prisma.feeType.create({
+    data: { clubId: club.id, name: "Familienbeitrag", kind: "FAMILY", familyMinMembers: 2 },
+  });
+  await prisma.feeRate.create({
+    data: {
+      clubId: club.id,
+      feeTypeId: familyType.id,
+      validFrom: feeStart,
+      amountCents: 1_500,
+      interval: "MONTHLY",
+      createdById: accounts.vorstand!.userId,
+    },
+  });
+  const memberNamed = (firstName: string, lastName: string) =>
+    prisma.member.findFirst({
+      where: { clubId: club.id, firstName, lastName },
+      select: { id: true },
+    });
+  const sophie = await memberNamed("Sophie", "Krüger");
+  const lena = await memberNamed("Lena", "Krüger");
+  if (sophie && lena) {
+    await prisma.memberFinance.create({
+      data: { clubId: club.id, memberId: sophie.id, paymentMethod: "DIRECT_DEBIT" },
+    });
+    const family = await prisma.feeFamily.create({
+      data: {
+        clubId: club.id,
+        name: "Familie Krüger",
+        feeTypeId: familyType.id,
+        payerMemberId: sophie.id,
+        createdById: accounts.vorstand!.userId,
+      },
+    });
+    await prisma.feeFamilyMember.createMany({
+      data: [sophie, lena].map((m) => ({
+        clubId: club.id,
+        familyId: family.id,
+        memberId: m.id,
+        validFrom: feeStart,
+        createdById: accounts.vorstand!.userId,
+      })),
+    });
+  }
+  const benKoch = await memberNamed("Ben", "Koch");
+  if (benKoch) {
+    await prisma.memberFinance.create({
+      data: { clubId: club.id, memberId: benKoch.id, paymentMethod: "DIRECT_DEBIT" },
+    });
+    for (const first of ["Lukas", "Paul"]) {
+      const child = await memberNamed(first, "Koch");
+      if (child)
+        await prisma.memberFinance.create({
+          data: { clubId: club.id, memberId: child.id, payerMemberId: benKoch.id },
+        });
+    }
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Nachrichten und Benachrichtigungen
   // ---------------------------------------------------------------------------------------------

@@ -471,6 +471,8 @@ model Club {
   feeRates               FeeRate[]
   memberFinances         MemberFinance[]
   memberFeeAssignments   MemberFeeAssignment[]
+  feeFamilies            FeeFamily[]
+  feeFamilyMembers       FeeFamilyMember[]
   cashCounts             CashCount[]
   folders                DocumentFolder[]
   invitations            Invitation[]
@@ -620,6 +622,10 @@ model Member {
   /// Mitglieder, für die dieses Mitglied zahlt.
   paysFor                MemberFinance[]         @relation("MemberFinancePayer")
   feeAssignments         MemberFeeAssignment[]
+  /// Familien, in denen das Mitglied ist bzw. war (Familienbeitrag).
+  feeFamilies            FeeFamilyMember[]
+  /// Familien, für die dieses Mitglied zahlt.
+  paysForFamilies        FeeFamily[]             @relation("FeeFamilyPayer")
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -1527,6 +1533,7 @@ model FeeType {
   department  Department?           @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
   rates       FeeRate[]
   assignments MemberFeeAssignment[]
+  families    FeeFamily[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1573,6 +1580,49 @@ model MemberFinance {
 
 /// Feste Beitragsart, Befreiung, Ermäßigung oder fester Betrag – mit Zeitraum und Grund. Je Tag höchstens eine feste
 /// Beitragsart und eine andere Regel (Ausschlussbedingung in der Datenbank).
+/// Familie für den Familienbeitrag (Etappe 6): feste Gruppe, die der Kassenwart pflegt. Statt der Grundbeiträge ihrer
+/// Mitglieder zahlt sie den Familienbeitrag (`feeTypeId`, Art FAMILY) – an den Zahler. Aufgelöst: `archivedAt`.
+model FeeFamily {
+  id            String    @id @default(uuid(7))
+  clubId        String
+  name          String
+  feeTypeId     String
+  payerMemberId String
+  archivedAt    DateTime? @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  createdById   String?
+
+  club    Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  feeType FeeType           @relation(fields: [clubId, feeTypeId], references: [clubId, id], onDelete: NoAction)
+  payer   Member            @relation("FeeFamilyPayer", fields: [clubId, payerMemberId], references: [clubId, id], onDelete: NoAction)
+  members FeeFamilyMember[]
+
+  @@unique([clubId, id])
+  @@index([clubId, payerMemberId])
+}
+
+/// Mitglied einer Familie von … bis … (einschließlich; offen = noch dabei). Je Mitglied und Tag höchstens eine Familie.
+model FeeFamilyMember {
+  id          String    @id @default(uuid(7))
+  clubId      String
+  familyId    String
+  memberId    String
+  validFrom   DateTime  @db.Date
+  validTo     DateTime? @db.Date
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  createdById String?
+  endedById   String?
+
+  club   Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  family FeeFamily @relation(fields: [clubId, familyId], references: [clubId, id], onDelete: NoAction)
+  member Member    @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([clubId, id])
+  @@index([clubId, familyId])
+  @@index([clubId, memberId, validFrom])
+}
+
 model MemberFeeAssignment {
   id          String            @id @default(uuid(7))
   clubId      String

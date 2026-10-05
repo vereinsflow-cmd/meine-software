@@ -95,6 +95,19 @@ export async function buildUserDataExport(
             include: { feeType: { select: { name: true } } },
             orderBy: { validFrom: "asc" },
           },
+          feeFamilies: {
+            include: { family: { select: { name: true } } },
+            orderBy: { validFrom: "asc" },
+          },
+          paysForFamilies: {
+            select: {
+              name: true,
+              members: {
+                select: { member: { select: { firstName: true, lastName: true } } },
+                orderBy: { validFrom: "asc" },
+              },
+            },
+          },
           shiftAssignments: {
             include: {
               shift: {
@@ -336,6 +349,17 @@ export async function buildUserDataExport(
                 : null,
               notiz: member.finance?.note ?? null,
               zahltFuer: member.paysFor.map((f) => `${f.member.firstName} ${f.member.lastName}`),
+              familien: member.feeFamilies.map((f) => ({
+                familie: f.family.name,
+                ab: day(f.validFrom),
+                bis: day(f.validTo),
+              })),
+              zahltFuerFamilien: member.paysForFamilies.map((f) => ({
+                familie: f.name,
+                mitglieder: [
+                  ...new Set(f.members.map((m) => `${m.member.firstName} ${m.member.lastName}`)),
+                ],
+              })),
               regeln: member.feeAssignments.map((a) => ({
                 art: a.kind,
                 beitragsart: a.feeType?.name ?? null,

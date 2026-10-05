@@ -76,6 +76,8 @@ export const MODEL_SCOPE = {
   FeeRate: "tenant",
   MemberFinance: "tenant",
   MemberFeeAssignment: "tenant",
+  FeeFamily: "tenant",
+  FeeFamilyMember: "tenant",
   SupportTicket: "tenant",
   CalendarFeedToken: "tenant",
   AuditLog: "tenant",

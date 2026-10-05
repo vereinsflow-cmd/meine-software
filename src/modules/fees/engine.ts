@@ -16,7 +16,9 @@ import {
 import type {
   ChargeLinePreview,
   ChargePreview,
+  CoveredPreview,
   EngineAssignment,
+  EngineFamily,
   EngineFeeType,
   EngineInput,
   EngineMember,
@@ -237,9 +239,12 @@ interface FeeDay {
 }
 
 interface FreeDay {
-  kind: "exempt" | "none";
-  /** Für „beitragsfrei“ bzw. „nicht berechnet“. */
+  /** „family“: Der Familienbeitrag deckt den Grundbeitrag des Tages ab. */
+  kind: "exempt" | "none" | "family";
+  /** Für „beitragsfrei“ bzw. „nicht berechnet“ (bei „family“ der Name der Familie). */
   reason: string;
+  /** Nur bei „family“. */
+  familyId?: string;
   /** Für den Erklärungssatz. */
   label: string;
   phase: string;
@@ -265,7 +270,25 @@ interface DraftLine {
 type MemberResult =
   | { kind: "charge"; charge: ChargePreview }
   | { kind: "exempt"; exempt: ExemptPreview }
+  | { kind: "covered"; covered: CoveredPreview }
   | { kind: "skipped"; reason: string };
+
+/** Ergebnis von Schritt 1 und 2: die Beitragstage eines Mitglieds, bevor Familien und Abschnitte dazukommen. */
+interface MemberDays {
+  member: EngineMember;
+  /** Erster und letzter Beitragstag im Zeitraum. */
+  ws: DayNo;
+  we: DayNo;
+  joinDay: DayNo | null;
+  leftDay: DayNo | null;
+  /** Grundbeitrag je Tag ab `ws` (der Familienschritt ersetzt Tage durch „family“). */
+  baseDays: BaseDay[];
+  extraDays: Map<string, (ExtraDay | null)[]>;
+  exemptCounts: Map<string, number>;
+  noneCounts: Map<string, number>;
+  /** Tag, an dem die Altersgrenze wechselt (nur „genau ab dem Geburtstag“) – dort steht im Text nur der Monat. */
+  ageDay: DayNo | null;
+}
 
 interface Run<T> {
   from: DayNo;
@@ -320,13 +343,20 @@ interface RunContext {
   ageMatters: boolean;
   membersById: Map<string, EngineMember>;
   payerNames: Record<string, string>;
+  /** Familien nach Mitglied (für den Zahler der übrigen Beiträge). */
+  familiesByMember: Map<string, { family: EngineFamily; from: DayNo; to: DayNo }[]>;
+  /** Je Mitglied bzw. Familie die Tage, die nur als Monat erscheinen (Geburtstage, siehe `dayTexts`). */
+  maskedDays: Map<string, Set<DayNo>>;
 }
 
-function calculateMember(
+type Warn = (code: WarningCode, text: string, familyId?: string) => void;
+
+/** Schritt 1 und 2 für ein Mitglied: Beitragstage und Grundbeitrag je Tag (oder warum es nicht berechnet wird). */
+function memberDays(
   member: EngineMember,
   ctx: RunContext,
-  warn: (code: WarningCode, text: string) => void,
-): MemberResult {
+  warn: Warn,
+): MemberDays | { kind: "skipped"; reason: string } {
   const { settings, catalog, periodStart, periodEnd } = ctx;
   const name = member.name;
 
@@ -719,24 +749,77 @@ function calculateMember(
         : `im ${monthName(ageChange.day)} liegt eine Altersgrenze.`;
     warn("AGE_LIMIT_IN_PERIOD", `Bei ${name} wechselt im Zeitraum das Alter – ${changed}`);
   }
-  // Nur beim Alter „genau ab dem Geburtstag“ fällt eine Grenze auf den Geburtstag (nach Jahrgang ist es der 01.01.).
-  const ageDay = ctx.settings.ageRule === "EXACT_DAY" ? (ageChange?.day ?? null) : null;
-  /** Anfang bzw. Ende eines Abschnitts als Text – fällt er auf den Geburtstag, nur der Monat. */
-  const fromText = (day: DayNo) =>
-    day === ageDay ? `ab Geburtstag im ${monthName(day)}` : dayMonth(day);
-  const toText = (day: DayNo) =>
-    ageDay !== null && day + 1 === ageDay
-      ? `bis Geburtstag im ${monthName(ageDay)}`
-      : dayMonth(day);
+  return {
+    member,
+    ws,
+    we,
+    joinDay,
+    leftDay,
+    baseDays,
+    extraDays,
+    exemptCounts,
+    noneCounts,
+    // Nur beim Alter „genau ab dem Geburtstag“ fällt eine Grenze auf den Geburtstag (nach Jahrgang ist es der 01.01.).
+    ageDay: ctx.settings.ageRule === "EXACT_DAY" ? (ageChange?.day ?? null) : null,
+  };
+}
 
-  // Schritt 3 und 4: Abschnitte und ihr genauer Wert.
-  const rangeText = (from: DayNo, to: DayNo) => {
-    if (from === periodStart && to === periodEnd) return "";
+/**
+ * Tage als Text, wobei Grenzen, die auf einen Geburtstag fallen (`masked`), nur den Monat zeigen – das genaue Datum
+ * verriete das Geburtsdatum. Gilt auch für Grenzen, die aus dem Geburtstag eines anderen Familienmitglieds folgen.
+ */
+function dayTexts(masked: ReadonlySet<DayNo>, periodStart: DayNo, periodEnd: DayNo) {
+  const fromText = (day: DayNo) =>
+    masked.has(day) ? `ab Geburtstag im ${monthName(day)}` : dayMonth(day);
+  const toText = (day: DayNo) =>
+    masked.has(day + 1) ? `bis Geburtstag im ${monthName(day + 1)}` : dayMonth(day);
+  /** „01.10.–14.11.“, „bis Geburtstag im November“, „ab Geburtstag im November bis 31.12.“ */
+  const spanText = (from: DayNo, to: DayNo) => {
     const start = fromText(from);
     const end = toText(to);
-    if (!start.startsWith("ab ") && !end.startsWith("bis ")) return `, ${start}–${end}`;
-    return `, ${start.startsWith("ab ") ? start : `ab ${start}`} ${end.startsWith("bis ") ? end : `bis ${end}`}`;
+    if (!start.startsWith("ab ") && !end.startsWith("bis ")) return `${start}–${end}`;
+    return `${start.startsWith("ab ") ? start : `ab ${start}`} ${end.startsWith("bis ") ? end : `bis ${end}`}`;
   };
+  /** Wie `spanText` mit führendem Komma; leer für den ganzen Zeitraum. */
+  const rangeText = (from: DayNo, to: DayNo) =>
+    from === periodStart && to === periodEnd ? "" : `, ${spanText(from, to)}`;
+  return { fromText, toText, spanText, rangeText };
+}
+
+/** Name in Aufzählungen: Vorname, sonst der ganze Name. */
+const shortNameOf = (member: EngineMember) => member.shortName || member.name;
+
+/** „Sophie“, „Sophie und Lena“, „Sophie, Lena und Mia“. */
+function listText(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} und ${names[names.length - 1]}`;
+}
+
+/**
+ * Zahler eines Familienmitglieds für die übrigen Beiträge: der Zahler der Familie, in der es am letzten Beitragstag im
+ * Zeitraum ist. Wer die Familie vorher verlassen hat, zahlt danach selbst.
+ */
+function familyPayerOf(days: MemberDays, ctx: RunContext): EngineFamily | null {
+  // Tage nach dem Austritt (nach der Regel noch Beitragstage) zählen mit dem Stand des Austrittstags.
+  const last = Math.min(days.we, days.leftDay ?? Infinity);
+  for (const range of ctx.familiesByMember.get(days.member.id) ?? [])
+    if (range.from <= last && range.to >= last) return range.family;
+  return null;
+}
+
+/** Schritt 3 bis 7 für ein Mitglied: Abschnitte, Rundung, Zahler und Erklärung. */
+function finishMember(days: MemberDays, ctx: RunContext, warn: Warn): MemberResult {
+  const { member, ws, we, joinDay, leftDay, baseDays, extraDays, exemptCounts, noneCounts } = days;
+  const { settings, catalog, periodStart, periodEnd } = ctx;
+  const name = member.name;
+  // Grenzen auf einem Geburtstag (eigener oder eines Familienmitglieds) zeigen nur den Monat.
+  const { toText, spanText, rangeText } = dayTexts(
+    ctx.maskedDays.get(member.id) ?? new Set(),
+    periodStart,
+    periodEnd,
+  );
+
+  // Schritt 3 und 4: Abschnitte und ihr genauer Wert.
   const drafts: DraftLine[] = [];
   const feeDays = baseDays.map((day) => (day.kind === "fee" ? day : null));
   const baseSegments = runsOf(feeDays, ws, (day) => day.segment);
@@ -789,15 +872,26 @@ function calculateMember(
     const spans = runsOf(list, ws, () => "x");
     const whole = spans.length === 1 && spans[0]!.from === ws && spans[0]!.to === we;
     extraSummaries.push(
-      whole
-        ? type.name
-        : `${type.name} (${spans.map((s) => `${dayMonth(s.from)}–${dayMonth(s.to)}`).join(", ")})`,
+      whole ? type.name : `${type.name} (${spans.map((s) => spanText(s.from, s.to)).join(", ")})`,
     );
   }
 
   // Schritt 5: runden und centgenau verteilen.
   const total = roundHalfAwayFromZero(sum(drafts.map((line) => line.exact)));
   if (total <= 0) {
+    // Den Grundbeitrag zahlt die Familie – das Mitglied hat keine eigene Zeile.
+    const familyCounts = new Map<string, number>();
+    for (const day of baseDays) if (day.kind === "family") increment(familyCounts, day.familyId!);
+    const familyId = mostFrequent(familyCounts);
+    if (familyId) {
+      const family = baseDays.find(
+        (day): day is FreeDay => day.kind === "family" && day.familyId === familyId,
+      )!;
+      return {
+        kind: "covered",
+        covered: { memberId: member.id, memberName: name, familyId, familyName: family.reason },
+      };
+    }
     const exemptReason = mostFrequent(exemptCounts);
     if (exemptReason)
       return {
@@ -828,15 +922,10 @@ function calculateMember(
     exact: formatRational(line.exact),
   }));
 
-  if (member.paymentMethod === "DIRECT_DEBIT" && total < settings.minDebitCents)
-    warn(
-      "BELOW_MIN_DEBIT",
-      `Der Beitrag von ${name} (${formatEuroFromCents(total)}) liegt unter dem Mindestbetrag für Lastschriften (${formatEuroFromCents(settings.minDebitCents)}).`,
-    );
-
-  // Schritt 6: Zahler.
-  const payerMemberId = member.payerMemberId ?? member.id;
+  // Schritt 6: Zahler – ausdrücklich gewählt, sonst der Zahler der Familie, sonst das Mitglied selbst.
+  let payerMemberId = member.payerMemberId ?? member.id;
   let payerName = member.name;
+  let paymentMethod = member.paymentMethod;
   if (member.payerMemberId !== null) {
     const known =
       ctx.membersById.get(member.payerMemberId)?.name ?? ctx.payerNames[member.payerMemberId];
@@ -847,7 +936,22 @@ function calculateMember(
       );
       payerName = "unbekannter Zahler";
     } else payerName = known;
+  } else {
+    const family = familyPayerOf(days, ctx);
+    const payer = family ? ctx.membersById.get(family.payerMemberId) : undefined;
+    // Ein archivierter oder gelöschter Zahler zahlt nicht – dafür gibt es beim Familienbeitrag einen Hinweis.
+    if (payer && payer.id !== member.id && !payer.inactive) {
+      payerMemberId = payer.id;
+      payerName = payer.name;
+      paymentMethod = payer.paymentMethod;
+    }
   }
+
+  if (paymentMethod === "DIRECT_DEBIT" && total < settings.minDebitCents)
+    warn(
+      "BELOW_MIN_DEBIT",
+      `Der Beitrag von ${name} (${formatEuroFromCents(total)}) liegt unter dem Mindestbetrag für Lastschriften (${formatEuroFromCents(settings.minDebitCents)}).`,
+    );
 
   // Schritt 7: Erklärung in einem Satz.
   const phases = runsOf<BaseDay>(baseDays, ws, (day) => day.phase).map((run) => {
@@ -908,15 +1012,240 @@ function calculateMember(
   return {
     kind: "charge",
     charge: {
+      key: `m:${member.id}`,
       memberId: member.id,
       memberName: name,
+      family: null,
       payerMemberId,
       payerName,
-      paymentMethod: member.paymentMethod,
+      paymentMethod,
       amountCents: total,
       lines,
       explanation,
       mainFeeTypeName: catalog.byId.get(mainTypeId)?.name ?? "",
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Familien
+// ---------------------------------------------------------------------------
+
+interface FamilyDay {
+  rateId: string;
+  monthly: Rational;
+}
+
+/**
+ * Familienbeitrag einer Familie: An jedem Tag, an dem mindestens so viele Familienmitglieder einen Grundbeitrag zahlen
+ * würden, wie die Beitragsart verlangt, zahlt die Familie stattdessen einmal den Familienbeitrag – die Grundbeiträge
+ * dieser Mitglieder entfallen an dem Tag (ihre Tage werden zu „family“). Zusatzbeiträge der Abteilungen bleiben.
+ */
+function calculateFamily(
+  family: EngineFamily,
+  daysById: Map<string, MemberDays>,
+  ctx: RunContext,
+  warn: Warn,
+): { kind: "charge"; charge: ChargePreview } | { kind: "exempt"; exempt: ExemptPreview } | null {
+  const { periodStart, periodEnd, settings } = ctx;
+  const label = `„${family.name}“`;
+  const type = ctx.catalog.byId.get(family.feeTypeId) ?? null;
+  const usable = type !== null && type.type.kind === "FAMILY" && !type.type.archived;
+  const min = Math.max(2, type?.type.familyMinMembers ?? 2);
+  const ranges = family.members.map((m) => ({
+    memberId: m.memberId,
+    from: dayNo(m.validFrom),
+    to: m.validTo === null ? Infinity : dayNo(m.validTo),
+  }));
+  const length = periodEnd - periodStart + 1;
+  const familyDays: (FamilyDay | null)[] = new Array<FamilyDay | null>(length).fill(null);
+  const covered = new Set<string>();
+  let daysWithMembers = 0;
+  /** Zahlt an irgendeinem Tag überhaupt ein Familienmitglied einen Grundbeitrag? (Sonst ist die Familie hier leer.) */
+  let anyPaying = false;
+  let belowDays = 0;
+  let notApplied = 0;
+  let noRate: { count: number; first: DayNo } | null = null;
+  const freeDay: FreeDay = {
+    kind: "family",
+    reason: family.name,
+    familyId: family.id,
+    label: `über den Familienbeitrag (${family.name})`,
+    phase: `family:${family.id}`,
+  };
+
+  for (let i = 0; i < length; i++) {
+    const day = periodStart + i;
+    const paying: MemberDays[] = [];
+    let inRange = 0;
+    for (const range of ranges) {
+      const days = daysById.get(range.memberId);
+      // Tage vor dem Eintritt bzw. nach dem Austritt (nach der Regel noch Beitragstage) zählen mit dem Stand des Ein-
+      // bzw. Austrittstags – auch für die Familie.
+      const stateDay = days
+        ? Math.min(Math.max(day, days.joinDay ?? -Infinity), days.leftDay ?? Infinity)
+        : day;
+      if (range.from > stateDay || range.to < stateDay) continue;
+      inRange += 1;
+      if (!days || day < days.ws || day > days.we) continue;
+      const base = days.baseDays[day - days.ws]!;
+      // Wer an dem Tag nichts zahlen würde (auch 100 % ermäßigt), zählt nicht mit.
+      if (base.kind === "fee" && !(base.discount && base.discount.percentBp! >= 10_000))
+        paying.push(days);
+    }
+    if (inRange === 0) continue;
+    daysWithMembers += 1;
+    if (paying.length > 0) anyPaying = true;
+    if (paying.length < min) {
+      belowDays += 1;
+      continue;
+    }
+    if (!usable) {
+      notApplied += 1;
+      continue;
+    }
+    const rate = rateOn(type, day);
+    if (!rate || rate.interval === "ONCE") {
+      if (noRate) noRate.count += 1;
+      else noRate = { count: 1, first: day };
+      continue;
+    }
+    familyDays[i] = {
+      rateId: rate.id,
+      monthly: rational(rate.amountCents, monthsOfInterval(rate.interval)),
+    };
+    for (const days of paying) {
+      days.baseDays[day - days.ws] = freeDay;
+      covered.add(days.member.id);
+    }
+  }
+
+  if (notApplied > 0)
+    warn(
+      "FAMILY_NOT_APPLIED",
+      type === null || type.type.kind !== "FAMILY"
+        ? `Für ${label} ist kein Familienbeitrag gewählt – die Mitglieder zahlen einzeln. Bitte einen Familienbeitrag wählen.`
+        : `Der Familienbeitrag „${type.name}“ von ${label} ist archiviert – die Mitglieder zahlen einzeln. Bitte einen anderen wählen.`,
+      family.id,
+    );
+  if (noRate && type)
+    warn(
+      "FAMILY_NOT_APPLIED",
+      `Für „${type.name}“ ist ${daysText(noRate.count, noRate.first)} kein Beitragssatz gültig – ${label} zahlt dort einzeln.`,
+      family.id,
+    );
+  if (covered.size === 0) {
+    if (anyPaying && belowDays === daysWithMembers)
+      warn(
+        "FAMILY_TOO_SMALL",
+        `In ${label} zahlen im Zeitraum weniger als ${min} Mitglieder einen Grundbeitrag – der Familienbeitrag gilt nicht, jedes zahlt einzeln.`,
+        family.id,
+      );
+    return null;
+  }
+
+  // Zahler der Familie.
+  const payer = ctx.membersById.get(family.payerMemberId);
+  const payerName = payer?.name ?? ctx.payerNames[family.payerMemberId];
+  if (payerName === undefined)
+    warn(
+      "PAYER_NOT_MEMBER",
+      `Der Zahler von ${label} ist nicht als Mitglied erfasst – bitte den Zahler prüfen.`,
+      family.id,
+    );
+  else if (payer?.inactive)
+    warn(
+      "PAYER_NOT_MEMBER",
+      `Der Zahler von ${label} (${payer.name}) ist archiviert oder gelöscht – bitte einen neuen Zahler wählen.`,
+      family.id,
+    );
+
+  // Abschnitte gleichen Satzes; Grenzen auf dem Geburtstag eines Familienmitglieds zeigen nur den Monat.
+  const { spanText, rangeText } = dayTexts(
+    ctx.maskedDays.get(`f:${family.id}`) ?? new Set(),
+    periodStart,
+    periodEnd,
+  );
+  const runs = runsOf(familyDays, periodStart, (day) => day.rateId);
+  const drafts: DraftLine[] = runs.map((run) => ({
+    feeTypeId: type!.id,
+    feeRateId: run.value.rateId,
+    assignmentId: null,
+    from: run.from,
+    to: run.to,
+    exact: segmentValue(run.value.monthly, run.from, run.to),
+    text: `${type!.name}${rangeText(run.from, run.to)}`,
+  }));
+  const total = roundHalfAwayFromZero(sum(drafts.map((line) => line.exact)));
+  // Der Zahler zuerst („für Sophie, Lena und Mia“), dann nach Namen.
+  const members = [...covered]
+    .map((id) => daysById.get(id)!.member)
+    .sort(
+      (a, b) =>
+        Number(b.id === family.payerMemberId) - Number(a.id === family.payerMemberId) ||
+        collator.compare(a.name, b.name) ||
+        compareIds(a.id, b.id),
+    );
+  if (total <= 0)
+    return {
+      kind: "exempt",
+      exempt: {
+        memberId: family.payerMemberId,
+        memberName: family.name,
+        familyId: family.id,
+        reason: `Familienbeitrag 0,00 € (${type!.name})`,
+      },
+    };
+
+  const cents = apportion(
+    total,
+    drafts.map((line) => line.exact),
+  );
+  const spans = runsOf(familyDays, periodStart, () => "x");
+  const whole = spans.length === 1 && spans[0]!.from === periodStart && spans[0]!.to === periodEnd;
+  const rateChanges = runs.slice(1).filter((run, i) => run.from === runs[i]!.to + 1);
+  let explanation = `${type!.name} für ${listText(members.map(shortNameOf))}`;
+  if (!whole) explanation += ` (${spans.map((span) => spanText(span.from, span.to)).join(", ")})`;
+  if (rateChanges.length > 0)
+    explanation += ` (neuer Beitragssatz ab ${rateChanges.map((run) => dayMonth(run.from)).join(" und ")})`;
+  if (belowDays > 0) explanation += `, sonst zu wenige Mitglieder – dann zahlt jedes einzeln`;
+  explanation += ` → ${formatEuroFromCents(total)}`;
+
+  const paymentMethod = payer && !payer.inactive ? payer.paymentMethod : "TRANSFER";
+  if (paymentMethod === "DIRECT_DEBIT" && total < settings.minDebitCents)
+    warn(
+      "BELOW_MIN_DEBIT",
+      `Der Familienbeitrag von ${label} (${formatEuroFromCents(total)}) liegt unter dem Mindestbetrag für Lastschriften (${formatEuroFromCents(settings.minDebitCents)}).`,
+      family.id,
+    );
+
+  return {
+    kind: "charge",
+    charge: {
+      key: `f:${family.id}`,
+      memberId: family.payerMemberId,
+      memberName: family.name,
+      family: {
+        id: family.id,
+        name: family.name,
+        members: members.map((m) => ({ id: m.id, name: m.name })),
+      },
+      payerMemberId: family.payerMemberId,
+      payerName: payerName ?? "unbekannter Zahler",
+      paymentMethod,
+      amountCents: total,
+      lines: drafts.map((line, i) => ({
+        feeTypeId: line.feeTypeId,
+        feeRateId: line.feeRateId,
+        assignmentId: null,
+        fromDate: dayDate(line.from),
+        toDate: dayDate(line.to),
+        amountCents: cents[i]!,
+        text: line.text,
+        exact: formatRational(line.exact),
+      })),
+      explanation,
+      mainFeeTypeName: type!.name,
     },
   };
 }
@@ -936,6 +1265,20 @@ export function calculateFees(input: EngineInput): EnginePreview {
   const periodEnd = dayNo(input.periodEnd);
   if (periodEnd < periodStart) throw new RangeError("Der Zeitraum endet vor seinem Beginn.");
   const catalog = prepareCatalog(input.feeTypes);
+  const families = [...(input.families ?? [])].sort(
+    (a, b) => collator.compare(a.name, b.name) || compareIds(a.id, b.id),
+  );
+  const familiesByMember = new Map<string, { family: EngineFamily; from: DayNo; to: DayNo }[]>();
+  for (const family of families)
+    for (const m of family.members) {
+      const list = familiesByMember.get(m.memberId) ?? [];
+      list.push({
+        family,
+        from: dayNo(m.validFrom),
+        to: m.validTo === null ? Infinity : dayNo(m.validTo),
+      });
+      familiesByMember.set(m.memberId, list);
+    }
   const ctx: RunContext = {
     periodStart,
     periodEnd,
@@ -945,11 +1288,14 @@ export function calculateFees(input: EngineInput): EnginePreview {
     ageMatters: catalog.ageBounded.length > 0,
     membersById: new Map(input.members.map((m) => [m.id, m])),
     payerNames: input.payerNames ?? {},
+    familiesByMember,
+    maskedDays: new Map(),
   };
 
   const preview: EnginePreview = {
     charges: [],
     exempt: [],
+    covered: [],
     skipped: [],
     warnings: [],
     totalCents: 0,
@@ -957,21 +1303,62 @@ export function calculateFees(input: EngineInput): EnginePreview {
   const members = [...input.members].sort((a, b) =>
     byMember({ memberName: a.name, memberId: a.id }, { memberName: b.name, memberId: b.id }),
   );
-  for (const member of members) {
-    const warn = (code: WarningCode, text: string) => {
-      const warning: EngineWarning = { code, memberId: member.id, text };
+  const warnFor =
+    (memberId: string): Warn =>
+    (code, text, familyId) => {
+      const warning: EngineWarning = { code, memberId, text };
+      if (familyId) warning.familyId = familyId;
       preview.warnings.push(warning);
     };
-    const result = calculateMember(member, ctx, warn);
+
+  // Schritt 1 und 2 für alle, dann die Familien (sie brauchen die Tage aller ihrer Mitglieder), dann Schritt 3 bis 7.
+  const daysById = new Map<string, MemberDays>();
+  for (const member of members) {
+    const days = memberDays(member, ctx, warnFor(member.id));
+    if ("kind" in days)
+      preview.skipped.push({ memberId: member.id, memberName: member.name, reason: days.reason });
+    else daysById.set(member.id, days);
+  }
+  // Geburtstage, auf die eine Grenze fallen kann: der eigene und die aller Familienmitglieder (der Familienbeitrag kann am
+  // Geburtstag eines Kindes beginnen – dann wechselt dort auch der Beitrag der übrigen).
+  const ownAgeDay = (memberId: string) => daysById.get(memberId)?.ageDay ?? null;
+  for (const days of daysById.values()) {
+    const masked = new Set<DayNo>();
+    if (days.ageDay !== null) masked.add(days.ageDay);
+    ctx.maskedDays.set(days.member.id, masked);
+  }
+  for (const family of families) {
+    const masked = new Set<DayNo>();
+    for (const m of family.members) {
+      const ageDay = ownAgeDay(m.memberId);
+      if (ageDay !== null) masked.add(ageDay);
+    }
+    ctx.maskedDays.set(`f:${family.id}`, masked);
+    for (const m of family.members)
+      for (const day of masked) ctx.maskedDays.get(m.memberId)?.add(day);
+  }
+  for (const family of families) {
+    const result = calculateFamily(family, daysById, ctx, warnFor(family.payerMemberId));
+    if (result?.kind === "charge") {
+      preview.charges.push(result.charge);
+      preview.totalCents += result.charge.amountCents;
+    } else if (result?.kind === "exempt") preview.exempt.push(result.exempt);
+  }
+  for (const member of members) {
+    const days = daysById.get(member.id);
+    if (!days) continue;
+    const result = finishMember(days, ctx, warnFor(member.id));
     if (result.kind === "charge") {
       preview.charges.push(result.charge);
       preview.totalCents += result.charge.amountCents;
     } else if (result.kind === "exempt") preview.exempt.push(result.exempt);
+    else if (result.kind === "covered") preview.covered.push(result.covered);
     else
       preview.skipped.push({ memberId: member.id, memberName: member.name, reason: result.reason });
   }
   preview.charges.sort(byMember);
   preview.exempt.sort(byMember);
+  preview.covered.sort(byMember);
   preview.skipped.sort(byMember);
   return preview;
 }

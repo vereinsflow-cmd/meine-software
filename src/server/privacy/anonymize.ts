@@ -108,6 +108,41 @@ export async function anonymizeMemberData(
     where: { clubId, memberId, kind: { not: "ASSIGN" } },
     data: { reason: "anonymisiert" },
   });
+  // Familien: ab heute nicht mehr dabei (frühere Zeiträume bleiben), künftige Einträge entfallen.
+  const today = todayCalendarDate(now);
+  await tx.feeFamilyMember.updateMany({
+    where: {
+      clubId,
+      memberId,
+      validFrom: { lte: today },
+      OR: [{ validTo: null }, { validTo: { gt: today } }],
+    },
+    data: { validTo: today },
+  });
+  await tx.feeFamilyMember.deleteMany({ where: { clubId, memberId, validFrom: { gt: today } } });
+  // Ist sonst niemand mehr da (alle anonymisiert), verrät der Name der Familie („Familie Krüger“) noch den Nachnamen:
+  // neutral benennen, auflösen und ihre Einträge im Änderungsprotokoll leeren.
+  const families = await tx.feeFamily.findMany({
+    where: { clubId, OR: [{ payerMemberId: memberId }, { members: { some: { memberId } } }] },
+    select: {
+      id: true,
+      archivedAt: true,
+      payer: { select: { id: true, anonymizedAt: true } },
+      members: { select: { member: { select: { id: true, anonymizedAt: true } } } },
+    },
+  });
+  for (const family of families) {
+    const people = [family.payer, ...family.members.map((m) => m.member)];
+    if (people.some((person) => person.id !== memberId && person.anonymizedAt === null)) continue;
+    await tx.feeFamily.update({
+      where: { id: family.id },
+      data: { name: "Familie (anonymisiert)", archivedAt: family.archivedAt ?? now },
+    });
+    await tx.auditLog.updateMany({
+      where: { clubId, entityType: "FeeFamily", entityId: family.id },
+      data: { summary: ANONYMOUS_AUDIT_SUMMARY, changes: Prisma.JsonNull },
+    });
+  }
   await tx.auditLog.updateMany({
     where: { clubId, entityType: "Member", entityId: memberId },
     data: { summary: ANONYMOUS_AUDIT_SUMMARY, changes: Prisma.JsonNull },
