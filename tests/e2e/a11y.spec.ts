@@ -37,6 +37,8 @@ const adminPages = [
   "/finanzen",
   "/finanzen/kassenbuch",
   "/finanzen/rechnungen",
+  "/finanzen/beitraege",
+  "/finanzen/beitraege/arten",
   "/finanzen/abschluss",
   "/finanzen/einstellungen",
   "/hilfe",

@@ -784,6 +784,50 @@ async function main() {
   }
 
   // ---------------------------------------------------------------------------------------------
+  // Beiträge: Beitragsordnung des Demovereins (Ehrenmitglieder ohne eigene Beitragsart sind beitragsfrei) und eine
+  // Ermäßigung für Claudia als Übungsleiterin.
+  // ---------------------------------------------------------------------------------------------
+  const feeStart = parseCalendarDate(`${today.getUTCFullYear()}-01-01`)!;
+  const feeSpecs = [
+    { name: "Jugend bis 17 Jahre", priority: 10, maxAge: 17, statuses: [], cents: 600 },
+    { name: "Passiv", priority: 20, maxAge: null, statuses: ["PASSIVE"], cents: 400 },
+    { name: "Erwachsene", priority: 30, maxAge: null, statuses: [], cents: 1_200 },
+  ] as const;
+  for (const spec of feeSpecs) {
+    const feeType = await prisma.feeType.create({
+      data: {
+        clubId: club.id,
+        name: spec.name,
+        kind: "BASE",
+        priority: spec.priority,
+        maxAge: spec.maxAge,
+        statuses: [...spec.statuses],
+      },
+    });
+    await prisma.feeRate.create({
+      data: {
+        clubId: club.id,
+        feeTypeId: feeType.id,
+        validFrom: feeStart,
+        amountCents: spec.cents,
+        interval: "MONTHLY",
+        createdById: accounts.vorstand!.userId,
+      },
+    });
+  }
+  await prisma.memberFeeAssignment.create({
+    data: {
+      clubId: club.id,
+      memberId: accounts.abteilung!.memberId,
+      kind: "DISCOUNT_PERCENT",
+      percentBp: 5_000,
+      validFrom: feeStart,
+      reason: "Übungsleiterin",
+      createdById: accounts.vorstand!.userId,
+    },
+  });
+
+  // ---------------------------------------------------------------------------------------------
   // Nachrichten und Benachrichtigungen
   // ---------------------------------------------------------------------------------------------
   const welcome = await prisma.message.create({

@@ -36,7 +36,17 @@ import {
   SPHERE_LABEL,
 } from "@/modules/finance/ledger-format";
 import { financeTabCounts } from "@/modules/finance/overview";
+import { FeeSettingsForm } from "@/modules/fees/components/fee-settings-form";
+import { AGE_RULE_LABEL, PRO_RATA_ENTRY_LABEL, PRO_RATA_EXIT_LABEL } from "@/modules/fees/schemas";
+import { getFeeSettings } from "@/modules/fees/service";
 import { requirePageContext } from "@/server/tenancy/context";
+
+const FEE_RHYTHM = {
+  MONTHLY: "monatlich",
+  QUARTERLY: "vierteljährlich",
+  HALF_YEARLY: "halbjährlich",
+  YEARLY: "jährlich",
+} as const;
 
 export const metadata: Metadata = { title: "Konten und Kategorien" };
 
@@ -48,11 +58,12 @@ export default async function FinanceSettingsPage() {
   const ctx = await requirePageContext();
   if (!canFinance(ctx, "finance:read")) return <NoAccess what="die Finanzen" />;
   const canManage = canFinance(ctx, "finance:manage");
-  const [setup, accounts, categories, counts] = await Promise.all([
+  const [setup, accounts, categories, counts, feeSettings] = await Promise.all([
     getLedgerSetup(ctx),
     listAccounts(ctx, { includeArchived: true }),
     listCategories(ctx),
     financeTabCounts(ctx),
+    getFeeSettings(ctx),
   ]);
 
   if (!setup) {
@@ -238,6 +249,39 @@ export default async function FinanceSettingsPage() {
               </div>
             ))}
         </div>
+      </section>
+
+      <section aria-labelledby="beitraege-titel" className="mb-8 max-w-3xl">
+        <h2 id="beitraege-titel" className="text-lg font-semibold">
+          Beiträge
+        </h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Wie „Wer zahlt was“ und der Beitragslauf rechnen. Die Beitragsarten selbst stehen unter
+          „Beiträge“ → „Beitragsarten“.
+        </p>
+        <Card>
+          <CardContent>
+            {canManage ? (
+              <FeeSettingsForm
+                defaults={{
+                  feeInterval: feeSettings.feeInterval,
+                  dueDay: String(feeSettings.dueDay),
+                  proRataEntry: feeSettings.proRataEntry,
+                  proRataExit: feeSettings.proRataExit,
+                  ageRule: feeSettings.ageRule,
+                  missingBirthDateAsAdult: feeSettings.missingBirthDateAsAdult,
+                }}
+              />
+            ) : (
+              <p className="text-sm">
+                Abrechnung {FEE_RHYTHM[feeSettings.feeInterval]}, fällig am {feeSettings.dueDay}. ·
+                Eintritt {PRO_RATA_ENTRY_LABEL[feeSettings.proRataEntry]} · Austritt{" "}
+                {PRO_RATA_EXIT_LABEL[feeSettings.proRataExit]} · Alter:{" "}
+                {AGE_RULE_LABEL[feeSettings.ageRule]}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section aria-labelledby="bereiche-titel" className="max-w-3xl">

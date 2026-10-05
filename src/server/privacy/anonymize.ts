@@ -94,6 +94,20 @@ export async function anonymizeMemberData(
 
   // Einträge zu diesem Mitglied selbst: Text und Änderungsdetails leeren.
   await enablePurgeMode(tx);
+  // Beiträge: freie Notiz und Zahler-Verknüpfungen (in beide Richtungen) entfernen, Gründe von Ermäßigungen ersetzen –
+  // die Regeln selbst bleiben (frühere Zeiträume bleiben nachvollziehbar). Erlaubt nur im Datenschutzmodus (Trigger).
+  await tx.memberFinance.updateMany({
+    where: { clubId, memberId },
+    data: { note: null, payerMemberId: null },
+  });
+  await tx.memberFinance.updateMany({
+    where: { clubId, payerMemberId: memberId },
+    data: { payerMemberId: null },
+  });
+  await tx.memberFeeAssignment.updateMany({
+    where: { clubId, memberId, kind: { not: "ASSIGN" } },
+    data: { reason: "anonymisiert" },
+  });
   await tx.auditLog.updateMany({
     where: { clubId, entityType: "Member", entityId: memberId },
     data: { summary: ANONYMOUS_AUDIT_SUMMARY, changes: Prisma.JsonNull },

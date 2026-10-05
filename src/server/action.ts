@@ -50,6 +50,9 @@ const FINANCE_CODES = [
   "DOCUMENT_RETAINED",
   "INVOICE_BOOKED",
   "CLOSE_INVALID",
+  "FEE_RATE_LOCKED",
+  "FEE_HISTORY_LOCKED",
+  "PAYER_CHAIN",
 ] as const;
 const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"]+)`);
 
@@ -60,6 +63,10 @@ export function mapDatabaseError(error: unknown): AppError | null {
   // Gegenseitige Sperre bzw. Schreibkonflikt gleichzeitiger Transaktionen: Ein erneuter Versuch klappt.
   if (/deadlock detected|could not serialize|TransactionWriteConflict|40P01|40001/.test(text))
     return conflict("Die Änderung kollidierte mit einer anderen. Bitte versuche es erneut.");
+  if (text.includes("MemberFeeAssignment_no_overlap"))
+    return conflict("Für diesen Zeitraum gibt es schon eine solche Regel – beende sie zuerst.");
+  if (text.includes("FeeType_one_priority_per_base"))
+    return conflict("Die Reihenfolge hat sich gerade geändert. Bitte versuche es erneut.");
   if (text.includes("SHIFT_FULL")) return conflict("Diese Schicht ist bereits voll besetzt.");
   if (text.includes("SHIFT_OVERLAP")) {
     return conflict("Du bist zur selben Zeit bereits in einer anderen Schicht eingetragen.");

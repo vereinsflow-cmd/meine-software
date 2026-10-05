@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 /** Bereiche der Finanzen in der Reihenfolge der Leiste. Neue Bereiche kommen dazu, sobald sie fertig sind. */
 export const FINANCE_TABS = [
   { href: "/finanzen", label: "Übersicht", exact: true },
+  { href: "/finanzen/beitraege", label: "Beiträge" },
   { href: "/finanzen/kassenbuch", label: "Kassenbuch" },
   { href: "/finanzen/rechnungen", label: "Rechnungen" },
   { href: "/finanzen/abschluss", label: "Abschluss" },
@@ -23,7 +24,9 @@ export function FinanceTabs({ counts = {} }: { counts?: Partial<Record<string, n
   return (
     <nav
       aria-label="Bereiche der Finanzen"
-      className={cn(SEGMENT_BAR, "mb-6 max-w-full flex-nowrap overflow-x-auto")}
+      // relative: Auch der unsichtbare Hilfstext („überfällig“) bleibt in der waagerecht scrollenden Leiste – sonst
+      // machte er die Seite am Handy breiter als den Bildschirm.
+      className={cn(SEGMENT_BAR, "relative mb-6 max-w-full flex-nowrap overflow-x-auto")}
     >
       {FINANCE_TABS.map((tab) => {
         const current =
