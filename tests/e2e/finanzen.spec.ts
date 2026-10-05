@@ -1,33 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, login, open, openNavGroup } from "./helpers";
+import { USERS, ensureLedger, isoDaysAgo, login, open, openNavGroup } from "./helpers";
 
 /**
  * Finanzen im Browser: Der Vorstand (Kassenwart) öffnet den Bereich, richtet das Kassenbuch ein, bucht, storniert und
  * korrigiert. Mitglieder und Helfer haben keinen Zugang. Die E2E-Datenbank wird je Lauf neu aufgebaut – das Kassenbuch
  * ist dort anfangs nicht eingerichtet; der erste Test richtet es ein, die folgenden nutzen es (Tests laufen nacheinander).
  */
-
-/** „JJJJ-MM-TT“ vor `days` Tagen (Berlin). */
-function isoDaysAgo(days: number): string {
-  const date = new Date(Date.now() - days * 86_400_000);
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(date);
-}
-
-async function ensureLedger(page: Page): Promise<void> {
-  await open(page, "/finanzen/kassenbuch");
-  const setup = page.getByRole("button", { name: "Kassenbuch einrichten" });
-  if (await setup.isVisible()) {
-    // Beginn vor 60 Tagen statt am 1. Januar: Die bezahlte Seed-Rechnung (vor 40 Tagen) liegt so zu jeder Jahreszeit im
-    // Kassenbuch – auch im Januar.
-    await page.getByLabel("Kassenbuch beginnt am").fill(isoDaysAgo(60));
-    await page.getByLabel("Bank").fill("Sparkasse Musterstadt");
-    await page.getByLabel("Anfangsbestand in €").first().fill("11.200,00");
-    await page.getByLabel("Anfangsbestand in €").nth(1).fill("239,80");
-    await setup.click();
-  }
-  await expect(page.getByRole("button", { name: "Neue Buchung" })).toBeVisible({ timeout: 20_000 });
-}
 
 async function book(
   page: Page,

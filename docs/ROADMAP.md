@@ -39,7 +39,8 @@ Aufteilung, Storno/Korrektur, Umbuchung, Barkasse nie im Minus – Regeln in der
 [ADR-0010](adr/0010-finanzen-kassenbuch.md)) und Rechnungsliste (siehe [DESIGN.md](DESIGN.md#finanzen-cockpit)); dazu **Belege** an
 Buchungen (Datei oder Eigenbeleg, 8 Jahre gesperrt, Filter „Ohne Beleg“), bezahlte Rechnungen „Ins Kassenbuch“, **Monatsabschluss**
 mit Checkliste und verketteter Prüfsumme, **Kassensturz** mit Zählhilfe sowie Konten und Kategorien verwalten; **Beiträge**: Beitragsarten
-mit Sätzen „ab“, Ermäßigungen/Befreiungen, Zahler, **Familien** mit Familienbeitrag und „Wer zahlt was“ tagesgenau ([ADR-0011](adr/0011-mitgliedsbeitraege.md)). Der weitere Bauplan
+mit Sätzen „ab“, Ermäßigungen/Befreiungen, Zahler, **Familien** mit Familienbeitrag und „Wer zahlt was“ tagesgenau ([ADR-0011](adr/0011-mitgliedsbeitraege.md)); **Beitragslauf** in drei
+Schritten (Prüfen, Vorschau, Erstellen) mit Nummern, Nachlauf, „rückgängig“ und „Offene Beiträge“ ([ADR-0012](adr/0012-beitragslauf.md)). Der weitere Bauplan
 (22 Stufen: Beiträge, Beitragslauf, Kontoauszug und automatische Zuordnung, Lastschrift, Rücklastschriften,
 Erinnerungen, Spenden und Zuwendungsbestätigungen, Berichte, Export, Töpfe, „Mein Beitrag“) folgt Schritt für Schritt. Der Rest dieses Entwurfs hält die Entscheidungen fest, damit sie später
 nicht neu erfunden werden. Rechnungen sind dabei ausdrücklich **keine** Buchungen: Sie lassen sich ändern und auf „wieder offen“ setzen; das

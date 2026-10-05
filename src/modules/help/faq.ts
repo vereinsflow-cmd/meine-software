@@ -609,6 +609,18 @@ export const FAQ: readonly FaqSection[] = [
           "ermäßigung befreiung beitragsfrei übungsleiter eltern zahler lastschrift überweisung",
       },
       {
+        id: "beitragslauf",
+        question: "Wie erstelle ich die Beiträge für ein Quartal?",
+        steps: [
+          "Unter „Finanzen“ → „Beiträge“ → „Beitragslauf“ den Zeitraum wählen. Schritt 1 zeigt Hinweise, etwa ein fehlendes Geburtsdatum – am besten vorher beheben.",
+          "Schritt 2 zeigt die Vorschau: Summen und jede Zeile mit ihrer Rechnung. Das Fälligkeitsdatum lässt sich oben ändern.",
+          "„Beiträge erstellen“ legt genau diese Beiträge mit Nummer an. Sie stehen danach unter „Offene Beiträge“.",
+        ],
+        tip: "Solange noch nichts bezahlt ist, lässt sich der ganze Lauf rückgängig machen. Ein zweiter Lauf für denselben Zeitraum (Nachlauf) erstellt nur, was noch fehlt – etwa für neu erfasste Mitglieder. Kein Tag wird doppelt berechnet.",
+        link: { href: "/finanzen/beitraege/lauf", label: "Beitragslauf" },
+        keywords: "beitragslauf beiträge erstellen quartal abrechnung nachlauf rückgängig",
+      },
+      {
         id: "familienbeitrag",
         question: "Wie richte ich einen Familienbeitrag ein?",
         steps: [

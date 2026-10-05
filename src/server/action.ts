@@ -54,6 +54,9 @@ const FINANCE_CODES = [
   "FEE_HISTORY_LOCKED",
   "PAYER_CHAIN",
   "FAMILY_TYPE",
+  "FEE_RUN_LOCKED",
+  "CHARGE_LOCKED",
+  "CHARGE_INVALID",
 ] as const;
 const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"]+)`);
 
@@ -66,6 +69,10 @@ export function mapDatabaseError(error: unknown): AppError | null {
     return conflict("Die Änderung kollidierte mit einer anderen. Bitte versuche es erneut.");
   if (text.includes("MemberFeeAssignment_no_overlap"))
     return conflict("Für diesen Zeitraum gibt es schon eine solche Regel – beende sie zuerst.");
+  if (text.includes("ChargeCoverage_no_overlap"))
+    return conflict(
+      "Ein Teil dieser Beiträge wurde gerade schon erstellt (zum Beispiel in einem zweiten Fenster). Bitte lade die Vorschau neu.",
+    );
   if (text.includes("FeeFamilyMember_no_overlap"))
     return conflict(
       "Das Mitglied ist in diesem Zeitraum schon in einer Familie – trage es dort zuerst aus.",

@@ -306,6 +306,36 @@ export const familyMemberDeleteSchema = z.object({ id });
 /** Familie auflösen: letzter Tag für alle Mitglieder. */
 export const familyDissolveSchema = z.object({ id, validTo: calendarDate });
 
+// ---------------------------------------------------------------------------------------------
+// Beitragslauf und Beiträge
+// ---------------------------------------------------------------------------------------------
+
+/** „N Beiträge erstellen“: genau die Vorschau mit diesem Prüfwert. */
+export const feeRunExecuteSchema = z.object({
+  periodStart: calendarDate,
+  dueDate: calendarDate,
+  inputHash: z.string().regex(/^[0-9a-f]{64}$/),
+});
+
+const reason = z
+  .string()
+  .trim()
+  .min(2, "Bitte gib kurz den Grund an.")
+  .max(300, "Bitte höchstens 300 Zeichen.");
+
+/** Beitragslauf rückgängig machen (alle Beiträge werden gestrichen). */
+export const feeRunRevertSchema = z.object({ id, reason });
+
+/** Einen Beitrag streichen. */
+export const chargeVoidSchema = z.object({ id, reason });
+
+export const CHARGE_STATUS_LABEL = {
+  OPEN: "offen",
+  PAID: "bezahlt",
+  VOID: "gestrichen",
+  WRITTEN_OFF: "ausgebucht",
+} as const;
+
 export const PRO_RATA_ENTRY_LABEL = {
   DAY: "ab dem Eintrittstag (tagesgenau)",
   MONTH_START: "ab dem Monat des Eintritts (ganzer Monat)",

@@ -473,6 +473,10 @@ model Club {
   memberFeeAssignments   MemberFeeAssignment[]
   feeFamilies            FeeFamily[]
   feeFamilyMembers       FeeFamilyMember[]
+  feeRuns                FeeRun[]
+  charges                Charge[]
+  chargeLines            ChargeLine[]
+  chargeCoverages        ChargeCoverage[]
   cashCounts             CashCount[]
   folders                DocumentFolder[]
   invitations            Invitation[]
@@ -626,6 +630,10 @@ model Member {
   feeFamilies            FeeFamilyMember[]
   /// Familien, für die dieses Mitglied zahlt.
   paysForFamilies        FeeFamily[]             @relation("FeeFamilyPayer")
+  /// Beiträge (Forderungen) des Mitglieds bzw. die es zahlt.
+  charges                Charge[]                @relation("ChargeMember")
+  chargesPaid            Charge[]                @relation("ChargePayer")
+  chargeCoverages        ChargeCoverage[]
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -654,6 +662,7 @@ model Department {
   /// Buchungszeilen, die dieser Abteilung zugeordnet sind (Töpfe, Auswertungen).
   ledgerLines            LedgerLine[]
   feeTypes               FeeType[]
+  chargeLines            ChargeLine[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1251,9 +1260,10 @@ model FinanceCategory {
   createdAt  DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
 
-  club     Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  lines    LedgerLine[]
-  feeTypes FeeType[]
+  club        Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  lines       LedgerLine[]
+  feeTypes    FeeType[]
+  chargeLines ChargeLine[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1534,6 +1544,7 @@ model FeeType {
   rates       FeeRate[]
   assignments MemberFeeAssignment[]
   families    FeeFamily[]
+  chargeLines ChargeLine[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -1597,6 +1608,7 @@ model FeeFamily {
   feeType FeeType           @relation(fields: [clubId, feeTypeId], references: [clubId, id], onDelete: NoAction)
   payer   Member            @relation("FeeFamilyPayer", fields: [clubId, payerMemberId], references: [clubId, id], onDelete: NoAction)
   members FeeFamilyMember[]
+  charges Charge[]
 
   @@unique([clubId, id])
   @@index([clubId, payerMemberId])
@@ -1646,4 +1658,173 @@ model MemberFeeAssignment {
 
   @@unique([clubId, id])
   @@index([clubId, memberId, validFrom])
+}
+
+enum FeeRunStatus {
+  CREATED
+  REVERTED
+}
+
+enum ChargeKind {
+  FEE
+  MANUAL
+}
+
+enum ChargeStatus {
+  OPEN
+  PAID
+  VOID
+  WRITTEN_OFF
+}
+
+/// Beitragslauf (Etappe 7): erstellt aus der Vorschau die Beiträge eines Zeitraums. `inputHash` sichert, dass genau das
+/// erstellt wird, was zu sehen war; `idempotencyKey` (Zeitraum + Hash), dass ein doppelter Klick nichts doppelt anlegt.
+/// Unveränderlich bis auf „rückgängig“ (Trigger fee_run_guard).
+model FeeRun {
+  id             String       @id @default(uuid(7))
+  clubId         String
+  year           Int
+  number         Int
+  /// „4. Quartal 2026“
+  label          String
+  periodStart    DateTime     @db.Date
+  periodEnd      DateTime     @db.Date
+  dueDate        DateTime     @db.Date
+  status         FeeRunStatus @default(CREATED)
+  idempotencyKey String
+  inputHash      String
+  chargeCount    Int
+  totalCents     Int
+  /// Hinweise der Prüfung beim Erstellen (Texte).
+  warnings       Json         @default("[]")
+  numberFrom     Int?
+  numberTo       Int?
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  createdById    String?
+  revertedAt     DateTime?    @db.Timestamptz(3)
+  revertedById   String?
+  revertReason   String?
+
+  club    Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  charges Charge[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, idempotencyKey])
+  @@unique([clubId, year, number])
+  @@index([clubId, periodStart])
+}
+
+/// Beitrag (Forderung) an ein Mitglied bzw. eine Familie, Nummer „B-2026-0412“. Betrag, Zeilen und Erklärung bleiben, wie
+/// sie erstellt wurden; Zahlungen ändern nur `paidCents`/`status` (ab Etappe 8). Gestrichen = `VOID` (Trigger charge_guard).
+model Charge {
+  id               String        @id @default(uuid(7))
+  clubId           String
+  year             Int
+  number           Int
+  kind             ChargeKind    @default(FEE)
+  /// „Mitgliedsbeitrag 4. Quartal 2026“
+  title            String
+  /// Mitglied – beim Familienbeitrag der Zahler der Familie.
+  memberId         String
+  familyId         String?
+  payerMemberId    String
+  feeRunId         String?
+  periodStart      DateTime?     @db.Date
+  periodEnd        DateTime?     @db.Date
+  dueDate          DateTime      @db.Date
+  amountCents      Int
+  paidCents        Int           @default(0)
+  writtenOffCents  Int           @default(0)
+  status           ChargeStatus  @default(OPEN)
+  /// Zahlweg beim Erstellen.
+  paymentMethod    PaymentMethod
+  /// Nachvollziehbare Rechnung (Zeilen mit genauen Werten als Bruch).
+  calculation      Json
+  explanation      String
+  /// Namen beim Erstellen (Mitglied bzw. Familie, Zahler).
+  debtorName       String
+  payerName        String
+  collectionHold   Boolean       @default(false)
+  reminderLevel    Int           @default(0)
+  lastReminderAt   DateTime?     @db.Timestamptz(3)
+  voidedAt         DateTime?     @db.Timestamptz(3)
+  voidReason       String?
+  voidedById       String?
+  writtenOffAt     DateTime?     @db.Timestamptz(3)
+  writtenOffReason String?
+  writtenOffById   String?
+  replacesChargeId String?       @unique
+  createdAt        DateTime      @default(now()) @db.Timestamptz(3)
+  createdById      String?
+  updatedAt        DateTime      @updatedAt @db.Timestamptz(3)
+
+  club       Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  member     Member       @relation("ChargeMember", fields: [clubId, memberId], references: [clubId, id], onDelete: NoAction)
+  payer      Member       @relation("ChargePayer", fields: [clubId, payerMemberId], references: [clubId, id], onDelete: NoAction)
+  family     FeeFamily?   @relation(fields: [clubId, familyId], references: [clubId, id], onDelete: NoAction)
+  feeRun     FeeRun?      @relation(fields: [clubId, feeRunId], references: [clubId, id], onDelete: NoAction)
+  replaces   Charge?      @relation("ChargeReplaces", fields: [replacesChargeId], references: [id], onDelete: NoAction)
+  replacedBy Charge?      @relation("ChargeReplaces")
+  lines      ChargeLine[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, year, number])
+  @@index([clubId, status, dueDate])
+  @@index([clubId, payerMemberId, status])
+  @@index([clubId, memberId, periodStart])
+  @@index([clubId, feeRunId])
+  @@index([clubId, familyId])
+}
+
+/// Zeile eines Beitrags (negativ = Ermäßigung). Unveränderlich; Summe = Betrag des Beitrags (am Ende der Transaktion geprüft).
+model ChargeLine {
+  id           String    @id @default(uuid(7))
+  clubId       String
+  chargeId     String
+  position     Int
+  feeTypeId    String?
+  /// Satz bzw. Regel, auf der die Zeile beruht (zum Nachvollziehen; ohne Fremdschlüssel – die Zeile bleibt, wie sie war).
+  feeRateId    String?
+  assignmentId String?
+  fromDate     DateTime? @db.Date
+  toDate       DateTime? @db.Date
+  amountCents  Int
+  categoryId   String
+  departmentId String?
+  text         String
+
+  club       Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  charge     Charge           @relation(fields: [clubId, chargeId], references: [clubId, id], onDelete: NoAction)
+  feeType    FeeType?         @relation(fields: [clubId, feeTypeId], references: [clubId, id], onDelete: NoAction)
+  category   FinanceCategory  @relation(fields: [clubId, categoryId], references: [clubId, id], onDelete: NoAction)
+  department Department?      @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: NoAction)
+  coverage   ChargeCoverage[]
+
+  @@unique([clubId, id])
+  @@unique([chargeId, position])
+  @@index([clubId, chargeId])
+  @@index([clubId, feeRateId])
+  @@index([clubId, assignmentId])
+}
+
+/// Welche Tage eine Zeile für wen abdeckt: Gruppe „BASE“ (Grund- und Familienbeitrag) bzw. die Beitragsart. Je Mitglied,
+/// Gruppe und Tag höchstens eine geltende Abdeckung (Ausschlussbedingung) – kein Tag wird zweimal berechnet.
+model ChargeCoverage {
+  id           String   @id @default(uuid(7))
+  clubId       String
+  chargeLineId String
+  memberId     String
+  feeGroup     String
+  coversFrom   DateTime @db.Date
+  coversTo     DateTime @db.Date
+  /// Nach dem Streichen des Beitrags nicht mehr (die Tage sind wieder frei).
+  active       Boolean  @default(true)
+
+  club   Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  line   ChargeLine @relation(fields: [clubId, chargeLineId], references: [clubId, id], onDelete: NoAction)
+  member Member     @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: NoAction)
+
+  @@unique([clubId, id])
+  @@index([clubId, memberId])
+  @@index([clubId, chargeLineId])
 }

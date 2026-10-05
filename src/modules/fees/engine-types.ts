@@ -81,6 +81,17 @@ export interface EngineMember {
   departments: { departmentId: string; since: Date | null }[];
   /** Höchstens eine ASSIGN und höchstens eine andere je Tag (sichert die Datenbank). */
   assignments: EngineAssignment[];
+  /**
+   * Schon abgerechnete Tage aus früheren Beitragsläufen (nur im Beitragslauf; „Wer zahlt was“ rechnet ohne): Gruppe
+   * „BASE“ für Grund- und Familienbeitrag, sonst die Beitragsart (Zusatzbeitrag, Aufnahmegebühr).
+   */
+  coverage?: {
+    feeGroup: string;
+    from: Date;
+    to: Date;
+    /** Abgedeckt durch den Familienbeitrag dieser Familie (sonst `null`). */
+    familyId?: string | null;
+  }[];
   /** Ausdrücklich gewählter Zahler (z. B. ein Elternteil). Ohne: in einer Familie deren Zahler, sonst das Mitglied selbst. */
   payerMemberId: string | null;
   paymentMethod: PaymentMethodValue;
@@ -165,6 +176,24 @@ export interface ChargeFamily {
   members: { id: string; name: string }[];
 }
 
+/** Gruppe der Abdeckung für Grund- und Familienbeitrag (sie schließen sich je Tag aus). */
+export const BASE_FEE_GROUP = "BASE";
+/** Aufnahmegebühr: einmal je Mitglied – die Abdeckung gilt „immer“. */
+export const COVERAGE_ALWAYS = {
+  from: new Date(Date.UTC(1900, 0, 1)),
+  to: new Date(Date.UTC(9999, 11, 31)),
+} as const;
+
+/** Welche Tage eine Zeile für wen abdeckt (der Beitragslauf speichert das, damit kein Tag zweimal berechnet wird). */
+export interface CoveragePreview {
+  memberId: string;
+  feeGroup: string;
+  from: Date;
+  to: Date;
+  /** Index der Zeile in `lines`. */
+  line: number;
+}
+
 export interface ChargePreview {
   /** Eindeutig je Vorschau: „m:<Mitglied>“ bzw. „f:<Familie>“. */
   key: string;
@@ -182,6 +211,8 @@ export interface ChargePreview {
   lines: ChargeLinePreview[];
   /** Ein Satz, der den Betrag erklärt („Erwachsene, 50 % ermäßigt (Übungsleiterin) → 18,00 €“). */
   explanation: string;
+  /** Abgedeckte Tage je Mitglied und Gruppe (Ermäßigungszeilen decken nichts eigenes ab). */
+  coverage: CoveragePreview[];
   /** Beitragsart, nach der die Zeile in der Übersicht heißt (bei mehreren die des größten Anteils). */
   mainFeeTypeName: string;
 }

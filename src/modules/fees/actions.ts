@@ -11,10 +11,12 @@ import {
   endFamilyMember,
   updateFamily,
 } from "./families";
+import { executeFeeRun, revertFeeRun, voidCharge } from "./run";
 import {
   assignmentDeleteSchema,
   assignmentEndSchema,
   assignmentSchema,
+  chargeVoidSchema,
   familyCreateSchema,
   familyDissolveSchema,
   familyMemberAddSchema,
@@ -22,6 +24,8 @@ import {
   familyMemberEndSchema,
   familyUpdateSchema,
   feeRateDeleteSchema,
+  feeRunExecuteSchema,
+  feeRunRevertSchema,
   feeRateSchema,
   feeSettingsSchema,
   feeTypeArchiveSchema,
@@ -161,5 +165,23 @@ export async function deleteFamilyMemberAction(input: unknown) {
 export async function dissolveFamilyAction(input: unknown) {
   return action("fee-family", async (value) =>
     dissolveFamily(await requireTenantContext(), parseInput(familyDissolveSchema, value)),
+  )(input);
+}
+
+export async function executeFeeRunAction(input: unknown) {
+  return action("fee-run", async (value) =>
+    executeFeeRun(await requireTenantContext(), parseInput(feeRunExecuteSchema, value)),
+  )(input);
+}
+
+export async function revertFeeRunAction(input: unknown) {
+  return action("fee-run", async (value) =>
+    revertFeeRun(await requireTenantContext(), parseInput(feeRunRevertSchema, value)),
+  )(input);
+}
+
+export async function voidChargeAction(input: unknown) {
+  return action("charge", async (value) =>
+    voidCharge(await requireTenantContext(), parseInput(chargeVoidSchema, value)),
   )(input);
 }
