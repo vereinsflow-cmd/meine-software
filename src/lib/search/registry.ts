@@ -248,6 +248,17 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
     keywords: ["beitragsart", "beitragsordnung", "jugend", "passiv", "aufnahmegebühr"],
   },
   {
+    id: "page:beitragsfamilien",
+    category: "seiten",
+    title: "Familien (Beiträge)",
+    description: "Familienbeitrag und wer für die Familie zahlt",
+    href: "/finanzen/beitraege/familien",
+    iconKey: "finanzen",
+    permission: "finance:read",
+    notOwnOnly: true,
+    keywords: ["familie", "familienbeitrag", "geschwister", "eltern", "zahler"],
+  },
+  {
     id: "page:abschluss",
     category: "seiten",
     title: "Monatsabschluss",

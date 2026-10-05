@@ -36,6 +36,8 @@ export interface EngineFeeType {
   /** Kleiner = zuerst geprüft (bei BASE eindeutig je Verein). */
   priority: number;
   archived: boolean;
+  /** Nur bei FAMILY: ab so vielen Familienmitgliedern mit Grundbeitrag gilt der Familienbeitrag (≥ 2). */
+  familyMinMembers?: number | null;
   /** Beitragssätze, beliebige Reihenfolge; maßgeblich ist der jüngste mit `validFrom <= Tag`. */
   rates: EngineFeeRate[];
 }
@@ -65,6 +67,8 @@ export interface EngineAssignment {
 export interface EngineMember {
   id: string;
   name: string;
+  /** Vorname für Aufzählungen („Familienbeitrag für Sophie, Lena und Mia“); sonst der ganze Name. */
+  shortName?: string;
   birthDate: Date | null;
   joinedAt: Date | null;
   leftAt: Date | null;
@@ -77,9 +81,19 @@ export interface EngineMember {
   departments: { departmentId: string; since: Date | null }[];
   /** Höchstens eine ASSIGN und höchstens eine andere je Tag (sichert die Datenbank). */
   assignments: EngineAssignment[];
-  /** Zahler (z. B. ein Elternteil), sonst das Mitglied selbst. */
+  /** Ausdrücklich gewählter Zahler (z. B. ein Elternteil). Ohne: in einer Familie deren Zahler, sonst das Mitglied selbst. */
   payerMemberId: string | null;
   paymentMethod: PaymentMethodValue;
+}
+
+/** Familie für den Familienbeitrag: feste Gruppe mit einem Zahler; Mitglieder mit Zeitraum (ab/bis). */
+export interface EngineFamily {
+  id: string;
+  name: string;
+  /** Beitragsart der Art FAMILY. */
+  feeTypeId: string;
+  payerMemberId: string;
+  members: { memberId: string; validFrom: Date; validTo: Date | null }[];
 }
 
 export interface EngineSettings {
@@ -98,6 +112,8 @@ export interface EngineInput {
   feeTypes: EngineFeeType[];
   settings: EngineSettings;
   members: EngineMember[];
+  /** Familien (Familienbeitrag statt der Grundbeiträge ihrer Mitglieder). */
+  families?: EngineFamily[];
   /** Namen der Zahler, die keine Mitglieder des Laufs sind (für die Anzeige); sonst aus `members`. */
   payerNames?: Record<string, string>;
 }
@@ -111,11 +127,18 @@ export type WarningCode =
   | "STATUS_HISTORY_INCOMPLETE"
   | "AGE_LIMIT_IN_PERIOD"
   | "BELOW_MIN_DEBIT"
-  | "PAYER_NOT_MEMBER";
+  | "PAYER_NOT_MEMBER"
+  /** Familienbeitrag greift nicht (Beitragsart archiviert, ohne Betrag …) – die Mitglieder zahlen einzeln. */
+  | "FAMILY_NOT_APPLIED"
+  /** Im ganzen Zeitraum zahlen weniger Familienmitglieder einen Beitrag als nötig – jedes zahlt einzeln. */
+  | "FAMILY_TOO_SMALL";
 
 export interface EngineWarning {
   code: WarningCode;
+  /** Bei Hinweisen zu einer Familie: ihr Zahler. */
   memberId: string;
+  /** Hinweis zu einer Familie (Link auf die Familien statt auf das Mitglied). */
+  familyId?: string;
   /** Ganzer Satz für die Anzeige („Otto Weber hat kein Geburtsdatum – als Erwachsener berechnet.“). */
   text: string;
 }
@@ -135,9 +158,22 @@ export interface ChargeLinePreview {
   exact: string;
 }
 
+/** Familie eines Familienbeitrags mit den Mitgliedern, für die er im Zeitraum gilt. */
+export interface ChargeFamily {
+  id: string;
+  name: string;
+  members: { id: string; name: string }[];
+}
+
 export interface ChargePreview {
+  /** Eindeutig je Vorschau: „m:<Mitglied>“ bzw. „f:<Familie>“. */
+  key: string;
+  /** Mitglied – beim Familienbeitrag der Zahler der Familie. */
   memberId: string;
+  /** Mitglied bzw. Name der Familie („Familie Krüger“). */
   memberName: string;
+  /** Nur beim Familienbeitrag. */
+  family: ChargeFamily | null;
   payerMemberId: string;
   payerName: string;
   paymentMethod: PaymentMethodValue;
@@ -151,15 +187,28 @@ export interface ChargePreview {
 }
 
 export interface ExemptPreview {
+  /** Beim Familienbeitrag 0,00 € der Zahler der Familie. */
   memberId: string;
   memberName: string;
+  /** Nur beim Familienbeitrag. */
+  familyId?: string;
   /** „Ehrenmitglied – beitragsfrei“, „beitragsfrei: Härtefall“, „Beitrag 0,00 €“. */
   reason: string;
+}
+
+/** Mitglied, dessen Grundbeitrag im ganzen Zeitraum der Familienbeitrag abdeckt (ohne eigene Zeile). */
+export interface CoveredPreview {
+  memberId: string;
+  memberName: string;
+  familyId: string;
+  familyName: string;
 }
 
 export interface EnginePreview {
   charges: ChargePreview[];
   exempt: ExemptPreview[];
+  /** Zahlen nur über den Familienbeitrag. */
+  covered: CoveredPreview[];
   /** Nicht berechnet: archiviert, ausgetreten vor dem Zeitraum, Eintritt danach. */
   skipped: { memberId: string; memberName: string; reason: string }[];
   warnings: EngineWarning[];

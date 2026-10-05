@@ -14,6 +14,8 @@ import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance, canFinance } from "@/modules/finance/access";
 import { calculateFees } from "./engine";
 import type {
+  ChargePreview,
+  EngineFamily,
   EngineFeeType,
   EngineInput,
   EngineMember,
@@ -42,7 +44,10 @@ import {
   feeTypeArchiveSchema,
   feeTypeCreateSchema,
   feeTypeMoveSchema,
+  FAMILY_MIN_MESSAGE,
+  familyMinMembersValid,
   feeTypeUpdateSchema,
+  kindWithoutRules,
   memberFinanceSchema,
 } from "./schemas";
 
@@ -152,6 +157,8 @@ export interface FeeTypeDto {
   statuses: ("ACTIVE" | "PASSIVE" | "LEFT" | "HONORARY" | "BLOCKED")[];
   minAge: number | null;
   maxAge: number | null;
+  /** Nur beim Familienbeitrag. */
+  familyMinMembers: number | null;
   priority: number;
   description: string | null;
   archived: boolean;
@@ -174,9 +181,12 @@ function ruleText(type: {
   statuses: string[];
   minAge: number | null;
   maxAge: number | null;
+  familyMinMembers: number | null;
   department: { name: string } | null;
 }): string {
   if (type.kind === "ADMISSION") return "einmalig beim Eintritt";
+  if (type.kind === "FAMILY")
+    return `für Familien, sobald ${type.familyMinMembers ?? 2} Mitglieder einen Grundbeitrag zahlen würden`;
   const who = type.statuses.length
     ? type.statuses.map((s) => STATUS_PLURAL[s] ?? s).join(", ")
     : "Aktive, Passive und Gesperrte";
@@ -234,6 +244,7 @@ function feeTypeDto(row: FeeTypeRow, today: Date, billing: BillingInterval): Fee
     statuses: row.statuses,
     minAge: row.minAge,
     maxAge: row.maxAge,
+    familyMinMembers: row.familyMinMembers,
     priority: row.priority,
     description: row.description,
     archived: row.archivedAt !== null,
@@ -309,10 +320,11 @@ export async function createFeeType(ctx: TenantContext, input: unknown): Promise
         clubId: ctx.clubId,
         name: data.name,
         kind: data.kind,
-        departmentId: data.kind === "ADMISSION" ? null : (department?.id ?? null),
-        statuses: data.kind === "ADMISSION" ? [] : data.statuses,
-        minAge: data.kind === "ADMISSION" ? null : ageValue(data.minAge),
-        maxAge: data.kind === "ADMISSION" ? null : ageValue(data.maxAge),
+        departmentId: kindWithoutRules(data.kind) ? null : (department?.id ?? null),
+        statuses: kindWithoutRules(data.kind) ? [] : data.statuses,
+        minAge: kindWithoutRules(data.kind) ? null : ageValue(data.minAge),
+        maxAge: kindWithoutRules(data.kind) ? null : ageValue(data.maxAge),
+        familyMinMembers: data.kind === "FAMILY" ? Number(data.familyMinMembers) : null,
         priority: data.kind === "BASE" ? (last._max.priority ?? 0) + 10 : 100,
         description: data.description || null,
       },
@@ -347,14 +359,24 @@ export async function updateFeeType(ctx: TenantContext, input: unknown): Promise
     const department = await assertDepartment(tx, data.departmentId);
     if (type.kind === "ADDITIONAL" && !department)
       throw validationFailed({ departmentId: ["Ein Zusatzbeitrag gehört zu einer Abteilung."] });
+    if (type.kind === "FAMILY" && !familyMinMembersValid(data.familyMinMembers))
+      throw validationFailed({
+        familyMinMembers: [
+          data.familyMinMembers === undefined
+            ? "Bitte angeben, ab wie vielen Mitgliedern der Familienbeitrag gilt."
+            : FAMILY_MIN_MESSAGE,
+        ],
+      });
+    const noRules = kindWithoutRules(type.kind);
     await tx.feeType.update({
       where: { id: type.id },
       data: {
         name: data.name,
-        departmentId: type.kind === "ADMISSION" ? null : (department?.id ?? null),
-        statuses: type.kind === "ADMISSION" ? [] : data.statuses,
-        minAge: type.kind === "ADMISSION" ? null : ageValue(data.minAge),
-        maxAge: type.kind === "ADMISSION" ? null : ageValue(data.maxAge),
+        departmentId: noRules ? null : (department?.id ?? null),
+        statuses: noRules ? [] : data.statuses,
+        minAge: noRules ? null : ageValue(data.minAge),
+        maxAge: noRules ? null : ageValue(data.maxAge),
+        familyMinMembers: type.kind === "FAMILY" ? Number(data.familyMinMembers) : null,
         description: data.description || null,
       },
     });
@@ -699,6 +721,7 @@ const engineFeeTypes = (rows: FeeTypeRow[]): EngineFeeType[] =>
     statuses: row.statuses,
     minAge: row.minAge,
     maxAge: row.maxAge,
+    familyMinMembers: row.familyMinMembers,
     priority: row.priority,
     archived: row.archivedAt !== null,
     rates: row.rates.map((rate) => ({
@@ -760,6 +783,7 @@ function engineMember(
   return {
     id: row.id,
     name: `${row.firstName} ${row.lastName}`,
+    shortName: row.firstName,
     birthDate: row.birthDate,
     joinedAt: row.joinedAt,
     leftAt: row.leftAt,
@@ -803,10 +827,35 @@ export async function whoPays(
   assertFinance(ctx, "finance:read");
   const settings = await getFeeSettings(ctx);
   const period = options.period ?? billingPeriod(settings.feeInterval);
+  // Familien, die den Zeitraum berühren (bei einem einzelnen Mitglied nur seine).
+  const familyRows = await ctx.db.feeFamily.findMany({
+    where: {
+      ...(options.memberId ? { members: { some: { memberId: options.memberId } } } : {}),
+    },
+    include: {
+      members: {
+        where: {
+          validFrom: { lte: period.end },
+          OR: [{ validTo: null }, { validTo: { gte: period.start } }],
+        },
+        select: { memberId: true, validFrom: true, validTo: true },
+      },
+    },
+  });
+  // Ein einzelnes Mitglied: mit den übrigen Mitgliedern und Zahlern seiner Familien – ob der Familienbeitrag gilt, hängt
+  // von allen ab.
+  const memberIds = options.memberId
+    ? [
+        ...new Set([
+          options.memberId,
+          ...familyRows.flatMap((f) => [f.payerMemberId, ...f.members.map((m) => m.memberId)]),
+        ]),
+      ]
+    : null;
   const [feeTypes, members] = await Promise.all([
     ctx.db.feeType.findMany({ include: feeTypeInclude }),
     ctx.db.member.findMany({
-      where: options.memberId ? { id: options.memberId } : {},
+      where: memberIds ? { id: { in: memberIds } } : {},
       select: memberSelect,
     }),
   ]);
@@ -841,24 +890,48 @@ export async function whoPays(
     ...members.map((m) => [m.id, m.finance?.paymentMethod ?? "TRANSFER"] as const),
     ...payers.map((p) => [p.id, p.finance?.paymentMethod ?? "TRANSFER"] as const),
   ]);
+  const families: EngineFamily[] = familyRows
+    .filter((f) => f.members.length > 0)
+    .map((f) => ({
+      id: f.id,
+      name: f.name,
+      feeTypeId: f.feeTypeId,
+      payerMemberId: f.payerMemberId,
+      members: f.members,
+    }));
   const input: EngineInput = {
     periodStart: period.start,
     periodEnd: period.end,
     feeTypes: engineFeeTypes(feeTypes),
     settings,
     members: members.map((row) => engineMember(row, methodOf, inactivePayers)),
+    families,
     payerNames: Object.fromEntries(payers.map((p) => [p.id, `${p.firstName} ${p.lastName}`])),
   };
-  const preview = calculateFees(input);
-  // Hinweis für Mitglieder, deren Zahler nicht mehr aktiv ist (sie zahlen bis dahin selbst).
+  let preview = calculateFees(input);
+  // Hinweis für Mitglieder, deren Zahler nicht mehr aktiv ist: Bis ein neuer gewählt ist, zahlen sie selbst – bzw. in
+  // einer Familie deren Zahler.
   for (const row of members) {
     const payerId = row.finance?.payerMemberId;
     if (!payerId || !inactivePayers.has(payerId) || inactive(row)) continue;
+    const own = preview.charges.find((c) => c.key === `m:${row.id}`);
+    const until = !own
+      ? ""
+      : own.payerMemberId === row.id
+        ? ` Bis dahin zahlt ${row.firstName} selbst.`
+        : ` Bis dahin zahlt ${own.payerName} (Zahler der Familie).`;
     preview.warnings.push({
       code: "PAYER_NOT_MEMBER",
       memberId: row.id,
-      text: `Der Zahler von ${row.firstName} ${row.lastName} ist nicht mehr aktiv (archiviert oder gelöscht) – bitte einen neuen wählen. Bis dahin zahlt ${row.firstName} selbst.`,
+      text: `Der Zahler von ${row.firstName} ${row.lastName} ist nicht mehr aktiv (archiviert oder gelöscht) – bitte einen neuen wählen.${until}`,
     });
+  }
+  if (options.memberId) {
+    // Hinweise zu den eigenen Familien (z. B. „Familienbeitrag greift nicht“) gehören auf die Karte des Mitglieds.
+    const ownFamilies = families
+      .filter((f) => f.members.some((m) => m.memberId === options.memberId))
+      .map((f) => f.id);
+    preview = onlyMember(preview, options.memberId, ownFamilies);
   }
   return {
     ...preview,
@@ -868,16 +941,58 @@ export async function whoPays(
   };
 }
 
+/** Aus einer Vorschau mit Familienmitgliedern nur das, was ein Mitglied betrifft (eigene Zeile, seine Familie). */
+function onlyMember(
+  preview: EnginePreview,
+  memberId: string,
+  ownFamilies: string[],
+): EnginePreview {
+  const charges = preview.charges.filter((charge) =>
+    charge.family
+      ? charge.family.members.some((m) => m.id === memberId)
+      : charge.memberId === memberId,
+  );
+  const familyIds = new Set([
+    ...ownFamilies,
+    ...charges.flatMap((charge) => (charge.family ? [charge.family.id] : [])),
+  ]);
+  for (const covered of preview.covered)
+    if (covered.memberId === memberId) familyIds.add(covered.familyId);
+  return {
+    charges,
+    exempt: preview.exempt.filter((e) => e.memberId === memberId && !e.familyId),
+    covered: preview.covered.filter((c) => c.memberId === memberId),
+    skipped: preview.skipped.filter((s) => s.memberId === memberId),
+    warnings: preview.warnings.filter((w) =>
+      w.familyId ? familyIds.has(w.familyId) : w.memberId === memberId,
+    ),
+    totalCents: charges.reduce((total, charge) => total + charge.amountCents, 0),
+  };
+}
+
 export interface MemberFeeInfo {
   period: FeePeriod;
-  /** Betrag im laufenden Zeitraum, `null` = beitragsfrei bzw. nicht berechnet. */
-  charge: WhoPays["charges"][number] | null;
+  /** Eigener Betrag im laufenden Zeitraum, `null` = keiner (beitragsfrei, über die Familie, nicht berechnet). */
+  charge: ChargePreview | null;
+  /** Familienbeiträge, die im Zeitraum den Grundbeitrag des Mitglieds abdecken (bei einem Wechsel zwei). */
+  familyCharges: ChargePreview[];
   exempt: string | null;
   warnings: string[];
   paymentMethod: "TRANSFER" | "DIRECT_DEBIT" | "CASH";
+  /** Ausdrücklich gewählter Zahler. */
   payer: { id: string; name: string } | null;
+  /** Familie, in der das Mitglied heute ist (bzw. als nächstes sein wird), mit ihrem Zahler. */
+  family: {
+    id: string;
+    name: string;
+    validFrom: Date;
+    validTo: Date | null;
+    payer: { id: string; name: string };
+  } | null;
   /** Mitglieder, für die dieses Mitglied zahlt. */
   paysFor: { id: string; name: string }[];
+  /** Familien, für die dieses Mitglied zahlt. */
+  paysForFamilies: { id: string; name: string }[];
   note: string | null;
   assignments: {
     id: string;
@@ -947,6 +1062,32 @@ export async function getMemberFee(
         },
       },
       paysFor: { select: { member: { select: { id: true, firstName: true, lastName: true } } } },
+      // Familien, die noch laufen (nicht aufgelöst, jemand heute oder künftig dabei).
+      paysForFamilies: {
+        where: {
+          archivedAt: null,
+          members: {
+            some: { OR: [{ validTo: null }, { validTo: { gte: todayCalendarDate() } }] },
+          },
+        },
+        select: { id: true, name: true },
+      },
+      feeFamilies: {
+        where: { OR: [{ validTo: null }, { validTo: { gte: todayCalendarDate() } }] },
+        orderBy: { validFrom: "asc" },
+        take: 1,
+        select: {
+          validFrom: true,
+          validTo: true,
+          family: {
+            select: {
+              id: true,
+              name: true,
+              payer: { select: { id: true, firstName: true, lastName: true } },
+            },
+          },
+        },
+      },
       feeAssignments: {
         orderBy: { validFrom: "desc" },
         include: { feeType: { select: { name: true } } },
@@ -956,10 +1097,13 @@ export async function getMemberFee(
   if (!member) return null;
   const result = await whoPays(ctx, { memberId });
   const today = todayCalendarDate();
-  const charge = result.charges[0] ?? null;
+  const charge = result.charges.find((c) => c.family === null) ?? null;
+  const familyCharges = result.charges.filter((c) => c.family !== null);
+  const membership = member.feeFamilies[0];
   return {
     period: result.period,
     charge,
+    familyCharges,
     exempt: result.exempt[0]?.reason ?? result.skipped[0]?.reason ?? null,
     warnings: result.warnings.map((w) => w.text),
     paymentMethod: member.finance?.paymentMethod ?? "TRANSFER",
@@ -969,10 +1113,23 @@ export async function getMemberFee(
           name: `${member.finance.payer.firstName} ${member.finance.payer.lastName}`,
         }
       : null,
+    family: membership
+      ? {
+          id: membership.family.id,
+          name: membership.family.name,
+          validFrom: membership.validFrom,
+          validTo: membership.validTo,
+          payer: {
+            id: membership.family.payer.id,
+            name: `${membership.family.payer.firstName} ${membership.family.payer.lastName}`,
+          },
+        }
+      : null,
     paysFor: member.paysFor.map((f) => ({
       id: f.member.id,
       name: `${f.member.firstName} ${f.member.lastName}`,
     })),
+    paysForFamilies: member.paysForFamilies,
     note: member.finance?.note ?? null,
     assignments: member.feeAssignments.map((a) => ({
       id: a.id,

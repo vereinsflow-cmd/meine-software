@@ -200,9 +200,13 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
     "NO_JOIN_DATE",
     "LEFT_WITHOUT_DATE",
     "PAYER_NOT_MEMBER",
+    "FAMILY_NOT_APPLIED",
   ]);
+  // Je Mitglied bzw. Familie einmal gezählt.
   const feeWarnings = new Set(
-    fees.warnings.filter((w) => actionable.has(w.code)).map((w) => w.memberId),
+    fees.warnings
+      .filter((w) => actionable.has(w.code))
+      .map((w) => (w.familyId ? `f:${w.familyId}` : `m:${w.memberId}`)),
   ).size;
   if (fees.feeTypeCount > 0 && feeWarnings > 0)
     due.push({
@@ -210,9 +214,10 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
       urgency: 35,
       title:
         feeWarnings === 1
-          ? "Beiträge: 1 Mitglied prüfen"
-          : `Beiträge: ${feeWarnings} Mitglieder prüfen`,
-      detail: "Zum Beispiel fehlt ein Geburtsdatum oder es passt keine Beitragsart.",
+          ? "Beiträge: 1 Hinweis prüfen"
+          : `Beiträge: ${feeWarnings} Hinweise prüfen`,
+      detail:
+        "Zum Beispiel fehlt ein Geburtsdatum, es passt keine Beitragsart oder ein Familienbeitrag greift nicht.",
       tone: "warning",
       href: "/finanzen/beitraege",
       actionLabel: "Hinweise ansehen",

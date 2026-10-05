@@ -51,13 +51,31 @@ const optionalAge = z
     "Bitte gib ein Alter zwischen 0 und 120 ein.",
   );
 
-export const FEE_KINDS = ["BASE", "ADDITIONAL", "ADMISSION"] as const;
-export const FEE_KIND_LABEL: Record<(typeof FEE_KINDS)[number] | "FAMILY", string> = {
+export const FEE_KINDS = ["BASE", "ADDITIONAL", "FAMILY", "ADMISSION"] as const;
+export const FEE_KIND_LABEL: Record<(typeof FEE_KINDS)[number], string> = {
   BASE: "Grundbeitrag",
   ADDITIONAL: "Zusatzbeitrag einer Abteilung",
-  ADMISSION: "Aufnahmegebühr (einmalig)",
   FAMILY: "Familienbeitrag",
+  ADMISSION: "Aufnahmegebühr (einmalig)",
 };
+
+/** Ohne Status, Alter und Abteilung: Aufnahmegebühr (beim Eintritt) und Familienbeitrag (für die Familie). */
+export const kindWithoutRules = (kind: string) => kind === "ADMISSION" || kind === "FAMILY";
+
+/**
+ * „Ab wie vielen zahlenden Mitgliedern“ beim Familienbeitrag: 2 bis 10. Geprüft wird nur beim Familienbeitrag – bei
+ * anderen Arten ist das Feld ausgeblendet und darf kein unsichtbares Hindernis sein.
+ */
+const familyMinMembers = z
+  .string()
+  .trim()
+  .max(20)
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
+export const familyMinMembersValid = (value: string | undefined) =>
+  value !== undefined && /^\d{1,2}$/.test(value) && Number(value) >= 2 && Number(value) <= 10;
+export const FAMILY_MIN_MESSAGE = "Bitte eine Zahl zwischen 2 und 10 eingeben.";
 
 export const FEE_INTERVALS = ["MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"] as const;
 export const FEE_INTERVAL_LABEL: Record<(typeof FEE_INTERVALS)[number] | "ONCE", string> = {
@@ -83,6 +101,7 @@ const ruleFields = {
   statuses: z.array(z.enum(MEMBER_STATUSES)).max(4),
   minAge: optionalAge,
   maxAge: optionalAge,
+  familyMinMembers,
   description: z.string().trim().max(300).optional(),
 };
 
@@ -109,8 +128,17 @@ export const feeTypeCreateSchema = z
     validFrom: calendarDate,
   })
   .superRefine((data, ctx) => {
-    // Aufnahmegebühr: Status, Alter und Abteilung spielen keine Rolle (ausgeblendet, auch nicht geprüft).
-    if (data.kind !== "ADMISSION") checkAges(data, ctx);
+    // Aufnahmegebühr und Familienbeitrag: Status, Alter und Abteilung spielen keine Rolle (ausgeblendet, nicht geprüft).
+    if (!kindWithoutRules(data.kind)) checkAges(data, ctx);
+    if (data.kind === "FAMILY" && !familyMinMembersValid(data.familyMinMembers))
+      ctx.addIssue({
+        code: "custom",
+        path: ["familyMinMembers"],
+        message:
+          data.familyMinMembers === undefined
+            ? "Bitte angeben, ab wie vielen Mitgliedern der Familienbeitrag gilt."
+            : FAMILY_MIN_MESSAGE,
+      });
     if (data.kind === "ADDITIONAL" && !data.departmentId)
       ctx.addIssue({
         code: "custom",
@@ -129,7 +157,8 @@ export const feeTypeCreateSchema = z
   });
 export type FeeTypeCreateInput = z.input<typeof feeTypeCreateSchema>;
 
-/** Regeln einer Beitragsart ändern (Art bleibt; Beträge über „Neuer Betrag ab …“). */
+/** Regeln einer Beitragsart ändern (Art bleibt; Beträge über „Neuer Betrag ab …“). Ob die Altersgrenzen zählen, weiß erst
+ * der Dienst (er kennt die Art) – ausgeblendete Felder kommen leer. */
 export const feeTypeUpdateSchema = z
   .object({ id, ...ruleFields })
   .superRefine((data, ctx) => checkAges(data, ctx));
@@ -220,6 +249,62 @@ export const assignmentEndSchema = z.object({ id, validTo: calendarDate });
 
 /** Regel entfernen (nur noch nicht gültig oder heute angelegt). */
 export const assignmentDeleteSchema = z.object({ id });
+
+// ---------------------------------------------------------------------------------------------
+// Familien
+// ---------------------------------------------------------------------------------------------
+
+const familyName = z.string().trim().min(1, "Bitte gib der Familie einen Namen.").max(80);
+const familyFeeType = z.string().trim().min(1, "Bitte wähle den Familienbeitrag.").max(64);
+const familyPayer = z.string().trim().min(1, "Bitte wähle, wer für die Familie zahlt.").max(64);
+
+/** „Familie anlegen“: Name, Familienbeitrag, Zahler, Mitglieder ab einem Tag. */
+export const familyCreateSchema = z
+  .object({
+    name: familyName,
+    feeTypeId: familyFeeType,
+    payerMemberId: familyPayer,
+    memberIds: z
+      .array(id)
+      .min(2, "Eine Familie hat mindestens zwei Mitglieder.")
+      .max(20, "Höchstens 20 Mitglieder je Familie."),
+    validFrom: calendarDate,
+  })
+  .superRefine((data, ctx) => {
+    if (new Set(data.memberIds).size !== data.memberIds.length)
+      ctx.addIssue({
+        code: "custom",
+        path: ["memberIds"],
+        message: "Jedes Mitglied nur einmal.",
+      });
+  });
+export type FamilyCreateInput = z.input<typeof familyCreateSchema>;
+
+/** Name, Familienbeitrag und Zahler ändern (Mitglieder einzeln hinzufügen bzw. austragen). */
+export const familyUpdateSchema = z.object({
+  id,
+  name: familyName,
+  feeTypeId: familyFeeType,
+  payerMemberId: familyPayer,
+});
+export type FamilyUpdateInput = z.input<typeof familyUpdateSchema>;
+
+/** Mitglied ab einem Tag zur Familie hinzufügen. */
+export const familyMemberAddSchema = z.object({
+  familyId: id,
+  memberId: z.string().trim().min(1, "Bitte wähle ein Mitglied.").max(64),
+  validFrom: calendarDate,
+});
+export type FamilyMemberAddInput = z.input<typeof familyMemberAddSchema>;
+
+/** Mitglied austragen: letzter Tag in der Familie. */
+export const familyMemberEndSchema = z.object({ id, validTo: calendarDate });
+
+/** Versehentlich hinzugefügt (noch nicht gültig oder heute): ganz entfernen. */
+export const familyMemberDeleteSchema = z.object({ id });
+
+/** Familie auflösen: letzter Tag für alle Mitglieder. */
+export const familyDissolveSchema = z.object({ id, validTo: calendarDate });
 
 export const PRO_RATA_ENTRY_LABEL = {
   DAY: "ab dem Eintrittstag (tagesgenau)",

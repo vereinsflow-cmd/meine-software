@@ -36,7 +36,7 @@ const noRateYet = (type: FeeTypeDto) => !type.rates.some((rate) => rate.current)
 
 /**
  * Beitragsarten: Grundbeiträge in der Reihenfolge, in der sie geprüft werden (die erste passende gilt), darunter
- * Zusatzbeiträge und Aufnahmegebühr. Jede Zeile sagt in Alltagssprache, für wen sie gilt und was sie kostet; Beträge
+ * Familienbeiträge, Zusatzbeiträge und Aufnahmegebühr. Jede Zeile sagt in Alltagssprache, für wen sie gilt und was sie kostet; Beträge
  * ändern sich nur „ab einem Tag“ – frühere Zeiträume bleiben, wie sie waren.
  */
 export default async function FeeTypesPage() {
@@ -60,10 +60,18 @@ export default async function FeeTypesPage() {
       items: base,
     },
     {
+      key: "familie",
+      title: "Familienbeiträge",
+      hint: "Gelten für die Familien, die unter „Familien“ angelegt sind – statt der Grundbeiträge ihrer Mitglieder.",
+      items: types.filter((t) => t.kind === "FAMILY" && !t.archived),
+    },
+    {
       key: "zusatz",
       title: "Zusatzbeiträge und Aufnahmegebühr",
       hint: "Zusatzbeiträge zahlen die Mitglieder einer Abteilung zusätzlich zum Grundbeitrag.",
-      items: types.filter((t) => t.kind !== "BASE" && !t.archived),
+      items: types.filter(
+        (t) => (t.kind === "ADDITIONAL" || t.kind === "ADMISSION") && !t.archived,
+      ),
     },
     {
       key: "archiv",
@@ -136,7 +144,7 @@ export default async function FeeTypesPage() {
                               {type.name}
                             </span>
                             <span className="block text-sm text-muted-foreground">
-                              {type.kind === "BASE"
+                              {type.kind === "BASE" || type.kind === "FAMILY"
                                 ? type.ruleText
                                 : `${FEE_KIND_LABEL[type.kind]} · ${type.ruleText}`}
                             </span>
@@ -188,6 +196,7 @@ export default async function FeeTypesPage() {
                                   statuses: type.statuses,
                                   minAge: type.minAge,
                                   maxAge: type.maxAge,
+                                  familyMinMembers: type.familyMinMembers,
                                   description: type.description,
                                   archived: type.archived,
                                   removableRates:

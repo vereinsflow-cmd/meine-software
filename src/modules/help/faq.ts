@@ -609,6 +609,18 @@ export const FAQ: readonly FaqSection[] = [
           "ermäßigung befreiung beitragsfrei übungsleiter eltern zahler lastschrift überweisung",
       },
       {
+        id: "familienbeitrag",
+        question: "Wie richte ich einen Familienbeitrag ein?",
+        steps: [
+          "Unter „Finanzen“ → „Beiträge“ → „Beitragsarten“ eine Beitragsart der Art „Familienbeitrag“ anlegen – mit Betrag und ab wie vielen Mitgliedern er gilt (z. B. ab 3).",
+          "Unter „Familien“ → „Familie anlegen“ die Mitglieder auswählen und festlegen, wer zahlt.",
+          "Ab dann steht die Familie unter „Wer zahlt was“ als eine Zeile. Wer die Familie verlässt, wird ausgetragen – frühere Zeiträume bleiben, wie sie waren.",
+        ],
+        tip: "Der Familienbeitrag gilt an jedem Tag, an dem genug Familienmitglieder einen Grundbeitrag zahlen würden; sonst zahlt jedes einzeln. Zusatzbeiträge der Abteilungen bleiben beim Mitglied – sie zahlt der Zahler der Familie mit.",
+        link: { href: "/finanzen/beitraege/familien", label: "Familien" },
+        keywords: "familie familienbeitrag geschwister eltern kinder zahler",
+      },
+      {
         id: "monatsabschluss",
         question: "Was ist der Monatsabschluss und wann mache ich ihn?",
         steps: [

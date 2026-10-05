@@ -4,9 +4,23 @@ import { revalidatePath } from "next/cache";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
 import {
+  addFamilyMember,
+  createFamily,
+  deleteFamilyMember,
+  dissolveFamily,
+  endFamilyMember,
+  updateFamily,
+} from "./families";
+import {
   assignmentDeleteSchema,
   assignmentEndSchema,
   assignmentSchema,
+  familyCreateSchema,
+  familyDissolveSchema,
+  familyMemberAddSchema,
+  familyMemberDeleteSchema,
+  familyMemberEndSchema,
+  familyUpdateSchema,
   feeRateDeleteSchema,
   feeRateSchema,
   feeSettingsSchema,
@@ -111,5 +125,41 @@ export async function updateFeeSettingsAction(input: unknown) {
 export async function deleteAssignmentAction(input: unknown) {
   return action("fee-assignment", async (value) =>
     deleteAssignment(await requireTenantContext(), parseInput(assignmentDeleteSchema, value)),
+  )(input);
+}
+
+export async function createFamilyAction(input: unknown) {
+  return action("fee-family", async (value) =>
+    createFamily(await requireTenantContext(), parseInput(familyCreateSchema, value)),
+  )(input);
+}
+
+export async function updateFamilyAction(input: unknown) {
+  return action("fee-family", async (value) =>
+    updateFamily(await requireTenantContext(), parseInput(familyUpdateSchema, value)),
+  )(input);
+}
+
+export async function addFamilyMemberAction(input: unknown) {
+  return action("fee-family", async (value) =>
+    addFamilyMember(await requireTenantContext(), parseInput(familyMemberAddSchema, value)),
+  )(input);
+}
+
+export async function endFamilyMemberAction(input: unknown) {
+  return action("fee-family", async (value) =>
+    endFamilyMember(await requireTenantContext(), parseInput(familyMemberEndSchema, value)),
+  )(input);
+}
+
+export async function deleteFamilyMemberAction(input: unknown) {
+  return action("fee-family", async (value) =>
+    deleteFamilyMember(await requireTenantContext(), parseInput(familyMemberDeleteSchema, value)),
+  )(input);
+}
+
+export async function dissolveFamilyAction(input: unknown) {
+  return action("fee-family", async (value) =>
+    dissolveFamily(await requireTenantContext(), parseInput(familyDissolveSchema, value)),
   )(input);
 }

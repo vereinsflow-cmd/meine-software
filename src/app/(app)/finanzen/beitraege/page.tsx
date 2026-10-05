@@ -41,7 +41,7 @@ export const metadata: Metadata = { title: "Beiträge" };
 
 /**
  * „Wer zahlt was“ (Etappe 5): für den laufenden (oder gewählten) Zeitraum, was jedes Mitglied zahlen soll und warum –
- * bevor irgendetwas eingezogen wird. Hinweise (ohne Geburtsdatum, keine passende Beitragsart …) stehen ruhig als Text
+ * bevor irgendetwas eingezogen wird. Eine Familie mit Familienbeitrag steht als eine Zeile da (Etappe 6). Hinweise (ohne Geburtsdatum, keine passende Beitragsart …) stehen ruhig als Text
  * darüber, jeder mit Link zum Mitglied. Noch keine Beiträge erstellt: Das macht später der Beitragslauf.
  */
 export default async function FeesPage({
@@ -73,11 +73,24 @@ export default async function FeesPage({
         (charge) =>
           charge.memberName.toLowerCase().includes(q) ||
           charge.payerName.toLowerCase().includes(q) ||
-          charge.mainFeeTypeName.toLowerCase().includes(q),
+          charge.mainFeeTypeName.toLowerCase().includes(q) ||
+          (charge.family?.members ?? []).some((m) => m.name.toLowerCase().includes(q)),
       )
     : result.charges;
   const byMethod = (method: "TRANSFER" | "DIRECT_DEBIT" | "CASH") =>
     result.charges.filter((c) => c.paymentMethod === method).length;
+  // Wer zahlt – einzeln oder über den Familienbeitrag (jedes Mitglied einmal).
+  const paying = new Set([
+    ...result.charges.filter((c) => !c.family).map((c) => c.memberId),
+    ...result.covered.map((c) => c.memberId),
+    ...result.charges.flatMap((c) => c.family?.members.map((m) => m.id) ?? []),
+  ]);
+  const familyCount = result.charges.filter((c) => c.family).length;
+  const viaFamily = new Set([
+    ...result.covered.map((c) => c.memberId),
+    ...result.charges.flatMap((c) => c.family?.members.map((m) => m.id) ?? []),
+  ]).size;
+  const familyHref = (id: string) => `/finanzen/beitraege/familien#familie-${id}`;
 
   return (
     <>
@@ -136,11 +149,19 @@ export default async function FeesPage({
             aria-label="Zusammenfassung"
             className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
           >
-            <Tile label="Beiträge zusammen" value={formatEuroFromCents(result.totalCents)} />
+            <Tile
+              label="Beiträge zusammen"
+              value={formatEuroFromCents(result.totalCents)}
+              detail={`${byMethod("DIRECT_DEBIT")} per Lastschrift, ${byMethod("TRANSFER")} per Überweisung${byMethod("CASH") ? `, ${byMethod("CASH")} bar` : ""}`}
+            />
             <Tile
               label="Mitglieder mit Beitrag"
-              value={String(result.charges.length)}
-              detail={`${byMethod("DIRECT_DEBIT")} per Lastschrift, ${byMethod("TRANSFER")} per Überweisung${byMethod("CASH") ? `, ${byMethod("CASH")} bar` : ""}`}
+              value={String(paying.size)}
+              detail={
+                familyCount > 0
+                  ? `davon ${viaFamily} über ${familyCount === 1 ? "einen Familienbeitrag" : `${familyCount} Familienbeiträge`}`
+                  : undefined
+              }
             />
             <Tile
               label="Beitragsfrei"
@@ -160,13 +181,17 @@ export default async function FeesPage({
                 <h2 className="text-lg font-semibold">Bitte prüfen</h2>
                 <ul className="grid gap-1.5 text-sm">
                   {result.warnings.map((warning, index) => (
-                    <li key={`${warning.memberId}-${warning.code}-${index}`}>
+                    <li key={`${warning.familyId ?? warning.memberId}-${warning.code}-${index}`}>
                       {warning.text}{" "}
                       <Link
-                        href={`/mitglieder/${warning.memberId}`}
+                        href={
+                          warning.familyId
+                            ? familyHref(warning.familyId)
+                            : `/mitglieder/${warning.memberId}`
+                        }
                         className="font-medium text-primary underline-offset-4 hover:underline"
                       >
-                        Mitglied öffnen
+                        {warning.familyId ? "Familie öffnen" : "Mitglied öffnen"}
                       </Link>
                     </li>
                   ))}
@@ -193,10 +218,14 @@ export default async function FeesPage({
                 </TableHeader>
                 <TableBody>
                   {rows.map((charge) => (
-                    <TableRow key={charge.memberId}>
+                    <TableRow key={charge.key}>
                       <TableCell className="align-top whitespace-normal">
                         <Link
-                          href={`/mitglieder/${charge.memberId}`}
+                          href={
+                            charge.family
+                              ? familyHref(charge.family.id)
+                              : `/mitglieder/${charge.memberId}`
+                          }
                           className="font-medium underline-offset-4 hover:underline"
                         >
                           {charge.memberName}
@@ -204,7 +233,7 @@ export default async function FeesPage({
                         <span className="block text-sm text-muted-foreground">
                           {charge.explanation}
                         </span>
-                        {charge.payerMemberId !== charge.memberId && (
+                        {(charge.family || charge.payerMemberId !== charge.memberId) && (
                           <span className="block text-sm text-muted-foreground">
                             zahlt: {charge.payerName}
                           </span>
@@ -236,9 +265,11 @@ export default async function FeesPage({
               </h2>
               <ul className="grid gap-1 text-sm">
                 {result.exempt.map((item) => (
-                  <li key={item.memberId}>
+                  <li key={`${item.familyId ?? ""}${item.memberId}`}>
                     <Link
-                      href={`/mitglieder/${item.memberId}`}
+                      href={
+                        item.familyId ? familyHref(item.familyId) : `/mitglieder/${item.memberId}`
+                      }
                       className="font-medium underline-offset-4 hover:underline"
                     >
                       {item.memberName}
