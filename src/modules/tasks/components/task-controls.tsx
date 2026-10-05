@@ -209,6 +209,7 @@ export function TaskRow({ task, options }: { task: TaskDto; options: TaskFormOpt
       if (!result.ok) toast.error(result.error.message);
       else if (status === "DONE")
         toast.success(`„${task.title}“ ist erledigt.`, {
+          duration: 8000,
           action: { label: "Rückgängig", onClick: () => restore(previous) },
         });
       router.refresh();

@@ -10,7 +10,7 @@ import { ChatAvatar } from "./chat-avatar";
  */
 export function ChatList({ chats, activeKey }: { chats: ChatSummary[]; activeKey?: string }) {
   return (
-    <ul aria-label="Chats" className="min-h-0 flex-1 overflow-y-auto">
+    <ul aria-label="Chats" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       {chats.map((chat) => {
         const active = chat.key === activeKey;
         const firstName = chat.last.author?.split(" ")[0];

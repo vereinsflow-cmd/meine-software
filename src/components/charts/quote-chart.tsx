@@ -143,7 +143,7 @@ export function QuoteChart({
         onPointerLeave={() => setActive(null)}
         onPointerCancel={() => setActive(null)}
         className={cn(
-          "relative h-14 motion-safe:animate-in motion-safe:duration-700 motion-safe:fade-in max-sm:touch-auto sm:touch-pan-y sm:touch-pinch-zoom",
+          "relative h-14 motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in max-sm:touch-auto sm:touch-pan-y sm:touch-pinch-zoom",
           className,
         )}
       >

@@ -46,6 +46,7 @@ export function MarkPaidButton({
       }
       toast.success(`„${name}“ ist als bezahlt markiert.`, {
         description: hint,
+        duration: 8000,
         action: { label: "Rückgängig", onClick: () => reopen() },
       });
       router.refresh();

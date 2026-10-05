@@ -290,7 +290,7 @@ function QuoteStats({ quote, period }: { quote: Quote; period: QuotePeriod }) {
  * Was darüber liegt und selbst bedienbar ist (Zeitraum-Knöpfe, Kurs mit Infofeld), steht außerhalb des Links (`extra`) –
  * Knöpfe in einem Link wären ungültig; der Kurs liegt in einem zweiten, für Tastatur und Screenreader verborgenen Link zum
  * selben Ziel (`QuoteLink`). Der Fokusrahmen sitzt an der Karte selbst (`has-…:focus-visible`), der Rand der Karte schnitte
- * ihn sonst ab. Beim Überfahren hebt die Karte sich leicht an und leuchtet stärker (ohne Bewegung bei „Bewegung reduzieren“).
+ * ihn sonst ab. Beim Überfahren leuchtet die Karte stärker, sie hebt sich aber nicht an.
  */
 export function KpiShell({
   label,
@@ -314,11 +314,7 @@ export function KpiShell({
     <>
       <div className="flex items-start gap-2.5">
         <span
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-[0.7rem] bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4",
-            href &&
-              "transition-transform duration-200 group-hover/card:scale-110 motion-reduce:transition-none",
-          )}
+          className="flex size-8 shrink-0 items-center justify-center rounded-[0.7rem] bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4"
           aria-hidden="true"
         >
           {icon}
@@ -351,7 +347,7 @@ export function KpiShell({
         colors.card,
         href &&
           cn(
-            "transition-[translate,box-shadow] duration-200 hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+            "transition-[background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
             colors.hover,
           ),
       )}

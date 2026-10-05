@@ -69,7 +69,7 @@ export function CalendarChip({ entry, dayKey }: { entry: CalendarEntry; dayKey: 
       href={entry.href}
       style={accent(entry)}
       className={cn(
-        "block rounded-md border border-l-4 px-1.5 py-1 text-xs leading-tight transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        "block rounded-md border border-l-4 px-1.5 py-1 text-xs leading-tight transition-[filter] hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         styleOf(entry),
         entry.status === "DRAFT" && "border-dashed",
         cancelled && "opacity-70",
@@ -236,7 +236,7 @@ export function EntryRow({ entry, dayKey }: { entry: CalendarEntry; dayKey: stri
         href={entry.href}
         style={accent(entry)}
         className={cn(
-          "flex flex-col gap-1 rounded-lg border border-l-4 p-3 transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:flex-row sm:gap-4",
+          "flex flex-col gap-1 rounded-lg border border-l-4 p-3 transition-[filter] hover:brightness-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:flex-row sm:gap-4",
           styleOf(entry),
           entry.status === "DRAFT" && "border-dashed",
           cancelled && "opacity-75",

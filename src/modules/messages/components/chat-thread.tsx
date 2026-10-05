@@ -51,7 +51,7 @@ export function ChatThread({ chat }: { chat: ChatDetail }) {
 
       <ChatStream
         lastId={chat.messages.at(-1)?.id ?? null}
-        className="min-h-0 flex-1 overflow-y-auto bg-[#efeae2] px-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6 dark:bg-[#0b141a]"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#efeae2] px-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6 dark:bg-[#0b141a]"
       >
         {chat.hasOlder && (
           <p className="mb-3 text-center">

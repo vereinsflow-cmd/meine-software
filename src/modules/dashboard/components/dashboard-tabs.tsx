@@ -188,8 +188,8 @@ export function DashboardTabs({
     direction === null
       ? undefined
       : direction === "next"
-        ? "motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in motion-safe:slide-in-from-right-6"
-        : "motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in motion-safe:slide-in-from-left-6";
+        ? "motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in motion-safe:slide-in-from-right-2"
+        : "motion-safe:animate-in motion-safe:duration-200 motion-safe:fade-in motion-safe:slide-in-from-left-2";
 
   return (
     <Tabs
@@ -243,7 +243,7 @@ export function DashboardTabs({
               ref={line}
               data-slot="tab-indicator"
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-full bg-card opacity-0 shadow-sm ring-1 ring-black/5 transition-[transform,width] duration-300 ease-out motion-reduce:transition-none dark:bg-white/15 dark:ring-white/40"
+              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-full bg-card opacity-0 shadow-sm ring-1 ring-black/5 transition-[transform,width] duration-200 ease-out motion-reduce:transition-none dark:bg-white/15 dark:ring-white/40"
               style={{ transition: "none" }}
             />
           </TabsList>
