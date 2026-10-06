@@ -265,8 +265,8 @@ Diese Punkte sind bekannt und bewusst offen – sie stehen nicht „still“ in 
   (gültig vom 07.09.2026 bis 06.12.2026) – erzeugt mit `node scripts/build-bank-codes.mjs` nach
   `src/server/banks/bank-codes-de.json` (liegt der Anwendung bei). Bezeichnungen und Orte bleiben unverändert; ausgewählt
   werden nur gültige, nicht technische Bankleitzahlen. Die Bundesbank gibt die Datei viermal im Jahr neu heraus (gültig ab
-  Anfang März, Juni, September und Dezember) – danach das Skript erneut ausführen und hier sowie im Impressum die
-  Gültigkeit anpassen. Die Quellenangabe steht auch im Impressum.
+  Anfang März, Juni, September und Dezember) – ab diesem Tag das Skript erneut ausführen; es passt die Gültigkeit hier, im
+  Impressum und in `src/server/banks/bank-codes.ts` selbst an. Die Quellenangabe steht auch im Impressum.
 
 ## Lizenz
 

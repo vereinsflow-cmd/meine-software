@@ -178,6 +178,27 @@ interface ParsedQuery {
   fromIban: boolean;
 }
 
+/**
+ * Rechtsformen – in den Bezeichnungen der Bundesbank stehen sie (fast) nie, vom Kontoauszug abgeschrieben aber oft:
+ * „Berliner Volksbank eG“ sucht „Berliner Volksbank“. In dieser Schreibweise fallen sie immer weg; anders geschrieben
+ * („eg“, „Ag“) könnten sie auch ein angefangener Ort sein („Sparkasse eg…“ → Eggenfelden) – dann erst, wenn sonst nichts
+ * passt.
+ */
+const LEGAL_FORMS = ["eG", "AG", "SE", "KGaA", "GmbH", "mbH"];
+const LEGAL_FORM_KEYS = new Set(LEGAL_FORMS.map((form) => form.toLowerCase()));
+
+/** Suchtext ohne Rechtsformen; `null`, wenn keine darin steht oder sonst nichts Suchbares übrig bliebe. */
+function withoutLegalForms(text: string, anyCase: boolean): string | null {
+  const tokens = text.split(" ");
+  const kept = tokens.filter((token) => {
+    const letters = token.replace(/[^\p{L}\p{N}]/gu, ""); // „e.G.“, „AG,“
+    return !(anyCase ? LEGAL_FORM_KEYS.has(letters.toLowerCase()) : LEGAL_FORMS.includes(letters));
+  });
+  const rest = kept.join(" ");
+  if (kept.length === tokens.length || rest.length < BANK_QUERY_MIN_LENGTH) return null;
+  return queryWords(rest).length > 0 ? rest : null;
+}
+
 function parseQuery(text: string): ParsedQuery | null {
   const ibanCode = bankCodeFromIban(text) ?? bankCodeFromIbanStart(text);
   if (ibanCode) {
@@ -266,6 +287,8 @@ function codeTier(bank: BankEntry, query: ParsedQuery): { tier: number; code?: s
 interface Candidate {
   bank: BankEntry;
   tier: number;
+  /** Die Eingabe ist genau die Bezeichnung („Sparkasse Witten“ vor „Sparkasse Wittenberg“) – nur bei eindeutigen Namen. */
+  exact: boolean;
   /** Gefundene Bankleitzahl, wenn danach gesucht wurde. */
   code?: string;
   /** Stelle des Treffers in der Bezeichnung (nur für „alle Wörter in der Bezeichnung“). */
@@ -275,12 +298,13 @@ interface Candidate {
 const collator = new Intl.Collator("de");
 
 /**
- * Reihenfolge: Rangstufe (bei Bankleitzahl-Anfang dann die Bankleitzahl, bei Wörtern der Bezeichnung die Stelle des
- * Treffers), dann nicht zur Löschung angekündigt, mehr Orte, Name.
+ * Reihenfolge: Rangstufe, dann genau die Bezeichnung (vor längeren mit gleichem Anfang), bei Bankleitzahl-Anfang die
+ * Bankleitzahl, bei Wörtern der Bezeichnung die Stelle des Treffers, dann nicht zur Löschung angekündigt, mehr Orte, Name.
  */
 function compare(a: Candidate, b: Candidate): number {
   return (
     b.tier - a.tier ||
+    Number(b.exact) - Number(a.exact) ||
     (a.tier === TIER.CODE_PREFIX && a.code && b.code ? a.code.localeCompare(b.code) : 0) ||
     a.position - b.position ||
     Number(a.bank.deletion) - Number(b.bank.deletion) ||
@@ -307,6 +331,25 @@ function detailOf(bank: BankEntry, code: string | undefined): string {
   return code || bank.codes.length === 1 ? `${where} · BLZ ${shown}` : where;
 }
 
+/** Die besten Treffer zu einem Suchtext, sortiert (höchstens `max`). */
+function bestMatches(text: string, max: number): Candidate[] {
+  const query = parseQuery(text);
+  const top: Candidate[] = [];
+  if (!query) return top;
+  for (const entry of INDEX) {
+    const byCode = codeTier(entry.bank, query);
+    const tier = query.fromIban ? byCode.tier : Math.max(byCode.tier, textTier(entry, query));
+    if (tier === 0) continue;
+    const position = tier === TIER.NAME_WORDS ? namePosition(entry, query) : 0;
+    const exact =
+      tier === TIER.NAME_START &&
+      entry.bank.value === entry.bank.name && // „Volksbank“: gibt es oft – dann zählt das nicht
+      entry.phrases.some((phrase) => query.phrases.includes(phrase));
+    insertTop(top, { bank: entry.bank, tier, exact, code: byCode.code, position }, max);
+  }
+  return top;
+}
+
 /**
  * Vorschläge zu einer Eingabe – Name, Ort, Bankleitzahl (auch mit Leerzeichen), BIC oder IBAN, beste zuerst, höchstens
  * `BANK_SUGGESTION_LIMIT`. Zu kurze, zu lange oder unbrauchbare Eingaben liefern eine leere Liste.
@@ -314,19 +357,15 @@ function detailOf(bank: BankEntry, code: string | undefined): string {
 export function searchBanks(input: string, limit = BANK_SUGGESTION_LIMIT): BankSuggestion[] {
   const text = normalizeBankQuery(input);
   if (text.length < BANK_QUERY_MIN_LENGTH || text.length > BANK_QUERY_MAX_LENGTH) return [];
-  const query = parseQuery(text);
   const max = Number.isFinite(limit)
     ? Math.min(Math.max(0, Math.floor(limit)), BANK_SUGGESTION_LIMIT)
     : BANK_SUGGESTION_LIMIT;
-  if (!query || max === 0) return [];
+  if (max === 0) return [];
 
-  const top: Candidate[] = [];
-  for (const entry of INDEX) {
-    const byCode = codeTier(entry.bank, query);
-    const tier = query.fromIban ? byCode.tier : Math.max(byCode.tier, textTier(entry, query));
-    if (tier === 0) continue;
-    const position = tier === TIER.NAME_WORDS ? namePosition(entry, query) : 0;
-    insertTop(top, { bank: entry.bank, tier, code: byCode.code, position }, max);
+  let top = bestMatches(withoutLegalForms(text, false) ?? text, max);
+  if (top.length === 0) {
+    const relaxed = withoutLegalForms(text, true);
+    if (relaxed) top = bestMatches(relaxed, max);
   }
   return top.map(({ bank, code }) => ({
     id: bank.id,

@@ -13,7 +13,7 @@ import {
   searchKeys,
   wordKeys,
 } from "@/lib/bank-search";
-import { bankCodeFromIban } from "@/lib/bank-suggestions";
+import { bankCodeFromIban, bankSearchQuery } from "@/lib/bank-suggestions";
 
 describe("bankCodeFromIban (Vertrag zwischen Feld und API)", () => {
   it("liefert die Bankleitzahl einer deutschen IBAN – mit oder ohne Leerzeichen, auch klein geschrieben", () => {
@@ -37,6 +37,62 @@ describe("bankCodeFromIban (Vertrag zwischen Feld und API)", () => {
       "Sparkasse Vest",
     ]) {
       expect(bankCodeFromIban(text), text).toBeNull();
+    }
+  });
+});
+
+describe("bankSearchQuery: was das Feld an die Schnittstelle schickt (keine Kontonummer in der URL)", () => {
+  it("eine deutsche IBAN – auch mit Text davor oder Leerzeichen darin – wird zur Bankleitzahl", () => {
+    for (const text of [
+      "DE12 4265 0150 0000 0000 00",
+      "de12426501500000000000",
+      "IBAN DE12 4265 0150 0000 0000 00", // so steht sie auf Briefbögen und Rechnungen
+      "IBAN: DE12426501500000000000",
+      "IBANDE12426501500000000000",
+      "Konto DE12 4265 0150 0000 0000 00",
+      "Sparkasse Vest DE12 4265 0150 0000 1234 56",
+      "Sparkasse Vest, IBAN DE12 4265 0150 0000 0000 00",
+      "DE 12 4265 0150 0000 0000 00",
+      "DE12 4265 0150", // angefangen, Bankleitzahl vollständig
+      "IBAN DE12 4265 0150 0000",
+    ]) {
+      expect(bankSearchQuery(text), text).toBe("42650150");
+    }
+  });
+
+  it("angefangene oder ausländische IBAN und Kontonummern: nichts senden", () => {
+    for (const text of [
+      "DE00",
+      "DE12 4265",
+      "IBAN DE12",
+      "AT61 1904 3002 3457 3201",
+      "NL91 ABNA 0417 1643 00",
+      "NL91ABNA0417164300",
+      "Kto 1234567890",
+      "4265015012345678", // Bankleitzahl und Kontonummer am Stück
+    ]) {
+      expect(bankSearchQuery(text), text).toBeNull();
+    }
+  });
+
+  it("Namen, Bankleitzahl und BIC bleiben unverändert", () => {
+    for (const text of [
+      "sparkasse vest",
+      "Deutsche Bank",
+      "IBAN First", // gibt es als Bank
+      "42650150",
+      "426 501 50",
+      "WELADED1REK",
+      "GENODEM1GLS",
+      "GENODE61FR1",
+      "COBADEFF",
+      "AABSDE31XXX",
+      "1822direkt",
+      "1822",
+      "n26",
+      "IBAN DE1",
+    ]) {
+      expect(bankSearchQuery(text), text).toBe(text);
     }
   });
 });

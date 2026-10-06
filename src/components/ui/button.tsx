@@ -38,7 +38,8 @@ const buttonVariants = cva(
     compoundVariants: [
       {
         size: ["sm", "icon-sm"],
-        className: "pointer-coarse:relative pointer-coarse:after:absolute pointer-coarse:after:-inset-1",
+        className:
+          "pointer-coarse:relative pointer-coarse:after:absolute pointer-coarse:after:-inset-1",
       },
       {
         size: ["xs", "icon-xs"],

@@ -7,25 +7,20 @@ import type { ApiResponse } from "@/lib/action-result";
 import {
   BANK_QUERY_MAX_LENGTH,
   BANK_QUERY_MIN_LENGTH,
-  bankCodeFromIban,
+  bankSearchQuery,
   type BankSuggestionsResponse,
 } from "@/lib/bank-suggestions";
 
-/**
- * Was an den Server geht: Eine IBAN (auch erst halb getippt) gehört nicht in eine Such-URL oder ein Server-Protokoll – von ihr
- * wird nur die Bankleitzahl gesucht, sobald sie vollständig ist (Stellen 5–12). `null`: (noch) nichts suchen.
- */
-function bankQuery(query: string): string | null {
-  const bankCode = bankCodeFromIban(query);
-  if (bankCode) return bankCode;
-  const compact = query.replace(/\s+/g, "").toUpperCase();
-  if (!/^DE\d{2}/.test(compact)) return query;
-  return /^DE\d{10}/.test(compact) ? compact.slice(4, 12) : null;
-}
+/** Leerzeichen ab „BLZ“ fest – die Bankleitzahl bricht am schmalen Handy nicht mitten durch („694 400“ / „07“). */
+const keepBankCodeTogether = (detail: string) =>
+  detail.replace(/BLZ( \d+)+$/, (code) => code.replaceAll(" ", "\u00a0"));
 
-/** Vorschläge von `GET /api/banken`; `null` bei Fehlern (z. B. offline, zu viele Anfragen) – dann einfach keine Liste. */
+/**
+ * Vorschläge von `GET /api/banken`; `null` bei Fehlern (z. B. offline, zu viele Anfragen) – dann einfach keine Liste. Eine
+ * IBAN oder Kontonummer geht nicht in die Such-URL, nur ihre Bankleitzahl (`bankSearchQuery`).
+ */
 async function loadBanks(query: string, signal: AbortSignal): Promise<Suggestion[] | null> {
-  const search = bankQuery(query);
+  const search = bankSearchQuery(query);
   if (search === null) return null;
   const response = await fetch(`/api/banken?q=${encodeURIComponent(search)}`, { signal });
   if (!response.ok) return null;
@@ -34,7 +29,7 @@ async function loadBanks(query: string, signal: AbortSignal): Promise<Suggestion
   return body.data.banks.map((bank) => ({
     id: bank.id,
     label: bank.name,
-    detail: bank.detail,
+    detail: keepBankCodeTogether(bank.detail),
     value: bank.value,
   }));
 }
@@ -46,18 +41,15 @@ async function loadBanks(query: string, signal: AbortSignal): Promise<Suggestion
  */
 export function BankNameField<T extends FieldValues>({
   enabled,
-  enterKeyHint,
   ...props
 }: BaseProps<T> & {
   /** Vorschläge an oder aus (nur für Bankkonten). */
   enabled?: boolean;
-  enterKeyHint?: "enter" | "done" | "next";
 }) {
   return (
     <SuggestField
       {...props}
       enabled={enabled}
-      enterKeyHint={enterKeyHint}
       load={loadBanks}
       minLength={BANK_QUERY_MIN_LENGTH}
       maxLength={BANK_QUERY_MAX_LENGTH}

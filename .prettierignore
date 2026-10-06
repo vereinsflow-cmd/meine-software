@@ -19,3 +19,5 @@ src/server/banks/bank-codes-de.json
 tsconfig.json
 # Die Werbe-Website ist eine eigenständige statische Seite mit eigenen Werkzeugen (siehe website/README.md).
 website
+# Fremde Skill-Dateien (unverändert aus ihren Quellen übernommen) und alte Arbeitskopien – nicht formatieren.
+.claude

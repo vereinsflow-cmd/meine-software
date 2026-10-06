@@ -29,7 +29,13 @@ function feeType(over: Partial<EngineFeeType> & Pick<EngineFeeType, "id" | "name
     ...over,
   };
 }
-const YOUTH = feeType({ id: "ft-youth", name: "Jugend", priority: 10, maxAge: 17, rates: [rate("r-y", 600)] });
+const YOUTH = feeType({
+  id: "ft-youth",
+  name: "Jugend",
+  priority: 10,
+  maxAge: 17,
+  rates: [rate("r-y", 600)],
+});
 
 /** Lukas wird am 12.11.2026 18. */
 const lukas: EngineMember = {
@@ -82,7 +88,12 @@ describe("Geburtstag in Beitragshinweisen", () => {
   });
 
   it("keine Beitragsart bis zum Geburtstag: keine Tageszahl, aus der sich das Datum ergäbe", () => {
-    const adultOnly = feeType({ id: "ft-a", name: "Erwachsene", minAge: 18, rates: [rate("r-a", 1200)] });
+    const adultOnly = feeType({
+      id: "ft-a",
+      name: "Erwachsene",
+      minAge: 18,
+      rates: [rate("r-a", 1200)],
+    });
     const p = run([adultOnly]);
     const texts = p.warnings.filter((w) => w.code === "NO_FEE_TYPE").map((w) => w.text);
     expect(texts).toEqual([

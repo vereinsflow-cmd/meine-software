@@ -1,4 +1,11 @@
-import { expect, test, type Locator, type Page, type Response } from "@playwright/test";
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+  type Request,
+  type Response,
+} from "@playwright/test";
 import { violations } from "./axe";
 import { USERS, ensureLedger, login, open } from "./helpers";
 
@@ -90,10 +97,12 @@ test.describe("Bankvorschläge – Schnittstelle", () => {
     // Länger als das Feld (60 Zeichen): abgelehnt
     expect((await request.get(`/api/banken?q=${"x".repeat(61)}`)).status()).toBe(422);
 
-    // Eine IBAN in der Adresse wird nicht zwischengespeichert (enthielte die Kontonummer)
-    const iban = await request.get("/api/banken?q=DE12426501500000000000");
-    expect(((await iban.json()) as typeof body).data.banks[0]?.name).toBe(VEST);
-    expect(iban.headers()["cache-control"]).toContain("no-store");
+    // Eine IBAN in der Adresse wird nicht zwischengespeichert (enthielte die Kontonummer) – auch mit Text davor
+    for (const q of ["DE12426501500000000000", "IBAN: DE12 4265 0150 0000 0000 00"]) {
+      const iban = await request.get(`/api/banken?q=${encodeURIComponent(q)}`);
+      expect(((await iban.json()) as typeof body).data.banks[0]?.name, q).toBe(VEST);
+      expect(iban.headers()["cache-control"], q).toContain("no-store");
+    }
   });
 });
 
@@ -181,6 +190,15 @@ test.describe("Bankvorschläge – Konten", () => {
     await answered;
     await expect(list).toBeVisible();
 
+    // Die Maus markiert wie ↓/↑ (nur ein Vorschlag ist hervorgehoben) – Enter übernimmt ihn, statt zu speichern.
+    const first = list.getByRole("option").first();
+    await first.hover();
+    await expect(first).toHaveAttribute("aria-selected", "true");
+    await expect(bank).toHaveAttribute("aria-activedescendant", (await first.getAttribute("id"))!);
+    await bank.press("Enter");
+    await expect(bank).toHaveValue(VEST);
+    await expect(dialog).toBeVisible();
+
     // Barkasse: ein normales Textfeld ohne Liste – auch für einen Suchtext, dessen Vorschläge schon da wären.
     await dialog.getByLabel("Art").selectOption("CASH");
     await expect(list).toBeHidden();
@@ -205,12 +223,17 @@ test.describe("Bankvorschläge – Konten", () => {
     const account = page.getByRole("row").filter({ hasText: name });
     await expect(account).toContainText("Vereinsheim");
 
-    // Bearbeiten: keine Suche für den schon eingetragenen Wert; Vorschlag per Klick übernehmen und speichern.
+    // Bearbeiten: keine Suche für den schon eingetragenen Wert; Vorschlag per Klick übernehmen und speichern. Neu geladen,
+    // damit der Vorschlags-Speicher des Browsers leer ist – eine Suche beim Öffnen fiele sonst nicht auf („Vereinsheim“
+    // stünde schon darin, ohne Anfrage).
+    await open(page, "/finanzen/einstellungen");
     await page.getByRole("button", { name: `Konto ${name} bearbeiten` }).click();
     const edit = page.getByRole("dialog", { name: "Konto bearbeiten" });
     const editBank = bankField(edit);
     await expect(editBank).toHaveValue("Vereinsheim");
     await expect(editBank).toHaveAttribute("aria-expanded", "false");
+    // Bewusst gewartet (Prüfung, dass nichts kommt): Eine Suche beim Öffnen hätte nach 150 ms begonnen.
+    await page.waitForTimeout(400);
     const picked = answer(page, "vest recklinghausen");
     await editBank.fill("vest recklinghausen");
     await picked;
@@ -226,37 +249,33 @@ test.describe("Bankvorschläge – Konten", () => {
     expect(searched).toEqual(["sparkasse vest", "Vereinsheim", "vest recklinghausen"]);
   });
 
-  test("Reihenfolge: eine späte Antwort auf einen älteren Suchtext ändert die Liste nicht", async ({
+  test("Reihenfolge: eine ältere Suche wird abgebrochen – ihre Antwort kann die Liste nicht mehr ändern", async ({
     page,
   }) => {
     const dialog = await openAddAccount(page);
-    let lateDone: Promise<void> = Promise.resolve();
-    await page.route(isBankSearch, async (route) => {
-      const q = new URL(route.request().url()).searchParams.get("q");
-      if (q === "sparkasse") {
-        // Ältere Suche: kommt erst nach der neueren an (oder wird vorher abgebrochen).
-        lateDone = (async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-          await route.fulfill({ json: stubBody(["Veraltet A", "Veraltet B"]) }).catch(() => {});
-        })();
-        return lateDone;
-      }
+    const isOlder = (request: Request) => {
+      const url = new URL(request.url());
+      return isBankSearch(url) && url.searchParams.get("q") === "sparkasse";
+    };
+    await page.route(isBankSearch, (route) => {
+      // Ältere Suche: bleibt ohne Antwort, bis die Seite sie abbricht.
+      if (isOlder(route.request())) return;
       return route.fulfill({ json: stubBody(["Aktuell Eins", "Aktuell Zwei"]) });
     });
     const bank = bankField(dialog);
-    const first = page.waitForRequest((request) => {
-      const url = new URL(request.url());
-      return isBankSearch(url) && url.searchParams.get("q") === "sparkasse";
-    });
+    const first = page.waitForRequest(isOlder);
+    const aborted = page.waitForEvent("requestfailed", isOlder);
     await bank.fill("sparkasse");
     await first;
     const later = answer(page, "sparkasse vest");
     await bank.fill("sparkasse vest");
     await later;
-    const options = suggestions(page).getByRole("option");
-    await expect(options).toHaveText([/Aktuell Eins/, /Aktuell Zwei/]);
-    await lateDone; // die ältere Antwort ist jetzt da (oder verworfen)
-    await expect(options).toHaveText([/Aktuell Eins/, /Aktuell Zwei/]);
+    // Ein sicheres Zeichen statt Warten auf eine späte Antwort: Die Seite hat die ältere Anfrage selbst abgebrochen.
+    expect((await aborted).failure()?.errorText).toBe("net::ERR_ABORTED");
+    await expect(suggestions(page).getByRole("option")).toHaveText([
+      /Aktuell Eins/,
+      /Aktuell Zwei/,
+    ]);
     await expect(bank).toHaveValue("sparkasse vest");
   });
 
@@ -271,16 +290,43 @@ test.describe("Bankvorschläge – Konten", () => {
     expect((await failed).status()).toBe(500);
     await expect(suggestions(page)).toBeHidden();
     await expect(bank).toHaveAttribute("aria-expanded", "false");
+    const failedAgain = answer(page, "sparkasse vest r");
     await bank.pressSequentially(" r");
+    expect((await failedAgain).status()).toBe(500);
     await expect(bank).toHaveValue("sparkasse vest r");
 
-    // Wieder erreichbar: Fehler werden nicht gemerkt, die nächste Suche zeigt Vorschläge.
+    // Wieder erreichbar – Fehler werden nicht gemerkt: ↓ versucht denselben Text noch einmal …
     await page.unroute(isBankSearch);
-    const recovered = answer(page, "sparkasse vest re");
-    await bank.pressSequentially("e");
-    await recovered;
-    await expect(suggestions(page).getByRole("option").first()).toContainText(VEST);
+    const options = suggestions(page).getByRole("option");
+    const retried = answer(page, "sparkasse vest r");
+    await bank.press("ArrowDown");
+    await retried;
+    await expect(options.first()).toContainText(VEST);
+    // … und ein Text, der vorhin scheiterte, wird neu gesucht (nicht als „keine Treffer“ gemerkt).
+    const again = answer(page, "sparkasse vest");
+    await bank.fill("sparkasse vest");
+    await again;
+    await expect(options.first()).toContainText(VEST);
     expect(errors).toEqual([]);
+  });
+
+  test("IBAN im Feld: an den Server geht nur die Bankleitzahl, nie die Kontonummer", async ({
+    page,
+  }) => {
+    const sent: string[] = [];
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (isBankSearch(url)) sent.push(url.searchParams.get("q") ?? "");
+    });
+    const dialog = await openAddAccount(page);
+    const bank = bankField(dialog);
+    const answered = answer(page, "42650150");
+    // So steht sie auf Briefbögen und Rechnungen – mit „IBAN“ davor.
+    await bank.pressSequentially("IBAN DE12 4265 0150 0000 0000 00");
+    await answered;
+    await expect(suggestions(page).getByRole("option").first()).toContainText(VEST);
+    expect(sent).toContain("42650150");
+    for (const q of sent) expect(q.replace(/\s+/g, ""), q).not.toMatch(/\d{9,}/);
   });
 
   test("Extremfall: lange Namen am schmalen Bildschirm brechen um, nichts läuft seitlich über", async ({
@@ -358,7 +404,9 @@ test.describe("Bankvorschläge – Konten", () => {
     await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
     await expect.poll(() => insideList(options.last())).toBe(true);
     await list.evaluate((element) => (element.scrollTop = 0));
-    // Mit der Tastatur: ↑ springt zum letzten Vorschlag und holt ihn in die Liste.
+    // Mit der Tastatur: ↑ springt zum letzten Vorschlag und holt ihn in die Liste (die Maus erst aus der Liste – sie
+    // markiert sonst selbst einen Vorschlag).
+    await page.mouse.move(0, 0);
     await bank.press("ArrowUp");
     await expect(options.last()).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => insideList(options.last())).toBe(true);

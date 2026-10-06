@@ -471,7 +471,7 @@ function EntryRow({
           {entry.description}
         </span>
         {(entry.counterpartyName || entry.counterpartyMember) && (
-          <span className="block text-sm text-muted-foreground wrap-anywhere">
+          <span className="block text-sm wrap-anywhere text-muted-foreground">
             {entry.counterpartyMember?.name ?? entry.counterpartyName}
           </span>
         )}
@@ -515,7 +515,9 @@ function EntryRow({
           <span className="block text-sm text-muted-foreground">{targets.join(", ")}</span>
         )}
       </TableCell>
-      <TableCell className="hidden align-top whitespace-normal xl:table-cell">{entry.account.name}</TableCell>
+      <TableCell className="hidden align-top whitespace-normal xl:table-cell">
+        {entry.account.name}
+      </TableCell>
       <TableCell className="text-right align-top font-semibold whitespace-nowrap tabular-nums">
         <span
           className={cn(

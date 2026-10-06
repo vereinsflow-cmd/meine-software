@@ -40,3 +40,20 @@ export function bankCodeFromIban(text: string): string | null {
   const match = /^DE\d{20}$/.exec(compact);
   return match ? compact.slice(4, 12) : null;
 }
+
+/**
+ * Was das Feld „Bank“ an `GET /api/banken` schickt. Kontonummern gehören nicht in eine Such-URL, ein Server-Protokoll oder
+ * einen Zwischenspeicher – auch nicht mit Text davor („IBAN: DE12 4265 0150 …“, „Sparkasse Vest DE12 …“):
+ *   - eine deutsche IBAN irgendwo im Text, Bankleitzahl vollständig → nur die Bankleitzahl („42650150“),
+ *   - eine angefangene deutsche IBAN, eine ausländische IBAN oder 9 und mehr Ziffern am Stück (Kontonummer) → `null`:
+ *     nichts senden,
+ *   - sonst der Text unverändert (Name, Ort, Bankleitzahl, BIC).
+ * Die Schnittstelle wendet dieselbe Regel an (und speichert solche Antworten nicht zwischen).
+ */
+export function bankSearchQuery(text: string): string | null {
+  const compact = text.replace(/[\s.:/-]+/g, "").toUpperCase();
+  const iban = /DE\d{2}(\d{8})/.exec(compact);
+  if (iban) return iban[1]!;
+  if (/\d{9,}/.test(compact) || /(?:^|IBAN)[A-Z]{2}\d{2}/.test(compact)) return null;
+  return text;
+}

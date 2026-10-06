@@ -47,7 +47,6 @@ export function LedgerSetupForm({ defaultStart }: { defaultStart: string }) {
           name="bankInstitute"
           label="Bank"
           hint="z. B. Sparkasse Musterstadt"
-          enterKeyHint="next"
         />
         <TextField
           form={form}

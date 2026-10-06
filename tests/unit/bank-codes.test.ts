@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { queryWords } from "@/lib/bank-search";
-import { BANK_QUERY_MAX_LENGTH, BANK_SUGGESTION_LIMIT } from "@/lib/bank-suggestions";
+import {
+  BANK_QUERY_MAX_LENGTH,
+  BANK_SUGGESTION_LIMIT,
+  bankSearchQuery,
+} from "@/lib/bank-suggestions";
 import { BANK_ALIASES, WORD_ABBREVIATIONS } from "@/server/banks/aliases";
 import { BANK_DATA, searchBanks } from "@/server/banks/bank-codes";
 
@@ -32,7 +36,8 @@ describe("Bankleitzahlendatei der Bundesbank (aufbereitet)", () => {
     ]) {
       const text = readFileSync(path.join(root, file), "utf8");
       expect(text, file).toContain("Deutsche Bundesbank");
-      expect(text, `${file} – nach neuer Bankleitzahlendatei anpassen`).toContain(stated);
+      // Schreibt `node scripts/build-bank-codes.mjs` selbst – rot nur, wenn jemand die Angabe von Hand geändert hat.
+      expect(text, `${file} – Gültigkeit der Bankleitzahlendatei anpassen`).toContain(stated);
     }
   });
 
@@ -52,7 +57,7 @@ describe("Bankleitzahlendatei der Bundesbank (aufbereitet)", () => {
 
   it("enthält keine gelöschten, alten oder technischen Bankleitzahlen", () => {
     const technical =
-      /-alt(?:-|$)|Settlement|ITGK|\bGAA\b|\bG[fF] P\d|\bG[fF]-|Service\s*-\s*BZ|^Bundesbank\b|\bZ[wW] \d|\bCC\b|Processing|Sonder-BLZ/;
+      /-alt(?:-|$)|Settlement|ITGK|\bGAA\b|\bG[fF] P\d|\bG[fF]-|Service\s*-\s*BZ|^Bundesbank\b|\bZ[wW] \d|\bCC\b|Processing|Sonder-BLZ|\bIBLZ\b|Prepaid Card|^Commerzbank INT$|, (?:INT|TF MZ) \d+$/;
     for (const bank of banks) {
       expect(bank.name, bank.id).not.toMatch(technical);
       for (const other of bank.otherNames) expect(other, bank.id).not.toMatch(technical);
@@ -65,6 +70,46 @@ describe("Bankleitzahlendatei der Bundesbank (aufbereitet)", () => {
     // … und Standorte mit eigenem Namen (Merkmal 2) werden eigene Vorschläge
     expect(names).toContain("Deutsche Kreditbank");
     expect(names).toContain("Volksbank Potsdam Zndl d Berliner Volksbank");
+    // Hauptstellen mit einer Zahl im Namen sind echte Banken („Commerzbank, Filiale Berlin 1“ – nicht technisch)
+    const codes = new Set(banks.flatMap((bank) => bank.codes));
+    for (const code of ["10040000", "12040000", "10080000"]) expect(codes, code).toContain(code);
+  });
+
+  it("kein Feldwert doppelt – sonst stünden gleiche Zeilen in der Liste („Sparda-Bank West“ an vier Bankleitzahlen)", () => {
+    const values = banks.map((bank) => bank.value);
+    expect(new Set(values).size).toBe(values.length);
+    expect(banks.filter((bank) => bank.name === "Sparda-Bank West")).toHaveLength(1);
+  });
+
+  it("jede Bankleitzahl der Daten findet ihre Bank (auch eine alte nach einer Fusion, siehe Nachfolge-Bankleitzahl)", () => {
+    const holders = new Map<string, number>();
+    for (const bank of banks)
+      for (const code of bank.codes) holders.set(code, (holders.get(code) ?? 0) + 1);
+    for (const bank of banks) {
+      for (const code of bank.codes) {
+        if (holders.get(code)! > BANK_SUGGESTION_LIMIT) continue; // z. B. Zweigniederlassungen einer Volksbank
+        expect(
+          searchBanks(code).map((result) => result.id),
+          code,
+        ).toContain(bank.id);
+      }
+    }
+  });
+
+  it("keine Bezeichnung, kein Ort und keine BIC wird beim Tippen für eine Kontonummer gehalten", () => {
+    const texts = new Set<string>();
+    for (const bank of banks) {
+      for (const text of [bank.name, bank.place, bank.short, ...bank.places, ...bank.branches])
+        texts.add(text);
+      for (const text of [...bank.otherNames, ...bank.bics]) texts.add(text);
+    }
+    for (const alias of BANK_ALIASES) for (const name of alias.names) texts.add(name);
+    for (const text of texts) {
+      for (let end = 1; end <= text.length; end++) {
+        const typed = text.slice(0, end);
+        if (bankSearchQuery(typed) !== typed) expect.fail(`„${typed}“ würde nicht gesucht`);
+      }
+    }
   });
 
   it("Namen und Feldwerte passen ins Feld, Bezeichnung und Ort sind unverändert", () => {
@@ -167,6 +212,31 @@ describe("Bank-Vorschläge: die beste Bank steht vorn", () => {
     ["gießen", "Sparkasse Gießen"],
     ["apobank", "apoBank"],
     ["gls", "GLS Gemeinschaftsbank"],
+    ["olb", "Oldenburgische Landesbank AG"],
+    ["bfs", "SozialBank"],
+    ["bank für sozialwirtschaft", "SozialBank"],
+    ["mbs", "Mittelbrandenburgische Sparkasse in Potsdam"],
+    ["fraspa", "Frankfurter Sparkasse"],
+    ["nospa", "Nord-Ostsee Sparkasse"],
+    // Commerzbank in Berlin: Hauptstelle per Bankleitzahl, BIC und IBAN
+    ["10040000", "Commerzbank, Filiale Berlin 1"],
+    ["COBADEBBXXX", "Commerzbank, Filiale Berlin 1"],
+    ["DE00 1004 0000 0000 0000 00", "Commerzbank, Filiale Berlin 1"],
+    // Rechtsform vom Kontoauszug abgeschrieben – steht in den Daten nicht
+    ["Berliner Volksbank eG", "Berliner Volksbank"],
+    ["GLS Gemeinschaftsbank eG", "GLS Gemeinschaftsbank"],
+    ["Commerzbank AG", "Commerzbank"],
+    ["Deutsche Bank AG", "Deutsche Bank"],
+    ["VR Bank Nord eG", "VR Bank Nord"],
+    ["berliner volksbank eg", "Berliner Volksbank"], // klein: erst, wenn sonst nichts passt
+    ["Oldenburgische Landesbank AG", "Oldenburgische Landesbank AG"],
+    ["sparkasse eg", "Sparkasse Rottal-Inn"], // klein auch ein angefangener Ort (Eggenfelden)
+    // Genau die Bezeichnung vor einer längeren mit gleichem Anfang
+    ["Sparkasse Witten", "Sparkasse Witten"],
+    ["Sparkasse Wittenb", "Sparkasse Wittenberg"],
+    ["Volksbank Rot", "Volksbank Rot"],
+    ["Raiffeisenbank Neumarkt", "Raiffeisenbank Neumarkt"],
+    ["VR-Bank Mitte", "VR-Bank Mitte"],
   ])("„%s“ → %s", (query, expected) => {
     expect(top(query)?.name).toBe(expected);
   });

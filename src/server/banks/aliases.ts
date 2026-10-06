@@ -44,6 +44,11 @@ export const BANK_ALIASES: readonly BankAlias[] = [
   { names: ["Haspa"], blz: "20050550" }, // Hamburger Sparkasse
   { names: ["Naspa"], blz: "51050015" }, // Nassauische Sparkasse
   { names: ["Berliner Sparkasse"], blz: "10050000" },
+  { names: ["OLB"], blz: "28020050" }, // Oldenburgische Landesbank (sonst gewinnt der Ort Olbernhau)
+  { names: ["BFS", "Bank für Sozialwirtschaft"], blz: "37020500" }, // heute „SozialBank“
+  { names: ["MBS"], blz: "16050000" }, // Mittelbrandenburgische Sparkasse in Potsdam
+  { names: ["Fraspa"], blz: "50050201" }, // Frankfurter Sparkasse
+  { names: ["Nospa"], blz: "21750000" }, // Nord-Ostsee Sparkasse
 ];
 
 /**

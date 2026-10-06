@@ -1,9 +1,9 @@
 import type { NextRequest } from "next/server";
-import { bankCodeFromIbanStart, normalizeBankQuery } from "@/lib/bank-search";
+import { normalizeBankQuery } from "@/lib/bank-search";
 import {
   BANK_QUERY_MAX_LENGTH,
   BANK_QUERY_MIN_LENGTH,
-  bankCodeFromIban,
+  bankSearchQuery,
   type BankSuggestionsResponse,
 } from "@/lib/bank-suggestions";
 import { apiHandler, jsonOk } from "@/server/api";
@@ -21,8 +21,9 @@ const CACHE = { "Cache-Control": "public, max-age=86400, stale-while-revalidate=
  * und kostet weniger als eine Datenbank-Abfrage; eine Begrenzung über die Datenbank bei jedem Tastendruck wäre teurer als
  * die Suche selbst, und ohne `TRUST_PROXY` landen alle Vereine in einem gemeinsamen Topf.
  *
- * Die Eingabe wird nie protokolliert – sie könnte eine IBAN sein. Antworten auf eine IBAN werden deshalb auch nicht
- * zwischengespeichert (die Adresse enthielte die Kontonummer).
+ * Die Eingabe wird nie protokolliert – sie könnte eine IBAN sein. Gesucht wird wie im Feld (`bankSearchQuery`): von einer
+ * IBAN nur die Bankleitzahl, eine Kontonummer gar nicht. Antworten darauf werden auch nicht zwischengespeichert (die
+ * Adresse enthielte die Kontonummer).
  */
 export const GET = apiHandler(async (request: NextRequest) => {
   const query = normalizeBankQuery(request.nextUrl.searchParams.get("q") ?? "");
@@ -31,10 +32,10 @@ export const GET = apiHandler(async (request: NextRequest) => {
       q: [`Bitte gib höchstens ${BANK_QUERY_MAX_LENGTH} Zeichen ein.`],
     });
   }
-  const banks = query.length < BANK_QUERY_MIN_LENGTH ? [] : searchBanks(query);
-  const iban = bankCodeFromIban(query) !== null || bankCodeFromIbanStart(query) !== null;
+  const search = bankSearchQuery(query);
+  const banks = search === null || query.length < BANK_QUERY_MIN_LENGTH ? [] : searchBanks(search);
   return jsonOk<BankSuggestionsResponse>(
     { banks },
-    { headers: iban ? { "Cache-Control": "private, no-store" } : CACHE },
+    { headers: search !== query ? { "Cache-Control": "private, no-store" } : CACHE },
   );
 }, "bank-codes");

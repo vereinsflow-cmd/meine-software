@@ -66,6 +66,41 @@ describe("GET /api/banken", () => {
     expect(banks(body)?.map((bank) => bank.name)).toEqual(["Sparkasse Vest Recklinghausen"]);
   });
 
+  it("IBAN mit Text davor: nur die Bankleitzahl, nicht zwischengespeichert", async () => {
+    for (const q of [
+      "IBAN: DE12 4265 0150 0000 0000 00",
+      "IBANDE12426501500000000000",
+      "Sparkasse Vest DE12 4265 0150 0000 1234 56",
+    ]) {
+      const { status, cache, body } = await call(`?q=${encodeURIComponent(q)}`);
+      expect(status, q).toBe(200);
+      expect(cache, q).toBe("private, no-store");
+      expect(
+        banks(body)?.map((bank) => bank.name),
+        q,
+      ).toEqual(["Sparkasse Vest Recklinghausen"]);
+    }
+  });
+
+  it("angefangene oder ausländische IBAN und Kontonummern: keine Suche, nicht zwischengespeichert", async () => {
+    for (const q of [
+      "DE12 4265",
+      "AT61 1904 3002 3457 3201",
+      "NL91ABNA0417164300",
+      "Kto 1234567890",
+    ]) {
+      const { status, cache, body } = await call(`?q=${encodeURIComponent(q)}`);
+      expect(status, q).toBe(200);
+      expect(cache, q).toBe("private, no-store");
+      expect(banks(body), q).toEqual([]);
+    }
+    // Bankleitzahl und BIC sind keine Kontonummer – die Antwort darf zwischengespeichert werden.
+    for (const q of ["42650150", "426 501 50", "WELADED1REK"]) {
+      const { cache } = await call(`?q=${encodeURIComponent(q)}`);
+      expect(cache, q).toBe("public, max-age=86400, stale-while-revalidate=604800");
+    }
+  });
+
   it("Sonderzeichen sind harmlos", async () => {
     for (const q of ["<script>alert(1)</script>", "%", "_", "' OR 1=1 --", "🏦🏦"]) {
       const { status, body } = await call(`?q=${encodeURIComponent(q)}`);

@@ -15,20 +15,25 @@
  * Zeichen für Zeichen unverändert; das Skript wählt nur aus und fasst zusammen.
  *
  * Aktualisieren: Die Bundesbank gibt die Datei viermal im Jahr neu heraus – gültig ab dem Montag nach dem ersten Samstag
- * im März, Juni, September und Dezember, veröffentlicht bis zum 20. Februar, Mai, August und November. Danach dieses
- * Skript erneut ausführen und die JSON-Datei einchecken (gleiche Datei → gleiche Ausgabe, kein Zeitstempel).
+ * im März, Juni, September und Dezember (veröffentlicht schon einige Wochen vorher). Ab diesem Gültigkeitsbeginn dieses
+ * Skript erneut ausführen – vorher nimmt es die noch gültige Datei und meldet nur, dass die neue bereitliegt. Es passt die
+ * Gültigkeit in der Quellenangabe (README, Impressum, `bank-codes.ts`) selbst an; danach die Dateien einchecken (gleiche
+ * Datei → gleiche Ausgabe, kein Zeitstempel).
  *
  * Auswahl (Satzaufbau: Merkblatt der Bundesbank, Anhang 1 – 168 Zeichen je Zeile, ISO-8859-1):
  *   - Datensätze mit Änderungskennzeichen „D“ (gelöscht) fallen weg.
  *   - Grundlage sind die Hauptdatensätze (Merkmal 1) ohne technische Bezeichnungen: alte Bankleitzahlen nach Fusionen
- *     („-alt-“), Verrechnungs- und Geldautomaten-Bankleitzahlen (Settlement, ITGK, GAA, Zw 55, Service-BZ …) und interne
- *     Geschäftsfelder („Gf P2“, „GF-B48“). Echte Marken in einem Geschäftsfeld bleiben (comdirect, 1822direkt …).
+ *     („-alt-“), Verrechnungs- und Geldautomaten-Bankleitzahlen (Settlement, ITGK, GAA, Zw 55, Service-BZ, IBLZ …) und
+ *     interne Geschäftsfelder („Gf P2“, „GF-B48“). Echte Marken in einem Geschäftsfeld bleiben (comdirect, 1822direkt …).
+ *   - Nennt die Bundesbank zu einer alten Bankleitzahl die Nachfolge-Bankleitzahl (Feld 13), wird die alte ein weiterer
+ *     Suchbegriff der Nachfolgerin – IBANs behalten die alte Bankleitzahl noch lange.
  *   - Weitere Standorte (Merkmal 2) werden zu Suchbegriffen ihrer Bank („sparkasse dorsten“ findet die Sparkasse Vest).
  *     Trägt ein Standort einen eigenen Namen („Deutsche Kreditbank“, „Volksbank Potsdam Zndl d Berliner Volksbank“),
  *     wird er ein eigener Vorschlag mit Bankleitzahl und BIC seiner Hauptstelle.
- *   - Gleiche Namen: Liegt dieselbe Bank an vielen Orten (Commerzbank, Deutsche Bank, Postbank …), gibt es einen
- *     Vorschlag „an … Orten“; die Orte bleiben Suchbegriffe. Genossenschaftsbanken (BIC beginnt mit „GENO“) mit
- *     gleichem Namen sind dagegen meist verschiedene Banken und bleiben einzeln, mit Ort.
+ *   - Gleiche Namen: Liegt dieselbe Bank an vielen Orten (Commerzbank, Deutsche Bank, Postbank, Sparda-Bank West …),
+ *     gibt es einen Vorschlag „an … Orten“; die Orte bleiben Suchbegriffe. Genossenschaftsbanken (BIC beginnt mit
+ *     „GENO“) mit einem allgemeinen Namen („Volksbank“, „Raiffeisenbank“) sind dagegen verschiedene Banken und bleiben
+ *     einzeln, mit Ort.
  *   - Feldwert ist die Bezeichnung. Nur wo ein allgemeiner Name mehrere verschiedene Banken meint („Volksbank“,
  *     „Raiffeisenbank“, „VR Bank“), kommt der Ort dazu („Raiffeisenbank Lauenburg“) – höchstens 60 Zeichen.
  *
@@ -167,6 +172,7 @@ function parseRecords(text) {
       bic: field(140, 150),
       change: field(159, 159), // Änderungskennzeichen A, M, U oder D
       deletion: field(160, 160) === "1", // Löschung angekündigt (Bankleitzahl gilt noch)
+      successor: field(161, 168), // Nachfolge-Bankleitzahl („00000000“: keine)
     };
     if (
       !/^\d{8}$/.test(record.blz) ||
@@ -198,7 +204,10 @@ const BUSINESS_LINE =
 /** Alte Bankleitzahl nach einer Fusion („Volksbank Haltern -alt-“, abgeschnitten auch „… -alt“). */
 const OLD_CODE = /-alt(?:-|$)/;
 
-/** Bezeichnungen von Bankleitzahlen, bei denen niemand ein Vereinskonto hat. */
+/**
+ * Bezeichnungen, die kein eigener Vorschlag werden: technische Bankleitzahlen (dort hat niemand ein Vereinskonto) und alte
+ * Bankleitzahlen nach einer Fusion (Konten laufen bei der Nachfolgerin – siehe Nachfolge-Bankleitzahl in `buildBanks`).
+ */
 const TECHNICAL = [
   OLD_CODE,
   /Settlement/i, // „UniCredit Bank - HVB Settlement EAC01“
@@ -212,7 +221,10 @@ const TECHNICAL = [
   /Service\s*-\s*BZ\b|Service-Center/,
   /Sonder-BLZ|\bGS nur für\b/,
   /\b(?:Zw|ZW|Ztv|Bs)\s+(?:\d|[A-Z]{1,2}(?![\p{L}\p{N}])|Münsterstraße)/u, // „Zw 55“, „Zw A“, „Ztv 22“, „Bs 80“, „Zw CS“
-  /\s(?:\d{1,3}|I{1,3})$/, // „Filiale Berlin 2“, „Filiale Berlin III“, „INT 1“, „TF MZ 2“
+  // Nur „Commerzbank, INT 1“, „Commerzbank, TF MZ 2“ – nicht „Commerzbank, Filiale Berlin 1“ oder „… Filiale Berlin III“:
+  // das sind echte Hauptstellen mit Kundenkonten.
+  /,\s(?:INT|TF MZ)\s\d+$/,
+  /\bIBLZ\b|^Commerzbank INT$|Prepaid Card/, // interne Bankleitzahlen („… IBLZ“, „Commerzbank INT“, Prepaid-Karten)
   /\b(?:ehem\.|eh)\s+Filiale\b/, // ehemalige Filialen („Aareal Bank ehem. Filiale Hamburg“, „Isbank eh Filiale Mannheim“)
   /\bG[fF]\d/, // „ReiseBank Gf2“
 ];
@@ -337,7 +349,8 @@ function buildBanks(records, report) {
     candidates.push({ ...record, bic: main.bic, deletion: main.deletion, ownName: true });
   }
 
-  // 2. Gleiche Namen zusammenfassen: dieselbe Bank an vielen Orten → ein Vorschlag; Genossenschaftsbanken je Bankleitzahl.
+  // 2. Gleiche Namen zusammenfassen: dieselbe Bank an vielen Orten → ein Vorschlag. Genossenschaftsbanken mit allgemeinem
+  //    Namen („Volksbank“) je Bankleitzahl – sonst stünde z. B. „Sparda-Bank West“ mehrmals gleich in der Liste.
   const byName = new Map();
   for (const candidate of candidates) {
     (byName.get(candidate.name) ?? byName.set(candidate.name, []).get(candidate.name)).push(
@@ -346,7 +359,7 @@ function buildBanks(records, report) {
   }
   const groups = [];
   for (const members of byName.values()) {
-    if (members.some((member) => isCooperative(member.bic))) {
+    if (members.some((member) => isCooperative(member.bic)) && isGenericName(members[0].name)) {
       const byCode = new Map();
       for (const member of members) {
         (byCode.get(member.blz) ?? byCode.set(member.blz, []).get(member.blz)).push(member);
@@ -391,6 +404,7 @@ function buildBanks(records, report) {
     return {
       first,
       codes,
+      mainCodes,
       name: first.name,
       place: single ? places[0] : "",
       plz: single ? first.plz : "",
@@ -404,7 +418,21 @@ function buildBanks(records, report) {
     };
   });
 
-  // 4. id: die erste Bankleitzahl (die eines Hauptdatensatzes, falls vorhanden – die gehört nur zu diesem Eintrag).
+  // 4. Alte Bankleitzahl mit Nachfolge-Bankleitzahl: weiterer Suchbegriff der Nachfolgerin (hinter der ersten
+  //    Bankleitzahl – die bleibt die angezeigte und die id). Nur deren Hauptdatensatz zählt, nicht ein Standort mit eigenem
+  //    Namen unter derselben Bankleitzahl.
+  const successors = []; // nur für --pruefen
+  for (const record of active) {
+    const successor = record.successor;
+    if (record.feature !== "1" || !OLD_CODE.test(record.name)) continue;
+    if (!/^\d{8}$/.test(successor) || successor === "00000000") continue;
+    const bank = banks.find((candidate) => candidate.mainCodes.includes(successor));
+    if (!bank || bank.codes.includes(record.blz)) continue;
+    bank.codes = [bank.codes[0], ...[...bank.codes.slice(1), record.blz].sort()];
+    successors.push(`${record.name} (${record.blz}) → ${bank.name} (${successor})`);
+  }
+
+  // 5. id: die erste Bankleitzahl (die eines Hauptdatensatzes, falls vorhanden – die gehört nur zu diesem Eintrag).
   //    Ein Standort mit eigenem Namen teilt sie mit seiner Hauptstelle und bekommt „-2“, „-3“ …
   banks.sort(
     (a, b) =>
@@ -421,7 +449,7 @@ function buildBanks(records, report) {
     bank.id = n === 1 ? base : `${base}-${n}`;
   }
 
-  // 5. Feldwert: gibt es den Namen als mehrere verschiedene Banken („Volksbank“), kommt der Ort dazu.
+  // 6. Feldwert: gibt es den Namen als mehrere verschiedene Banken („Volksbank“), kommt der Ort dazu.
   const entriesPerName = new Map();
   for (const bank of banks) entriesPerName.set(bank.name, (entriesPerName.get(bank.name) ?? 0) + 1);
   for (const bank of banks) {
@@ -449,6 +477,8 @@ function buildBanks(records, report) {
     }
     console.log("\nFeldwert mit Ort (gleichnamige Banken):");
     for (const bank of banks.filter((b) => b.value)) console.log(`  ${bank.value}`);
+    console.log("\nAlte Bankleitzahlen als Suchbegriff der Nachfolgerin:");
+    for (const line of successors) console.log(`  ${line}`);
   }
   return { banks, dropped };
 }
@@ -494,18 +524,22 @@ async function main() {
   const day = today();
   let bytes;
   let validity;
+  let links = []; // alle Dateien der Download-Seite (für den Hinweis auf eine neuere)
   if (args.file) {
     bytes = new Uint8Array(readFileSync(args.file));
-    validity = args.from
-      ? { from: args.from, until: args.until }
-      : chooseLink(textFileLinks(readFileSync(args.page, "utf8")), day);
+    if (args.from) validity = { from: args.from, until: args.until };
+    else {
+      links = textFileLinks(readFileSync(args.page, "utf8"));
+      validity = chooseLink(links, day);
+    }
     console.log(
       `Lese ${args.file} (gültig vom ${germanDate(validity.from)} bis ${germanDate(validity.until)}) …`,
     );
   } else {
     console.log("Lade die Download-Seite der Bundesbank …");
     const page = new TextDecoder("utf-8").decode(await download(PAGE_URL));
-    validity = chooseLink(textFileLinks(page), day);
+    links = textFileLinks(page);
+    validity = chooseLink(links, day);
     console.log(
       `Lade ${validity.href} (gültig vom ${germanDate(validity.from)} bis ${germanDate(validity.until)}) …`,
     );
@@ -539,10 +573,27 @@ async function main() {
       `⚠ Diese Datei galt nur bis ${germanDate(validity.until)}. Neue Datei auf der Download-Seite der Bundesbank prüfen: ${PAGE_URL}`,
     );
   }
-  // Die Quellenangabe nennt die Gültigkeit – nach einer neuen Datei auch dort anpassen (prüft auch bank-codes.test.ts).
+  // Die nächste Datei steht schon einige Wochen vor ihrem Gültigkeitsbeginn auf der Seite – bis dahin gilt die alte.
+  const next = links
+    .filter((link) => link.from > validity.from)
+    .sort((a, b) => a.from.localeCompare(b.from))[0];
+  if (next) {
+    console.warn(
+      `⚠ Die nächste Datei (gültig ab ${germanDate(next.from)}) liegt schon bereit – an diesem Tag das Skript erneut ausführen.`,
+    );
+  }
+  // Die Quellenangabe nennt die Gültigkeit – nach einer neuen Datei dort anpassen (prüft auch bank-codes.test.ts).
   const stated = `gültig vom ${germanDate(validity.from)} bis ${germanDate(validity.until)}`;
   for (const file of ATTRIBUTION_FILES) {
-    if (!readFileSync(path.join(root, file), "utf8").includes(stated)) {
+    const full = path.join(root, file);
+    const text = readFileSync(full, "utf8");
+    if (text.includes(stated)) continue;
+    // Genau eine Angabe je Datei – sonst lieber von Hand (die Wortwahl hat sich geändert oder es gibt eine zweite Quelle).
+    const found = text.match(VALIDITY) ?? [];
+    if (found.length === 1) {
+      writeFileSync(full, text.replace(found[0], stated));
+      console.log(`✔ Gültigkeit in ${file} angepasst: „${stated}“`);
+    } else {
       console.warn(`⚠ Bitte in ${file} die Gültigkeit anpassen: „${stated}“`);
     }
   }
@@ -554,6 +605,7 @@ const ATTRIBUTION_FILES = [
   "src/app/(legal)/impressum/page.tsx",
   "src/server/banks/bank-codes.ts",
 ];
+const VALIDITY = /gültig vom \d{2}\.\d{2}\.\d{4} bis \d{2}\.\d{2}\.\d{4}/g;
 const germanDate = (iso) => iso.split("-").reverse().join(".");
 
 main().catch((error) => {

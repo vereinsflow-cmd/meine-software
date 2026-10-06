@@ -1300,7 +1300,9 @@ function calculateFamily(
   const familyBirthday = (day: DayNo) =>
     familyMasked.has(day) ||
     (settings.ageRule === "EXACT_DAY" &&
-      family.members.some((m) => isBirthday(daysById.get(m.memberId)?.member.birthDate ?? null, day)));
+      family.members.some((m) =>
+        isBirthday(daysById.get(m.memberId)?.member.birthDate ?? null, day),
+      ));
   const familyGapText = (gap: { count: number; first: DayNo; last: DayNo }) =>
     maskedDaysText(gap.count, gap.first, gap.last, periodEnd, familyBirthday);
   if (noRate && type)
