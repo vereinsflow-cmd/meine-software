@@ -38,8 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026100504';
-const VF_SKRIPT = '/assets/js/site.js?v=2026100504'; // Menü der Kopfzeile auf dem Smartphone
+const VF_STYLESHEET = '/assets/css/site.css?v=2026100602';
+const VF_SKRIPT = '/assets/js/site.js?v=2026100602'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
