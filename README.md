@@ -260,6 +260,13 @@ Diese Punkte sind bekannt und bewusst offen – sie stehen nicht „still“ in 
   bereinigt um Großkunden und Ortsteile, erzeugt mit `node scripts/build-postal-codes.mjs` nach
   `src/server/geo/postal-codes-de.json` (liegt der Anwendung bei, keine Anfrage an fremde Dienste). Die Namensnennung
   steht auch im Impressum.
+- **Banken und Bankleitzahlen** (Vorschläge im Feld „Bank“ der Finanzen): Quelle: Deutsche Bundesbank,
+  [Bankleitzahlendatei](https://www.bundesbank.de/de/aufgaben/unbarer-zahlungsverkehr/serviceangebot/bankleitzahlen/download-bankleitzahlen-602592)
+  (gültig vom 07.09.2026 bis 06.12.2026) – erzeugt mit `node scripts/build-bank-codes.mjs` nach
+  `src/server/banks/bank-codes-de.json` (liegt der Anwendung bei). Bezeichnungen und Orte bleiben unverändert; ausgewählt
+  werden nur gültige, nicht technische Bankleitzahlen. Die Bundesbank gibt die Datei viermal im Jahr neu heraus (gültig ab
+  Anfang März, Juni, September und Dezember) – danach das Skript erneut ausführen und hier sowie im Impressum die
+  Gültigkeit anpassen. Die Quellenangabe steht auch im Impressum.
 
 ## Lizenz
 
