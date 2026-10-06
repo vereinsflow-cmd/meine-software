@@ -2,7 +2,7 @@ import { formatCalendarDate, startOfBerlinDate, todayCalendarDate } from "@/lib/
 import { parseInput } from "@/server/action";
 import { recordAudit } from "@/server/audit/audit";
 import { badRequest } from "@/server/errors";
-import { recomputeClose } from "@/server/finance/close-hash";
+import { recomputeCloses } from "@/server/finance/close-hash";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance, canFinance } from "./access";
 import { getLedgerSetup, LONG_TX, yearSummary, type LedgerSetup } from "./ledger";
@@ -309,41 +309,44 @@ export async function listPeriodCloses(ctx: TenantContext): Promise<PeriodCloseD
 /**
  * Abschlüsse nachrechnen (Hinweis für Kassenprüfer): Kontostände und Prüfsumme jedes Abschlusses frisch aus den Buchungen,
  * und jede Prüfsumme muss auf die des Vormonats verweisen. Eine Abweichung hieße, dass jemand an der Datenbank vorbei etwas
- * verändert hat.
+ * verändert hat. Erst die Kette (billig, ohne weitere Abfrage), dann alle Abschlüsse in einer einzigen Abfrage.
  */
 export async function verifyPeriodCloses(
   ctx: TenantContext,
 ): Promise<{ ok: boolean; checked: number }> {
   assertFinance(ctx, "finance:read");
   const rows = await ctx.db.financePeriodClose.findMany({ orderBy: { closedThrough: "asc" } });
-  let previous: (typeof rows)[number] | null = null;
-  for (const row of rows) {
-    // Kette: Der erste noch vorhandene Abschluss darf auf einen schon gelöschten (nach Ablauf der Frist) verweisen.
-    if (previous && row.previousHash !== previous.contentHash)
-      return { ok: false, checked: rows.length };
-    const after =
-      previous?.closedThrough ??
-      (row.previousHash
-        ? new Date(Date.UTC(row.closedThrough.getUTCFullYear(), row.closedThrough.getUTCMonth(), 0))
-        : null);
-    const stored = (row.balances ?? {}) as Record<string, number>;
-    const result = await recomputeClose({
-      clubId: ctx.clubId,
+  const failed = { ok: false, checked: rows.length };
+  // Kette: Der erste noch vorhandene Abschluss darf auf einen schon gelöschten (nach Ablauf der Frist) verweisen.
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i]!.previousHash !== rows[i - 1]!.contentHash) return failed;
+  }
+  const results = await recomputeCloses(
+    ctx.clubId,
+    rows.map((row, i) => ({
       previousHash: row.previousHash,
-      after,
+      after:
+        rows[i - 1]?.closedThrough ??
+        (row.previousHash
+          ? new Date(
+              Date.UTC(row.closedThrough.getUTCFullYear(), row.closedThrough.getUTCMonth(), 0),
+            )
+          : null),
       closedThrough: row.closedThrough,
-      storedBalances: stored,
-    });
+      storedBalances: row.balances ?? {},
+    })),
+  );
+  for (const [i, row] of rows.entries()) {
+    const result = results[i];
+    const stored = (row.balances ?? {}) as Record<string, number>;
     // Kontostände frisch aus den Buchungen: gleich für jedes damalige Konto; später angelegte Konten haben bis dahin 0 €.
     const sameBalances =
-      result !== null &&
+      !!result &&
       Object.entries(stored).every(
         ([id, cents]) => Number(result.balances[id] ?? 0) === Number(cents),
       ) &&
       Object.entries(result.balances).every(([id, cents]) => id in stored || Number(cents) === 0);
-    if (!result || result.hash !== row.contentHash || !sameBalances)
-      return { ok: false, checked: rows.length };
-    previous = row;
+    if (!result || result.hash !== row.contentHash || !sameBalances) return failed;
   }
   return { ok: true, checked: rows.length };
 }

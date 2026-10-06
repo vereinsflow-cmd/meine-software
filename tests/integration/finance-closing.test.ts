@@ -236,6 +236,26 @@ describe("Konten und Kategorien", () => {
     expect(bank.name).toBe("Girokonto");
   });
 
+  it("archivieren und gleichzeitig buchen: nie ein archiviertes Konto mit Geld darauf", async () => {
+    const { ctx, cat } = await setup();
+    for (let round = 0; round < 3; round++) {
+      const { id } = await createAccount(ctx.board, { name: `Tagesgeld ${round}`, kind: "BANK" });
+      await Promise.allSettled([
+        archiveAccount(ctx.board, { id, archived: true }),
+        createEntry(ctx.board, {
+          kind: "INCOME",
+          accountId: id,
+          bookingDate: toDateInputValue(todayCalendarDate()),
+          description: "Spende",
+          lines: [{ categoryId: cat("Spenden"), amount: "5,00" }],
+        }),
+      ]);
+      const account = await prisma.financeAccount.findUniqueOrThrow({ where: { id } });
+      const balance = (await accountBalances(ctx.board)).get(id) ?? 0;
+      expect(account.archivedAt === null || balance === 0).toBe(true);
+    }
+  });
+
   it("Kategorie anlegen, Bereich ändern (frühere Buchungen behalten ihren), Programm-Kategorien bleiben aktiv", async () => {
     const { ctx, bank, cat } = await setup();
     const { id } = await createCategory(ctx.board, {

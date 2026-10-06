@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   formatCalendarDate,
@@ -75,7 +76,9 @@ const DEFAULT_SETTINGS: Omit<FeeSettings, "stored"> = {
   minDebitCents: 500,
 };
 
-export async function getFeeSettings(ctx: TenantContext): Promise<FeeSettings> {
+export const getFeeSettings = cache(async function getFeeSettings(
+  ctx: TenantContext,
+): Promise<FeeSettings> {
   assertFinance(ctx, "finance:read");
   const row = await ctx.db.financeSettings.findUnique({ where: { clubId: ctx.clubId } });
   if (!row) return { ...DEFAULT_SETTINGS, stored: false };
@@ -89,7 +92,7 @@ export async function getFeeSettings(ctx: TenantContext): Promise<FeeSettings> {
     minDebitCents: row.minDebitCents,
     stored: true,
   };
-}
+});
 
 export async function updateFeeSettings(ctx: TenantContext, input: unknown): Promise<void> {
   assertFinance(ctx, "finance:manage");
@@ -623,13 +626,12 @@ export async function addAssignment(ctx: TenantContext, input: unknown): Promise
           ? "Für diesen Zeitraum gibt es schon eine feste Beitragsart – beende sie zuerst."
           : "Für diesen Zeitraum gibt es schon eine Ermäßigung oder Befreiung – beende sie zuerst.",
       );
-    const percentBp =
-      data.kind === "DISCOUNT_PERCENT"
-        ? parsePercentToBp(data.percent)
-        : null;
+    const percentBp = data.kind === "DISCOUNT_PERCENT" ? parsePercentToBp(data.percent) : null;
     if (data.kind === "DISCOUNT_PERCENT" && percentBp === null)
       throw validationFailed({
-        percent: ["Bitte gib die Ermäßigung in Prozent zwischen 0,01 und 100 ein (z. B. 50 oder 12,5)."],
+        percent: [
+          "Bitte gib die Ermäßigung in Prozent zwischen 0,01 und 100 ein (z. B. 50 oder 12,5).",
+        ],
       });
     const amountCents = data.kind === "FIXED_AMOUNT" ? parseEuroToCents(data.amount!)! : null;
     await tx.memberFeeAssignment.create({

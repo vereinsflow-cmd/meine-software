@@ -2,7 +2,7 @@ import { formatEuroFromCents } from "@/lib/dates";
 import { parseSignedEuroToCents } from "@/lib/money";
 import { parseInput } from "@/server/action";
 import { recordAudit } from "@/server/audit/audit";
-import { type TenantTx } from "@/server/db/tenant";
+import { lockUntilCommit, type TenantTx } from "@/server/db/tenant";
 import { conflict, notFound, validationFailed } from "@/server/errors";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance } from "./access";
@@ -124,9 +124,18 @@ export async function archiveAccount(ctx: TenantContext, input: unknown): Promis
   assertFinance(ctx, "finance:manage");
   const data = parseInput(archiveSchema, input);
   await ctx.db.$transaction(async (tx) => {
+    // Gleichzeitiges Archivieren zweier Konten: nacheinander – sonst sähen beide das andere noch als aktiv.
+    await lockUntilCommit(tx, ctx.clubId, "finance:accounts");
     const account = await tx.financeAccount.findFirst({ where: { id: data.id } });
     if (!account) throw notFound("Das Konto");
     if (data.archived === (account.archivedAt !== null)) return;
+    // Erst ändern (Zeilensperre), dann prüfen: Eine gleichzeitige Buchung liest das Konto FOR SHARE (Trigger) – entweder
+    // wartet sie und scheitert am Archiv-Datum, oder das Archivieren wartet auf sie und sieht ihren Betrag im Kontostand.
+    // Scheitert eine Prüfung, rollt die Transaktion die Änderung zurück.
+    await tx.financeAccount.update({
+      where: { id: account.id },
+      data: { archivedAt: data.archived ? new Date() : null },
+    });
     if (data.archived) {
       const balance = await tx.ledgerEntry.aggregate({
         where: { accountId: account.id },
@@ -142,10 +151,6 @@ export async function archiveAccount(ctx: TenantContext, input: unknown): Promis
       });
       if (others === 0) throw conflict("Ein Konto muss aktiv bleiben.");
     }
-    await tx.financeAccount.update({
-      where: { id: account.id },
-      data: { archivedAt: data.archived ? new Date() : null },
-    });
     await recordAudit(tx, auditActor(ctx), {
       action: data.archived ? "finance.account_archived" : "finance.account_restored",
       entityType: "FinanceAccount",
