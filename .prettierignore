@@ -13,7 +13,11 @@ next-env.d.ts
 .next-leer
 # Erzeugt von scripts/build-postal-codes.mjs – bewusst kompakt in einer Zeile
 src/server/geo/postal-codes-de.json
+# Erzeugt von scripts/build-bank-codes.mjs – eine Bank je Zeile
+src/server/banks/bank-codes-de.json
 # Wird von Next.js automatisch angepasst (Typ-Ordner der Build-Verzeichnisse) – nicht formatieren.
 tsconfig.json
 # Die Werbe-Website ist eine eigenständige statische Seite mit eigenen Werkzeugen (siehe website/README.md).
 website
+# Fremde Skill-Dateien (unverändert aus ihren Quellen übernommen) und alte Arbeitskopien – nicht formatieren.
+.claude

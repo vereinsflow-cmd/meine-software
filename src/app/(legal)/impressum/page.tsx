@@ -63,6 +63,17 @@ export default function ImprintPage() {
           </a>
           , bereinigt.
         </p>
+        <p>
+          Banken und Bankleitzahlen (Vorschläge im Feld „Bank“): Quelle: Deutsche Bundesbank,{" "}
+          <a
+            href="https://www.bundesbank.de/de/aufgaben/unbarer-zahlungsverkehr/serviceangebot/bankleitzahlen/download-bankleitzahlen-602592"
+            className="text-primary underline underline-offset-4"
+            rel="noreferrer"
+          >
+            Bankleitzahlendatei
+          </a>{" "}
+          (gültig vom 07.09.2026 bis 06.12.2026).
+        </p>
       </section>
     </article>
   );

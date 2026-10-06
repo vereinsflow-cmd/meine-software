@@ -18,7 +18,8 @@ import { cn } from "@/lib/utils";
  */
 type AnyForm<T extends FieldValues> = UseFormReturn<T, unknown, FieldValues>;
 
-interface BaseProps<T extends FieldValues> {
+/** Gemeinsame Eigenschaften aller Felder (auch für eigene Felder wie `SuggestField`). */
+export interface BaseProps<T extends FieldValues> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: UseFormReturn<T, any, any>;
   name: Path<T>;
@@ -29,7 +30,11 @@ interface BaseProps<T extends FieldValues> {
   className?: string;
 }
 
-function errorOf<T extends FieldValues>(form: AnyForm<T>, name: Path<T>): string | undefined {
+/** Fehlermeldung eines Felds (auch verschachtelt, z. B. `address.city`). */
+export function errorOf<T extends FieldValues>(
+  form: AnyForm<T>,
+  name: Path<T>,
+): string | undefined {
   const parts = name.split(".");
   let current: unknown = form.formState.errors;
   for (const part of parts) {
@@ -56,12 +61,16 @@ function initialOf<T extends FieldValues>(form: AnyForm<T>, name: Path<T>): unkn
 }
 
 /** Startwert als Text für Eingabe-, Text- und Auswahlfelder (Zahlen werden zu Text; sonst kein Startwert). */
-function initialText<T extends FieldValues>(form: AnyForm<T>, name: Path<T>): string | undefined {
+export function initialText<T extends FieldValues>(
+  form: AnyForm<T>,
+  name: Path<T>,
+): string | undefined {
   const value = initialOf(form, name);
   return typeof value === "string" || typeof value === "number" ? String(value) : undefined;
 }
 
-function FieldShell({
+/** Beschriftung, Hilfetext und Fehlermeldung um ein Eingabefeld – für alle Felder gleich. */
+export function FieldShell({
   id,
   label,
   hint,

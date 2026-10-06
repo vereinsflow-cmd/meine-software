@@ -14,12 +14,24 @@ describe("Ermäßigung in Prozent", () => {
     expect(parsePercentToBp(text)).toBe(bp);
   });
 
-  it.each(["", "0", "0,00", "0,001", "100,01", "101", "1e1", "0x10", "-5", "5%", "1.000", "12,", ",5", "Infinity"])(
-    "„%s“ ist ungültig",
-    (text) => {
-      expect(parsePercentToBp(text)).toBeNull();
-    },
-  );
+  it.each([
+    "",
+    "0",
+    "0,00",
+    "0,001",
+    "100,01",
+    "101",
+    "1e1",
+    "0x10",
+    "-5",
+    "5%",
+    "1.000",
+    "12,",
+    ",5",
+    "Infinity",
+  ])("„%s“ ist ungültig", (text) => {
+    expect(parsePercentToBp(text)).toBeNull();
+  });
 
   it("Schema meldet ungültige Prozente in einfachem Deutsch", () => {
     const base = {

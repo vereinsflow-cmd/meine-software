@@ -5,6 +5,7 @@ import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/
 import { useActionForm } from "@/hooks/use-action-form";
 import { setupLedgerAction } from "../ledger-actions";
 import { ledgerSetupSchema } from "../ledger-schemas";
+import { BankNameField } from "./bank-name-field";
 
 /**
  * „Kassenbuch einrichten“ beim ersten Besuch: Girokonto mit Anfangsbestand, auf Wunsch die Barkasse, und der Tag, ab dem in
@@ -41,7 +42,7 @@ export function LedgerSetupForm({ defaultStart }: { defaultStart: string }) {
       <fieldset className="grid gap-4 rounded-xl border p-4 sm:grid-cols-3">
         <legend className="px-1 text-sm font-semibold">Bankkonto</legend>
         <TextField form={form} name="bankName" label="Name" required />
-        <TextField
+        <BankNameField
           form={form}
           name="bankInstitute"
           label="Bank"

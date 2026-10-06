@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useWatch } from "react-hook-form";
 import { PencilIcon, PlusIcon } from "lucide-react";
+import type { FinanceAccountKind } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +32,7 @@ import {
   categoryCreateSchema,
   categoryUpdateSchema,
 } from "../ledger-schemas";
+import { BankNameField } from "./bank-name-field";
 
 const SPHERE_OPTIONS = (
   ["NON_PROFIT", "ASSET_MANAGEMENT", "PURPOSE_OPERATION", "COMMERCIAL"] as const
@@ -74,6 +77,8 @@ function AddAccountForm({
       onDone();
     },
   });
+  // Bankvorschläge nur für Bankkonten – bei „Barkasse“ steht hier eher „Vereinsheim“.
+  const kind = useWatch({ control: form.control, name: "kind" });
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <TextField form={form} name="name" label="Name" required />
@@ -88,7 +93,13 @@ function AddAccountForm({
         ]}
         required
       />
-      <TextField form={form} name="bankName" label="Bank oder Beschreibung" hint="freiwillig" />
+      <BankNameField
+        form={form}
+        name="bankName"
+        label="Bank oder Beschreibung"
+        hint="freiwillig"
+        enabled={kind === "BANK"}
+      />
       {openingAllowed ? (
         <TextField
           form={form}
@@ -116,7 +127,7 @@ function AddAccountForm({
 export function EditAccountDialog({
   account,
 }: {
-  account: { id: string; name: string; bankName: string | null };
+  account: { id: string; name: string; bankName: string | null; kind: FinanceAccountKind };
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -143,7 +154,7 @@ function EditAccountForm({
   account,
   onDone,
 }: {
-  account: { id: string; name: string; bankName: string | null };
+  account: { id: string; name: string; bankName: string | null; kind: FinanceAccountKind };
   onDone: () => void;
 }) {
   const { form, onSubmit, isPending, formError } = useActionForm({
@@ -158,7 +169,13 @@ function EditAccountForm({
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <TextField form={form} name="name" label="Name" required />
-      <TextField form={form} name="bankName" label="Bank oder Beschreibung" hint="freiwillig" />
+      <BankNameField
+        form={form}
+        name="bankName"
+        label="Bank oder Beschreibung"
+        hint="freiwillig"
+        enabled={account.kind === "BANK"}
+      />
       <FormError message={formError} />
       <SubmitButton pending={isPending} className="justify-self-start">
         Speichern
