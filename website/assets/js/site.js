@@ -461,6 +461,37 @@
     }
   }
 
+  // Überschriften der Abschnitte erscheinen Wort für Wort aus der Unschärfe, wie „Bringt Vereinsarbeit in Fluss“ im
+  // Einstieg (site.css „Bewegung: Feinschliff“). Dafür bekommt jedes Wort einen Span (.sw) mit seiner Nummer (--wi). Die
+  // Spans sind inline und ohne eigene Maße – am Umbruch der Zeilen ändert sich nichts. Geschützte Leerzeichen bleiben im
+  // Wort. Nur mit Einblenden (also nicht bei „Bewegung reduzieren“ und ohne IntersectionObserver).
+  if (canObserve && !reduceMotion) {
+    for (const heading of document.querySelectorAll(".section-head.reveal > h2")) {
+      const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+      const texts = [];
+      while (walker.nextNode()) texts.push(walker.currentNode);
+      let index = 0;
+      for (const text of texts) {
+        if (!text.data.trim()) continue;
+        const fragment = document.createDocumentFragment();
+        for (const part of text.data.split(/([ \t\r\n]+)/)) {
+          if (!part) continue;
+          if (!part.trim()) {
+            fragment.append(part);
+            continue;
+          }
+          const word = document.createElement("span");
+          word.className = "sw";
+          word.textContent = part;
+          word.style.setProperty("--wi", String(index++));
+          fragment.append(word);
+        }
+        text.replaceWith(fragment);
+      }
+      heading.classList.add("is-split");
+    }
+  }
+
   // Sanftes Ein- und Ausblenden beim Scrollen. Versteckt wird nur, was gerade nicht zu sehen ist: beim Laden alles
   // außerhalb des Fensters, später alles, was das Fenster ganz verlassen hat. Kommt es zurück, gleitet es aus der
   // Richtung herein, aus der es kommt. Was gleichzeitig erscheint, folgt kurz nacheinander (Zeile für Zeile).
@@ -497,6 +528,32 @@
       const box = element.getBoundingClientRect();
       if (box.top > limit || box.bottom < 0) hide(element, box.bottom < 0);
       observer.observe(element);
+    }
+  }
+
+  // Licht unter dem Zeiger (Karten der Funktionen, nur Zeigergeräte): Die Karte merkt sich die Lage des Zeigers als
+  // --mx/--my (höchstens einmal je Bild); Lichtschein und heller Rand folgen ihm (site.css „Bewegung: Feinschliff“).
+  // Gesetzt wird nur an der Karte unter dem Zeiger. Bei „Bewegung reduzieren“ bleibt es beim ruhigen Überfahren.
+  if (!reduceMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    for (const card of document.querySelectorAll(".bento > .feat")) {
+      let frame = 0;
+      let x = 0;
+      let y = 0;
+      card.addEventListener(
+        "pointermove",
+        (event) => {
+          x = event.clientX;
+          y = event.clientY;
+          if (frame) return;
+          frame = requestAnimationFrame(() => {
+            frame = 0;
+            const box = card.getBoundingClientRect();
+            card.style.setProperty("--mx", `${Math.round(x - box.left)}px`);
+            card.style.setProperty("--my", `${Math.round(y - box.top)}px`);
+          });
+        },
+        { passive: true },
+      );
     }
   }
 
@@ -647,7 +704,7 @@
     buttons[target].focus();
   });
 
-  // Reiter („Im Detail“): Ohne JavaScript stehen die Themen untereinander. Mit JavaScript erscheint die Reiterleiste,
+  // Reiter (Abläufe, #details): Ohne JavaScript stehen die Themen untereinander. Mit JavaScript erscheint die Reiterleiste,
   // immer ein Thema ist sichtbar. Bedienung wie bei Reitern üblich: Klick, Pfeiltasten (wählen sofort), Pos1/Ende.
   // Führt ein Link auf ein Thema (#suche aus der Fußzeile), wird dessen Reiter gewählt.
   // Unter dem gewählten Reiter liegt ein blauer Strich (.tabs::before), der beim Wechsel zum neuen Reiter gleitet und
@@ -694,20 +751,22 @@
       const out = from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
       out.addEventListener("finish", () => from.classList.remove("is-leaving"));
       running.push(out);
-      const enter = (element, delay) => {
+      // Der Text kommt dazu aus einer leichten Unschärfe (wie die Überschriften) – so verschwimmt der Wechsel der Sätze
+      // zu einer Bewegung statt zweier Texte übereinander. Das Fenster bleibt scharf (große Fläche).
+      const enter = (element, delay, blur) => {
         if (!element) return;
         running.push(
           element.animate(
             [
-              { opacity: 0, transform: `translateX(${dir * 12}px)` },
-              { opacity: 1, transform: "none" },
+              { opacity: 0, transform: `translateX(${dir * 12}px)`, filter: blur ? "blur(4px)" : "none" },
+              { opacity: 1, transform: "none", filter: "none" },
             ],
             { duration: 280, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
           ),
         );
       };
-      enter(to.querySelector(".spot-text"), 60); // kurz nach dem Ausblenden des bisherigen
-      enter(to.querySelector(".spot-media"), 100);
+      enter(to.querySelector(".spot-text"), 60, true); // kurz nach dem Ausblenden des bisherigen
+      enter(to.querySelector(".spot-media"), 100, false);
     };
     const parked = []; // [Bild, src, srcset] der Bilder, die noch nicht laden sollen
     const park = (panel) => {
@@ -778,6 +837,8 @@
       const current = tabs.indexOf(document.activeElement);
       if (current < 0) return;
       const moves = { ArrowLeft: current - 1, ArrowRight: current + 1, Home: 0, End: tabs.length - 1 };
+      // Breit stehen die Reiter untereinander (site.css „Kürzen und Ordnen“): dann auch hoch/runter
+      if (getComputedStyle(list).flexDirection === "column") Object.assign(moves, { ArrowUp: current - 1, ArrowDown: current + 1 });
       if (!(event.key in moves)) return;
       event.preventDefault();
       choose((moves[event.key] + tabs.length) % tabs.length, true);
@@ -799,6 +860,16 @@
     else window.addEventListener("resize", settlePill, { passive: true });
     window.addEventListener("hashchange", fromHash);
   }
+
+  // Aufklappbare Frage als Sprungziel (#ablauf aus der Fußzeile): Führt die Adresse auf ein geschlossenes <details>,
+  // öffnet es sich – sonst stünde dort nur die Frage.
+  const openTarget = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const target = id ? document.getElementById(id) : null;
+    if (target instanceof HTMLDetailsElement) target.open = true;
+  };
+  openTarget();
+  window.addEventListener("hashchange", openTarget);
 
   // Navigation: Abschnitt, der gerade in der Mitte des Fensters steht, wird hervorgehoben; eine Markierung gleitet
   // dorthin – und beim Überfahren zum Menüpunkt unter dem Mauszeiger.

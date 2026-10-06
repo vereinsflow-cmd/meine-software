@@ -16,6 +16,9 @@
    - Vorführungen (Laptop nach der Ausgangslage, Telefon zwischen Rollen und Sicherheit – so wechseln Bühne und Text auch
      in der zweiten Hälfte der Seite): Aufklappen und Drehen als Animationen an einer Scroll-Timeline, ebenfalls auf dem
      Compositor; ohne Scroll-Timeline stellt site.js ihre Zeit nach dem Scrollfortschritt ein.
+   - Feinschliff (Abschnitt „Bewegung: Feinschliff“ vor dem Druck): Nacht-Abschnitte wachsen aus einer runden Karte,
+     Überschriften Wort für Wort aus der Unschärfe, Live-Fenster aus einer Maske, Tiefe im Einstieg, Licht unter dem
+     Zeiger auf den Karten der Funktionen, Stufen der Rollen füllen sich.
    - „Bewegung reduzieren“ (prefers-reduced-motion): keine Animationen, alles sofort sichtbar.
    ========================================================================== */
 
@@ -66,7 +69,7 @@
   --container: 1160px;
   --gutter: clamp(16px, 4vw, 32px);
   --section-pad: clamp(56px, 7vw, 104px); /* nur noch Bühne der Vorführungen (Hochformat) – nicht ändern */
-  --section-y: clamp(64px, 8vw, 120px); /* Abstand oben und unten in jedem Abschnitt (wie Funktionen) */
+  --section-y: clamp(56px, 6.5vw, 96px); /* Abstand oben und unten in jedem Abschnitt (wie Funktionen); knapper, seit die Seite kürzer ist */
   --head-gap: clamp(36px, 5vw, 56px); /* vom Kopf eines Abschnitts zu seinem Inhalt (wie Funktionen) */
 
   /* Schrift-Stufen wie in den Funktionen: Abschnittsüberschrift (h2), Bereichsüberschrift eine Stufe darunter
@@ -166,7 +169,6 @@ p {
 /* Texte, die keine Absätze sind, ebenfalls ohne einzelnes Wort in der letzten Zeile */
 .facts li > span,
 .checks li > span,
-.cta-steps li > span,
 summary {
   text-wrap: pretty;
 }
@@ -1766,77 +1768,7 @@ details[open] > summary .toggle,
 }
 
 /* ---------- Kennzahlen-Leiste ----------
-   Eine ruhige Fußnote zum Einstieg, kein Kasten: oben eine feine Linie über die Breite des Inhalts, darunter vier kurze
-   Belege mit viel Luft dazwischen – ohne senkrechte Striche, ohne gleiche Höhen, oben bündig. Zahl und Einheit stehen in
-   einem Schwarz, bewusst klein (höchstens 1,5 rem, halbfett statt fett): Die Leiste liest als Fußnote zum Einstieg und
-   tritt nicht gegen die Abschnittsüberschriften an – keine großen Kennzahlen. Darunter grau, wofür sie stehen. Vier
-   Spalten ab 1000 px, darunter zwei mal zwei ohne Linie dazwischen, unter 360 px eine Spalte.
-   Die Zahl ist höchstens so groß, dass „100 % Deutsch“ (gut 6,7 em) in ihre Spalte passt: Jede Spalte ist ein
-   Größen-Container, gerechnet wird mit 7,1 em (Reserve für breitere Systemschriften). Ohne Container-Einheiten bricht
-   die Zeile notfalls nach „100 %“ um. */
-
-.facts ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  margin: 0;
-  padding: 28px 0 0;
-  list-style: none;
-  border-top: 1px solid var(--line);
-}
-
-.facts li {
-  container-type: inline-size;
-}
-
-.facts {
-  --facts-num: clamp(1.25rem, 0.4vw + 1.125rem, 1.5rem);
-}
-
-.facts strong {
-  display: block;
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: var(--facts-num);
-  font-size: min(var(--facts-num), 100cqi / 7.1);
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.facts li > span {
-  display: block;
-  max-width: 17rem;
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-@media (min-width: 1000px) {
-  .facts ul {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(24px, 4vw, 56px);
-  }
-}
-
-@media (max-width: 559px) {
-  /* Zwei schmale Spalten: getrennt wird nur an der Fuge, die im HTML markiert ist („Vereins-administrator“ statt
-     einer automatischen Trennung mitten im Wortteil) */
-  .facts li > span {
-    margin-top: 6px;
-    font-size: 0.9375rem;
-    line-height: 1.45;
-    hyphens: manual;
-  }
-}
-
-@media (max-width: 359px) {
-  .facts ul {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
+   Jetzt ein dunkles Band (Baustein .band, siehe „Nacht und Tag“ am Ende vor den Keyframes). */
 
 /* ---------- Vorführungen: Laptop und Telefon drehen sich ins Bild ----------
    Die Bewegungen sind CSS-Animationen auf transform und opacity, die von selbst ablaufen, sobald das Gerät zur Hälfte im
@@ -5283,129 +5215,6 @@ details[open] > summary .toggle,
   }
 }
 
-/* ---------- Ausgangslage (Vorher/Nachher) ----------
-   Kopf über die ganze Breite: zwei Sätze, je in einer eigenen Zeile – der zweite in Grau (gleiche Größe), wie zwei Stimmen
-   eines Satzes. Darunter statt Karten ein schlichter Vergleich über die ganze Breite: je Thema eine Zeile unter einer
-   feinen Linie, links Symbol und Titel, in der Mitte „Bisher“ in Grau, rechts „Mit VereinsFlow“ in Schwarz – den
-   Gegensatz trägt Grau gegen Schwarz, nicht Rot gegen Grün, keine Kreuze und Haken.
-   - Ab 900 px eine Tabelle (0,8 : 1 : 1,2) mit einer Kopfzeile über den Spalten; die Beschriftung in den Zeilen ist dort
-     nur für Screenreader da. Die drei Spalten einer Zeile stehen auf der Grundlinie ihrer ersten Zeile.
-   - 720 bis 899 px: Titel über der Zeile, „Bisher“ und „Mit VereinsFlow“ nebeneinander, je mit Beschriftung.
-   - Darunter alles untereinander: Symbol und Titel, „Bisher“ mit dem grauen Satz, darunter der Satz in Schwarz.
-   Symbol links neben dem Titel wie in den Funktionen (24 px, 14 px Abstand); bricht ein Titel um, bleibt die zweite
-   Zeile unter dem Text, nicht unter dem Symbol. Wie dort trennt „Informa-tionen“ nur, wenn das Wort allein nicht in die
-   Zeile passt (große eingestellte Schrift; bedingte Trennstelle im HTML, Umbruch ohne Ausgleich). */
-
-#ausgangslage .h-line + .h-line {
-  color: var(--muted);
-}
-
-.vergleich {
-  --vg-spalten: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.2fr);
-  --vg-gap: clamp(24px, 4vw, 56px);
-}
-
-.vergleich-zeile {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-  padding-block: clamp(24px, 2.6vw, 32px);
-  border-top: 1px solid var(--line);
-}
-
-/* Unter der letzten Zeile keine Linie – also auch kein Innenabstand: Der Abschnitt endet mit --section-y wie alle */
-.vergleich-zeile:last-child {
-  padding-bottom: 0;
-}
-
-.vergleich-zeile h3 {
-  position: relative;
-  padding-left: calc(1.5rem + 14px);
-  color: var(--ink);
-  font-size: 1.25rem;
-  font-weight: 650;
-  line-height: 1.3;
-  letter-spacing: -0.015em;
-  hyphens: manual;
-  overflow-wrap: break-word;
-  text-wrap: wrap;
-}
-
-/* Symbol mittig auf der ersten Zeile des Titels (Zeilenhöhe 1,3 × 1,25 rem) */
-.vergleich-zeile h3 .sym {
-  position: absolute;
-  top: calc((1.625rem - 1.5rem) / 2);
-  left: 0;
-}
-
-.vergleich-zeile .label {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.vergleich-zeile p {
-  max-width: 34rem;
-  font-size: 1.0625rem;
-  line-height: 1.55;
-}
-
-.vergleich .vorher p {
-  color: var(--muted);
-}
-
-.vergleich .nachher p,
-.vergleich .nachher .label,
-.vergleich-kopf .label + .label {
-  color: var(--ink);
-}
-
-/* Die Kopfzeile gibt es nur in der Tabelle */
-.vergleich-kopf {
-  display: none;
-}
-
-@media (min-width: 720px) and (max-width: 899px) {
-  .vergleich-zeile {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--vg-gap);
-  }
-
-  .vergleich-zeile h3 {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 900px) {
-  .vergleich-kopf,
-  .vergleich-zeile {
-    display: grid;
-    grid-template-columns: var(--vg-spalten);
-    column-gap: var(--vg-gap);
-  }
-
-  .vergleich-kopf {
-    padding-bottom: 14px;
-  }
-
-  .vergleich-kopf .label:first-child {
-    grid-column: 2;
-  }
-
-  .vergleich-zeile {
-    align-items: baseline;
-  }
-
-  /* Beschriftung in den Zeilen nur für Screenreader (die Kopfzeile zeigt sie einmal) */
-  .vergleich-zeile .label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-}
-
 /* ---------- Hervorgehobene Bereiche (Bild + Text im Wechsel) ---------- */
 
 .spot {
@@ -5865,10 +5674,12 @@ details[open] > summary .toggle,
   }
 
   .story-paper {
-    grid-area: 2 / 2 / 3 / 3;
-    align-self: end;
+    /* Eigene Zeile unter den Schritten (wie am Smartphone): Zugeklappt sind die Schritte kürzer als das Telefon, ein
+       Blatt in derselben Zelle läge über dessen unterem Rand */
+    grid-area: 3 / 1 / 4 / 2;
+    align-self: start;
     justify-self: start;
-    margin: 0 0 12px;
+    margin: 40px 0 0 var(--story-indent);
   }
 
   .story-steps {
@@ -6093,426 +5904,6 @@ details[open] > summary .toggle,
   }
 }
 
-/* ---------- Rollen ----------
-   Rechtetabelle ohne Kasten, nach der Reichweite bei den Mitgliederdaten gruppiert – die Aussage „wer sieht was“ ist die
-   Ordnung: Gesamter Verein (Vereinsadministrator, Vorstandsmitglied), Eigene Abteilung (Abteilungsleiter), Nur eigene
-   Daten (Helfer, Mitglied). Oben 1 px Schwarz, zwischen den Gruppen 1 px --line-strong, zwischen den Rollen einer Gruppe
-   1 px --line. Ab 900 px drei Spalten unter einer Kopfzeile (Reichweite | Rolle | Aufgaben), die Reichweite einmal je
-   Gruppe und die feine Linie zwischen Rollen einer Gruppe nur unter Rolle und Aufgaben; schmaler steht die Reichweite als
-   Überschrift über der Gruppe. Für Screenreader nennt jede Rolle ihre Reichweite selbst (.scope, „Mitgliederdaten: …“). */
-
-.roles-head {
-  display: none;
-}
-
-/* Linie über jeder Gruppe (an ihrer ersten Rolle), über der ersten in Schwarz */
-.role-group > .role:first-child {
-  border-top: 1px solid var(--line-strong);
-}
-
-.roles > .role-group:first-of-type > .role:first-child {
-  border-top-color: var(--ink);
-}
-
-/* Schmal: Gruppen durch mehr Weißraum voneinander abgesetzt als die Rollen innerhalb einer Gruppe */
-.role-group + .role-group {
-  margin-top: 20px;
-}
-
-.role {
-  display: flex;
-  flex-direction: column;
-  padding-block: 22px 24px;
-}
-
-.role + .role {
-  border-top: 1px solid var(--line);
-}
-
-.role h3 {
-  font-size: 1.125rem;
-  font-weight: 650;
-  line-height: 1.3;
-  letter-spacing: -0.012em;
-  hyphens: auto; /* „Vereinsadministrator“ bei großer Schrift oder starkem Zoom */
-}
-
-.role h3 + p {
-  max-width: 36rem;
-  margin-top: 6px;
-  color: var(--text);
-  font-size: 1.0625rem;
-  line-height: 1.55;
-}
-
-/* Reichweite: in der ersten Rolle einer Gruppe sichtbar (schmal als Überschrift der Gruppe, darüber), in den weiteren
-   nur für Screenreader */
-.role .scope {
-  order: -1;
-  margin-bottom: 12px;
-  color: var(--ink);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.scope-key {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.role + .role .scope {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-/* Tablet: Name und Aufgaben nebeneinander, die Reichweite darüber */
-@media (min-width: 640px) {
-  .role {
-    display: grid;
-    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
-    grid-template-areas:
-      "scope scope"
-      "name text";
-    column-gap: clamp(24px, 3vw, 48px);
-    align-items: baseline;
-  }
-
-  .role h3 {
-    grid-area: name;
-  }
-
-  .role h3 + p {
-    grid-area: text;
-    margin-top: 0;
-  }
-
-  .role .scope {
-    grid-area: scope;
-  }
-}
-
-/* Breit: drei Spalten unter der Kopfzeile, die Reichweite einmal je Gruppe in der ersten Spalte */
-@media (min-width: 900px) {
-  .roles-head,
-  .role {
-    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.6fr);
-    column-gap: clamp(24px, 3vw, 48px);
-  }
-
-  .roles-head {
-    display: grid;
-    margin: 0;
-    padding-bottom: 14px;
-  }
-
-  .role {
-    grid-template-areas: "scope name text";
-    padding-block: clamp(22px, 2.2vw, 30px);
-  }
-
-  .role-group + .role-group {
-    margin-top: 0;
-  }
-
-  .role + .role {
-    border-top: 0;
-  }
-
-  /* Linie zwischen Rollen derselben Gruppe: nur über Rolle und Aufgaben – die erste Spalte gehört der Gruppe */
-  .role + .role::before {
-    content: "";
-    grid-column: name-start / text-end;
-    grid-row: 1;
-    align-self: start;
-    margin-top: calc(-1 * clamp(22px, 2.2vw, 30px));
-    border-top: 1px solid var(--line);
-  }
-
-  .role .scope {
-    margin: 0;
-  }
-
-  .scope-key {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
-
-/* Hinweis unter der Tabelle: eine graue Zeile mit Symbol, ohne Kasten */
-.roles-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-top: clamp(24px, 3vw, 36px);
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
-
-.roles-note .sym {
-  width: 20px;
-  height: 20px;
-  margin-top: 0.06em;
-}
-
-/* ---------- Sicherheit ----------
-   Weiß wie alle Abschnitte – keine Fläche, keine Tafel, kein Siegel, kein Lichtschein. Das Kernversprechen ist
-   Typografie, die sechs Schutzmaßnahmen sind ruhige Zeilen mit feinen Linien (.rows), wie eine Aufstellung:
-   - Kopf über die ganze Breite (.section-head.wide): die Überschrift in --h2, in zwei Zeilen je ein Satzteil
-     („Mitgliederdaten verdienen / mehr als einen Passwortschutz“, .h-line), darunter die Einleitung. In einer halben
-     Spalte bräche die Überschrift in --h2 in vier Zeilen mit einem verwaisten „einen“.
-   - Ab 1000 px zwei Spalten, ab 1200 px im Raster der Funktionen: links so breit wie deren Kopfspalte (393 px, siehe
-     .fkt) mit demselben Abstand – die Zeilen beginnen an derselben Kante wie die Liste der Funktionen. Links das
-     Versprechen, rechts die Zeilen; beide beginnen auf derselben Höhe über einer feinen Linie.
-   - Schmaler steht alles untereinander: Kopf, Versprechen, Zeilen, Fußnote.
-   Eine Zeile ist ein Aufklapper (details, die ganze Zeile ist die Schaltfläche): Symbol, Titel und ein Satz, rechts das
-   Plus (.toggle) auf der Höhe des Titels; die Einzelheiten folgen grau unter dem Satz. Beim Überfahren wird der Titel
-   unterstrichen und das Plus gefüllt (siehe .toggle) – kein Blau, keine Fläche. */
-
-.trust {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-@media (min-width: 1000px) {
-  .trust {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-    grid-template-areas:
-      "head head"
-      "promise panel";
-    column-gap: clamp(48px, 5vw, 80px);
-    align-items: start;
-  }
-
-  .trust-head {
-    grid-area: head;
-  }
-
-  .trust-promise {
-    grid-area: promise;
-  }
-
-  .trust-panel {
-    grid-area: panel;
-  }
-}
-
-@media (min-width: 1200px) {
-  .trust {
-    grid-template-columns: 393px minmax(0, 1fr);
-    column-gap: clamp(56px, 5vw, 80px);
-  }
-}
-
-/* Der zweite Satz der Einleitung folgt hier nicht noch einmal im Abschnitt – er bleibt (anders als in den übrigen Köpfen)
-   auch auf dem Telefon stehen */
-@media (max-width: 719px) {
-  .trust-head .lead-more {
-    display: inline;
-  }
-}
-
-/* Kernversprechen: ein Satz in Schwarz, groß und fett gesetzt, darüber das durchgestrichene Auge als Linie, darunter
-   grau die Einordnung. Das Versprechen ist ein Größen-Container: Bei stark vergrößerter Grundschrift wird der Satz
-   höchstens so groß, dass „Mitgliederdaten.“ (gut 7 em) noch in die Spalte passt. */
-.trust-promise {
-  container-type: inline-size;
-  padding-top: clamp(24px, 2.6vw, 32px);
-  border-top: 1px solid var(--line);
-}
-
-.trust-promise-sym {
-  display: block;
-  width: 1.75rem;
-  height: 1.75rem;
-}
-
-.trust-claim {
-  max-width: 22em;
-  margin-top: clamp(16px, 1.8vw, 22px);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 0.5vw + 1.25rem, 1.75rem);
-  font-size: min(clamp(1.5rem, 0.5vw + 1.25rem, 1.75rem), 100cqi / 7.5);
-  font-weight: 650;
-  line-height: 1.3;
-  letter-spacing: -0.022em;
-  text-wrap: balance;
-  overflow-wrap: break-word;
-}
-
-.trust-note {
-  max-width: 28rem;
-  margin-top: 14px;
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.55;
-}
-
-/* Untereinander: Abstand zwischen Versprechen und Zeilen wie zwischen Kopf und Inhalt */
-@media (max-width: 999px) {
-  .trust-panel {
-    margin-top: var(--head-gap);
-  }
-}
-
-/* Die Zeilen: feine Linie darüber und zwischen den Zeilen (.rows), keine ringsum */
-.trust-list {
-  border-top: 1px solid var(--line);
-}
-
-/* Abstände fest, damit beim Auf- und Zuklappen nur die Einzelheiten wachsen und nichts springt: Die Zeile hat oben
-   22 px, unten 12 px in der Schaltfläche und 10 px darunter (details). Geschlossen reicht die Tippfläche (::after) über
-   diese 10 px bis zur Linie; offen stehen dort die Einzelheiten – 12 px unter dem Satz – und bleiben markierbar. */
-.trust-item {
-  padding-bottom: 10px;
-}
-
-.trust-item > summary {
-  --row-lh: calc(1.125rem * 1.35); /* Zeilenhöhe des Titels: Symbol und Plus stehen mittig auf ihr */
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr) 1.75rem;
-  align-items: start;
-  column-gap: 16px;
-  padding: 22px 0 12px;
-  list-style: none;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.trust-item > summary::-webkit-details-marker {
-  display: none;
-}
-
-.trust-item:not([open]) > summary::after {
-  content: "";
-  position: absolute;
-  inset: 100% 0 auto;
-  height: 10px;
-}
-
-.trust-sym {
-  grid-row: 1 / 3;
-  margin-top: calc((var(--row-lh) - 1.5rem) / 2);
-}
-
-/* Titel wie eine kleine Zwischenüberschrift gesetzt, aber ohne Überschriftenrolle (siehe Kommentar im HTML) */
-.trust-title {
-  grid-column: 2;
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 650;
-  line-height: var(--row-lh);
-  letter-spacing: -0.014em;
-  text-decoration: underline 1px transparent;
-  text-underline-offset: 0.22em;
-  transition: text-decoration-color 0.2s;
-}
-
-.trust-line {
-  grid-column: 2;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
-
-/* Bei stark vergrößerter Schrift bricht ein Wort, das allein nicht in die Zeile passt, notfalls um, statt über den
-   Rand zu ragen (ohne automatische Silbentrennung – sonst trennte der Browser auch „Ver-einsFlow“ in normaler Größe;
-   lange Titelwörter haben dafür wie in den Funktionen eine bedingte Trennstelle im HTML: „Nachvoll-ziehbar“) */
-.trust-title,
-.trust-line,
-.trust-detail,
-.trust-note,
-.trust-facts {
-  overflow-wrap: break-word;
-}
-
-.trust-item .toggle {
-  grid-column: 3;
-  grid-row: 1 / 3;
-  margin-top: calc((var(--row-lh) - 1.75rem) / 2);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .trust-item > summary:hover .trust-title {
-    text-decoration-color: currentColor;
-  }
-}
-
-/* Rückmeldung beim Antippen (Touch hat kein Überfahren) */
-.trust-item > summary:active .toggle {
-  background: var(--ink);
-  box-shadow: none;
-  color: #ffffff;
-}
-
-/* Einzelheiten: unter dem Satz, bündig mit dem Text, so leise wie der Satz */
-.trust-detail {
-  max-width: calc(1.5rem + 16px + 36rem);
-  padding: 0 0 14px calc(1.5rem + 16px);
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.6;
-}
-
-/* Fußnote: „In der Anwendung“ – eine graue Zeile unter den Zeilen */
-.trust-facts {
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
-
-/* Smartphone: Titel etwas kleiner, der Satz läuft bis unter das Plus */
-@media (max-width: 719px) {
-  .trust-item {
-    padding-bottom: 8px;
-  }
-
-  .trust-item > summary {
-    --row-lh: calc(1.0625rem * 1.35);
-    column-gap: 14px;
-    padding: 18px 0 10px;
-  }
-
-  .trust-item:not([open]) > summary::after {
-    height: 8px;
-  }
-
-  .trust-title {
-    font-size: 1.0625rem;
-  }
-
-  .trust-line {
-    grid-column: 2 / -1;
-  }
-
-  .trust-item .toggle {
-    grid-row: 1;
-  }
-
-  .trust-detail {
-    padding: 0 0 12px calc(1.5rem + 14px);
-  }
-}
-
 /* ---------- Häufige Fragen ----------
    Einspaltig und linksbündig – Funktionen und Sicherheit stehen schon zweispaltig (Kopf bzw. Versprechen links, Liste
    rechts), hier nicht ein drittes Mal: Überschrift und Fragen beginnen an der Inhaltskante, die Fragen höchstens 52 rem
@@ -6665,12 +6056,8 @@ details[open] > summary .toggle,
     grid-area: 1 / 1;
   }
 
-  .cta-steps-block {
-    grid-area: 2 / 1;
-  }
-
   .notify {
-    grid-area: 1 / 2 / 3 / 3;
+    grid-area: 1 / 2;
   }
 }
 
@@ -6779,68 +6166,8 @@ details[open] > summary .toggle,
   display: block;
 }
 
-.cta-hint {
-  max-width: 34rem;
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.55;
-}
-
-/* Drei Schritte bis zum Start: Titel eine Stufe unter der Überschrift, darunter die Schritte unter je einer feinen Linie –
-   zwischen 900 und 1199 px nebeneinander (die Ziffer über dem Text), sonst untereinander (die Ziffer davor). Die Ziffern
-   sind nur Markierungen (.step-num, grau, ohne Kreis); vorgelesen wird die nummerierte Liste. */
-.cta-steps-title {
-  scroll-margin-top: calc(var(--header-h) + 24px);
-}
-
-.cta-steps {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  margin: clamp(24px, 3vw, 36px) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.cta-steps li {
-  display: grid;
-  grid-template-columns: 1.75rem minmax(0, 1fr);
-  align-content: start;
-  gap: 12px;
-  padding-block: 20px;
-  border-top: 1px solid var(--line);
-  color: var(--text);
-  font-size: 1.0625rem;
-  line-height: 1.55;
-}
-
-.cta-steps strong {
-  color: var(--ink);
-  font-weight: 650;
-}
-
-@media (min-width: 900px) and (max-width: 1199px) {
-  .cta-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: clamp(32px, 4vw, 56px);
-  }
-
-  .cta-steps li {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-    padding-block: 20px 0;
-  }
-}
-
-/* Neben der Benachrichtigung: untereinander, auf lesbare Zeilenlänge begrenzt */
-@media (min-width: 1200px) {
-  .cta-steps {
-    max-width: 38rem;
-  }
-}
-
 /* Benachrichtigung zum Start (Anmeldung mit Bestätigung, newsletter.php) auf der einen grauen Fläche (.tint): Titel,
-   ein Satz, drei Punkte mit schwarzem Häkchen, darunter das Formular. Zwischen 900 und 1199 px stehen Text und Formular
+   ein Satz, darunter das Formular. Zwischen 900 und 1199 px stehen Text und Formular
    nebeneinander, darüber (rechts neben der Anfrage) untereinander. Der Knopf ist nur umrandet – gefüllt ist allein
    „Demo anfragen“. */
 .notify {
@@ -6869,32 +6196,6 @@ details[open] > summary .toggle,
   max-width: 34rem;
   margin-top: 12px;
   color: var(--text);
-}
-
-.notify-points {
-  display: grid;
-  gap: 8px;
-  margin: 18px 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--text);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
-
-.notify-points li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-/* Häkchen wie in der Grundlage (.checks): schwarze Linie ohne Kreis, auf der Höhe der ersten Zeile */
-.notify-points .icon {
-  width: 16px;
-  height: 16px;
-  margin-top: calc((1.5em - 16px) / 2);
-  color: var(--ink);
-  stroke-width: 2;
 }
 
 .notify-form {
@@ -8377,8 +7678,8 @@ details[open] > summary .toggle,
       animation-timeline: scroll(root);
     }
 
-    /* Keine Parallaxe und kein Wachsen der Fenster mehr: Fenster, Telefone und Blatt stehen still (die Klassen .plx
-       bleiben im HTML nur als Hülle) – bewegt sind allein die Geräte und die Live-Fenster */
+    /* Keine Parallaxe der Fenster: Die Hülle .plx beschneidet die Live-Fenster nur beim Hereinscrollen (Maske, siehe
+       „Bewegung: Feinschliff“); Telefone und Blatt stehen still */
   }
 }
 
@@ -8404,18 +7705,16 @@ details[open] > summary .toggle,
   }
 }
 
-/* --- Aufklappen der Fragen und der Schutzmaßnahmen (Sicherheit): weich statt ruckartig (Browser mit ::details-content).
+/* --- Aufklappen der Fragen: weich statt ruckartig (Browser mit ::details-content).
    Öffnen 0,3 s, Schließen schneller (0,2 s), beides mit kräftigem Ausklang. Es wächst nur der Inhalt – die Abstände
    der Zeile bleiben fest (siehe „Sicherheit“ und „Häufige Fragen“). Das Plus dreht sich dazu zum × (siehe .toggle). --- */
 @supports selector(::details-content) {
   @media (prefers-reduced-motion: no-preference) {
-    .faq details,
-    .trust-item {
+    .faq details {
       interpolate-size: allow-keywords;
     }
 
-    .faq details::details-content,
-    .trust-item::details-content {
+    .faq details::details-content {
       height: 0;
       overflow: clip;
       opacity: 0;
@@ -8425,8 +7724,7 @@ details[open] > summary .toggle,
         content-visibility 0.2s allow-discrete;
     }
 
-    .faq details[open]::details-content,
-    .trust-item[open]::details-content {
+    .faq details[open]::details-content {
       height: auto;
       opacity: 1;
       transition-duration: 0.3s, 0.3s, 0.3s;
@@ -8756,18 +8054,1585 @@ details[open] > summary .toggle,
     display: none !important;
   }
 
-  /* Sicherheit und Fragen: die Einzelheiten und Antworten auch zugeklappt drucken (Browser mit ::details-content), ohne
-     Plus */
-  .trust-item::details-content,
+  /* Fragen: die Antworten auch zugeklappt drucken (Browser mit ::details-content), ohne Plus */
   .faq details::details-content {
     content-visibility: visible !important;
     height: auto !important;
     opacity: 1 !important;
   }
 
-  .trust-item .toggle,
   .faq .toggle {
     display: none !important;
+  }
+}
+
+/* ==========================================================================
+   Nacht und Tag
+   Die Seite wechselt zwischen dunklen Abschnitten (Nacht: Tinte #0F1C2E, fast Schwarz #0B0F17) und hellen (Tag: Weiß,
+   sparsam Papier #F6F3EC) – kein Abschnitt sieht aus wie der vorige. Bausteine (für alle Abschnitte):
+   - .nacht            dunkler Abschnitt; .nacht-tief = fast Schwarz. Farben als Variablen (--n-*), im Druck hell.
+   - .papier           heller, warmer Abschnitt (Papier).
+   - .band             Vertrauens-Band: kurze Punkte mit Linien-Symbol in Himmelblau (Sicherheit).
+   - .bento            Raster aus runden Karten (24 px) auf Nacht: Titel, ein Satz, wo es passt ein echtes Bild der
+                       Anwendung (Funktionen).
+   - .mehr             „Mehr dazu“: Einzelheiten aufklappbar statt Fließtext (im Druck offen).
+   Bewegung nur über transform/opacity (translate, scale), Überfahren nur bei Zeigergeräten, bei „Bewegung
+   reduzieren“ keine.
+   ========================================================================== */
+
+:root {
+  --night: #0f1c2e; /* Tinte */
+  --night-deep: #0b0f17; /* fast Schwarz */
+  --sky: #8fb0ff; /* Himmel: Akzent auf Nacht (Symbole, Linien, Fokus) – 8,1 : 1 auf Tinte */
+  --signal: #ff8a5e; /* Signalorange: nur kleine Akzente */
+  --paper: #f6f3ec; /* Papier */
+}
+
+.nacht {
+  --n-bg: var(--night);
+  --n-card: #162740; /* Karte auf Tinte */
+  --n-card-hi: #1c3050;
+  --n-ink: #ffffff; /* Überschriften, Titel */
+  --n-text: #d3dbe7; /* Fließtext: 10,8 : 1 auf der Karte */
+  --n-muted: #a7b3c6; /* Nebensachen: 8,1 : 1 auf Tinte, 7,1 : 1 auf der Karte */
+  --n-line: rgb(255 255 255 / 12%);
+  --n-line-strong: rgb(255 255 255 / 28%);
+  --n-acc: var(--sky);
+  --ring: var(--sky);
+  background: var(--n-bg);
+  color: var(--n-text);
+}
+
+.nacht-tief {
+  --n-bg: var(--night-deep);
+  --n-card: #141c2b;
+  --n-card-hi: #1a2436;
+}
+
+.papier {
+  background: var(--paper);
+}
+
+.nacht h2,
+.nacht h3,
+.nacht .subhead {
+  color: var(--n-ink);
+}
+
+.nacht .lead,
+.nacht .fkt-lead {
+  color: var(--n-text);
+}
+
+.nacht a:not(.btn) {
+  color: var(--n-ink);
+  text-decoration-color: rgb(143 176 255 / 55%);
+}
+
+.nacht a:not(.btn):hover {
+  text-decoration-color: var(--n-acc);
+}
+
+.nacht ::selection {
+  background: #2c4d86;
+  color: #ffffff;
+}
+
+.nacht kbd {
+  border-color: rgb(255 255 255 / 26%);
+  background: var(--n-card-hi);
+  color: #ffffff;
+}
+
+.nacht .checks li {
+  color: var(--n-text);
+}
+
+.nacht .checks strong,
+.nacht .checks .tick {
+  color: var(--n-ink);
+}
+
+.nacht .checks .tick {
+  color: var(--n-acc);
+}
+
+.nacht .toggle {
+  box-shadow: inset 0 0 0 1px var(--n-line-strong);
+  color: var(--n-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nacht summary:hover .toggle {
+    background: #ffffff;
+    color: var(--night);
+  }
+}
+
+.nacht details[open] > summary .toggle {
+  background: #ffffff;
+  color: var(--night);
+}
+
+/* ---------- Band (Vertrauens-Band) ----------
+   Vier (oder mehr) kurze Punkte nebeneinander, je ein Linien-Symbol in Himmelblau, darunter Titel und eine Zeile;
+   zwischen den Punkten eine feine senkrechte Linie. Schmal zwei Spalten, sehr schmal eine. */
+.band {
+  padding-block: clamp(32px, 4vw, 48px);
+}
+
+.band-liste {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.band-liste > li {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 4px;
+  align-content: start;
+  padding: 4px clamp(16px, 2.2vw, 32px);
+  border-left: 1px solid var(--n-line);
+}
+
+.band-liste > li:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.band-ico {
+  grid-row: 1 / 3;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1rem;
+  color: var(--n-acc);
+  stroke-width: 1.75;
+}
+
+.band-liste strong {
+  color: var(--n-ink);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.band-liste span {
+  color: var(--n-muted);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+@media (max-width: 899px) {
+  .band-liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 24px;
+  }
+
+  .band-liste > li:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 359px) {
+  .band-liste {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .band-liste > li {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* ---------- Funktionen: Bento ----------
+   Vier Spalten (720–999 px zwei, Smartphone eine). Helferschichten groß (2 × 2) in Vereinsblau mit der Ampel in einer
+   weißen Fläche und dem Telefon; Mitglieder und Auswertungen breit (2 × 1) mit Ausschnitt rechts (am Smartphone ohne);
+   die übrigen kompakt: Symbol, Plus, Titel, ein Satz. Hilfe & Support schließt über die ganze Breite
+   ab. Die ganze Karte ist der Knopf zur Beschreibung (Popover, wie bisher). */
+#funktionen.nacht {
+  background: var(--n-bg);
+}
+
+#funktionen .fkt {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(32px, 4vw, 48px);
+}
+
+#funktionen .fkt-kopf {
+  display: block;
+  max-width: none;
+}
+
+#funktionen .fkt-kopf h2 {
+  max-width: none;
+  color: var(--n-ink);
+}
+
+#funktionen .fkt-lead {
+  color: var(--n-text);
+}
+
+.bento {
+  --b-pad: 22px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: auto;
+  gap: 12px;
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .bento > .feat:not(.feat-z) {
+    min-height: 150px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .bento {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Karte */
+.bento > .feat {
+  --row-pt: var(--b-pad);
+  --row-px: var(--b-pad);
+  --fkt-plus: 2rem;
+  padding: var(--b-pad);
+  border-radius: var(--radius);
+  background: var(--n-card);
+  box-shadow: inset 0 0 0 1px var(--n-line);
+}
+
+.bento > .feat::before {
+  background: rgb(255 255 255 / 5%);
+}
+
+.bento > .feat .feat-ico {
+  color: var(--n-acc);
+}
+
+.bento > .feat h3 {
+  color: var(--n-ink);
+  font-size: 1.125rem;
+}
+
+.bento > .feat .feat-kurz {
+  color: var(--n-muted);
+}
+
+.bento > .feat .feat-plus {
+  box-shadow: inset 0 0 0 1px var(--n-line-strong);
+  color: var(--n-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bento > .feat:hover .feat-plus {
+    background: #ffffff;
+    color: var(--night);
+  }
+}
+
+.bento > .feat:active .feat-plus,
+.bento > .feat:has(.feat-btn:focus-visible) .feat-plus,
+.bento > .feat:has(> .feat-pop:popover-open) .feat-plus {
+  background: #ffffff;
+  color: var(--night);
+}
+
+.bento > .feat:has(.feat-btn:focus-visible) {
+  outline-color: var(--sky);
+  outline-offset: 3px;
+}
+
+/* Die Beschreibung (Popover) bleibt hell: Weiß mit dunkler Schrift, wie bisher */
+.bento .feat-pop {
+  --fkt-ink: var(--brand-ink);
+  --fkt-text: #2e2e2e;
+  --fkt-muted: #616161;
+  color: var(--fkt-text);
+}
+
+.bento .feat-pop a {
+  color: var(--brand-ink);
+}
+
+/* Ab 720 px stehen kompakte Karten hochkant: Symbol links oben, Plus rechts oben, darunter Titel und Satz */
+@media (min-width: 720px) {
+  .bento > .feat {
+    grid-template-columns: minmax(0, 1fr) var(--fkt-plus);
+    grid-template-rows: auto auto 1fr;
+    align-content: stretch;
+    row-gap: 0;
+  }
+
+  .bento > .feat .feat-ico {
+    grid-area: 1 / 1;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: 0 0 18px;
+  }
+
+  .bento > .feat .feat-plus {
+    grid-area: 1 / 2;
+    margin: 0;
+  }
+
+  .bento > .feat h3 {
+    grid-area: 2 / 1 / 3 / -1;
+  }
+
+  .bento > .feat .feat-kurz {
+    grid-area: 3 / 1 / 4 / -1;
+    margin-top: 4px;
+  }
+
+  .bento > .feat-breit {
+    grid-column: span 2;
+  }
+
+  .bento > .feat-z {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Hilfe & Support: eine flache Zeile über die ganze Breite (Symbol, Titel und Satz, Plus) */
+.bento > .feat-z {
+  margin: 0;
+}
+
+.bento > .feat-z::after {
+  content: none;
+}
+
+@media (min-width: 720px) {
+  .bento > .feat-z {
+    grid-template-columns: 1.75rem auto minmax(0, 1fr) var(--fkt-plus);
+    grid-template-rows: auto;
+    align-items: center;
+    column-gap: 14px;
+  }
+
+  .bento > .feat-z .feat-ico {
+    grid-area: 1 / 1;
+    margin: 0;
+  }
+
+  .bento > .feat-z h3 {
+    grid-area: 1 / 2;
+  }
+
+  .bento > .feat-z .feat-kurz {
+    grid-area: 1 / 3;
+    margin: 0;
+  }
+
+  .bento > .feat-z .feat-plus {
+    grid-area: 1 / 4;
+  }
+}
+
+/* Karten mit Bild: Ausschnitt aus der Anwendung, läuft am Rand der Karte aus */
+.feat-bild {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.feat-bild img {
+  display: block;
+  max-width: none;
+  background: var(--app-bg);
+}
+
+/* Schmal (eine Spalte) und Kalender: der Ausschnitt als Streifen unter dem Text, bis an den Rand der Karte */
+.bento > .feat-mit-bild .feat-bild {
+  grid-column: 1 / -1;
+  height: 150px;
+  margin: 18px calc(-1 * var(--b-pad)) calc(-1 * var(--b-pad)) 0;
+  border-radius: 14px 0 var(--radius) 0;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
+}
+
+.bento > .feat-mit-bild .feat-bild img {
+  width: 620px;
+}
+
+@media (min-width: 720px) {
+  .bento > .feat-mit-bild .feat-bild {
+    grid-area: 4 / 1 / 5 / -1;
+    height: 128px;
+  }
+}
+
+/* Ausschnitt Auswertungen ab dem Diagramm-Kopf */
+.feat-bild-zahl img {
+  margin-top: -150px;
+}
+
+/* Breit (Mitglieder, Auswertungen): Text links, der Ausschnitt rechts in voller Höhe */
+@media (min-width: 720px) {
+  .bento > .feat-breit {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 20px;
+  }
+
+  .bento > .feat-breit .feat-ico {
+    grid-area: 1 / 1;
+  }
+
+  /* Das Plus steht hier rechts oben in der Textspalte (rechts daneben liegt das Bild) */
+  .bento > .feat-breit .feat-plus {
+    grid-area: 1 / 1;
+    justify-self: end;
+  }
+
+  .bento > .feat-breit h3 {
+    grid-area: 2 / 1;
+  }
+
+  .bento > .feat-breit .feat-kurz {
+    grid-area: 3 / 1;
+  }
+
+  /* grid-area: auto – sonst wäre die (leere) Rasterzelle der Bezugsrahmen der absoluten Lage */
+  .bento > .feat-breit .feat-bild {
+    grid-area: auto;
+    position: absolute;
+    top: 24px;
+    right: 0;
+    bottom: 0;
+    left: 46%;
+    height: auto;
+    margin: 0;
+  }
+}
+
+/* Helferschichten: groß, in Vereinsblau (weiße Schrift 4,7 : 1); die Ampel in einer weißen Fläche (Farben wie in der
+   Anwendung), rechts das Telefon, das unten aus der Karte läuft */
+.bento > .feat-a {
+  --n-card: var(--brand);
+  --row-lh: calc(1.5rem * 1.2);
+  background: var(--brand);
+  box-shadow: none;
+}
+
+.bento > .feat-a .feat-ico,
+.bento > .feat-a h3,
+.bento > .feat-a .feat-kurz {
+  color: #ffffff;
+}
+
+.bento > .feat-a h3 {
+  font-size: clamp(1.375rem, 0.8vw + 1.1rem, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.024em;
+}
+
+.bento > .feat-a .feat-kurz {
+  font-size: 1.0625rem;
+}
+
+.bento > .feat-a .feat-plus {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%);
+}
+
+.bento > .feat-a::before {
+  background: rgb(255 255 255 / 7%);
+}
+
+.bento > .feat-a .feat-ampel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  justify-self: start;
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+}
+
+.bento > .feat-a .amp {
+  grid-template-columns: 4.25rem 2.25rem auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.bento > .feat-a .amp-plaetze {
+  grid-column: auto;
+}
+
+.bento > .feat-a .feat-bild-phone {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(220px, 70%);
+  height: 230px;
+  margin: 22px 0 calc(-1 * var(--b-pad));
+  border: 7px solid #0b0f17;
+  border-bottom: 0;
+  border-radius: 34px 34px 0 0;
+  background: #0b0f17;
+}
+
+.bento > .feat-a .feat-bild-phone img {
+  width: 100%;
+  height: auto;
+  border-radius: 27px 27px 0 0;
+}
+
+@media (min-width: 720px) {
+  .bento > .feat-a {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto var(--fkt-plus);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 24px;
+  }
+
+  .bento > .feat-a .feat-ico {
+    grid-area: 1 / 1;
+  }
+
+  .bento > .feat-a .feat-plus {
+    grid-area: 1 / 3;
+  }
+
+  .bento > .feat-a h3 {
+    grid-area: 2 / 1;
+  }
+
+  .bento > .feat-a .feat-kurz {
+    grid-area: 3 / 1;
+  }
+
+  .bento > .feat-a .feat-ampel {
+    grid-area: 4 / 1;
+    align-self: end;
+  }
+
+  .bento > .feat-a .feat-bild-phone {
+    grid-area: 1 / 2 / 5 / 3;
+    align-self: end;
+    width: 196px;
+    height: 260px;
+    margin: 0 0 calc(-1 * var(--b-pad));
+  }
+}
+
+@media (min-width: 1000px) {
+  .bento > .feat-a {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .bento > .feat-a .feat-bild-phone {
+    height: 280px;
+  }
+}
+
+/* Kleine Laptops (1000–1199 px): die große Karte ist nur gut 470 px breit – Telefon und Ampel schmaler, damit Titel und
+   Ampel neben dem Telefon Platz haben */
+@media (min-width: 1000px) and (max-width: 1199px) {
+  .bento > .feat-a {
+    column-gap: 16px;
+  }
+
+  .bento > .feat-a .feat-bild-phone {
+    width: 140px;
+    height: 250px;
+    border-width: 5px;
+    border-radius: 26px 26px 0 0;
+  }
+
+  .bento > .feat-a .feat-bild-phone img {
+    border-radius: 21px 21px 0 0;
+  }
+
+  .bento > .feat-a .feat-ampel {
+    padding: 12px 14px;
+  }
+
+  .bento > .feat-a .amp {
+    grid-template-columns: 3.5rem 2rem auto;
+    gap: 6px;
+  }
+}
+
+/* Sehr schmal: Ampel und Telefon etwas enger */
+@media (max-width: 389px) {
+  .bento {
+    --b-pad: 18px;
+  }
+
+  .bento > .feat-a .amp {
+    grid-template-columns: 3.75rem 2rem auto;
+    gap: 6px;
+  }
+}
+
+/* Smartphone: die Liste beginnt an der Inhaltskante (nicht im Rand wie früher) */
+@media (max-width: 719px) {
+  #funktionen .fkt-liste {
+    margin-inline: 0;
+  }
+
+  .bento > .feat {
+    padding: var(--b-pad);
+    border-radius: 20px;
+  }
+
+  .bento > .feat::before {
+    inset: 0;
+  }
+
+  .bento > .feat:not(.feat-a, .feat-a + .feat)::after {
+    content: none;
+  }
+
+  .bento > .feat-a {
+    margin: 0;
+  }
+
+  /* Kürzer: kompakte Karten dichter, die Ausschnitte nur im Bento ab 720 px (hier trägt das Telefon die Bilder) */
+  .bento > .feat:not(.feat-a) {
+    --row-pt: 16px;
+    padding-block: 16px;
+  }
+
+  .bento > .feat-mit-bild .feat-bild {
+    display: none;
+  }
+
+  .bento > .feat-a .feat-bild-phone {
+    height: 200px;
+  }
+}
+
+/* Überfahren (nur Zeigergeräte): die Karte hebt sich leicht, ihr Bild rückt ein wenig nach */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  /* transform für das Überfahren, translate gehört dem Einblenden (.reveal) – beide Übergänge bleiben erhalten */
+  .bento > .feat {
+    transition:
+      opacity 0.6s var(--ease-out) var(--reveal-delay, 0s),
+      translate 0.7s var(--ease-out) var(--reveal-delay, 0s),
+      transform 0.3s var(--ease-out);
+  }
+
+  .bento > .feat:hover {
+    transform: translateY(-4px);
+  }
+
+  .bento .feat-bild img {
+    transition: translate 0.45s var(--ease-out);
+  }
+
+  .bento > .feat:hover .feat-bild img {
+    translate: -6px -4px;
+  }
+
+  .bento > .feat-a:hover .feat-bild-phone img {
+    translate: 0 -8px;
+  }
+}
+
+/* ---------- „Mehr dazu“: Einzelheiten aufklappbar ---------- */
+.mehr {
+  margin-top: 14px;
+}
+
+.mehr > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--n-ink, var(--ink));
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.mehr > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mehr > summary .toggle {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.mehr > summary .toggle .icon {
+  width: 0.8125rem;
+  height: 0.8125rem;
+}
+
+.mehr > .checks {
+  margin-top: 8px;
+}
+
+@supports selector(::details-content) {
+  @media (prefers-reduced-motion: no-preference) {
+    .mehr {
+      interpolate-size: allow-keywords;
+    }
+
+    .mehr::details-content {
+      height: 0;
+      overflow: clip;
+      opacity: 0;
+      transition:
+        height 0.2s var(--ease-out),
+        opacity 0.15s var(--ease-out),
+        content-visibility 0.2s allow-discrete;
+    }
+
+    .mehr[open]::details-content {
+      height: auto;
+      opacity: 1;
+      transition-duration: 0.3s, 0.3s, 0.3s;
+    }
+  }
+}
+
+/* ---------- Helferschichten ----------
+   Das Live-Fenster ist eine eigene Stapelebene: Sein gerade gezeigtes Bild (site.js setzt beim Überblenden z-index am
+   Bild) und der Mauszeiger tragen z-index-Werte – ohne eigene Ebene lagen sie in der Ebene von .story und damit über
+   dem Telefon (z-index 1), das den Rand des Fensters überdeckt: Der rechte Rahmen des Telefons verschwand hinter dem
+   Bild. Mit isolation bleiben alle z-index-Werte im Fenster, Telefon und Blatt liegen davor. */
+.story-window {
+  isolation: isolate;
+}
+
+/* Schritte: die Linie über dem gezeigten Schritt in Vereinsblau (wie bisher), die Nummer in Vereinsblau statt Schwarz */
+.story[data-shown="1"] .story-step:nth-child(1) .step-num,
+.story[data-shown="2"] .story-step:nth-child(2) .step-num,
+.story[data-shown="3"] .story-step:nth-child(3) .step-num {
+  color: var(--brand);
+}
+
+.story-step .mehr {
+  margin-top: 10px;
+}
+
+/* ---------- Im Detail auf Nacht ---------- */
+#details .tabs {
+  box-shadow: inset 0 -1px 0 var(--n-line);
+}
+
+#details .tab {
+  color: var(--n-muted);
+}
+
+#details .tab[aria-selected="true"] {
+  color: var(--n-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #details .tab:hover {
+    color: var(--n-ink);
+  }
+}
+
+#details .tabs::before,
+#details .tabs:not(.has-pill) .tab[aria-selected="true"] {
+  --brand: var(--sky);
+}
+
+#details .tabs::before {
+  background: var(--sky);
+}
+
+#details .tabs:not(.has-pill) .tab[aria-selected="true"] {
+  box-shadow: inset 0 -2px 0 var(--sky);
+}
+
+#details .browser {
+  border-color: rgb(255 255 255 / 14%);
+}
+
+#details .spot-text .mehr {
+  margin-top: 18px;
+}
+
+@media (max-width: 599px) {
+  #details .spots.is-tabs > .tabs {
+    background: var(--n-bg);
+  }
+}
+
+
+/* ---------- Knöpfe auf Nacht ----------
+   Der Hauptknopf wird weiß mit Tinte (wie das Gegenstück zum schwarzen Knopf auf Tag), der Zweitknopf durchsichtig mit
+   heller Linie. Fokus wie überall auf Nacht in Himmel (--ring). */
+.nacht .btn-primary {
+  background: #ffffff;
+  color: var(--night);
+}
+
+.nacht .btn-secondary {
+  border-color: var(--n-line-strong);
+  background: transparent;
+  color: var(--n-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nacht .btn-primary:hover {
+    background: #dfe7f5;
+  }
+
+  .nacht .btn-secondary:hover {
+    border-color: rgb(255 255 255 / 55%);
+    background: rgb(255 255 255 / 8%);
+    color: var(--n-ink);
+  }
+}
+
+/* Helle Insel auf Nacht (Benachrichtigung im Kontakt): Papier, Farben und Fokus wie auf Tag */
+.nacht .insel {
+  --ring: #3f7fd6;
+  background: var(--paper);
+  color: var(--text);
+}
+
+.nacht .insel .subhead,
+.nacht .insel h3 {
+  color: var(--ink);
+}
+
+.nacht .insel a:not(.btn) {
+  color: var(--ink);
+  text-decoration-color: var(--link-line);
+}
+
+.nacht .insel ::selection {
+  background: rgb(58 107 234 / 22%);
+  color: var(--ink);
+}
+
+/* ---------- Sicherheit auf Nacht, mit den Rollen ----------
+   Kopf (Überschrift aus zwei Zeilen, ein Satz), darunter die fünf Rollen in drei Karten nach Reichweite bei den
+   Mitgliederdaten (Leiste aus drei Stufen in Himmel, darunter die Rollen groß), dann das Vertrauens-Band mit vier Punkten
+   und die Einzelheiten in „Mehr dazu“ (ab 900 px zweispaltig). Schmal stehen die Karten untereinander. */
+.schutz-titel {
+  font-size: min(var(--h2), (100vw - 2 * var(--gutter)) / 7.6);
+}
+
+.rollen-band {
+  scroll-margin-top: calc(var(--header-h) + 24px);
+}
+
+.rollen-titel {
+  margin-bottom: 16px;
+  color: var(--n-ink);
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.018em;
+}
+
+.rollen-stufen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stufe {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: clamp(20px, 2.4vw, 28px);
+  border-radius: var(--radius);
+  background: var(--n-card);
+  box-shadow: inset 0 0 0 1px var(--n-line);
+}
+
+.stufe-kopf {
+  display: grid;
+  gap: 10px;
+  color: var(--n-muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.stufe-leiste {
+  display: flex;
+  gap: 4px;
+}
+
+.stufe-leiste i {
+  width: 28px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgb(143 176 255 / 22%);
+}
+
+.stufe-3 .stufe-leiste i,
+.stufe-2 .stufe-leiste i:nth-child(-n + 2),
+.stufe-1 .stufe-leiste i:first-child {
+  background: var(--n-acc);
+}
+
+.stufe-rollen {
+  display: grid;
+  gap: 2px;
+  color: var(--n-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.1875rem, 0.5vw + 1rem, 1.375rem);
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.stufe-rollen > span {
+  display: block;
+}
+
+.schutz-band {
+  margin-top: clamp(40px, 5vw, 64px);
+}
+
+.schutz-mehr {
+  margin-top: clamp(28px, 3.5vw, 40px);
+  padding-top: 8px;
+  border-top: 1px solid var(--n-line);
+}
+
+@media (min-width: 720px) {
+  .rollen-stufen {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Smartphone: die vier Punkte untereinander (zwei schmale Spalten bräche fast jedes Wort um) */
+@media (max-width: 599px) {
+  .band-liste.schutz-band {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 18px;
+  }
+
+  .schutz-band > li {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .schutz-mehr > .checks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 48px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .stufe {
+    transition:
+      transform 0.3s var(--ease-out),
+      background-color 0.3s ease;
+  }
+
+  .stufe:hover {
+    transform: translateY(-2px);
+    background: var(--n-card-hi);
+  }
+}
+
+/* ---------- Häufige Fragen ----------
+   Ab 1000 px links der Kopf (läuft mit), rechts die Fragen über die ganze Spalte */
+.faq-kopf .lead {
+  font-size: 1.0625rem;
+}
+
+@media (min-width: 1000px) {
+  .faq-raster {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    column-gap: clamp(48px, 6vw, 96px);
+    align-items: start;
+  }
+
+  .faq-kopf {
+    position: sticky;
+    top: calc(var(--header-h) + 32px);
+    margin-bottom: 0;
+  }
+
+  .faq-raster .faq {
+    max-width: none;
+  }
+}
+
+/* ---------- Kontakt auf Nacht (Abschluss) ----------
+   Ab 1000 px links die Anfrage (Kopf, weißer Hauptknopf, Telefon, Adresse), rechts die Benachrichtigung auf Papier.
+   Schmal untereinander. */
+.kontakt.nacht {
+  padding-top: var(--section-y);
+}
+
+.kontakt .cta {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.nacht .cta-mail {
+  color: var(--n-text);
+}
+
+.nacht .copy-btn {
+  color: var(--n-ink);
+}
+
+.kontakt .notify.tint {
+  padding: clamp(24px, 3vw, 36px);
+}
+
+@media (min-width: 1000px) {
+  .kontakt .cta {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(48px, 6vw, 96px);
+    align-items: center;
+  }
+
+  .kontakt .cta-main {
+    grid-area: 1 / 1;
+  }
+
+  .kontakt .notify {
+    grid-area: 1 / 2;
+    display: block;
+  }
+
+  .kontakt .notify .notify-form {
+    margin-top: 24px;
+  }
+}
+
+/* Nach dem dunklen Abschluss braucht die Fußzeile keine Linie */
+main:has(> .kontakt:last-child) + .site-footer {
+  border-top-color: transparent;
+}
+
+/* ---------- Unterseiten ----------
+   Tag mit Papier: die Kurzfassung der Datenschutzerklärung als Papier-Karte, Fehler- und Bestätigungsseiten auf Papier
+   (Kopf- und Fußzeile bleiben weiß). */
+.summary.tint {
+  background: var(--paper);
+}
+
+.not-found {
+  background: var(--paper);
+}
+
+/* ---------- Kürzen und Ordnen ----------
+   Weniger Abschnitte, je eine Botschaft: Abläufe (Ausgangslage und „Im Detail“ in einem, #details), Funktionen,
+   Helferschichten, Sicherheit mit den Rollen, Fragen auf Papier, Kontakt.
+
+   Abläufe: Die Überschrift aus zwei Sätzen eine Stufe kleiner – breit je Satz eine Zeile. Ab 900 px stehen die vier
+   Reiter links untereinander (Symbol und Wort, ruhig wie eine Inhaltsangabe), auf einer feinen senkrechten Linie, an der
+   der Strich in Himmel zum gewählten gleitet (site.js setzt --pill-y und --pill-h); darunter der Satz zum gewählten
+   Thema, rechts das Live-Fenster. Spalten und Abstand wie bisher (0,95 fr | 1,3 fr): Die Fenster behalten ihre Maße.
+   Reiter, Text und Fenster liegen in einem Raster (subgrid) – ohne subgrid bleibt die Leiste waagerecht darüber. */
+#details .section-head h2 {
+  font-size: clamp(2rem, 2.2vw + 1rem, 3.25rem);
+  font-size: min(clamp(2rem, 2.2vw + 1rem, 3.25rem), (100vw - 2 * var(--gutter)) / 7.2);
+}
+
+.tab-ico {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  @supports (grid-template-columns: subgrid) {
+    #details .spots.is-tabs {
+      --spot-gap: clamp(36px, 6vw, 96px);
+      --list-gap: clamp(24px, 2.6vw, 36px);
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
+      grid-template-rows: auto 1fr;
+      gap: var(--list-gap) var(--spot-gap);
+    }
+
+    #details .spots.is-tabs > .tabs {
+      z-index: 1;
+      grid-area: 1 / 1;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      margin: 0;
+      box-shadow: inset 1px 0 0 var(--n-line);
+    }
+
+    #details .spots.is-tabs > .spot,
+    #details .spots.is-tabs > .spot.flip {
+      grid-area: 1 / 1 / 3 / 3;
+      grid-template-columns: subgrid;
+      grid-template-rows: subgrid;
+      gap: var(--list-gap) var(--spot-gap);
+    }
+
+    #details .spots.is-tabs > .spot > .spot-text {
+      grid-area: 2 / 1;
+    }
+
+    #details .spots.is-tabs > .spot > .spot-media {
+      grid-area: 1 / 2 / 3 / 3;
+    }
+
+    #details .spots.is-tabs .tab {
+      justify-content: flex-start;
+      gap: 14px;
+      min-height: 56px;
+      padding: 0 0 0 24px;
+      font-size: 1.25rem;
+      letter-spacing: -0.016em;
+    }
+
+    #details .spots.is-tabs .tab-ico {
+      display: block;
+      flex: none;
+      width: 22px;
+      height: 22px;
+      stroke-width: 1.75;
+    }
+
+    #details .spots.is-tabs .tab[aria-selected="true"] .tab-ico {
+      color: var(--n-acc);
+    }
+
+    #details .spots.is-tabs > .tabs::before {
+      top: 0;
+      bottom: auto;
+      width: 2px;
+      height: var(--pill-h, 0px);
+      translate: 0 var(--pill-y, 0px);
+    }
+
+    #details .spots.is-tabs > .tabs:not(.has-pill) .tab[aria-selected="true"] {
+      box-shadow: inset 2px 0 0 var(--sky);
+    }
+
+    #details .spots.is-tabs .spot-text .subhead {
+      font-size: clamp(1.375rem, 0.6vw + 1.1rem, 1.625rem);
+    }
+
+    #details .spots.is-tabs .spot-text .lead {
+      margin-top: 12px;
+      font-size: 1.0625rem;
+    }
+  }
+}
+
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  #details .spots.is-tabs > .tabs.has-pill:not(.is-instant)::before {
+    transition:
+      translate 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+      height 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
+/* Funktionen: derselbe Abstand oben und unten wie jeder Abschnitt */
+#funktionen {
+  padding-block: var(--section-y);
+}
+
+/* Fragen auf Papier: Linien und Plus wie auf Weiß */
+.papier .faq-kopf .lead a {
+  text-decoration-color: var(--link-line);
+}
+
+/* ---------- Bewegung: Feinschliff ----------
+   Wenige Effekte, jeder mit einer Aufgabe. Alle nur ohne „Bewegung reduzieren“; wo ein Browser etwas nicht kann (z. B.
+   Firefox ohne Scroll-Timelines), bleibt es still und sofort sichtbar – nichts wartet unsichtbar auf eine Animation.
+   Bewegt werden nur clip-path, transform/translate/scale, opacity und kurz filter. Das Scrollen selbst bleibt unberührt:
+   Die Scroll-Timelines lesen es nur ab (die Geräte hängen am echten Scrollen).
+   1. Nacht entfaltet sich: Beim Hereinscrollen wächst der dunkle Grund eines Nacht-Abschnitts aus einer runden Karte zur
+      vollen Breite. Beschnitten wird nur eine einfarbige Grundfläche (::before), nie der Inhalt; daneben steht die Farbe
+      des Abschnitts davor (--auf-aussen: Weiß, nach den Fragen Papier).
+   2. Überschriften Wort für Wort aus der Unschärfe (wie „Bringt Vereinsarbeit in Fluss“); site.js teilt die Wörter
+      (.sw), .reveal löst aus.
+   3. Live-Fenster öffnen sich beim Hereinscrollen aus einer abgerundeten Maske und setzen sich dabei; Telefon und Blatt
+      der Helferschichten kommen von ihrer Seite dazu.
+   4. Einstieg mit Tiefe: Beim Wegscrollen bleibt das Dashboard etwas zurück und tritt leicht nach hinten – es gleitet
+      unter den dunklen Abschnitt darunter.
+   5. Funktionen: Karten steigen gestaffelt auf; unter dem Zeiger ein Lichtschein mit hellem Rand (nur Zeigergeräte,
+      --mx/--my aus site.js).
+   6. Rollen: Die Stufen der Reichweite füllen sich beim Erscheinen nacheinander.
+   Vorführungen (Laptop, Telefon) und die Bildfolgen der Live-Fenster bleiben, wie sie sind. */
+
+/* 1. Nacht entfaltet sich; 3. Fenster aus der Maske; 4. Einstieg mit Tiefe (Scroll-Timelines) */
+@supports (animation-timeline: view()) and (clip-path: inset(0 round 1px)) {
+  @media screen and (prefers-reduced-motion: no-preference) {
+    .section.nacht,
+    #funktionen.nacht {
+      --auf-aussen: var(--bg);
+      --auf-x: clamp(8px, calc(4.5vw - 4px), 72px); /* unter dem Seitenrand (16 px): auch am Anfang liegt kein Text auf dem hellen Streifen */
+      --auf-r: clamp(22px, 3.2vw, 48px);
+      background: var(--auf-aussen);
+      view-timeline: --nacht block;
+    }
+
+    .papier + .section.nacht {
+      --auf-aussen: var(--paper);
+    }
+
+    .section.nacht::before,
+    #funktionen.nacht::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background: var(--n-bg);
+      pointer-events: none;
+      animation: nacht-auf linear backwards;
+      animation-timeline: --nacht;
+      animation-range: entry 0% entry 70%;
+    }
+
+    /* Fenster: die Hülle (.plx bzw. das Fenster der Helferschichten) beschneidet, das Fenster darin setzt sich von 112 %
+       auf seine Größe – fertig, sobald es ganz im Bild ist. Die Hülle blendet dafür nicht mehr zusätzlich ein. */
+    .spot-media .plx,
+    .story-window {
+      view-timeline: --bild block;
+      animation: bild-auf linear backwards;
+      animation-timeline: --bild;
+      animation-range: entry 0% entry 100%;
+    }
+
+    .spot-media .plx > .browser,
+    .story-window > .browser {
+      animation: bild-setzen linear backwards;
+      animation-timeline: --bild;
+      animation-range: entry 0% entry 100%;
+    }
+
+    .story-window.reveal.is-pending {
+      opacity: 1;
+      translate: none;
+    }
+
+    @media (min-width: 720px) {
+      .spot-media.reveal.is-pending {
+        opacity: 1;
+        translate: none;
+      }
+    }
+
+    /* Einstieg: neben dem kurzen Anstieg beim Laden (translate) die Tiefe beim Wegscrollen (transform) */
+    .hero {
+      view-timeline: --einstieg block;
+    }
+
+    .hero-visual.intro-6 {
+      transform-origin: 50% 0;
+      animation:
+        intro-rise 1.1s var(--ease-out) 0.1s both,
+        einstieg-tiefe linear both;
+      animation-timeline: auto, --einstieg;
+      animation-range: normal, exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes nacht-auf {
+  from {
+    clip-path: inset(0 var(--auf-x) round var(--auf-r));
+  }
+
+  to {
+    clip-path: inset(0 0 round 0);
+  }
+}
+
+@keyframes bild-auf {
+  from {
+    clip-path: inset(9% 7% round 40px);
+  }
+
+  to {
+    clip-path: inset(0 round var(--radius));
+  }
+}
+
+@keyframes bild-setzen {
+  from {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes einstieg-tiefe {
+  to {
+    transform: translateY(14%) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 2. Überschriften: Die Zeile steigt als Ganzes 20 px, die Wörter kommen nacheinander (55 ms) aus der Unschärfe */
+  .section-head.reveal > h2.is-split,
+  #funktionen .section-head.reveal > h2.is-split {
+    transition: translate 0.9s var(--ease-out) var(--reveal-delay, 0s);
+  }
+
+  .section-head.reveal.is-pending > h2.is-split,
+  #funktionen .section-head.reveal.is-pending > h2.is-split {
+    opacity: 1;
+    filter: none;
+    translate: 0 20px;
+    transition-delay: 0s;
+    transition-duration: 0.25s;
+  }
+
+  .is-split .sw {
+    transition:
+      opacity 0.7s var(--ease-out) calc(var(--reveal-delay, 0s) + var(--wi, 0) * 55ms),
+      filter 0.8s var(--ease-out) calc(var(--reveal-delay, 0s) + var(--wi, 0) * 55ms);
+  }
+
+  .is-pending > .is-split .sw {
+    opacity: 0;
+    filter: blur(12px);
+    transition-delay: 0s;
+    transition-duration: 0.2s;
+  }
+
+  /* 3. Helferschichten: Telefon von links, Blatt von rechts (dort, wo sie neben dem Fenster stehen) */
+  @media (min-width: 720px) {
+    .story-phone.reveal.is-pending {
+      translate: -32px 0;
+    }
+
+    .story-paper.reveal.is-pending {
+      translate: 32px 0;
+    }
+  }
+
+  /* 5. Funktionen: Karten steigen gestaffelt auf (site.js: 70 ms je Karte) und setzen sich dabei von 96 % auf ihre Größe.
+     Ein Übergang für Einblenden und Überfahren (transform hebt die Karte, siehe „Funktionen: Bento“). */
+  .fkt-liste.bento > .feat.reveal {
+    transition:
+      opacity 0.6s var(--ease-out) var(--reveal-delay, 0s),
+      translate 0.7s var(--ease-out) var(--reveal-delay, 0s),
+      scale 0.7s var(--ease-out) var(--reveal-delay, 0s),
+      transform 0.3s var(--ease-out);
+  }
+
+  .fkt-liste.bento > .feat.reveal.is-pending {
+    translate: 0 24px;
+    scale: 0.96;
+    transition-delay: 0s;
+    transition-duration: 0.25s;
+  }
+
+  .fkt-liste.bento > .feat.reveal.is-pending.from-above {
+    translate: 0 -24px;
+  }
+
+  /* 6. Rollen: Gefüllte Stufen bekommen ihre Farbe als Streifen, der von links einläuft – eine Stufe nach der anderen */
+  .stufe-3.reveal .stufe-leiste i,
+  .stufe-2.reveal .stufe-leiste i:nth-child(-n + 2),
+  .stufe-1.reveal .stufe-leiste i:first-child {
+    background: rgb(143 176 255 / 22%);
+  }
+
+  .stufe-3.reveal .stufe-leiste i::after,
+  .stufe-2.reveal .stufe-leiste i:nth-child(-n + 2)::after,
+  .stufe-1.reveal .stufe-leiste i:first-child::after {
+    content: "";
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--n-acc);
+    transform-origin: 0 50%;
+    transition: scale 0.45s var(--ease-out) calc(var(--reveal-delay, 0s) + 0.2s + var(--seg, 0) * 0.12s);
+  }
+
+  .stufe-leiste i:nth-child(2) {
+    --seg: 1;
+  }
+
+  .stufe-leiste i:nth-child(3) {
+    --seg: 2;
+  }
+
+  .stufe.reveal.is-pending .stufe-leiste i::after {
+    scale: 0 1;
+    transition-delay: 0s;
+    transition-duration: 0.2s;
+  }
+}
+
+/* 5. Licht unter dem Zeiger: weicher Schein auf der Karte (::before, sonst nur die Fläche beim Überfahren) und ein heller
+   Rand, der dem Zeiger folgt (::after, eine 1 px breite Maske). Auf der blauen Karte weiß statt Himmel. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .bento > .feat {
+    --licht: rgb(143 176 255 / 16%);
+    --licht-rand: rgb(143 176 255 / 80%);
+  }
+
+  .bento > .feat::before {
+    background:
+      radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), var(--licht), transparent 70%),
+      rgb(255 255 255 / 3%);
+  }
+
+  /* Blaue Karte: nur der helle Rand – jede Aufhellung des Blaus drückte die weiße Schrift unter 4,5 : 1 */
+  .bento > .feat-a {
+    --licht-rand: rgb(255 255 255 / 75%);
+  }
+
+  .bento > .feat-a::before {
+    background: none;
+  }
+
+  .bento > .feat::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 0%), var(--licht-rand), transparent 70%);
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0;
+    transition: opacity 0.3s var(--ease-out);
+    pointer-events: none;
+  }
+
+  .bento > .feat:hover::after {
+    opacity: 1;
+  }
+}
+
+/* ---------- Druck: Nacht wird Tag ---------- */
+@media print {
+  .nacht,
+  .nacht-tief {
+    --n-bg: #ffffff;
+    --n-card: #ffffff;
+    --n-card-hi: #ffffff;
+    --n-ink: #000000;
+    --n-text: #000000;
+    --n-muted: #333333;
+    --n-line: #cccccc;
+    --n-line-strong: #999999;
+    --n-acc: #000000;
+    background: #ffffff !important;
+    color: #000000;
+  }
+
+  .nacht kbd {
+    border-color: #999999;
+    color: #000000;
+  }
+
+  /* Überschriften: Wörter ohne Unschärfe, auch wenn gedruckt wird, bevor der Abschnitt je im Bild war */
+  .is-split .sw {
+    opacity: 1 !important;
+    filter: none !important;
+    transition: none !important;
+  }
+
+  /* Einstieg: nicht von der Ladeanimation abhängig (Druck gleich nach dem Laden) */
+  .intro,
+  .intro-6,
+  .hero-points li,
+  .hero .word {
+    animation: none !important;
+  }
+
+  /* Funktionen: einfache Liste in zwei Spalten, Titel und ganze Beschreibung (Symbole, Bilder und Ampel entfallen) */
+  .bento {
+    gap: 4px 24px !important;
+  }
+
+  .bento > .feat {
+    display: block !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 6px 0 10px !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    translate: none !important;
+    scale: none !important;
+  }
+
+  .bento > .feat::before,
+  .bento > .feat::after,
+  .bento > .feat .feat-ico {
+    display: none !important;
+  }
+
+  .bento > .feat h3 {
+    margin: 0 0 2px !important;
+    color: #000000 !important;
+    font-size: 1.0625rem !important;
+  }
+
+  .bento > .feat .feat-btn {
+    display: inline;
+    color: #000000;
+  }
+
+  .bento > .feat > .feat-pop {
+    margin: 0 !important;
+    color: #333333 !important;
+  }
+
+  .stufe {
+    box-shadow: inset 0 0 0 1px #cccccc;
+    break-inside: avoid;
+  }
+
+  .papier,
+  .not-found {
+    background: #ffffff;
+  }
+
+  .feat-bild {
+    display: none !important;
+  }
+
+  .mehr::details-content {
+    content-visibility: visible !important;
+    height: auto !important;
+    opacity: 1 !important;
+  }
+
+  .mehr > summary {
+    display: none;
+  }
+
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .bento > .feat {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    break-inside: avoid;
   }
 }
 
