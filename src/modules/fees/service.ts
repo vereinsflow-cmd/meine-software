@@ -1,4 +1,3 @@
-import { cache } from "react";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   formatCalendarDate,
@@ -76,9 +75,7 @@ const DEFAULT_SETTINGS: Omit<FeeSettings, "stored"> = {
   minDebitCents: 500,
 };
 
-export const getFeeSettings = cache(async function getFeeSettings(
-  ctx: TenantContext,
-): Promise<FeeSettings> {
+export async function getFeeSettings(ctx: TenantContext): Promise<FeeSettings> {
   assertFinance(ctx, "finance:read");
   const row = await ctx.db.financeSettings.findUnique({ where: { clubId: ctx.clubId } });
   if (!row) return { ...DEFAULT_SETTINGS, stored: false };
@@ -92,7 +89,7 @@ export const getFeeSettings = cache(async function getFeeSettings(
     minDebitCents: row.minDebitCents,
     stored: true,
   };
-});
+}
 
 export async function updateFeeSettings(ctx: TenantContext, input: unknown): Promise<void> {
   assertFinance(ctx, "finance:manage");

@@ -45,6 +45,7 @@ import { uploadReceipt } from "./receipts-dialog";
 export function EntryDialog({
   options,
   trigger,
+  triggerLabel,
   defaults,
   correct,
   invoice,
@@ -54,8 +55,13 @@ export function EntryDialog({
   onSaved,
 }: {
   options: EntryFormOptions;
-  /** Eigener Auslöser; ohne Angabe der blaue Knopf „Neue Buchung“. */
+  /** Eigener Auslöser (nur aus Client-Komponenten); ohne Angabe der blaue Knopf „Neue Buchung“. */
   trigger?: React.ReactNode;
+  /**
+   * Andere Beschriftung des blauen Knopfs – für Server-Seiten. Ein dort gebautes Knopf-Element als `trigger` käme beim
+   * Streamen manchmal „lazy“ an, und `DialogTrigger asChild` scheitert dann mit „failed to slot onto its children“.
+   */
+  triggerLabel?: string;
   defaults?: Partial<EntryInput>;
   /** Korrektur einer vorhandenen Buchung (Storno + neue Buchung). */
   correct?: { id: string; label: string };
@@ -78,11 +84,14 @@ export function EntryDialog({
     <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       {openProp === undefined && (
         <DialogTrigger asChild>
-          {trigger ?? (
-            <Button>
-              <PlusIcon /> Neue Buchung
-            </Button>
-          )}
+          {trigger ??
+            (triggerLabel ? (
+              <Button>{triggerLabel}</Button>
+            ) : (
+              <Button>
+                <PlusIcon /> Neue Buchung
+              </Button>
+            ))}
         </DialogTrigger>
       )}
       <DialogContent

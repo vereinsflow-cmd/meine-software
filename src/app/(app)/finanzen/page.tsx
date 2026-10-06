@@ -75,7 +75,7 @@ export default async function FinancePage() {
           overview.canManage && options ? (
             <EntryDialog
               options={options}
-              trigger={<Button>Einnahme oder Ausgabe erfassen</Button>}
+              triggerLabel="Einnahme oder Ausgabe erfassen"
             />
           ) : undefined
         }

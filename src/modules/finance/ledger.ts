@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { cache } from "react";
 import type { Prisma } from "@/generated/prisma/client";
 import type {
   CounterKind,
@@ -119,19 +118,14 @@ export interface LedgerSetup {
   closedThrough: Date | null;
 }
 
-/**
- * `null`, solange das Kassenbuch nicht eingerichtet ist. Je Seitenaufruf nur einmal gelesen (React `cache`, Schlüssel ist der
- * Kontext der Anfrage); außerhalb des Renderns – Server-Aktionen, Tests – liest jeder Aufruf frisch.
- */
-export const getLedgerSetup = cache(async function getLedgerSetup(
-  ctx: TenantContext,
-): Promise<LedgerSetup | null> {
+/** `null`, solange das Kassenbuch nicht eingerichtet ist. */
+export async function getLedgerSetup(ctx: TenantContext): Promise<LedgerSetup | null> {
   assertFinance(ctx, "finance:read");
   const settings = await ctx.db.financeSettings.findUnique({ where: { clubId: ctx.clubId } });
   return (
     settings && { ledgerStartDate: settings.ledgerStartDate, closedThrough: settings.closedThrough }
   );
-});
+}
 
 /** Legt die Standard-Kategorien an, soweit sie fehlen (idempotent). */
 async function ensureDefaultCategories(tx: TenantTx, clubId: string): Promise<void> {
@@ -273,9 +267,7 @@ export async function listAccounts(
   }));
 }
 
-export const listCategories = cache(async function listCategories(
-  ctx: TenantContext,
-): Promise<FinanceCategoryDto[]> {
+export async function listCategories(ctx: TenantContext): Promise<FinanceCategoryDto[]> {
   assertFinance(ctx, "finance:read");
   const rows = await ctx.db.financeCategory.findMany({
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -292,7 +284,7 @@ export const listCategories = cache(async function listCategories(
       row.archivedAt === null &&
       !HIDDEN_SYSTEM_KEYS.includes((row.systemKey ?? "") as SystemCategoryKey),
   }));
-});
+}
 
 // ---------------------------------------------------------------------------------------------
 // Buchen
