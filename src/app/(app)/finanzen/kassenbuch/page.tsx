@@ -467,11 +467,11 @@ function EntryRow({
         <span className="block text-sm text-muted-foreground tabular-nums sm:hidden">
           {entry.label} · {formatCalendarDate(entry.bookingDate)}
         </span>
-        <span className={cn("block font-medium", !struck && "text-foreground")}>
+        <span className={cn("block font-medium wrap-anywhere", !struck && "text-foreground")}>
           {entry.description}
         </span>
         {(entry.counterpartyName || entry.counterpartyMember) && (
-          <span className="block text-sm text-muted-foreground">
+          <span className="block text-sm text-muted-foreground wrap-anywhere">
             {entry.counterpartyMember?.name ?? entry.counterpartyName}
           </span>
         )}
@@ -489,7 +489,7 @@ function EntryRow({
             <a
               key={attachment.id}
               href={`/api/finanzen/belege/${attachment.id}`}
-              className="block text-sm break-words text-primary underline-offset-4 hover:underline"
+              className="block text-sm wrap-anywhere text-primary underline-offset-4 hover:underline"
             >
               <span className="sr-only">Beleg herunterladen: </span>
               {attachment.name}
@@ -515,7 +515,7 @@ function EntryRow({
           <span className="block text-sm text-muted-foreground">{targets.join(", ")}</span>
         )}
       </TableCell>
-      <TableCell className="hidden align-top xl:table-cell">{entry.account.name}</TableCell>
+      <TableCell className="hidden align-top whitespace-normal xl:table-cell">{entry.account.name}</TableCell>
       <TableCell className="text-right align-top font-semibold whitespace-nowrap tabular-nums">
         <span
           className={cn(

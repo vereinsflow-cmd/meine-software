@@ -71,8 +71,11 @@ export function EntryDialog({
   const [ownOpen, setOwnOpen] = useState(false);
   const open = openProp ?? ownOpen;
   const setOpen = onOpenChange ?? setOwnOpen;
+  // Während des Speicherns (samt Beleg-Upload) lässt sich das Fenster nicht schließen – sonst ginge dieselbe Buchung nach
+  // erneutem Öffnen ein zweites Mal durch.
+  const [busy, setBusy] = useState(false);
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       {openProp === undefined && (
         <DialogTrigger asChild>
           {trigger ?? (
@@ -108,6 +111,7 @@ export function EntryDialog({
           defaults={defaults}
           correct={correct}
           withInvoice={Boolean(invoice)}
+          onBusy={setBusy}
           onDone={() => {
             onSaved?.();
             setOpen(false);
@@ -123,6 +127,7 @@ function EntryForm({
   defaults,
   correct,
   withInvoice,
+  onBusy,
   onDone,
 }: {
   options: EntryFormOptions;
@@ -130,6 +135,7 @@ function EntryForm({
   correct?: { id: string; label: string };
   /** Die Rechnung ist schon der Beleg – kein eigenes Belegfeld. */
   withInvoice: boolean;
+  onBusy: (busy: boolean) => void;
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -154,6 +160,7 @@ function EntryForm({
       ? correctionFormSchema
       : (entrySchema as unknown as typeof correctionFormSchema),
     defaultValues: initial,
+    onBusy,
     action: async (values) => {
       const result = correct
         ? await correctEntryAction(correct.id, values.reason, values)
@@ -392,7 +399,7 @@ function EntryForm({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2"
+                  className="px-2"
                   disabled={isPending}
                   onClick={() => setReceipt(null)}
                 >

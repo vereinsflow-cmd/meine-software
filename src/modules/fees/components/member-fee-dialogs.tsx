@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +96,6 @@ function MemberFinanceForm({
   payers: Option[];
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: memberFinanceSchema,
     defaultValues: { memberId, ...defaults },
@@ -105,7 +103,6 @@ function MemberFinanceForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -190,7 +187,6 @@ function AssignmentForm({
   today: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: assignmentSchema,
     defaultValues: {
@@ -207,7 +203,6 @@ function AssignmentForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   const kind = useWatch({ control: form.control, name: "kind" });
@@ -288,7 +283,7 @@ export function EndAssignmentDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 px-2" aria-label={`${text} beenden`}>
+        <Button variant="ghost" size="sm" className="px-2" aria-label={`${text} beenden`}>
           Beenden
         </Button>
       </DialogTrigger>
@@ -312,7 +307,6 @@ function EndAssignmentForm({
   today: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: assignmentEndSchema,
     defaultValues: { id, validTo: today },
@@ -320,7 +314,6 @@ function EndAssignmentForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -343,11 +336,10 @@ function EndAssignmentForm({
 
 /** Regel ganz entfernen – nur am Tag der Eingabe oder solange sie noch nicht gilt (z. B. falsches Mitglied erwischt). */
 export function RemoveAssignmentButton({ id, text }: { id: string; text: string }) {
-  const router = useRouter();
   return (
     <ConfirmAction
       trigger={
-        <Button variant="ghost" size="sm" className="h-7 px-2" aria-label={`${text} entfernen`}>
+        <Button variant="ghost" size="sm" className="px-2" aria-label={`${text} entfernen`}>
           Entfernen
         </Button>
       }
@@ -357,7 +349,6 @@ export function RemoveAssignmentButton({ id, text }: { id: string; text: string 
       destructive
       action={() => deleteAssignmentAction({ id })}
       successMessage="Regel entfernt."
-      onSuccess={() => router.refresh()}
     />
   );
 }

@@ -400,7 +400,7 @@ export default async function FeeRunPage({
                     method="get"
                     action="/finanzen/beitraege/lauf"
                     role="search"
-                    className="flex gap-2"
+                    className="flex min-w-0 basis-full gap-2 sm:basis-auto"
                   >
                     <input type="hidden" name="zeitraum" value={toDateInputValue(period.start)} />
                     {due && <input type="hidden" name="faellig" value={toDateInputValue(due)} />}
@@ -412,7 +412,7 @@ export default async function FeeRunPage({
                       defaultValue={param(params, "q")}
                       placeholder="Mitglied suchen …"
                       aria-label="Vorschau durchsuchen"
-                      className="w-56"
+                      className="min-w-0 flex-1 sm:w-56 sm:flex-none"
                     />
                     <Button type="submit" variant="outline">
                       Suchen

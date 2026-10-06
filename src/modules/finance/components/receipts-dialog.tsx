@@ -122,6 +122,8 @@ function ReceiptsBody({
   const [note, setNote] = useState("");
   /** Datei, die gerade hochgeladen wird (für „Wird hochgeladen …“). */
   const [uploading, setUploading] = useState<string | null>(null);
+  /** Beleg, bei dem „Entfernen“ einmal gedrückt wurde und jetzt „Wirklich entfernen?“ fragt. */
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const hasNote = attachments.some((a) => a.note !== null);
 
   function run(task: () => Promise<void>) {
@@ -175,6 +177,12 @@ function ReceiptsBody({
   }
 
   function remove(attachment: LedgerAttachmentDto) {
+    // Erst nachfragen: ein Eigenbeleg ist danach weg, und der Knopf steht direkt neben dem Link zum Beleg.
+    if (confirmId !== attachment.id) {
+      setConfirmId(attachment.id);
+      return;
+    }
+    setConfirmId(null);
     run(async () => {
       const result = await removeAttachmentAction({ id: attachment.id });
       if (!result.ok) {
@@ -208,16 +216,21 @@ function ReceiptsBody({
               {removable && !attachment.locked && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant={confirmId === attachment.id ? "destructive" : "ghost"}
                   size="sm"
                   className="-my-1 shrink-0"
                   disabled={pending}
                   onClick={() => remove(attachment)}
+                  onBlur={() => setConfirmId((id) => (id === attachment.id ? null : id))}
                   aria-label={
-                    attachment.name ? `„${attachment.name}“ entfernen` : "Eigenbeleg entfernen"
+                    confirmId === attachment.id
+                      ? "Wirklich entfernen? Zum Bestätigen noch einmal drücken."
+                      : attachment.name
+                        ? `„${attachment.name}“ entfernen`
+                        : "Eigenbeleg entfernen"
                   }
                 >
-                  Entfernen
+                  {confirmId === attachment.id ? "Wirklich entfernen?" : "Entfernen"}
                 </Button>
               )}
             </li>

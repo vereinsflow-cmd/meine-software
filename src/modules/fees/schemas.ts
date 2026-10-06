@@ -196,6 +196,17 @@ export const ASSIGNMENT_KIND_LABEL: Record<(typeof ASSIGNMENT_KINDS)[number], st
   ASSIGN: "Feste Beitragsart",
 };
 
+/**
+ * Prozent als Basispunkte, streng aus den Ziffern gelesen: „50“ → 5000, „12,5“ → 1250, „0,01“ → 1. Nur 1–3 Ziffern mit
+ * höchstens zwei Nachkommastellen (kein „1e1“, kein „0x10“), Ergebnis 0,01–100 % – sonst `null`.
+ */
+export function parsePercentToBp(text: string | null | undefined): number | null {
+  const match = /^(\d{1,3})(?:[.,](\d{1,2}))?$/.exec((text ?? "").trim());
+  if (!match) return null;
+  const bp = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+  return bp >= 1 && bp <= 10_000 ? bp : null;
+}
+
 /** Ermäßigung, Befreiung, fester Betrag oder feste Beitragsart – mit Zeitraum und Grund. */
 export const assignmentSchema = z
   .object({
@@ -210,12 +221,12 @@ export const assignmentSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.kind === "DISCOUNT_PERCENT") {
-      const percent = Number((data.percent ?? "").replace(",", "."));
-      if (!data.percent || !Number.isFinite(percent) || percent <= 0 || percent > 100)
+      if (parsePercentToBp(data.percent) === null)
         ctx.addIssue({
           code: "custom",
           path: ["percent"],
-          message: "Bitte gib die Ermäßigung in Prozent ein (z. B. 50).",
+          message:
+            "Bitte gib die Ermäßigung in Prozent zwischen 0,01 und 100 ein (z. B. 50 oder 12,5).",
         });
     }
     if (data.kind === "FIXED_AMOUNT") {

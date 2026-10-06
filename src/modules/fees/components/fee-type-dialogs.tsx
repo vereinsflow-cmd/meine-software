@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useWatch, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
 import { ArrowDownIcon, ArrowUpIcon, EllipsisIcon, PlusIcon } from "lucide-react";
@@ -152,7 +152,6 @@ function CreateFeeTypeForm({
   today: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const initial: FeeTypeCreateInput = {
     kind: "BASE",
     name: "",
@@ -173,7 +172,6 @@ function CreateFeeTypeForm({
     successMessage: "Beitragsart angelegt.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   const kind = useWatch({ control: form.control, name: "kind" });
@@ -296,21 +294,25 @@ export function FeeTypeActions({
   canMoveDown: boolean;
 }) {
   const router = useRouter();
-  const { triggerRef, show, dialog } = useMoreActions<"edit" | "rate" | "archive">();
+  const { triggerRef, show, dialog } = useMoreActions<"edit" | "rate" | "archive" | "drop">();
   const edit = dialog("edit");
   const rate = dialog("rate");
   const archive = dialog("archive");
+  const drop = dialog("drop");
+  /** Geplanter Betrag, der nach Rückfrage zurückgenommen wird. */
+  const [dropping, setDropping] = useState<{ id: string; label: string } | null>(null);
+  // Schnelles Doppelklicken auf „Früher/Später prüfen“ ergäbe sonst einen Fehler „Reihenfolge hat sich geändert“.
+  const [moving, startMove] = useTransition();
 
-  async function move(direction: "up" | "down") {
-    const result = await moveFeeTypeAction({ id: type.id, direction });
-    if (!result.ok) toast.error(result.error.message);
-    router.refresh();
-  }
-  async function dropRate(id: string, label: string) {
-    const result = await deleteFeeRateAction({ id });
-    if (!result.ok) toast.error(result.error.message);
-    else toast.success(`Betrag ab ${label} zurückgenommen.`);
-    router.refresh();
+  function move(direction: "up" | "down") {
+    startMove(async () => {
+      const result = await moveFeeTypeAction({ id: type.id, direction }).catch(() => null);
+      if (!result) toast.error("Die Verbindung wurde unterbrochen. Bitte lade die Seite neu.");
+      else if (!result.ok) {
+        toast.error(result.error.message);
+        router.refresh();
+      }
+    });
   }
 
   return (
@@ -336,18 +338,24 @@ export function FeeTypeActions({
               <DropdownMenuItem onSelect={() => show("rate")}>Neuer Betrag ab …</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => show("edit")}>Regeln bearbeiten</DropdownMenuItem>
               {type.removableRates.map((rate) => (
-                <DropdownMenuItem key={rate.id} onSelect={() => dropRate(rate.id, rate.label)}>
+                <DropdownMenuItem
+                  key={rate.id}
+                  onSelect={() => {
+                    setDropping({ id: rate.id, label: rate.label });
+                    show("drop");
+                  }}
+                >
                   Betrag ab {rate.label} zurücknehmen
                 </DropdownMenuItem>
               ))}
               {type.kind === "BASE" && (canMoveUp || canMoveDown) && <DropdownMenuSeparator />}
               {type.kind === "BASE" && canMoveUp && (
-                <DropdownMenuItem onSelect={() => move("up")}>
+                <DropdownMenuItem disabled={moving} onSelect={() => move("up")}>
                   <ArrowUpIcon /> Früher prüfen
                 </DropdownMenuItem>
               )}
               {type.kind === "BASE" && canMoveDown && (
-                <DropdownMenuItem onSelect={() => move("down")}>
+                <DropdownMenuItem disabled={moving} onSelect={() => move("down")}>
                   <ArrowDownIcon /> Später prüfen
                 </DropdownMenuItem>
               )}
@@ -406,8 +414,21 @@ export function FeeTypeActions({
         confirmLabel={type.archived ? "Aktivieren" : "Archivieren"}
         action={() => archiveFeeTypeAction({ id: type.id, archived: !type.archived })}
         successMessage={type.archived ? "Wieder aktiv." : "Archiviert."}
-        onSuccess={() => router.refresh()}
       />
+
+      {dropping && (
+        <ConfirmAction
+          open={drop.open}
+          onOpenChange={drop.onOpenChange}
+          onCloseAutoFocus={drop.onCloseAutoFocus}
+          title={`Betrag ab ${dropping.label} zurücknehmen?`}
+          description={`Der geplante neue Betrag für „${type.name}“ wird gelöscht. Bis dahin gilt weiter der bisherige Betrag.`}
+          confirmLabel="Zurücknehmen"
+          destructive
+          action={() => deleteFeeRateAction({ id: dropping.id })}
+          successMessage={`Betrag ab ${dropping.label} zurückgenommen.`}
+        />
+      )}
     </>
   );
 }
@@ -421,7 +442,6 @@ function EditFeeTypeForm({
   departments: Departments;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: feeTypeUpdateSchema,
     defaultValues: {
@@ -438,7 +458,6 @@ function EditFeeTypeForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   const statuses = useWatch({ control: form.control, name: "statuses" }) ?? [];
@@ -484,7 +503,6 @@ function RateForm({
   today: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: feeRateSchema,
     defaultValues: {
@@ -497,7 +515,6 @@ function RateForm({
     successMessage: "Neuer Betrag gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (

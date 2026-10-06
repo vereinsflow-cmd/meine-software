@@ -135,8 +135,13 @@ export default async function ClosingPage() {
             <ul className="grid gap-1 text-sm">
               {preview.balances.map((balance) => (
                 <li key={balance.accountId} className="flex justify-between gap-4">
-                  <span>{balance.name}</span>
-                  <span className="font-semibold tabular-nums">
+                  <span className="min-w-0 break-words">{balance.name}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 font-semibold whitespace-nowrap tabular-nums",
+                      balance.balanceCents < 0 && "text-red-700 dark:text-red-400",
+                    )}
+                  >
                     {formatEuroFromCents(balance.balanceCents)}
                   </span>
                 </li>

@@ -27,7 +27,16 @@ interface Options<TSchema extends z.ZodType<FieldValues, FieldValues>, TData> {
   successMessage?: string;
   /** Formular nach Erfolg leeren (Standard: nein). */
   resetOnSuccess?: boolean;
+  /**
+   * Meldet, solange gespeichert wird – z. B. damit ein Fenster sich währenddessen nicht schließen lässt (sonst ließe sich
+   * dieselbe Buchung nach erneutem Öffnen ein zweites Mal absenden).
+   */
+  onBusy?: (busy: boolean) => void;
 }
+
+/** Die Anfrage kam nicht an oder die Antwort nicht zurück (offline, Zeitüberschreitung, neue App-Version im Hintergrund). */
+const CONNECTION_ERROR =
+  "Die Verbindung wurde unterbrochen. Bitte lade die Seite neu und prüfe, ob gespeichert wurde, bevor du es noch einmal versuchst.";
 
 /**
  * Verbindet React Hook Form (Browser-Validierung mit Zod) mit einer Server Action.
@@ -54,14 +63,24 @@ export function useActionForm<
   const [isPending, startTransition] = useTransition();
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { action, onSuccess, successMessage, resetOnSuccess } = options;
+  const { action, onSuccess, successMessage, resetOnSuccess, onBusy } = options;
 
   const onSubmit = useCallback(
     (event?: React.BaseSyntheticEvent) =>
       form.handleSubmit((values) => {
         setFormError(null);
+        onBusy?.(true);
         startTransition(async () => {
-          const result = await action(values);
+          let result: ActionResult<TData>;
+          try {
+            result = await action(values);
+          } catch {
+            // Ohne Abfangen ersetzte die Fehlerseite das ganze Formular – die Eingaben wären weg und unklar, ob gespeichert wurde.
+            setFormError(CONNECTION_ERROR);
+            return;
+          } finally {
+            onBusy?.(false);
+          }
           if (result.ok) {
             if (successMessage) toast.success(successMessage);
             if (resetOnSuccess) form.reset();
@@ -86,7 +105,7 @@ export function useActionForm<
           setFormError(placed && result.error.code === "VALIDATION" ? null : message);
         });
       })(event),
-    [action, form, onSuccess, resetOnSuccess, successMessage],
+    [action, form, onBusy, onSuccess, resetOnSuccess, successMessage],
   );
 
   return { form, onSubmit, isPending, formError, setFormError };

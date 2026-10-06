@@ -235,6 +235,7 @@ export async function accountBalances(
   ctx: TenantContext,
   asOf?: Date,
 ): Promise<Map<string, number>> {
+  assertFinance(ctx, "finance:read");
   const groups = await ctx.db.ledgerEntry.groupBy({
     by: ["accountId"],
     where: asOf ? { bookingDate: { lte: asOf } } : {},

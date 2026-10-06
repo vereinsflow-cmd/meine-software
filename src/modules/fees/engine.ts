@@ -117,6 +117,29 @@ function percentText(bp: number): string {
 const daysText = (count: number, first: DayNo) =>
   count === 1 ? `am ${fullDate(first)}` : `an ${count} Tagen ab dem ${fullDate(first)}`;
 
+/** Ist `day` ein Geburtstag, an dem sich das Alter ändert (nur beim Alter „genau ab dem Geburtstag“ eine Grenze)? */
+const isBirthday = (birth: Date | null, day: DayNo) =>
+  birth !== null && ageOn(birth, dayDate(day)) !== ageOn(birth, dayDate(day - 1));
+
+/**
+ * Wie `daysText`, aber ohne das Geburtsdatum zu verraten: Beginnt die Lücke an einem Geburtstag oder endet sie direkt
+ * davor, steht nur der Monat da („ab Geburtstag im November“) und keine Tageszahl (aus Anzahl und erstem Tag ließe sich
+ * sonst der Geburtstag ausrechnen).
+ */
+function maskedDaysText(
+  count: number,
+  first: DayNo,
+  last: DayNo,
+  periodEnd: DayNo,
+  birthday: (day: DayNo) => boolean,
+): string {
+  const startMasked = birthday(first);
+  const endMasked = last < periodEnd && birthday(last + 1);
+  if (!startMasked && !endMasked) return daysText(count, first);
+  const from = startMasked ? `ab Geburtstag im ${monthName(first)}` : `ab dem ${fullDate(first)}`;
+  return endMasked ? `${from} bis Geburtstag im ${monthName(last + 1)}` : from;
+}
+
 /**
  * Genauer Wert eines Abschnitts: für jeden Monat, den er berührt, der Monatsbeitrag – ganz für volle Monate, sonst
  * anteilig nach Tagen (Monatsbeitrag × Tage im Abschnitt / Tage des Monats).
@@ -521,6 +544,7 @@ function memberDays(
   let noType: {
     count: number;
     first: DayNo;
+    last: DayNo;
     status: MemberStatusValue;
     age: Age;
     /** Ein fester Betrag war eingestellt, ging aber mangels Beitragsart nicht. */
@@ -528,15 +552,17 @@ function memberDays(
   } | null = null;
   let missingAssigned: { count: number; first: DayNo } | null = null;
   let archivedAssigned: { name: string; count: number; first: DayNo } | null = null;
-  const noRate = new Map<string, { count: number; first: DayNo; name: string }>();
+  const noRate = new Map<string, { count: number; first: DayNo; last: DayNo; name: string }>();
   let previousSignature: string | null = null;
   let previousLabel: string | null = null;
   let ageChange: { day: DayNo; age: number; before: string | null; after: string } | null = null;
 
   const noteNoRate = (type: PreparedType, day: DayNo) => {
     const entry = noRate.get(type.id);
-    if (entry) entry.count += 1;
-    else noRate.set(type.id, { count: 1, first: day, name: type.name });
+    if (entry) {
+      entry.count += 1;
+      entry.last = day;
+    } else noRate.set(type.id, { count: 1, first: day, last: day, name: type.name });
   };
 
   // Schon abgerechnete Tage (aus früheren Beitragsläufen) – je Gruppe: „BASE“ für Grund- und Familienbeitrag, sonst die
@@ -643,8 +669,11 @@ function memberDays(
             noteNoRate(withoutRate, day);
             noRateToday = true;
           } else if (status !== "HONORARY" || fixedRule) {
-            if (noType) noType.count += 1;
-            else noType = { count: 1, first: day, status, age, fixed: fixedRule !== null };
+            if (noType) {
+              noType.count += 1;
+              noType.last = day;
+            } else
+              noType = { count: 1, first: day, last: day, status, age, fixed: fixedRule !== null };
           }
           // Ein fester Betrag braucht eine Beitragsart (für Kategorie und Text) – ohne passende eine ohne Betrag nehmen.
           if (fixedRule && withoutRate) type = withoutRate;
@@ -769,13 +798,18 @@ function memberDays(
   }
   if (birth === null && ctx.ageMatters && matchedByRule)
     warn("NO_BIRTH_DATE", `${name} hat kein Geburtsdatum – als Erwachsener berechnet.`);
+  // Grenzen auf dem Geburtstag nur mit Monat (siehe `maskedDaysText`) – nie das genaue Datum zusammen mit dem Alter.
+  const birthdayBoundary = (day: DayNo) =>
+    settings.ageRule === "EXACT_DAY" && isBirthday(birth, day);
+  const gapText = (gap: { count: number; first: DayNo; last: DayNo }) =>
+    maskedDaysText(gap.count, gap.first, gap.last, we, birthdayBoundary);
   if (noType) {
     const ageText = noType.age === null ? "ohne Geburtsdatum" : `${noType.age} Jahre`;
     warn(
       "NO_FEE_TYPE",
       noType.fixed
-        ? `Für ${name} ist ein fester Betrag eingestellt, aber es passt keine Beitragsart – ${daysText(noType.count, noType.first)} nicht berechnet. Bitte zusätzlich eine feste Beitragsart zuordnen.`
-        : `Für ${name} passt keine Beitragsart (Status „${STATUS_LABELS[noType.status]}“, ${ageText}) – ${daysText(noType.count, noType.first)} kein Grundbeitrag.`,
+        ? `Für ${name} ist ein fester Betrag eingestellt, aber es passt keine Beitragsart – ${gapText(noType)} nicht berechnet. Bitte zusätzlich eine feste Beitragsart zuordnen.`
+        : `Für ${name} passt keine Beitragsart (Status „${STATUS_LABELS[noType.status]}“, ${ageText}) – ${gapText(noType)} kein Grundbeitrag.`,
     );
   }
   if (archivedAssigned)
@@ -791,7 +825,7 @@ function memberDays(
   for (const entry of noRate.values())
     warn(
       "NO_FEE_TYPE",
-      `Für „${entry.name}“ ist ${daysText(entry.count, entry.first)} kein Beitragssatz gültig – bei ${name} nicht berechnet.`,
+      `Für „${entry.name}“ ist ${gapText(entry)} kein Beitragssatz gültig – bei ${name} nicht berechnet.`,
     );
   // Ohne Tag und Alter: Beides zusammen ergäbe das Geburtsdatum, das auf den Beitragsseiten nicht erscheinen soll.
   if (ageChange) {
@@ -1178,7 +1212,7 @@ function calculateFamily(
   let anyPaying = false;
   let belowDays = 0;
   let notApplied = 0;
-  let noRate: { count: number; first: DayNo } | null = null;
+  let noRate: { count: number; first: DayNo; last: DayNo } | null = null;
   const freeDay: FreeDay = {
     kind: "family",
     reason: family.name,
@@ -1236,8 +1270,10 @@ function calculateFamily(
     }
     const rate = rateOn(type, day);
     if (!rate || rate.interval === "ONCE") {
-      if (noRate) noRate.count += 1;
-      else noRate = { count: 1, first: day };
+      if (noRate) {
+        noRate.count += 1;
+        noRate.last = day;
+      } else noRate = { count: 1, first: day, last: day };
       continue;
     }
     familyDays[i] = {
@@ -1259,10 +1295,18 @@ function calculateFamily(
         : `Der Familienbeitrag „${type.name}“ von ${label} ist archiviert – die Mitglieder zahlen einzeln. Bitte einen anderen wählen.`,
       family.id,
     );
+  // Der Familienbeitrag kann am Geburtstag eines Familienmitglieds beginnen oder enden – dann nur den Monat zeigen.
+  const familyMasked = ctx.maskedDays.get(`f:${family.id}`) ?? new Set<DayNo>();
+  const familyBirthday = (day: DayNo) =>
+    familyMasked.has(day) ||
+    (settings.ageRule === "EXACT_DAY" &&
+      family.members.some((m) => isBirthday(daysById.get(m.memberId)?.member.birthDate ?? null, day)));
+  const familyGapText = (gap: { count: number; first: DayNo; last: DayNo }) =>
+    maskedDaysText(gap.count, gap.first, gap.last, periodEnd, familyBirthday);
   if (noRate && type)
     warn(
       "FAMILY_NOT_APPLIED",
-      `Für „${type.name}“ ist ${daysText(noRate.count, noRate.first)} kein Beitragssatz gültig – ${label} zahlt dort einzeln.`,
+      `Für „${type.name}“ ist ${familyGapText(noRate)} kein Beitragssatz gültig – ${label} zahlt dort einzeln.`,
       family.id,
     );
   if (covered.size === 0) {

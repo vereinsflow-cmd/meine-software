@@ -49,6 +49,7 @@ import {
   feeTypeUpdateSchema,
   kindWithoutRules,
   memberFinanceSchema,
+  parsePercentToBp,
 } from "./schemas";
 
 /**
@@ -624,8 +625,12 @@ export async function addAssignment(ctx: TenantContext, input: unknown): Promise
       );
     const percentBp =
       data.kind === "DISCOUNT_PERCENT"
-        ? Math.round(Number(data.percent!.replace(",", ".")) * 100)
+        ? parsePercentToBp(data.percent)
         : null;
+    if (data.kind === "DISCOUNT_PERCENT" && percentBp === null)
+      throw validationFailed({
+        percent: ["Bitte gib die Ermäßigung in Prozent zwischen 0,01 und 100 ein (z. B. 50 oder 12,5)."],
+      });
     const amountCents = data.kind === "FIXED_AMOUNT" ? parseEuroToCents(data.amount!)! : null;
     await tx.memberFeeAssignment.create({
       data: {
@@ -1179,7 +1184,7 @@ export async function getMemberFee(
     ctx.db.charge.aggregate({
       where: { status: "OPEN", OR: [{ memberId }, { payerMemberId: memberId }] },
       _count: { _all: true },
-      _sum: { amountCents: true, paidCents: true },
+      _sum: { amountCents: true, paidCents: true, writtenOffCents: true },
     }),
   ]);
   const today = todayCalendarDate();
@@ -1218,7 +1223,11 @@ export async function getMemberFee(
     paysForFamilies: member.paysForFamilies,
     openCharges: {
       count: open._count._all,
-      cents: (open._sum.amountCents ?? 0) - (open._sum.paidCents ?? 0),
+      // Offen ist, was weder bezahlt noch erlassen ist (wie in der Forderungsliste).
+      cents:
+        (open._sum.amountCents ?? 0) -
+        (open._sum.paidCents ?? 0) -
+        (open._sum.writtenOffCents ?? 0),
     },
     note: member.finance?.note ?? null,
     assignments: member.feeAssignments.map((a) => ({

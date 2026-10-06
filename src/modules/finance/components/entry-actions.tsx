@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { EllipsisIcon, PaperclipIcon, PencilIcon, Undo2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -148,7 +147,6 @@ function ReverseDialog({
   onCloseAutoFocus: (event: Event) => void;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -176,7 +174,6 @@ function ReverseDialog({
       toast.success(`Buchung ${entry.label} storniert (Storno ${result.data.label}).`);
       onDone();
       onOpenChange(false);
-      router.refresh();
     });
   }
   const errorId = `storno-${entry.id}-fehler`;

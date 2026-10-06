@@ -102,7 +102,7 @@ export default async function OpenChargesPage({
               method="get"
               action="/finanzen/beitraege/offen"
               role="search"
-              className="flex gap-2"
+              className="flex min-w-0 basis-full gap-2 sm:basis-auto"
             >
               {filter !== "offen" && <input type="hidden" name="status" value={filter} />}
               <Input
@@ -111,7 +111,7 @@ export default async function OpenChargesPage({
                 defaultValue={q}
                 placeholder="Name oder Nummer …"
                 aria-label="Beiträge durchsuchen"
-                className="w-56"
+                className="min-w-0 flex-1 sm:w-56 sm:flex-none"
               />
               <Button type="submit" variant="outline">
                 Suchen

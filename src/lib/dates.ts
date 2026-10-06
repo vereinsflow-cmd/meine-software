@@ -322,9 +322,10 @@ export function ageOn(birthDate: Date, on: Date = todayCalendarDate()): number {
 
 const euro = new Intl.NumberFormat(APP_LOCALE, { style: "currency", currency: "EUR" });
 
-/** Formatiert einen Betrag in Cent als Euro, z. B. 123456 → "1.234,56 €". */
+/** Formatiert einen Betrag in Cent als Euro, z. B. 123456 → "1.234,56 €". Negativ mit echtem Minuszeichen (−), wie
+ *  `formatSignedEuro` – sonst stehen auf derselben Seite zwei verschiedene Striche. */
 export function formatEuroFromCents(cents: number): string {
-  return euro.format(cents / 100);
+  return euro.format(cents / 100).replace("-", "−");
 }
 
 /** Dauer in Minuten als "2 Std. 30 Min." */

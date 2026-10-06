@@ -129,7 +129,7 @@ export default async function FeesPage({
                 </Link>
               </Button>
             </nav>
-            <form method="get" action="/finanzen/beitraege" role="search" className="flex gap-2">
+            <form method="get" action="/finanzen/beitraege" role="search" className="flex min-w-0 basis-full gap-2 sm:basis-auto">
               <input type="hidden" name="zeitraum" value={toDateInputValue(period.start)} />
               <Input
                 type="search"
@@ -137,7 +137,7 @@ export default async function FeesPage({
                 defaultValue={param(params, "q")}
                 placeholder="Name oder Beitragsart …"
                 aria-label="Beiträge durchsuchen"
-                className="w-56"
+                className="min-w-0 flex-1 sm:w-56 sm:flex-none"
               />
               <Button type="submit" variant="outline">
                 Suchen

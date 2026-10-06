@@ -89,7 +89,7 @@ export default async function FamiliesPage() {
                 return (
                   <Card key={family.id} id={`familie-${family.id}`} className="scroll-mt-24">
                     <CardHeader className="flex flex-row items-start justify-between gap-3">
-                      <div className="grid gap-1">
+                      <div className="grid min-w-0 gap-1 break-words">
                         <CardTitle role="heading" aria-level={2}>
                           {family.name}
                         </CardTitle>

@@ -141,7 +141,12 @@ export default async function FinanceSettingsPage() {
                   <TableCell className="hidden sm:table-cell">
                     {ACCOUNT_KIND_LABEL[account.kind]}
                   </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
+                  <TableCell
+                    className={cn(
+                      "text-right font-semibold tabular-nums",
+                      account.balanceCents < 0 && "text-red-700 dark:text-red-400",
+                    )}
+                  >
                     {formatEuroFromCents(account.balanceCents)}
                   </TableCell>
                   {canManage && (

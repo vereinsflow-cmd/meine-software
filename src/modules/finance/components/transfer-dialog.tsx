@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeftRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +21,11 @@ import { AMOUNT_HINT } from "../schemas";
 /** Umbuchung zwischen zwei eigenen Konten (z. B. Bargeld zur Bank gebracht) – weder Einnahme noch Ausgabe. */
 export function TransferDialog({ options }: { options: EntryFormOptions }) {
   const [open, setOpen] = useState(false);
+  // Während des Speicherns bleibt das Fenster offen – sonst ließe sich dieselbe Umbuchung zweimal absenden.
+  const [busy, setBusy] = useState(false);
   if (options.accounts.length < 2) return null;
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <ArrowLeftRightIcon /> Umbuchung
@@ -38,14 +39,21 @@ export function TransferDialog({ options }: { options: EntryFormOptions }) {
             ist weder Einnahme noch Ausgabe.
           </DialogDescription>
         </DialogHeader>
-        <TransferForm options={options} onDone={() => setOpen(false)} />
+        <TransferForm options={options} onBusy={setBusy} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-function TransferForm({ options, onDone }: { options: EntryFormOptions; onDone: () => void }) {
-  const router = useRouter();
+function TransferForm({
+  options,
+  onBusy,
+  onDone,
+}: {
+  options: EntryFormOptions;
+  onBusy: (busy: boolean) => void;
+  onDone: () => void;
+}) {
   const cash = options.accounts.find((a) => a.kind === "CASH");
   const bank = options.accounts.find((a) => a.kind === "BANK");
   const { form, onSubmit, isPending, formError } = useActionForm({
@@ -57,11 +65,11 @@ function TransferForm({ options, onDone }: { options: EntryFormOptions; onDone: 
       amount: "",
       description: "",
     },
+    onBusy,
     action: createTransferAction,
     successMessage: "Umgebucht.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (

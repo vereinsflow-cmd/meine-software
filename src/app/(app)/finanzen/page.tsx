@@ -90,7 +90,11 @@ export default async function FinancePage() {
           href="/finanzen/kassenbuch"
           lines={
             overview.setup
-              ? [overview.accounts.map((a) => a.name).join(" und ") || "Noch keine Konten"]
+              ? [
+                  new Intl.ListFormat("de", { type: "conjunction" }).format(
+                    overview.accounts.map((a) => a.name),
+                  ) || "Noch keine Konten",
+                ]
               : ["Kassenbuch noch nicht eingerichtet"]
           }
           points={overview.balancePoints.map((p) => ({
@@ -193,7 +197,13 @@ export default async function FinancePage() {
                     </dd>
                   </div>
                 </dl>
-                <MonthChart year={year} months={overview.year.months} legend={false} />
+                {overview.year.months.some((m) => m.incomeCents > 0 || m.expenseCents > 0) ? (
+                  <MonthChart year={year} months={overview.year.months} legend={false} />
+                ) : (
+                  <p className="py-10 text-center text-sm text-muted-foreground">
+                    Noch keine Einnahmen oder Ausgaben in {year}.
+                  </p>
+                )}
               </>
             ) : (
               <p className="py-10 text-center text-sm text-muted-foreground">
@@ -366,7 +376,7 @@ function DepartmentBars({
           key={department.departmentId}
           className="grid gap-1.5 sm:grid-cols-[9rem_minmax(0,1fr)_11rem] sm:items-center sm:gap-4"
         >
-          <span className="font-medium">{department.name}</span>
+          <span className="min-w-0 font-medium break-words hyphens-auto">{department.name}</span>
           <span aria-hidden="true" className="h-2.5 overflow-hidden rounded-full bg-muted">
             <span
               className="block h-full rounded-full bg-primary"

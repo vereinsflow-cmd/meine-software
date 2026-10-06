@@ -226,15 +226,15 @@ export default async function InvoicesPage({
                             href={`/api/dokumente/${invoice.documentId}/download`}
                             className="inline-flex items-center gap-1.5 font-medium underline-offset-4 hover:underline"
                           >
-                            {invoice.name}
+                            <span className="min-w-0 wrap-anywhere">{invoice.name}</span>
                             <DownloadIcon
-                              className="size-3.5 text-muted-foreground"
+                              className="size-3.5 shrink-0 text-muted-foreground"
                               aria-hidden="true"
                             />
                             <span className="sr-only">(herunterladen)</span>
                           </a>
                         ) : (
-                          <span className="font-medium">{invoice.name}</span>
+                          <span className="font-medium wrap-anywhere">{invoice.name}</span>
                         )}
                         <span className="block text-sm text-muted-foreground">
                           Rechnung vom {formatCalendarDate(invoice.invoiceDate)}

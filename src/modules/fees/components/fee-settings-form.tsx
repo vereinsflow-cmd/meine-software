@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   CheckboxField,
   FormError,
@@ -24,13 +23,11 @@ const options = <T extends string>(labels: Record<T, string>) =>
 
 /** Einstellungen für Beiträge: wie oft abgerechnet wird, wann fällig, wie bei Eintritt, Austritt und Alter gerechnet wird. */
 export function FeeSettingsForm({ defaults }: { defaults: FeeSettingsInput }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: feeSettingsSchema,
     defaultValues: defaults,
     action: updateFeeSettingsAction,
     successMessage: "Gespeichert.",
-    onSuccess: () => router.refresh(),
   });
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
