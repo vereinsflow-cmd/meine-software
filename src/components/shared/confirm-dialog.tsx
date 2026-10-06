@@ -71,7 +71,16 @@ export function ConfirmAction({
             disabled={pending}
             onClick={() =>
               startTransition(async () => {
-                const result = await action();
+                let result: Awaited<ReturnType<typeof action>>;
+                try {
+                  result = await action();
+                } catch {
+                  // Offline oder neue App-Version: Meldung statt Fehlerseite.
+                  toast.error(
+                    "Die Verbindung wurde unterbrochen. Bitte lade die Seite neu und prüfe, ob es geklappt hat.",
+                  );
+                  return;
+                }
                 if (!result.ok) {
                   toast.error(result.error.message);
                   return;

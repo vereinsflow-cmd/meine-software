@@ -94,7 +94,6 @@ export function CreateRunButton({
 /** „Beitragslauf rückgängig“: alle Beiträge werden gestrichen (mit Grund), die Tage sind wieder frei. */
 export function RevertRunDialog({ id, label }: { id: string; label: string }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: feeRunRevertSchema,
     defaultValues: { id, reason: "" },
@@ -102,7 +101,6 @@ export function RevertRunDialog({ id, label }: { id: string; label: string }) {
     successMessage: "Beitragslauf rückgängig gemacht.",
     onSuccess: () => {
       setOpen(false);
-      router.refresh();
     },
   });
   return (
@@ -147,7 +145,6 @@ export function VoidChargeDialog({
   variant?: "outline" | "ghost";
 }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: chargeVoidSchema,
     defaultValues: { id, reason: "" },
@@ -155,7 +152,6 @@ export function VoidChargeDialog({
     successMessage: "Beitrag gestrichen.",
     onSuccess: () => {
       setOpen(false);
-      router.refresh();
     },
   });
   return (

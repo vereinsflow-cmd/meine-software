@@ -68,14 +68,16 @@ export default async function FeeRunPage({
   const ctx = await requirePageContext();
   if (!canFinance(ctx, "finance:read")) return <NoAccess what="die Finanzen" />;
   const canManage = canFinance(ctx, "finance:manage");
-  const settings = await getFeeSettings(ctx);
-  const period = billingPeriod(
-    settings.feeInterval,
-    parseCalendarDate(param(params, "zeitraum") ?? "") ?? undefined,
-  );
   const due = parseCalendarDate(param(params, "faellig") ?? "") ?? undefined;
-  const [analysis, counts] = await Promise.all([
-    analyzeFeeRun(ctx, { period, dueDate: due }),
+  // Zähler der Reiter laufen parallel zu Einstellungen → Zeitraum → Prüfung des Laufs (kein Wasserfall).
+  const [{ settings, period, analysis }, counts] = await Promise.all([
+    getFeeSettings(ctx).then(async (settings) => {
+      const period = billingPeriod(
+        settings.feeInterval,
+        parseCalendarDate(param(params, "zeitraum") ?? "") ?? undefined,
+      );
+      return { settings, period, analysis: await analyzeFeeRun(ctx, { period, dueDate: due }) };
+    }),
     financeTabCounts(ctx),
   ]);
   const step = param(params, "schritt") === "2" ? 2 : 1;
@@ -400,7 +402,7 @@ export default async function FeeRunPage({
                     method="get"
                     action="/finanzen/beitraege/lauf"
                     role="search"
-                    className="flex gap-2"
+                    className="flex min-w-0 basis-full gap-2 sm:basis-auto"
                   >
                     <input type="hidden" name="zeitraum" value={toDateInputValue(period.start)} />
                     {due && <input type="hidden" name="faellig" value={toDateInputValue(due)} />}
@@ -412,7 +414,7 @@ export default async function FeeRunPage({
                       defaultValue={param(params, "q")}
                       placeholder="Mitglied suchen …"
                       aria-label="Vorschau durchsuchen"
-                      className="w-56"
+                      className="min-w-0 flex-1 sm:w-56 sm:flex-none"
                     />
                     <Button type="submit" variant="outline">
                       Suchen

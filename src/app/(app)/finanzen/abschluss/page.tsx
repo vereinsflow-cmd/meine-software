@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -29,7 +30,7 @@ import {
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
 import { formatSignedEuro } from "@/modules/finance/ledger-format";
 import { financeTabCounts } from "@/modules/finance/overview";
-import { requirePageContext } from "@/server/tenancy/context";
+import { requirePageContext, type TenantContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Monatsabschluss" };
 
@@ -42,10 +43,9 @@ export default async function ClosingPage() {
   const ctx = await requirePageContext();
   if (!canFinance(ctx, "finance:read")) return <NoAccess what="die Finanzen" />;
   const canManage = canFinance(ctx, "finance:manage");
-  const [preview, closes, verification, cashCounts, counts] = await Promise.all([
+  const [preview, closes, cashCounts, counts] = await Promise.all([
     closePreview(ctx),
     listPeriodCloses(ctx),
-    verifyPeriodCloses(ctx),
     listCashCounts(ctx, 5),
     financeTabCounts(ctx),
   ]);
@@ -135,8 +135,13 @@ export default async function ClosingPage() {
             <ul className="grid gap-1 text-sm">
               {preview.balances.map((balance) => (
                 <li key={balance.accountId} className="flex justify-between gap-4">
-                  <span>{balance.name}</span>
-                  <span className="font-semibold tabular-nums">
+                  <span className="min-w-0 break-words">{balance.name}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 font-semibold whitespace-nowrap tabular-nums",
+                      balance.balanceCents < 0 && "text-red-700 dark:text-red-400",
+                    )}
+                  >
                     {formatEuroFromCents(balance.balanceCents)}
                   </span>
                 </li>
@@ -155,11 +160,16 @@ export default async function ClosingPage() {
           <p className="text-sm text-muted-foreground">Noch keine.</p>
         ) : (
           <>
-            <p className="mb-3 text-sm text-muted-foreground">
-              {verification.ok
-                ? "Prüfsummen nachgerechnet: Alle Abschlüsse stimmen mit den Buchungen überein."
-                : "Achtung: Eine Prüfsumme stimmt nicht mehr – bitte den Support informieren."}
-            </p>
+            {/* Nachrechnen liest alle Buchungen – die Seite wartet nicht darauf. */}
+            <Suspense
+              fallback={
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Prüfsummen werden nachgerechnet …
+                </p>
+              }
+            >
+              <VerificationNote ctx={ctx} />
+            </Suspense>
             <TableCard>
               <Table>
                 <caption className="sr-only">Bisherige Monatsabschlüsse, neueste zuerst</caption>
@@ -257,6 +267,17 @@ export default async function ClosingPage() {
         )}
       </section>
     </>
+  );
+}
+
+async function VerificationNote({ ctx }: { ctx: TenantContext }) {
+  const verification = await verifyPeriodCloses(ctx);
+  return (
+    <p className="mb-3 text-sm text-muted-foreground">
+      {verification.ok
+        ? "Prüfsummen nachgerechnet: Alle Abschlüsse stimmen mit den Buchungen überein."
+        : "Achtung: Eine Prüfsumme stimmt nicht mehr – bitte den Support informieren."}
+    </p>
   );
 }
 

@@ -61,7 +61,6 @@ export function ClosePeriodButton({
       onSuccess={() => {
         closed.current = true;
         setNote("");
-        router.refresh();
       }}
       onCloseAutoFocus={(event) => {
         if (!closed.current) return;

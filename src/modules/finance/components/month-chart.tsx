@@ -70,7 +70,11 @@ export function MonthChart({
         <TimeChart
           type="bar"
           title={`Einnahmen und Ausgaben ${year}`}
-          rangeLabel={`Januar bis ${MONTH_NAMES[months.length - 1]} ${year}`}
+          rangeLabel={
+            months.length === 1
+              ? `${MONTH_NAMES[0]} ${year}`
+              : `Januar bis ${MONTH_NAMES[months.length - 1]} ${year}`
+          }
           buckets={buckets}
           series={SERIES}
           values={values}

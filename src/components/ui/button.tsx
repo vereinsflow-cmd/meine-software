@@ -33,6 +33,19 @@ const buttonVariants = cva(
         "icon-lg": "size-10",
       },
     },
+    // Kleine Knöpfe bekommen am Handy (grober Zeiger) eine unsichtbar größere Tippfläche von etwa 40 px – sichtbar bleibt
+    // alles gleich. Wie bei Checkbox und Radio über ein `::after`.
+    compoundVariants: [
+      {
+        size: ["sm", "icon-sm"],
+        className: "pointer-coarse:relative pointer-coarse:after:absolute pointer-coarse:after:-inset-1",
+      },
+      {
+        size: ["xs", "icon-xs"],
+        className:
+          "pointer-coarse:relative pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5",
+      },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",

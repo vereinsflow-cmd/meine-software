@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { PencilIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +76,6 @@ function OpeningForm({
   currentInput: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: openingSchema,
     defaultValues: { accountId: account.id, amount: currentInput },
@@ -85,7 +83,6 @@ function OpeningForm({
     successMessage: "Anfangsbestand gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (

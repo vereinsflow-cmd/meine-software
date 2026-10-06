@@ -339,6 +339,7 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
 export async function financeTabCounts(
   ctx: TenantContext,
 ): Promise<Partial<Record<string, number>>> {
+  if (!canFinance(ctx, "finance:read")) return {};
   const [overdue, setup] = await Promise.all([
     ctx.db.invoice.count({
       where: {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { CheckIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,9 @@ const PAID_BUTTON =
  * „Bezahlt“ – markiert eine offene Rechnung als bezahlt. Kein Rückfrage-Dialog: Die Meldung bietet „Rückgängig“ an,
  * falls man sich verklickt hat (die Rechnung ist dann wieder offen).
  */
+const CONNECTION_ERROR =
+  "Die Verbindung wurde unterbrochen. Bitte lade die Seite neu und prüfe, ob es geklappt hat.";
+
 export function MarkPaidButton({
   invoiceId,
   name,
@@ -31,15 +33,20 @@ export function MarkPaidButton({
   className?: string;
   /** Zweite Zeile der Meldung (z. B. wo es weitergeht: „ins Kassenbuch übernehmen“). */
   hint?: string;
-  /** In Tabellen: auf kleinen Bildschirmen nur das Häkchen (die volle Beschriftung trägt `aria-label`). */
+  /** In Tabellen: auf kleinen Bildschirmen auch beim Speichern nur das kurze „Bezahlt“ (die volle Beschriftung trägt `aria-label`). */
   compact?: boolean;
 }) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   function mark() {
     startTransition(async () => {
-      const result = await setInvoiceStatusAction({ id: invoiceId, status: "PAID" });
+      const result = await setInvoiceStatusAction({ id: invoiceId, status: "PAID" }).catch(
+        () => null,
+      );
+      if (!result) {
+        toast.error(CONNECTION_ERROR);
+        return;
+      }
       if (!result.ok) {
         toast.error(result.error.message);
         return;
@@ -49,15 +56,16 @@ export function MarkPaidButton({
         duration: 8000,
         action: { label: "Rückgängig", onClick: () => reopen() },
       });
-      router.refresh();
     });
   }
 
   function reopen() {
-    void setInvoiceStatusAction({ id: invoiceId, status: "OPEN" }).then((result) => {
-      if (!result.ok) toast.error(result.error.message);
-      router.refresh();
-    });
+    void setInvoiceStatusAction({ id: invoiceId, status: "OPEN" })
+      .then((result) => {
+        if (!result.ok) toast.error(result.error.message);
+        else toast.success(`„${name}“ ist wieder offen.`);
+      })
+      .catch(() => toast.error(CONNECTION_ERROR));
   }
 
   return (
@@ -70,8 +78,20 @@ export function MarkPaidButton({
       className={cn(PAID_BUTTON, className)}
     >
       <CheckIcon />
-      <span className={compact ? "hidden md:inline" : undefined}>
-        {pending ? "Wird gespeichert …" : "Bezahlt"}
+      {/* Am Handy nur „Bezahlt“ statt des langen Wartetexts – ein Häkchen allein sagt nicht, was der Knopf tut. */}
+      <span>
+        {pending ? (
+          compact ? (
+            <>
+              <span className="md:hidden">Bezahlt</span>
+              <span className="hidden md:inline">Wird gespeichert …</span>
+            </>
+          ) : (
+            "Wird gespeichert …"
+          )
+        ) : (
+          "Bezahlt"
+        )}
       </span>
     </Button>
   );

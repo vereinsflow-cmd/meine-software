@@ -74,6 +74,12 @@ export function ChargesTable({
                   <span className="block text-sm text-muted-foreground sm:hidden">
                     fällig {formatCalendarDate(charge.dueDate)} · {status}
                   </span>
+                  {/* Die Spalte „Offen“ gibt es erst auf großen Bildschirmen – bei Teilzahlung sonst unsichtbar. */}
+                  {charge.status === "OPEN" && charge.openCents < charge.amountCents && (
+                    <span className="block text-sm text-muted-foreground tabular-nums lg:hidden">
+                      noch {formatEuroFromCents(charge.openCents)} offen
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="hidden align-top md:table-cell">
                   {charge.periodLabel ?? "–"}

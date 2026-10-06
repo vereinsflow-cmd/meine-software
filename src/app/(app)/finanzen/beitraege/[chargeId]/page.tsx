@@ -80,13 +80,13 @@ export default async function ChargePage({ params }: { params: Promise<{ chargeI
       <div className="mt-4 grid max-w-4xl gap-6">
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
-            <div className="grid gap-1">
+            <div className="grid min-w-0 gap-1 break-words">
               <CardTitle role="heading" aria-level={2}>
                 {charge.title}
               </CardTitle>
               <p className="text-sm text-muted-foreground tabular-nums">{charge.number}</p>
             </div>
-            <p className="text-2xl font-bold tabular-nums">
+            <p className="shrink-0 text-2xl font-bold whitespace-nowrap tabular-nums">
               {formatEuroFromCents(charge.amountCents)}
             </p>
           </CardHeader>

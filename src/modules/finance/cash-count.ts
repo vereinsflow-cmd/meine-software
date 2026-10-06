@@ -54,9 +54,22 @@ export async function countCash(ctx: TenantContext, input: unknown): Promise<Cas
       select: { id: true, name: true },
     });
     if (!account) throw validationFailed({ accountId: ["Bitte wähle eine Barkasse."] });
-    // Erst den Nummernkreis, dann dieselbe Sperre wie die Prüfung „Barkasse nie im Minus“ – in dieser Reihenfolge sperrt
+    // Erst die Nummernkreise, dann dieselbe Sperre wie die Prüfung „Barkasse nie im Minus“ – in dieser Reihenfolge sperrt
     // auch jede Buchung (Nummer beim Anlegen, Barkasse beim Festschreiben). So bleibt der Stand stabil, ohne Verklemmung.
-    await lockNumbers(tx, ctx.clubId, "LEDGER", today.getUTCFullYear());
+    // Alle noch offenen Jahre (aufsteigend): Auch eine gleichzeitige Buchung mit Datum im offenen Vorjahr zählt zum Bestand.
+    const settings = await tx.financeSettings.findUnique({
+      where: { clubId: ctx.clubId },
+      select: { ledgerStartDate: true, closedThrough: true },
+    });
+    const openFrom = settings?.closedThrough
+      ? new Date(settings.closedThrough.getTime() + 86_400_000).getUTCFullYear()
+      : (settings?.ledgerStartDate.getUTCFullYear() ?? today.getUTCFullYear());
+    for (
+      let year = Math.min(openFrom, today.getUTCFullYear());
+      year <= today.getUTCFullYear();
+      year++
+    )
+      await lockNumbers(tx, ctx.clubId, "LEDGER", year);
     await lockUntilCommit(tx, ctx.clubId, `cash:${account.id}`);
     const book = await tx.ledgerEntry.aggregate({
       where: { accountId: account.id, bookingDate: { lte: today } },

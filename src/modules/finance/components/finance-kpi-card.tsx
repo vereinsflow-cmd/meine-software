@@ -4,10 +4,11 @@ import { QuoteChart, type QuoteChartPoint } from "@/components/charts/quote-char
 import type { KpiAccent } from "@/components/shared/accent";
 import { KpiShell, KpiValue } from "@/modules/dashboard/components/kpi-cards";
 import { formatEuroFromCents } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import { formatSignedEuro } from "../ledger-format";
 
 const fitSize = (chars: number) =>
-  `clamp(1.25rem, calc((100cqi - 2.5rem) / ${(0.64 * chars).toFixed(2)}), 2.15rem)`;
+  `clamp(1.05rem, calc((100cqi - 2.5rem) / ${(0.64 * chars).toFixed(2)}), 2.15rem)`;
 
 /**
  * Kennzahl der Finanzen im Stil der Dashboard-Karten (Farbverlauf, weiße Schrift, kleiner Kurs unten). Beträge kommen in
@@ -62,7 +63,11 @@ export function FinanceKpiCard({
       </div>
       <div className="mt-2.5 grid gap-0.5 text-sm text-white/95">
         {lines.map((line, index) => (
-          <p key={index} className={index === 1 ? "font-semibold" : "font-medium"}>
+          <p
+            key={index}
+            title={typeof line === "string" ? line : undefined}
+            className={cn("line-clamp-2", index === 1 ? "font-semibold" : "font-medium")}
+          >
             {line}
           </p>
         ))}

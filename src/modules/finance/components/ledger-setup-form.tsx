@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useWatch } from "react-hook-form";
 import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
@@ -12,7 +11,6 @@ import { ledgerSetupSchema } from "../ledger-schemas";
  * VereinsFlow gebucht wird (meist der 1. Januar). Die Kategorien kommen als Vorschlag dazu.
  */
 export function LedgerSetupForm({ defaultStart }: { defaultStart: string }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: ledgerSetupSchema,
     defaultValues: {
@@ -26,7 +24,6 @@ export function LedgerSetupForm({ defaultStart }: { defaultStart: string }) {
     },
     action: setupLedgerAction,
     successMessage: "Das Kassenbuch ist eingerichtet.",
-    onSuccess: () => router.refresh(),
   });
   const withCash = useWatch({ control: form.control, name: "withCash" });
   return (

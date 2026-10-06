@@ -1774,6 +1774,8 @@ model Charge {
   @@index([clubId, memberId, periodStart])
   @@index([clubId, feeRunId])
   @@index([clubId, familyId])
+  /// Liste „alle“ nach Fälligkeit.
+  @@index([clubId, dueDate])
 }
 
 /// Zeile eines Beitrags (negativ = Ermäßigung). Unveränderlich; Summe = Betrag des Beitrags (am Ende der Transaktion geprüft).
@@ -1827,4 +1829,6 @@ model ChargeCoverage {
   @@unique([clubId, id])
   @@index([clubId, memberId])
   @@index([clubId, chargeLineId])
+  /// Abdeckungen, die einen Zeitraum berühren (Beitragslauf für den ganzen Verein).
+  @@index([clubId, coversTo])
 }

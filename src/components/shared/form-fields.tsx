@@ -142,7 +142,8 @@ export function TextField<T extends FieldValues>({
         id={id}
         type={type}
         className={inputClassName}
-        autoComplete={autoComplete}
+        // Beträge: keine Liste alter Eingaben über dem Feld (am Handy verdeckt sie das nächste Feld und lädt zum Fehltippen ein).
+        autoComplete={autoComplete ?? (inputMode === "decimal" ? "off" : undefined)}
         placeholder={placeholder}
         inputMode={inputMode}
         disabled={disabled}

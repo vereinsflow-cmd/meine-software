@@ -135,8 +135,15 @@ function CashCountForm({
         counted: centsToInput(countedCents),
         denominations,
         note,
-      });
-      onBusy(false);
+      })
+        .catch(() => null)
+        .finally(() => onBusy(false));
+      if (!result) {
+        setError(
+          "Die Verbindung wurde unterbrochen. Bitte lade die Seite neu und prüfe, ob gezählt wurde.",
+        );
+        return;
+      }
       if (!result.ok) {
         const fields = result.error.fieldErrors ?? {};
         if (fields.note) setAskReason(true);
@@ -153,7 +160,6 @@ function CashCountForm({
           : `Differenz ${formatSignedEuro(result.data.differenceCents)} als Buchung ${result.data.entryLabel} festgehalten.`,
       );
       onDone();
-      router.refresh();
     });
   }
 

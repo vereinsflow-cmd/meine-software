@@ -135,7 +135,7 @@ export function MemberFeeCard({
               <dd className="text-right">
                 <Link
                   href={`/finanzen/beitraege/offen?q=${encodeURIComponent(memberName)}`}
-                  className="underline-offset-4 hover:underline"
+                  className="tabular-nums underline-offset-4 hover:underline"
                 >
                   {info.openCharges.count} · {formatEuroFromCents(info.openCharges.cents)}
                 </Link>

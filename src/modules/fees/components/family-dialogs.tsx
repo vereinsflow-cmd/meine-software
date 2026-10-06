@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useWatch } from "react-hook-form";
 import { EllipsisIcon, PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,7 +96,6 @@ function CreateFamilyForm({
   firstOfMonth: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: familyCreateSchema,
     defaultValues: {
@@ -111,7 +109,6 @@ function CreateFamilyForm({
     successMessage: "Familie angelegt.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   const memberIds = useWatch({ control: form.control, name: "memberIds" }) ?? [];
@@ -161,11 +158,12 @@ function CreateFamilyForm({
                 key={id}
                 className="flex items-center justify-between gap-2 rounded-md bg-muted/60 py-0.5 pr-0.5 pl-3 text-sm"
               >
-                {labelOf.get(id) ?? id}
+                <span className="min-w-0 break-words">{labelOf.get(id) ?? id}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
+                  className="shrink-0"
                   aria-label={`${labelOf.get(id) ?? "Mitglied"} entfernen`}
                   onClick={() => removeMember(id)}
                 >
@@ -366,7 +364,6 @@ function EditFamilyForm({
   options: FamilyFormOptions;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: familyUpdateSchema,
     defaultValues: {
@@ -379,7 +376,6 @@ function EditFamilyForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   // Der bisherige Familienbeitrag bleibt wählbar, auch wenn er archiviert ist.
@@ -426,7 +422,6 @@ function AddMemberForm({
   today: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: familyMemberAddSchema,
     defaultValues: { familyId, memberId: "", validFrom: today },
@@ -434,7 +429,6 @@ function AddMemberForm({
     successMessage: "Hinzugefügt.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -481,7 +475,6 @@ function DateForm({
   successMessage: string;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema,
     defaultValues: { id, validTo: today },
@@ -489,7 +482,6 @@ function DateForm({
     successMessage,
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -526,7 +518,7 @@ export function EndFamilyMemberDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 px-2" aria-label={`${name} austragen`}>
+        <Button variant="ghost" size="sm" className="px-2" aria-label={`${name} austragen`}>
           Austragen
         </Button>
       </DialogTrigger>
@@ -554,11 +546,10 @@ export function EndFamilyMemberDialog({
 
 /** Versehentlich hinzugefügt: ganz entfernen (nur heute bzw. solange es noch nicht gilt). */
 export function RemoveFamilyMemberButton({ id, name }: { id: string; name: string }) {
-  const router = useRouter();
   return (
     <ConfirmAction
       trigger={
-        <Button variant="ghost" size="sm" className="h-7 px-2" aria-label={`${name} entfernen`}>
+        <Button variant="ghost" size="sm" className="px-2" aria-label={`${name} entfernen`}>
           Entfernen
         </Button>
       }
@@ -568,7 +559,6 @@ export function RemoveFamilyMemberButton({ id, name }: { id: string; name: strin
       destructive
       action={() => deleteFamilyMemberAction({ id })}
       successMessage="Entfernt."
-      onSuccess={() => router.refresh()}
     />
   );
 }

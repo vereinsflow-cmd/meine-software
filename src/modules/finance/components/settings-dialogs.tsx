@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,7 +65,6 @@ function AddAccountForm({
   openingAllowed: boolean;
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: accountCreateSchema,
     defaultValues: { name: "", kind: "BANK", bankName: "", opening: "" },
@@ -74,7 +72,6 @@ function AddAccountForm({
     successMessage: "Konto angelegt.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -149,7 +146,6 @@ function EditAccountForm({
   account: { id: string; name: string; bankName: string | null };
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: accountUpdateSchema,
     defaultValues: { id: account.id, name: account.name, bankName: account.bankName ?? "" },
@@ -157,7 +153,6 @@ function EditAccountForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -184,7 +179,6 @@ export function ArchiveButton({
   name: string;
   archived: boolean;
 }) {
-  const router = useRouter();
   const action = kind === "account" ? archiveAccountAction : archiveCategoryAction;
   if (archived)
     return (
@@ -199,7 +193,6 @@ export function ArchiveButton({
         confirmLabel="Aktivieren"
         action={() => action({ id, archived: false })}
         successMessage="Wieder aktiv."
-        onSuccess={() => router.refresh()}
       />
     );
   return (
@@ -218,7 +211,6 @@ export function ArchiveButton({
       confirmLabel="Archivieren"
       action={() => action({ id, archived: true })}
       successMessage="Archiviert."
-      onSuccess={() => router.refresh()}
     />
   );
 }
@@ -247,7 +239,6 @@ export function AddCategoryDialog() {
 }
 
 function AddCategoryForm({ onDone }: { onDone: () => void }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: categoryCreateSchema,
     defaultValues: { name: "", direction: "EXPENSE", sphere: "NON_PROFIT", hint: "" },
@@ -255,7 +246,6 @@ function AddCategoryForm({ onDone }: { onDone: () => void }) {
     successMessage: "Kategorie angelegt.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (
@@ -336,7 +326,6 @@ function EditCategoryForm({
   };
   onDone: () => void;
 }) {
-  const router = useRouter();
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: categoryUpdateSchema,
     defaultValues: {
@@ -349,7 +338,6 @@ function EditCategoryForm({
     successMessage: "Gespeichert.",
     onSuccess: () => {
       onDone();
-      router.refresh();
     },
   });
   return (

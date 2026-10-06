@@ -235,6 +235,7 @@ export async function accountBalances(
   ctx: TenantContext,
   asOf?: Date,
 ): Promise<Map<string, number>> {
+  assertFinance(ctx, "finance:read");
   const groups = await ctx.db.ledgerEntry.groupBy({
     by: ["accountId"],
     where: asOf ? { bookingDate: { lte: asOf } } : {},
@@ -1063,7 +1064,7 @@ export async function balanceHistory(
   months = 12,
 ): Promise<{ month: string; balanceCents: number }[]> {
   assertFinance(ctx, "finance:read");
-  const settings = await ctx.db.financeSettings.findUnique({ where: { clubId: ctx.clubId } });
+  const settings = await getLedgerSetup(ctx);
   if (!settings) return [];
   const today = todayCalendarDate();
   const groups = await ctx.db.ledgerEntry.groupBy({
