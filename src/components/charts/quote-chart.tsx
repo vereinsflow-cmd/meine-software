@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type PointerEvent } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { linePath, sparklinePoints } from "@/lib/charts/geometry";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,9 @@ const LINE_BAND = HEIGHT * 0.6;
 
 /** Abstand des ersten und letzten Punkts vom Rand (in % der Breite) – die Beschriftungen darunter nutzen ihn auch. */
 const QUOTE_INSET = 6;
+/** Infofeld: Abstand zum gezeigten Punkt und Mindestabstand zum Kartenrand (in px; die Karte schneidet ab, was übersteht). */
+const TIP_GAP = 8;
+const TIP_EDGE = 10;
 
 /** Waagerechte Lage des Punkts `index` von `count` in % der Breite. */
 function quoteX(index: number, count: number): number {
@@ -64,7 +67,10 @@ export function QuoteChart({
   syntheticStart?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
+  const tip = useRef<HTMLDivElement>(null);
   const [hovered, setActive] = useState<number | null>(null);
+  /** Linke Kante des Infofelds in px – gemessen, damit es nie über den Kartenrand hinausragt (dort würde es abgeschnitten). */
+  const [tipLeft, setTipLeft] = useState<number | null>(null);
   // Infofeld mit Escape schließen (WCAG 1.4.13)
   useEffect(() => {
     if (hovered === null) return;
@@ -74,6 +80,19 @@ export function QuoteChart({
     document.addEventListener("keydown", close);
     return () => document.removeEventListener("keydown", close);
   }, [hovered]);
+  // Infofeld neben den Punkt legen (links von der Mitte rechts daneben, sonst links daneben) und in die Karte schieben, wo
+  // es dort keinen Platz hat. Vor dem Zeichnen gemessen – es springt nicht sichtbar.
+  useLayoutEffect(() => {
+    const boxElement = box.current;
+    const tipElement = tip.current;
+    if (hovered === null || hovered >= points.length || !boxElement || !tipElement) return;
+    const width = boxElement.clientWidth;
+    const tipWidth = tipElement.offsetWidth;
+    const percent = quoteX(hovered, points.length);
+    const x = (percent / 100) * width;
+    const preferred = percent > 50 ? x - tipWidth - TIP_GAP : x + TIP_GAP;
+    setTipLeft(Math.max(TIP_EDGE, Math.min(preferred, width - tipWidth - TIP_EDGE)));
+  }, [hovered, points]);
   if (points.length < 2) return null;
   const active = hovered !== null && hovered < points.length ? hovered : null;
 
@@ -225,16 +244,15 @@ export function QuoteChart({
             ))}
         </div>
 
-        {/* Infofeld am gezeigten Punkt – links von der Mitte nach rechts aufklappend, rechts davon nach links */}
+        {/* Infofeld am gezeigten Punkt – links von der Mitte rechts daneben, sonst links daneben, immer ganz in der Karte */}
         {point && (
           <div
-            className={cn(
-              "pointer-events-none absolute z-10 rounded-xl bg-white px-2.5 py-1.5 text-xs whitespace-nowrap text-slate-900 shadow-lg",
-              xy[active!]![0] > 50 ? "-translate-x-[calc(100%+0.5rem)]" : "translate-x-2",
-            )}
+            ref={tip}
+            // Breite nach Inhalt, höchstens die Karte (dann bricht der Text um); waagerecht gemessen, siehe oben.
+            className="pointer-events-none absolute z-10 w-max max-w-[calc(100%-1.25rem)] rounded-xl bg-white px-2.5 py-1.5 text-xs text-slate-900 shadow-lg"
             // Nahe am gezeigten Punkt (darüber), aber nie über den oberen Rand hinaus
             style={{
-              left: `${xy[active!]![0]}%`,
+              left: tipLeft ?? TIP_EDGE,
               top: `max(0px, calc(${(xy[active!]![1] / HEIGHT) * 100}% - 4.5rem))`,
             }}
           >
