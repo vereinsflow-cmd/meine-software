@@ -5,6 +5,7 @@ import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { DepartmentDialog } from "@/modules/departments/components/department-dialog";
 import { listDepartments } from "@/modules/departments/service";
@@ -21,7 +22,7 @@ export default async function DepartmentsPage() {
   const departments = await listDepartments(ctx, { includeInactive: clubWide });
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Abteilungen"
         description="Abteilungen und Gruppen des Vereins."
@@ -35,7 +36,7 @@ export default async function DepartmentsPage() {
           action={clubWide ? <DepartmentDialog /> : undefined}
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {departments.map((department) => (
             <li key={department.id}>
               <Card className="h-full">
@@ -78,6 +79,6 @@ export default async function DepartmentsPage() {
           ))}
         </ul>
       )}
-    </>
+    </PageStack>
   );
 }

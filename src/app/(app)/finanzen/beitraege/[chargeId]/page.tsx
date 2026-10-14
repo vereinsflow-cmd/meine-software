@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { BackLink } from "@/components/shared/back-link";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { formatCalendarDate, formatEuroFromCents } from "@/lib/dates";
 import { canFinance } from "@/modules/finance/access";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
@@ -74,10 +75,10 @@ export default async function ChargePage({ params }: { params: Promise<{ chargeI
   ];
 
   return (
-    <>
-      <FinanceHeader description={`Beitrag ${charge.number}`} counts={counts} />
+    <PageStack>
       <BackLink href="/finanzen/beitraege/offen">Offene Beiträge</BackLink>
-      <div className="mt-4 grid max-w-4xl gap-6">
+      <FinanceHeader description={`Beitrag ${charge.number}`} counts={counts} />
+      <div className="grid max-w-4xl gap-6">
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
             <div className="grid min-w-0 gap-1 break-words">
@@ -161,6 +162,6 @@ export default async function ChargePage({ params }: { params: Promise<{ chargeI
           </CardContent>
         </Card>
       </div>
-    </>
+    </PageStack>
   );
 }

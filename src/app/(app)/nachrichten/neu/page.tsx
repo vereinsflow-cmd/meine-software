@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { BackLink } from "@/components/shared/back-link";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { parseChatKey, type ChatTarget } from "@/modules/messages/chat-format";
@@ -62,7 +63,7 @@ export default async function ComposePage({
       : emptyMessage(defaultTarget(options));
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/nachrichten">Nachrichten</BackLink>
       <PageHeader
         title={draft ? "Entwurf bearbeiten" : "Neue Nachricht"}
@@ -73,7 +74,7 @@ export default async function ComposePage({
         }
       />
       <ComposeForm draftId={draft ? draftId : null} defaults={defaults} options={options} />
-    </>
+    </PageStack>
   );
 }
 

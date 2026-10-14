@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -15,9 +15,12 @@ import {
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatEuroFromCents, parseCalendarDate, toDateInputValue } from "@/lib/dates";
 import { param, type RawSearchParams } from "@/lib/search-params";
+import { cn } from "@/lib/utils";
 import { canFinance } from "@/modules/finance/access";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
 import { financeTabCounts } from "@/modules/finance/overview";
@@ -98,7 +101,7 @@ export default async function FeesPage({
   const familyHref = (id: string) => `/finanzen/beitraege/familien#familie-${id}`;
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader description={`Wer zahlt was ${phrase}`} counts={counts} />
       <FeesNav />
 
@@ -117,7 +120,7 @@ export default async function FeesPage({
         />
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <nav aria-label="Zeitraum" className="flex items-center gap-2">
               <Button asChild variant="outline" size="icon-sm">
                 <Link
@@ -157,7 +160,7 @@ export default async function FeesPage({
 
           <section
             aria-label="Zusammenfassung"
-            className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
           >
             <Tile
               label="Beiträge zusammen"
@@ -186,9 +189,9 @@ export default async function FeesPage({
           </section>
 
           {result.warnings.length > 0 && (
-            <Card className="mb-6">
+            <Card>
               <CardContent className="grid gap-2">
-                <h2 className="text-lg font-semibold">Bitte prüfen</h2>
+                <h2 className={CARD_TITLE}>Bitte prüfen</h2>
                 <ul className="grid gap-1.5 text-sm">
                   {result.warnings.map((warning, index) => (
                     <li key={`${warning.familyId ?? warning.memberId}-${warning.code}-${index}`}>
@@ -211,9 +214,11 @@ export default async function FeesPage({
           )}
 
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {q ? "Keine passenden Mitglieder." : "Im Zeitraum zahlt niemand einen Beitrag."}
-            </p>
+            <EmptyState
+              icon={<AREA_ICON.finanzen />}
+              title={q ? "Keine passenden Mitglieder" : "Im Zeitraum zahlt niemand einen Beitrag"}
+              description={q ? "Passe die Suche an oder wähle einen anderen Zeitraum." : undefined}
+            />
           ) : (
             <TableCard>
               <Table>
@@ -269,10 +274,7 @@ export default async function FeesPage({
           )}
 
           {result.exempt.length > 0 && !q && (
-            <section aria-labelledby="beitragsfrei-titel" className="mt-6 max-w-3xl">
-              <h2 id="beitragsfrei-titel" className="mb-2 text-lg font-semibold">
-                Beitragsfrei
-              </h2>
+            <PageSection id="beitragsfrei-titel" title="Beitragsfrei" className="max-w-3xl">
               <ul className="grid gap-1 text-sm">
                 {result.exempt.map((item) => (
                   <li key={`${item.familyId ?? ""}${item.memberId}`}>
@@ -288,9 +290,9 @@ export default async function FeesPage({
                   </li>
                 ))}
               </ul>
-            </section>
+            </PageSection>
           )}
-          <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+          <p className="max-w-3xl text-sm text-muted-foreground">
             Das ist eine Vorschau: Erst der Beitragslauf erstellt die Beiträge. Gerechnet wird beim
             Eintritt {PRO_RATA_ENTRY_LABEL[settings.proRataEntry]}, beim Austritt{" "}
             {PRO_RATA_EXIT_LABEL[settings.proRataExit]}, Altersgrenzen{" "}
@@ -298,13 +300,13 @@ export default async function FeesPage({
           </p>
         </>
       )}
-    </>
+    </PageStack>
   );
 }
 
 function Tile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-xs">
+    <div className={cn(CARD_SURFACE, "p-4")}>
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
       {detail && <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>}

@@ -3,12 +3,14 @@ import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventType } from "@/generated/prisma/enums";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack, SECTION_TITLE } from "@/components/shared/page-section";
 import {
   CALENDAR_VIEWS,
   VIEW_LABEL,
@@ -23,6 +25,7 @@ import {
 import { berlinParts, formatDateTime, startOfBerlinDay, toDateInputValue } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { buildQuery, enumParam, param, type RawSearchParams } from "@/lib/search-params";
+import { cn } from "@/lib/utils";
 import { Agenda, MonthGrid, WeekColumns } from "@/modules/calendar/components/calendar-views";
 import { FeedDialog } from "@/modules/calendar/components/feed-dialog";
 import { DayDoubleClick, NewEventButton } from "@/modules/calendar/components/quick-event";
@@ -121,7 +124,7 @@ export default async function CalendarPage({
   );
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Kalender"
         description="Alle Termine des Vereins und deine Helferschichten."
@@ -142,7 +145,7 @@ export default async function CalendarPage({
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="icon" aria-label={`Vorheriger ${noun}`}>
             <Link href={dateHref(view, prev)} scroll={false}>
@@ -159,7 +162,7 @@ export default async function CalendarPage({
               Heute
             </Link>
           </Button>
-          <h2 className="ml-1 text-lg font-semibold" aria-live="polite">
+          <h2 className={cn(SECTION_TITLE, "ml-1")} aria-live="polite">
             {title}
           </h2>
         </div>
@@ -184,7 +187,7 @@ export default async function CalendarPage({
         action="/kalender"
         role="search"
         aria-label="Kalender filtern"
-        className="mb-5 flex flex-wrap items-center gap-2 sm:gap-3"
+        className="flex flex-wrap items-center gap-2 sm:gap-3"
       >
         <input type="hidden" name="ansicht" value={view} />
         <input type="hidden" name="datum" value={toDateInputValue(anchor)} />
@@ -246,32 +249,35 @@ export default async function CalendarPage({
       </form>
 
       {truncated && (
-        <p
-          role="status"
-          className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm dark:border-amber-800 dark:bg-amber-950/40"
-        >
-          Es gibt sehr viele Termine in diesem Zeitraum – angezeigt werden die ersten 500. Wähle
-          eine kürzere Ansicht oder filtere nach Art oder Abteilung.
-        </p>
+        // Ein Hinweis, kein Alarm: `status` statt der `alert`-Rolle der Hinweisbox.
+        <Alert variant="warning" role="status">
+          <AlertDescription>
+            Es gibt sehr viele Termine in diesem Zeitraum – angezeigt werden die ersten 500. Wähle
+            eine kürzere Ansicht oder filtere nach Art oder Abteilung.
+          </AlertDescription>
+        </Alert>
       )}
 
-      {quick ? <DayDoubleClick options={quick}>{calendar}</DayDoubleClick> : calendar}
+      {/* Kalender und die Zeile darunter gehören zusammen: kleinerer Abstand als zwischen den Blöcken der Seite. */}
+      <div className="flex flex-col gap-4">
+        {quick ? <DayDoubleClick options={quick}>{calendar}</DayDoubleClick> : calendar}
 
-      <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <AREA_ICON.veranstaltungen className="size-3.5" aria-hidden="true" />
-        {/* Ein Textblock: Der Hinweis läuft im selben Satz weiter, statt als zweite Spalte daneben zu stehen. */}
-        <span>
-          {entries.length} {entries.length === 1 ? "Eintrag" : "Einträge"} im sichtbaren Zeitraum.
-          Zeiten in Ortszeit (Europe/Berlin).
-          {/* Auf dem Smartphone tippt man nicht doppelt – dort führt der Knopf „Neuer Termin“ zum Fenster. */}
-          {quick && (
-            <span className="hidden md:inline">
-              {" "}
-              Doppelklick auf einen Tag legt dort einen neuen Termin an.
-            </span>
-          )}
-        </span>
-      </p>
-    </>
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <AREA_ICON.veranstaltungen className="size-3.5" aria-hidden="true" />
+          {/* Ein Textblock: Der Hinweis läuft im selben Satz weiter, statt als zweite Spalte daneben zu stehen. */}
+          <span>
+            {entries.length} {entries.length === 1 ? "Eintrag" : "Einträge"} im sichtbaren Zeitraum.
+            Zeiten in Ortszeit (Europe/Berlin).
+            {/* Auf dem Smartphone tippt man nicht doppelt – dort führt der Knopf „Neuer Termin“ zum Fenster. */}
+            {quick && (
+              <span className="hidden md:inline">
+                {" "}
+                Doppelklick auf einen Tag legt dort einen neuen Termin an.
+              </span>
+            )}
+          </span>
+        </p>
+      </div>
+    </PageStack>
   );
 }

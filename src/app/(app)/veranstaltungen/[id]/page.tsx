@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DescriptionList } from "@/components/shared/description-list";
 import { EventStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { BackLink } from "@/components/shared/back-link";
 import { formatDateLong, formatDateTime, formatTimeRange } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
@@ -141,7 +142,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       : 0;
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/veranstaltungen">Alle Veranstaltungen</BackLink>
       <PageHeader
         title={event.title}
@@ -165,7 +166,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       />
 
       {event.status === "CANCELLED" && (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertTitle>Diese Veranstaltung wurde abgesagt</AlertTitle>
           <AlertDescription>{event.cancelReason}</AlertDescription>
         </Alert>
@@ -311,6 +312,6 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {helpers}
         </div>
       </div>
-    </>
+    </PageStack>
   );
 }

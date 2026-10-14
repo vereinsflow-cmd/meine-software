@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFieldArray } from "react-hook-form";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import type { SupportContact } from "@/lib/club-settings";
@@ -61,10 +62,9 @@ export function ContactsDialog({ contacts }: { contacts: SupportContact[] }) {
         <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
           <FormError message={formError} />
           {fields.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Noch keine Ansprechpartner. Ohne Einträge zeigt die Hilfeseite die allgemeinen
-              Kontaktdaten des Vereins.
-            </p>
+            <CompactEmpty icon={<UsersIcon />} accent="blue" title="Noch keine Ansprechpartner">
+              Ohne Einträge zeigt die Hilfeseite die allgemeinen Kontaktdaten des Vereins.
+            </CompactEmpty>
           )}
           {fields.map((field, index) => (
             <fieldset key={field.id} className="grid gap-3 rounded-lg border p-3">

@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
 import { formatDate } from "@/lib/dates";
@@ -35,7 +36,7 @@ export default async function SystemPage() {
   ];
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Systemadministration"
         description="Vereine der Plattform. Aus Datenschutzgründen siehst du hier nur Kennzahlen – keine Mitgliederdaten."
@@ -44,7 +45,7 @@ export default async function SystemPage() {
 
       <section
         aria-label="Globale Statistiken"
-        className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6"
+        className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6"
       >
         {tiles.map((tile) => (
           <Card key={tile.label} size="sm">
@@ -65,16 +66,17 @@ export default async function SystemPage() {
       </section>
 
       <TableCard>
-        <Table>
+        {/* Am Handy eine kleine Karte je Verein mit allen Kennzahlen; ab `md` die Tabelle („Angelegt“ erst ab `lg`). */}
+        <Table stack className="[--table-stack-label:10rem]">
           <caption className="sr-only">Vereine der Plattform</caption>
           <TableHeader>
             <TableRow>
               <TableHead>Verein</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden sm:table-cell">Mitglieder</TableHead>
-              <TableHead className="hidden md:table-cell">Benutzer</TableHead>
-              <TableHead className="hidden md:table-cell">Veranstaltungen</TableHead>
-              <TableHead className="hidden lg:table-cell">Angelegt</TableHead>
+              <TableHead>Mitglieder</TableHead>
+              <TableHead>Benutzer</TableHead>
+              <TableHead>Veranstaltungen</TableHead>
+              <TableHead className="md:max-lg:hidden">Angelegt</TableHead>
               <TableHead className="w-40">
                 <span className="sr-only">Aktionen</span>
               </TableHead>
@@ -87,31 +89,31 @@ export default async function SystemPage() {
                   <span className="font-medium">{club.name}</span>
                   <p className="text-xs text-muted-foreground">{club.slug}</p>
                 </TableCell>
-                <TableCell>
-                  {club.active ? (
-                    <ToneBadge tone="success">Aktiv</ToneBadge>
-                  ) : (
-                    <ToneBadge tone="danger">Deaktiviert</ToneBadge>
-                  )}
-                  {club.pendingAdminInvitation && (
-                    <ToneBadge tone="warning" className="ml-1">
-                      Admin-Einladung offen
-                    </ToneBadge>
-                  )}
+                <TableCell label="Status">
+                  <div className="flex flex-wrap gap-1">
+                    {club.active ? (
+                      <ToneBadge tone="success">Aktiv</ToneBadge>
+                    ) : (
+                      <ToneBadge tone="danger">Deaktiviert</ToneBadge>
+                    )}
+                    {club.pendingAdminInvitation && (
+                      <ToneBadge tone="warning">Admin-Einladung offen</ToneBadge>
+                    )}
+                  </div>
                 </TableCell>
-                <TableCell className="hidden tabular-nums sm:table-cell">
+                <TableCell label="Mitglieder" className="tabular-nums">
                   {club.memberCount}
                 </TableCell>
-                <TableCell className="hidden tabular-nums md:table-cell">
+                <TableCell label="Benutzer" className="tabular-nums">
                   {club.userCount}
                 </TableCell>
-                <TableCell className="hidden tabular-nums md:table-cell">
+                <TableCell label="Veranstaltungen" className="tabular-nums">
                   {club.eventCount}
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground lg:table-cell">
+                <TableCell label="Angelegt" className="text-muted-foreground md:max-lg:hidden">
                   {formatDate(club.createdAt)}
                 </TableCell>
-                <TableCell>
+                <TableCell className="max-md:mt-2">
                   <ClubStatusButton clubId={club.id} name={club.name} active={club.active} />
                 </TableCell>
               </TableRow>
@@ -119,6 +121,6 @@ export default async function SystemPage() {
           </TableBody>
         </Table>
       </TableCard>
-    </>
+    </PageStack>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DownloadIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBytes } from "@/lib/uploads";
@@ -46,7 +47,14 @@ export async function EventDocumentsCard({
         </CardHeader>
         <CardContent className="grid gap-3">
           {result.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Noch keine Dokumente hochgeladen.</p>
+            <CompactEmpty
+              icon={<AREA_ICON.dokumente />}
+              accent="slate"
+              title="Noch keine Dokumente hochgeladen"
+            >
+              Hochgeladene Genehmigungen, Ablaufpläne und Formulare zu dieser Veranstaltung stehen
+              hier.
+            </CompactEmpty>
           ) : (
             <ul className="divide-y rounded-lg border">
               {result.items.map((document) => (

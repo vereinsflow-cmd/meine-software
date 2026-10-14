@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { TASK_PRIORITY_LABEL } from "@/lib/labels";
 import {
@@ -134,7 +136,7 @@ export default async function TasksPage({
       : EMPTY_TEXT[tab];
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Aufgaben"
         description="Was im Verein zu erledigen ist – wer sich kümmert und bis wann."
@@ -143,7 +145,7 @@ export default async function TasksPage({
         }
       />
 
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Aufgaben anzeigen" className={SEGMENT_BAR}>
           {tabs.map((entry) => {
             const count = counts[entry];
@@ -223,7 +225,7 @@ export default async function TasksPage({
       </div>
 
       {eventId && (
-        <p className="mb-4 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Es werden nur Aufgaben {eventTitle ? `zu „${eventTitle}“` : "zu einer Veranstaltung"}{" "}
           angezeigt.{" "}
           <Link
@@ -247,7 +249,7 @@ export default async function TasksPage({
           }
         />
       ) : (
-        <>
+        <div>
           {groups ? (
             <div className="grid gap-6">
               {groups.map((group) => (
@@ -278,24 +280,29 @@ export default async function TasksPage({
             </ul>
           )}
           <Pagination basePath="/aufgaben" searchParams={params} {...result} />
-        </>
+        </div>
       )}
 
       {showChecklists && (
-        <section aria-labelledby="checklisten" className="mt-12 border-t pt-8">
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 id="checklisten" className="text-lg font-semibold">
-                Checklisten
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Abhaklisten, z. B. zur Vorbereitung einer Veranstaltung.
-              </p>
-            </div>
-            {canManage && <NewChecklistDialog events={options.events} />}
-          </div>
+        // Eigener Teil der Seite: eine Linie trennt ihn von den Aufgaben darüber.
+        <PageSection
+          id="checklisten"
+          title="Checklisten"
+          description="Abhaklisten, z. B. zur Vorbereitung einer Veranstaltung."
+          actions={canManage ? <NewChecklistDialog events={options.events} /> : undefined}
+          className="border-t pt-6"
+        >
           {checklists.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Noch keine Checklisten.</p>
+            <CompactEmpty
+              card
+              icon={<AREA_ICON.aufgaben />}
+              accent="blue"
+              title="Noch keine Checklisten"
+            >
+              {canManage
+                ? "Mit „Neue Checkliste“ legst du die erste an."
+                : "Sobald jemand eine Checkliste anlegt, steht sie hier."}
+            </CompactEmpty>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {checklists.map((list) => (
@@ -311,13 +318,13 @@ export default async function TasksPage({
                       </Link>
                     </p>
                   )}
-                  <ChecklistCard list={list} />
+                  <ChecklistCard list={list} surface="card" />
                 </div>
               ))}
             </div>
           )}
-        </section>
+        </PageSection>
       )}
-    </>
+    </PageStack>
   );
 }

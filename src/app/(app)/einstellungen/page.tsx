@@ -4,6 +4,7 @@ import { RocketIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ClubLogoCard } from "@/modules/clubs/components/logo-card";
 import { ClubSettingsForm } from "@/modules/clubs/components/settings-form";
 import { getClubSettings } from "@/modules/clubs/service";
@@ -18,7 +19,7 @@ export default async function SettingsPage() {
   const settings = await getClubSettings(ctx);
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Vereinseinstellungen"
         description={`Kürzel: ${settings.slug}`}
@@ -50,6 +51,6 @@ export default async function SettingsPage() {
           }}
         />
       </div>
-    </>
+    </PageStack>
   );
 }

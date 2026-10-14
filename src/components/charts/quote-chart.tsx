@@ -223,7 +223,7 @@ export function QuoteChart({
         <div className={cn("pointer-events-none absolute inset-0 hidden", detailClassName)}>
           <span
             className={cn(
-              "absolute left-5 rounded-full bg-black/25 px-2 py-0.5 text-[0.6875rem] font-semibold whitespace-nowrap tabular-nums ring-1 ring-white/25",
+              "absolute left-5 rounded-full bg-black/25 px-2 py-0.5 text-2xs font-semibold whitespace-nowrap tabular-nums ring-1 ring-white/25",
               risesEarly ? "translate-y-1" : "-translate-y-[calc(100%+0.25rem)]",
             )}
             style={{ top: `${(startY / HEIGHT) * 100}%` }}
@@ -236,7 +236,7 @@ export function QuoteChart({
             .map((value) => (
               <span
                 key={value}
-                className="absolute right-[1.5%] -translate-y-1/2 text-[0.6875rem] font-semibold tabular-nums"
+                className="absolute right-[1.5%] -translate-y-1/2 text-2xs font-semibold tabular-nums"
                 style={{ top: `${(yOf(value) / HEIGHT) * 100}%` }}
               >
                 {format(value)}
@@ -298,7 +298,7 @@ export function QuoteChart({
         {/* Ohne Zu- und Abgänge im Zeitraum gibt es keine Balken – dann entfällt die Zeile ganz */}
         {volume && [...volume.up, ...volume.down].some((count) => count > 0) && (
           <div className="mt-2">
-            <p className="px-5 text-[0.6875rem] font-semibold tracking-wide text-white uppercase">
+            <p className="px-5 text-2xs font-semibold tracking-wide text-white uppercase">
               {volume.label}
             </p>
             <div className="relative mt-1 h-7">
@@ -311,7 +311,7 @@ export function QuoteChart({
                   <Fragment key={index}>
                     {up > 0 && (
                       <span
-                        className="absolute bottom-1/2 w-2 -translate-x-1/2 rounded-t-[2px] bg-white"
+                        className="absolute bottom-1/2 w-2 -translate-x-1/2 rounded-t-xs bg-white"
                         style={{
                           left: `${quoteX(index, points.length)}%`,
                           height: `${(up / peak) * 50}%`,
@@ -320,7 +320,7 @@ export function QuoteChart({
                     )}
                     {down > 0 && (
                       <span
-                        className="absolute top-1/2 w-2 -translate-x-1/2 rounded-b-[2px] bg-white/45"
+                        className="absolute top-1/2 w-2 -translate-x-1/2 rounded-b-xs bg-white/45"
                         style={{
                           left: `${quoteX(index, points.length)}%`,
                           height: `${(down / peak) * 50}%`,

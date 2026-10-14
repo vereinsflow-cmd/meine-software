@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckIcon, LockIcon } from "lucide-react";
+import { ACCENT } from "@/components/shared/accent";
 import { cn } from "@/lib/utils";
 import { SETUP_STEPS, type SetupStepId, type SetupTaskId } from "../steps";
 
@@ -30,9 +31,8 @@ export function SetupStepper({
                 className={cn(
                   "flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold",
                   isCurrent && "border-primary bg-primary text-primary-foreground",
-                  !isCurrent &&
-                    isDone &&
-                    "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-emerald-950",
+                  // Erledigt: grün getönt statt vollflächig – so bleibt der aktuelle Schritt (Markenfarbe) der kräftigste.
+                  !isCurrent && isDone && cn("border-transparent", ACCENT.emerald.tile),
                   !isCurrent && !isDone && "bg-card text-muted-foreground",
                 )}
               >

@@ -57,19 +57,19 @@ const WIDGET_SIZE: Record<
 > = {
   s: {
     card: "[--card-spacing:--spacing(4)]",
-    chip: "size-8 rounded-[0.7rem] [&_svg]:size-4",
+    chip: "size-8 rounded-lg [&_svg]:size-4",
     title: "text-base",
     content: "gap-3",
   },
   m: {
     card: "[--card-spacing:--spacing(5)]",
-    chip: "size-10 rounded-[0.85rem] [&_svg]:size-5",
+    chip: "size-10 rounded-xl [&_svg]:size-5",
     title: "",
     content: "gap-4",
   },
   l: {
     card: "[--card-spacing:--spacing(6)]",
-    chip: "size-10 rounded-[0.85rem] [&_svg]:size-5",
+    chip: "size-10 rounded-xl [&_svg]:size-5",
     title: "",
     content: "gap-4",
   },
@@ -107,7 +107,7 @@ export function Widget({
       {/* Kachel wie im Entwurf 2: große Rundung, weicher Schein in der Farbe des Bereichs, etwas mehr Innenabstand. */}
       <Card
         className={cn(
-          "h-full rounded-[1.75rem] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          "h-full rounded-4xl dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
           dims.card,
           TILE_ACCENT[accent].surface,
           emphasis && "ring-2 ring-primary/50 dark:ring-primary/60",
@@ -185,7 +185,7 @@ export function StaffingWarnings({
     // Pfeil zur Helferplanung. Die Rolle `alert` (Screenreader) und der Text bleiben wie bisher.
     <Alert
       variant="warning"
-      className="relative mb-6 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 overflow-hidden rounded-[1.75rem] border border-amber-300/70 bg-linear-to-r from-amber-100 via-amber-50 to-amber-100/70 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] dark:border-amber-400/25 dark:from-amber-500/20 dark:via-amber-500/[0.06] dark:to-amber-500/10"
+      className="relative grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 overflow-hidden rounded-4xl border border-amber-300/70 bg-linear-to-r from-amber-100 via-amber-50 to-amber-100/70 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] dark:border-amber-400/25 dark:from-amber-500/20 dark:via-amber-500/[0.06] dark:to-amber-500/10"
     >
       <span
         aria-hidden="true"

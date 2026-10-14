@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { BackLink } from "@/components/shared/back-link";
 import { formatDateTime } from "@/lib/dates";
@@ -45,7 +46,7 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
         : AUDIENCE_LABEL[message.audience];
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/nachrichten">Nachrichten</BackLink>
       <PageHeader
         title={message.subject}
@@ -81,6 +82,6 @@ export default async function MessagePage({ params }: { params: Promise<{ id: st
           {message.sendEmail && " · zusätzlich per E-Mail"}
         </p>
       </div>
-    </>
+    </PageStack>
   );
 }

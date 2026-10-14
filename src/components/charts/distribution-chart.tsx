@@ -60,7 +60,7 @@ export function DistributionChart({
               {/* Die Länge zeigt die Größe, die Farbe die Kategorie (wie im Ring). Der Wert steht am Balkenende. */}
               <div className="relative h-8">
                 <div
-                  className="absolute inset-y-1.5 left-0 rounded-r-[5px]"
+                  className="absolute inset-y-1.5 left-0 rounded-r-sm"
                   style={{
                     width: `calc((100% - 6.5rem) * ${ratio})`,
                     minWidth: 3,
@@ -148,7 +148,7 @@ export function DistributionChart({
             )}
           >
             <span
-              className="size-3 shrink-0 rounded-[3px]"
+              className="size-3 shrink-0 rounded-xs"
               style={{ backgroundColor: colorOfSlot(slice.slot) }}
               aria-hidden="true"
             />

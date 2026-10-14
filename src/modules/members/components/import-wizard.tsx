@@ -6,6 +6,7 @@ import { CircleCheckIcon, DownloadIcon, UploadIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CARD_TITLE } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -17,6 +18,8 @@ import {
 import { ToneBadge, type Tone } from "@/components/shared/status-badge";
 import { FormError } from "@/components/shared/form-fields";
 import { TableCard } from "@/components/shared/table-card";
+import { CARD_SURFACE } from "@/components/ui/surface";
+import { cn } from "@/lib/utils";
 import { executeImportAction, previewImportAction } from "../actions";
 import type { ImportPreview } from "../import";
 
@@ -100,8 +103,8 @@ export function ImportWizard() {
 
   return (
     <div className="grid gap-6">
-      <div className="rounded-xl border p-4">
-        <h2 className="mb-1 text-base font-medium">1. Datei auswählen</h2>
+      <div className={cn(CARD_SURFACE, "p-4")}>
+        <h2 className={cn(CARD_TITLE, "mb-1")}>1. Datei auswählen</h2>
         <p className="mb-3 text-sm text-muted-foreground">
           CSV-Datei (Semikolon oder Komma getrennt) mit mindestens den Spalten{" "}
           <strong>Vorname</strong> und <strong>Nachname</strong>. Weitere Spalten: Mitgliedsnummer,
@@ -135,8 +138,8 @@ export function ImportWizard() {
 
       {preview && (
         <div className="grid gap-4">
-          <div className="rounded-xl border p-4">
-            <h2 className="mb-2 text-base font-medium">2. Vorschau prüfen</h2>
+          <div className={cn(CARD_SURFACE, "p-4")}>
+            <h2 className={cn(CARD_TITLE, "mb-2")}>2. Vorschau prüfen</h2>
             <div className="flex flex-wrap gap-2" role="status">
               <ToneBadge tone="success">{preview.counts.ok} gültig</ToneBadge>
               <ToneBadge tone="warning">{preview.counts.duplicate} Duplikate</ToneBadge>
@@ -150,7 +153,9 @@ export function ImportWizard() {
           </div>
 
           <TableCard>
-            <Table>
+            {/* Am Handy gestapelt: jede Zeile der Datei eine kleine Karte mit Zeile, Mitglied, Ergebnis und Hinweis. */}
+            <Table stack>
+              <caption className="sr-only">Vorschau des Imports</caption>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">Zeile</TableHead>
@@ -162,14 +167,25 @@ export function ImportWizard() {
               <TableBody>
                 {preview.rows.map((row) => (
                   <TableRow key={row.line}>
-                    <TableCell className="text-muted-foreground tabular-nums">{row.line}</TableCell>
-                    <TableCell className="font-medium">{row.label}</TableCell>
-                    <TableCell>
+                    <TableCell label="Zeile" className="text-muted-foreground tabular-nums">
+                      {row.line}
+                    </TableCell>
+                    <TableCell label="Mitglied" className="font-medium">
+                      {row.label}
+                    </TableCell>
+                    <TableCell label="Ergebnis">
                       <ToneBadge tone={STATUS[row.status].tone}>
                         {STATUS[row.status].label}
                       </ToneBadge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    {/* Ohne Hinweis fehlt die Zeile am Handy, statt leer dazustehen. */}
+                    <TableCell
+                      label="Hinweis"
+                      className={cn(
+                        "text-sm whitespace-normal text-muted-foreground",
+                        row.messages.length === 0 && "max-md:hidden",
+                      )}
+                    >
                       {row.messages.join(" ")}
                     </TableCell>
                   </TableRow>

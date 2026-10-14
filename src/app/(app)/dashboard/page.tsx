@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty } from "@/components/shared/compact-empty";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
@@ -233,7 +234,7 @@ export default async function DashboardPage({
     const { shown } = arrangeBlocks(tab, Object.keys(available), layout?.tabs[tab]);
     if (shown.length === 0) {
       return (
-        <CompactEmpty icon={<EyeOffIcon />} accent="slate" title="Alle Karten ausgeblendet">
+        <CompactEmpty card icon={<EyeOffIcon />} accent="slate" title="Alle Karten ausgeblendet">
           Über „Anpassen“ oben blendest du Karten dieses Bereichs wieder ein.
         </CompactEmpty>
       );
@@ -316,7 +317,7 @@ export default async function DashboardPage({
   });
 
   return (
-    <>
+    <PageStack>
       {/* Wer hier ankommt, ist nicht (mehr) in der Einrichtung – steht noch deren Rahmen, wird er ersetzt. */}
       <SetupFrameSync locked={false} />
       <PageHeader
@@ -370,6 +371,6 @@ export default async function DashboardPage({
       {shifts && <StaffingWarnings warnings={shifts.warnings} />}
 
       <DashboardTabs tabs={tabs} initial={resolveTab(param(params, "tab"), available)} />
-    </>
+    </PageStack>
   );
 }

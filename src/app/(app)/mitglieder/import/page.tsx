@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { BackLink } from "@/components/shared/back-link";
 import { ImportWizard } from "@/modules/members/components/import-wizard";
 import { can } from "@/server/permissions/policy";
@@ -13,13 +14,13 @@ export default async function ImportMembersPage() {
   if (!can(ctx, "members:import")) return <NoAccess what="den Mitglieder-Import" />;
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader
         title="Mitglieder importieren"
         description="Lade eine CSV-Datei hoch. Du siehst zuerst eine Vorschau – erst danach wird etwas gespeichert."
       />
       <ImportWizard />
-    </>
+    </PageStack>
   );
 }

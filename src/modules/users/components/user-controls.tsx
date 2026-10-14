@@ -149,7 +149,9 @@ export function RoleSelect({
       aria-label={`Rolle von ${name}`}
       value={roleId}
       disabled={disabled || pending}
-      className="h-8 w-auto min-w-40"
+      // Höchstens so breit wie die Zelle: Am Handy (gestapelte Tabelle) passt ein langer Rollenname sonst nicht in die Karte.
+      // Mit dem Finger 44 px hoch (grober Zeiger), sonst kompakt wie die Zeile.
+      className="h-8 w-auto max-w-full min-w-40 pointer-coarse:h-11"
       onChange={(event) =>
         startTransition(async () => {
           const result = await changeRoleAction({ membershipId, roleId: event.target.value });
@@ -241,7 +243,7 @@ export function InvitationActions({ id, email }: { id: string; email: string }) 
     });
 
   return (
-    <div className="flex gap-1">
+    <div className="flex flex-wrap gap-2">
       <Button
         size="sm"
         variant="ghost"

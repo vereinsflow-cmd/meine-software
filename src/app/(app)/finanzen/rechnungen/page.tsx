@@ -15,6 +15,7 @@ import {
 import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { TableCard } from "@/components/shared/table-card";
 import {
@@ -56,6 +57,7 @@ const FILTERS: { value: InvoiceFilter; label: string }[] = [
 /**
  * Rechnungen, die der Verein bezahlen muss – an einem Ort (vorher nur über „Dokumente“ zu finden). Offene stehen nach
  * Fälligkeit, überfällige rot; „Bezahlt“ (grün, mit Rückgängig) wie auf dem Dashboard. Hochladen gleich als Rechnung.
+ * Am Handy wird jede Rechnung eine kleine Karte (`<Table stack>`): Name oben, darunter Betrag, Fälligkeit und Stand.
  */
 export default async function InvoicesPage({
   searchParams,
@@ -106,7 +108,7 @@ export default async function InvoicesPage({
     `/finanzen/rechnungen?stand=${next}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description={
           result.openTotalCents > 0
@@ -129,7 +131,7 @@ export default async function InvoicesPage({
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <nav aria-label="Rechnungen anzeigen" className={SEGMENT_BAR}>
           {FILTERS.map((filter) => (
             <Link
@@ -183,7 +185,7 @@ export default async function InvoicesPage({
           }
         />
       ) : (
-        <>
+        <div>
           {/* Zahl aller überfälligen (nicht nur dieser Seite) – bei einer Suche passt sie nicht zur Liste. */}
           {stand === "offen" && !q && result.overdueCount > 0 && (
             <p className="mb-2 text-sm font-medium text-red-700 dark:text-red-400">
@@ -194,7 +196,7 @@ export default async function InvoicesPage({
           )}
           {/* tabIndex -1: Nach „Ins Kassenbuch“ landet der Fokus hier (der Knopf verschwindet mit der Buchung). */}
           <TableCard id={INVOICE_LIST_FOCUS_ID} tabIndex={-1} className="outline-none">
-            <Table>
+            <Table stack>
               <caption className="sr-only">
                 Rechnungen ({FILTERS.find((f) => f.value === stand)!.label})
               </caption>
@@ -202,8 +204,8 @@ export default async function InvoicesPage({
                 <TableRow>
                   <TableHead>Rechnung</TableHead>
                   <TableHead className="text-right">Betrag</TableHead>
-                  <TableHead className="hidden md:table-cell">Fällig</TableHead>
-                  <TableHead className="hidden md:table-cell">Stand</TableHead>
+                  <TableHead>Fällig</TableHead>
+                  <TableHead>Stand</TableHead>
                   <TableHead className="w-32">
                     <span className="sr-only">Aktionen</span>
                   </TableHead>
@@ -239,31 +241,18 @@ export default async function InvoicesPage({
                         <span className="block text-sm text-muted-foreground">
                           Rechnung vom {formatCalendarDate(invoice.invoiceDate)}
                         </span>
-                        <span
-                          className={cn(
-                            "block text-sm md:hidden",
-                            invoice.overdue
-                              ? "font-medium text-red-700 dark:text-red-400"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          {state}
-                        </span>
-                        {invoice.booking && (
-                          <BookingLink booking={invoice.booking} className="md:hidden" />
-                        )}
                       </TableCell>
-                      <TableCell className="text-right font-semibold tabular-nums">
+                      <TableCell label="Betrag" className="text-right font-semibold tabular-nums">
                         {invoice.amountCents === null
                           ? "–"
                           : formatEuroFromCents(invoice.amountCents)}
                       </TableCell>
-                      <TableCell className="hidden tabular-nums md:table-cell">
+                      <TableCell label="Fällig" className="tabular-nums">
                         {invoice.dueDate ? formatCalendarDate(invoice.dueDate) : "–"}
                       </TableCell>
                       <TableCell
+                        label="Stand"
                         className={cn(
-                          "hidden md:table-cell",
                           invoice.overdue
                             ? "font-medium text-red-700 dark:text-red-400"
                             : "text-muted-foreground",
@@ -272,7 +261,8 @@ export default async function InvoicesPage({
                         {state}
                         {invoice.booking && <BookingLink booking={invoice.booking} />}
                       </TableCell>
-                      <TableCell className="text-right">
+                      {/* Am Handy unter den Angaben; ohne Knopf (z. B. schon gebucht) fällt die Zeile dort weg. */}
+                      <TableCell className="text-right max-md:mt-2 max-md:empty:hidden">
                         {result.canManage && invoice.status === "OPEN" && (
                           <MarkPaidButton
                             invoiceId={invoice.id}
@@ -300,18 +290,18 @@ export default async function InvoicesPage({
             </Table>
           </TableCard>
           <Pagination basePath="/finanzen/rechnungen" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }
 
 /** „im Kassenbuch Nr. 2026-0042“ – führt zur Buchung (Suche nach der Nummer). */
-function BookingLink({ booking, className }: { booking: { label: string }; className?: string }) {
+function BookingLink({ booking }: { booking: { label: string } }) {
   return (
     <Link
       href={`/finanzen/kassenbuch?q=${booking.label}`}
-      className={cn("block text-sm text-primary underline-offset-4 hover:underline", className)}
+      className="block text-sm text-primary underline-offset-4 hover:underline"
     >
       im Kassenbuch Nr. {booking.label}
     </Link>

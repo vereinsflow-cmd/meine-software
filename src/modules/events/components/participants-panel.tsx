@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserMinusIcon, UserPlusIcon } from "lucide-react";
+import { UserMinusIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { toast } from "sonner";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import { IconButton } from "@/components/shared/icon-button";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,9 @@ export function ParticipantsPanel({
       )}
 
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Noch keine Antworten.</p>
+        <CompactEmpty icon={<UsersIcon />} accent="blue" title="Noch keine Antworten">
+          Sobald Mitglieder zu- oder absagen, stehen sie hier.
+        </CompactEmpty>
       ) : (
         <ExpandableList
           className="divide-y rounded-lg border"

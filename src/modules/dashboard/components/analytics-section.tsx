@@ -34,7 +34,7 @@ export function AnalyticsSection({
       {/* Kachel wie die übrigen Karten des Dashboards (große Rundung, weicher Schein in Blau). */}
       <Card
         className={cn(
-          "rounded-[1.75rem] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          "rounded-4xl dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
           size === "s"
             ? "[--card-spacing:--spacing(4)]"
             : size === "l"
@@ -49,7 +49,7 @@ export function AnalyticsSection({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   className={cn(
-                    "flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] [&_svg]:size-5",
+                    "flex size-10 shrink-0 items-center justify-center rounded-xl [&_svg]:size-5",
                     TILE_ACCENT.blue.chip,
                   )}
                   aria-hidden="true"

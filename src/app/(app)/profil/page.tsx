@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ClubLogo } from "@/components/shared/club-logo";
 import { DescriptionList } from "@/components/shared/description-list";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import {
@@ -63,7 +64,7 @@ export default async function ProfilePage() {
   ]);
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Mein Profil"
         description="Deine Angaben, Benachrichtigungen, dein Passwort und die Geräte, auf denen du angemeldet bist."
@@ -165,6 +166,6 @@ export default async function ProfilePage() {
           />
         </Section>
       </div>
-    </>
+    </PageStack>
   );
 }
