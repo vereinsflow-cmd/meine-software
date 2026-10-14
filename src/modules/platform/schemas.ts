@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { idString } from "@/lib/id-schema";
 
 export const createClubSchema = z.object({
   name: z
@@ -27,6 +28,6 @@ export type CreateClubInput = z.output<typeof createClubSchema>;
 export type CreateClubFormInput = z.input<typeof createClubSchema>;
 
 export const clubStatusSchema = z.object({
-  clubId: z.string().min(1).max(64),
+  clubId: idString,
   active: z.boolean(),
 });

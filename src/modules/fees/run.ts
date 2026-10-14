@@ -17,6 +17,7 @@ import type { EnginePreview } from "./engine-types";
 import { periodFor, type FeePeriod } from "./periods";
 import { chargeVoidSchema, feeRunExecuteSchema, feeRunRevertSchema } from "./schemas";
 import { calculatePreview, getFeeSettings, type FeeSettings } from "./service";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Beitragslauf (Etappe 7): Aus der Vorschau eines Zeitraums werden Beiträge (Forderungen) mit Nummer, Zeilen und den
@@ -538,8 +539,8 @@ export async function listCharges(
   const search: Prisma.ChargeWhereInput = q
     ? {
         OR: [
-          { debtorName: { contains: q, mode: "insensitive" } },
-          { payerName: { contains: q, mode: "insensitive" } },
+          { debtorName: { contains: likeText(q), mode: "insensitive" } },
+          { payerName: { contains: likeText(q), mode: "insensitive" } },
           ...(numberMatch
             ? [
                 numberMatch[1]

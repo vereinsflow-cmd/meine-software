@@ -8,6 +8,7 @@ import { notFound, validationFailed } from "@/server/errors";
 import { lockUntilCommit } from "@/server/db/tenant";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { entryNumber } from "./ledger-format";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Finanzen – erster Baustein: Rechnungen, die der Verein bezahlen muss, und die offenen Zahlungen.
@@ -190,7 +191,7 @@ export async function listInvoices(
       is: {
         deletedAt: null,
         archivedAt: null,
-        ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
+        ...(q ? { name: { contains: likeText(q), mode: "insensitive" } } : {}),
       },
     },
     ...(stand === "offen" ? { status: "OPEN" } : stand === "bezahlt" ? { status: "PAID" } : {}),

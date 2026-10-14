@@ -1,11 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { uploadMetaSchema } from "@/modules/documents/schemas";
 import { uploadDocument } from "@/modules/documents/service";
 import { apiHandler, jsonOk } from "@/server/api";
-import { env } from "@/server/env";
 import { parseInput } from "@/server/action";
 import { validationFailed } from "@/server/errors";
 import { requireTenantContext } from "@/server/tenancy/context";
+import { rejectOversizedDocumentUpload } from "@/server/upload-limit";
 
 /**
  * Dokument hochladen (multipart/form-data: `file`, `access`, optional `category` und `eventId`; Rechnungen zusätzlich
@@ -19,21 +19,8 @@ import { requireTenantContext } from "@/server/tenancy/context";
 export const POST = apiHandler(async (request: NextRequest) => {
   const ctx = await requireTenantContext();
 
-  const limit = env.MAX_UPLOAD_MB * 1024 * 1024 + 256 * 1024; // Datei plus Formular-Overhead
-  const announced = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(announced) && announced > limit) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          code: "VALIDATION",
-          message: `Die Datei ist zu groß (höchstens ${env.MAX_UPLOAD_MB} MB).`,
-          fieldErrors: { file: [`Die Datei ist zu groß (höchstens ${env.MAX_UPLOAD_MB} MB).`] },
-        },
-      },
-      { status: 413, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const tooLarge = rejectOversizedDocumentUpload(request);
+  if (tooLarge) return tooLarge;
 
   const form = await request.formData();
   const file = form.get("file");

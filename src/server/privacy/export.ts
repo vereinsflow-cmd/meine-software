@@ -2,6 +2,7 @@ import "server-only";
 import { calendarDateToInputValue } from "@/lib/dates";
 import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { prisma } from "@/server/db/client";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Datenexport für die betroffene Person (Auskunft und Datenübertragbarkeit, Art. 15 und 20 DSGVO).
@@ -284,8 +285,8 @@ export async function buildUserDataExport(
         where: {
           clubId: membership.clubId,
           OR: [
-            { counterpartyName: { contains: fullName, mode: "insensitive" } },
-            { description: { contains: fullName, mode: "insensitive" } },
+            { counterpartyName: { contains: likeText(fullName), mode: "insensitive" } },
+            { description: { contains: likeText(fullName), mode: "insensitive" } },
           ],
         },
         select: {

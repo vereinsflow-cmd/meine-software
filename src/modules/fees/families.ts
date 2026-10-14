@@ -195,6 +195,11 @@ async function assertPayer(tx: TenantTx, payerMemberId: string) {
   return payer;
 }
 
+/** Familien-Einträge, die ab `validFrom` noch gelten oder erst beginnen. */
+const openFrom = (validFrom: Date) => ({
+  OR: [{ validTo: null }, { validTo: { gte: validFrom } }],
+});
+
 /**
  * Freundliche Meldung vorab, falls das Mitglied ab `validFrom` schon in einer Familie ist (die Datenbank sichert es ab) –
  * mit dem, was zu tun ist: einen späteren Tag wählen, dort austragen oder einen geplanten Eintrag entfernen.
@@ -205,10 +210,24 @@ async function assertNotInFamily(
   validFrom: Date,
 ) {
   const other = await tx.feeFamilyMember.findFirst({
-    where: { memberId: member.id, OR: [{ validTo: null }, { validTo: { gte: validFrom } }] },
+    where: { memberId: member.id, ...openFrom(validFrom) },
     include: { family: { select: { name: true } } },
     orderBy: { validFrom: "asc" },
   });
+  throwIfInFamily(member, other, validFrom);
+}
+
+/** Die Meldung zu {@link assertNotInFamily} für einen schon geladenen Eintrag (`other`: der früheste ab `validFrom`). */
+function throwIfInFamily(
+  member: { firstName: string; lastName: string },
+  other: {
+    validFrom: Date;
+    validTo: Date | null;
+    createdAt: Date;
+    family: { name: string };
+  } | null,
+  validFrom: Date,
+) {
   if (!other) return;
   const who = fullName(member);
   const where = `„${other.family.name}“`;
@@ -243,19 +262,35 @@ export async function createFamily(ctx: TenantContext, input: unknown): Promise<
   return ctx.db.$transaction(async (tx) => {
     const type = await assertFamilyFeeType(tx, data.feeTypeId);
     await assertPayer(tx, data.payerMemberId);
+    // Mitglieder und ihre Familien-Einträge mit je einer Abfrage für alle (statt zwei je Mitglied); geprüft wird danach in
+    // der Reihenfolge der Auswahl, damit dieselbe Meldung kommt wie bei der Prüfung einzeln.
+    const found = new Map(
+      (
+        await tx.member.findMany({
+          where: { id: { in: data.memberIds } },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            archivedAt: true,
+            deletedAt: true,
+            anonymizedAt: true,
+          },
+        })
+      ).map((member) => [member.id, member]),
+    );
+    const entries = await tx.feeFamilyMember.findMany({
+      where: { memberId: { in: data.memberIds }, ...openFrom(validFrom) },
+      include: { family: { select: { name: true } } },
+      orderBy: { validFrom: "asc" },
+    });
+    // Je Mitglied der früheste Eintrag – wie `assertNotInFamily`.
+    const firstEntry = new Map<string, (typeof entries)[number]>();
+    for (const entry of entries)
+      if (!firstEntry.has(entry.memberId)) firstEntry.set(entry.memberId, entry);
     const members = [];
     for (const memberId of data.memberIds) {
-      const member = await tx.member.findFirst({
-        where: { id: memberId },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          archivedAt: true,
-          deletedAt: true,
-          anonymizedAt: true,
-        },
-      });
+      const member = found.get(memberId);
       // Inzwischen archiviert oder gelöscht (anderes Fenster): beim Feld „Mitglieder“ sagen, wen es betrifft.
       if (!member || member.archivedAt || member.deletedAt || member.anonymizedAt)
         throw validationFailed({
@@ -265,7 +300,7 @@ export async function createFamily(ctx: TenantContext, input: unknown): Promise<
               : "Ein ausgewähltes Mitglied gibt es nicht mehr – bitte die Liste prüfen.",
           ],
         });
-      await assertNotInFamily(tx, member, validFrom);
+      throwIfInFamily(member, firstEntry.get(memberId) ?? null, validFrom);
       members.push(member);
     }
     const family = await tx.feeFamily.create({
@@ -430,6 +465,8 @@ export async function dissolveFamily(ctx: TenantContext, input: unknown): Promis
       },
     });
     if (!family) throw notFound("Die Familie");
+    const removed: string[] = [];
+    const ended: string[] = [];
     for (const row of family.members) {
       if (row.validTo && row.validTo.getTime() <= validTo.getTime()) continue;
       if (row.validFrom.getTime() > validTo.getTime()) {
@@ -439,13 +476,16 @@ export async function dissolveFamily(ctx: TenantContext, input: unknown): Promis
               `${fullName(row.member)} ist erst ab ${formatCalendarDate(row.validFrom)} in der Familie – bitte einen späteren Tag wählen.`,
             ],
           });
-        await tx.feeFamilyMember.delete({ where: { id: row.id } });
-      } else
-        await tx.feeFamilyMember.update({
-          where: { id: row.id },
-          data: { validTo, endedById: ctx.userId },
-        });
+        removed.push(row.id);
+      } else ended.push(row.id);
     }
+    // Gesammelt schreiben statt je Eintrag – die Datenbank prüft weiterhin jede Zeile (Trigger „FeeFamilyMember_guard“).
+    if (removed.length > 0) await tx.feeFamilyMember.deleteMany({ where: { id: { in: removed } } });
+    if (ended.length > 0)
+      await tx.feeFamilyMember.updateMany({
+        where: { id: { in: ended } },
+        data: { validTo, endedById: ctx.userId },
+      });
     // Endet sie erst künftig, läuft sie bis dahin weiter (Familienbeitrag, Zahler, Bearbeiten); aufgelöst gilt sie, sobald
     // der Tag vorbei ist.
     if (validTo.getTime() < today.getTime())

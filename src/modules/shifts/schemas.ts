@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseBerlinDateTime, parseCalendarDate } from "@/lib/dates";
+import { idString, optionalIdString } from "@/lib/id-schema";
 
 const text = (max: number, label: string) =>
   z
@@ -46,11 +47,7 @@ export const shiftFormSchema = z.object({
     .optional(),
   requirements: text(500, "Die Anforderung"),
   internalNotes: text(1000, "Der Hinweis"),
-  responsibleMemberId: z
-    .string()
-    .max(64)
-    .optional()
-    .transform((value) => (value ? value : undefined)),
+  responsibleMemberId: optionalIdString,
   status: z.enum(["OPEN", "CLOSED"]),
 });
 export type ShiftFormInput = z.input<typeof shiftFormSchema>;
@@ -75,14 +72,14 @@ export function normalizeShiftTimes(
   return endsAt ? { startsAt, endsAt, endsNextDay: true } : null;
 }
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";
 export const assignSchema = z.object({
-  shiftId: z.string().min(1).max(64),
-  memberId: z.string().min(1).max(64),
+  shiftId: idString,
+  memberId: idString,
 });
-export const shiftRefSchema = z.object({ shiftId: z.string().min(1).max(64) });
+export const shiftRefSchema = z.object({ shiftId: idString });
 export const hoursSchema = z.object({
-  assignmentId: z.string().min(1).max(64),
+  assignmentId: idString,
   minutes: z
     .number({ error: "Bitte gib die Dauer ein." })
     .int()

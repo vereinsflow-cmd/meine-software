@@ -135,6 +135,8 @@ arbeitet nur eine. Alle Jobs sind **idempotent** (bedingte Updates, `dedupeKey`,
 
 Hochgeladene Dateien liegen **außerhalb von `public/`** im `STORAGE_DIR`, unter einem zufälligen Schlüssel (nicht dem Dateinamen)
 je Verein. Zugriff nur über `GET /api/dokumente/<id>/download`, das Anmeldung, Verein und Zugriffsstufe bei jedem Abruf prüft.
+Ausnahme sind Belege von Buchungen (Zugriffsstufe „Nur Finanzen“): Sie kommen über `GET /api/finanzen/belege/<id>`, das statt
+der Zugriffsstufe das Recht `finance:read` mit Reichweite „Verein“ prüft und genauso ausliefert.
 Das **Vereinslogo** liegt im selben Verzeichnis des Vereins (Angaben in eigenen Spalten am `Club`, nicht in `settings`) und wird
 über `GET /api/vereine/<id>/logo` ausgeliefert – als einzige Route mit Vereins-ID in der Adresse: Sie prüft eine aktive
 Mitgliedschaft genau in diesem Verein (`loadTenantContextForUser`, ohne Ausweichen), damit der Vereinswechsler auch die Logos der
@@ -144,9 +146,10 @@ Details der Prüfungen: [SECURITY.md](SECURITY.md#uploads).
 
 ## Fehlerbehandlung
 
-Dienste werfen typisierte Fehler (`AppError`: nicht angemeldet, verboten, nicht gefunden, ungültig, Konflikt, zu viele Anfragen).
+Dienste werfen typisierte Fehler (`AppError`: nicht angemeldet, verboten, nicht gefunden, ungültig, Konflikt, zu viele Anfragen,
+fehlerhafte Anfrage).
 `actions.ts` und Route Handler übersetzen sie in ein einheitliches Ergebnis `{ ok, data | error }` mit deutscher Meldung und – wo
-möglich – Feldfehlern; Route Handler setzen den passenden HTTP-Status (401, 403, 404, 409, 422, 429). **Interne Fehler zeigen nie
+möglich – Feldfehlern; Route Handler setzen den passenden HTTP-Status (400, 401, 403, 404, 409, 422, 429). **Interne Fehler zeigen nie
 Details**: Der Benutzer sieht eine allgemeine Meldung, das Server-Protokoll den Fehlertyp – ohne Personendaten, Passwörter oder Token.
 
 ## Konfiguration
@@ -159,6 +162,6 @@ Mail-Transport ungleich `smtp`. `next build` benötigt keine Konfiguration – d
 
 - **Neuer Fachbereich:** `src/modules/<name>/` mit `service.ts`, `actions.ts`, `schemas.ts`, `components/`; Rechte im Katalog ergänzen;
   Modelle im Schema mit Eintrag in `MODEL_SCOPE`; Aktionen in `audit-labels.ts` benennen.
-- **Finanzen, Push, mobile Apps:** Fachdienste kennen weder Next.js noch HTML; ein zukünftiger API-Zugang (z. B. für eine App) ruft
+- **Push, mobile Apps:** Fachdienste kennen weder Next.js noch HTML; ein zukünftiger API-Zugang (z. B. für eine App) ruft
   dieselben Dienste mit demselben Kontext auf. Einzelheiten: [ROADMAP.md](ROADMAP.md).
 - **Virenscan:** `registerUploadScanner(...)` in `src/server/storage/scan.ts`.

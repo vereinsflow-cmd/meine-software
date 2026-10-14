@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseCalendarDate } from "@/lib/dates";
+import { idString } from "@/lib/id-schema";
 import { MAX_AMOUNT_CENTS, parseEuroToCents } from "@/lib/money";
 
 /**
@@ -71,6 +72,6 @@ export type InvoiceEdit = z.output<typeof invoiceEditSchema>;
 
 /** „Als bezahlt markieren“ bzw. „wieder offen“. */
 export const invoiceStatusSchema = z.object({
-  id: z.string().min(1).max(64),
+  id: idString,
   status: z.enum(INVOICE_STATUSES),
 });
