@@ -56,17 +56,24 @@ export async function findDeletionBlockers(userId: string): Promise<string[]> {
     where: { userId, status: "ACTIVE", role: { key: "CLUB_ADMIN" }, club: { status: "ACTIVE" } },
     select: { clubId: true, club: { select: { name: true } } },
   });
+  // Weitere aktive Administratoren – für alle diese Vereine mit einer Abfrage (statt einer je Verein).
+  const others =
+    adminOf.length > 0
+      ? await prisma.clubMembership.groupBy({
+          by: ["clubId"],
+          where: {
+            clubId: { in: adminOf.map((membership) => membership.clubId) },
+            userId: { not: userId },
+            status: "ACTIVE",
+            role: { key: "CLUB_ADMIN" },
+            user: { disabledAt: null, deletedAt: null },
+          },
+          _count: { _all: true },
+        })
+      : [];
+  const withOtherAdmins = new Set(others.map((row) => row.clubId));
   for (const membership of adminOf) {
-    const others = await prisma.clubMembership.count({
-      where: {
-        clubId: membership.clubId,
-        userId: { not: userId },
-        status: "ACTIVE",
-        role: { key: "CLUB_ADMIN" },
-        user: { disabledAt: null, deletedAt: null },
-      },
-    });
-    if (others === 0)
+    if (!withOtherAdmins.has(membership.clubId))
       blockers.push(
         `Du bist der letzte Vereinsadministrator von „${membership.club.name}“. Bestimme zuerst einen weiteren Administrator.`,
       );
@@ -282,16 +289,16 @@ export async function executeDeletionRequest(
           note: `Konto gelöscht; ${anonymized} Mitgliedsdatensatz/-sätze anonymisiert.`,
         },
       });
-      for (const clubId of clubIds) {
-        await tx.auditLog.create({
-          data: {
+      if (clubIds.length > 0) {
+        await tx.auditLog.createMany({
+          data: clubIds.map((clubId) => ({
             clubId,
-            actorType: "SYSTEM",
+            actorType: "SYSTEM" as const,
             action: "privacy.deletion_completed",
             entityType: "User",
             entityId: user.id,
             summary: "Konto und Mitgliedsdaten auf Antrag gelöscht",
-          },
+          })),
         });
       }
     },

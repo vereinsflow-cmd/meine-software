@@ -567,6 +567,10 @@ export async function updateMember(
         where: { memberId: id, departmentId: { in: removed.map((d) => d.departmentId) } },
       });
     }
+    // Neue Zuordnungen und geänderte Leiter-Kennzeichen gesammelt schreiben (statt einer Anweisung je Abteilung).
+    const added: { departmentId: string; isLeader: boolean }[] = [];
+    const becomeLeader: string[] = [];
+    const stopLeader: string[] = [];
     for (const departmentId of nextIds) {
       // Das Leiter-Kennzeichen ändert nur, wer die JEWEILIGE Abteilung verwalten darf; sonst bleibt es, wie es ist.
       const wantsLeader = manageLeader(departmentId)
@@ -574,15 +578,27 @@ export async function updateMember(
         : (currentById.get(departmentId)?.isLeader ?? false);
       const current = currentById.get(departmentId);
       if (!current) {
-        await tx.memberDepartment.create({
-          data: { clubId: ctx.clubId, memberId: id, departmentId, isLeader: wantsLeader },
-        });
+        added.push({ departmentId, isLeader: wantsLeader });
       } else if (current.isLeader !== wantsLeader) {
-        await tx.memberDepartment.updateMany({
-          where: { memberId: id, departmentId },
-          data: { isLeader: wantsLeader },
-        });
+        (wantsLeader ? becomeLeader : stopLeader).push(departmentId);
       }
+    }
+    if (added.length > 0) {
+      await tx.memberDepartment.createMany({
+        data: added.map((row) => ({ clubId: ctx.clubId, memberId: id, ...row })),
+      });
+    }
+    if (becomeLeader.length > 0) {
+      await tx.memberDepartment.updateMany({
+        where: { memberId: id, departmentId: { in: becomeLeader } },
+        data: { isLeader: true },
+      });
+    }
+    if (stopLeader.length > 0) {
+      await tx.memberDepartment.updateMany({
+        where: { memberId: id, departmentId: { in: stopLeader } },
+        data: { isLeader: false },
+      });
     }
 
     // Austritt oder Sperre entzieht das Benutzerkonto den Zugang zum Verein.

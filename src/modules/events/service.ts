@@ -570,34 +570,32 @@ export async function createEvent(
   const publishedAt = publish ? new Date() : null;
 
   return ctx.db.$transaction(async (tx) => {
-    const ids: string[] = [];
-    for (const occurrence of occurrences) {
-      const created = await tx.event.create({
-        data: {
-          clubId: ctx.clubId,
-          seriesId,
-          ...eventData(input, times),
-          startsAt: occurrence.startsAt,
-          endsAt: occurrence.endsAt,
-          registrationDeadline:
-            deadlineOffset === null
-              ? null
-              : new Date(occurrence.startsAt.getTime() - deadlineOffset),
-          status: publish ? "PUBLISHED" : "DRAFT",
-          publishedAt,
-          createdById: ctx.userId,
-        },
-      });
-      ids.push(created.id);
-    }
-    const first = ids[0]!;
-    const series = ids.length > 1;
+    // Alle Termine der Serie mit einer Anweisung (statt einer je Termin).
+    const created = await tx.event.createManyAndReturn({
+      data: occurrences.map((occurrence) => ({
+        clubId: ctx.clubId,
+        seriesId,
+        ...eventData(input, times),
+        startsAt: occurrence.startsAt,
+        endsAt: occurrence.endsAt,
+        registrationDeadline:
+          deadlineOffset === null ? null : new Date(occurrence.startsAt.getTime() - deadlineOffset),
+        status: publish ? ("PUBLISHED" as const) : ("DRAFT" as const),
+        publishedAt,
+        createdById: ctx.userId,
+      })),
+      select: { id: true, startsAt: true },
+    });
+    // Der erste Termin der Serie – über den Beginn, denn die Reihenfolge der Rückgabe ist nicht zugesichert.
+    const firstStart = occurrences[0]!.startsAt.getTime();
+    const first = created.find((event) => event.startsAt.getTime() === firstStart)!.id;
+    const series = created.length > 1;
     await recordAudit(tx, auditActor(ctx), {
       action: "event.created",
       entityType: "Event",
       entityId: first,
       summary: series
-        ? `Terminserie „${input.title}“ mit ${ids.length} Terminen angelegt`
+        ? `Terminserie „${input.title}“ mit ${created.length} Terminen angelegt`
         : `Veranstaltung „${input.title}“ angelegt`,
     });
     if (publish) {
@@ -606,17 +604,17 @@ export async function createEvent(
         entityType: "Event",
         entityId: first,
         summary: series
-          ? `Terminserie „${input.title}“ mit ${ids.length} Terminen veröffentlicht`
+          ? `Terminserie „${input.title}“ mit ${created.length} Terminen veröffentlicht`
           : `Veranstaltung „${input.title}“ veröffentlicht`,
       });
       await announcePublished(tx, ctx, {
         title: input.title,
         departmentId: audience.departmentId,
         firstId: first,
-        count: ids.length,
+        count: created.length,
       });
     }
-    return { id: first, count: ids.length };
+    return { id: first, count: created.length };
   });
 }
 
