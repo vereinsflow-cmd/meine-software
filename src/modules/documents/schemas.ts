@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalIdString as optionalId } from "@/lib/id-schema";
 import { parseEuroToCents } from "@/lib/money";
 import { amountText, checkAmount, dueDateText, invoiceEditSchema } from "@/modules/finance/schemas";
 
@@ -20,12 +21,6 @@ const optionalText = (max: number, label: string) =>
     .max(max, `${label} ist zu lang (höchstens ${max} Zeichen).`)
     .optional()
     .transform((value) => (value ? value : undefined));
-
-const optionalId = z
-  .string()
-  .max(64)
-  .optional()
-  .transform((value) => (value ? value : undefined));
 
 /** Kästchen aus einem Formular (multipart): angehakt kommt „on“ (bzw. „true“/„1“), sonst fehlt es ganz. */
 const formCheckbox = z
@@ -75,4 +70,4 @@ export const documentFormSchema = z.object({
 export type DocumentFormInput = z.input<typeof documentFormSchema>;
 export type DocumentInput = z.output<typeof documentFormSchema>;
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";

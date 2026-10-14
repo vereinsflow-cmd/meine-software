@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseInput, runAction, type ActionResult } from "@/server/action";
+import { parseInput, type ActionResult } from "@/server/action";
+import { runActionAndRefresh } from "@/server/action-refresh";
 import { requireTenantContext } from "@/server/tenancy/context";
 import {
   correctEntry,
@@ -31,30 +32,22 @@ function refresh() {
 }
 
 export async function setupLedgerAction(input: unknown): Promise<ActionResult> {
-  return runAction(async () => {
+  return runActionAndRefresh("finance-setup", refresh, async () => {
     await setupLedger(await requireTenantContext(), parseInput(ledgerSetupSchema, input));
-    refresh();
     return undefined;
-  }, "finance-setup");
+  });
 }
 
 export async function createEntryAction(input: unknown): Promise<ActionResult<CreatedEntry>> {
-  return runAction(async () => {
-    const created = await createEntry(await requireTenantContext(), parseInput(entrySchema, input));
-    refresh();
-    return created;
-  }, "finance-entry");
+  return runActionAndRefresh("finance-entry", refresh, async () =>
+    createEntry(await requireTenantContext(), parseInput(entrySchema, input)),
+  );
 }
 
 export async function reverseEntryAction(input: unknown): Promise<ActionResult<{ label: string }>> {
-  return runAction(async () => {
-    const result = await reverseEntry(
-      await requireTenantContext(),
-      parseInput(reverseSchema, input),
-    );
-    refresh();
-    return result;
-  }, "finance-reverse");
+  return runActionAndRefresh("finance-reverse", refresh, async () =>
+    reverseEntry(await requireTenantContext(), parseInput(reverseSchema, input)),
+  );
 }
 
 export async function correctEntryAction(
@@ -62,54 +55,40 @@ export async function correctEntryAction(
   reason: string,
   entry: unknown,
 ): Promise<ActionResult<CreatedEntry>> {
-  return runAction(async () => {
-    const created = await correctEntry(await requireTenantContext(), {
+  return runActionAndRefresh("finance-correct", refresh, async () =>
+    correctEntry(await requireTenantContext(), {
       ...parseInput(reverseSchema, { id, reason }),
       entry: parseInput(entrySchema, entry),
-    });
-    refresh();
-    return created;
-  }, "finance-correct");
+    }),
+  );
 }
 
 export async function createTransferAction(
   input: unknown,
 ): Promise<ActionResult<{ label: string }>> {
-  return runAction(async () => {
-    const result = await createTransfer(
-      await requireTenantContext(),
-      parseInput(transferSchema, input),
-    );
-    refresh();
-    return result;
-  }, "finance-transfer");
+  return runActionAndRefresh("finance-transfer", refresh, async () =>
+    createTransfer(await requireTenantContext(), parseInput(transferSchema, input)),
+  );
 }
 
 export async function correctOpeningAction(
   input: unknown,
 ): Promise<ActionResult<{ amountCents: number }>> {
-  return runAction(async () => {
-    const result = await correctOpening(
-      await requireTenantContext(),
-      parseInput(openingSchema, input),
-    );
-    refresh();
-    return result;
-  }, "finance-opening");
+  return runActionAndRefresh("finance-opening", refresh, async () =>
+    correctOpening(await requireTenantContext(), parseInput(openingSchema, input)),
+  );
 }
 
 export async function attachReceiptNoteAction(input: unknown): Promise<ActionResult> {
-  return runAction(async () => {
+  return runActionAndRefresh("finance-receipt", refresh, async () => {
     await attachReceiptNote(await requireTenantContext(), parseInput(receiptNoteSchema, input));
-    refresh();
     return undefined;
-  }, "finance-receipt");
+  });
 }
 
 export async function removeAttachmentAction(input: unknown): Promise<ActionResult> {
-  return runAction(async () => {
+  return runActionAndRefresh("finance-receipt", refresh, async () => {
     await removeAttachment(await requireTenantContext(), parseInput(attachmentIdSchema, input));
-    refresh();
     return undefined;
-  }, "finance-receipt");
+  });
 }

@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseInput, runAction, type ActionResult } from "@/server/action";
+import { parseInput } from "@/server/action";
+import { runActionAndRefresh } from "@/server/action-refresh";
 import { requireTenantContext } from "@/server/tenancy/context";
 import {
   addFamilyMember,
@@ -54,134 +55,122 @@ function refresh() {
   revalidatePath("/mitglieder", "layout");
 }
 
-function action<T>(
-  scope: string,
-  run: (input: unknown) => Promise<T>,
-): (input: unknown) => Promise<ActionResult<T>> {
-  return async (input: unknown) =>
-    runAction(async () => {
-      const result = await run(input);
-      refresh();
-      return result;
-    }, scope);
-}
-
 export async function createFeeTypeAction(input: unknown) {
-  return action("fee-type", async (value) =>
-    createFeeType(await requireTenantContext(), parseInput(feeTypeCreateSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-type", refresh, async () =>
+    createFeeType(await requireTenantContext(), parseInput(feeTypeCreateSchema, input)),
+  );
 }
 
 export async function updateFeeTypeAction(input: unknown) {
-  return action("fee-type", async (value) =>
-    updateFeeType(await requireTenantContext(), parseInput(feeTypeUpdateSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-type", refresh, async () =>
+    updateFeeType(await requireTenantContext(), parseInput(feeTypeUpdateSchema, input)),
+  );
 }
 
 export async function archiveFeeTypeAction(input: unknown) {
-  return action("fee-type", async (value) =>
-    archiveFeeType(await requireTenantContext(), parseInput(feeTypeArchiveSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-type", refresh, async () =>
+    archiveFeeType(await requireTenantContext(), parseInput(feeTypeArchiveSchema, input)),
+  );
 }
 
 export async function moveFeeTypeAction(input: unknown) {
-  return action("fee-type", async (value) =>
-    moveFeeType(await requireTenantContext(), parseInput(feeTypeMoveSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-type", refresh, async () =>
+    moveFeeType(await requireTenantContext(), parseInput(feeTypeMoveSchema, input)),
+  );
 }
 
 export async function addFeeRateAction(input: unknown) {
-  return action("fee-rate", async (value) =>
-    addFeeRate(await requireTenantContext(), parseInput(feeRateSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-rate", refresh, async () =>
+    addFeeRate(await requireTenantContext(), parseInput(feeRateSchema, input)),
+  );
 }
 
 export async function deleteFeeRateAction(input: unknown) {
-  return action("fee-rate", async (value) =>
-    deleteFeeRate(await requireTenantContext(), parseInput(feeRateDeleteSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-rate", refresh, async () =>
+    deleteFeeRate(await requireTenantContext(), parseInput(feeRateDeleteSchema, input)),
+  );
 }
 
 export async function updateMemberFinanceAction(input: unknown) {
-  return action("member-finance", async (value) =>
-    updateMemberFinance(await requireTenantContext(), parseInput(memberFinanceSchema, value)),
-  )(input);
+  return runActionAndRefresh("member-finance", refresh, async () =>
+    updateMemberFinance(await requireTenantContext(), parseInput(memberFinanceSchema, input)),
+  );
 }
 
 export async function addAssignmentAction(input: unknown) {
-  return action("fee-assignment", async (value) =>
-    addAssignment(await requireTenantContext(), parseInput(assignmentSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-assignment", refresh, async () =>
+    addAssignment(await requireTenantContext(), parseInput(assignmentSchema, input)),
+  );
 }
 
 export async function endAssignmentAction(input: unknown) {
-  return action("fee-assignment", async (value) =>
-    endAssignment(await requireTenantContext(), parseInput(assignmentEndSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-assignment", refresh, async () =>
+    endAssignment(await requireTenantContext(), parseInput(assignmentEndSchema, input)),
+  );
 }
 
 export async function updateFeeSettingsAction(input: unknown) {
-  return action("fee-settings", async (value) =>
-    updateFeeSettings(await requireTenantContext(), parseInput(feeSettingsSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-settings", refresh, async () =>
+    updateFeeSettings(await requireTenantContext(), parseInput(feeSettingsSchema, input)),
+  );
 }
 
 export async function deleteAssignmentAction(input: unknown) {
-  return action("fee-assignment", async (value) =>
-    deleteAssignment(await requireTenantContext(), parseInput(assignmentDeleteSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-assignment", refresh, async () =>
+    deleteAssignment(await requireTenantContext(), parseInput(assignmentDeleteSchema, input)),
+  );
 }
 
 export async function createFamilyAction(input: unknown) {
-  return action("fee-family", async (value) =>
-    createFamily(await requireTenantContext(), parseInput(familyCreateSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-family", refresh, async () =>
+    createFamily(await requireTenantContext(), parseInput(familyCreateSchema, input)),
+  );
 }
 
 export async function updateFamilyAction(input: unknown) {
-  return action("fee-family", async (value) =>
-    updateFamily(await requireTenantContext(), parseInput(familyUpdateSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-family", refresh, async () =>
+    updateFamily(await requireTenantContext(), parseInput(familyUpdateSchema, input)),
+  );
 }
 
 export async function addFamilyMemberAction(input: unknown) {
-  return action("fee-family", async (value) =>
-    addFamilyMember(await requireTenantContext(), parseInput(familyMemberAddSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-family", refresh, async () =>
+    addFamilyMember(await requireTenantContext(), parseInput(familyMemberAddSchema, input)),
+  );
 }
 
 export async function endFamilyMemberAction(input: unknown) {
-  return action("fee-family", async (value) =>
-    endFamilyMember(await requireTenantContext(), parseInput(familyMemberEndSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-family", refresh, async () =>
+    endFamilyMember(await requireTenantContext(), parseInput(familyMemberEndSchema, input)),
+  );
 }
 
 export async function deleteFamilyMemberAction(input: unknown) {
-  return action("fee-family", async (value) =>
-    deleteFamilyMember(await requireTenantContext(), parseInput(familyMemberDeleteSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-family", refresh, async () =>
+    deleteFamilyMember(await requireTenantContext(), parseInput(familyMemberDeleteSchema, input)),
+  );
 }
 
 export async function dissolveFamilyAction(input: unknown) {
-  return action("fee-family", async (value) =>
-    dissolveFamily(await requireTenantContext(), parseInput(familyDissolveSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-family", refresh, async () =>
+    dissolveFamily(await requireTenantContext(), parseInput(familyDissolveSchema, input)),
+  );
 }
 
 export async function executeFeeRunAction(input: unknown) {
-  return action("fee-run", async (value) =>
-    executeFeeRun(await requireTenantContext(), parseInput(feeRunExecuteSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-run", refresh, async () =>
+    executeFeeRun(await requireTenantContext(), parseInput(feeRunExecuteSchema, input)),
+  );
 }
 
 export async function revertFeeRunAction(input: unknown) {
-  return action("fee-run", async (value) =>
-    revertFeeRun(await requireTenantContext(), parseInput(feeRunRevertSchema, value)),
-  )(input);
+  return runActionAndRefresh("fee-run", refresh, async () =>
+    revertFeeRun(await requireTenantContext(), parseInput(feeRunRevertSchema, input)),
+  );
 }
 
 export async function voidChargeAction(input: unknown) {
-  return action("charge", async (value) =>
-    voidCharge(await requireTenantContext(), parseInput(chargeVoidSchema, value)),
-  )(input);
+  return runActionAndRefresh("charge", refresh, async () =>
+    voidCharge(await requireTenantContext(), parseInput(chargeVoidSchema, input)),
+  );
 }

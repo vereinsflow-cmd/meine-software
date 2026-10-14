@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EventType, EventVisibility } from "@/generated/prisma/enums";
 import { parseBerlinDateTime, parseCalendarDate } from "@/lib/dates";
+import { idString, optionalIdString } from "@/lib/id-schema";
 import { MAX_SERIES_OCCURRENCES } from "@/lib/recurrence";
 
 /**
@@ -63,11 +64,7 @@ export const eventFormSchema = z
     allDay: z.boolean(),
     locationName: text(150, "Der Ort"),
     address: text(250, "Die Adresse"),
-    contactMemberId: z
-      .string()
-      .max(64)
-      .optional()
-      .transform((value) => (value ? value : undefined)),
+    contactMemberId: optionalIdString,
     contactName: text(100, "Der Name"),
     contactEmail: z
       .string()
@@ -81,11 +78,7 @@ export const eventFormSchema = z
       .transform((value) => (value ? value.toLowerCase() : undefined)),
     contactPhone: text(40, "Die Telefonnummer"),
     targetAudience: text(150, "Die Zielgruppe"),
-    departmentId: z
-      .string()
-      .max(64)
-      .optional()
-      .transform((value) => (value ? value : undefined)),
+    departmentId: optionalIdString,
     maxParticipants: z
       .number({ error: "Bitte gib eine Zahl ein." })
       .int("Bitte gib eine ganze Zahl ein.")
@@ -212,12 +205,12 @@ export function normalizeEventTimes(input: EventInput): NormalizedEventTimes | n
   return { startsAt, endsAt, registrationDeadline };
 }
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";
 
 /** Zusatz beim Anlegen: „Gleich veröffentlichen“ (Fenster „Neuer Termin“ im Kalender). Fehlt er, entsteht ein Entwurf. */
 export const createEventOptionsSchema = z.object({ publish: z.boolean().optional() }).optional();
 export const cancelEventSchema = z.object({
-  id: z.string().min(1).max(64),
+  id: idString,
   reason: z
     .string()
     .trim()
@@ -225,16 +218,16 @@ export const cancelEventSchema = z.object({
     .max(500, "Der Grund ist zu lang (höchstens 500 Zeichen)."),
 });
 export const respondSchema = z.object({
-  eventId: z.string().min(1).max(64),
+  eventId: idString,
   response: z.enum(["ACCEPTED", "DECLINED"]),
   note: z.string().trim().max(300).optional(),
 });
 export const participantSchema = z.object({
-  eventId: z.string().min(1).max(64),
-  memberId: z.string().min(1).max(64),
+  eventId: idString,
+  memberId: idString,
   status: z.enum(["ACCEPTED", "DECLINED", "WAITLISTED"]),
 });
 export const duplicateSchema = z.object({
-  id: z.string().min(1).max(64),
+  id: idString,
   startDate: dateField("das neue Datum"),
 });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseCalendarDate } from "@/lib/dates";
+import { trimmedIdString as id, trimmedOptionalIdString as optionalId } from "@/lib/id-schema";
 import { MAX_AMOUNT_CENTS, parseEuroToCents, parseSignedEuroToCents } from "@/lib/money";
 import { amountText, checkAmount } from "./schemas";
 
@@ -8,14 +9,7 @@ import { amountText, checkAmount } from "./schemas";
  * positiv – ob Einnahme oder Ausgabe, sagt die Wahl darüber. In Cent umgerechnet wird im Dienst (`parseEuroToCents`).
  */
 
-const id = z.string().trim().min(1).max(64);
 const accountRef = z.string().trim().min(1, "Bitte wähle ein Konto.").max(64);
-const optionalId = z
-  .string()
-  .trim()
-  .max(64)
-  .optional()
-  .transform((value) => (value ? value : undefined));
 
 /** Pflichtdatum „JJJJ-MM-TT“. */
 export const calendarDateText = z

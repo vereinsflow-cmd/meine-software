@@ -17,7 +17,14 @@ import {
 } from "@/server/platform/clubs";
 import { loadTenantContext } from "@/server/tenancy/context-core";
 import { createClubSchema } from "@/modules/platform/schemas";
-import { addUserToClub, createClub, createMember, createUser, unique } from "../helpers/factories";
+import {
+  addUserToClub,
+  createClub,
+  createEvent,
+  createMember,
+  createUser,
+  unique,
+} from "../helpers/factories";
 
 beforeEach(() => {
   mail.sent.length = 0;
@@ -177,6 +184,56 @@ describe("Systemadministration", () => {
     expect((await loadTenantContext(asSession(user), club.id))?.clubId).toBe(club.id);
     // Daten sind unverändert erhalten.
     expect(await prisma.member.count({ where: { clubId: club.id } })).toBe(1);
+  });
+
+  it("zählt Mitglieder, Benutzer und Veranstaltungen je Verein – Archiviertes, Gelöschtes und Gesperrtes nicht", async () => {
+    const superadmin = asSession(await createUser({ isPlatformAdmin: true }));
+    const a = await createClub("Zählverein A");
+    const b = await createClub("Zählverein B");
+    const empty = await createClub("Zählverein leer");
+
+    // Verein A: zwei Benutzer (je mit Mitgliedsdatensatz) und zwei Mitglieder ohne Konto → 4 Mitglieder, 2 Benutzer.
+    await addUserToClub(a, "CLUB_ADMIN");
+    await addUserToClub(a, "MEMBER");
+    await createMember(a.id);
+    await createMember(a.id);
+    // Zählen nicht: archiviertes und gelöschtes Mitglied, gesperrte Mitgliedschaft, gelöschte Veranstaltung.
+    const archived = await createMember(a.id);
+    await prisma.member.update({ where: { id: archived.id }, data: { archivedAt: new Date() } });
+    const trashed = await createMember(a.id);
+    await prisma.member.update({ where: { id: trashed.id }, data: { deletedAt: new Date() } });
+    await prisma.clubMembership.create({
+      data: {
+        clubId: a.id,
+        userId: (await createUser()).id,
+        roleId: a.roleIds.MEMBER!,
+        status: "SUSPENDED",
+      },
+    });
+    for (let i = 0; i < 3; i++) await createEvent(a.id);
+    const removed = await createEvent(a.id);
+    await prisma.event.update({ where: { id: removed.id }, data: { deletedAt: new Date() } });
+
+    // Verein B: ein Benutzer und ein Mitglied ohne Konto, keine Veranstaltung.
+    await addUserToClub(b, "MEMBER");
+    await createMember(b.id);
+
+    const rows = await listPlatformClubs(superadmin);
+    expect(rows.find((r) => r.id === a.id)).toMatchObject({
+      memberCount: 4,
+      userCount: 2,
+      eventCount: 3,
+    });
+    expect(rows.find((r) => r.id === b.id)).toMatchObject({
+      memberCount: 2,
+      userCount: 1,
+      eventCount: 0,
+    });
+    expect(rows.find((r) => r.id === empty.id)).toMatchObject({
+      memberCount: 0,
+      userCount: 0,
+      eventCount: 0,
+    });
   });
 
   it("liefert nur Kennzahlen – keine personenbezogenen Daten von Mitgliedern", async () => {

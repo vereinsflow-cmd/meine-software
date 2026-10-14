@@ -3,6 +3,7 @@ import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import type { TenantDb, TenantTx } from "@/server/db/tenant";
 import { notFound } from "@/server/errors";
 import type { TenantContext } from "@/server/tenancy/context-core";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 /**
  * Benachrichtigungen (In-App, optional zusätzlich per E-Mail).
@@ -127,7 +128,8 @@ export async function notifyUsers(
       type: input.type,
       title: input.title.slice(0, 200),
       body: input.body?.slice(0, 2000) ?? null,
-      linkUrl: input.linkUrl ?? null,
+      // Nur interne Pfade: Die Datenbank-Prüfregel lässt `/\…` durch, Browser lesen das wie `//fremde-seite`.
+      linkUrl: input.linkUrl ? safeRedirectPath(input.linkUrl, "/benachrichtigungen") : null,
       dedupeKey: input.dedupeKey?.(r.userId) ?? null,
       emailStatus:
         input.email && r.user.emailNotifications ? ("PENDING" as const) : ("NONE" as const),
