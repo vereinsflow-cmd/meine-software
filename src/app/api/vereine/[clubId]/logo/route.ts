@@ -8,6 +8,7 @@ import { notFound, validationFailed } from "@/server/errors";
 import { getRequestMeta } from "@/server/security/request";
 import { loadTenantContextForUser } from "@/server/tenancy/context-core";
 import { requireTenantContext, requireUser } from "@/server/tenancy/context";
+import { rejectOversizedUpload } from "@/server/upload-limit";
 
 type RouteContext = { params: Promise<{ clubId: string }> };
 
@@ -70,15 +71,12 @@ export const POST = apiHandler(async (request: NextRequest, context: RouteContex
   const ctx = await requireTenantContext();
   if (clubId !== ctx.clubId) throw notFound("Der Verein");
 
-  const limit = CLUB_LOGO_MAX_BYTES + 64 * 1024; // Datei plus Formular-Overhead
-  const announced = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(announced) && announced > limit) {
-    const message = `Das Logo ist zu groß (höchstens ${formatBytes(CLUB_LOGO_MAX_BYTES)}).`;
-    return NextResponse.json(
-      { ok: false, error: { code: "VALIDATION", message, fieldErrors: { file: [message] } } },
-      { status: 413, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const tooLarge = rejectOversizedUpload(
+    request,
+    CLUB_LOGO_MAX_BYTES + 64 * 1024, // Datei plus Formular-Overhead
+    `Das Logo ist zu groß (höchstens ${formatBytes(CLUB_LOGO_MAX_BYTES)}).`,
+  );
+  if (tooLarge) return tooLarge;
 
   const form = await request.formData();
   const file = form.get("file");

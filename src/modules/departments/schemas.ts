@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { idString, optionalIdString } from "@/lib/id-schema";
 
 const optionalText = (max: number, label: string) =>
   z
@@ -38,11 +39,7 @@ export type DepartmentInput = z.output<typeof departmentSchema>;
 export type DepartmentFormInput = z.input<typeof departmentSchema>;
 
 export const groupSchema = z.object({
-  departmentId: z
-    .string()
-    .max(64)
-    .optional()
-    .transform((value) => (value ? value : undefined)),
+  departmentId: optionalIdString,
   name: z
     .string()
     .trim()
@@ -53,17 +50,17 @@ export const groupSchema = z.object({
 export type GroupInput = z.output<typeof groupSchema>;
 export type GroupFormInput = z.input<typeof groupSchema>;
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";
 export const groupMemberSchema = z.object({
-  groupId: z.string().min(1).max(64),
-  memberId: z.string().min(1).max(64),
+  groupId: idString,
+  memberId: idString,
 });
 export const leaderSchema = z.object({
-  departmentId: z.string().min(1).max(64),
-  memberId: z.string().min(1).max(64),
+  departmentId: idString,
+  memberId: idString,
   isLeader: z.boolean(),
 });
 export const departmentMemberSchema = z.object({
-  departmentId: z.string().min(1).max(64),
-  memberId: z.string().min(1).max(64),
+  departmentId: idString,
+  memberId: idString,
 });

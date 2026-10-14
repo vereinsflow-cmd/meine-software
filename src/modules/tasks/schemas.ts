@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseCalendarDate } from "@/lib/dates";
+import { idString, optionalIdString as optionalId } from "@/lib/id-schema";
 
 const text = (max: number, label: string) =>
   z
@@ -8,12 +9,6 @@ const text = (max: number, label: string) =>
     .max(max, `${label} ist zu lang (höchstens ${max} Zeichen).`)
     .optional()
     .transform((value) => (value ? value : undefined));
-
-const optionalId = z
-  .string()
-  .max(64)
-  .optional()
-  .transform((value) => (value ? value : undefined));
 
 const optionalDate = z
   .string()
@@ -60,10 +55,10 @@ export const emptyTask = (eventId?: string): TaskFormInput => ({
 });
 
 export const taskStatusSchema = z.object({
-  id: z.string().min(1).max(64),
+  id: idString,
   status: z.enum(TASK_STATUSES),
 });
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";
 
 export const checklistSchema = z.object({
   title: z
@@ -76,7 +71,7 @@ export const checklistSchema = z.object({
 export type ChecklistInput = z.output<typeof checklistSchema>;
 
 export const checklistItemSchema = z.object({
-  checklistId: z.string().min(1).max(64),
+  checklistId: idString,
   text: z
     .string()
     .trim()
@@ -85,4 +80,4 @@ export const checklistItemSchema = z.object({
   assigneeMemberId: optionalId,
   dueDate: optionalDate,
 });
-export const toggleItemSchema = z.object({ id: z.string().min(1).max(64), done: z.boolean() });
+export const toggleItemSchema = z.object({ id: idString, done: z.boolean() });

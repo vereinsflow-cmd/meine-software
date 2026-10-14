@@ -1,10 +1,5 @@
 import { z } from "zod";
-
-const optionalId = z
-  .string()
-  .max(64)
-  .optional()
-  .transform((value) => (value ? value : undefined));
+import { optionalIdString as optionalId } from "@/lib/id-schema";
 
 export const AUDIENCES = [
   "ALL_MEMBERS",
@@ -67,8 +62,7 @@ export const messageFormSchema = z
 export type MessageFormInput = z.input<typeof messageFormSchema>;
 export type MessageInput = z.output<typeof messageFormSchema>;
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
-export const sendSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";
 
 export const emptyMessage = (over: Partial<MessageFormInput> = {}): MessageFormInput => ({
   subject: "",

@@ -43,7 +43,7 @@ export const ticketFormSchema = z.object({
 export type TicketFormInput = z.input<typeof ticketFormSchema>;
 export type TicketInput = z.output<typeof ticketFormSchema>;
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";
 
 /** Bearbeitung durch die Verwaltung: Status und (optional) eine Antwort für die meldende Person. */
 export const ticketUpdateSchema = z.object({
