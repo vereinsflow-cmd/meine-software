@@ -27,12 +27,12 @@ function currentTab(pathname: string): string {
   return best;
 }
 
-/** Unterbereiche der Beiträge. */
+/** Unterbereiche der Beiträge – in der Spalte der Seite (`PageStack`) nur so breit wie die Einträge. */
 export function FeesNav() {
   const pathname = usePathname();
   const active = currentTab(pathname);
   return (
-    <nav aria-label="Bereiche der Beiträge" className={cn(SEGMENT_BAR, "mb-5")}>
+    <nav aria-label="Bereiche der Beiträge" className={cn(SEGMENT_BAR, "self-start")}>
       {FEES_TABS.map((tab) => {
         const current = tab.href === active;
         return (

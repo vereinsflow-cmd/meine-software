@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { BackLink } from "@/components/shared/back-link";
 import { MEMBER_STATUS_LABEL } from "@/lib/labels";
 import { getMemberStats } from "@/modules/members/service";
@@ -14,7 +17,11 @@ export const metadata: Metadata = { title: "Mitgliederstatistik" };
 function BarList({ rows }: { rows: { label: string; count: number }[] }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   if (rows.length === 0)
-    return <p className="text-sm text-muted-foreground">Keine Daten vorhanden.</p>;
+    return (
+      <CompactEmpty icon={<AREA_ICON.auswertungen />} accent="blue" title="Keine Daten vorhanden">
+        Die Verteilung erscheint, sobald passende Angaben erfasst sind.
+      </CompactEmpty>
+    );
   return (
     <ul className="grid gap-2.5">
       {rows.map((row) => (
@@ -42,7 +49,7 @@ export default async function MemberStatsPage() {
   const stats = await getMemberStats(ctx);
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader
         title="Mitgliederstatistik"
@@ -99,6 +106,6 @@ export default async function MemberStatsPage() {
           </Card>
         )}
       </div>
-    </>
+    </PageStack>
   );
 }

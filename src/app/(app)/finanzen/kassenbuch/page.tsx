@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
@@ -22,8 +22,10 @@ import {
   FilterToggle,
 } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { TableCard } from "@/components/shared/table-card";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatCalendarDate, formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
 import { centsToInput } from "@/lib/money";
 import { param, pageRequest, type RawSearchParams } from "@/lib/search-params";
@@ -135,7 +137,7 @@ export default async function LedgerPage({
 
   if (!setup) {
     return (
-      <>
+      <PageStack>
         <FinanceHeader
           description="Einnahmen und Ausgaben von Girokonto und Barkasse"
           counts={counts}
@@ -143,7 +145,7 @@ export default async function LedgerPage({
         <Card className="max-w-3xl">
           <CardContent className="grid gap-4">
             <div>
-              <h2 className="text-lg font-semibold">Kassenbuch einrichten</h2>
+              <h2 className={CARD_TITLE}>Kassenbuch einrichten</h2>
               <p className="text-sm text-muted-foreground">
                 Einmal die Konten mit ihrem Anfangsbestand anlegen – danach buchst du Einnahmen und
                 Ausgaben, und die Übersicht zeigt Kontostände und Zahlen.
@@ -158,7 +160,7 @@ export default async function LedgerPage({
             )}
           </CardContent>
         </Card>
-      </>
+      </PageStack>
     );
   }
 
@@ -193,7 +195,7 @@ export default async function LedgerPage({
   );
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description="Einnahmen und Ausgaben von Girokonto und Barkasse"
         counts={counts}
@@ -217,13 +219,16 @@ export default async function LedgerPage({
         }
       />
 
-      <section aria-label="Kontostände" className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="Kontostände" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {accounts.map((account) => (
+          // Beim Überfahren färbt sich der feine Rand der Karte (Ring) blau; das gewählte Konto trägt ihn kräftig.
           <div
             key={account.id}
             className={cn(
-              "relative rounded-xl border bg-card p-4 shadow-xs transition-colors [@media(hover:hover)]:has-[a:hover]:border-primary/40",
-              accountId === account.id && "border-primary ring-1 ring-primary",
+              CARD_SURFACE,
+              "relative p-4 transition-shadow motion-reduce:transition-none [@media(hover:hover)]:has-[a:hover]:ring-primary/40",
+              accountId === account.id &&
+                "ring-2 ring-primary dark:ring-primary [@media(hover:hover)]:has-[a:hover]:ring-primary",
             )}
           >
             <Link
@@ -254,12 +259,7 @@ export default async function LedgerPage({
         ))}
       </section>
 
-      <form
-        method="get"
-        action="/finanzen/kassenbuch"
-        role="search"
-        className={cn("mb-4", FILTER_FORM)}
-      >
+      <form method="get" action="/finanzen/kassenbuch" role="search" className={FILTER_FORM}>
         <Input
           type="search"
           name="q"
@@ -355,7 +355,7 @@ export default async function LedgerPage({
           }
         />
       ) : (
-        <>
+        <div>
           {/* tabIndex -1: Nach einem Storno landet der Fokus hier (das „⋯“ der Buchung gibt es dann nicht mehr). */}
           <p
             id={LEDGER_FOCUS_ID}
@@ -420,14 +420,14 @@ export default async function LedgerPage({
             </Table>
           </TableCard>
           <Pagination basePath="/finanzen/kassenbuch" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-      <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+      <p className="max-w-3xl text-sm text-muted-foreground">
         Buchungen werden nicht geändert, sondern storniert – so bleibt alles nachvollziehbar. Ein
         Storno bekommt eine eigene Nummer, das Datum der ursprünglichen Buchung und verweist auf
         sie.
       </p>
-    </>
+    </PageStack>
   );
 }
 

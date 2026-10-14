@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NoAccess } from "@/components/shared/no-access";
 import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { toDateInputValue } from "@/lib/dates";
 import { MemberForm } from "@/modules/members/components/member-form";
 import { listDepartmentOptions, suggestNextMemberNumber } from "@/modules/members/service";
@@ -20,7 +21,7 @@ export default async function NewMemberPage() {
   ]);
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader title="Neues Mitglied" description="Felder mit * sind Pflichtfelder." />
       <MemberForm
@@ -51,6 +52,6 @@ export default async function NewMemberPage() {
           leaderDepartmentIds: [],
         }}
       />
-    </>
+    </PageStack>
   );
 }

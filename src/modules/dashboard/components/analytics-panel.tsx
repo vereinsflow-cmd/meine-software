@@ -13,6 +13,7 @@ import {
 import { DistributionTable, TimeTable } from "@/components/charts/chart-table";
 import { DistributionChart } from "@/components/charts/distribution-chart";
 import { TimeChart } from "@/components/charts/time-chart";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl, type SegmentOption } from "@/components/ui/segmented-control";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,21 +57,10 @@ const RANGE_OPTIONS = (granularities: readonly Granularity[]): SegmentOption<Gra
 /** Leerer Zustand: freundlich statt wie ein Fehler – „noch nichts zu zählen“ ist normal, besonders in einem neuen Verein. */
 function ChartEmpty() {
   return (
-    <div className="flex items-center gap-4 rounded-xl bg-muted/50 px-4 py-5">
-      <span
-        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300 [&_svg]:size-5"
-        aria-hidden="true"
-      >
-        <ChartNoAxesColumnIcon />
-      </span>
-      <div>
-        <p className="text-base font-semibold">Noch keine Daten</p>
-        <p className="text-sm text-muted-foreground">
-          Für diese Auswahl gibt es noch nichts zu zeigen. Sobald Daten da sind, erscheint hier das
-          Diagramm.
-        </p>
-      </div>
-    </div>
+    <CompactEmpty icon={<ChartNoAxesColumnIcon />} accent="blue" title="Noch keine Daten">
+      Für diese Auswahl gibt es noch nichts zu zeigen. Sobald Daten da sind, erscheint hier das
+      Diagramm.
+    </CompactEmpty>
   );
 }
 
@@ -80,7 +70,7 @@ function Legend({ series }: { series: { id: string; label: string }[] }) {
       {series.map((s, index) => (
         <li key={s.id} className="flex items-center gap-2">
           <span
-            className="size-3 rounded-[3px]"
+            className="size-3 rounded-xs"
             style={{ backgroundColor: `var(--chart-${Math.min(index, 5) + 1})` }}
             aria-hidden="true"
           />

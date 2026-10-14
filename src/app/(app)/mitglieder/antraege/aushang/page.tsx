@@ -6,6 +6,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { PrintButton } from "@/components/shared/print-button";
 import { clubLogoUrl } from "@/lib/club-logo";
 import { buildPosterPageStyle } from "@/lib/print";
@@ -34,15 +35,16 @@ export default async function JoinPosterPage() {
   const logoUrl = clubLogoUrl(ctx.clubId, ctx.club.logoSha256);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="print:hidden">
-        <BackLink href="/mitglieder/antraege">Beitrittsanträge</BackLink>
-        <PageHeader
-          title="Aushang drucken"
-          description="Ein DIN-A4-Blatt mit dem QR-Code – für das Vereinsheim, das Schwarze Brett oder die Halle."
-          actions={link ? <PrintButton label="Aushang drucken" /> : undefined}
-        />
-      </div>
+    <PageStack className="mx-auto max-w-3xl">
+      <BackLink href="/mitglieder/antraege" className="print:hidden">
+        Beitrittsanträge
+      </BackLink>
+      <PageHeader
+        title="Aushang drucken"
+        description="Ein DIN-A4-Blatt mit dem QR-Code – für das Vereinsheim, das Schwarze Brett oder die Halle."
+        actions={link ? <PrintButton label="Aushang drucken" /> : undefined}
+        className="print:hidden"
+      />
 
       {!link ? (
         <EmptyState
@@ -94,6 +96,6 @@ export default async function JoinPosterPage() {
           </ol>
         </article>
       )}
-    </div>
+    </PageStack>
   );
 }

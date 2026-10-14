@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { BackLink } from "@/components/shared/back-link";
 import {
@@ -38,7 +40,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   const addableMembers = department.canManageClubWide ? await listAddableMembers(ctx, id) : [];
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/abteilungen">Alle Abteilungen</BackLink>
       <PageHeader
         title={department.name}
@@ -93,9 +95,9 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
                 Die Mitgliederliste ist für deine Rolle nicht sichtbar.
               </p>
             ) : department.members.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Keine (für dich sichtbaren) Mitglieder.
-              </p>
+              <CompactEmpty icon={<AREA_ICON.mitglieder />} accent="blue" title="Keine Mitglieder">
+                In dieser Abteilung sind keine (für dich sichtbaren) Mitglieder.
+              </CompactEmpty>
             ) : (
               <ul className="divide-y">
                 {department.members.map((member) => (
@@ -144,7 +146,13 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
           </CardHeader>
           <CardContent>
             {department.groups.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Noch keine Gruppen.</p>
+              <CompactEmpty
+                icon={<AREA_ICON.abteilungen />}
+                accent="blue"
+                title="Noch keine Gruppen"
+              >
+                Zum Beispiel Mannschaften, Trainingsgruppen oder Arbeitskreise.
+              </CompactEmpty>
             ) : (
               <ul className="grid gap-5">
                 {department.groups.map((group) => (
@@ -196,6 +204,6 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
           </CardContent>
         </Card>
       </div>
-    </>
+    </PageStack>
   );
 }

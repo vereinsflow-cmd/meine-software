@@ -4,6 +4,7 @@ import { AREA_ICON } from "@/components/shared/area-icons";
 import type { EventType } from "@/generated/prisma/enums";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import {
   WEEKDAY_LONG,
   WEEKDAY_SHORT,
@@ -20,7 +21,8 @@ import type { CalendarEntry } from "../service";
 /**
  * Darstellung der Kalenderansichten. Reine Server-Komponenten: Blättern, Ansicht und Filter laufen über Links und ein
  * GET-Formular – die Seite funktioniert ohne JavaScript und ist per Tastatur und Screenreader bedienbar.
- * Bedeutung steckt nie nur in der Farbe: Art, "abgesagt" und "Entwurf" stehen zusätzlich als Text da.
+ * Bedeutung steckt nie nur in der Farbe: Art, "abgesagt" und "Entwurf" stehen zusätzlich als Text da. Die Farben je Art
+ * (und Abteilung, `entry.color`) sind bewusst Datenfarben wie in einer Legende – keine Zustandsfarben, daher keine Tokens.
  * Jeder Tag trägt `data-date` (JJJJ-MM-TT): Daran erkennt `DayDoubleClick` (quick-event.tsx), welcher Tag doppelt
  * angeklickt wurde, und öffnet dort „Neuer Termin“.
  */
@@ -102,7 +104,7 @@ export function MonthGrid({
   const weeks: Date[][] = [];
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
   return (
-    <div className="hidden overflow-hidden rounded-xl border md:block">
+    <div className={cn(CARD_SURFACE, "hidden overflow-hidden md:block")}>
       <table className="w-full table-fixed border-collapse">
         <caption className="sr-only">Monatsübersicht der Termine</caption>
         <thead>
@@ -198,8 +200,10 @@ export function WeekColumns({
             aria-label={formatDateLong(day)}
             aria-current={isToday ? "date" : undefined}
             className={cn(
-              "min-h-40 rounded-xl border p-2",
-              isToday && "border-primary ring-1 ring-primary/30",
+              CARD_SURFACE,
+              "min-h-40 p-2",
+              // Heute: Rand in der Markenfarbe statt des blassen Kartenrands (auch dunkel, daher `dark:` noch einmal).
+              isToday && "ring-primary dark:ring-primary",
             )}
           >
             <h3 className="mb-2 text-xs font-medium">
@@ -210,7 +214,10 @@ export function WeekColumns({
               {isToday && <span className="ml-1 text-primary">Heute</span>}
             </h3>
             {entries.length === 0 ? (
-              <p className="text-xs text-muted-foreground">–</p>
+              <p className="text-xs text-muted-foreground">
+                <span aria-hidden="true">–</span>
+                <span className="sr-only">Keine Termine</span>
+              </p>
             ) : (
               <ul className="grid gap-1">
                 {entries.map((entry) => (

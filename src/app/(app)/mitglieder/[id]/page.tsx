@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { DescriptionList } from "@/components/shared/description-list";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { BackLink } from "@/components/shared/back-link";
 import { formatCalendarDate, formatDateTime } from "@/lib/dates";
@@ -49,7 +52,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   });
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader
         title={name}
@@ -75,7 +78,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="grid gap-6 lg:col-span-2">
+        <div className="grid content-start gap-6 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle role="heading" aria-level={2}>
@@ -227,7 +230,13 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
             </CardHeader>
             <CardContent>
               {history.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Noch keine Einträge.</p>
+                <CompactEmpty
+                  icon={<AREA_ICON.protokoll />}
+                  accent="slate"
+                  title="Noch keine Einträge"
+                >
+                  Sobald jemand die Angaben ändert, steht es hier – mit Datum und Namen.
+                </CompactEmpty>
               ) : (
                 <ol className="divide-y">
                   {history.map((entry) => {
@@ -259,6 +268,6 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
           </Card>
         )}
       </div>
-    </>
+    </PageStack>
   );
 }

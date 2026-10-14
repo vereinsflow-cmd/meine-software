@@ -23,6 +23,7 @@ import {
 } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
@@ -36,7 +37,6 @@ import { eventOptions } from "@/lib/event-options";
 import { centsToInput } from "@/lib/money";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { formatBytes } from "@/lib/uploads";
-import { cn } from "@/lib/utils";
 import {
   DeleteDocumentButton,
   EditDocumentDialog,
@@ -102,7 +102,7 @@ export default async function DocumentsPage({
   const usedPercent = Math.min(100, Math.round((usage.usedBytes / usage.quotaBytes) * 100));
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Dokumente"
         description="Satzung, Protokolle, Formulare und weitere Unterlagen deines Vereins."
@@ -126,7 +126,7 @@ export default async function DocumentsPage({
         method="get"
         action="/dokumente"
         role="search"
-        className={cn("mb-4", FILTER_FORM)}
+        className={FILTER_FORM}
       >
         {eventId && <input type="hidden" name="veranstaltung" value={eventId} />}
         <Input
@@ -178,7 +178,7 @@ export default async function DocumentsPage({
       </form>
 
       {eventId && (
-        <p className="mb-3 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Es werden nur Dokumente zu einer Veranstaltung angezeigt.{" "}
           <Link href={`/veranstaltungen/${eventId}`} className="underline underline-offset-4">
             Zur Veranstaltung
@@ -206,7 +206,7 @@ export default async function DocumentsPage({
           }
         />
       ) : (
-        <>
+        <div>
           <TableCard>
             <Table>
               <caption className="sr-only">Dokumente, neueste zuerst</caption>
@@ -325,12 +325,12 @@ export default async function DocumentsPage({
             </Table>
           </TableCard>
           <Pagination basePath="/dokumente" searchParams={params} {...result} />
-        </>
+        </div>
       )}
 
       {canUpload && (
-        <>
-          <p className="mt-6 text-sm text-muted-foreground" role="status">
+        <div>
+          <p className="text-sm text-muted-foreground" role="status">
             Speicherplatz: {formatBytes(usage.usedBytes)} von {formatBytes(usage.quotaBytes)} belegt
             ({usedPercent} %).
           </p>
@@ -339,8 +339,8 @@ export default async function DocumentsPage({
             Tipp: Du kannst Dateien auch einfach auf diese Seite ziehen, um sie hochzuladen – auch
             mehrere auf einmal.
           </p>
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

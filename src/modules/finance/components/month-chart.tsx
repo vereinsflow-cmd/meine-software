@@ -43,7 +43,7 @@ export function MonthChart({
             {SERIES.map((series, index) => (
               <li key={series.id} className="flex items-center gap-2">
                 <span
-                  className="size-3 rounded-[3px]"
+                  className="size-3 rounded-xs"
                   style={{ backgroundColor: `var(--chart-${index + 1})` }}
                   aria-hidden="true"
                 />

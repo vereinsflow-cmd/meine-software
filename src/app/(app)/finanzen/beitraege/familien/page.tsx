@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { formatCalendarDate, toDateInputValue, todayCalendarDate } from "@/lib/dates";
 import { canFinance } from "@/modules/finance/access";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
@@ -50,7 +51,7 @@ export default async function FamiliesPage() {
   const noFeeType = options !== null && options.feeTypes.length === 0;
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description="Beiträge · Familien"
         counts={counts}
@@ -80,7 +81,7 @@ export default async function FamiliesPage() {
           }
         />
       ) : (
-        <div className="grid gap-8">
+        <>
           {active.length > 0 && (
             <section aria-label="Familien" className="grid gap-4 lg:grid-cols-2">
               {active.map((family) => {
@@ -193,10 +194,7 @@ export default async function FamiliesPage() {
           )}
 
           {dissolved.length > 0 && (
-            <section aria-labelledby="aufgeloest-titel" className="max-w-3xl">
-              <h2 id="aufgeloest-titel" className="mb-2 text-lg font-semibold">
-                Aufgelöst
-              </h2>
+            <PageSection id="aufgeloest-titel" title="Aufgelöst" className="max-w-3xl">
               <ul className="grid gap-1 text-sm">
                 {dissolved.map((family) => {
                   const last = family.members
@@ -240,7 +238,7 @@ export default async function FamiliesPage() {
                   );
                 })}
               </ul>
-            </section>
+            </PageSection>
           )}
 
           <p className="max-w-3xl text-sm text-muted-foreground">
@@ -249,8 +247,8 @@ export default async function FamiliesPage() {
             bleiben bei den Mitgliedern; sie zahlt ebenfalls der Zahler der Familie, solange beim
             Mitglied kein anderer eingestellt ist.
           </p>
-        </div>
+        </>
       )}
-    </>
+    </PageStack>
   );
 }

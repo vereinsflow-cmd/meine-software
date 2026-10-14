@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { EventForm } from "@/modules/events/components/event-form";
 import { getEventForEdit, getEventFormOptions } from "@/modules/events/service";
 import { isAppError } from "@/server/errors";
@@ -22,7 +23,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   const options = await getEventFormOptions(ctx);
 
   return (
-    <>
+    <PageStack>
       <BackLink href={`/veranstaltungen/${id}`}>{values.title}</BackLink>
       <PageHeader
         title={`${values.title} bearbeiten`}
@@ -36,6 +37,6 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
         departmentRequired={options.departmentRequired}
         defaultValues={values}
       />
-    </>
+    </PageStack>
   );
 }

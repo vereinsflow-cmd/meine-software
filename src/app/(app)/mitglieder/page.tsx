@@ -24,13 +24,13 @@ import {
 } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { SortableHead } from "@/components/shared/sort-link";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
 import { formatCalendarDate } from "@/lib/dates";
 import { MEMBER_STATUS_LABEL } from "@/lib/labels";
-import { cn } from "@/lib/utils";
 import {
   buildQuery,
   enumParam,
@@ -93,7 +93,7 @@ export default async function MembersPage({
   } as const;
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Mitglieder"
         description={`${result.total} ${result.total === 1 ? "Eintrag" : "Einträge"}${filtered ? " (gefiltert)" : ""}`}
@@ -144,7 +144,7 @@ export default async function MembersPage({
         method="get"
         action="/mitglieder"
         role="search"
-        className={cn("mb-4", FILTER_FORM)}
+        className={FILTER_FORM}
       >
         <Input
           type="search"
@@ -251,7 +251,8 @@ export default async function MembersPage({
           }
         />
       ) : (
-        <>
+        // Tabelle und Seitenwahl gehören zusammen: Die Seitenwahl hält ihren eigenen, kleineren Abstand.
+        <div>
           <TableCard>
             <Table>
               <caption className="sr-only">Mitgliederliste</caption>
@@ -327,8 +328,8 @@ export default async function MembersPage({
             </Table>
           </TableCard>
           <Pagination basePath="/mitglieder" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

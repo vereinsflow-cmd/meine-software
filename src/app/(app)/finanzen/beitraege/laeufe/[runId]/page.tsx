@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatCalendarDate, formatEuroFromCents, toDateInputValue } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import { canFinance } from "@/modules/finance/access";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
 import { financeTabCounts } from "@/modules/finance/overview";
@@ -37,14 +40,14 @@ export default async function FeeRunDetailPage({ params }: { params: Promise<{ r
   const title = `Beitragslauf ${run.label}`;
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader description={`Beiträge · ${title}`} counts={counts} />
       <FeesNav />
 
-      <Card className="mb-6">
+      <Card>
         <CardContent className="flex flex-wrap items-start justify-between gap-4">
           <div className="grid gap-1">
-            <h2 className="text-xl font-bold">{title}</h2>
+            <h2 className={CARD_TITLE}>{title}</h2>
             <p className="text-sm text-muted-foreground">
               Zeitraum {formatCalendarDate(run.periodStart)} bis {formatCalendarDate(run.periodEnd)}{" "}
               · fällig am {formatCalendarDate(run.dueDate)} · erstellt am{" "}
@@ -67,7 +70,7 @@ export default async function FeeRunDetailPage({ params }: { params: Promise<{ r
         </CardContent>
       </Card>
 
-      <section aria-label="Summen" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="Summen" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
           label="Beiträge"
           value={formatEuroFromCents(run.totalCents)}
@@ -95,7 +98,7 @@ export default async function FeeRunDetailPage({ params }: { params: Promise<{ r
       </section>
 
       {run.warnings.length > 0 && (
-        <details className="mb-6 rounded-xl border bg-card p-4 text-sm shadow-xs">
+        <details className={cn(CARD_SURFACE, "p-4 text-sm")}>
           <summary className="cursor-pointer font-semibold">
             Hinweise beim Erstellen ({run.warnings.length})
           </summary>
@@ -113,7 +116,7 @@ export default async function FeeRunDetailPage({ params }: { params: Promise<{ r
         canManage={canManage && !reverted}
       />
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-xs">
+      <div className={cn(CARD_SURFACE, "flex flex-wrap items-center justify-between gap-3 p-4")}>
         <p className="max-w-xl text-sm text-muted-foreground">
           {reverted
             ? "Alle Beiträge dieses Laufs sind gestrichen. Der Zeitraum lässt sich neu erstellen."
@@ -132,6 +135,6 @@ export default async function FeeRunDetailPage({ params }: { params: Promise<{ r
           )}
         </div>
       </div>
-    </>
+    </PageStack>
   );
 }

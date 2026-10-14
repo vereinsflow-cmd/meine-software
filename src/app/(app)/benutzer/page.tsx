@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { MailIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -12,6 +13,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
 import { formatDate, formatDateTime } from "@/lib/dates";
@@ -68,14 +70,14 @@ export default async function UsersPage({
   const roleOptions = roles.map((r) => ({ id: r.id, name: r.name, assignable: r.assignable }));
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Benutzer und Rollen"
         description="Wer hat Zugang zum Verein und welche Rechte hat er?"
         actions={canInvite ? <InviteDialog roles={roleOptions} members={invitable} /> : undefined}
       />
 
-      <nav aria-label="Bereiche" className="mb-4 flex gap-1 border-b">
+      <nav aria-label="Bereiche" className="flex gap-1 border-b">
         {TABS.map((t) => (
           <Link
             key={t.id}
@@ -101,14 +103,15 @@ export default async function UsersPage({
 
       {tab === "benutzer" && (
         <TableCard>
-          <Table>
+          {/* Am Handy gestapelt: jede Person eine kleine Karte, „Letzte Anmeldung“ steht dort als eigene Zeile. */}
+          <Table stack>
             <caption className="sr-only">Benutzer des Vereins</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Rolle</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Letzte Anmeldung</TableHead>
+                <TableHead className="md:max-lg:hidden">Letzte Anmeldung</TableHead>
                 <TableHead className="w-12">
                   <span className="sr-only">Aktionen</span>
                 </TableHead>
@@ -117,7 +120,7 @@ export default async function UsersPage({
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.membershipId}>
-                  <TableCell>
+                  <TableCell className="wrap-anywhere">
                     {user.memberId ? (
                       <Link
                         href={`/mitglieder/${user.memberId}`}
@@ -130,7 +133,7 @@ export default async function UsersPage({
                     )}
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell label="Rolle">
                     {canManage ? (
                       <RoleSelect
                         membershipId={user.membershipId}
@@ -143,17 +146,20 @@ export default async function UsersPage({
                       user.roleName
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell label="Status">
                     {user.status === "ACTIVE" ? (
                       <ToneBadge tone="success">Aktiv</ToneBadge>
                     ) : (
                       <ToneBadge tone="danger">Gesperrt</ToneBadge>
                     )}
                   </TableCell>
-                  <TableCell className="hidden text-sm text-muted-foreground tabular-nums lg:table-cell">
+                  <TableCell
+                    label="Letzte Anmeldung"
+                    className="text-sm text-muted-foreground tabular-nums md:max-lg:hidden"
+                  >
                     {user.lastLoginAt ? `${formatDateTime(user.lastLoginAt)} Uhr` : "–"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className={cn(!canManage && "max-md:hidden")}>
                     {canManage && (
                       <UserActions
                         membershipId={user.membershipId}
@@ -173,18 +179,20 @@ export default async function UsersPage({
       {tab === "einladungen" &&
         (invitations.length === 0 ? (
           <EmptyState
+            icon={<MailIcon />}
             title="Keine offenen Einladungen"
             description="Eingeladene Personen erscheinen hier, bis sie ihr Konto angelegt haben."
           />
         ) : (
           <TableCard>
-            <Table>
+            {/* Am Handy gestapelt: jede Einladung eine kleine Karte, „Gültig bis“ steht dort als eigene Zeile. */}
+            <Table stack>
               <caption className="sr-only">Offene Einladungen</caption>
               <TableHeader>
                 <TableRow>
                   <TableHead>E-Mail-Adresse</TableHead>
                   <TableHead>Rolle</TableHead>
-                  <TableHead className="hidden md:table-cell">Gültig bis</TableHead>
+                  <TableHead>Gültig bis</TableHead>
                   <TableHead className="w-64">
                     <span className="sr-only">Aktionen</span>
                   </TableHead>
@@ -193,20 +201,20 @@ export default async function UsersPage({
               <TableBody>
                 {invitations.map((invitation) => (
                   <TableRow key={invitation.id}>
-                    <TableCell>
+                    <TableCell className="font-medium wrap-anywhere md:font-normal">
                       {invitation.email}
                       {invitation.memberName && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs font-normal text-muted-foreground">
                           für Mitglied {invitation.memberName}
                         </p>
                       )}
                     </TableCell>
-                    <TableCell>{invitation.roleName}</TableCell>
-                    <TableCell className="hidden tabular-nums md:table-cell">
+                    <TableCell label="Rolle">{invitation.roleName}</TableCell>
+                    <TableCell label="Gültig bis" className="tabular-nums">
                       {formatDate(invitation.expiresAt)}{" "}
                       {invitation.expired && <ToneBadge tone="warning">abgelaufen</ToneBadge>}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={cn(!canInvite && "max-md:hidden")}>
                       {canInvite && (
                         <InvitationActions id={invitation.id} email={invitation.email} />
                       )}
@@ -219,7 +227,7 @@ export default async function UsersPage({
         ))}
 
       {tab === "rollen" && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {roles.map((role) => {
             const byModule = Object.entries(Object.groupBy(role.permissions, (p) => p.module));
             return (
@@ -264,6 +272,6 @@ export default async function UsersPage({
           })}
         </div>
       )}
-    </>
+    </PageStack>
   );
 }

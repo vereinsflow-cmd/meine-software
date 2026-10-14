@@ -5,6 +5,9 @@ import Link from "next/link";
 import { ArrowRightIcon, SearchXIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CARD_SURFACE } from "@/components/ui/surface";
+import { CompactEmpty } from "@/components/shared/compact-empty";
+import { cn } from "@/lib/utils";
 import type { FaqItem, FaqSection } from "../faq";
 
 const normalize = (text: string) =>
@@ -91,13 +94,16 @@ export function FaqList({ sections }: { sections: FaqSection[] }) {
       </div>
 
       {total === 0 ? (
-        <div className="flex items-start gap-3 rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-          <SearchXIcon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          <p>
-            Dazu gibt es noch keine Antwort. Versuche ein anderes Wort – oder melde dein Anliegen
-            über „Problem melden“, damit dir die Vereinsverwaltung helfen kann.
-          </p>
-        </div>
+        // Kein Treffer ist kein Fehler: ruhige Karte statt gestricheltem Rahmen, mit dem nächsten Schritt.
+        <CompactEmpty
+          card
+          icon={<SearchXIcon />}
+          accent="slate"
+          title="Dazu gibt es noch keine Antwort"
+        >
+          Versuche ein anderes Wort – oder melde dein Anliegen über „Problem melden“, damit dir die
+          Vereinsverwaltung helfen kann.
+        </CompactEmpty>
       ) : (
         filtered.map((section) => (
           <section
@@ -111,7 +117,7 @@ export function FaqList({ sections }: { sections: FaqSection[] }) {
               </h3>
               <p className="text-sm text-muted-foreground">{section.description}</p>
             </div>
-            <div className="divide-y rounded-xl border">
+            <div className={cn(CARD_SURFACE, "divide-y")}>
               {section.items.map((item) => (
                 <details
                   key={item.id}
@@ -126,7 +132,7 @@ export function FaqList({ sections }: { sections: FaqSection[] }) {
                       <span>{item.question}</span>
                       <span
                         aria-hidden="true"
-                        className="mt-0.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+                        className="mt-0.5 shrink-0 text-muted-foreground group-open:rotate-90 motion-safe:transition-transform"
                       >
                         <ArrowRightIcon className="size-4" />
                       </span>

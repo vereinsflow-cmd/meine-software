@@ -10,7 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
 import { formatEuroFromCents } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -52,7 +55,8 @@ export const metadata: Metadata = { title: "Konten und Kategorien" };
 
 /**
  * Einstellungen der Finanzen: Konten (anlegen, umbenennen, leer archivieren) und Kategorien (anlegen, umbenennen, Bereich
- * ändern, archivieren) – mit einer Erklärung der steuerlichen Bereiche in Alltagssprache.
+ * ändern, archivieren) – mit einer Erklärung der steuerlichen Bereiche in Alltagssprache. Die Konten stehen am Handy als
+ * kleine Karten (`<Table stack>`), die Kategorien bleiben eine schmale Tabelle (Name und Knöpfe passen nebeneinander).
  */
 export default async function FinanceSettingsPage() {
   const ctx = await requirePageContext();
@@ -68,17 +72,19 @@ export default async function FinanceSettingsPage() {
 
   if (!setup) {
     return (
-      <>
+      <PageStack>
         <FinanceHeader description="Konten und Kategorien" counts={counts} />
-        <Card className="max-w-3xl">
-          <CardContent>
-            <p className="text-sm">Zuerst das Kassenbuch einrichten.</p>
-            <Button asChild className="mt-3">
+        <EmptyState
+          icon={<AREA_ICON.finanzen />}
+          title="Erst das Kassenbuch einrichten"
+          description="Dabei entstehen die Konten und Kategorien – danach verwaltest du sie hier."
+          action={
+            <Button asChild>
               <Link href="/finanzen/kassenbuch">Zum Kassenbuch</Link>
             </Button>
-          </CardContent>
-        </Card>
-      </>
+          }
+        />
+      </PageStack>
     );
   }
 
@@ -95,23 +101,21 @@ export default async function FinanceSettingsPage() {
   ];
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader description="Konten und Kategorien" counts={counts} />
 
-      <section aria-labelledby="konten-titel" className="mb-8">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <h2 id="konten-titel" className="text-lg font-semibold">
-            Konten
-          </h2>
-          {canManage && <AddAccountDialog openingAllowed={openingAllowed} />}
-        </div>
+      <PageSection
+        id="konten-titel"
+        title="Konten"
+        actions={canManage ? <AddAccountDialog openingAllowed={openingAllowed} /> : undefined}
+      >
         <TableCard>
-          <Table>
+          <Table stack>
             <caption className="sr-only">Konten des Vereins</caption>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead className="hidden sm:table-cell">Art</TableHead>
+                <TableHead>Art</TableHead>
                 <TableHead className="text-right">Kontostand</TableHead>
                 {canManage && (
                   <TableHead className="w-40">
@@ -133,15 +137,11 @@ export default async function FinanceSettingsPage() {
                         {account.bankName}
                       </span>
                     )}
-                    <span className="block text-sm text-muted-foreground sm:hidden">
-                      {ACCOUNT_KIND_LABEL[account.kind]}
-                    </span>
                     {account.archived && <span className="block text-sm">archiviert</span>}
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {ACCOUNT_KIND_LABEL[account.kind]}
-                  </TableCell>
+                  <TableCell label="Art">{ACCOUNT_KIND_LABEL[account.kind]}</TableCell>
                   <TableCell
+                    label="Kontostand"
                     className={cn(
                       "text-right font-semibold tabular-nums",
                       account.balanceCents < 0 && "text-red-700 dark:text-red-400",
@@ -150,8 +150,8 @@ export default async function FinanceSettingsPage() {
                     {formatEuroFromCents(account.balanceCents)}
                   </TableCell>
                   {canManage && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <TableCell className="text-right max-md:mt-2">
+                      <div className="flex items-center justify-end gap-2 max-md:justify-start">
                         <EditAccountDialog account={account} />
                         {/* Archivieren nur leer und nicht das letzte aktive Konto (sonst lehnt der Server ab). */}
                         {(account.archived ||
@@ -171,20 +171,14 @@ export default async function FinanceSettingsPage() {
             </TableBody>
           </Table>
         </TableCard>
-      </section>
+      </PageSection>
 
-      <section aria-labelledby="kategorien-titel" className="mb-8">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="kategorien-titel" className="text-lg font-semibold">
-              Kategorien
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Vorschläge in Alltagssprache – im Zweifel mit dem Steuerberater abstimmen.
-            </p>
-          </div>
-          {canManage && <AddCategoryDialog />}
-        </div>
+      <PageSection
+        id="kategorien-titel"
+        title="Kategorien"
+        description="Vorschläge in Alltagssprache – im Zweifel mit dem Steuerberater abstimmen."
+        actions={canManage ? <AddCategoryDialog /> : undefined}
+      >
         <div className="grid gap-6">
           {groups
             .filter((group) => group.items.length > 0)
@@ -254,16 +248,14 @@ export default async function FinanceSettingsPage() {
               </div>
             ))}
         </div>
-      </section>
+      </PageSection>
 
-      <section aria-labelledby="beitraege-titel" className="mb-8 max-w-3xl">
-        <h2 id="beitraege-titel" className="text-lg font-semibold">
-          Beiträge
-        </h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Wie „Wer zahlt was“ und der Beitragslauf rechnen. Die Beitragsarten selbst stehen unter
-          „Beiträge“ → „Beitragsarten“.
-        </p>
+      <PageSection
+        id="beitraege-titel"
+        title="Beiträge"
+        description="Wie „Wer zahlt was“ und der Beitragslauf rechnen. Die Beitragsarten selbst stehen unter „Beiträge“ → „Beitragsarten“."
+        className="max-w-3xl"
+      >
         <Card>
           <CardContent>
             {canManage ? (
@@ -287,12 +279,13 @@ export default async function FinanceSettingsPage() {
             )}
           </CardContent>
         </Card>
-      </section>
+      </PageSection>
 
-      <section aria-labelledby="bereiche-titel" className="max-w-3xl">
-        <h2 id="bereiche-titel" className="mb-2 text-lg font-semibold">
-          Die vier Bereiche – kurz erklärt
-        </h2>
+      <PageSection
+        id="bereiche-titel"
+        title="Die vier Bereiche – kurz erklärt"
+        className="max-w-3xl"
+      >
         <dl className="grid gap-3 text-sm">
           {(Object.keys(SPHERE_EXPLANATION) as (keyof typeof SPHERE_EXPLANATION)[]).map(
             (sphere) => (
@@ -303,11 +296,11 @@ export default async function FinanceSettingsPage() {
             ),
           )}
         </dl>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Gemeinnützige Vereine trennen ihre Einnahmen nach diesen Bereichen – das braucht später
           der Kassenbericht und die Steuererklärung. Im Zweifel hilft der Steuerberater.
         </p>
-      </section>
-    </>
+      </PageSection>
+    </PageStack>
   );
 }

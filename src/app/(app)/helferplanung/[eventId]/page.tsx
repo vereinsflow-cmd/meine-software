@@ -5,11 +5,15 @@ import { DownloadIcon, PrinterIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CARD_TITLE } from "@/components/ui/card";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { BackLink } from "@/components/shared/back-link";
 import { formatDateLong, formatTimeRange, toDateInputValue, toTimeInputValue } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import { ShiftFormDialog } from "@/modules/shifts/components/shift-dialogs";
 import { ShiftPlan, type PlanTimeline } from "@/modules/shifts/components/shift-plan";
 import type { ShiftFormInput } from "@/modules/shifts/schemas";
@@ -117,7 +121,7 @@ export default async function EventShiftsPage({
   };
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/helferplanung" className="print:hidden">
         Helferplanung
       </BackLink>
@@ -172,7 +176,7 @@ export default async function EventShiftsPage({
       />
 
       {cancelled ? (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive">
           <AlertTitle>Diese Veranstaltung wurde abgesagt</AlertTitle>
           {plan.event.cancelReason && (
             <AlertDescription>{plan.event.cancelReason}</AlertDescription>
@@ -180,7 +184,7 @@ export default async function EventShiftsPage({
         </Alert>
       ) : (
         note && (
-          <Alert className="mb-6">
+          <Alert>
             <AlertTitle>{note.title}</AlertTitle>
             <AlertDescription>{note.text}</AlertDescription>
           </Alert>
@@ -203,13 +207,10 @@ export default async function EventShiftsPage({
           }
         />
       ) : (
-        <section
-          aria-labelledby="tagesablauf"
-          className="overflow-hidden rounded-xl border bg-card shadow-xs"
-        >
+        <section aria-labelledby="tagesablauf" className={cn(CARD_SURFACE, "overflow-hidden")}>
           <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 pt-4 pb-3 sm:px-6">
             {/* tabIndex -1: Nach dem Löschen einer Schicht landet der Fokus hier (die Zeile ist dann weg). */}
-            <h2 id="tagesablauf" tabIndex={-1} className="text-lg font-semibold outline-none">
+            <h2 id="tagesablauf" tabIndex={-1} className={cn(CARD_TITLE, "outline-none")}>
               Tagesablauf
             </h2>
             {active.length > 0 && (
@@ -234,6 +235,6 @@ export default async function EventShiftsPage({
           />
         </section>
       )}
-    </>
+    </PageStack>
   );
 }

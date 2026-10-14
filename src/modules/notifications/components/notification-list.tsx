@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BellIcon, BellRingIcon, CheckCheckIcon, ClockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import {
@@ -56,10 +57,10 @@ export function NotificationList({ items }: { items: Item[] }) {
           <li
             key={item.id}
             className={cn(
-              "relative flex items-start gap-4 overflow-hidden rounded-xl p-4 pl-5 shadow-sm ring-1 transition-shadow duration-150 hover:shadow-md motion-reduce:transition-none sm:p-5 sm:pl-6",
-              unread
-                ? "bg-primary/[0.06] ring-primary/40 dark:bg-primary/10"
-                : "bg-card ring-foreground/10 dark:ring-foreground/15",
+              CARD_SURFACE,
+              "relative flex items-start gap-4 overflow-hidden p-4 pl-5 transition-shadow duration-150 hover:shadow-md motion-reduce:transition-none sm:p-5 sm:pl-6",
+              // Ungelesen: blau getönt mit blauem Rand (statt Kartenfarbe und blassem Rand).
+              unread && "bg-primary/6 ring-primary/40 dark:bg-primary/10 dark:ring-primary/40",
             )}
           >
             {unread && (
@@ -86,9 +87,7 @@ export function NotificationList({ items }: { items: Item[] }) {
                     {item.title}
                   </span>
                   {item.body && (
-                    <span className="mt-1 block text-[0.9375rem] text-muted-foreground">
-                      {item.body}
-                    </span>
+                    <span className="mt-1 block text-sm text-muted-foreground">{item.body}</span>
                   )}
                 </button>
                 <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums">

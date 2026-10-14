@@ -1,4 +1,5 @@
 import { CheckIcon } from "lucide-react";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatEuroFromCents } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +89,7 @@ export function Tile({
   compact?: boolean;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-xs">
+    <div className={cn(CARD_SURFACE, "p-4")}>
       <p className="text-sm text-muted-foreground">{label}</p>
       <p
         className={cn(

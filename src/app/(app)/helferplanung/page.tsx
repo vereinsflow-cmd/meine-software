@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRightIcon, PrinterIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack, SECTION_TITLE } from "@/components/shared/page-section";
 import {
   daysUntil,
   formatDayMonth,
@@ -65,7 +68,7 @@ export default async function HelperPlanningPage() {
     .filter((entry) => entry.shifts.length > 0);
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Helferplanung"
         actions={
@@ -85,26 +88,29 @@ export default async function HelperPlanningPage() {
       />
 
       {urgent.length > 0 && (
-        <section
-          aria-label="Bald und noch nicht besetzt"
-          className="mb-8 grid rounded-xl border bg-card shadow-xs"
-        >
+        <section aria-label="Bald und noch nicht besetzt" className={cn(CARD_SURFACE, "grid")}>
           {urgent.map(({ event, shifts }) => (
             <UrgentLine key={event.eventId} event={event} shifts={shifts} />
           ))}
         </section>
       )}
 
-      <section aria-labelledby="meine-einsaetze" className="mb-9">
+      <section aria-labelledby="meine-einsaetze" className="grid gap-3">
         <SectionHeading id="meine-einsaetze" title="Meine Einsätze" focusable>
           {mine.length > 0 && `${mineCount} ${mine.length === 1 ? "kommender" : "kommende"}`}
         </SectionHeading>
-        <div className="rounded-xl border bg-card shadow-xs">
-          {mine.length === 0 ? (
-            <p className="px-4 py-3.5 text-sm text-muted-foreground sm:px-6">
-              Du bist für keine kommende Schicht eingetragen.
-            </p>
-          ) : (
+        {mine.length === 0 ? (
+          // Wie die Karte „Meine Einsätze“ auf dem Dashboard.
+          <CompactEmpty
+            card
+            icon={<AREA_ICON.einsaetze />}
+            accent="emerald"
+            title="Noch keine Einsätze"
+          >
+            Du bist für keine kommende Schicht eingetragen.
+          </CompactEmpty>
+        ) : (
+          <div className={CARD_SURFACE}>
             <ul>
               {mine.map((a) => (
                 <li
@@ -145,11 +151,11 @@ export default async function HelperPlanningPage() {
                 </li>
               ))}
             </ul>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
-      <section aria-labelledby="veranstaltungen-mit-schichten">
+      <section aria-labelledby="veranstaltungen-mit-schichten" className="grid gap-3">
         <SectionHeading
           id="veranstaltungen-mit-schichten"
           title="Veranstaltungen mit Helferplanung"
@@ -166,17 +172,21 @@ export default async function HelperPlanningPage() {
             description="Sobald für eine veröffentlichte Veranstaltung Schichten geplant sind, erscheinen sie hier."
           />
         ) : (
-          <div className="rounded-xl border bg-card shadow-xs">
+          <div className={CARD_SURFACE}>
             {events.map((event) => (
               <EventBlock key={event.eventId} event={event} />
             ))}
           </div>
         )}
       </section>
-    </>
+    </PageStack>
   );
 }
 
+/**
+ * Kopf eines Abschnitts: Überschrift (wie `PageSection`) und daneben – nicht darunter – die Zahl dazu, wie im Entwurf
+ * „Tagesablauf“. Den Abstand zum Inhalt (0,75 rem) gibt der Abschnitt.
+ */
 function SectionHeading({
   id,
   title,
@@ -190,11 +200,11 @@ function SectionHeading({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
       <h2
         id={id}
         tabIndex={focusable ? -1 : undefined}
-        className="text-lg font-semibold outline-none"
+        className={cn(SECTION_TITLE, "outline-none")}
       >
         {title}
       </h2>
@@ -229,12 +239,7 @@ function UrgentLine({ event, shifts }: { event: PlanningEvent; shifts: PlanningS
             critical ? "bg-red-600" : "bg-amber-500",
           )}
         />
-        <span
-          className={cn(
-            "font-semibold",
-            critical ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400",
-          )}
-        >
+        <span className={cn("font-semibold", STAFFING_TONE_CLASS[critical ? "red" : "amber"])}>
           {URGENCY_LABEL[critical ? "CRITICAL" : "SOON"]}:
         </span>{" "}
         {joinTitles(titles)} bei „{event.title}“ {titles.length === 1 ? "ist" : "sind"} noch{" "}

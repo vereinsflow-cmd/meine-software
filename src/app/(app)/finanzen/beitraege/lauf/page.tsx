@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, SearchXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -14,9 +14,12 @@ import {
 } from "@/components/ui/table";
 import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import {
   formatCalendarDate,
   formatEuroFromCents,
@@ -158,7 +161,7 @@ export default async function FeeRunPage({
       : `/mitglieder/${warning.memberId}`;
 
   const header = (
-    <Card className="mb-6">
+    <Card>
       <CardContent className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-1">
           <nav aria-label="Zeitraum" className="flex items-center gap-2">
@@ -174,7 +177,7 @@ export default async function FeeRunPage({
                 <ChevronLeftIcon />
               </Link>
             </Button>
-            <h2 className="text-xl font-bold">{title}</h2>
+            <h2 className={CARD_TITLE}>{title}</h2>
             <Button asChild variant="outline" size="icon-sm">
               <Link
                 href={href({
@@ -224,7 +227,7 @@ export default async function FeeRunPage({
 
   const blocked = !settings.stored || analysis.feeTypeCount === 0;
   return (
-    <>
+    <PageStack>
       <FinanceHeader description={`Beiträge · ${title}`} counts={counts} />
       <FeesNav />
 
@@ -257,7 +260,7 @@ export default async function FeeRunPage({
           {header}
 
           {earlier.length > 0 && (
-            <Card className="mb-6">
+            <Card>
               <CardContent className="text-sm">
                 Für {period.label}{" "}
                 {earlier.length === 1
@@ -284,10 +287,10 @@ export default async function FeeRunPage({
 
           {step === 1 ? (
             <>
-              <Card className="mb-6">
+              <Card>
                 <CardContent className="grid gap-4">
                   <div>
-                    <h2 className="text-lg font-semibold">Schritt 1: Prüfen</h2>
+                    <h2 className={CARD_TITLE}>Schritt 1: Prüfen</h2>
                     <p className="text-sm text-muted-foreground">
                       {groups.length === 0
                         ? "Keine Hinweise – alles stimmig."
@@ -334,10 +337,7 @@ export default async function FeeRunPage({
             </>
           ) : (
             <>
-              <section
-                aria-label="Summen"
-                className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-              >
+              <section aria-label="Summen" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Tile
                   label="Beiträge gesamt"
                   value={formatEuroFromCents(preview.totalCents)}
@@ -366,7 +366,7 @@ export default async function FeeRunPage({
               </section>
 
               {groups.length > 0 && (
-                <Card className="mb-6">
+                <Card>
                   <CardContent className="flex flex-wrap items-start justify-between gap-3 text-sm">
                     <p>
                       <span className="font-semibold">Hinweise aus Schritt 1: </span>
@@ -385,7 +385,7 @@ export default async function FeeRunPage({
               <TableCard>
                 <div className="flex flex-wrap items-start justify-between gap-3 p-4">
                   <div>
-                    <h2 className="text-lg font-semibold">
+                    <h2 className={CARD_TITLE}>
                       Vorschau: {preview.charges.length}{" "}
                       {preview.charges.length === 1 ? "Beitrag" : "Beiträge"}
                     </h2>
@@ -441,9 +441,15 @@ export default async function FeeRunPage({
                   </nav>
                 </div>
                 {rows.length === 0 ? (
-                  <p className="px-4 pb-4 text-sm text-muted-foreground">
-                    Keine passenden Beiträge.
-                  </p>
+                  <div className="px-4 pb-4">
+                    <CompactEmpty
+                      icon={<SearchXIcon />}
+                      accent="slate"
+                      title="Keine passenden Beiträge"
+                    >
+                      Passe die Suche oder den Filter an.
+                    </CompactEmpty>
+                  </div>
                 ) : (
                   <Table>
                     <caption className="sr-only">Vorschau {title}</caption>
@@ -543,17 +549,13 @@ export default async function FeeRunPage({
           )}
         </>
       )}
-    </>
+    </PageStack>
   );
 }
 
 function BottomBar({ note, children }: { note: string; children?: React.ReactNode }) {
   return (
-    <div
-      className={cn(
-        "mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-xs",
-      )}
-    >
+    <div className={cn(CARD_SURFACE, "flex flex-wrap items-center justify-between gap-3 p-4")}>
       <p className="min-w-0 flex-1 basis-64 text-sm text-muted-foreground">{note}</p>
       <div className="flex shrink-0 flex-wrap gap-2">{children}</div>
     </div>
