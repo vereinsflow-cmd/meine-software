@@ -81,9 +81,10 @@ export function FilterRowSkeleton({ wide = false }: { wide?: boolean }) {
 export function RunCardSkeleton() {
   return (
     <div className={cn(CARD_SURFACE, "flex flex-wrap items-start justify-between gap-4 p-5")}>
-      <div className="grid min-w-0 gap-2">
-        <Skeleton className="my-px h-6 w-72 max-w-full" />
-        <Skeleton className="h-4 w-96 max-w-full" />
+      {/* Breite über max-w-*: In einem Grid ohne feste Breite löst `max-w-full` nicht auf – am Handy ragte die Zeile sonst raus. */}
+      <div className="grid w-full max-w-96 min-w-0 gap-2">
+        <Skeleton className="my-px h-6 w-full max-w-72" />
+        <Skeleton className="h-4 w-full" />
       </div>
       <Skeleton className="h-10 w-80 max-w-full rounded-lg" />
     </div>
