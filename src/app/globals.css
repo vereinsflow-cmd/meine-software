@@ -11,6 +11,11 @@
   --text-xs--line-height: 1.4;
   --text-sm: 0.9375rem;
   --text-sm--line-height: 1.45;
+  /* Einzige Größe unter text-xs (11 px bei 16 px Grundschrift, wächst mit ihr bis 12,4 px): nur für kurze Beschriftungen in
+     Diagrammen und Überzeilen in Großbuchstaben auf den Kennzahlenkarten – immer mindestens halbfett und in voller
+     Schriftfarbe (nie gedämpft), nie für Sätze oder Hinweise. Ohne eigene Zeilenhöhe: sie erbt die der Umgebung, wie
+     vorher `text-[0.6875rem]`. */
+  --text-2xs: 0.6875rem;
   /* Inhaltsbreiten für die Kennzahlen des Dashboards (Containerabfragen `@bento/kpis` und `@bento-wide/kpis`, Aufteilung in
      modules/dashboard/kpi-layout.ts) – in rem, wachsen also mit der Grundschrift. 49 rem sind bei 1280 px Fensterbreite mit
      Seitenleiste erreicht, 58 rem z. B. bei 1470 px. */
@@ -50,6 +55,12 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-chart-neutral: var(--chart-neutral);
+  --color-chat-wallpaper: var(--chat-wallpaper);
+  --color-chat-day: var(--chat-day);
+  --color-chat-bubble-own: var(--chat-bubble-own);
+  --color-chat-bubble-other: var(--chat-bubble-other);
+  --color-chat-bubble-foreground: var(--chat-bubble-foreground);
+  --color-chat-meta: var(--chat-meta);
   --color-ring: var(--ring);
   --color-field: var(--field-border);
   --color-input: var(--input);
@@ -162,6 +173,15 @@
   /* Kachel hinter dem Vereinslogo (siehe components/shared/club-logo.tsx): hell, damit auch dunkle Logos mit
      durchsichtigem Hintergrund sichtbar bleiben */
   --club-logo-bg: oklch(1 0 0);
+  /* Nachrichten „wie WhatsApp“ (modules/messages, Tailwind: `bg-chat-wallpaper`, `bg-chat-bubble-own` …): die Farben von
+     WhatsApp – Hintergrund des Verlaufs, Datumstrenner, eigene (grün) und fremde Blasen (weiß), Schrift darin und Uhrzeit/
+     Häkchen. Die Uhrzeit ist etwas dunkler als bei WhatsApp, damit sie auch auf Grün 4,5:1 erreicht. */
+  --chat-wallpaper: #efeae2;
+  --chat-day: var(--card);
+  --chat-bubble-own: #d9fdd3;
+  --chat-bubble-other: #ffffff;
+  --chat-bubble-foreground: #111b21;
+  --chat-meta: #54656f;
   /* Breite der festen Seitenleiste (ab `lg`); die Provider-Komponente überschreibt diesen Wert inline, wenn eingeklappt. */
   --sidebar-w: 17rem;
   /* Höhe der Kopfzeile (und des Seitenleisten-Kopfs); auf niedrigen Bildschirmen etwas flacher. Die Nachrichten-Seite
@@ -226,6 +246,13 @@
   --sidebar-ring: oklch(0.72 0.14 258);
   /* Vereinslogos sind für helle Flächen gestaltet – auch im Dunkeln auf heller Kachel */
   --club-logo-bg: oklch(0.97 0 0);
+  /* Nachrichten im Dunkeln wie bei WhatsApp (dunkles Blaugrün); Uhrzeit und Häkchen weiß mit 80 % Deckkraft. */
+  --chat-wallpaper: #0b141a;
+  --chat-day: #182229;
+  --chat-bubble-own: #005c4b;
+  --chat-bubble-other: #202c33;
+  --chat-bubble-foreground: #e9edef;
+  --chat-meta: rgb(255 255 255 / 80%);
 }
 
 @layer base {
@@ -296,6 +323,91 @@
  */
 @utility tile-tint {
   background-image: radial-gradient(120% 85% at 0% 0%, var(--tile-tint), transparent 62%);
+}
+
+/*
+ * Tabellen am Handy als gestapelte Karten (`<Table stack>` und `<TableCell label="…">`, components/ui/table.tsx; seit
+ * 14.10.2026): Unter 768 px wird jede Zeile ein Block mit Innenabstand – wie eine kleine Karte in der `TableCard` –, jede
+ * Zelle eine Zeile „Beschriftung · Wert“. Die Beschriftung kommt aus `data-label` und steht links in einer festen Spalte
+ * (`--table-stack-label`, Vorgabe 8 rem); Zellen ohne Beschriftung (meist die erste: Name, Titel) gehen über die ganze
+ * Breite. Die Kopfzeile bleibt für Screenreader erhalten (nur unsichtbar), die sichtbare Beschriftung ist für sie stumm
+ * (`content: … / ""`) – sonst hörten sie jede Spalte doppelt. Ab 768 px ist es eine gewöhnliche Tabelle.
+ *
+ * `display` steht in `@layer components`: So gewinnen `hidden`, `max-md:hidden` und `md:table-cell` an einer Zelle weiter.
+ * Abstände, Umbruch und Ausrichtung stehen mit höherer Spezifität in `@layer utilities` und schlagen `p-2`,
+ * `whitespace-nowrap` und `text-right` der Zellen – am Handy sehen alle gestapelten Tabellen gleich aus.
+ */
+@layer components {
+  @media (width < 48rem) {
+    table[data-stack],
+    table[data-stack] > :is(tbody, tfoot),
+    table[data-stack] > :is(tbody, tfoot) > tr,
+    table[data-stack] > :is(tbody, tfoot) > tr > :is(td, th) {
+      display: block;
+    }
+    /* Der Block umschließt die links schwebende Beschriftung, auch wenn sie länger ist als der Wert. */
+    table[data-stack] > :is(tbody, tfoot) > tr > [data-label] {
+      display: flow-root;
+    }
+    table[data-stack] > thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  }
+}
+
+@layer utilities {
+  @media (width < 48rem) {
+    table[data-stack] > :is(tbody, tfoot) > tr {
+      padding: 0.75rem 1rem;
+    }
+    table[data-stack] > :is(tbody, tfoot) > tr > :is(td, th) {
+      width: auto;
+      padding: 0.125rem 0;
+      text-align: start;
+      white-space: normal;
+    }
+    table[data-stack] > :is(tbody, tfoot) > tr > [data-label] {
+      padding-left: var(--table-stack-label, 8rem);
+    }
+    table[data-stack] > :is(tbody, tfoot) > tr > [data-label]::before {
+      content: attr(data-label);
+      float: left;
+      width: calc(var(--table-stack-label, 8rem) - 0.75rem);
+      margin-left: calc(var(--table-stack-label, 8rem) * -1);
+      color: var(--muted-foreground);
+      font-weight: 500;
+      text-align: start;
+      overflow-wrap: anywhere;
+    }
+    /* Für Screenreader stumm, wo der Browser Ersatztext für `content` kennt (ältere lesen sie zusätzlich zur Kopfzeile). */
+    @supports (content: "" / "") {
+      table[data-stack] > :is(tbody, tfoot) > tr > [data-label]::before {
+        content: attr(data-label) / "";
+      }
+    }
+    /*
+     * Knöpfe und Auswahlfelder sind in den Karten die Hauptaktionen: mit dem Finger (grober Zeiger) mindestens 44 px hoch,
+     * reine Symbolknöpfe auch 44 px breit. `min-*` schlägt `h-8`/`size-9` der Knöpfe, sichtbar bleibt sonst alles gleich.
+     * Knöpfe erkennt die Regel an `data-variant` UND `data-size` (setzt nur `Button`): `data-slot="button"` überschreiben
+     * Menü- und Hinweis-Auslöser (`asChild`) mit ihrem eigenen Namen.
+     */
+    @media (pointer: coarse) {
+      table[data-stack] > :is(tbody, tfoot) > tr > td :is([data-variant][data-size], select) {
+        min-height: 2.75rem;
+      }
+      table[data-stack] > :is(tbody, tfoot) > tr > td [data-variant][data-size^="icon"] {
+        min-width: 2.75rem;
+      }
+    }
+  }
 }
 
 /*
