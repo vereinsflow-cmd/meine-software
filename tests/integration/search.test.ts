@@ -303,16 +303,13 @@ describe("Zentrale Suche – Datensätze", () => {
       expect((await searchEntities(ctx.admin, "Zora Zeno")).mitglieder).toEqual([]);
     });
 
-    // Bekannter Fehler (siehe docs/ROADMAP.md, „Bekannte Fehler“): Die Suche filtert gelöschte Mitglieder (Papierkorb)
-    // nicht heraus. Wer den Papierkorb nicht sehen darf (Vorstand: kein `members:delete`), findet sie trotzdem; die
-    // Detailseite zeigt dann „nicht gefunden“. Der Test hält den heutigen Stand fest: Ist der Fehler behoben, schlägt er
-    // gezielt fehl – dann `[]` erwarten und „BEKANNTER FEHLER“ aus dem Titel nehmen.
-    it("BEKANNTER FEHLER: gelöschte Mitglieder (Papierkorb) erscheinen auch für Rollen ohne Papierkorb-Recht", async () => {
+    it("gelöschte Mitglieder (Papierkorb) erscheinen nie – auch nicht mit Papierkorb-Recht", async () => {
       const trashed = await createMember(clubA.id, { firstName: "Paul", lastName: "Papierkorb" });
       await prisma.member.update({ where: { id: trashed.id }, data: { deletedAt: new Date() } });
       expect(ctx.board.permissions.has("members:delete")).toBe(false);
       const found = (await searchEntities(ctx.board, "Papierkorb")).mitglieder.map((m) => m.id);
-      expect(found).toEqual([`member:${trashed.id}`]); // richtig wäre []
+      expect(found).toEqual([]);
+      expect((await searchEntities(ctx.admin, "Papierkorb")).mitglieder).toEqual([]);
     });
 
     it("zeigt höchstens fünf Mitglieder, alphabetisch nach Nach- und Vorname", async () => {
@@ -435,21 +432,21 @@ describe("Zentrale Suche – Datensätze", () => {
       });
     });
 
-    // `%` und `_` wirken in der Suche derzeit als Platzhalter (siehe docs/ROADMAP.md, „Bekannte Fehler“). Entscheidend
-    // ist: Auch eine Anfrage, die auf alles passt, liefert nie mehr, als die Rolle ohnehin sehen darf – und nie etwas aus
-    // einem fremden Verein.
-    it("Platzhalter wie % und _ umgehen weder Rechte noch die Mandantentrennung", async () => {
+    it("Platzhalter wie % und _ sind gewöhnliche Zeichen", async () => {
       for (const q of ["%%", "__"]) {
-        const asMember = await searchEntities(ctx.member, q);
-        expect(asMember.mitglieder.map((m) => m.id)).toEqual([`member:${ids.ownMember}`]);
-        expect(asMember.veranstaltungen.map((e) => e.id)).toEqual([`event:${ids.published}`]);
-        expect(titles(asMember.dokumente)).toEqual(["Zander-Protokoll.pdf"]);
-
-        const asForeignAdmin = JSON.stringify(await searchEntities(ctx.adminB, q));
-        for (const own of [ids.zora, ids.zeno, ids.published, ids.docAll]) {
-          expect(asForeignAdmin).not.toContain(own);
-        }
+        expect(await searchEntities(ctx.admin, q)).toEqual({
+          mitglieder: [],
+          veranstaltungen: [],
+          dokumente: [],
+        });
       }
+      const percent = await createMember(clubA.id, {
+        firstName: "Hundert",
+        lastName: "Prozent%Zeichen",
+      });
+      expect((await searchEntities(ctx.admin, "t%Z")).mitglieder.map((m) => m.id)).toEqual([
+        `member:${percent.id}`,
+      ]);
     });
 
     it("Suchtext wie eine SQL-Einschleusung ist nur Text", async () => {

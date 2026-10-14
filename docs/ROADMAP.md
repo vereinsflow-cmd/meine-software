@@ -104,9 +104,5 @@ auf das richtige Verhalten umgestellt.
 
 - **Ziel-Links von Benachrichtigungen:** Die Prüfregel `Notification_link_chk` (Migration `20260920191000_integrity_guards`) sperrt mit
   `NOT LIKE '/\%'` wegen der LIKE-Maskierung nur den Text `/%`, nicht `/\…`. Browser lesen `/\example.com` wie `//example.com` – der Link
-  führt dann auf eine fremde Seite. Test: `tests/integration/notifications.test.ts` („BEKANNTER FEHLER: die Datenbank nimmt '/\\…' an“).
-- **Gelöschte Mitglieder in der Suche:** Die zentrale Suche (`src/modules/search/service.ts`) filtert Mitglieder im Papierkorb nicht
-  heraus. Auch Rollen ohne Papierkorb-Recht (Vorstand) finden sie; die Detailseite meldet dann „nicht gefunden“. Test:
-  `tests/integration/search.test.ts` („BEKANNTER FEHLER: gelöschte Mitglieder …“).
-- **`%` und `_` in der Suche:** Die Suchbegriffe werden für `contains` nicht maskiert; `%` passt auf beliebig viele Zeichen, `_` auf
-  genau eines. Rechte und Mandantentrennung bleiben gewahrt. Test: `tests/integration/search.test.ts` („Platzhalter wie % und _ …“).
+  führt dann auf eine fremde Seite. Der Code lässt seit 14.10.2026 nur interne Pfade durch (`notifyUsers` → `safeRedirectPath`);
+  die Prüfregel selbst zu korrigieren braucht eine Migration. Test: `tests/integration/notifications.test.ts` („BEKANNTER FEHLER: die Datenbank nimmt '/\\…' an“).

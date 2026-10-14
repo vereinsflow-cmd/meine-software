@@ -23,6 +23,7 @@ import type {
   MemberSortField,
   MemberView,
 } from "./types";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Mitgliederverwaltung – Geschäftslogik.
@@ -137,10 +138,12 @@ export function searchWhere(ctx: TenantContext, q: string): Prisma.MemberWhereIn
   return {
     AND: tokens.map((token) => ({
       OR: [
-        { firstName: { contains: token, mode: "insensitive" as const } },
-        { lastName: { contains: token, mode: "insensitive" as const } },
-        { memberNumber: { contains: token, mode: "insensitive" as const } },
-        ...(searchEmail ? [{ email: { contains: token, mode: "insensitive" as const } }] : []),
+        { firstName: { contains: likeText(token), mode: "insensitive" as const } },
+        { lastName: { contains: likeText(token), mode: "insensitive" as const } },
+        { memberNumber: { contains: likeText(token), mode: "insensitive" as const } },
+        ...(searchEmail
+          ? [{ email: { contains: likeText(token), mode: "insensitive" as const } }]
+          : []),
       ],
     })),
   };

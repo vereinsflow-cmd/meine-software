@@ -16,6 +16,7 @@ import { badRequest, forbidden, notFound, validationFailed } from "@/server/erro
 import { assertCan, can, scopeOf, type ResourceRef } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { normalizeEventTimes, type EventInput } from "./schemas";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Veranstaltungen – Geschäftslogik.
@@ -169,8 +170,8 @@ export function searchWhere(q: string): Prisma.EventWhereInput {
   return {
     AND: tokens.map((token) => ({
       OR: [
-        { title: { contains: token, mode: "insensitive" as const } },
-        { locationName: { contains: token, mode: "insensitive" as const } },
+        { title: { contains: likeText(token), mode: "insensitive" as const } },
+        { locationName: { contains: likeText(token), mode: "insensitive" as const } },
       ],
     })),
   };

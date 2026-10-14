@@ -274,6 +274,29 @@ describe("Benachrichtigungen erzeugen (notifyUsers)", () => {
     expect(await prisma.notification.count({ where: { clubId: clubA.id } })).toBe(0);
   });
 
+  it("Ziel-Links bleiben intern: fremde Adressen werden auf die Benachrichtigungsliste umgelenkt", async () => {
+    const { clubA, paula, ctx } = await setup();
+    for (const linkUrl of ["/\\example.com", "//example.com", "https://example.com", "/aufgaben"]) {
+      await notifyUsers(ctx.paulaA.db, clubA.id, {
+        userIds: [paula.user.id],
+        type: "SYSTEM",
+        title: `Link ${linkUrl}`,
+        linkUrl,
+      });
+    }
+    const links = await prisma.notification.findMany({
+      where: { clubId: clubA.id, userId: paula.user.id },
+      orderBy: { createdAt: "asc" },
+      select: { title: true, linkUrl: true },
+    });
+    expect(Object.fromEntries(links.map((n) => [n.title, n.linkUrl]))).toEqual({
+      "Link /\\example.com": "/benachrichtigungen",
+      "Link //example.com": "/benachrichtigungen",
+      "Link https://example.com": "/benachrichtigungen",
+      "Link /aufgaben": "/aufgaben",
+    });
+  });
+
   it("E-Mail nur auf Wunsch und nur an Personen, die E-Mail-Benachrichtigungen nicht abgeschaltet haben", async () => {
     const { clubA, paula, otto, ctx } = await setup();
     await prisma.user.update({ where: { id: otto.user.id }, data: { emailNotifications: false } });
@@ -323,15 +346,13 @@ describe("Benachrichtigungen erzeugen (notifyUsers)", () => {
     expect(await prisma.notification.count({ where: { title: "Erinnerung" } })).toBe(2);
   });
 
+  // Direkt in die Datenbank (ohne notifyUsers, das fremde Links schon vorher umlenkt): prüft die Prüfregel selbst.
   it("die Datenbank lehnt externe Ziel-Links ab (nur interne Pfade)", async () => {
     const { clubA, paula, ctx } = await setup();
     for (const linkUrl of ["https://example.com/phish", "//example.com", "example.com"]) {
       await expect(
-        notifyUsers(ctx.paulaA.db, clubA.id, {
-          userIds: [paula.user.id],
-          type: "SYSTEM",
-          title: "Link",
-          linkUrl,
+        prisma.notification.create({
+          data: { clubId: clubA.id, userId: paula.user.id, type: "SYSTEM", title: "Link", linkUrl },
         }),
       ).rejects.toThrow(/Notification_link_chk/);
     }
@@ -351,15 +372,18 @@ describe("Benachrichtigungen erzeugen (notifyUsers)", () => {
   // Seite). Der Test hält den heutigen Stand fest: Ist die Prüfregel korrigiert, schlägt er gezielt fehl – dann
   // `.rejects.toThrow(/Notification_link_chk/)` erwarten und „BEKANNTER FEHLER“ aus dem Titel nehmen.
   it("BEKANNTER FEHLER: die Datenbank nimmt '/\\…' an (wird im Browser zu einer fremden Adresse)", async () => {
-    const { clubA, paula, ctx } = await setup();
+    const { clubA, paula } = await setup();
     await expect(
-      notifyUsers(ctx.paulaA.db, clubA.id, {
-        userIds: [paula.user.id],
-        type: "SYSTEM",
-        title: "Link",
-        linkUrl: "/\\example.com",
+      prisma.notification.create({
+        data: {
+          clubId: clubA.id,
+          userId: paula.user.id,
+          type: "SYSTEM",
+          title: "Link",
+          linkUrl: "/\\example.com",
+        },
       }),
-    ).resolves.toBe(1); // richtig wäre ein Fehler mit Notification_link_chk
+    ).resolves.toMatchObject({ linkUrl: "/\\example.com" }); // richtig wäre ein Fehler mit Notification_link_chk
   });
 });
 

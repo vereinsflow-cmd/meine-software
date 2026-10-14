@@ -3,6 +3,7 @@ import { AUDIT_MODULES, type AuditModuleKey } from "@/lib/audit-labels";
 import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import { assertCan } from "@/server/permissions/policy";
 import type { TenantContext } from "@/server/tenancy/context-core";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Änderungsprotokoll – nur lesen. Der Zugriff ist auf Verwalter mit `audit:read` beschränkt und wie alles andere auf den
@@ -50,7 +51,7 @@ export function auditWhere(query: Omit<AuditQuery, "request">): Prisma.AuditLogW
         : {},
       query.actorUserId ? { actorUserId: query.actorUserId } : {},
       query.q?.trim()
-        ? { summary: { contains: query.q.trim(), mode: "insensitive" as const } }
+        ? { summary: { contains: likeText(query.q.trim()), mode: "insensitive" as const } }
         : {},
       created.gte || created.lt ? { createdAt: created } : {},
     ],
