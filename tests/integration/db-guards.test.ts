@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db/client";
 import { mapDatabaseError } from "@/server/action";
-import { createClub, createEvent, createMember, createShift, unique } from "../helpers/factories";
+import {
+  createClub,
+  createEvent,
+  createMember,
+  createShift,
+  createUser,
+  unique,
+} from "../helpers/factories";
 
 const HOUR = 3_600_000;
 
@@ -347,6 +354,18 @@ describe("CHECK-Constraints", () => {
     ).rejects.toThrow();
   });
 
+  it("Zwei-Faktor: der zuletzt angenommene Zeitschritt ist leer oder nicht negativ", async () => {
+    const user = await createUser();
+    expect(user.totpLastStep).toBeNull();
+    await expect(
+      prisma.user.update({ where: { id: user.id }, data: { totpLastStep: -1 } }),
+    ).rejects.toThrow(/User_totp_last_step_chk/);
+    const step = Math.floor(Date.now() / 30_000);
+    await expect(
+      prisma.user.update({ where: { id: user.id }, data: { totpLastStep: step } }),
+    ).resolves.toMatchObject({ totpLastStep: step });
+  });
+
   it("erlaubt in Benachrichtigungen nur interne Links", async () => {
     const club = await createClub();
     const user = await prisma.user.create({
@@ -450,5 +469,55 @@ describe("CHECK-Constraints", () => {
         data: { ...base, status: "ACCEPTED", decidedAt: new Date(), memberId: member.id },
       }),
     ).resolves.toBeDefined();
+  });
+});
+
+describe("Anwesenheit (EventAttendance)", () => {
+  it("je Termin und Mitglied genau eine Zeile; erfasst am ist gesetzt, erfasst von bleibt optional", async () => {
+    const club = await createClub();
+    const event = await createEvent(club.id);
+    const member = await createMember(club.id);
+    const row = await prisma.eventAttendance.create({
+      data: { clubId: club.id, eventId: event.id, memberId: member.id, status: "PRESENT" },
+    });
+    expect(row).toMatchObject({ status: "PRESENT", recordedById: null });
+    expect(row.recordedAt).toBeInstanceOf(Date);
+
+    const error = await prisma.eventAttendance
+      .create({
+        data: { clubId: club.id, eventId: event.id, memberId: member.id, status: "ABSENT" },
+      })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
+    expect(mapDatabaseError(error)?.code).toBe("CONFLICT");
+    // Erneutes Erfassen ändert die vorhandene Zeile.
+    await prisma.eventAttendance.upsert({
+      where: { eventId_memberId: { eventId: event.id, memberId: member.id } },
+      create: { clubId: club.id, eventId: event.id, memberId: member.id, status: "EXCUSED" },
+      update: { status: "EXCUSED", recordedAt: new Date() },
+    });
+    expect(await prisma.eventAttendance.findMany({ where: { eventId: event.id } })).toEqual([
+      expect.objectContaining({ id: row.id, status: "EXCUSED" }),
+    ]);
+  });
+
+  it("entfällt mit dem endgültig gelöschten Termin bzw. Mitglied", async () => {
+    const club = await createClub();
+    const [eventA, eventB] = await Promise.all([createEvent(club.id), createEvent(club.id)]);
+    const [m1, m2] = await Promise.all([createMember(club.id), createMember(club.id)]);
+    await prisma.eventAttendance.createMany({
+      data: [
+        { clubId: club.id, eventId: eventA.id, memberId: m1.id, status: "PRESENT" },
+        { clubId: club.id, eventId: eventB.id, memberId: m1.id, status: "EXCUSED" },
+        { clubId: club.id, eventId: eventB.id, memberId: m2.id, status: "ABSENT" },
+      ],
+    });
+
+    await prisma.event.delete({ where: { id: eventA.id } });
+    expect(await prisma.eventAttendance.count({ where: { clubId: club.id } })).toBe(2);
+    await prisma.member.delete({ where: { id: m2.id } });
+    expect(await prisma.eventAttendance.findMany({ where: { clubId: club.id } })).toEqual([
+      expect.objectContaining({ eventId: eventB.id, memberId: m1.id, status: "EXCUSED" }),
+    ]);
   });
 });

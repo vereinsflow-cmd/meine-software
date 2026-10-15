@@ -5,12 +5,24 @@ Web-Rahmen getrennt sind (siehe [ARCHITECTURE.md](ARCHITECTURE.md#erweiterbarkei
 
 ## Zuerst empfohlen
 
-| Vorhaben                            | Warum                                                                        | Schon vorbereitet                                                                                                  |
-| ----------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Zwei-Faktor-Anmeldung (TOTP)**    | Erhöht den Schutz von Administrator-Konten deutlich                          | Felder `totpSecretEnc`, `totpEnabledAt`; Profil-Abschnitt; Datenexport kennt sie                                   |
-| **Öffentliche Veranstaltungsseite** | „Öffentlich“-Veranstaltungen sollen auf der Vereins-Webseite verlinkbar sein | `Event.visibility = PUBLIC`; Kalender-Export je Termin                                                             |
-| **Virenscan für Uploads**           | Vereine nehmen Dateien von Dritten an (Bewerbungen, Formulare)               | `registerUploadScanner(...)` in `src/server/storage/scan.ts`                                                       |
-| **Finanzen** (siehe unten)          | Beiträge und Kasse sind der nächste große Verwaltungsaufwand                 | Rechte `finance:read`/`finance:manage`, Rechnungen mit offenen Zahlungen (27.09.2026), Protokollbereich „Finanzen“ |
+| Vorhaben                            | Warum                                                                        | Schon vorbereitet                                                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Zwei-Faktor-Pflicht je Verein**   | Ein Verein soll sie für Administratoren (oder alle) vorschreiben können      | Zwei-Faktor-Anmeldung (TOTP) seit 14.10.2026 freiwillig je Konto; `totpEnabledAt` zeigt, wer sie eingeschaltet hat                |
+| **Öffentliche Veranstaltungsseite** | „Öffentlich“-Veranstaltungen sollen auf der Vereins-Webseite verlinkbar sein | `Event.visibility = PUBLIC`; Kalender-Export je Termin                                                                            |
+| **Virenscan für Uploads**           | Vereine nehmen Dateien von Dritten an (Bewerbungen, Formulare)               | `registerUploadScanner(...)` in `src/server/storage/scan.ts`                                                                      |
+| **Finanzen** (siehe unten)          | Beiträge und Kasse sind der nächste große Verwaltungsaufwand                 | Rechnungen; Stufen 1–7 gebaut (Kassenbuch, Belege, Abschluss, Beiträge, Familien, Beitragslauf); als Nächstes Zahlungen (Stufe 8) |
+
+## Zuletzt umgesetzt (14.10.2026)
+
+- **Zwei-Faktor-Anmeldung (TOTP):** freiwillig je Konto unter „Mein Profil“, mit 10 Wiederherstellungscodes; zurücksetzen kann sie der
+  Vereinsadministrator, bei Plattform-Administratoren und Personen in mehreren Vereinen nur der Betreiber (`npm run admin:reset-2fa`).
+  Einzelheiten in [SECURITY.md](SECURITY.md#anmeldung-und-sitzungen). **Offen:** die Pflicht je Verein (siehe oben) und die Einrichtung
+  für reine Plattform-Administratoren ohne Verein („Mein Profil“ setzt einen Verein voraus).
+- **Anwesenheit:** Trainer haken ab einer Stunde vor Beginn ab, wer da war, wer entschuldigt und wer unentschuldigt fehlte – getrennt von
+  Zu- und Absagen, bewusst ohne Gründe. Auswertung mit CSV-Export unter „Veranstaltungen“ → „Anwesenheit“, die eigene Anwesenheit auf
+  der Mitgliedsseite; gelöscht 24 Monate nach dem Termin (siehe [PRIVACY.md](PRIVACY.md#welche-daten-wozu)).
+- **Ehrungen:** runde Mitgliedsjubiläen (10, 25, 40, 50, 60, 70, 75 Jahre) je Jahr unter „Mitglieder“ → „Ehrungen“, gerechnet ab dem
+  Eintrittsdatum, mit Druckliste, CSV-Export und Dashboard-Karte „Jubiläen“. Offen: eigene Stufen je Verein.
 
 ## Weitere Vorhaben
 
@@ -50,7 +62,7 @@ brauchen. Der weitere Bauplan
 (22 Stufen: Beiträge, Beitragslauf, Kontoauszug und automatische Zuordnung, Lastschrift, Rücklastschriften,
 Erinnerungen, Spenden und Zuwendungsbestätigungen, Berichte, Export, Töpfe, „Mein Beitrag“) folgt Schritt für Schritt. Der Rest dieses Entwurfs hält die Entscheidungen fest, damit sie später
 nicht neu erfunden werden. Rechnungen sind dabei ausdrücklich **keine** Buchungen: Sie lassen sich ändern und auf „wieder offen“ setzen; das
-Kassenbuch mit Stornoregel und Abschlusssperre kommt erst mit Schritt 4 und kann bezahlte Rechnungen als Belege übernehmen.
+Kassenbuch mit Stornoregel und Abschlusssperre übernimmt bezahlte Rechnungen auf Knopfdruck („Ins Kassenbuch“) als Buchung mit Beleg.
 
 ### Grundregeln
 
@@ -77,15 +89,18 @@ Kassenbuch mit Stornoregel und Abschlusssperre kommt erst mit Schritt 4 und kann
 | `DonationReceipt` | Zuwendungsbestätigung: Spender, Betrag, Datum, Nummer, Art                                                                             |
 
 Beiträge nach Abteilung und Altersgruppe ergeben sich aus den vorhandenen Daten (Abteilungszugehörigkeit, Geburtsdatum am Berliner Tag). Der
-Beitragslauf wird ein Job (`fees`) unter Job-Sperre und mit Idempotenz-Schlüssel (Mitglied + Beitragsart + Zeitraum) – ein doppelter Lauf erzeugt keine doppelten Forderungen.
+Beitragslauf ist kein Job, sondern startet von Hand (Prüfen, Vorschau, Erstellen) unter einer Sperre des Vereins und mit Idempotenz-Schlüssel (u. a. Zeitraum und Prüfwert der Vorschau); kein Tag wird zweimal berechnet – ein doppelter Lauf erzeugt keine doppelten Beiträge ([ADR-0012](adr/0012-beitragslauf.md)).
 
 ### Umsetzungsschritte
 
-1. Rechte, Modelle, Migration (Trigger für Abschlusssperre und Stornoregel), `MODEL_SCOPE`, Audit-Labels. **Teilweise erledigt:** Rechte
-   `finance:read`/`finance:manage`, Rechnungen, Protokollbereich; offen sind `finance:export` und die Buchungsmodelle.
-2. Beitragsarten und Zuordnung; Beitragslauf mit Vorschau (wie beim CSV-Import: erst zeigen, dann ausführen).
-3. Zahlungseingang erfassen und zuordnen; offene Posten; Erinnerungsschreiben (Vorlage, per Nachricht/E-Mail).
-4. Kassenbuch mit Belegen (vorhandene Dokumentenablage, neue Zugriffsstufe „Nur Finanzen“).
+1. Rechte, Modelle, Migration (Trigger für Abschlusssperre und Stornoregel), `MODEL_SCOPE`, Audit-Labels. **Erledigt;** das Recht
+   `finance:export` ist angelegt und wird mit dem Export (Schritt 5) genutzt.
+2. Beitragsarten und Zuordnung; Beitragslauf mit Vorschau (wie beim CSV-Import: erst zeigen, dann ausführen). **Erledigt**
+   ([ADR-0011](adr/0011-mitgliedsbeitraege.md), [ADR-0012](adr/0012-beitragslauf.md)).
+3. Zahlungseingang erfassen und zuordnen; offene Posten; Erinnerungsschreiben (Vorlage, per Nachricht/E-Mail). **Teilweise
+   erledigt:** Liste „Offene Beiträge“; Zahlungen und Erinnerungen fehlen noch.
+4. Kassenbuch mit Belegen (vorhandene Dokumentenablage, neue Zugriffsstufe „Nur Finanzen“). **Erledigt**
+   ([ADR-0010](adr/0010-finanzen-kassenbuch.md)).
 5. SEPA-Lastschriftdatei (pain.008) und CSV/DATEV-Export; Jahresübersicht je Abteilung/Veranstaltung.
 6. Zuwendungsbestätigungen. **Teilweise erledigt:** Spenden erfassen (Teil 1, [ADR-0013](adr/0013-spenden.md)); die Bestätigungen selbst
    kommen als A4-Druckansicht nach amtlichem Muster (Teil 2), nicht als PDF.
@@ -93,7 +108,7 @@ Beitragslauf wird ein Job (`fees`) unter Job-Sperre und mit Idempotenz-Schlüsse
 
 ## Bekannte Grenzen (Stand heute)
 
-- Finanzen bisher mit Kassenbuch, Rechnungen, Beiträgen und Spenden (noch keine Zahlungen, Lastschrift und Zuwendungsbestätigungen), keine Zwei-Faktor-Anmeldung, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
+- Finanzen bisher mit Kassenbuch, Rechnungen, Beiträgen und Spenden (noch keine Zahlungen, Lastschrift und Zuwendungsbestätigungen), Zwei-Faktor-Anmeldung nur freiwillig, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
 - Das Docker-Image ist nicht in einer Docker-Umgebung gestartet worden (siehe [OPERATIONS.md](OPERATIONS.md)).
 - Die Oberfläche ist nur Deutsch; Zeiten stets in `Europe/Berlin` (auch für Vereine in anderen Zeitzonen).
 - Die Barrierefreiheit ist beim Bau berücksichtigt (Beschriftungen, Tastatur, Fokus, Fehlertexte, Farbe nie als einziger Hinweis) und wird automatisch mit axe

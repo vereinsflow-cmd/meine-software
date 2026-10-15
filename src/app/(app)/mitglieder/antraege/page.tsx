@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { InboxIcon, InfoIcon, PrinterIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  ClipboardCheckIcon,
+  InboxIcon,
+  InfoIcon,
+  PrinterIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +17,9 @@ import { CompactEmpty } from "@/components/shared/compact-empty";
 import { DescriptionList } from "@/components/shared/description-list";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { ToneBadge } from "@/components/shared/status-badge";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatCalendarDate, formatDate, formatDateTime } from "@/lib/dates";
 import {
   APPLICATION_DECIDED_RETENTION_DAYS,
@@ -31,7 +39,7 @@ import {
   ResendInvitationButton,
   SetupJoinLinkButton,
 } from "@/modules/membership-applications/components/join-controls";
-import { QrCode } from "@/modules/membership-applications/components/qr-code";
+import { QrCode } from "@/components/shared/qr-code";
 import {
   canManageApplications,
   getJoinLink,
@@ -83,6 +91,7 @@ function JoinCapacityInfo({ link }: { link: JoinLink }) {
         aria-valuemin={0}
         aria-valuemax={link.limit}
         aria-valuenow={Math.min(link.used, link.limit)}
+        aria-valuetext={`${link.used} von ${link.limit} genutzt`}
         className="h-2 overflow-hidden rounded-full bg-muted"
       >
         <div
@@ -315,13 +324,18 @@ function PendingCard({ application }: { application: ApplicationDto }) {
 function DecidedList({ decided }: { decided: ApplicationDto[] }) {
   if (decided.length === 0)
     return (
-      <p className="text-sm text-muted-foreground">
+      <CompactEmpty
+        card
+        icon={<ClipboardCheckIcon />}
+        accent="slate"
+        title="Noch nichts entschieden"
+      >
         In den letzten {APPLICATION_DECIDED_RETENTION_DAYS} Tagen wurde über keinen Antrag
         entschieden.
-      </p>
+      </CompactEmpty>
     );
   return (
-    <ul className="divide-y rounded-xl bg-card shadow-sm ring-1 ring-foreground/10 dark:ring-foreground/15">
+    <ul className={cn(CARD_SURFACE, "divide-y")}>
       {decided.map((application) => {
         const accepted = application.status === "ACCEPTED";
         return (
@@ -376,49 +390,44 @@ export default async function ApplicationsPage() {
   const [link, { pending, decided }] = await Promise.all([getJoinLink(ctx), listApplications(ctx)]);
 
   return (
-    <div className="max-w-4xl">
+    <PageStack className="max-w-4xl">
       <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
       <PageHeader
         title="Beitrittsanträge"
         description="Neue Mitglieder stellen ihren Antrag über den QR-Code. Erst wenn du annimmst, wird die Person Mitglied und bekommt eine Einladung per E-Mail."
       />
 
-      <div className="grid gap-9">
-        <JoinLinkCard link={link} />
+      <JoinLinkCard link={link} />
 
-        <section aria-labelledby="offene-antraege" className="grid gap-3">
-          <h2 id="offene-antraege" className="text-xl font-semibold">
-            Offene Anträge{pending.length > 0 ? ` (${pending.length})` : ""}
-          </h2>
-          {pending.length === 0 ? (
-            <Card>
-              <CardContent>
-                <CompactEmpty icon={<InboxIcon />} accent="blue" title="Keine offenen Anträge">
-                  Neue Anträge erscheinen hier. Wer über den QR-Code einen Antrag stellt, wartet auf
-                  deine Entscheidung.
-                </CompactEmpty>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {pending.map((application) => (
-                <PendingCard key={application.id} application={application} />
-              ))}
-            </div>
-          )}
-          <p className="text-sm text-muted-foreground">
-            Offene Anträge werden nach {APPLICATION_PENDING_RETENTION_DAYS} Tagen automatisch
-            gelöscht, entschiedene nach {APPLICATION_DECIDED_RETENTION_DAYS} Tagen.
-          </p>
-        </section>
+      <PageSection
+        id="offene-antraege"
+        title={`Offene Anträge${pending.length > 0 ? ` (${pending.length})` : ""}`}
+      >
+        {pending.length === 0 ? (
+          <CompactEmpty card icon={<InboxIcon />} accent="blue" title="Keine offenen Anträge">
+            Neue Anträge erscheinen hier. Wer über den QR-Code einen Antrag stellt, wartet auf deine
+            Entscheidung.
+          </CompactEmpty>
+        ) : (
+          <div className="grid gap-4">
+            {pending.map((application) => (
+              <PendingCard key={application.id} application={application} />
+            ))}
+          </div>
+        )}
+        <p className="text-sm text-muted-foreground">
+          Offene Anträge werden nach {APPLICATION_PENDING_RETENTION_DAYS} Tagen automatisch
+          gelöscht, entschiedene nach {APPLICATION_DECIDED_RETENTION_DAYS} Tagen.
+        </p>
+      </PageSection>
 
-        <section aria-labelledby="zuletzt-entschieden" className="grid gap-3">
-          <h2 id="zuletzt-entschieden" className="text-xl font-semibold">
-            Zuletzt entschieden
-          </h2>
-          <DecidedList decided={decided} />
-        </section>
-      </div>
-    </div>
+      <PageSection
+        id="zuletzt-entschieden"
+        title="Zuletzt entschieden"
+        description={`Die letzten ${APPLICATION_DECIDED_RETENTION_DAYS} Tage`}
+      >
+        <DecidedList decided={decided} />
+      </PageSection>
+    </PageStack>
   );
 }

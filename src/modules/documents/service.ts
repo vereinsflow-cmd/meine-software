@@ -21,6 +21,7 @@ import { scanUpload } from "@/server/storage/scan";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { invoiceBaseName, nextInvoiceName } from "@/modules/finance/invoice-format";
 import type { DocumentInput } from "./schemas";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Dokumente – sicher hochladen, ablegen und herunterladen.
@@ -99,8 +100,8 @@ export function searchWhere(q: string): Prisma.DocumentWhereInput {
   return {
     AND: tokens.map((token) => ({
       OR: [
-        { name: { contains: token, mode: "insensitive" as const } },
-        { category: { contains: token, mode: "insensitive" as const } },
+        { name: { contains: likeText(token), mode: "insensitive" as const } },
+        { category: { contains: likeText(token), mode: "insensitive" as const } },
       ],
     })),
   };

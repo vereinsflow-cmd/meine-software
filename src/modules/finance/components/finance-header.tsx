@@ -3,7 +3,8 @@ import { FinanceTabs } from "./finance-tabs";
 
 /**
  * Kopf jeder Finanzseite: Überschrift „Finanzen“ mit Untertitel und den Knöpfen der Seite, darunter die Leiste der Bereiche.
- * (Kein gemeinsames Layout: Jede Seite bringt ihre eigenen Knöpfe mit – der blaue Hauptknopf zuerst.)
+ * (Kein gemeinsames Layout: Jede Seite bringt ihre eigenen Knöpfe mit – der blaue Hauptknopf zuerst.) Steht als erstes in
+ * der Spalte der Seite (`PageStack`); die Abstände macht die Spalte. Auch der Ladezustand zeigt ihn (`FinanceLoading`).
  */
 export function FinanceHeader({
   description,

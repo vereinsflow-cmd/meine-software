@@ -13,6 +13,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
 import { BackLink } from "@/components/shared/back-link";
 import { berlinParts, formatDuration } from "@/lib/dates";
@@ -38,7 +39,7 @@ export default async function HoursPage({
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/helferplanung">Helferplanung</BackLink>
       <PageHeader
         title="Helferstunden"
@@ -48,7 +49,7 @@ export default async function HoursPage({
             : `Deine dokumentierten Einsatzzeiten ${year} – insgesamt ${formatDuration(totalMinutes)}.`
         }
       />
-      <form key={JSON.stringify(params)} method="get" className="mb-4 flex items-end gap-2">
+      <form key={JSON.stringify(params)} method="get" className="flex items-end gap-2">
         <div className="grid gap-1.5">
           <label htmlFor="jahr" className="text-sm font-medium">
             Jahr
@@ -72,7 +73,8 @@ export default async function HoursPage({
         />
       ) : (
         <TableCard>
-          <Table>
+          {/* Am Handy gestapelt: je Person eine Zeile „Einsätze“ und „Stunden“ unter dem Namen. */}
+          <Table stack>
             <caption className="sr-only">Helferstunden {year}</caption>
             <TableHeader>
               <TableRow>
@@ -85,18 +87,20 @@ export default async function HoursPage({
               {rows.map((row) => (
                 <TableRow key={row.memberId}>
                   <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell className="text-right tabular-nums">{row.shifts}</TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell label="Einsätze" className="text-right tabular-nums">
+                    {row.shifts}
+                  </TableCell>
+                  <TableCell label="Stunden" className="text-right tabular-nums">
                     {formatDuration(row.minutes)}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="bg-muted/50 font-semibold">
                 <TableCell>Gesamt</TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell label="Einsätze" className="text-right tabular-nums">
                   {rows.reduce((sum, r) => sum + r.shifts, 0)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell label="Stunden" className="text-right tabular-nums">
                   {formatDuration(totalMinutes)}
                 </TableCell>
               </TableRow>
@@ -104,6 +108,6 @@ export default async function HoursPage({
           </Table>
         </TableCard>
       )}
-    </>
+    </PageStack>
   );
 }

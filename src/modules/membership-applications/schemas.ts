@@ -110,4 +110,4 @@ export type ApplicationInput = z.output<typeof applicationFormSchema>;
 export const isHoneypotFilled = (input: Pick<ApplicationInput, "website">): boolean =>
   input.website.trim() !== "";
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";

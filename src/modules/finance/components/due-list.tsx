@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { CircleCheckBigIcon } from "lucide-react";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DueItem } from "../overview";
@@ -18,18 +20,26 @@ const TONE_TEXT: Record<DueItem["tone"], string> = {
 export function DueList({
   items,
   canManage,
-  empty = "Alles erledigt – gerade ist nichts zu tun.",
+  empty = "Gerade ist nichts zu tun.",
 }: {
   /** Nach `urgency` sortiert. */
   items: DueItem[];
   canManage: boolean;
-  /** Satz, wenn es gar nichts gibt. */
+  /** Satz unter „Alles erledigt“, wenn es gar nichts gibt. */
   empty?: string;
 }) {
   const now = items.filter((item) => !item.later && !item.info);
   const later = items.filter((item) => item.later && !item.info);
   const info = items.filter((item) => item.info);
-  if (items.length === 0) return <p className="py-6 text-sm text-muted-foreground">{empty}</p>;
+  if (items.length === 0) {
+    return (
+      <div className="mt-2">
+        <CompactEmpty icon={<CircleCheckBigIcon />} accent="emerald" title="Alles erledigt">
+          {empty}
+        </CompactEmpty>
+      </div>
+    );
+  }
   return (
     <>
       <p className="mb-2 text-sm text-muted-foreground">

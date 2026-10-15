@@ -21,7 +21,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   // Leere Version, noch kein Konto: zuerst Verein und Administrator anlegen.
   if (await isFirstRunOpen()) redirect("/einrichten");
 
-  const notice = first(params.expired) ? "expired" : first(params.reset) ? "reset" : null;
+  const notice = first(params.expired)
+    ? "expired"
+    : first(params.reset)
+      ? "reset"
+      : first(params.abgelaufen)
+        ? "second-factor-expired"
+        : null;
 
   return (
     <AuthCard

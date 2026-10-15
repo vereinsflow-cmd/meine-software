@@ -96,6 +96,16 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
     keywords: ["auswertung"],
   },
   {
+    id: "page:anwesenheit",
+    category: "seiten",
+    title: "Auswertung anzeigen · Anwesenheit",
+    description: "Wer wie oft beim Training oder Termin da war",
+    href: "/veranstaltungen/anwesenheit",
+    iconKey: "auswertungen",
+    permission: "events:manage_participants",
+    keywords: ["auswertung", "anwesenheit", "training", "quote", "gefehlt", "entschuldigt"],
+  },
+  {
     id: "page:dashboard-aktivitaet",
     category: "seiten",
     title: "Auswertung anzeigen · Vereinsaktivität",
@@ -123,6 +133,18 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
     iconKey: "mitglieder",
     permission: "members:read",
     notOwnOnly: true,
+  },
+  {
+    id: "page:ehrungen",
+    category: "seiten",
+    title: "Ehrungen",
+    description: "Runde Mitgliedsjubiläen eines Jahres ansehen, drucken und exportieren",
+    href: "/mitglieder/ehrungen",
+    iconKey: "ehrungen",
+    // Wie canSeeAnniversaries: Mitglieder vereinsweit oder der eigenen Abteilungen sehen, nicht nur sich selbst.
+    permission: "members:read",
+    notOwnOnly: true,
+    keywords: ["jubiläum", "jubilare", "ehrung", "ehrennadel", "mitgliedsjahre", "treue"],
   },
   {
     id: "page:kalender",
@@ -354,6 +376,7 @@ export const SEARCH_REGISTRY: StaticRegistryEntry[] = [
     description: "Eigene Kontodaten, Passwort und Sitzungen verwalten",
     href: "/profil",
     iconKey: "profil",
+    keywords: ["zwei-faktor", "2fa", "authenticator", "passwort ändern", "sicherheit"],
   },
   {
     id: "page:datenschutz",

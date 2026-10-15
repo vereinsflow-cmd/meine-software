@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRightIcon,
+  AwardIcon,
   BellOffIcon,
   CakeIcon,
   CircleCheckBigIcon,
@@ -17,6 +18,7 @@ import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty as Empty } from "@/components/shared/compact-empty";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import { TaskPriorityBadge, TaskStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import { yearsLabel } from "@/lib/anniversaries";
 import { auditActionLabel } from "@/lib/audit-labels";
 import {
   MONTH_NAMES,
@@ -57,19 +59,19 @@ const WIDGET_SIZE: Record<
 > = {
   s: {
     card: "[--card-spacing:--spacing(4)]",
-    chip: "size-8 rounded-[0.7rem] [&_svg]:size-4",
+    chip: "size-8 rounded-lg [&_svg]:size-4",
     title: "text-base",
     content: "gap-3",
   },
   m: {
     card: "[--card-spacing:--spacing(5)]",
-    chip: "size-10 rounded-[0.85rem] [&_svg]:size-5",
+    chip: "size-10 rounded-xl [&_svg]:size-5",
     title: "",
     content: "gap-4",
   },
   l: {
     card: "[--card-spacing:--spacing(6)]",
-    chip: "size-10 rounded-[0.85rem] [&_svg]:size-5",
+    chip: "size-10 rounded-xl [&_svg]:size-5",
     title: "",
     content: "gap-4",
   },
@@ -107,7 +109,7 @@ export function Widget({
       {/* Kachel wie im Entwurf 2: große Rundung, weicher Schein in der Farbe des Bereichs, etwas mehr Innenabstand. */}
       <Card
         className={cn(
-          "h-full rounded-[1.75rem] dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
+          "h-full rounded-4xl dark:inset-shadow-[0_1px_0_rgb(255_255_255/0.05)]",
           dims.card,
           TILE_ACCENT[accent].surface,
           emphasis && "ring-2 ring-primary/50 dark:ring-primary/60",
@@ -185,7 +187,7 @@ export function StaffingWarnings({
     // Pfeil zur Helferplanung. Die Rolle `alert` (Screenreader) und der Text bleiben wie bisher.
     <Alert
       variant="warning"
-      className="relative mb-6 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 overflow-hidden rounded-[1.75rem] border border-amber-300/70 bg-linear-to-r from-amber-100 via-amber-50 to-amber-100/70 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] dark:border-amber-400/25 dark:from-amber-500/20 dark:via-amber-500/[0.06] dark:to-amber-500/10"
+      className="relative grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 overflow-hidden rounded-4xl border border-amber-300/70 bg-linear-to-r from-amber-100 via-amber-50 to-amber-100/70 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] dark:border-amber-400/25 dark:from-amber-500/20 dark:via-amber-500/[0.06] dark:to-amber-500/10"
     >
       <span
         aria-hidden="true"
@@ -718,6 +720,61 @@ export function Birthdays({
                   wird {b.turns} ·{" "}
                   <span className="whitespace-nowrap">
                     {formatDateShort(b.date)} ({inDaysLabel(b.inDays)})
+                  </span>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ExpandableList>
+      )}
+    </Widget>
+  );
+}
+
+/**
+ * Runde Mitgliedsjubiläen der nächsten 60 Tage (höchstens fünf) – aufgebaut wie „Geburtstage“: Datumsfläche, Name, Stufe und
+ * Tag. Die vollständige Liste eines Jahres (zum Drucken und Exportieren) steht unter „Ehrungen“.
+ */
+export function Anniversaries({
+  anniversaries,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  anniversaries: NonNullable<DashboardData["anniversaries"]>;
+  size?: BlockSize;
+}) {
+  return (
+    <Widget
+      id="w-jubilaeen"
+      size={size}
+      title="Jubiläen"
+      icon={<AwardIcon />}
+      accent="blue"
+      description="Runde Mitgliedsjubiläen in den nächsten 60 Tagen"
+      more={{ href: "/mitglieder/ehrungen", label: "Alle Ehrungen" }}
+    >
+      {anniversaries.length === 0 ? (
+        <Empty icon={<AwardIcon />} accent="blue" title="Keine Jubiläen">
+          In den nächsten 60 Tagen hat niemand ein rundes Mitgliedsjubiläum.
+        </Empty>
+      ) : (
+        <ExpandableList className="divide-y" initial={initialRows(size, 3)} itemNoun="weitere">
+          {anniversaries.map((a) => (
+            <li
+              key={a.memberId}
+              className={cn("flex items-center gap-3 py-2.5 first:pt-0 last:pb-0", LIST_ROW)}
+            >
+              <DateTile value={a.date} accent="blue" />
+              <div className="grid min-w-0 gap-0.5">
+                <Link
+                  href={`/mitglieder/${a.memberId}`}
+                  className="text-base font-semibold underline-offset-4 hover:underline"
+                >
+                  {a.name}
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  {yearsLabel(a.years)} Mitglied ·{" "}
+                  <span className="whitespace-nowrap">
+                    {formatDateShort(a.date)} ({inDaysLabel(a.inDays)})
                   </span>
                 </span>
               </div>

@@ -15,6 +15,7 @@ import { forbidden, notFound, validationFailed } from "@/server/errors";
 import { assertCan, can, scopeOf, type ResourceRef } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import type { TaskInput } from "./schemas";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Aufgaben – Geschäftslogik.
@@ -165,8 +166,8 @@ export async function listTasks(ctx: TenantContext, query: TaskListQuery): Promi
       query.overdueOnly ? { status: { not: "DONE" }, dueDate: { lt: today } } : {},
       ...tokens.map((token) => ({
         OR: [
-          { title: { contains: token, mode: "insensitive" as const } },
-          { description: { contains: token, mode: "insensitive" as const } },
+          { title: { contains: likeText(token), mode: "insensitive" as const } },
+          { description: { contains: likeText(token), mode: "insensitive" as const } },
         ],
       })),
     ],

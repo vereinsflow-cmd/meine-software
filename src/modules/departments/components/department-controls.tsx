@@ -210,6 +210,8 @@ export function GroupControls({
                 if (!result.ok) toast.error(result.error.message);
                 else {
                   setSelected("");
+                  // Wie beim Hinzufügen zur Abteilung eine kurze Bestätigung – auch für Screenreader.
+                  toast.success("Zur Gruppe hinzugefügt.");
                   router.refresh();
                 }
               })
@@ -259,7 +261,10 @@ export function RemoveGroupMemberButton({
         startTransition(async () => {
           const result = await removeGroupMemberAction({ groupId, memberId, departmentId });
           if (!result.ok) toast.error(result.error.message);
-          else router.refresh();
+          else {
+            toast.success("Aus der Gruppe entfernt.");
+            router.refresh();
+          }
         })
       }
     >

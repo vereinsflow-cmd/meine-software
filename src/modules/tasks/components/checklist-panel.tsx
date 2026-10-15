@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { IconButton } from "@/components/shared/icon-button";
@@ -168,12 +169,25 @@ function ChecklistItemRow({ item }: { item: ChecklistDto["items"][number] }) {
   );
 }
 
-export function ChecklistCard({ list }: { list: ChecklistDto }) {
+/**
+ * Eine Checkliste mit Fortschritt, Punkten und Eingabe für neue Punkte. `surface`: „inset“ (Vorgabe) als umrandeter Kasten
+ * innerhalb einer Karte (Veranstaltungsseite), „card“ als eigene Karte auf dem Seitengrund (Aufgabenseite).
+ */
+export function ChecklistCard({
+  list,
+  surface = "inset",
+}: {
+  list: ChecklistDto;
+  surface?: "inset" | "card";
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const total = list.items.length;
   return (
-    <section aria-label={`Checkliste ${list.title}`} className="rounded-xl border p-4">
+    <section
+      aria-label={`Checkliste ${list.title}`}
+      className={cn(surface === "card" ? CARD_SURFACE : "rounded-xl border", "p-4")}
+    >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-base font-semibold">
           <AREA_ICON.aufgaben className="size-4" aria-hidden="true" /> {list.title}

@@ -12,7 +12,7 @@ Installation).
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | Ein Verein sieht oder ändert Daten eines anderen (IDOR)      | Kontext aus der Sitzung, gefilterter Datenbank-Client, zusammengesetzte Fremdschlüssel; „nicht gefunden“ statt „verboten“ | [Mandanten](#mandantentrennung)                     |
 | Rechteausweitung innerhalb eines Vereins                     | Rechte mit Reichweite, Prüfung immer im Dienst, Rollen serverseitig                                                       | [Rechte](#rechte)                                   |
-| Passwort erraten / Konto übernehmen                          | Argon2id, Passwortregeln, Rate-Limits je Konto und IP, konstante Antwortzeit, keine Konto-Aufzählung                      | [Anmeldung](#anmeldung-und-sitzungen)               |
+| Passwort erraten / Konto übernehmen                          | Argon2id, Passwortregeln, Rate-Limits je Konto und IP, konstante Antwortzeit, keine Konto-Aufzählung, Zwei-Faktor (TOTP)  | [Anmeldung](#anmeldung-und-sitzungen)               |
 | Sitzung stehlen oder fixieren                                | Zufallstoken, nur Hash gespeichert, `HttpOnly`/`Secure`/`__Host-`, Inaktivitäts- und Höchstdauer                          | [Anmeldung](#anmeldung-und-sitzungen)               |
 | Fremde Seite löst Aktionen im Namen des Benutzers aus (CSRF) | `SameSite=Lax`, Herkunftsprüfung, Server Actions mit eingebautem Schutz                                                   | [Web](#webangriffe)                                 |
 | Skripteinschleusung (XSS)                                    | React-Escaping, keine `innerHTML`-Nutzung, CSP mit Nonce, Nachrichten nur als Text                                        | [Web](#webangriffe)                                 |
@@ -46,6 +46,15 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
   `finance:manage` (Standard: Vereinsadministrator und Vorstand). Der Dokumentendienst liefert die Rechnungsangaben nur mit dem Recht aus;
   ohne es fehlen sie ganz (nicht nur in der Oberfläche). Die Summe auf dem Dashboard zählt auch Belege höherer Zugriffsstufe, den Beleg
   öffnen kann trotzdem nur, wer das Dokument sehen darf.
+- **Anwesenheit** (`src/modules/events/attendance.ts`): Erfassen, Auswerten und CSV-Export nur mit `events:manage_participants`,
+  bezogen auf die Abteilung des Termins – Vorstand und Administratoren im ganzen Verein, Abteilungsleiter nur bei Terminen der
+  eigenen Abteilungen. Auf die Liste kommen nur Personen mit Zu- oder Absage, bereits erfasste oder Mitglieder aus derselben
+  Reichweite (sonst „nicht gefunden“); Auswertung und Export filtern schon in der Abfrage. Erfassen erst ab einer Stunde vor
+  Beginn und nur bei veröffentlichten oder abgeschlossenen Terminen, gespeichert unter einer Sperre je Termin. Mitglieder sehen nur
+  ihre eigene Anwesenheit. Speichern und Export stehen im Protokoll (Zahlen, keine Namen). Geprüft in `tests/integration/attendance.test.ts`.
+- **Ehrungen** (`src/modules/members/anniversaries.ts`): nur mit `members:read` in der Reichweite Verein oder Abteilung –
+  Abteilungsleiter sehen dieselben Mitglieder wie in der Mitgliederliste, wer nur die eigenen Daten sieht, keine Ehrungen. Liste
+  und Druckansicht zeigen keine Kontaktdaten; der CSV-Export braucht zusätzlich `members:export` und wird protokolliert.
 - Der **letzte Vereinsadministrator** kann weder entfernt noch herabgestuft werden; der **letzte Plattform-Administrator** kann sich
   nicht löschen.
 
@@ -103,7 +112,48 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
   `Secure` und `__Host-`-Präfix. Beim Anmelden entsteht immer eine **neue** Sitzung (keine Fixierung); beim Passwortwechsel werden
   andere Sitzungen beendet. Inaktivität (Vorgabe 60 Minuten) und Höchstdauer (14 Tage) prüft der Server bei jeder Anfrage.
 - **Einladungen und Reset-Links:** Einmal-Token, nur als Hash gespeichert, begrenzte Gültigkeit, nach Gebrauch ungültig; gleichzeitiges Einlösen gelingt genau einmal (getestet).
-- **Zwei-Faktor:** _noch nicht umgesetzt_ (siehe [ROADMAP.md](ROADMAP.md)); Datenfelder (`totpSecretEnc`) sind vorbereitet.
+- **Zwei-Faktor-Anmeldung (TOTP, freiwillig je Konto)** – `src/server/auth/two-factor.ts`, `totp.ts`, `recovery-codes.ts`,
+  `login-challenge.ts`, `src/server/security/secret-box.ts`:
+  - **Verfahren:** RFC 6238 (HMAC-SHA1, 6 Ziffern, 30 Sekunden), geprüft mit ±1 Zeitschritt; nur `node:crypto`, kein Zusatzpaket.
+    Getestet mit den Prüfwerten aus RFC 4226 (Anhang D) und RFC 6238 (Anhang B).
+  - **Geheimnis:** 160 Bit, verschlüsselt mit AES-256-GCM (`totpSecretEnc`). Der Schlüssel wird per HKDF aus `APP_SECRET` abgeleitet
+    (eigene Unterschlüssel für Verschlüsselung und HMAC), die Benutzer-ID ist als AAD eingebunden – in ein anderes Konto kopiert,
+    lässt sich der Wert nicht entschlüsseln. Angezeigt wird es nur der Person selbst während der Einrichtung (QR-Code als SVG-Pfad
+    vom Server, Schlüssel zum Abtippen). **`APP_SECRET` darf sich danach nicht mehr ändern** (siehe [OPERATIONS.md](OPERATIONS.md#konfiguration)).
+  - **Einschalten** erst mit dem aktuellen Passwort **und** dem ersten richtigen Code; dabei enden alle anderen Sitzungen. Das Passwort
+    verhindert, dass jemand mit einer kurz übernommenen Sitzung (offener Vereins-PC, gestohlenes Cookie) sein eigenes Handy einträgt und
+    die Person damit dauerhaft aussperrt. Eine angefangene Einrichtung ändert an der Anmeldung nichts (geprüft wird nur `totpEnabledAt`).
+  - **Kein zweimaliger Code:** Der zuletzt angenommene Zeitschritt steht in `totpLastStep`; angenommen wird nur ein späterer, geprüft und
+    gespeichert in einer bedingten Anweisung (`updateMany … totpLastStep < Schritt`). Derselbe oder ein älterer Code wird abgelehnt –
+    auch bei gleichzeitigen Anfragen gewinnt genau eine (getestet).
+  - **Wiederherstellungscodes:** 10 Stück `XXXXX-XXXXX` (Crockford-Base32, je 50 Bit), nur einmal angezeigt, gespeichert als HMAC-SHA256
+    (an die Benutzer-ID gebunden). Einlösen entfernt den Hash in einer Anweisung (`array_remove … WHERE hash = ANY(…)`): Ein Code gelingt
+    genau einmal, auch gleichzeitig (getestet). Nutzung → Protokoll und E-Mail. Neue Codes nur mit Passwort und Code.
+  - **Anmeldung in zwei Schritten:** Nach dem richtigen Passwort entsteht noch **keine** Sitzung (keine „letzte Anmeldung“, kein
+    Protokolleintrag). Stattdessen ein Cookie für 5 Minuten (`…_2fa`, AES-GCM-verschlüsselt mit `{uid, next, pwd, exp}`, `HttpOnly`,
+    `SameSite=Strict`, in Produktion `Secure` und `__Host-`), dann `/anmelden/bestaetigen`. `pwd` ist ein Fingerabdruck des
+    Passwort-Hashs (HMAC, gekürzt): Nach einem Passwortwechsel oder -reset endet jede offene Code-Eingabe sofort, auch mit einem
+    aufbewahrten Cookie. Erst der richtige Code startet die Sitzung
+    (Protokoll „Anmeldung mit Zwei-Faktor“), das Rücksprungziel prüft erneut `safeRedirectPath`. „Abbrechen“ löscht das Cookie.
+    „Gerät merken“ gibt es bewusst nicht.
+  - **Fehlversuche:** 5 je Konto in 15 Minuten, 20 je Konto und Tag, 30 je IP in 15 Minuten. Jeder Versuch wird **vor** der Prüfung
+    atomar gezählt (`INSERT … ON CONFLICT`), sonst kämen viele gleichzeitige Anfragen alle noch an der Grenze vorbei (getestet mit 20
+    gleichzeitigen Codes: höchstens 5 werden geprüft). Ein Erfolg leert den 15-Minuten-Zähler des Kontos; beim Tages- und beim
+    IP-Zähler nimmt er nur seinen eigenen Versuch zurück – die Fehlversuche des Tages laufen von selbst ab. Beim Erreichen einer
+    Grenze einmal Protokoll (`auth.2fa_locked`) und eine E-Mail an die Person – das Passwort ist dann vermutlich bekannt.
+    Einrichten, Ausschalten und neue Codes: 10 Versuche je Konto in 15 Minuten und 20 je Tag, ebenso vorab gezählt. Das
+    Zurücksetzen (Verein oder Betreiber) leert Zwei-Faktor-Daten, Sitzungen und Protokoll in einer Transaktion, danach die
+    Anmelde-Sperren; die E-Mail geht erst nach dem Speichern.
+  - **Ausschalten** nur mit Passwort **und** Code (oder Wiederherstellungscode). Ein **Passwort-Reset lässt die Zwei-Faktor-Anmeldung
+    eingeschaltet** – wer nur das E-Mail-Postfach kontrolliert, kommt nicht ins Konto.
+  - **Zurücksetzen durch den Verein** („Benutzer und Rollen“ → „⋯“): nur mit `users:manage`, nur für Personen, deren Rechte man selbst
+    vollständig hat, nie das eigene Konto. Das Konto gilt plattformweit: Ist die Person auch in einem anderen Verein oder
+    Plattform-Administrator, darf es nur der Betreiber (`npm run admin:reset-2fa`). Geprüft wird das erst nach „ist überhaupt etwas
+    eingerichtet?“ – sonst verriete die Meldung bei jeder Person, ob sie auch woanders ist. Fremde Vereine → „nicht gefunden“. Danach enden alle
+    Sitzungen der Person, sie bekommt eine E-Mail, das Vereinsprotokoll vermerkt `user.2fa_reset`.
+  - Jede Änderung (ein, aus, neue Codes, Code benutzt, gesperrt, zurückgesetzt) steht im Protokoll und meldet sich per E-Mail.
+  - Geprüft in `tests/unit/totp.test.ts`, `secret-box.test.ts`, `recovery-codes.test.ts`, `tests/integration/two-factor*.test.ts`,
+    Ende-zu-Ende in `tests/e2e/zwei-faktor.spec.ts`.
 
 ## Webangriffe
 
@@ -120,8 +170,10 @@ zusammengesetzte Fremdschlüssel). **Getestet** in jedem Fachbereich mit zwei Ve
   Standort aus), `Cross-Origin-Opener-Policy: same-origin`, in Produktion HSTS (2 Jahre, `includeSubDomains`, `preload`).
 - **SQL-Einschleusung:** Alle Abfragen laufen über Prisma (parametrisiert). Wo Roh-SQL nötig ist (Advisory-Locks, Aufbewahrung,
   Anonymisierung), sind Werte gebunden (`$queryRaw`/`$executeRaw` mit Template-Literal). Der Tenant-Client sperrt `…Unsafe`-Varianten.
-- **Open-Redirect:** Rücksprungziele nach der Anmeldung und Benachrichtigungs-Links sind nur interne Pfade (Prüfung in der Anwendung
-  **und** per Datenbank-CHECK).
+- **Open-Redirect:** Rücksprungziele nach der Anmeldung (auch nach dem Zwei-Faktor-Code) und Benachrichtigungs-Links sind nur interne
+  Pfade (Prüfung in der Anwendung **und** per Datenbank-CHECK: beginnt mit `/`, zweites Zeichen weder `/` noch `\`, keine
+  Steuerzeichen). Bis 14.10.2026 ließ die Datenbankregel wegen der LIKE-Maskierung `/\…` durch; korrigiert mit der Migration
+  `20261014120200_notification_link_check_fix`, ebenso für die Seitenangabe von Support-Meldungen (siehe [DATA_MODEL.md](DATA_MODEL.md)).
 - **Eingaben:** Jede Server Action und jeder Route Handler validiert mit Zod, am Server – die Prüfung im Browser ist nur Komfort.
 
 ## Uploads
@@ -156,7 +208,7 @@ Umsetzung: `src/lib/uploads.ts`, `src/server/storage/`, `src/modules/documents/s
 ## Rate-Limits
 
 Zähler liegen in PostgreSQL (`RateLimitBucket`), also gemeinsam für alle Server-Instanzen und ohne Zusatzdienst. Begrenzt sind:
-Anmeldung (je Konto und IP), Passwort-Reset (anfordern und einlösen), Passwortwechsel, Einladungen, Datei-Upload, Vereinslogo (20 je Person und Stunde), Datenexport,
+Anmeldung (je Konto und IP), Zwei-Faktor-Codes (je Konto, je Konto und Tag, je IP), Passwort-Reset (anfordern und einlösen), Passwortwechsel, Einladungen, Datei-Upload, Vereinslogo (20 je Person und Stunde), Datenexport,
 Löschantrag, Support-Meldungen (10 je Person und Stunde), Beitrittsanträge (5 je IP und Stunde, 30 je Verein und Tag), das Logo der
 Beitrittsseite (120 je IP und Stunde), Kalender-Feed und der Cron-Endpunkt. **IP-Grenzen zählen je Anschluss** (`rateLimitIp`): IPv4 als ganze
 Adresse, IPv6 als /64-Netz – ein IPv6-Anschluss hat meist ein ganzes /64 und könnte seine Adresse darin für jeden Versuch wechseln.
@@ -166,8 +218,8 @@ Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selb
 ## Protokoll und Nachvollziehbarkeit
 
 - `AuditLog` ist per Datenbank-Trigger **unveränderlich** (kein UPDATE; DELETE nur in der Aufbewahrungsroutine).
-- Erfasst werden Anmeldungen, Rechteänderungen, Änderungen an Mitgliedern, Veranstaltungen, Schichten, Aufgaben, Nachrichten, Dokumenten,
-  Einwilligungen und Datenschutz-Vorgängen. Sensible Werte (E-Mail, Telefon, Adresse, Notizen) werden nur als „geändert“ vermerkt.
+- Erfasst werden Anmeldungen (auch mit Zwei-Faktor), jede Änderung an der Zwei-Faktor-Anmeldung, Rechteänderungen, Änderungen an
+  Mitgliedern, Veranstaltungen, Anwesenheit, Schichten, Aufgaben, Nachrichten, Dokumenten, Einwilligungen und Datenschutz-Vorgängen sowie Exporte. Sensible Werte (E-Mail, Telefon, Adresse, Notizen) werden nur als „geändert“ vermerkt.
 - Ansicht für Berechtigte unter „Änderungsprotokoll“, filterbar nach Bereich, Person, Zeitraum und Text.
 
 ## Konfiguration und Geheimnisse
@@ -176,6 +228,9 @@ Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selb
 - **Der Server startet in Produktion nicht**, wenn `APP_SECRET` oder `CRON_SECRET` noch den Platzhalter der Vorlage enthalten, `APP_URL` nicht mit `https://`
   beginnt oder `MAIL_TRANSPORT` nicht `smtp` ist (sonst landeten Reset-Links im Server-Protokoll). Geprüft beim Start (`src/instrumentation.ts`).
 - Geheimnisse werden mit `timingSafeEqual` verglichen (Cron-Token); Token für Einladungen, Reset und Kalender-Abo nur als **Hash** gespeichert.
+- Aus `APP_SECRET` werden per HKDF eigene Schlüssel abgeleitet (`src/server/security/secret-box.ts`): für die verschlüsselten
+  Zwei-Faktor-Geheimnisse, das Cookie des Zwei-Faktor-Schritts und die Prüfwerte der Wiederherstellungscodes. Wer `APP_SECRET` ändert,
+  macht alle eingerichteten Zwei-Faktor-Anmeldungen unbrauchbar (siehe [OPERATIONS.md](OPERATIONS.md#konfiguration)).
 - Der Seed (Demo-Konten mit bekanntem Passwort) **verweigert die Ausführung in Produktion**.
 
 ## Logs und Fehler
@@ -195,7 +250,8 @@ Anfragen wie eine IP aus – und nur dann, wenn der Proxy `X-Forwarded-For` selb
 ## Nicht abgedeckt (bewusst benannt)
 
 - Kein Virenscan der Uploads (Erweiterungspunkt vorhanden).
-- Keine Zwei-Faktor-Anmeldung (vorbereitet).
+- Zwei-Faktor-Anmeldung ist freiwillig; ein Verein kann sie (noch) nicht für alle oder für Administratoren vorschreiben. Konten ohne
+  Verein (reine Plattform-Administratoren) können sie in der Oberfläche noch nicht einrichten, weil „Mein Profil“ einen Verein voraussetzt.
 - Keine Datenbank-Zeilensicherheit (Row-Level-Security) als vierte Schicht – siehe [ADR-0002](adr/0002-mandantentrennung.md); die drei vorhandenen Schichten sind getestet.
 - Keine automatische Verschlüsselung der Dateiablage; empfohlen ist ein verschlüsselter Datenträger auf dem Server.
 - Kein Schutz vor Angriffen auf Netzwerkebene (DDoS): dafür Reverse-Proxy oder Anbieter-Dienste einsetzen.

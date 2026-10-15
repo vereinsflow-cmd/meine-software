@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { FilterFields, FilterToggle } from "@/components/shared/filter-toggle";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { TableCard } from "@/components/shared/table-card";
 import { AUDIT_MODULES, auditActionLabel, formatAuditChanges } from "@/lib/audit-labels";
@@ -65,7 +66,7 @@ export default async function AuditLogPage({
   const filtered = Boolean(area || q || from || toDay || actorUserId);
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Änderungsprotokoll"
         description="Wer wann was geändert hat. Einträge können nicht nachträglich verändert werden; sensible Angaben (z. B. Kontaktdaten) werden nur als „geändert“ vermerkt."
@@ -77,7 +78,7 @@ export default async function AuditLogPage({
         action="/protokoll"
         role="search"
         aria-label="Protokoll filtern"
-        className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         <div className="grid gap-1.5">
           <Label htmlFor="pr-q">Suche in der Beschreibung</Label>
@@ -147,9 +148,11 @@ export default async function AuditLogPage({
           }
         />
       ) : (
-        <>
+        // Tabelle und Seitenwechsel gehören zusammen (eigener Abstand der `Pagination`).
+        <div>
           <TableCard>
-            <Table>
+            {/* Am Handy eine kleine Karte je Eintrag: oben der Zeitpunkt, darunter Person, Aktion und Beschreibung. */}
+            <Table stack>
               <caption className="sr-only">Änderungsprotokoll, neueste Einträge zuerst</caption>
               <TableHeader>
                 <TableRow>
@@ -164,10 +167,10 @@ export default async function AuditLogPage({
                   const details = formatAuditChanges(entry.changes);
                   return (
                     <TableRow key={entry.id}>
-                      <TableCell className="align-top whitespace-nowrap tabular-nums">
+                      <TableCell className="align-top whitespace-nowrap tabular-nums max-md:font-medium">
                         {formatDateTime(entry.createdAt)}
                       </TableCell>
-                      <TableCell className="align-top">
+                      <TableCell label="Person" className="align-top">
                         {entry.actor.kind === "USER" ? (
                           entry.actor.name
                         ) : entry.actor.kind === "SYSTEM" ? (
@@ -181,10 +184,10 @@ export default async function AuditLogPage({
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="align-top font-medium">
+                      <TableCell label="Aktion" className="align-top font-medium">
                         {auditActionLabel(entry.action)}
                       </TableCell>
-                      <TableCell className="align-top whitespace-normal">
+                      <TableCell label="Beschreibung" className="align-top whitespace-normal">
                         {entry.summary ?? <span className="text-muted-foreground">–</span>}
                         {details.length > 0 && (
                           <details className="mt-1 text-sm">
@@ -206,8 +209,8 @@ export default async function AuditLogPage({
             </Table>
           </TableCard>
           <Pagination basePath="/protokoll" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

@@ -16,10 +16,10 @@ import {
 } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { EVENT_STATUS_LABEL, EVENT_TYPE_LABEL } from "@/lib/labels";
 import { enumParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
-import { cn } from "@/lib/utils";
 import { EventListItemView } from "@/modules/events/components/event-list-item";
 import { getEventFormOptions, listEvents } from "@/modules/events/service";
 import { can } from "@/server/permissions/policy";
@@ -60,7 +60,7 @@ export default async function EventsPage({
   const canSeeArchive = can(ctx, "events:archive");
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Veranstaltungen"
         description={`${result.total} ${result.total === 1 ? "Veranstaltung" : "Veranstaltungen"}${filtered ? " (gefiltert)" : ""}`}
@@ -78,6 +78,14 @@ export default async function EventsPage({
                 <AREA_ICON.kalender /> Kalender
               </Link>
             </Button>
+            {/* Auswertung der Anwesenheit – für alle, die Teilnehmerlisten verwalten (Abteilungsleiter: eigene Abteilungen) */}
+            {can(ctx, "events:manage_participants") && (
+              <Button asChild variant="outline">
+                <Link href="/veranstaltungen/anwesenheit">
+                  <AREA_ICON.auswertungen /> Anwesenheit
+                </Link>
+              </Button>
+            )}
           </>
         }
       />
@@ -87,7 +95,7 @@ export default async function EventsPage({
         method="get"
         action="/veranstaltungen"
         role="search"
-        className={cn("mb-4", FILTER_FORM)}
+        className={FILTER_FORM}
       >
         <Input
           type="search"
@@ -184,15 +192,16 @@ export default async function EventsPage({
           }
         />
       ) : (
-        <>
+        // Liste und Seitenwahl sind ein Block (die Seitenwahl bringt ihren kleineren Abstand selbst mit).
+        <div>
           <ul className="grid gap-3">
             {result.items.map((event) => (
               <EventListItemView key={event.id} event={event} />
             ))}
           </ul>
           <Pagination basePath="/veranstaltungen" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

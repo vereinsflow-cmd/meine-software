@@ -9,6 +9,7 @@ import {
   inviteUser,
   removeUser,
   resendInvitation,
+  resetUserTwoFactor,
   revokeInvitation,
   setUserStatus,
 } from "./service";
@@ -64,4 +65,12 @@ export async function removeUserAction(input: unknown): Promise<ActionResult> {
     refresh();
     return undefined;
   }, "user-remove");
+}
+
+export async function resetUserTwoFactorAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    await resetUserTwoFactor(await requireTenantContext(), parseInput(idSchema, input).id);
+    refresh();
+    return undefined;
+  }, "user-2fa-reset");
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CircleCheckIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClubLogo } from "@/components/shared/club-logo";
+import { IconCircle } from "@/components/shared/empty-state";
 import {
   CheckboxField,
   FormError,
@@ -86,10 +87,10 @@ export function JoinApplicationCard({
             role="status"
             className="grid justify-items-center gap-3 py-4 text-center outline-none"
           >
-            <CircleCheckIcon
-              className="size-10 text-emerald-600 dark:text-emerald-400"
-              aria-hidden="true"
-            />
+            {/* Grünes Häkchen in der runden Fläche wie bei leeren Listen und Fehlermeldungen (`IconCircle`). */}
+            <IconCircle tone="emerald">
+              <CircleCheckIcon />
+            </IconCircle>
             <p className="text-lg font-semibold">Danke, dein Antrag ist beim Verein angekommen.</p>
             <p className="text-base text-muted-foreground">
               Sobald der Vorstand ihn bestätigt, bekommst du eine E-Mail mit deiner Einladung.

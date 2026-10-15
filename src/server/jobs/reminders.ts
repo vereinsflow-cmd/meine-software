@@ -52,7 +52,11 @@ export async function sendShiftReminders(now: Date = new Date()): Promise<number
   if (rows.length === 0) return 0;
 
   const byShift = new Map<string, typeof rows>();
-  for (const row of rows) byShift.set(row.shiftId, [...(byShift.get(row.shiftId) ?? []), row]);
+  for (const row of rows) {
+    const group = byShift.get(row.shiftId);
+    if (group) group.push(row);
+    else byShift.set(row.shiftId, [row]);
+  }
 
   for (const group of byShift.values()) {
     const first = group[0]!;

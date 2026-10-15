@@ -89,6 +89,18 @@ export async function resetRateLimit(key: string): Promise<void> {
   await prisma.rateLimitBucket.deleteMany({ where: { key } });
 }
 
+/**
+ * Nimmt EINEN schon gezählten Versuch zurück (nie unter null, nur im laufenden Zeitfenster). Für Zähler, die jeden Versuch
+ * vor der Prüfung zählen müssen (gleichzeitige Anfragen), bei denen ein Erfolg aber nicht mitzählen soll – ohne den
+ * ganzen Zähler zu leeren, an dem auch Fehlversuche anderer Anfragen hängen (z. B. je IP).
+ */
+export async function releaseRateLimit(key: string): Promise<void> {
+  await prisma.$executeRaw`
+    UPDATE "RateLimitBucket"
+       SET "count" = "count" - 1
+     WHERE "key" = ${key} AND "count" > 0 AND "resetAt" > now()`;
+}
+
 /** Schlüsselbestandteil aus einer E-Mail-Adresse: gehasht, damit keine Adressen im Zähler stehen. */
 export function rateLimitSubject(value: string): string {
   return hashToken(value.trim().toLowerCase()).slice(0, 32);

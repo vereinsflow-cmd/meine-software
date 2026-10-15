@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
+import { CHAT_PAGE_HEIGHT } from "@/components/shared/page-skeletons";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { BackLink } from "@/components/shared/back-link";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatDateTime } from "@/lib/dates";
 import { intParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
@@ -49,7 +52,8 @@ export default async function MessagesPage({
   const chatOpen = key !== undefined;
 
   return (
-    <div className="flex h-[calc(100dvh-var(--app-header-height)-2rem)] min-h-[28rem] flex-col sm:h-[calc(100dvh-var(--app-header-height)-3rem)] xl:h-[calc(100dvh-var(--app-header-height)-4rem)]">
+    // Volle Höhe: dieselbe Rechnung wie das Ladegerüst (`CHAT_PAGE_HEIGHT`), damit beim Laden nichts springt.
+    <div className={cn("flex flex-col", CHAT_PAGE_HEIGHT)}>
       {/* Am Smartphone füllt der geöffnete Chat den Bildschirm (wie in der App) – die Überschrift bleibt für Screenreader. */}
       {chatOpen && <h1 className="sr-only md:hidden">Nachrichten</h1>}
       <PageHeader
@@ -67,7 +71,7 @@ export default async function MessagesPage({
         }
       />
 
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className={cn(CARD_SURFACE, "flex min-h-0 flex-1 overflow-hidden")}>
         <aside
           aria-label="Chatliste"
           className={cn(
@@ -94,7 +98,8 @@ export default async function MessagesPage({
                   ? "Mit „Neue Nachricht“ schreibst du die erste – an alle Mitglieder oder eine deiner Gruppen."
                   : "Sobald dein Verein dir etwas mitteilt, erscheint es hier."
               }
-              className="m-4 border-none"
+              // Liegt schon in der Chatfläche – ohne eigenen Rahmen und Schatten.
+              className="m-4 shadow-none ring-0"
             />
           ) : (
             <ChatList chats={chats} activeKey={chat?.key} />
@@ -108,7 +113,7 @@ export default async function MessagesPage({
           {chat ? (
             <ChatThread chat={chat} />
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-[#efeae2] p-6 text-center dark:bg-[#0b141a]">
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-chat-wallpaper p-6 text-center">
               {chatOpen ? (
                 <>
                   <p className="font-medium">Diesen Chat gibt es nicht (mehr).</p>
@@ -140,7 +145,7 @@ export default async function MessagesPage({
 async function Drafts({ ctx, params }: { ctx: TenantContext; params: RawSearchParams }) {
   const result = await listSent(ctx, "drafts", pageRequest(params, 15));
   return (
-    <>
+    <PageStack>
       <BackLink href="/nachrichten">Nachrichten</BackLink>
       <PageHeader
         title="Entwürfe"
@@ -160,13 +165,14 @@ async function Drafts({ ctx, params }: { ctx: TenantContext; params: RawSearchPa
           description="Speichere eine Nachricht als Entwurf, um später weiterzuschreiben."
         />
       ) : (
-        <>
+        <div>
           <ul className="grid gap-2" aria-label="Entwürfe">
             {result.items.map((message) => (
               <li key={message.id}>
                 <Link
                   href={`/nachrichten/neu?entwurf=${message.id}`}
-                  className="block rounded-xl border bg-card p-4 transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  // Tastaturfokus: der allgemeine Fokussaum (globals.css) – der Ring gehört hier dem Kartenrand.
+                  className={cn(CARD_SURFACE, "block p-4 transition-colors hover:bg-accent/40")}
                 >
                   <span className="flex flex-wrap items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-2">
@@ -185,8 +191,8 @@ async function Drafts({ ctx, params }: { ctx: TenantContext; params: RawSearchPa
             ))}
           </ul>
           <Pagination basePath="/nachrichten" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

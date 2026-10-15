@@ -1,38 +1,41 @@
 # VereinsFlow
 
 Moderne, sichere Vereinsverwaltung als Mehrmandanten-Anwendung (SaaS): **ein Verein = ein Mandant**. Mitglieder, Abteilungen,
-Veranstaltungen, **Helferschichten** (mit Schutz vor Überbuchung und Doppelbelegung), Aufgaben, Kalender, Nachrichten und
-Dokumente – mit Rollen und Rechten, Änderungsprotokoll und DSGVO-Funktionen. Oberfläche durchgehend Deutsch, mobil nutzbar,
-barrierefrei gebaut.
+Veranstaltungen mit **Anwesenheit**, **Helferschichten** (mit Schutz vor Überbuchung und Doppelbelegung), Aufgaben, Kalender, Nachrichten,
+Dokumente und **Finanzen** (Kassenbuch, Rechnungen, Mitgliedsbeiträge) – mit Rollen und Rechten, Änderungsprotokoll und
+DSGVO-Funktionen. Oberfläche durchgehend Deutsch, mobil nutzbar, barrierefrei gebaut.
 
 > **Stand:** Das erste Ziel (MVP) ist erreicht und in weiten Teilen darüber hinaus ausgebaut. Ehrlich benannt sind die
-> Lücken unter [Bekannte Grenzen](#bekannte-grenzen) – vor allem: **Finanzen** und **Zwei-Faktor-Anmeldung** sind noch nicht
-> gebaut, eine **öffentliche Veranstaltungsseite** fehlt, und der **Virenscan** für Uploads ist nur als Erweiterungspunkt
-> vorbereitet.
+> Lücken unter [Bekannte Grenzen](#bekannte-grenzen) – vor allem: Die **Finanzen** sind erst zum Teil gebaut (Zahlungen,
+> Lastschrift und Spenden fehlen noch), die **Zwei-Faktor-Anmeldung** ist freiwillig (ein Verein kann sie noch nicht
+> vorschreiben), eine **öffentliche Veranstaltungsseite** fehlt, und der **Virenscan** für Uploads ist nur als
+> Erweiterungspunkt vorbereitet.
 
 ## Funktionsumfang
 
-| Bereich                            | Stand       | Kern                                                                                                                                                                                                                                                         |
-| ---------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Anmeldung, Konto, Einladungen      | fertig      | Sitzungen mit Inaktivitäts- und Höchstdauer, Passwort-Reset, Einladungen per Link, Rate-Limits, Profil und Sitzungsübersicht                                                                                                                                 |
-| **Vereinslogo**                    | fertig      | Eigenes Logo je Verein neben dem Namen (Kopfzeile, Vereinswechsler, Menü, Profil), auf dem gedruckten Helferplan oben rechts; PNG/JPEG/WebP bis 1 MB, Inhalts- und Größenprüfung, sonst Anfangsbuchstaben                                                    |
-| Mandanten, Rollen, Rechte          | fertig      | Superadministrator (Plattform) sowie Vereinsadmin, Vorstand, Abteilungsleiter, Helfer, Mitglied; Rechte mit Reichweite Verein / Abteilung / nur eigene Daten                                                                                                 |
-| Mitglieder                         | fertig      | Anlegen, Bearbeiten, Archivieren, Papierkorb, Suche/Filter/Sortierung, CSV-Import mit Vorschau, CSV-Export, Statistik, Notizen, Einwilligungen, Änderungshistorie                                                                                            |
-| **Mitglied werden per QR-Code**    | fertig      | Beitrittslink als QR-Code mit A4-Aushang und begrenzter Zahl an Anmeldungen (beim Einrichten festgelegt); öffentliches Antragsformular (Handy zuerst, Honigtopf, Rate-Limits); Vorstand nimmt an oder lehnt ab – erst dann Mitglied und Einladung per E-Mail |
-| **Verein einrichten**              | fertig      | Assistent in sechs Schritten für neue Vereine (Vereinsdaten, Logo, Abteilungen, Mitglieder, Vorstand, Abschluss) mit Hinweis im Rahmen bis zum Abschluss; leere lokale Version mit Ersteinrichtung                                                           |
-| Abteilungen und Gruppen            | fertig      | Abteilungen, Gruppen, Leiter, Zuordnung von Mitgliedern                                                                                                                                                                                                      |
-| Veranstaltungen                    | fertig      | Status-Ablauf, Anmeldung mit Limit und Warteliste, Duplizieren, Serientermine, Absage mit Benachrichtigung                                                                                                                                                   |
-| **Helferschichten**                | fertig      | Überbuchungs- und Doppelbelegungsschutz (Datenbank-Sperren), Mindestalter, Zuweisung durch Veranstalter, Stundenerfassung, Ampel-Zustände, Druckansicht, CSV-Export, Erinnerungen                                                                            |
-| Aufgaben und Checklisten           | fertig      | Aufgaben mit Zuständigen, Fälligkeit, Priorität, Status; Checklisten je Veranstaltung                                                                                                                                                                        |
-| Kalender                           | fertig      | Monat, Woche, Tag, Liste; iCal-Export je Termin und persönlicher Kalender-Abo-Link (widerrufbar)                                                                                                                                                             |
-| Nachrichten und Benachrichtigungen | fertig      | Nachrichten an Verein, Abteilung, Teilnehmer oder Helfer; Entwürfe, Ankündigungen, Rückruf, Lesestatistik; Benachrichtigungscenter, E-Mail mit Warteschlange                                                                                                 |
-| Dokumente                          | fertig      | Sicherer Upload (Positivliste, Inhaltsprüfung), Zugriffsstufen, Speicherkontingent, Download nur über geprüfte Route                                                                                                                                         |
-| **Hilfe & Support**                | fertig      | Ansprechpartner des Vereins, Meldeformular für Fehler, Fragen und Vorschläge (mit Antwort und Status), durchsuchbare Bedienungsanleitung passend zur Rolle                                                                                                   |
-| Dashboard                          | fertig      | Rollenabhängige Kacheln (Mitglieder, Termine, freie Schichten, Aufgaben, Geburtstage, Benachrichtigungen)                                                                                                                                                    |
-| Änderungsprotokoll                 | fertig      | Unveränderlich (Datenbank-Trigger), filterbar; sensible Werte nur als „geändert“                                                                                                                                                                             |
-| Datenschutz (DSGVO)                | fertig      | Datenexport, Löschantrag mit Bedenkzeit, Einwilligungen, Anonymisierung, Aufbewahrungsfristen je Verein                                                                                                                                                      |
-| **Finanzen**                       | Platzhalter | Seite mit Roadmap – bewusst ohne Funktionen. Plan und Datenmodell: [docs/ROADMAP.md](docs/ROADMAP.md)                                                                                                                                                        |
-| Zwei-Faktor-Anmeldung (TOTP)       | geplant     | Datenfelder sind vorbereitet, die Anmeldung damit fehlt noch                                                                                                                                                                                                 |
+| Bereich                            | Stand     | Kern                                                                                                                                                                                                                                                         |
+| ---------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Anmeldung, Konto, Einladungen      | fertig    | Sitzungen mit Inaktivitäts- und Höchstdauer, Passwort-Reset, Einladungen per Link, Rate-Limits, Profil und Sitzungsübersicht                                                                                                                                 |
+| **Zwei-Faktor-Anmeldung (TOTP)**   | fertig    | Freiwillig je Konto mit Code aus einer Authenticator-App und 10 Wiederherstellungscodes; jeder Code gilt nur einmal, Rate-Limits; zurücksetzen durch den Verein oder den Betreiber                                                                           |
+| **Vereinslogo**                    | fertig    | Eigenes Logo je Verein neben dem Namen (Kopfzeile, Vereinswechsler, Menü, Profil), auf dem gedruckten Helferplan oben rechts; PNG/JPEG/WebP bis 1 MB, Inhalts- und Größenprüfung, sonst Anfangsbuchstaben                                                    |
+| Mandanten, Rollen, Rechte          | fertig    | Superadministrator (Plattform) sowie Vereinsadmin, Vorstand, Abteilungsleiter, Helfer, Mitglied; Rechte mit Reichweite Verein / Abteilung / nur eigene Daten                                                                                                 |
+| Mitglieder                         | fertig    | Anlegen, Bearbeiten, Archivieren, Papierkorb, Suche/Filter/Sortierung, CSV-Import mit Vorschau, CSV-Export, Statistik, Notizen, Einwilligungen, Änderungshistorie                                                                                            |
+| **Ehrungen**                       | fertig    | Runde Mitgliedsjubiläen (10, 25, 40, 50, 60, 70, 75 Jahre) je Jahr, gerechnet ab dem Eintritt; Druckliste für die Versammlung, CSV-Export, Dashboard-Karte „Jubiläen“                                                                                        |
+| **Mitglied werden per QR-Code**    | fertig    | Beitrittslink als QR-Code mit A4-Aushang und begrenzter Zahl an Anmeldungen (beim Einrichten festgelegt); öffentliches Antragsformular (Handy zuerst, Honigtopf, Rate-Limits); Vorstand nimmt an oder lehnt ab – erst dann Mitglied und Einladung per E-Mail |
+| **Verein einrichten**              | fertig    | Assistent in sechs Schritten für neue Vereine (Vereinsdaten, Logo, Abteilungen, Mitglieder, Vorstand, Abschluss) mit Hinweis im Rahmen bis zum Abschluss; leere lokale Version mit Ersteinrichtung                                                           |
+| Abteilungen und Gruppen            | fertig    | Abteilungen, Gruppen, Leiter, Zuordnung von Mitgliedern                                                                                                                                                                                                      |
+| Veranstaltungen                    | fertig    | Status-Ablauf, Anmeldung mit Limit und Warteliste, Duplizieren, Serientermine, Absage mit Benachrichtigung                                                                                                                                                   |
+| **Anwesenheit**                    | fertig    | Trainer haken ab, wer da war, entschuldigt oder unentschuldigt fehlte (ohne Gründe); Auswertung je Abteilung, Gruppe und Zeitraum mit CSV-Export; nach 24 Monaten gelöscht                                                                                   |
+| **Helferschichten**                | fertig    | Überbuchungs- und Doppelbelegungsschutz (Datenbank-Sperren), Mindestalter, Zuweisung durch Veranstalter, Stundenerfassung, Ampel-Zustände, Druckansicht, CSV-Export, Erinnerungen                                                                            |
+| Aufgaben und Checklisten           | fertig    | Aufgaben mit Zuständigen, Fälligkeit, Priorität, Status; Checklisten je Veranstaltung                                                                                                                                                                        |
+| Kalender                           | fertig    | Monat, Woche, Tag, Liste; iCal-Export je Termin und persönlicher Kalender-Abo-Link (widerrufbar)                                                                                                                                                             |
+| Nachrichten und Benachrichtigungen | fertig    | Chats wie bei WhatsApp je Gruppe (Verein, Abteilung, Teilnehmer, Helfer) – jeder schreibt in seine Gruppen; Entwürfe, Ankündigungen, Rückruf, Lesestatistik; Benachrichtigungscenter, E-Mail mit Warteschlange                                               |
+| Dokumente                          | fertig    | Sicherer Upload (Positivliste, Inhaltsprüfung), Zugriffsstufen, Speicherkontingent, Download nur über geprüfte Route                                                                                                                                         |
+| **Hilfe & Support**                | fertig    | Ansprechpartner des Vereins, Meldeformular für Fehler, Fragen und Vorschläge (mit Antwort und Status), durchsuchbare Bedienungsanleitung passend zur Rolle                                                                                                   |
+| Dashboard                          | fertig    | Vier Reiter mit rollenabhängigen Karten (Kennzahlen mit Verlauf, Termine, freie Schichten, Aufgaben, Geburtstage, Jubiläen, Offene Zahlungen, Benachrichtigungen); mit „Anpassen“ selbst einstellbar (ein- und ausblenden, Reihenfolge, Größe)               |
+| Änderungsprotokoll                 | fertig    | Unveränderlich (Datenbank-Trigger), filterbar; sensible Werte nur als „geändert“                                                                                                                                                                             |
+| Datenschutz (DSGVO)                | fertig    | Datenexport, Löschantrag mit Bedenkzeit, Einwilligungen, Anonymisierung, Aufbewahrungsfristen je Verein                                                                                                                                                      |
+| **Finanzen**                       | im Aufbau | Übersicht („Cockpit“), Kassenbuch mit Belegen, Storno und Umbuchung, Rechnungen („Offene Zahlungen“), Monatsabschluss und Kassensturz, Beiträge mit Familien und Beitragslauf; weitere Stufen im [Bauplan](docs/ROADMAP.md#finanzen--entwurf)                |
 
 ## Technik im Überblick
 
@@ -55,7 +58,9 @@ Embedded-PostgreSQL.
 
 > **Kurzweg (ohne Docker):** Nach den Schritten 1 und 2 genügt **ein Befehl** – `npm run dev:all`, unter Windows ein
 > Doppelklick auf **`Start-VereinsFlow.cmd`**, auf dem Mac auf **`Start-VereinsFlow.command`**. Er startet die Datenbank, legt fehlende Tabellen an (beim allerersten Mal
-> auch die Demo-Daten), startet die Anwendung und öffnet den Browser. Das Fenster bleibt offen, solange man VereinsFlow
+> auch die Demo-Daten) und startet die Anwendung; der Doppelklick (bzw. `npm run dev:all -- --open`) öffnet zusätzlich den
+> Browser. Läuft VereinsFlow schon, wird nichts doppelt gestartet; eine hängende Kopie aus diesem Ordner wird beendet und neu
+> gestartet. Was im Fenster steht, landet auch in `.local/start.log`. Das Fenster bleibt offen, solange man VereinsFlow
 > benutzt; mit Strg+C wird alles sauber beendet. Die Schritte 3 bis 6 unten beschreiben dasselbe von Hand.
 
 > **Leere Version (wie für einen neuen Verein):** `npm run dev:all -- --leer`, Doppelklick auf
@@ -151,6 +156,7 @@ offen lassen (oder `docker compose up -d`) und erst dann `npm run dev` bzw. `npm
 | Befehl                            | Wirkung                                                                       |
 | --------------------------------- | ----------------------------------------------------------------------------- |
 | `npm run dev:all`                 | Alles starten: Datenbank + Tabellen + Anwendung (`-- --open`: Browser öffnen) |
+| `npm run dev:all -- --seed`       | Wie `dev:all`, spielt dazu die Demo-Daten ein, falls sie fehlen               |
 | `npm run dev:all -- --leer`       | Leere Version für einen neuen Verein (Port 3001, eigene Datenbank)            |
 | `npm run dev`                     | Nur der Entwicklungsserver (Port 3000; die Datenbank muss schon laufen)       |
 | `npm run build` / `npm start`     | Produktions-Build und -Start                                                  |
@@ -168,14 +174,19 @@ offen lassen (oder `docker compose up -d`) und erst dann `npm run dev` bzw. `npm
 | `npm run db:studio`               | Datenbank im Browser ansehen                                                  |
 | `npm run jobs:run`                | Hintergrundjobs einmal ausführen (Erinnerungen, Mailversand, Aufbewahrung, …) |
 | `npm run admin:create`            | Ersten Plattform-Administrator anlegen (Produktion: siehe Betrieb)            |
+| `npm run admin:reset-2fa`         | Zwei-Faktor-Anmeldung eines Kontos zurücksetzen (siehe Betrieb)               |
 | `npm run test:prod-smoke`         | Rauchtest gegen den Produktions-Build (vorher `npm run build`)                |
 
 ## Tests
 
-- **Unit** (`tests/unit`): reine Logik – Berechtigungen, Zeit und Zeitzonen, Schichtregeln, Dateiprüfung, iCal, Architekturregeln.
+- **Unit** (`tests/unit`): reine Logik – Berechtigungen, Zeit und Zeitzonen, Schichtregeln, Beitragsberechnung, Dateiprüfung,
+  iCal, Zwei-Faktor-Codes (Prüfwerte aus RFC 4226 und 6238), Jubiläen, Architekturregeln.
 - **Integration** (`tests/integration`): die Fachdienste gegen eine echte PostgreSQL, je Testdatei eine frische Datenbank.
   Sie prüfen unter anderem Mandantentrennung, Überbuchungs- und Doppelbelegungsschutz (auch bei gleichzeitigen Zugriffen),
-  Datenexport und -löschung sowie Dateizugriff.
+  Kassenbuch-Regeln (Storno, Monatsabschluss, Belege), Beitragslauf, Zwei-Faktor-Anmeldung (jeder Code gelingt genau einmal),
+  Anwesenheit, Datenexport und -löschung sowie Dateizugriff. Jede
+  Testdatei kopiert eine Vorlage-Datenbank (`vf_test_template`), die zu Beginn jedes Laufs neu entsteht – deshalb nie zwei
+  Integrationsläufe gleichzeitig gegen dieselbe PostgreSQL starten.
 - **Barrierefreiheit** (`tests/e2e/a11y.spec.ts`): axe-core prüft alle Hauptseiten (öffentlich und angemeldet, mehrere Rollen, hell und dunkel,
   geöffneter Dialog) nach WCAG 2.1 A/AA. Das findet nur einen Teil der Probleme – ein Durchgang mit Screenreader und Tastatur bleibt nötig.
 - **Ende-zu-Ende** (`tests/e2e`): Playwright startet einen eigenen Server (Port 3100) mit eigener Datenbank `vf_e2e`, die vor
@@ -215,7 +226,8 @@ src/server/        Infrastruktur: Anmeldung, Mandanten-Kontext, Rechte, Datenban
 src/lib/           Reine Hilfen ohne Server-Abhängigkeit (Datum/Zeit, Formatierung, Dateiprüfung, Schicht-Ampel, …)
 src/components/    Wiederverwendbare Oberflächenbausteine (ui = shadcn, shared, layout)
 tests/             unit, integration, e2e, prod-smoke
-scripts/           Hilfsprogramme: eingebettete Datenbank, Hintergrundjobs, ersten Plattform-Administrator anlegen
+scripts/           Hilfsprogramme: Starter (dev:all), eingebettete Datenbank, Hintergrundjobs, ersten Plattform-Administrator
+                   anlegen, Zwei-Faktor-Anmeldung zurücksetzen, Tabellen für Postleitzahlen und Bankleitzahlen erzeugen
 docs/              Architektur, Sicherheit, Datenschutz, Betrieb, Roadmap, Entscheidungen
 website/           Werbe-Website (statisch, mit eigenen Werkzeugen – siehe website/README.md)
 Dockerfile, docker-compose*.yml, .github/   Betrieb (Container) und CI
@@ -232,7 +244,9 @@ Architekturtest sowie eine ESLint-Regel erzwingen sie.
 - [Datenschutz (DSGVO)](docs/PRIVACY.md) – Datenarten, Fristen, Betroffenenrechte, Cookie-Konzept
 - [Betrieb](docs/OPERATIONS.md) – Produktion, Docker, Cron, Datensicherung, Reverse-Proxy
 - [Oberfläche und Gestaltung](docs/DESIGN.md) – Größen, Farben, Hervorhebungen, Seitenleiste, Ansichten prüfen
-- [Roadmap](docs/ROADMAP.md) – Finanzen, Zwei-Faktor, Push, mobile Apps, weitere Ideen
+- [Verfahrensdokumentation Kassenbuch](docs/VERFAHRENSDOKUMENTATION.md) – wie das Kassenbuch geführt wird (GoBD), für Verein,
+  Kassenprüfer und Finanzamt
+- [Roadmap](docs/ROADMAP.md) – Bauplan der Finanzen, Zwei-Faktor-Pflicht, Push, mobile Apps, weitere Ideen
 - [Architekturentscheidungen](docs/adr/README.md)
 - [Werbe-Website](website/README.md) – Vorschau, Prüfung und Veröffentlichung der Startseite
 
@@ -241,8 +255,12 @@ Architekturtest sowie eine ESLint-Regel erzwingen sie.
 Diese Punkte sind bekannt und bewusst offen – sie stehen nicht „still“ in der Oberfläche, sondern sind dort als
 „in Vorbereitung“ gekennzeichnet oder hier beschrieben:
 
-- **Finanzen** – nur Platzhalterseite, keine Funktion.
-- **Zwei-Faktor-Anmeldung** – in der Profilseite als „in Vorbereitung“ vermerkt.
+- **Finanzen** – gebaut sind Kassenbuch, Rechnungen, Monatsabschluss und Beiträge bis zum Beitragslauf. Zahlungen erfassen
+  und zuordnen (auch per Kontoauszug), Lastschrift (SEPA), Erinnerungen, Spenden mit Zuwendungsbestätigungen, Berichte und
+  Export folgen Schritt für Schritt (siehe Roadmap). Bis dahin lassen sich Beiträge erstellen und streichen, aber noch nicht
+  als bezahlt erfassen.
+- **Zwei-Faktor-Anmeldung** – freiwillig je Konto; ein Verein kann sie (noch) nicht für alle oder für Administratoren
+  vorschreiben. Reine Plattform-Administratoren ohne Verein können sie in der Oberfläche noch nicht einrichten.
 - **Öffentliche Veranstaltungsseite** – die Sichtbarkeit „öffentlich“ kennzeichnet Veranstaltungen nur; eine Seite für Gäste
   ohne Anmeldung gibt es noch nicht.
 - **Virenscan für Uploads** – Dateien werden auf Typ und Inhalt geprüft, aber nicht auf Schadsoftware gescannt. Der

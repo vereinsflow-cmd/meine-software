@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BellOffIcon } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import {
   MarkAllReadButton,
@@ -29,13 +30,14 @@ export default async function NotificationsPage({
   ]);
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Benachrichtigungen"
         description={unread > 0 ? `${unread} ungelesen` : "Alles gelesen."}
         actions={<MarkAllReadButton disabled={unread === 0} />}
       />
-      <div className={cn("mb-6", SEGMENT_BAR)} role="group" aria-label="Filter">
+      {/* `self-start`: Die Leiste bleibt so breit wie ihre Einträge (die Spalte würde sie sonst strecken). */}
+      <div className={cn("self-start", SEGMENT_BAR)} role="group" aria-label="Filter">
         <a
           href="/benachrichtigungen"
           aria-current={!unreadOnly ? "true" : undefined}
@@ -69,7 +71,7 @@ export default async function NotificationsPage({
           description="Hier erscheinen Hinweise zu neuen Veranstaltungen, Schichteinteilungen, Aufgaben und Nachrichten."
         />
       ) : (
-        <>
+        <div>
           <NotificationList
             items={result.items.map((item) => ({
               id: item.id,
@@ -81,8 +83,8 @@ export default async function NotificationsPage({
             }))}
           />
           <Pagination basePath="/benachrichtigungen" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

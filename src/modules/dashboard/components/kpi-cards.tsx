@@ -176,7 +176,7 @@ function ChangeChip({
       {/* Darf umbrechen statt am Kartenrand abgeschnitten zu werden (schmale Karten, größere Schrift) */}
       <span
         className={cn(
-          "inline-flex min-h-6 flex-wrap items-center gap-x-1 rounded-2xl bg-white px-2.5 py-0.5 text-[0.8125rem] font-bold tabular-nums shadow-sm",
+          "inline-flex min-h-6 flex-wrap items-center gap-x-1 rounded-2xl bg-white px-2.5 py-0.5 text-xs font-bold tabular-nums shadow-sm",
           DIRECTION_TEXT[change.direction],
         )}
       >
@@ -191,7 +191,7 @@ function ChangeChip({
       {/* Leerzeichen für den vorgelesenen Namen des Links (im Flex-Container sonst „…%)in 12 Monaten“). In schmalen Karten
           nur für Screenreader – dort nennen die gedrückten Zeitraum-Knöpfe den Zeitraum sichtbar. */}{" "}
       {!hideSince && (
-        <span className="text-[0.8125rem] font-medium text-white @max-[17rem]/kpi:sr-only">
+        <span className="text-xs font-medium text-white @max-[17rem]/kpi:sr-only">
           {period.since}
         </span>
       )}
@@ -270,9 +270,7 @@ function QuoteStats({ quote, period }: { quote: Quote; period: QuotePeriod }) {
     <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/15 pt-2.5">
       {items.map(([term, value]) => (
         <div key={term}>
-          <dt className="text-[0.6875rem] font-semibold tracking-wide text-white uppercase">
-            {term}
-          </dt>
+          <dt className="text-2xs font-semibold tracking-wide text-white uppercase">{term}</dt>
           <dd className="text-sm font-bold tabular-nums">{value}</dd>
         </div>
       ))}
@@ -314,16 +312,13 @@ export function KpiShell({
     <>
       <div className="flex items-start gap-2.5">
         <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-[0.7rem] bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4"
           aria-hidden="true"
         >
           {icon}
         </span>
         {/* Stehen drei oder vier Karten in einer Reihe, reserviert das Raster zwei Zeilen (`GRID_COLUMNS` in kpi-layout.ts). */}
-        <p
-          data-slot="kpi-label"
-          className="min-w-0 flex-1 pt-1 text-[0.9375rem] leading-snug font-semibold"
-        >
+        <p data-slot="kpi-label" className="min-w-0 flex-1 pt-1 text-sm leading-snug font-semibold">
           {label}
         </p>
         {href && (
@@ -342,7 +337,7 @@ export function KpiShell({
     <Card
       data-kpi={label}
       className={cn(
-        "@container/kpi relative isolate h-full gap-0 rounded-[1.75rem] bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
+        "@container/kpi relative isolate h-full gap-0 rounded-4xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
         "has-[[data-slot=kpi-link]:focus-visible]:ring-2 has-[[data-slot=kpi-link]:focus-visible]:ring-ring has-[[data-slot=kpi-link]:focus-visible]:ring-offset-2 has-[[data-slot=kpi-link]:focus-visible]:ring-offset-background",
         colors.card,
         href &&
@@ -365,7 +360,7 @@ export function KpiShell({
           <Link
             href={href}
             data-slot="kpi-link"
-            className="block rounded-xl after:absolute after:inset-0 after:rounded-[1.75rem] after:content-[''] focus-visible:outline-hidden"
+            className="block rounded-xl after:absolute after:inset-0 after:rounded-4xl after:content-[''] focus-visible:outline-hidden"
           >
             {head}
           </Link>
@@ -670,7 +665,7 @@ export function FreeShiftsCard({
             // bis auf Knöpfe und Kurve auf den Link der Karte durch (kein eigenes `z-10`).
             <div className="mt-4 hidden w-full flex-1 flex-col rounded-2xl bg-black/15 p-3.5 ring-1 ring-white/10 @bento/kpis:flex">
               <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                <p className="text-[0.6875rem] font-semibold tracking-wide text-white uppercase">
+                <p className="text-2xs font-semibold tracking-wide text-white uppercase">
                   Auslastung
                 </p>
                 <PeriodSwitch label={label} quote={quote} value={period.id} onChange={choose} />
@@ -694,13 +689,13 @@ export function FreeShiftsCard({
               </QuoteLink>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-white/15 pt-2 text-sm">
                 <div>
-                  <dt className="text-[0.6875rem] font-semibold tracking-wide text-white uppercase">
+                  <dt className="text-2xs font-semibold tracking-wide text-white uppercase">
                     besetzt
                   </dt>
                   <dd className="font-bold tabular-nums">{filled}</dd>
                 </div>
                 <div>
-                  <dt className="text-[0.6875rem] font-semibold tracking-wide text-white uppercase">
+                  <dt className="text-2xs font-semibold tracking-wide text-white uppercase">
                     frei
                   </dt>
                   <dd className="font-bold tabular-nums">{freeSpots}</dd>

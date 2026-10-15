@@ -4,6 +4,7 @@ import { InboxIcon } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { ToneBadge, type Tone } from "@/components/shared/status-badge";
 import { BackLink } from "@/components/shared/back-link";
@@ -16,6 +17,7 @@ import { can } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 import { cn } from "@/lib/utils";
 import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
+import { CARD_SURFACE } from "@/components/ui/surface";
 
 export const metadata: Metadata = { title: "Eingegangene Meldungen" };
 
@@ -44,14 +46,14 @@ export default async function TicketsPage({
   const result = await listTickets(ctx, { status: view.status, request: pageRequest(params, 15) });
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/hilfe">Hilfe & Support</BackLink>
       <PageHeader
         title="Eingegangene Meldungen"
         description="Probleme, Fragen und Vorschläge aus deinem Verein. Setze den Status und antworte – die meldende Person wird benachrichtigt."
       />
 
-      <nav aria-label="Ansicht wählen" className={cn("mb-4", SEGMENT_BAR)}>
+      <nav aria-label="Ansicht wählen" className={cn("self-start", SEGMENT_BAR)}>
         {VIEWS.map((entry) => (
           <Link
             key={entry.key}
@@ -77,12 +79,13 @@ export default async function TicketsPage({
           }
         />
       ) : (
-        <>
+        // Liste und Seitenwechsel gehören zusammen (eigener Abstand der `Pagination`).
+        <div>
           <ul className="grid gap-4">
             {result.items.map((ticket) => (
               <li
                 key={ticket.id}
-                className="grid gap-3 rounded-xl border p-4"
+                className={cn(CARD_SURFACE, "grid gap-3 p-4")}
                 aria-label={`Meldung ${ticket.subject}`}
               >
                 <div>
@@ -127,8 +130,8 @@ export default async function TicketsPage({
             ))}
           </ul>
           <Pagination basePath="/hilfe/meldungen" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

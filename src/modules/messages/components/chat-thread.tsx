@@ -16,7 +16,9 @@ import { ChatStream } from "./chat-stream";
  * Unten schreibt jeder, der zur Gruppe gehört (wie in einer WhatsApp-Gruppe); Vorstand und Leitung auch in fremde.
  *
  * Farben: die von WhatsApp, die Grautöne für Uhrzeit und Häkchen etwas dunkler – so erreichen sie auch auf Grün das
- * nötige Kontrastverhältnis (4,5 : 1).
+ * nötige Kontrastverhältnis (4,5 : 1). Sie stehen als `--chat-*` in globals.css (hell und dunkel), hier nur die Namen
+ * (`bg-chat-wallpaper`, `bg-chat-bubble-own` …); Hinweise im Verlauf (Datum, „Ältere Nachrichten laden“) teilen sich
+ * `bg-chat-day`.
  */
 export function ChatThread({ chat }: { chat: ChatDetail }) {
   const messages = withRuns(
@@ -51,20 +53,20 @@ export function ChatThread({ chat }: { chat: ChatDetail }) {
 
       <ChatStream
         lastId={chat.messages.at(-1)?.id ?? null}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#efeae2] px-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6 dark:bg-[#0b141a]"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-chat-wallpaper px-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
       >
         {chat.hasOlder && (
           <p className="mb-3 text-center">
             <Link
               href={`/nachrichten?chat=${chat.key}&anzahl=${chat.messages.length + 50}`}
-              className="rounded-full bg-card px-3 py-1 text-xs font-medium shadow-sm hover:underline"
+              className="rounded-full bg-chat-day px-3 py-1 text-xs font-medium shadow-sm hover:underline"
             >
               Ältere Nachrichten laden
             </Link>
           </p>
         )}
         {messages.length === 0 ? (
-          <p className="mx-auto mt-8 w-fit max-w-sm rounded-lg bg-card px-3 py-2 text-center text-sm text-muted-foreground shadow-sm">
+          <p className="mx-auto mt-8 w-fit max-w-sm rounded-lg bg-chat-day px-3 py-2 text-center text-sm text-muted-foreground shadow-sm">
             Noch keine Nachrichten in diesem Chat. Schreib die erste!
           </p>
         ) : (
@@ -73,7 +75,7 @@ export function ChatThread({ chat }: { chat: ChatDetail }) {
               <Fragment key={message.id}>
                 {message.newDay && (
                   <li className="my-2 text-center">
-                    <span className="rounded-lg bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-sm dark:bg-[#182229]">
+                    <span className="rounded-lg bg-chat-day px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-sm">
                       {dayLabel(message.sentAt)}
                     </span>
                   </li>
@@ -120,8 +122,8 @@ function Bubble({ message }: { message: ChatBubble & { firstOfRun: boolean } }) 
       className={cn(
         "relative max-w-[85%] scroll-m-4 rounded-lg px-2.5 pt-1.5 pb-1 text-sm leading-snug shadow-sm data-[highlight=true]:ring-2 data-[highlight=true]:ring-primary sm:max-w-[70%]",
         message.mine
-          ? "bg-[#d9fdd3] text-[#111b21] dark:bg-[#005c4b] dark:text-[#e9edef]"
-          : "bg-white text-[#111b21] dark:bg-[#202c33] dark:text-[#e9edef]",
+          ? "bg-chat-bubble-own text-chat-bubble-foreground"
+          : "bg-chat-bubble-other text-chat-bubble-foreground",
         message.firstOfRun && (message.mine ? "rounded-tr-none" : "rounded-tl-none"),
         message.canDelete && "pr-9",
       )}
@@ -130,14 +132,14 @@ function Bubble({ message }: { message: ChatBubble & { firstOfRun: boolean } }) 
         <p className={cn("mb-0.5 text-xs font-semibold", nameTone(author))}>{author}</p>
       )}
       {message.isAnnouncement && (
-        <p className="mb-0.5 text-xs font-semibold tracking-wide text-[#54656f] uppercase dark:text-white/80">
+        <p className="mb-0.5 text-xs font-semibold tracking-wide text-chat-meta uppercase">
           Ankündigung
         </p>
       )}
       {message.showSubject && <p className="font-semibold">{message.subject}</p>}
       {/* Reiner Text: React maskiert alles, Zeilenumbrüche bleiben durch white-space erhalten. */}
       <p className="break-words whitespace-pre-wrap">{message.body}</p>
-      <p className="mt-0.5 flex items-center justify-end gap-1 text-xs text-[#54656f] dark:text-white/80">
+      <p className="mt-0.5 flex items-center justify-end gap-1 text-xs text-chat-meta">
         {message.sendEmail && (
           <>
             <MailIcon className="size-3.5" aria-hidden="true" />

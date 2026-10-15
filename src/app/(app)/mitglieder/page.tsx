@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DownloadIcon, InboxIcon, PlusIcon, UploadIcon } from "lucide-react";
+import { AwardIcon, DownloadIcon, InboxIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { MemberStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
@@ -24,13 +24,13 @@ import {
 } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { SortableHead } from "@/components/shared/sort-link";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
 import { formatCalendarDate } from "@/lib/dates";
 import { MEMBER_STATUS_LABEL } from "@/lib/labels";
-import { cn } from "@/lib/utils";
 import {
   buildQuery,
   enumParam,
@@ -38,6 +38,7 @@ import {
   param,
   type RawSearchParams,
 } from "@/lib/search-params";
+import { canSeeAnniversaries } from "@/modules/members/anniversaries";
 import { listDepartmentOptions, listMembers } from "@/modules/members/service";
 import { countPendingApplications } from "@/modules/membership-applications/service";
 import { MEMBER_SORT_FIELDS, type MemberView } from "@/modules/members/types";
@@ -93,7 +94,7 @@ export default async function MembersPage({
   } as const;
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Mitglieder"
         description={`${result.total} ${result.total === 1 ? "Eintrag" : "Einträge"}${filtered ? " (gefiltert)" : ""}`}
@@ -134,6 +135,14 @@ export default async function MembersPage({
                 <AREA_ICON.auswertungen /> Statistik
               </Link>
             </Button>
+            {/* Runde Mitgliedsjubiläen – für alle, die Mitglieder vereinsweit oder ihrer Abteilungen sehen */}
+            {canSeeAnniversaries(ctx) && (
+              <Button asChild variant="outline">
+                <Link href="/mitglieder/ehrungen">
+                  <AwardIcon /> Ehrungen
+                </Link>
+              </Button>
+            )}
           </>
         }
       />
@@ -144,7 +153,7 @@ export default async function MembersPage({
         method="get"
         action="/mitglieder"
         role="search"
-        className={cn("mb-4", FILTER_FORM)}
+        className={FILTER_FORM}
       >
         <Input
           type="search"
@@ -251,7 +260,8 @@ export default async function MembersPage({
           }
         />
       ) : (
-        <>
+        // Tabelle und Seitenwahl gehören zusammen: Die Seitenwahl hält ihren eigenen, kleineren Abstand.
+        <div>
           <TableCard>
             <Table>
               <caption className="sr-only">Mitgliederliste</caption>
@@ -327,8 +337,8 @@ export default async function MembersPage({
             </Table>
           </TableCard>
           <Pagination basePath="/mitglieder" searchParams={params} {...result} />
-        </>
+        </div>
       )}
-    </>
+    </PageStack>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CircleCheckIcon, InfoIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,23 +10,31 @@ import { useActionForm } from "@/hooks/use-action-form";
 import {
   acceptInvitationAction,
   acceptInvitationExistingAction,
+  cancelSecondFactorAction,
   forgotPasswordAction,
   loginAction,
   resetPasswordAction,
+  verifySecondFactorAction,
 } from "../actions";
 import {
   acceptInvitationSchema,
   forgotPasswordSchema,
   loginSchema,
   resetPasswordSchema,
+  secondFactorSchema,
 } from "../schemas";
+import {
+  SecondFactorCodeField,
+  SecondFactorModeSwitch,
+  type SecondFactorMode,
+} from "./second-factor-field";
 
 export function LoginForm({
   next,
   notice,
 }: {
   next?: string;
-  notice?: "expired" | "reset" | null;
+  notice?: "expired" | "reset" | "second-factor-expired" | null;
 }) {
   const { form, onSubmit, isPending, formError } = useActionForm({
     schema: loginSchema,
@@ -41,6 +49,15 @@ export function LoginForm({
           <InfoIcon />
           <AlertDescription>
             Du wurdest aus Sicherheitsgründen abgemeldet (Inaktivität oder abgelaufene Sitzung).
+            Bitte melde dich erneut an.
+          </AlertDescription>
+        </Alert>
+      )}
+      {notice === "second-factor-expired" && (
+        <Alert>
+          <InfoIcon />
+          <AlertDescription>
+            Die Anmeldung wurde nicht abgeschlossen (nach 5 Minuten ohne Code oder abgebrochen).
             Bitte melde dich erneut an.
           </AlertDescription>
         </Alert>
@@ -82,6 +99,51 @@ export function LoginForm({
         </Link>
       </p>
     </form>
+  );
+}
+
+/**
+ * Zweiter Schritt der Anmeldung (Zwei-Faktor): Code aus der App – oder, wer das Handy nicht zur Hand hat, ein
+ * Wiederherstellungscode. Beides geht in dasselbe Feld; der Umschalter ändert nur Beschriftung und Tastatur am Handy.
+ */
+export function SecondFactorForm() {
+  const [mode, setMode] = useState<SecondFactorMode>("app");
+  const { form, onSubmit, isPending, formError, setFormError } = useActionForm({
+    schema: secondFactorSchema,
+    defaultValues: { code: "" },
+    action: verifySecondFactorAction,
+  });
+
+  useEffect(() => {
+    form.setFocus("code");
+  }, [form, mode]);
+
+  function switchMode() {
+    form.reset({ code: "" });
+    setFormError(null);
+    setMode((current) => (current === "app" ? "recovery" : "app"));
+  }
+
+  return (
+    <div className="grid gap-4">
+      <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
+        <FormError message={formError} />
+        <SecondFactorCodeField form={form} name="code" mode={mode} />
+        <SubmitButton pending={isPending} pendingLabel="Wird geprüft …" className="w-full">
+          Bestätigen
+        </SubmitButton>
+      </form>
+      <SecondFactorModeSwitch
+        mode={mode}
+        onSwitch={switchMode}
+        className="justify-self-center text-center"
+      />
+      <form action={cancelSecondFactorAction} className="grid">
+        <Button type="submit" variant="outline" className="w-full">
+          Abbrechen
+        </Button>
+      </form>
+    </div>
   );
 }
 

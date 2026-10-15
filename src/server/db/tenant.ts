@@ -51,6 +51,7 @@ export const MODEL_SCOPE = {
   MembershipApplication: "tenant",
   Event: "tenant",
   EventParticipant: "tenant",
+  EventAttendance: "tenant",
   EventShift: "tenant",
   ShiftAssignment: "tenant",
   Task: "tenant",

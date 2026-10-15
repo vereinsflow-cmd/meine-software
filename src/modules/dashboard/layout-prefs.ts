@@ -34,6 +34,8 @@ export const DASHBOARD_BLOCKS: Record<DashboardTabId, readonly DashboardBlock[]>
   ],
   mitglieder: [
     { id: "geburtstage", label: "Geburtstage", group: "geburtstage" },
+    // Runde Mitgliedsjubiläen der nächsten 60 Tage (Ehrungen) – unter derselben Überschrift „Anstehend“ wie die Geburtstage.
+    { id: "jubilaeen", label: "Jubiläen", group: "geburtstage" },
     { id: "auswertungen", label: "Auswertungen" },
   ],
   aktivitaet: [

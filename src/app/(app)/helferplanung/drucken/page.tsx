@@ -4,14 +4,17 @@ import { AREA_ICON } from "@/components/shared/area-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { PrintButton } from "@/components/shared/print-button";
 import { BackLink } from "@/components/shared/back-link";
 import { addBerlinDays, formatDate, formatDateTime, parseBerlinDateTime } from "@/lib/dates";
 import { clubLogoUrl } from "@/lib/club-logo";
 import { buildPrintPageStyle, type PrintOrientation } from "@/lib/print";
+import { cn } from "@/lib/utils";
 import { enumParam, param, paramList, type RawSearchParams } from "@/lib/search-params";
 import { ShiftPlanSheets } from "@/modules/shifts/components/print-plan";
 import { PRINT_CONTENTS, previewLabel, type PrintContent } from "@/modules/shifts/print-plan";
@@ -94,9 +97,11 @@ export default async function PrintShiftPlanPage({
   });
   const logoUrl = clubLogoUrl(ctx.clubId, ctx.club.logoSha256);
 
+  // Seitenrhythmus wie überall: Bildschirmteil und Ausdruck stehen in einer Spalte mit 1,5 rem Lücke. Beim Drucken ist die
+  // Spalte ein gewöhnlicher Block (der Bildschirmteil fehlt dort ohnehin), damit die Seitenumbrüche wie bisher fallen.
   return (
-    <div>
-      <div className="mx-auto max-w-3xl print:hidden">
+    <PageStack className="print:block">
+      <PageStack className="mx-auto w-full max-w-3xl print:hidden">
         <BackLink href={backHref}>{backLabel}</BackLink>
         <PageHeader
           title="Helferplan drucken"
@@ -110,7 +115,7 @@ export default async function PrintShiftPlanPage({
           action="/helferplanung/drucken"
           role="search"
           aria-label="Ausdruck eingrenzen"
-          className="mb-6 grid gap-4 rounded-xl border p-4"
+          className={cn(CARD_SURFACE, "grid gap-4 p-4")}
         >
           <fieldset className="grid gap-2">
             <legend className="text-sm font-medium">
@@ -213,7 +218,7 @@ export default async function PrintShiftPlanPage({
             )}
           </div>
         </form>
-      </div>
+      </PageStack>
 
       {/* Ab hier: der eigentliche Ausdruck, in einer eigenen Hülle mit `id` (damit Tests ihn eindeutig von der
           übrigen Seite unterscheiden können). `@page` setzt Format/Ränder und eine wiederkehrende Kopf-/Fußzeile mit
@@ -249,6 +254,6 @@ export default async function PrintShiftPlanPage({
           </>
         )}
       </div>
-    </div>
+    </PageStack>
   );
 }

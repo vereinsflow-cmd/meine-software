@@ -31,7 +31,7 @@ export default function DashboardLoading() {
             <Skeleton
               key={index}
               className={cn(
-                "h-60 rounded-[1.75rem] @bento/kpis:h-auto",
+                "h-60 rounded-4xl @bento/kpis:h-auto",
                 index > 0 && "max-sm:hidden",
                 cell,
               )}
@@ -40,8 +40,8 @@ export default function DashboardLoading() {
         </div>
       </div>
       <div className="mt-10 grid gap-7 md:grid-cols-2">
-        <Skeleton className="h-72 rounded-[1.75rem]" />
-        <Skeleton className="h-72 rounded-[1.75rem]" />
+        <Skeleton className="h-72 rounded-4xl" />
+        <Skeleton className="h-72 rounded-4xl" />
       </div>
     </div>
   );

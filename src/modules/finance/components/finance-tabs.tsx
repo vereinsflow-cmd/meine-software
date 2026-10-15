@@ -50,8 +50,9 @@ export function FinanceTabs({ counts = {} }: { counts?: Partial<Record<string, n
       ref={bar}
       aria-label="Bereiche der Finanzen"
       // relative: Auch der unsichtbare Hilfstext („überfällig“) bleibt in der waagerecht scrollenden Leiste – sonst
-      // machte er die Seite am Handy breiter als den Bildschirm.
-      className={cn(SEGMENT_BAR, "relative mb-6 max-w-full flex-nowrap overflow-x-auto")}
+      // machte er die Seite am Handy breiter als den Bildschirm. `self-start`: In der Spalte der Seite (`PageStack`) nur so
+      // breit wie die Kacheln; den Abstand darunter macht die Spalte.
+      className={cn(SEGMENT_BAR, "relative max-w-full flex-nowrap self-start overflow-x-auto")}
     >
       {FINANCE_TABS.map((tab) => {
         const current =

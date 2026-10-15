@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
+import { saveAttendance, type SaveAttendanceResult } from "./attendance";
+import { saveAttendanceSchema } from "./attendance-schemas";
 import { removeParticipant, respondToEvent, setParticipantStatus } from "./participants";
 import {
   cancelEventSchema,
@@ -135,4 +137,18 @@ export async function removeParticipantAction(input: unknown): Promise<ActionRes
     refresh(data.eventId);
     return undefined;
   }, "event-participant-remove");
+}
+
+/** Anwesenheit eines Termins speichern (nur geänderte Personen; `null` entfernt den Eintrag). */
+export async function saveAttendanceAction(
+  input: unknown,
+): Promise<ActionResult<SaveAttendanceResult>> {
+  return runAction(async () => {
+    const data = parseInput(saveAttendanceSchema, input);
+    const result = await saveAttendance(await requireTenantContext(), data);
+    revalidatePath(`/veranstaltungen/${data.eventId}`);
+    revalidatePath(`/veranstaltungen/${data.eventId}/anwesenheit`);
+    revalidatePath("/veranstaltungen/anwesenheit");
+    return result;
+  }, "event-attendance-save");
 }

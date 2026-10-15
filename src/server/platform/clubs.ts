@@ -60,8 +60,12 @@ export async function listPlatformClubs(actor: SessionUser): Promise<PlatformClu
       select: { clubId: true },
     }),
   ]);
-  const count = (rows: { clubId: string; _count: { _all: number } }[], id: string) =>
-    rows.find((r) => r.clubId === id)?._count._all ?? 0;
+  // Zähler je Verein als Map: Nachschlagen statt Suchen in der Liste (sonst Vereine × Vereine).
+  const countsOf = (rows: { clubId: string; _count: { _all: number } }[]) =>
+    new Map(rows.map((r) => [r.clubId, r._count._all]));
+  const memberCounts = countsOf(members);
+  const userCounts = countsOf(users);
+  const eventCounts = countsOf(events);
   const invited = new Set(adminInvites.map((i) => i.clubId));
 
   return clubs.map((club) => ({
@@ -71,9 +75,9 @@ export async function listPlatformClubs(actor: SessionUser): Promise<PlatformClu
     active: club.status === "ACTIVE",
     createdAt: club.createdAt,
     deactivatedAt: club.deactivatedAt,
-    memberCount: count(members, club.id),
-    userCount: count(users, club.id),
-    eventCount: count(events, club.id),
+    memberCount: memberCounts.get(club.id) ?? 0,
+    userCount: userCounts.get(club.id) ?? 0,
+    eventCount: eventCounts.get(club.id) ?? 0,
     pendingAdminInvitation: invited.has(club.id),
   }));
 }

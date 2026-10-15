@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CalculatorIcon, LockIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -11,7 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
+import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
 import { formatCalendarDate, formatDate, formatEuroFromCents } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -52,19 +57,19 @@ export default async function ClosingPage() {
 
   if (!preview) {
     return (
-      <>
+      <PageStack>
         <FinanceHeader description="Monat für Monat festschreiben" counts={counts} />
-        <Card className="max-w-3xl">
-          <CardContent>
-            <p className="text-sm">
-              Zuerst das Kassenbuch einrichten – danach schließt du hier die Monate ab.
-            </p>
-            <Button asChild className="mt-3">
+        <EmptyState
+          icon={<AREA_ICON.finanzen />}
+          title="Erst das Kassenbuch einrichten"
+          description="Danach schließt du hier die Monate ab."
+          action={
+            <Button asChild>
               <Link href="/finanzen/kassenbuch">Zum Kassenbuch</Link>
             </Button>
-          </CardContent>
-        </Card>
-      </>
+          }
+        />
+      </PageStack>
     );
   }
 
@@ -72,7 +77,7 @@ export default async function ClosingPage() {
   const lastClose = closes[0];
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description={
           lastClose
@@ -82,11 +87,11 @@ export default async function ClosingPage() {
         counts={counts}
       />
 
-      <div className="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
         <Card>
           <CardContent className="grid gap-4">
             <div>
-              <h2 className="text-lg font-semibold">{preview.label}</h2>
+              <h2 className={CARD_TITLE}>{preview.label}</h2>
               <p className="text-sm text-muted-foreground">
                 {preview.ended
                   ? "Als Nächstes abzuschließen. Danach ist der Monat festgeschrieben – Korrekturen landen im Folgemonat."
@@ -116,7 +121,7 @@ export default async function ClosingPage() {
 
         <Card>
           <CardContent className="grid gap-3">
-            <h2 className="text-lg font-semibold">Zahlen im {preview.label}</h2>
+            <h2 className={CARD_TITLE}>Zahlen im {preview.label}</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <dt className="text-muted-foreground">Einnahmen</dt>
               <dd className="text-right font-semibold tabular-nums">
@@ -151,21 +156,18 @@ export default async function ClosingPage() {
         </Card>
       </div>
 
-      <section aria-labelledby={CLOSE_FOCUS_ID} className="mb-6">
-        {/* tabIndex -1: Nach dem Abschluss landet der Fokus hier. */}
-        <h2 id={CLOSE_FOCUS_ID} tabIndex={-1} className="mb-1 text-lg font-semibold outline-none">
-          Bisherige Abschlüsse
-        </h2>
+      {/* focusTarget: Nach dem Abschluss landet der Fokus auf der Überschrift. */}
+      <PageSection id={CLOSE_FOCUS_ID} focusTarget title="Bisherige Abschlüsse">
         {closes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Noch keine.</p>
+          <CompactEmpty card icon={<LockIcon />} accent="slate" title="Noch keine Abschlüsse">
+            Jeder abgeschlossene Monat steht hier mit seiner Prüfsumme.
+          </CompactEmpty>
         ) : (
           <>
             {/* Nachrechnen liest alle Buchungen – die Seite wartet nicht darauf. */}
             <Suspense
               fallback={
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Prüfsummen werden nachgerechnet …
-                </p>
+                <p className="text-sm text-muted-foreground">Prüfsummen werden nachgerechnet …</p>
               }
             >
               <VerificationNote ctx={ctx} />
@@ -225,18 +227,22 @@ export default async function ClosingPage() {
             </TableCard>
           </>
         )}
-      </section>
+      </PageSection>
 
-      <section aria-labelledby="kassenstuerze-titel">
-        <h2 id="kassenstuerze-titel" className="mb-1 text-lg font-semibold">
-          Letzte Kassenstürze
-        </h2>
+      <PageSection id="kassenstuerze-titel" title="Letzte Kassenstürze">
         {cashCounts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {canManage
-              ? "Noch keiner. Im Kassenbuch unter „Weitere Aktionen“ → „Kassensturz“."
-              : "Noch keiner."}
-          </p>
+          <div className="max-w-3xl">
+            <CompactEmpty
+              card
+              icon={<CalculatorIcon />}
+              accent="slate"
+              title="Noch kein Kassensturz"
+            >
+              {canManage
+                ? "Im Kassenbuch unter „Weitere Aktionen“ → „Kassensturz“."
+                : "Gezählte Kassenstände stehen hier, sobald jemand die Kasse zählt."}
+            </CompactEmpty>
+          </div>
         ) : (
           <ul className="grid max-w-3xl">
             {cashCounts.map((count) => (
@@ -265,15 +271,15 @@ export default async function ClosingPage() {
             ))}
           </ul>
         )}
-      </section>
-    </>
+      </PageSection>
+    </PageStack>
   );
 }
 
 async function VerificationNote({ ctx }: { ctx: TenantContext }) {
   const verification = await verifyPeriodCloses(ctx);
   return (
-    <p className="mb-3 text-sm text-muted-foreground">
+    <p className="text-sm text-muted-foreground">
       {verification.ok
         ? "Prüfsummen nachgerechnet: Alle Abschlüsse stimmen mit den Buchungen überein."
         : "Achtung: Eine Prüfsumme stimmt nicht mehr – bitte den Support informieren."}

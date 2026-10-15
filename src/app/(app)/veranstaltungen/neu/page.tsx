@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NoAccess } from "@/components/shared/no-access";
 import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { toDateInputValue } from "@/lib/dates";
 import { addBerlinDays } from "@/lib/dates";
 import { EventForm } from "@/modules/events/components/event-form";
@@ -19,7 +20,7 @@ export default async function NewEventPage() {
   const nextWeek = toDateInputValue(addBerlinDays(new Date(), 7));
 
   return (
-    <>
+    <PageStack>
       <BackLink href="/veranstaltungen">Alle Veranstaltungen</BackLink>
       <PageHeader
         title="Neue Veranstaltung"
@@ -32,6 +33,6 @@ export default async function NewEventPage() {
         departmentRequired={options.departmentRequired}
         defaultValues={newEventFormDefaults(nextWeek)}
       />
-    </>
+    </PageStack>
   );
 }

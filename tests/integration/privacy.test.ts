@@ -406,6 +406,27 @@ describe("Löschantrag", () => {
     await prisma.user.update({ where: { id: disabled.user.id }, data: { disabledAt: new Date() } });
     expect(await findDeletionBlockers(soloAdmin.user.id)).toHaveLength(1);
 
+    // Administrator in mehreren Vereinen: je Verein ohne weiteren Administrator ein Hinweis, Vereine mit einem weiteren
+    // aktiven Administrator blockieren nicht.
+    const multi = await addUserToClub(club, "CLUB_ADMIN", {
+      firstName: "Mehrfach",
+      lastName: "Admin",
+    });
+    const lonelyA = await createClub("Allein A");
+    const lonelyB = await createClub("Allein B");
+    await addUserToClub(lonelyA, "CLUB_ADMIN", { user: multi.user });
+    await addUserToClub(lonelyB, "CLUB_ADMIN", { user: multi.user });
+    const blockers = await findDeletionBlockers(multi.user.id);
+    expect(blockers).toHaveLength(2);
+    expect(blockers.join(" ")).toContain("„Allein A“");
+    expect(blockers.join(" ")).toContain("„Allein B“");
+    expect(blockers.join(" ")).not.toContain("„Einzeladmin“");
+    // Ein Administrator, der nur in einem ANDEREN Verein aktiv ist, zählt nicht für „Allein B“.
+    await addUserToClub(lonelyA, "CLUB_ADMIN", { firstName: "Zweit", lastName: "A" });
+    expect(await findDeletionBlockers(multi.user.id)).toEqual([
+      "Du bist der letzte Vereinsadministrator von „Allein B“. Bestimme zuerst einen weiteren Administrator.",
+    ]);
+
     // Plattform-Administrator
     const superAdmin = await prisma.user.create({
       data: {
@@ -542,6 +563,19 @@ describe("Ausführung der Löschung", () => {
     );
     expect(entries.filter((e) => e.summary?.includes("Hanna")).map((e) => e.action)).toEqual([]);
     expect(entries.filter((e) => e.action === "privacy.deletion_completed")).toHaveLength(1);
+    // Je Verein der Person genau ein Nachweis (auch im zweiten Verein), als Systemeintrag ohne Akteur.
+    const completed = await prisma.auditLog.findMany({
+      where: { action: "privacy.deletion_completed", entityId: people.person.user.id },
+      select: { clubId: true, actorType: true, actorUserId: true, entityType: true, summary: true },
+    });
+    expect(completed.map((e) => e.clubId).sort()).toEqual([club.id, b.id].sort());
+    for (const entry of completed)
+      expect(entry).toMatchObject({
+        actorType: "SYSTEM",
+        actorUserId: null,
+        entityType: "User",
+        summary: "Konto und Mitgliedsdaten auf Antrag gelöscht",
+      });
     expect(
       await prisma.deletionRequest.findUniqueOrThrow({ where: { id: pending.id } }),
     ).toMatchObject({

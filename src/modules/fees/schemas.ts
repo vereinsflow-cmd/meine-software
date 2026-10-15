@@ -1,19 +1,12 @@
 import { z } from "zod";
 import { parseCalendarDate } from "@/lib/dates";
+import { trimmedIdString as id, trimmedOptionalIdString as optionalId } from "@/lib/id-schema";
 import { MAX_AMOUNT_CENTS, parseEuroToCents } from "@/lib/money";
 
 /**
  * Eingaben rund um Beiträge (Browser und Server, ohne Server-Code). Beträge kommen als Text („12,00“), Prozente als Text
  * („50“ bzw. „12,5“); umgerechnet wird im Dienst.
  */
-
-const id = z.string().trim().min(1).max(64);
-const optionalId = z
-  .string()
-  .trim()
-  .max(64)
-  .optional()
-  .transform((value) => (value ? value : undefined));
 
 const calendarDate = z
   .string()

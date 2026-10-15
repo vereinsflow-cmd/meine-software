@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
  * über. Auf dem Smartphone stehen die Aktionen wie bisher immer darunter.
  * `inline`: Beschreibung steht neben dem Titel statt darunter – kompakter, z. B. für die Begrüßung auf dem Dashboard.
  * `align="center"` richtet sie dabei mittig zum Titel aus statt an der Grundlinie (für ein Schild statt Text).
+ *
+ * Abstand nach unten: 1,75 rem (`inline` 1,25 rem) – auch als erstes Kind von `PageStack` (shared/page-section.tsx), dessen
+ * Lücke von 1,5 rem der Kopf dort nur ergänzt.
  */
 export function PageHeader({
   title,
@@ -33,9 +36,12 @@ export function PageHeader({
 }) {
   return (
     <div
+      data-slot="page-header"
       className={cn(
         "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between",
-        inline ? "mb-5 sm:items-center" : "mb-7 sm:items-start",
+        inline
+          ? "mb-5 in-data-[slot=page-stack]:-mb-1 sm:items-center"
+          : "mb-7 in-data-[slot=page-stack]:mb-1 sm:items-start",
         className,
       )}
     >

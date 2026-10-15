@@ -36,6 +36,7 @@ import {
   transferSchema,
   type EntryData,
 } from "./ledger-schemas";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Kassenbuch: Konten, Kategorien, Buchungen, Storno, Umbuchung, Kontostände und Jahreszahlen.
@@ -970,8 +971,8 @@ export async function listEntries(
     ...(q
       ? {
           OR: [
-            { description: { contains: q, mode: "insensitive" } },
-            { counterpartyName: { contains: q, mode: "insensitive" } },
+            { description: { contains: likeText(q), mode: "insensitive" } },
+            { counterpartyName: { contains: likeText(q), mode: "insensitive" } },
             ...(/^\d{4}-\d{1,4}$/.test(q)
               ? [{ year: Number(q.split("-")[0]), number: Number(q.split("-")[1]) }]
               : []),

@@ -333,6 +333,70 @@ describe("Berechtigungen und Reichweite", () => {
     ]);
   });
 
+  it("mehrere neue Abteilungen und Leitungswechsel in beide Richtungen in einem Schritt", async () => {
+    const { club, ctx, fussball, handball } = await setup();
+    const tennis = await createDepartment(club.id, "Tennis");
+    const volleyball = await createDepartment(club.id, "Volleyball");
+    const { id } = await createMember(
+      ctx.admin,
+      input({ departmentIds: [fussball.id, handball.id], leaderDepartmentIds: [handball.id] }),
+    );
+    const before = await prisma.memberDepartment.findMany({ where: { memberId: id } });
+
+    // Fußball wird Leitung, Handball nicht mehr; Tennis (Leitung) und Volleyball kommen neu dazu.
+    await updateMember(
+      ctx.admin,
+      id,
+      input({
+        departmentIds: [fussball.id, handball.id, tennis.id, volleyball.id],
+        leaderDepartmentIds: [fussball.id, tennis.id],
+      }),
+    );
+    expect(
+      (await getMember(ctx.admin, id)).departments.map((d) => [d.name, d.isLeader]).sort(),
+    ).toEqual([
+      ["Fußball", true],
+      ["Handball", false],
+      ["Tennis", true],
+      ["Volleyball", false],
+    ]);
+    const rows = await prisma.memberDepartment.findMany({ where: { memberId: id } });
+    expect(rows.every((row) => row.clubId === club.id && row.since === null)).toBe(true);
+    // Bestehende Zuordnungen bleiben dieselben Zeilen (nur das Kennzeichen ändert sich).
+    for (const old of before)
+      expect(rows.find((row) => row.departmentId === old.departmentId)?.createdAt).toEqual(
+        old.createdAt,
+      );
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { action: "member.updated", entityId: id },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(audit.changes).toMatchObject({
+      departments: {
+        from: ["Fußball", "Handball"],
+        to: ["Fußball", "Handball", "Tennis", "Volleyball"],
+      },
+    });
+
+    // Nur Leitung ändern, keine neue Zuordnung: Tennis und Volleyball tauschen.
+    await updateMember(
+      ctx.admin,
+      id,
+      input({
+        departmentIds: [fussball.id, handball.id, tennis.id, volleyball.id],
+        leaderDepartmentIds: [fussball.id, volleyball.id],
+      }),
+    );
+    expect(
+      (await getMember(ctx.admin, id)).departments.map((d) => [d.name, d.isLeader]).sort(),
+    ).toEqual([
+      ["Fußball", true],
+      ["Handball", false],
+      ["Tennis", false],
+      ["Volleyball", true],
+    ]);
+  });
+
   it("Abteilungsleiter kann weder archivieren noch löschen noch exportieren", async () => {
     const { ctx, fussball } = await setup();
     const { id } = await createMember(ctx.admin, input({ departmentIds: [fussball.id] }));

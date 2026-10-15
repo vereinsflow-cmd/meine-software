@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserMinusIcon, UserPlusIcon } from "lucide-react";
+import { UserMinusIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { toast } from "sonner";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import { IconButton } from "@/components/shared/icon-button";
 import { Button } from "@/components/ui/button";
@@ -56,12 +57,14 @@ export function ParticipantsPanel({
   return (
     <div className="grid gap-4">
       {editable && candidates.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <NativeSelect
             aria-label="Mitglied hinzufügen"
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
-            className="w-auto min-w-56"
+            // Breite in Prozent bzw. fest statt „so breit wie der längste Name“: Ein sehr langer Name in der Liste machte die Seite
+            // am Handy sonst breiter als den Bildschirm. Am Handy füllt das Feld die Zeile neben „Anmelden“.
+            className="w-full min-w-0 flex-1 sm:w-64 sm:flex-none"
           >
             <option value="">Mitglied hinzufügen …</option>
             {candidates.map((c) => (
@@ -88,7 +91,9 @@ export function ParticipantsPanel({
       )}
 
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Noch keine Antworten.</p>
+        <CompactEmpty icon={<UsersIcon />} accent="blue" title="Noch keine Antworten">
+          Sobald Mitglieder zu- oder absagen, stehen sie hier.
+        </CompactEmpty>
       ) : (
         <ExpandableList
           className="divide-y rounded-lg border"

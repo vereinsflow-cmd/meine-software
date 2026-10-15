@@ -120,7 +120,6 @@ export function ChoiceField<T extends FieldValues>({
               type="radio"
               value={choice.value}
               defaultChecked={initial === choice.value}
-              aria-invalid={error ? true : undefined}
               className="mt-0.5 size-4 shrink-0 accent-primary"
               {...form.register(name, {
                 onChange: (event: React.ChangeEvent<HTMLInputElement>) =>

@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageSection, PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
 import { formatCalendarDate, toDateInputValue, todayCalendarDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -82,7 +83,7 @@ export default async function FeeTypesPage() {
   ];
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description={`Beiträge · Beitragslauf ${FEE_INTERVAL_LABEL[settings.feeInterval].replace(/^im /, "je ")}`}
         counts={counts}
@@ -105,15 +106,16 @@ export default async function FeeTypesPage() {
           }
         />
       ) : (
-        <div className="grid gap-8">
+        <>
           {groups
             .filter((group) => group.items.length > 0)
             .map((group) => (
-              <section key={group.key} aria-labelledby={`gruppe-${group.key}`}>
-                <h2 id={`gruppe-${group.key}`} className="text-lg font-semibold">
-                  {group.title}
-                </h2>
-                <p className="mb-3 text-sm text-muted-foreground">{group.hint}</p>
+              <PageSection
+                key={group.key}
+                id={`gruppe-${group.key}`}
+                title={group.title}
+                description={group.hint}
+              >
                 <TableCard>
                   <Table>
                     <caption className="sr-only">{group.title}</caption>
@@ -229,7 +231,7 @@ export default async function FeeTypesPage() {
                     </TableBody>
                   </Table>
                 </TableCard>
-              </section>
+              </PageSection>
             ))}
           {!settings.stored && (
             <Card className="max-w-3xl">
@@ -239,8 +241,8 @@ export default async function FeeTypesPage() {
               </CardContent>
             </Card>
           )}
-        </div>
+        </>
       )}
-    </>
+    </PageStack>
   );
 }

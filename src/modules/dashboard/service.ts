@@ -8,6 +8,11 @@ import { listRecentActivity, type AuditEntryDto } from "@/modules/audit/service"
 import { eventVisibilityWhere, listEvents, type EventListItem } from "@/modules/events/service";
 import { getOpenPayments, type OpenPayments } from "@/modules/finance/service";
 import {
+  canSeeAnniversaries,
+  listUpcomingAnniversaries,
+  type UpcomingAnniversaryItem,
+} from "@/modules/members/anniversaries";
+import {
   canSeeBirthdays,
   listUpcomingBirthdays,
   memberReadScope,
@@ -87,6 +92,11 @@ export interface DashboardData {
   tasks: { mine: TaskDto[]; stats: TaskStats } | null;
   notifications: { unread: number; latest: NotificationDto[] };
   birthdays: UpcomingBirthday[] | null;
+  /**
+   * Runde Mitgliedsjubiläen der nächsten 60 Tage (höchstens 5, Karte „Jubiläen“) – nur, wer Mitglieder vereinsweit bzw. der
+   * eigenen Abteilungen sehen darf. Dann gibt es auch `members`; der Reiter „Mitglieder“ steht also ohnehin da.
+   */
+  anniversaries: UpcomingAnniversaryItem[] | null;
   /** Letzte Ereignisse im Verein – nur für Rollen mit Zugriff auf das Änderungsprotokoll. */
   activity: AuditEntryDto[] | null;
   /** Offene Zahlungen (Rechnungen) – nur für Rollen mit `finance:read` (Vereinsadministrator, Vorstand). */
@@ -218,20 +228,33 @@ export async function getDashboard(
   ctx: TenantContext,
   now: Date = new Date(),
 ): Promise<DashboardData> {
-  const [members, events, shifts, tasks, unread, latest, birthdays, activity, payments] =
-    await Promise.all([
-      loadMembers(ctx, now),
-      loadEvents(ctx, now),
-      loadShifts(ctx, now),
-      loadTasks(ctx),
-      countUnread(ctx),
-      listNotifications(ctx, { request: FIRST_PAGE }),
-      canSeeBirthdays(ctx)
-        ? listUpcomingBirthdays(ctx, { now, days: 14, limit: 6 })
-        : Promise.resolve(null),
-      can(ctx, "audit:read") ? listRecentActivity(ctx, 6) : Promise.resolve(null),
-      canFinance(ctx, "finance:read") ? getOpenPayments(ctx, { limit: 6 }) : Promise.resolve(null),
-    ]);
+  const [
+    members,
+    events,
+    shifts,
+    tasks,
+    unread,
+    latest,
+    birthdays,
+    anniversaries,
+    activity,
+    payments,
+  ] = await Promise.all([
+    loadMembers(ctx, now),
+    loadEvents(ctx, now),
+    loadShifts(ctx, now),
+    loadTasks(ctx),
+    countUnread(ctx),
+    listNotifications(ctx, { request: FIRST_PAGE }),
+    canSeeBirthdays(ctx)
+      ? listUpcomingBirthdays(ctx, { now, days: 14, limit: 6 })
+      : Promise.resolve(null),
+    canSeeAnniversaries(ctx)
+      ? listUpcomingAnniversaries(ctx, { now, days: 60, limit: 5 })
+      : Promise.resolve(null),
+    can(ctx, "audit:read") ? listRecentActivity(ctx, 6) : Promise.resolve(null),
+    canFinance(ctx, "finance:read") ? getOpenPayments(ctx, { limit: 6 }) : Promise.resolve(null),
+  ]);
   return {
     members,
     events,
@@ -239,6 +262,7 @@ export async function getDashboard(
     tasks,
     notifications: { unread, latest: latest.items },
     birthdays,
+    anniversaries,
     activity,
     payments,
   };

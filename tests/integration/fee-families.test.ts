@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toDateInputValue, todayCalendarDate } from "@/lib/dates";
+import { formatCalendarDate, toDateInputValue, todayCalendarDate } from "@/lib/dates";
 import { prisma } from "@/server/db/client";
 import { toActionError } from "@/server/action";
 import { anonymizeMemberData } from "@/server/privacy/anonymize";
@@ -403,6 +403,190 @@ describe("Familien", () => {
       memberId: mia.id,
       validFrom: iso(daysAhead(1)),
     });
+  });
+
+  it("Anlegen prüft die Auswahl der Reihe nach – dieselben Meldungen wie bei der Prüfung je Mitglied", async () => {
+    const { club, ctx, familyType, sophie, lena, mia, person } = await setup();
+    const tom = await person("Tom");
+    const eva = await person("Eva");
+    const ben = await person("Ben");
+    const weber = await createFamily(ctx.board, {
+      name: "Familie Weber",
+      feeTypeId: familyType.id,
+      payerMemberId: tom.id,
+      memberIds: [tom.id, eva.id],
+      validFrom: iso(daysAgo(30)),
+    });
+    const tomRow = await prisma.feeFamilyMember.findFirstOrThrow({
+      where: { familyId: weber.id, memberId: tom.id },
+    });
+    await endFamilyMember(ctx.board, { id: tomRow.id, validTo: iso(today()) });
+    // Tom ist außerdem ab in 5 Tagen bei Schmidt geplant – maßgeblich ist der früheste Eintrag (Weber, bis heute).
+    // Mia ist bei Schmidt ab in 10 Tagen geplant (liegt in der Zukunft, lässt sich also noch entfernen).
+    const schmidt = await prisma.feeFamily.create({
+      data: {
+        clubId: club.id,
+        name: "Familie Schmidt",
+        feeTypeId: familyType.id,
+        payerMemberId: ben.id,
+      },
+    });
+    await prisma.feeFamilyMember.createMany({
+      data: [
+        { clubId: club.id, familyId: schmidt.id, memberId: tom.id, validFrom: daysAhead(5) },
+        { clubId: club.id, familyId: schmidt.id, memberId: mia.id, validFrom: daysAhead(10) },
+      ],
+    });
+    const alt = await person("Alt");
+    await prisma.member.update({ where: { id: alt.id }, data: { archivedAt: new Date() } });
+    const other = await setup("Anderer Verein");
+
+    const attempt = (memberIds: string[]) =>
+      failure(
+        createFamily(ctx.board, {
+          name: "Familie Krüger",
+          feeTypeId: familyType.id,
+          payerMemberId: sophie.id,
+          memberIds,
+          validFrom: iso(today()),
+        }),
+      );
+    // Wer in der Auswahl zuerst kommt, bestimmt die Meldung.
+    expect(await attempt([sophie.id, alt.id, tom.id])).toMatch(
+      /Alt Krüger ist nicht mehr aktiv – bitte aus der Liste nehmen\./,
+    );
+    expect(await attempt([sophie.id, tom.id, alt.id])).toMatch(
+      new RegExp(
+        `Tom Krüger ist bis einschließlich ${formatCalendarDate(today())} in „Familie Weber“ – bitte frühestens den ${formatCalendarDate(daysAhead(1))} wählen\\.`,
+      ),
+    );
+    expect(await attempt([lena.id, mia.id, tom.id])).toMatch(
+      new RegExp(
+        `Mia Krüger ist ab ${formatCalendarDate(daysAhead(10))} für „Familie Schmidt“ eingetragen – bitte den Eintrag dort zuerst entfernen\\.`,
+      ),
+    );
+    // Unbekannt oder aus einem anderen Verein: „gibt es nicht mehr“.
+    for (const missing of ["gibt-es-nicht", other.lena.id])
+      expect(await attempt([sophie.id, missing, tom.id])).toMatch(
+        /Ein ausgewähltes Mitglied gibt es nicht mehr – bitte die Liste prüfen\./,
+      );
+    // Ab dem Tag nach Weber: Tom ist ab in 5 Tagen bei Schmidt (liegt in der Zukunft, lässt sich also noch entfernen) –
+    // „dort zuerst entfernen“.
+    expect(
+      await failure(
+        createFamily(ctx.board, {
+          name: "Familie Krüger",
+          feeTypeId: familyType.id,
+          payerMemberId: sophie.id,
+          memberIds: [sophie.id, tom.id],
+          validFrom: iso(daysAhead(1)),
+        }),
+      ),
+    ).toMatch(/Tom Krüger ist ab .* für „Familie Schmidt“ eingetragen – bitte den Eintrag dort/);
+    // Ida gehört seit zehn Tagen zu Schmidt (nicht heute erfasst, lässt sich also nicht mehr entfernen) – wer davor
+    // beginnen will, muss sie dort austragen.
+    const ida = await person("Ida");
+    await prisma.feeFamilyMember.create({
+      data: {
+        clubId: club.id,
+        familyId: schmidt.id,
+        memberId: ida.id,
+        validFrom: daysAgo(10),
+        createdAt: daysAgo(10),
+      },
+    });
+    expect(
+      await failure(
+        createFamily(ctx.board, {
+          name: "Familie Krüger",
+          feeTypeId: familyType.id,
+          payerMemberId: sophie.id,
+          memberIds: [sophie.id, ida.id],
+          validFrom: iso(daysAgo(30)),
+        }),
+      ),
+    ).toBe(
+      `Ida Krüger ist ab ${formatCalendarDate(daysAgo(10))} in „Familie Schmidt“ – bitte dort zuerst austragen.`,
+    );
+    expect(
+      await prisma.feeFamily.count({ where: { clubId: club.id, name: "Familie Krüger" } }),
+    ).toBe(0);
+
+    // Gelingt: alle ab dem Tag, Protokoll mit den Namen in der Reihenfolge der Auswahl.
+    const { id } = await createFamily(ctx.board, {
+      name: "Familie Krüger",
+      feeTypeId: familyType.id,
+      payerMemberId: sophie.id,
+      memberIds: [lena.id, sophie.id],
+      validFrom: iso(today()),
+    });
+    const rows = await prisma.feeFamilyMember.findMany({ where: { familyId: id } });
+    expect(rows.map((r) => r.memberId).sort()).toEqual([lena.id, sophie.id].sort());
+    expect(
+      rows.every((r) => r.validFrom.getTime() === today().getTime() && r.validTo === null),
+    ).toBe(true);
+    expect(rows.every((r) => r.createdById === ctx.board.userId)).toBe(true);
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { action: "finance.family_created", entityId: id },
+    });
+    expect(audit.summary).toBe(
+      `Familie „Familie Krüger“ angelegt (Lena Krüger, Sophie Krüger ab ${formatCalendarDate(today())})`,
+    );
+  });
+
+  it("Auflösen: offene Einträge enden zum Tag, künftige entfallen, beendete bleiben – ein Fehler ändert nichts", async () => {
+    const { club, ctx, familyType, sophie, lena, mia, kid } = await setup();
+    const { id } = await createFamily(ctx.board, {
+      name: "Familie Krüger",
+      feeTypeId: familyType.id,
+      payerMemberId: sophie.id,
+      memberIds: [sophie.id, lena.id, mia.id],
+      validFrom: iso(daysAgo(60)),
+    });
+    const lenaRow = await prisma.feeFamilyMember.findFirstOrThrow({
+      where: { familyId: id, memberId: lena.id },
+    });
+    await endFamilyMember(ctx.board, { id: lenaRow.id, validTo: iso(daysAgo(20)) });
+    const max = await kid("Max");
+    await addFamilyMember(ctx.board, {
+      familyId: id,
+      memberId: max.id,
+      validFrom: iso(daysAhead(10)),
+    });
+    // Paul gehört seit drei Tagen dazu (nicht heute erfasst) – vor seinem Beginn lässt sich nicht auflösen.
+    const paul = await kid("Paul");
+    await prisma.feeFamilyMember.create({
+      data: {
+        clubId: club.id,
+        familyId: id,
+        memberId: paul.id,
+        validFrom: daysAgo(3),
+        createdAt: daysAgo(3),
+      },
+    });
+    const snapshot = () =>
+      prisma.feeFamilyMember.findMany({ where: { familyId: id }, orderBy: { id: "asc" } });
+    const before = await snapshot();
+
+    expect(await failure(dissolveFamily(ctx.board, { id, validTo: iso(daysAgo(5)) }))).toMatch(
+      new RegExp(
+        `Paul Krüger ist erst ab ${formatCalendarDate(daysAgo(3))} in der Familie – bitte einen späteren Tag wählen\\.`,
+      ),
+    );
+    expect(await snapshot()).toEqual(before);
+    expect((await prisma.feeFamily.findUniqueOrThrow({ where: { id } })).archivedAt).toBeNull();
+
+    await dissolveFamily(ctx.board, { id, validTo: iso(daysAgo(2)) });
+    const after = new Map((await snapshot()).map((row) => [row.memberId, row]));
+    expect([...after.keys()].sort()).toEqual([sophie.id, lena.id, mia.id, paul.id].sort()); // Max entfällt
+    for (const memberId of [sophie.id, mia.id, paul.id])
+      expect(after.get(memberId)).toMatchObject({
+        validTo: daysAgo(2),
+        endedById: ctx.board.userId,
+      });
+    // Lena war schon früher ausgetragen: unverändert.
+    expect(after.get(lena.id)).toEqual(before.find((row) => row.memberId === lena.id));
+    expect((await prisma.feeFamily.findUniqueOrThrow({ where: { id } })).archivedAt).not.toBeNull();
   });
 
   it("Anonymisierung des letzten: Familie heißt neutral, ist aufgelöst, Protokoll ohne Namen", async () => {

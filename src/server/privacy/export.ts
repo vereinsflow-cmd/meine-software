@@ -4,12 +4,13 @@ import { DONATION_KIND_LABEL, purposeLabel, receiptBadge } from "@/modules/donat
 import { addressComplete, donationReceiptState } from "@/modules/donations/receipt-status";
 import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { prisma } from "@/server/db/client";
+import { likeText } from "@/lib/like-pattern";
 
 /**
  * Datenexport für die betroffene Person (Auskunft und Datenübertragbarkeit, Art. 15 und 20 DSGVO).
  *
  * Ausgegeben werden AUSSCHLIESSLICH die Daten der anfragenden Person: ihr Konto, ihre Mitgliedschaften samt
- * Stammdaten, Einwilligungen, Anmeldungen, Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
+ * Stammdaten, Einwilligungen, Anmeldungen, Anwesenheit (ohne „erfasst von“), Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
  * Kalender-Abos (ohne Geheimnisse) und Sitzungen (ohne Token). Angaben über andere Personen (Mitanmeldungen, andere Helfer, Namen in Protokolltexten) sind
  * bewusst NICHT enthalten. Passwort-Hash, Zwei-Faktor-Geheimnis und Token verlassen den Server nie.
  * Das Format ist gut lesbares JSON mit deutschen Schlüsseln.
@@ -82,6 +83,16 @@ export async function buildUserDataExport(
           participations: {
             include: { event: { select: { title: true, startsAt: true } } },
             orderBy: { createdAt: "asc" },
+            take: LIMIT,
+          },
+          // Anwesenheit bei Terminen – ohne, wer sie erfasst hat (das wäre eine Angabe über eine andere Person).
+          attendances: {
+            select: {
+              status: true,
+              recordedAt: true,
+              event: { select: { title: true, startsAt: true } },
+            },
+            orderBy: { recordedAt: "asc" },
             take: LIMIT,
           },
           // Kassenbuch: Buchungen, bei denen das Mitglied Zahler oder Empfänger war.
@@ -309,8 +320,8 @@ export async function buildUserDataExport(
         where: {
           clubId: membership.clubId,
           OR: [
-            { counterpartyName: { contains: fullName, mode: "insensitive" } },
-            { description: { contains: fullName, mode: "insensitive" } },
+            { counterpartyName: { contains: likeText(fullName), mode: "insensitive" } },
+            { description: { contains: likeText(fullName), mode: "insensitive" } },
           ],
         },
         select: {
@@ -372,6 +383,12 @@ export async function buildUserDataExport(
               antwort: p.status,
               notiz: p.note,
               am: iso(p.respondedAt),
+            })),
+            anwesenheit: member.attendances.map((a) => ({
+              veranstaltung: a.event.title,
+              beginn: iso(a.event.startsAt),
+              status: a.status,
+              erfasstAm: iso(a.recordedAt),
             })),
             helferschichten: member.shiftAssignments.map((a) => ({
               veranstaltung: a.shift.event.title,

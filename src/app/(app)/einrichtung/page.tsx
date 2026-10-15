@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
-  CircleCheckIcon,
-  CircleIcon,
+  CheckIcon,
   FileSpreadsheetIcon,
   QrCodeIcon,
   UserPlusIcon,
@@ -13,9 +12,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_SURFACE } from "@/components/ui/surface";
+import { ACCENT } from "@/components/shared/accent";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { enumParam, type RawSearchParams } from "@/lib/search-params";
+import { cn } from "@/lib/utils";
 import { ClubLogoCard } from "@/modules/clubs/components/logo-card";
 import { ClubSettingsForm } from "@/modules/clubs/components/settings-form";
 import { getClubSettings } from "@/modules/clubs/service";
@@ -83,7 +86,7 @@ export default async function SetupPage({
   const next = SETUP_STEPS[index + 1];
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Verein einrichten"
         description={
@@ -144,7 +147,7 @@ export default async function SetupPage({
           </nav>
         </section>
       </div>
-    </>
+    </PageStack>
   );
 }
 
@@ -258,7 +261,12 @@ async function StepContent({
                 <li key={way.href}>
                   <Link
                     href={way.href}
-                    className="group flex h-full flex-col gap-2 rounded-xl border bg-card p-4 transition-colors outline-none hover:border-primary/50 hover:bg-primary/5 focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className={cn(
+                      CARD_SURFACE,
+                      // Hervorhebung über den Ring der Kartenfläche (er ersetzt den Rand); dunkel ausdrücklich, weil die
+                      // Kartenfläche dort ihren eigenen Rington setzt.
+                      "group flex h-full flex-col gap-2 p-4 transition-[background-color,box-shadow] outline-none hover:bg-primary/5 hover:ring-primary/40 focus-visible:ring-3 focus-visible:ring-ring/50 dark:hover:ring-primary/40 dark:focus-visible:ring-ring/50",
+                    )}
                   >
                     <span
                       aria-hidden="true"
@@ -355,17 +363,17 @@ async function StepContent({
                 const done = overview.done[entry.id as Exclude<SetupStepId, "abschluss">];
                 return (
                   <li key={entry.id} className="flex items-start gap-3">
-                    {done ? (
-                      <CircleCheckIcon
-                        className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <CircleIcon
-                        className="mt-0.5 size-5 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
-                    )}
+                    {/* Wie in der Schrittfolge: erledigt = grün getönter Kreis mit Haken, offen = leerer Kreis – im Rand
+                        der Eingabefelder (`border-field`, mindestens 3:1 gegen die Karte, hell wie dunkel). */}
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full [&_svg]:size-3.5",
+                        done ? ACCENT.emerald.tile : "border-2 border-field",
+                      )}
+                    >
+                      {done && <CheckIcon strokeWidth={3} />}
+                    </span>
                     <div className="min-w-0">
                       <Link
                         href={`/einrichtung?schritt=${entry.id}`}

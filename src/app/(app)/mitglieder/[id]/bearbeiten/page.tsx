@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { isAppError } from "@/server/errors";
 import { MemberForm } from "@/modules/members/components/member-form";
 import { getMemberForEdit, listDepartmentOptions } from "@/modules/members/service";
@@ -25,7 +26,7 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
   const { values, editable } = edit;
 
   return (
-    <>
+    <PageStack>
       <BackLink href={`/mitglieder/${id}`}>
         {values.firstName} {values.lastName}
       </BackLink>
@@ -40,6 +41,6 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
         editable={editable}
         defaultValues={values}
       />
-    </>
+    </PageStack>
   );
 }

@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HandHeartIcon, ReceiptTextIcon, TrendingUpIcon, WalletIcon } from "lucide-react";
+import {
+  ChartColumnIcon,
+  HandHeartIcon,
+  ReceiptTextIcon,
+  TrendingUpIcon,
+  WalletIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import {
   formatCalendarDate,
   formatEuroFromCents,
@@ -59,7 +68,7 @@ export default async function FinancePage() {
   const { payments } = overview;
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description={`Geschäftsjahr ${year} · Stand ${formatCalendarDate(today)}`}
         counts={counts}
@@ -70,7 +79,7 @@ export default async function FinancePage() {
         }
       />
 
-      <section aria-label="Kennzahlen" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="Kennzahlen" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <FinanceKpiCard
           label="Kontostand gesamt"
           accent="blue"
@@ -144,12 +153,12 @@ export default async function FinancePage() {
         />
       </section>
 
-      <div className="mb-6 grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">
         <Card>
           <CardContent className="grid gap-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <div>
-                <h2 className="text-lg font-semibold">Einnahmen und Ausgaben {year}</h2>
+                <h2 className={CARD_TITLE}>Einnahmen und Ausgaben {year}</h2>
                 <p className="text-sm text-muted-foreground">
                   Je Monat, ohne Umbuchungen und Anfangsbestände
                 </p>
@@ -166,10 +175,7 @@ export default async function FinancePage() {
                 <dl className="flex flex-wrap gap-x-10 gap-y-2">
                   <div>
                     <dt className="flex items-center gap-2 text-sm">
-                      <span
-                        className="size-2.5 rounded-[3px] bg-[var(--chart-1)]"
-                        aria-hidden="true"
-                      />{" "}
+                      <span className="size-2.5 rounded-xs bg-chart-1" aria-hidden="true" />{" "}
                       Einnahmen
                     </dt>
                     <dd className="text-2xl font-bold tabular-nums">
@@ -178,10 +184,7 @@ export default async function FinancePage() {
                   </div>
                   <div>
                     <dt className="flex items-center gap-2 text-sm">
-                      <span
-                        className="size-2.5 rounded-[3px] bg-[var(--chart-2)]"
-                        aria-hidden="true"
-                      />{" "}
+                      <span className="size-2.5 rounded-xs bg-chart-2" aria-hidden="true" />{" "}
                       Ausgaben
                     </dt>
                     <dd className="text-2xl font-bold tabular-nums">
@@ -192,23 +195,30 @@ export default async function FinancePage() {
                 {overview.year.months.some((m) => m.incomeCents > 0 || m.expenseCents > 0) ? (
                   <MonthChart year={year} months={overview.year.months} legend={false} />
                 ) : (
-                  <p className="py-10 text-center text-sm text-muted-foreground">
-                    Noch keine Einnahmen oder Ausgaben in {year}.
-                  </p>
+                  <CompactEmpty
+                    icon={<ChartColumnIcon />}
+                    accent="slate"
+                    title={`Noch keine Einnahmen oder Ausgaben in ${year}`}
+                  >
+                    Sobald gebucht ist, stehen hier die Monate als Balken.
+                  </CompactEmpty>
                 )}
               </>
             ) : (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                Sobald das Kassenbuch eingerichtet ist, stehen hier die Einnahmen und Ausgaben je
-                Monat.
-              </p>
+              <CompactEmpty
+                icon={<ChartColumnIcon />}
+                accent="slate"
+                title="Kassenbuch noch nicht eingerichtet"
+              >
+                Sobald es eingerichtet ist, stehen hier die Einnahmen und Ausgaben je Monat.
+              </CompactEmpty>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="grid gap-1">
-            <h2 className="text-lg font-semibold">Das steht an</h2>
+            <h2 className={CARD_TITLE}>Das steht an</h2>
             <DueList items={overview.due} canManage={overview.canManage} />
           </CardContent>
         </Card>
@@ -219,16 +229,19 @@ export default async function FinancePage() {
           <Card>
             <CardContent className="grid gap-4">
               <div>
-                <h2 className="text-lg font-semibold">Ausgaben der Abteilungen {year}</h2>
+                <h2 className={CARD_TITLE}>Ausgaben der Abteilungen {year}</h2>
                 <p className="text-sm text-muted-foreground">
                   Buchungen, die einer Abteilung zugeordnet sind
                 </p>
               </div>
               {overview.departments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Noch keine Buchungen mit Abteilung. Beim Buchen kannst du jede Einnahme oder
-                  Ausgabe einer Abteilung zuordnen.
-                </p>
+                <CompactEmpty
+                  icon={<AREA_ICON.abteilungen />}
+                  accent="slate"
+                  title="Noch keine Buchungen mit Abteilung"
+                >
+                  Beim Buchen kannst du jede Einnahme oder Ausgabe einer Abteilung zuordnen.
+                </CompactEmpty>
               ) : (
                 <DepartmentBars departments={overview.departments} />
               )}
@@ -237,7 +250,7 @@ export default async function FinancePage() {
           <Card>
             <CardContent className="grid gap-3">
               <div>
-                <h2 className="text-lg font-semibold">Konten</h2>
+                <h2 className={CARD_TITLE}>Konten</h2>
                 <p className="text-sm text-muted-foreground">Stand {formatCalendarDate(today)}</p>
               </div>
               <ul className="grid">
@@ -289,7 +302,7 @@ export default async function FinancePage() {
           </Card>
         </div>
       )}
-    </>
+    </PageStack>
   );
 }
 

@@ -7,6 +7,7 @@ import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { formatEuroFromCents } from "@/lib/dates";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { canFinance } from "@/modules/finance/access";
@@ -61,7 +62,7 @@ export default async function OpenChargesPage({
     redirect(href({ seite: pages > 1 ? String(pages) : undefined }));
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description={
           result.counts.offen > 0
@@ -85,7 +86,7 @@ export default async function OpenChargesPage({
         />
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <nav aria-label="Status" className={SEGMENT_BAR}>
               {FILTERS.map((f) => (
                 <Link
@@ -120,34 +121,42 @@ export default async function OpenChargesPage({
           </div>
 
           {result.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {q ? "Keine passenden Beiträge." : "Hier steht gerade nichts."}
-            </p>
+            <EmptyState
+              icon={<AREA_ICON.finanzen />}
+              title={q ? "Keine passenden Beiträge" : "Hier steht gerade nichts"}
+              description={
+                q
+                  ? "Passe die Suche an oder wähle oben einen anderen Stand."
+                  : "Wähle oben einen anderen Stand, um die übrigen Beiträge zu sehen."
+              }
+            />
           ) : (
-            <ChargesTable charges={result.items} caption="Beiträge" canManage={canManage} />
-          )}
-
-          {pages > 1 && (
-            <nav aria-label="Seiten" className="mt-4 flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                Seite {page} von {pages}
-              </span>
-              <span className="flex gap-2">
-                {page > 1 && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={href({ seite: String(page - 1) })}>Zurück</Link>
-                  </Button>
-                )}
-                {page < pages && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={href({ seite: String(page + 1) })}>Weiter</Link>
-                  </Button>
-                )}
-              </span>
-            </nav>
+            // Seitenwechsel nur bei Beiträgen: Eine leere Seite hinter dem Ende leitet oben um.
+            <div className="grid gap-4">
+              <ChargesTable charges={result.items} caption="Beiträge" canManage={canManage} />
+              {pages > 1 && (
+                <nav aria-label="Seiten" className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Seite {page} von {pages}
+                  </span>
+                  <span className="flex gap-2">
+                    {page > 1 && (
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={href({ seite: String(page - 1) })}>Zurück</Link>
+                      </Button>
+                    )}
+                    {page < pages && (
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={href({ seite: String(page + 1) })}>Weiter</Link>
+                      </Button>
+                    )}
+                  </span>
+                </nav>
+              )}
+            </div>
           )}
         </>
       )}
-    </>
+    </PageStack>
   );
 }

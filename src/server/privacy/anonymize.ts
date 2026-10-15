@@ -8,8 +8,8 @@ import { todayCalendarDate } from "@/lib/dates";
  * Wird von der Aufbewahrungsroutine (Papierkorb-Frist, ausgetretene Mitglieder) und von der Bearbeitung von
  * Löschanträgen verwendet. Der Datensatz bleibt als leere Hülle bestehen, damit Auswertungen (Helferstunden,
  * Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber er lässt keinen Rückschluss auf die
- * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten und keine
- * Klartext-Namen im Änderungsprotokoll.
+ * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten, keine
+ * Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll.
  */
 export const ANONYMOUS_FIRST_NAME = "Gelöschtes";
 export const ANONYMOUS_LAST_NAME = "Mitglied";
@@ -101,6 +101,9 @@ export async function anonymizeMemberData(
   await tx.invitation.deleteMany({ where: { clubId, memberId } }); // enthalten die E-Mail-Adresse
   await tx.membershipApplication.deleteMany({ where: { clubId, memberId } }); // Antrag mit Kontaktdaten und Nachricht
   await tx.eventParticipant.updateMany({ where: { clubId, memberId }, data: { note: null } });
+  // Anwesenheit: Ohne Person zählt sie nirgends mehr (Listen und Auswertungen blenden anonymisierte Mitglieder aus) – und
+  // an der leeren Hülle bliebe sonst bis zu 24 Monate ein Bewegungsprofil (wann wo gewesen) hängen.
+  await tx.eventAttendance.deleteMany({ where: { clubId, memberId } });
   await tx.shiftAssignment.updateMany({ where: { clubId, memberId }, data: { note: null } });
   await tx.messageRecipient.updateMany({ where: { clubId, memberId }, data: { userId: null } });
   // Dokumente, die zu dieser Person gehören (z. B. Aufnahmeantrag): in den Papierkorb; der Aufbewahrungsjob entfernt die Dateien.

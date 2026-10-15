@@ -2,6 +2,7 @@ import { z } from "zod";
 import { MemberStatus } from "@/generated/prisma/enums";
 import { COUNTRY_CODES } from "@/lib/countries";
 import { parseCalendarDate, todayCalendarDate } from "@/lib/dates";
+import { idString } from "@/lib/id-schema";
 
 /**
  * Eingabe-Schemas für Mitglieder. Werden im Browser (Sofort-Feedback) und im Service
@@ -72,8 +73,8 @@ export const memberFormSchema = z
     status: z.enum(MEMBER_STATUS_VALUES, "Bitte wähle einen Status."),
     clubFunction: text(100, "Die Funktion"),
     internalNotes: text(5000, "Die Notiz"),
-    departmentIds: z.array(z.string().min(1).max(64)).max(50),
-    leaderDepartmentIds: z.array(z.string().min(1).max(64)).max(50),
+    departmentIds: z.array(idString).max(50),
+    leaderDepartmentIds: z.array(idString).max(50),
   })
   .superRefine((data, ctx) => {
     const birth = data.birthDate ? parseCalendarDate(data.birthDate) : null;
@@ -151,10 +152,10 @@ export type MemberFormInput = z.input<typeof memberFormSchema>;
 export type MemberInput = z.output<typeof memberFormSchema>;
 
 export const consentSchema = z.object({
-  memberId: z.string().min(1).max(64),
+  memberId: idString,
   type: z.enum(["PRIVACY_POLICY", "DATA_PROCESSING", "NEWSLETTER", "PHOTO_PUBLICATION"]),
   granted: z.boolean(),
   source: z.enum(["app", "paper"]).default("paper"),
 });
 
-export const idSchema = z.object({ id: z.string().min(1).max(64) });
+export { idSchema } from "@/lib/id-schema";

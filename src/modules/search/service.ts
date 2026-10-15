@@ -54,7 +54,10 @@ export async function searchEntities(
   const [mitglieder, veranstaltungen, dokumente] = await Promise.all([
     can(ctx, "members:read")
       ? ctx.db.member.findMany({
-          where: { AND: [memberReadScope(ctx) ?? {}, memberSearchWhere(ctx, q)] },
+          // Papierkorb nie: Die Suche zeigt nur lebende Datensätze (gelöschte Mitglieder hat die Mitgliederliste im Papierkorb).
+          where: {
+            AND: [{ deletedAt: null }, memberReadScope(ctx) ?? {}, memberSearchWhere(ctx, q)],
+          },
           select: { id: true, firstName: true, lastName: true, memberNumber: true },
           orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
           take: ENTITY_SEARCH_LIMIT_PER_CATEGORY,

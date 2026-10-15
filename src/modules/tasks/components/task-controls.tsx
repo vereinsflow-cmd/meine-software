@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import {
   Dialog,
   DialogContent,
@@ -227,8 +228,10 @@ export function TaskRow({ task, options }: { task: TaskDto; options: TaskFormOpt
     <li
       aria-label={`Aufgabe ${task.title}`}
       className={cn(
-        "flex items-start gap-3 rounded-xl border bg-card p-4",
-        task.overdue && "border-red-300 dark:border-red-900",
+        CARD_SURFACE,
+        "flex items-start gap-3 p-4",
+        // Überfällig: roter Rand (die Frist steht zusätzlich rot im Text).
+        task.overdue && "ring-destructive/40 dark:ring-destructive/40",
         done && "bg-muted/40",
       )}
     >

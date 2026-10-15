@@ -2,12 +2,18 @@ import Link from "next/link";
 import { MapPinIcon, UsersIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { EventStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import { CARD_SURFACE } from "@/components/ui/surface";
 import { berlinParts, formatDateShort, formatTimeRange, MONTH_NAMES } from "@/lib/dates";
 import { EVENT_TYPE_LABEL, PARTICIPANT_STATUS_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
+import { STAFFING_TONE_CLASS } from "@/modules/shifts/staffing-text";
 import type { EventListItem } from "../service";
 
-/** Eine Veranstaltung in der Liste: Datumsfeld, Titel, Zeit, Ort und Kennzahlen zu Teilnehmern und Helfern. */
+/**
+ * Eine Veranstaltung in der Liste: Datumsfeld, Titel, Zeit, Ort und Kennzahlen zu Teilnehmern und Helfern – als Karte
+ * (Kartenfläche wie überall), beim Überfahren leicht getönt. Der Fokusrahmen braucht `dark:` noch einmal, sonst gewänne im
+ * Dunklen der blasse Kartenrand.
+ */
 export function EventListItemView({ event }: { event: EventListItem }) {
   const start = berlinParts(event.startsAt);
   const cancelled = event.status === "CANCELLED";
@@ -17,7 +23,10 @@ export function EventListItemView({ event }: { event: EventListItem }) {
     <li>
       <Link
         href={`/veranstaltungen/${event.id}`}
-        className="flex gap-4 rounded-xl border p-4 transition-colors outline-none hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          CARD_SURFACE,
+          "flex gap-4 p-4 transition-colors outline-none hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring dark:focus-visible:ring-ring",
+        )}
       >
         <div
           className="flex size-14 shrink-0 flex-col items-center justify-center rounded-lg bg-muted text-center leading-tight"
@@ -74,7 +83,7 @@ export function EventListItemView({ event }: { event: EventListItem }) {
               <span
                 className={cn(
                   "inline-flex items-center gap-1",
-                  openShifts > 0 && !cancelled && "font-medium text-amber-700 dark:text-amber-400",
+                  openShifts > 0 && !cancelled && cn("font-medium", STAFFING_TONE_CLASS.amber),
                 )}
               >
                 <AREA_ICON.helferplanung className="size-3.5" aria-hidden="true" />

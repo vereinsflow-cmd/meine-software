@@ -5,6 +5,7 @@ import {
   DownloadIcon,
   FileCheckIcon,
   IdCardIcon,
+  InboxIcon,
   ScaleIcon,
   TrashIcon,
   UserXIcon,
@@ -12,7 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DescriptionList } from "@/components/shared/description-list";
+import { CompactEmpty } from "@/components/shared/compact-empty";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { formatDateTime } from "@/lib/dates";
 import { SUPPORT_RETENTION_MONTHS } from "@/lib/support";
 import {
@@ -72,7 +75,7 @@ export default async function PrivacyPage() {
   ]);
 
   return (
-    <>
+    <PageStack>
       <PageHeader
         title="Datenschutz"
         description="Deine Rechte: Auskunft, Einwilligungen, Datenexport und Löschung – und wer für deine Daten verantwortlich ist."
@@ -176,10 +179,13 @@ export default async function PrivacyPage() {
               }))}
             />
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Dein Konto ist mit keinem Mitgliedsdatensatz verknüpft – es sind daher keine
-              Einwilligungen gespeichert.
-            </p>
+            <CompactEmpty
+              icon={<FileCheckIcon />}
+              accent="slate"
+              title="Keine Einwilligungen gespeichert"
+            >
+              Dein Konto ist mit keinem Mitgliedsdatensatz verknüpft.
+            </CompactEmpty>
           )}
         </Section>
 
@@ -224,9 +230,10 @@ export default async function PrivacyPage() {
             description="Nur für Verantwortliche des Datenschutzes. Die Löschung wird nach der Bedenkzeit automatisch ausgeführt."
           >
             {requests.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Es liegen keine offenen Löschanträge vor.
-              </p>
+              <CompactEmpty icon={<InboxIcon />} accent="slate" title="Keine offenen Löschanträge">
+                Stellt jemand in deinem Verein einen Löschantrag, steht er hier – mit dem Tag, an
+                dem er ausgeführt wird.
+              </CompactEmpty>
             ) : (
               <ul className="divide-y rounded-lg border">
                 {requests.map((request) => (
@@ -246,6 +253,6 @@ export default async function PrivacyPage() {
           </Section>
         )}
       </div>
-    </>
+    </PageStack>
   );
 }
