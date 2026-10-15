@@ -16,9 +16,7 @@ test.describe("Profil", () => {
       page.getByRole("region", { name: "Angemeldete Geräte" }).getByText("Dieses Gerät"),
     ).toBeVisible();
     await expect(
-      page
-        .getByRole("region", { name: "Zwei-Faktor-Authentifizierung" })
-        .getByText("Nicht eingerichtet"),
+      page.getByRole("region", { name: "Zwei-Faktor-Anmeldung" }).getByText("Nicht eingerichtet"),
     ).toBeVisible();
 
     const firstName = page.getByLabel("Vorname");

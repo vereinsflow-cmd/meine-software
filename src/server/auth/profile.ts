@@ -38,7 +38,6 @@ export interface OwnAccount {
   createdAt: Date;
   lastLoginAt: Date | null;
   emailNotifications: boolean;
-  totpEnabledAt: Date | null;
 }
 
 /** Die eigenen Kontodaten für die Profilseite (ohne Passwort-Hash und Geheimnisse). */
@@ -52,7 +51,6 @@ export async function getOwnAccount(userId: string): Promise<OwnAccount> {
       createdAt: true,
       lastLoginAt: true,
       emailNotifications: true,
-      totpEnabledAt: true,
     },
   });
   if (!account) throw notFound("Das Konto");

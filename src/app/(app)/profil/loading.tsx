@@ -26,7 +26,7 @@ function RowsSkeleton({ rows }: { rows: number }) {
 
 /**
  * Ladezustand von „Mein Profil“: Kopf, darunter (höchstens 56 rem breit) die Abschnitte Persönliche Angaben, Meine
- * Vereine, Benachrichtigungen, Passwort ändern, Zwei-Faktor-Authentifizierung und Angemeldete Geräte.
+ * Vereine, Benachrichtigungen, Passwort ändern, Zwei-Faktor-Anmeldung und Angemeldete Geräte.
  */
 export default function ProfileLoading() {
   return (
@@ -68,8 +68,11 @@ export default function ProfileLoading() {
             <Skeleton className="h-9 w-36 rounded-lg" />
           </div>
         </FormCardSkeleton>
-        <FormCardSkeleton icon titleWidth="w-44">
-          <Skeleton className="h-4 w-4/5" />
+        <FormCardSkeleton icon titleWidth="w-44" description>
+          <div className="grid gap-4">
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-9 w-64 max-w-full rounded-lg" />
+          </div>
         </FormCardSkeleton>
         <FormCardSkeleton icon titleWidth="w-44" description>
           <RowsSkeleton rows={2} />

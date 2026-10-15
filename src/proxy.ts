@@ -14,6 +14,8 @@ import { SESSION_COOKIE_NAME } from "@/lib/session-cookie";
 
 const PUBLIC_PATHS = [
   "/anmelden",
+  // Zweiter Schritt mit Zwei-Faktor: noch ohne Sitzung (die Seite prüft das Zwischenstands-Cookie selbst).
+  "/anmelden/bestaetigen",
   "/registrieren",
   "/passwort-vergessen",
   "/passwort-zuruecksetzen",

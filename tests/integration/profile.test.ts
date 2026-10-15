@@ -179,9 +179,10 @@ describe("Profil", () => {
       lastName: "Neu",
       email: person.user.email,
       emailNotifications: true,
-      totpEnabledAt: null,
     });
     expect(JSON.stringify(account)).not.toContain("passwordHash");
+    // Den Stand der Zwei-Faktor-Anmeldung liefert `getTwoFactorOverview` – hier steht nichts davon.
+    expect(Object.keys(account).filter((key) => key.startsWith("totp"))).toEqual([]);
     expect(
       await prisma.auditLog.findFirst({
         where: { actorUserId: person.user.id, action: "auth.profile_updated" },

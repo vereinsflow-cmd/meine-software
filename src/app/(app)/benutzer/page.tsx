@@ -166,6 +166,7 @@ export default async function UsersPage({
                         name={user.name}
                         status={user.status}
                         isSelf={user.isSelf}
+                        twoFactorEnabled={user.twoFactorEnabled}
                       />
                     )}
                   </TableCell>

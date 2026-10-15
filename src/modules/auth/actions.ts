@@ -9,14 +9,22 @@ import {
   acceptInvitationAsNewUser,
 } from "@/server/auth/invitations";
 import {
+  clearLoginChallenge,
+  readLoginChallenge,
+  startLoginChallenge,
+} from "@/server/auth/login-challenge";
+import {
   changePassword,
   authenticate,
+  needsSecondFactor,
   requestPasswordReset,
   resetPassword,
+  type AuthenticatedUser,
 } from "@/server/auth/service";
 import { endSession, getCurrentSession, startSession } from "@/server/auth/session";
 import { setSessionActiveClub } from "@/server/auth/session-core";
-import { unauthenticated } from "@/server/errors";
+import { verifySecondFactor } from "@/server/auth/two-factor";
+import { AppError, unauthenticated } from "@/server/errors";
 import { getRequestMeta } from "@/server/security/request";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import {
@@ -26,6 +34,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   resetPasswordSchema,
+  secondFactorSchema,
 } from "./schemas";
 
 /**
@@ -33,21 +42,76 @@ import {
  * denn die Prüfung im Browser lässt sich umgehen.
  */
 
+/** Startseite nach der Anmeldung, wenn kein (gültiges) Rücksprungziel mitkam. */
+const homeFor = (user: AuthenticatedUser) =>
+  user.activeClubId ? "/dashboard" : user.isPlatformAdmin ? "/system" : "/kein-verein";
+
 export async function loginAction(input: unknown): Promise<ActionResult> {
   return runAction(async () => {
     const data = parseInput(loginSchema, input);
     const meta = await getRequestMeta();
-    const user = await authenticate(data, meta);
-    await startSession(user.userId, user.activeClubId);
+    const result = await authenticate(data, meta);
 
-    const fallback = user.activeClubId
-      ? "/dashboard"
-      : user.isPlatformAdmin
-        ? "/system"
-        : "/kein-verein";
+    if (needsSecondFactor(result)) {
+      // Passwort richtig, aber noch keine Sitzung: Erst der Code aus der App meldet an.
+      await startLoginChallenge({
+        userId: result.userId,
+        next: data.next && safeRedirectPath(data.next, "") ? data.next : null,
+        passwordFingerprint: result.passwordFingerprint,
+      });
+      redirect("/anmelden/bestaetigen");
+    }
+
+    await clearLoginChallenge(); // Reste eines abgebrochenen zweiten Schritts
+    await startSession(result.userId, result.activeClubId);
     revalidatePath("/", "layout"); // Kein Layout eines früheren Benutzers im Client-Cache behalten
-    redirect(safeRedirectPath(data.next, fallback));
+    redirect(safeRedirectPath(data.next, homeFor(result)));
   }, "login");
+}
+
+/**
+ * Zweiter Schritt der Anmeldung: Code aus der App oder Wiederherstellungscode. Wer das Passwort richtig eingegeben hat,
+ * steht nur im kurzlebigen, verschlüsselten Cookie – nie in einem Formularfeld.
+ */
+export async function verifySecondFactorAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const data = parseInput(secondFactorSchema, input);
+    const challenge = await readLoginChallenge();
+    if (!challenge) {
+      await clearLoginChallenge();
+      redirect("/anmelden?abgelaufen=1");
+    }
+
+    let user: AuthenticatedUser;
+    try {
+      ({ user } = await verifySecondFactor(
+        {
+          userId: challenge.userId,
+          passwordFingerprint: challenge.passwordFingerprint,
+          code: data.code,
+        },
+        await getRequestMeta(),
+      ));
+    } catch (error) {
+      // Konto inzwischen gesperrt, Passwort geändert oder Zwei-Faktor abgeschaltet: von vorn beginnen.
+      if (error instanceof AppError && error.code === "UNAUTHENTICATED") {
+        await clearLoginChallenge();
+        redirect("/anmelden?abgelaufen=1");
+      }
+      throw error;
+    }
+
+    await clearLoginChallenge();
+    await startSession(user.userId, user.activeClubId);
+    revalidatePath("/", "layout");
+    redirect(safeRedirectPath(challenge.next, homeFor(user)));
+  }, "login-second-factor");
+}
+
+/** „Abbrechen“ im zweiten Schritt: Der Zwischenstand wird verworfen, zurück zur Anmeldung. */
+export async function cancelSecondFactorAction(): Promise<void> {
+  await clearLoginChallenge();
+  redirect("/anmelden");
 }
 
 export async function logoutAction(): Promise<void> {

@@ -14,6 +14,7 @@ import {
   rateLimitSubject,
   resetRateLimit,
 } from "@/server/security/rate-limit";
+import { hmacSha256 } from "@/server/security/secret-box";
 import { generateToken, hashToken } from "@/server/security/tokens";
 import { burnPasswordCheck, hashPassword, verifyPassword } from "./password";
 
@@ -25,6 +26,8 @@ import { burnPasswordCheck, hashPassword, verifyPassword } from "./password";
  *  - Gleiche Fehlermeldung und Antwortzeit für "unbekannte E-Mail" und "falsches Passwort".
  *  - Passwort-Reset verrät nie, ob ein Konto existiert.
  *  - Tokens sind zufällig, einmalig verwendbar, laufen ab und liegen nur als Hash in der Datenbank.
+ *  - Mit Zwei-Faktor-Anmeldung entsteht die Sitzung erst nach dem Code aus der App (`two-factor.ts`). Ein Passwort-Reset
+ *    schaltet die Zwei-Faktor-Anmeldung NICHT ab – wer nur die E-Mail-Adresse kontrolliert, kommt so nicht ins Konto.
  */
 
 export interface ClientMeta {
@@ -53,11 +56,48 @@ export interface AuthenticatedUser {
   activeClubId: string | null;
 }
 
-/** Prüft E-Mail und Passwort. Legt KEINE Sitzung an (das übernimmt die Server Action). */
+/** Passwort war richtig, es fehlt noch der Code aus der Authenticator-App (siehe `two-factor.ts`). */
+export interface SecondFactorRequired {
+  secondFactor: "required";
+  userId: string;
+  /** Fingerabdruck des aktuellen Passworts – der zweite Schritt gilt nur, solange es dasselbe ist. */
+  passwordFingerprint: string;
+  // Noch nicht angemeldet: kein Startverein, keine Rechte (`never`, damit beide Varianten dieselben Felder kennen).
+  isPlatformAdmin?: never;
+  activeClubId?: never;
+}
+
+/** Ergebnis der Passwortprüfung: fertig angemeldet (ohne Zwei-Faktor) oder zweiter Schritt nötig. */
+export type AuthenticateResult = AuthenticatedUser | SecondFactorRequired;
+
+export const needsSecondFactor = (result: AuthenticateResult): result is SecondFactorRequired =>
+  "secondFactor" in result;
+
+/**
+ * Fingerabdruck des Passwort-Hashs für den Zwischenschritt der Anmeldung (Cookie): HMAC mit dem eigenen Schlüssel, gekürzt.
+ * Jedes neue Passwort hat einen neuen Hash (eigenes Salz) und damit einen neuen Fingerabdruck – so endet eine offene
+ * Code-Eingabe mit dem Passwortwechsel oder -reset, ohne dafür etwas in der Datenbank zu speichern.
+ */
+export const passwordFingerprint = (passwordHash: string): string =>
+  hmacSha256(`login-challenge:${passwordHash}`).slice(0, 32);
+
+export type LoginMethod = "password" | "totp" | "recovery_code";
+
+const LOGIN_SUMMARY: Record<LoginMethod, string> = {
+  password: "Anmeldung",
+  totp: "Anmeldung mit Zwei-Faktor",
+  recovery_code: "Anmeldung mit Zwei-Faktor (Wiederherstellungscode)",
+};
+
+/**
+ * Prüft E-Mail und Passwort. Legt KEINE Sitzung an (das übernimmt die Server Action).
+ * Ist die Zwei-Faktor-Anmeldung eingeschaltet, endet hier nur der erste Schritt: keine letzte Anmeldung, kein Protokoll –
+ * beides folgt erst nach dem richtigen Code (`verifySecondFactor`). Eine angefangene, nicht bestätigte Einrichtung zählt nicht.
+ */
 export async function authenticate(
   input: { email: string; password: string },
   meta: ClientMeta,
-): Promise<AuthenticatedUser> {
+): Promise<AuthenticateResult> {
   const email = normalizeEmail(input.email);
   const accountKey = `login:acct:${rateLimitSubject(email)}`;
   const ipKey = `login:ip:${rateLimitIp(meta.ip)}`;
@@ -86,6 +126,25 @@ export async function authenticate(
 
   await resetRateLimit(accountKey);
 
+  if (user.totpEnabledAt !== null && user.totpSecretEnc !== null) {
+    return {
+      secondFactor: "required",
+      userId: user.id,
+      passwordFingerprint: passwordFingerprint(user.passwordHash),
+    };
+  }
+  return finishLogin(user, meta, "password");
+}
+
+/**
+ * Letzter Schritt jeder erfolgreichen Anmeldung: Startverein bestimmen, „letzte Anmeldung“ setzen, protokollieren.
+ * Die Sitzung legt danach die Server Action an.
+ */
+export async function finishLogin(
+  user: { id: string; isPlatformAdmin: boolean },
+  meta: ClientMeta,
+  method: LoginMethod,
+): Promise<AuthenticatedUser> {
   const membership = await prisma.clubMembership.findFirst({
     where: { userId: user.id, status: "ACTIVE", club: { status: "ACTIVE" } },
     orderBy: { joinedAt: "asc" },
@@ -99,7 +158,7 @@ export async function authenticate(
     action: "auth.login",
     entityType: "User",
     entityId: user.id,
-    summary: "Anmeldung",
+    summary: LOGIN_SUMMARY[method],
     ipPrefix: meta.ipPrefix,
   });
 

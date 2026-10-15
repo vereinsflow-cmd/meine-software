@@ -51,7 +51,15 @@ export async function endSession(): Promise<void> {
   if (token) {
     await deleteSessionByToken(token);
   }
-  store.delete(sessionCookieName());
+  // Mit denselben Eigenschaften wie beim Setzen: Ein `__Host-`-Cookie ohne `Secure` und `Path=/` verwirft der Browser –
+  // auch die Anweisung, es zu löschen.
+  store.delete({
+    name: sessionCookieName(),
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
 }
 
 /** Aktuelle Sitzung der laufenden Anfrage (pro Anfrage nur einmal aus der Datenbank geladen). */
