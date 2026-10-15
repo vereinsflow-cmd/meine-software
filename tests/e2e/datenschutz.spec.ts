@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { E2E_BASE_URL } from "./environment";
 import { DEMO_PASSWORD, USERS, login, open } from "./helpers";
 
 test.describe("Datenschutz – Seite und Einwilligungen", () => {
@@ -148,7 +149,7 @@ test.describe("Datenschutz – Datenexport", () => {
       "/api/privacy/export",
     );
 
-    const anonymous = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    const anonymous = await playwright.request.newContext({ baseURL: E2E_BASE_URL });
     const response = await anonymous.get("/api/privacy/export");
     expect(response.status()).toBe(401);
     expect(await response.json()).toMatchObject({ ok: false, error: { code: "UNAUTHENTICATED" } });

@@ -13,9 +13,9 @@ const root = path.resolve(__dirname, "../..");
  * Dateien früherer Läufe (`storageDir`, relativ zum Projekt) gehören zur alten Datenbank und werden entfernt.
  */
 export async function rebuildDatabase(name: string, storageDir?: string): Promise<void> {
+  await dropDatabase(name);
   const admin = new pg.Client({ connectionString: ADMIN_DATABASE_URL });
   await admin.connect();
-  await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
   await admin.query(`CREATE DATABASE ${name} ENCODING 'UTF8' TEMPLATE template0`);
   await admin.end();
 
@@ -41,4 +41,12 @@ export async function rebuildDatabase(name: string, storageDir?: string): Promis
       ...(storageDir ? { STORAGE_DIR: storageDir } : {}),
     },
   });
+}
+
+/** Löscht eine Test-Datenbank samt offener Verbindungen (z. B. die eigene Datenbank eines parallelen E2E-Laufs). */
+export async function dropDatabase(name: string): Promise<void> {
+  const admin = new pg.Client({ connectionString: ADMIN_DATABASE_URL });
+  await admin.connect();
+  await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+  await admin.end();
 }

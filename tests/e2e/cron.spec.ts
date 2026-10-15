@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { E2E_BASE_URL } from "./environment";
 
 /** Der Cron-Endpunkt ist nur mit dem geheimen Token erreichbar (CRON_SECRET aus der .env, wie beim Server). */
 const secret = process.env.CRON_SECRET;
-const baseURL = "http://localhost:3100";
+const baseURL = E2E_BASE_URL;
 
 test.describe("Cron-Endpunkt /api/cron/run", () => {
   test.skip(!secret, "CRON_SECRET ist nicht gesetzt");

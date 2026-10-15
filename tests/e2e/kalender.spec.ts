@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { E2E_BASE_URL, appUrlPattern } from "./environment";
 import { USERS, login, open } from "./helpers";
 
 /** Datum (JJJJ-MM-TT) in Europe/Berlin, `offset` Tage ab heute. Die Seed-Daten sind relativ zu "heute" angelegt. */
@@ -376,7 +377,7 @@ test.describe("Kalender – iCal", () => {
     expect(body).toContain("Vereinsheim\\, Besprechungsraum");
     expect(body).not.toContain("Trainerhonorare"); // interne Notiz der Veranstaltung
 
-    const anonymous = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    const anonymous = await playwright.request.newContext({ baseURL: E2E_BASE_URL });
     expect((await anonymous.get(`/api/calendar/event/${id}`)).status()).toBe(401);
     await anonymous.dispose();
   });
@@ -391,7 +392,9 @@ test.describe("Kalender – iCal", () => {
     const dialog = page.getByRole("dialog", { name: "Kalender abonnieren" });
     await dialog.getByRole("button", { name: /^(Neuen )?Link erzeugen$/ }).click();
     const url = await dialog.getByLabel("Dein persönlicher Link").inputValue();
-    expect(url).toMatch(/^http:\/\/localhost:3100\/api\/calendar\/feed\/[A-Za-z0-9_-]{43}\.ics$/);
+    expect(url).toMatch(
+      appUrlPattern("/api/calendar/feed/[A-Za-z0-9_-]{43}\\.ics", { exact: true }),
+    );
     await expect(dialog.getByText("Diesen Link siehst du nur jetzt.")).toBeVisible();
 
     // Kalender-Apps haben kein Sitzungs-Cookie: der geheime Link genügt.
@@ -429,7 +432,7 @@ test.describe("Kalender – iCal", () => {
   test("Unbekannte oder manipulierte Abo-Links liefern 404 ohne Details", async ({
     playwright,
   }) => {
-    const anonymous = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    const anonymous = await playwright.request.newContext({ baseURL: E2E_BASE_URL });
     for (const path of [
       "/api/calendar/feed/abc.ics",
       `/api/calendar/feed/${"A".repeat(43)}.ics`,
