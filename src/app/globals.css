@@ -326,6 +326,34 @@
 }
 
 /*
+ * Kennzahlen des Dashboards, wenn drei oder vier Karten in einer Reihe stehen (`kpi-row`, gesetzt in
+ * modules/dashboard/kpi-layout.ts): Kopf (Symbol und Beschriftung), Zahl mit Sätzen und Kurs jeder Karte liegen in drei
+ * gemeinsamen Zeilen (CSS-Subgrid über Zelle, Karte, Inhalt und Link). So stehen die Zahlen immer auf einer Höhe – auch
+ * wenn eine Beschriftung in einer breiteren Schrift (z. B. DejaVu Sans unter Linux) auf drei Zeilen umbricht. Jede
+ * Beschriftung behält mindestens zwei Zeilen Platz (wie vorher), damit die Reihe gleich aussieht, wenn nur manche umbrechen.
+ * Nur für eine Reihe gedacht: Der Abstand zwischen den Zeilen ist 0, die Abstände in der Karte machen ihre Ränder.
+ */
+@utility kpi-row {
+  row-gap: 0;
+  & > *,
+  & [data-slot="card"],
+  & [data-slot="card-content"] {
+    grid-row: span 3;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+  & [data-kpi-main] {
+    grid-row: span 2;
+    display: grid;
+    grid-template-rows: subgrid;
+  }
+  & [data-slot="kpi-label"] {
+    min-height: calc(2lh + 0.25rem);
+  }
+}
+
+/*
  * Tabellen am Handy als gestapelte Karten (`<Table stack>` und `<TableCell label="…">`, components/ui/table.tsx; seit
  * 14.10.2026): Unter 768 px wird jede Zeile ein Block mit Innenabstand – wie eine kleine Karte in der `TableCard` –, jede
  * Zelle eine Zeile „Beschriftung · Wert“. Die Beschriftung kommt aus `data-label` und steht links in einer festen Spalte

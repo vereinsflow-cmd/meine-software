@@ -281,28 +281,41 @@ test.describe("Seitenleiste – Animationen", () => {
   const style = (locator: ReturnType<typeof tile>, property: string) =>
     locator.evaluate((element, prop) => getComputedStyle(element).getPropertyValue(prop), property);
 
-  test("Überfahren: Symbol wird leicht größer und bekommt Farbe und Grund", async ({ page }) => {
+  // Seit dem Feinschliff vom 05.10.2026 ruhiger: Überfahren und Fokus färben das Symbol nur noch (kein Anheben, kein
+  // Vergrößern) – die Liste wird dutzende Male am Tag benutzt. Bewegung gibt es nur noch beim Drücken.
+  test("Überfahren: Symbol bekommt Farbe und Grund, bewegt sich aber nicht; Drücken federt es ein", async ({
+    page,
+  }) => {
     await login(page, USERS.admin);
     await openNavGroup(nav(page), "Verein");
     const icon = tile(page, "Kalender");
+    const link = nav(page).getByRole("link", { name: "Kalender", exact: true });
     await expect.poll(() => style(icon, "scale")).toBe("none");
     const before = await style(icon, "background-color");
-    await nav(page).getByRole("link", { name: "Kalender", exact: true }).hover();
-    await expect.poll(() => style(icon, "scale")).toBe("1.1");
-    expect(await style(icon, "background-color")).not.toBe(before);
-    // Maus weg: zurück in den Ausgangszustand
+    await link.hover();
+    await expect.poll(() => style(icon, "background-color")).not.toBe(before);
+    expect(await style(icon, "scale")).toBe("none");
+    expect(await style(icon, "translate")).toBe("none");
+    // Drücken (ohne Loslassen über dem Link – sonst öffnete sich der Kalender): das Symbol federt kurz ein
+    await page.mouse.down();
+    await expect.poll(() => style(icon, "scale")).toBe("0.95");
+    // Maus weg und loslassen: zurück in den Ausgangszustand
     await page.mouse.move(700, 400);
+    await page.mouse.up();
     await expect.poll(() => style(icon, "scale")).toBe("none");
+    await expect.poll(() => style(icon, "background-color")).toBe(before);
   });
 
   test("Tastaturfokus reagiert wie der Zeiger", async ({ page }) => {
     await login(page, USERS.admin);
     await openNavGroup(nav(page), "Organisation");
     const icon = tile(page, "Aufgaben");
+    const before = await style(icon, "background-color");
     await nav(page).getByRole("link", { name: "Aufgaben", exact: true }).focus();
     await page.keyboard.press("Shift+Tab");
     await page.keyboard.press("Tab"); // Fokus per Tastatur auf „Aufgaben“ (focus-visible)
-    await expect.poll(() => style(icon, "scale")).toBe("1.1");
+    await expect.poll(() => style(icon, "background-color")).not.toBe(before);
+    expect(await style(icon, "scale")).toBe("none");
   });
 
   test("„Bewegung reduzieren“: keine Bewegung, aber die Farbänderung bleibt", async ({ page }) => {
