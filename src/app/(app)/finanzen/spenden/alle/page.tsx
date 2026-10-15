@@ -184,7 +184,7 @@ export default async function AllDonationsPage({
                   className={segmentItem(status === f)}
                 >
                   {DONATION_STATUS_FILTER_LABEL[f]}
-                  <span className="text-xs tabular-nums opacity-80">{statusCounts[f]}</span>
+                  <span className="text-xs tabular-nums">{statusCounts[f]}</span>
                 </Link>
               ))}
             </nav>
