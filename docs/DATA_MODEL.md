@@ -49,6 +49,12 @@ erDiagram
     User ||--o{ Notification : erhaelt
     Event |o--o{ Document : "Unterlagen"
     Document ||--o| Invoice : "ist Rechnung"
+    Member |o--o| Donor : "spendet als"
+    Donor |o--o{ Donation : gibt
+    Department |o--o{ Donation : "Zweck"
+    Event |o--o{ Donation : "Zweck"
+    Donation ||--o{ DonationAttachment : "Nachweise"
+    Document |o--o{ DonationAttachment : ""
     Club ||--o{ AuditLog : protokolliert
 ```
 
@@ -109,6 +115,21 @@ erDiagram
 | `SupportTicket`               | Meldung an die Vereinsverwaltung (Hilfe & Support): Art, Überschrift, Text, Seite, gekürztes Gerät, Status, Antwort; `createdById` ohne Fremdschlüssel             |
 | `CalendarFeedToken`           | Persönlicher Kalender-Abo-Link (nur Hash gespeichert, widerrufbar)                                                                                                 |
 
+### Spenden (Finanzen)
+
+Kassenbuch, Belege, Abschluss und Beiträge sind in [ADR-0010](adr/0010-finanzen-kassenbuch.md) bis
+[ADR-0012](adr/0012-beitragslauf.md) beschrieben; die Spenden in [ADR-0013](adr/0013-spenden.md).
+
+| Modell                        | Zweck                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Donor`                       | Spender: ein Mitglied (`memberId`, eindeutig je Verein – Name und Anschrift kommen aus dem Mitglied) oder eine andere Person, Firma, Stiftung bzw. ein anderer Verein (`kind`, eigener `name` und Anschrift, Land als ISO-Code, leer = Deutschland). `restrictedAt`/`restrictedReason`: gesperrt (Art. 18 DSGVO) – keine neuen Spenden; ein anonymisiertes Mitglied hinterlässt hier Name und Anschrift als Momentaufnahme                                                                                                                                                                                                                                                                                                           |
+| `Donation`                    | Spende (Aufzeichnung nach § 50 Abs. 7 EStDV): Art (`MONEY`, `IN_KIND`, `EXPENSE_WAIVER`), Spender **oder** Bezeichnung ohne Namen (`anonymousLabel`, Spendendose), Tag der Zuwendung, Betrag in Cent, Zahlweg des Spenders (`paymentMethod`, nur Geld), Zweck (Abteilung oder Veranstaltung, dazu optional Text), Wunsch zur Bestätigung (`receiptWish`), bei Geld die Zeile im Kassenbuch (`ledgerLineId`, eine Spende je Zeile), bei Sachspenden Bezeichnung, Herkunft, „Unterlagen liegen vor“, bei Aufwandsspenden Tätigkeit, Zeitraum, Grundlage, eingeräumt/fällig, regelmäßig und die Bestätigung des Anspruchs (`claimConfirmedAt/ById`), Storno mit Grund (nur Sach/Aufwand). Kein gespeicherter Status – er wird berechnet |
+| `DonationAttachment`          | Nachweis einer Spende: Dokument (Stufe „Nur Finanzen“, Kategorie „Spendennachweise“) **oder** kurzer Vermerk; unveränderlich                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `FinanceSettings` (Finanzamt) | Finanzamt (Ort), Steuernummer, Art und Datum des Bescheids (`exemptionKind`, `exemptionDate`), letzter Veranlagungszeitraum, begünstigte Zwecke im Genitiv (`taxPurposes`, „des Sports“) und – nur § 60a – im Akkusativ (`taxPurposesStatute`, „den Sport“), Mitgliedsbeiträge abziehbar ja/nein                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+Geld ist immer in ganzen Cent gespeichert; Kalendertage als `@db.Date`. Verweise innerhalb des Vereins sind zusammengesetzte
+Fremdschlüssel mit `NO ACTION`: Ein Mitglied, eine Abteilung oder eine Buchungszeile mit Spenden lässt sich nicht löschen.
+
 ### Protokoll
 
 | Modell     | Zweck                                                                                                                          |
@@ -117,26 +138,33 @@ erDiagram
 
 ## Datenbank-Prüfregeln (Auszug)
 
-| Regel                                                                                   | Umsetzung                                                            |
-| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-`                   | CHECK                                                                |
-| Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)                            | CHECK                                                                |
-| Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440                    | CHECK                                                                |
-| Nie mehr Helfer als benötigt                                                            | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)       |
-| Keine überlappenden Schichten je Mitglied                                               | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied) |
-| Teilnehmerlimit                                                                         | Trigger `event_participant_capacity_guard`                           |
-| Änderungsprotokoll unveränderlich                                                       | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)  |
-| Höchstens eine offene Einladung je E-Mail und Verein                                    | Teil-Unique-Index                                                    |
-| Benachrichtigungs-Links nur intern (kein Open-Redirect)                                 | CHECK                                                                |
-| Dokument gehört zu höchstens einem Bezugsobjekt                                         | CHECK                                                                |
-| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB                    | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
-| Rechnung: Betrag 1 Cent – 10 Mio. €; offene Rechnung immer mit Betrag                   | CHECK (`Invoice_amount_chk`, `Invoice_open_amount_chk`)              |
-| Rechnung: „bezahlt am/von“ nur bei bezahlten; höchstens eine je Dokument                | CHECK (`Invoice_paid_chk`), Unique (`clubId`, `documentId`)          |
-| Beitrittslink: 43 Zeichen base64url, immer mit Zeitpunkt; eindeutig                     | CHECK (`Club_join_token_chk`), Unique (`joinToken`)                  |
-| Beitrittslink: Anzahl der Anmeldungen 1–5000 oder leer (unbegrenzt); genutzt ≥ 0        | CHECK (`Club_join_limit_chk`, `Club_join_used_chk`)                  |
-| Beitrittsantrag: Namen 1–80 Zeichen, E-Mail klein geschrieben, Nachricht ≤ 1000 Zeichen | CHECK (`MembershipApplication_name_chk`, `_email_chk`, `_text_chk`)  |
-| Beitrittsantrag: offen ⇔ nicht entschieden; Mitglied nur bei „angenommen“               | CHECK (`MembershipApplication_decision_chk`)                         |
-| Beitrittsantrag: Fassung des Einwilligungstexts nie leer, höchstens 64 Zeichen          | CHECK (`MembershipApplication_consent_version_chk`)                  |
+| Regel                                                                                                                                 | Umsetzung                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-`                                                                 | CHECK                                                                                 |
+| Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)                                                                          | CHECK                                                                                 |
+| Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440                                                                  | CHECK                                                                                 |
+| Nie mehr Helfer als benötigt                                                                                                          | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)                        |
+| Keine überlappenden Schichten je Mitglied                                                                                             | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied)                  |
+| Teilnehmerlimit                                                                                                                       | Trigger `event_participant_capacity_guard`                                            |
+| Änderungsprotokoll unveränderlich                                                                                                     | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)                   |
+| Höchstens eine offene Einladung je E-Mail und Verein                                                                                  | Teil-Unique-Index                                                                     |
+| Benachrichtigungs-Links nur intern (kein Open-Redirect)                                                                               | CHECK                                                                                 |
+| Dokument gehört zu höchstens einem Bezugsobjekt                                                                                       | CHECK                                                                                 |
+| Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB                                                                  | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat                       |
+| Rechnung: Betrag 1 Cent – 10 Mio. €; offene Rechnung immer mit Betrag                                                                 | CHECK (`Invoice_amount_chk`, `Invoice_open_amount_chk`)                               |
+| Rechnung: „bezahlt am/von“ nur bei bezahlten; höchstens eine je Dokument                                                              | CHECK (`Invoice_paid_chk`), Unique (`clubId`, `documentId`)                           |
+| Beitrittslink: 43 Zeichen base64url, immer mit Zeitpunkt; eindeutig                                                                   | CHECK (`Club_join_token_chk`), Unique (`joinToken`)                                   |
+| Beitrittslink: Anzahl der Anmeldungen 1–5000 oder leer (unbegrenzt); genutzt ≥ 0                                                      | CHECK (`Club_join_limit_chk`, `Club_join_used_chk`)                                   |
+| Beitrittsantrag: Namen 1–80 Zeichen, E-Mail klein geschrieben, Nachricht ≤ 1000 Zeichen                                               | CHECK (`MembershipApplication_name_chk`, `_email_chk`, `_text_chk`)                   |
+| Beitrittsantrag: offen ⇔ nicht entschieden; Mitglied nur bei „angenommen“                                                             | CHECK (`MembershipApplication_decision_chk`)                                          |
+| Beitrittsantrag: Fassung des Einwilligungstexts nie leer, höchstens 64 Zeichen                                                        | CHECK (`MembershipApplication_consent_version_chk`)                                   |
+| Geldspende: genau eine geltende Einnahme der Kategorie „Spenden“; Betrag, Tag, Abteilung und Veranstaltung aus der Zeile, danach fest | Trigger `donation_before_insert`, `donation_guard`; Unique (`clubId`, `ledgerLineId`) |
+| Geld hat Buchungszeile und Zahlweg, Sach-/Aufwandsspende nie; ohne Spender nur Geld mit Bezeichnung                                   | CHECK (`Donation_kind_chk`, `Donation_donor_chk`)                                     |
+| Sachspende mit Bezeichnung (10–500 Zeichen) und Herkunft; Aufwandsspende: eingeräumt ≤ Beginn ≤ Ende ≤ fällig, Ende ≤ Verzicht        | CHECK (`Donation_in_kind_chk`, `Donation_waiver_chk`)                                 |
+| Sach-/Aufwandsspende nicht in der Zukunft, nicht vor dem Beginn des Kassenbuchs; nur stornieren (mit Grund), nie löschen              | Trigger `donation_day_check`, `donation_guard`; CHECK (`Donation_void_chk`)           |
+| Gesperrter Spender bekommt keine neuen Spenden; die Verknüpfung Spender ↔ Mitglied steht fest                                         | Trigger `donation_donor_check`, `donor_guard`                                         |
+| Nachweise 10 Jahre gesperrt (längere Frist gewinnt, wenn das Dokument auch an einer Buchung hängt)                                    | Trigger `DonationAttachment_retention`, `document_finance_retain_until`               |
+| Finanzamt-Angaben: Steuernummer-Form, Art und Datum gemeinsam, letzter Veranlagungszeitraum nicht nach dem Bescheid                   | CHECK (`FinanceSettings_tax_chk`)                                                     |
 
 Die gewünschte Abteilung eines Beitrittsantrags ist ein zusammengesetzter Fremdschlüssel mit `RESTRICT` (wie alle optionalen
 Verweise): Beim Löschen der Abteilung leert der Dienst das Feld vorher (`deleteDepartment`), ein Antrag verhindert das Löschen nie.

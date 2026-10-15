@@ -12,8 +12,13 @@ import {
 } from "@/components/ui/table";
 import { NoAccess } from "@/components/shared/no-access";
 import { TableCard } from "@/components/shared/table-card";
-import { formatEuroFromCents } from "@/lib/dates";
+import { calendarDateToInputValue, formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import {
+  TaxSettingsForm,
+  TaxSettingsSummary,
+} from "@/modules/donations/components/tax-settings-form";
+import { getTaxSettings } from "@/modules/donations/service";
 import { canFinance } from "@/modules/finance/access";
 import { HIDDEN_SYSTEM_KEYS, type SystemCategoryKey } from "@/modules/finance/default-categories";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
@@ -58,12 +63,13 @@ export default async function FinanceSettingsPage() {
   const ctx = await requirePageContext();
   if (!canFinance(ctx, "finance:read")) return <NoAccess what="die Finanzen" />;
   const canManage = canFinance(ctx, "finance:manage");
-  const [setup, accounts, categories, counts, feeSettings] = await Promise.all([
+  const [setup, accounts, categories, counts, feeSettings, taxSettings] = await Promise.all([
     getLedgerSetup(ctx),
     listAccounts(ctx, { includeArchived: true }),
     listCategories(ctx),
     financeTabCounts(ctx),
     getFeeSettings(ctx),
+    getTaxSettings(ctx),
   ]);
 
   if (!setup) {
@@ -284,6 +290,32 @@ export default async function FinanceSettingsPage() {
                 {PRO_RATA_EXIT_LABEL[feeSettings.proRataExit]} · Alter:{" "}
                 {AGE_RULE_LABEL[feeSettings.ageRule]}
               </p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section
+        id="finanzamt"
+        aria-labelledby="finanzamt-titel"
+        className="mb-8 max-w-3xl scroll-mt-24"
+      >
+        <h2 id="finanzamt-titel" className="text-lg font-semibold">
+          Finanzamt
+        </h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Für Zuwendungsbestätigungen und den Beleg bis 300 € – genau so, wie es im Bescheid des
+          Finanzamts steht.
+        </p>
+        <Card>
+          <CardContent>
+            {canManage ? (
+              <TaxSettingsForm
+                settings={taxSettings}
+                today={calendarDateToInputValue(todayCalendarDate())}
+              />
+            ) : (
+              <TaxSettingsSummary settings={taxSettings} />
             )}
           </CardContent>
         </Card>

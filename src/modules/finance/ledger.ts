@@ -19,6 +19,7 @@ import { lockUntilCommit, type TenantTx } from "@/server/db/tenant";
 import { env } from "@/server/env";
 import { badRequest, conflict, notFound, validationFailed } from "@/server/errors";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
+import { carryOverDonation } from "@/modules/donations/ledger-hooks";
 import { assertFinance, canFinance } from "./access";
 import {
   DEFAULT_CATEGORIES,
@@ -627,6 +628,13 @@ export async function correctEntry(
       summary: `Buchung ${reversed.original} korrigiert: neu ${label} (${formatEuroFromCents(created.amountCents)})`,
     });
     if (invoice) await linkInvoice(tx, ctx, invoice, { id: created.id, label });
+    // Eine Spende der alten Buchung gehört zur neuen (nach beiden Buchungen, ohne Spenden-Sperre – siehe ledger-hooks).
+    await carryOverDonation(tx, ctx, {
+      originalEntryId: id,
+      originalLabel: reversed.original,
+      newEntryId: created.id,
+      newLabel: label,
+    });
     return { id: created.id, label };
   }, LONG_TX);
 }
@@ -796,6 +804,13 @@ export interface LedgerEntryDto {
   attachments: LedgerAttachmentDto[];
   /** Geltende Einnahme oder Ausgabe ohne Beleg (Umbuchungen, Stornos und Anfangsbestände brauchen keinen). */
   needsReceipt: boolean;
+  /** Zeilen der Kategorie „Spenden“ (Einnahmen) und ihre Spende – leer = „Spender fehlt“. */
+  donationLines: { lineId: string; amountCents: number; donationId: string | null }[];
+  /**
+   * „Als Spende kennzeichnen“ im Menü „⋯“: geltende Einnahme mit einer Spenden-Zeile ohne Spende – auch in
+   * abgeschlossenen Monaten (es wird nichts gebucht).
+   */
+  canAssignDonation: boolean;
 }
 
 export interface LedgerFilter {
@@ -820,6 +835,8 @@ const entryInclude = {
     include: {
       department: { select: { id: true, name: true } },
       event: { select: { id: true, title: true } },
+      category: { select: { systemKey: true } },
+      donation: { select: { id: true, donorId: true } },
     },
   },
   reversedBy: { select: { id: true, year: true, number: true } },
@@ -835,6 +852,16 @@ const entryInclude = {
 type EntryRow = Prisma.LedgerEntryGetPayload<{ include: typeof entryInclude }>;
 
 function entryDto(row: EntryRow, canManage: boolean): LedgerEntryDto {
+  const donationLines =
+    row.kind === "STANDARD"
+      ? row.lines
+          .filter((line) => line.category.systemKey === "DONATIONS" && line.amountCents > 0)
+          .map((line) => ({
+            lineId: line.id,
+            amountCents: line.amountCents,
+            donationId: line.donation?.id ?? null,
+          }))
+      : [];
   return {
     id: row.id,
     label: entryNumber(row.year, row.number),
@@ -882,6 +909,12 @@ function entryDto(row: EntryRow, canManage: boolean): LedgerEntryDto {
       ),
     })),
     needsReceipt: row.kind === "STANDARD" && !row.reversedBy && row.attachments.length === 0,
+    donationLines,
+    canAssignDonation:
+      canManage &&
+      row.kind === "STANDARD" &&
+      !row.reversedBy &&
+      donationLines.some((line) => line.donationId === null),
   };
 }
 
@@ -1099,6 +1132,8 @@ export interface EntryFormOptions {
     label: string;
     direction: "INCOME" | "EXPENSE" | "BOTH";
     hint: string | null;
+    /** Programm-Kategorie („DONATIONS“ → Hinweis auf „Spende erfassen“). */
+    systemKey: string | null;
   }[];
   /** Abteilungen („a:<id>“) und Veranstaltungen der letzten und nächsten zwölf Monate („v:<id>“). */
   targets: { value: string; label: string; group: "Abteilung" | "Veranstaltung" }[];
@@ -1145,7 +1180,13 @@ export async function entryFormOptions(ctx: TenantContext): Promise<EntryFormOpt
     accounts: accounts.map((a) => ({ value: a.id, label: a.name, kind: a.kind })),
     categories: categories
       .filter((c) => c.selectable)
-      .map((c) => ({ value: c.id, label: c.name, direction: c.direction, hint: c.hint })),
+      .map((c) => ({
+        value: c.id,
+        label: c.name,
+        direction: c.direction,
+        hint: c.hint,
+        systemKey: c.systemKey,
+      })),
     targets: [
       ...departments.map((d) => ({
         value: `a:${d.id}`,

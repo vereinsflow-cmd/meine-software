@@ -294,7 +294,7 @@ Bildern (Ben: „nimm nummer 3“). Zugang nur mit `finance:read` **vereinsweit*
 
 - **Kopf jeder Finanzseite** (`FinanceHeader`): Überschrift „Finanzen“, Untertitel, Knöpfe der Seite (blauer Hauptknopf zuerst),
   darunter die Leiste der Bereiche (`FinanceTabs`, helle Umschaltleiste wie überall, am Handy waagerecht scrollbar):
-  Übersicht · Kassenbuch · Rechnungen (Beiträge, Lastschrift, Bank, Spenden, Berichte folgen mit ihren Stufen). Eine kleine
+  Übersicht · Beiträge · Kassenbuch · Rechnungen · Spenden · Abschluss (Lastschrift, Bank, Berichte folgen mit ihren Stufen). Eine kleine
   bernsteinfarbene Zahl zeigt Dringendes (überfällige Rechnungen).
 - **Übersicht** (`app/(app)/finanzen/page.tsx`, Daten `modules/finance/overview.ts`): vier Kennzahlen mit Farbverlauf wie auf
   dem Dashboard (`FinanceKpiCard` auf `KpiShell`): Kontostand gesamt (blau, Kurs der letzten 12 Monate), Offene Rechnungen
@@ -317,6 +317,68 @@ Bildern (Ben: „nimm nummer 3“). Zugang nur mit `finance:read` **vereinsweit*
 - **Regeln der Datenbank** (Migration `finance_ledger`): unveränderliche Buchungen, Storno nur als exakte Gegenbuchung,
   lückenlose Nummern je Jahr, Barkasse am Ende keines Tages im Minus und nie in der Zukunft, abgeschlossene Zeiträume gesperrt.
   Fehlermeldungen kommen als deutscher Satz („Die Barkasse wäre am 02.09.2026 im Minus (−40,00 €).“).
+
+## Spenden („Spenden-Cockpit“)
+
+Seit 07.10.2026 (Teil 1: Erfassen) der Tab **Spenden** zwischen „Rechnungen“ und „Abschluss“, Gestaltung nach Entwurf 3
+„Spenden-Cockpit“ aus vier Bildern (Ben: Nummer 3). Regeln und Gründe in [ADR-0013](adr/0013-spenden.md); Daten in
+`modules/donations/service.ts`, alle Zahlen der Seite rechnet `summary.ts` rein aus einer Abfrage (`getDonationsPage`) – die
+violette Karte der Übersicht nutzt dieselbe, damit überall dieselbe Summe steht. Lesen mit `finance:read`, alles
+Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
+
+- **Seite** `/finanzen/spenden` (Jahr über `?jahr=`, Untertitel „Geschäftsjahr 2026 · Stand 07.10.2026“, blauer Kopfknopf
+  **„Spende erfassen“**). Ohne eingerichtetes Kassenbuch nur der Hinweis „Richte zuerst das Kassenbuch ein“.
+- **Reihe 1:** violette Kennzahl „Spenden 2026“ (`FinanceKpiCard` mit Kasten „Nach Art“ rechts – Geld-, Sach-,
+  Aufwandsspenden –, am Handy darunter; Zeilen „23 Spenden von 14 Spendern“ und „2.450,00 € mit festem Zweck“; Kurs der
+  Monate kumuliert), daneben zwei weiße Karten **„Spender 2026“** (Zahl, „10 Mitglieder“, „4 Firmen und Stiftungen“, Link
+  „Alle Spender ansehen“) und **„Bestätigungen“** (Zahl „fehlen noch“ in Bernstein, Legende grün „erstellt“ und grau „nicht
+  nötig“, dreiteiliger Balken nur zur Zierde – alles steht als Text daneben). „nicht nötig, unter 300 €“ heißt die Legende
+  nur, wenn alle Spender dieses Topfs ausschließlich Überweisungen bis 300 € haben (K21). Am Handy: violette Karte volle
+  Breite, die zwei weißen nebeneinander.
+- **Darunter** (Reihenfolge im Code = Reihenfolge am Handy): **Das steht an** → **Spenden je Monat** → **Letzte Spenden** →
+  **Wofür gespendet wurde**; ab `xl` links Monate und Letzte Spenden, rechts „Das steht an“ und „Wofür“, beide Spalten
+  laufen unabhängig. „Spenden je Monat“: gestapelte Balken (Geld `--chart-1`, Sach- und Aufwandsspenden `--chart-3`),
+  ganze Euro über dem Balken (am Handy ohne „€“), Cent im `aria-label`, „Als Tabelle“, Untertitel „nach Tag der Zuwendung“
+  (Sach- und Aufwandsspenden haben keine Buchung). „Letzte Spenden“: die fünf neuesten mit Datum, Spender (darunter
+  „Mitglied“, „Firma“, „Stiftung oder Verein“, „Privatperson“, „ohne Namen“), Zweck, Bestätigung, Betrag; Link „Alle
+  anzeigen“. „Wofür“: Balken je Zweck, „Frei verwendbar“ immer zuletzt in Grau, Fußsatz „Geld mit festem Zweck darf der
+  Verein nur dafür ausgeben.“
+- **Status der Bestätigung** als Abzeichen: „nötig“ (Bernstein), „Adresse fehlt“ (rot – so lässt sich nichts ausstellen),
+  „erstellt am 24.09.“ (grün, Teil 2), „nicht nötig“ / „nicht möglich“ / „gesperrt“ / „Spender fehlt“ (grau umrandet),
+  „storniert“ (grau, Betrag durchgestrichen). Die Erklärung steht als Titel und für Screenreader („Überweisung bis 300 € –
+  Kontoauszug und Beleg des Vereins genügen“).
+- **Das steht an** (gleiche Liste wie auf der Übersicht, nur der erste Punkt mit blauem Knopf): Bescheid abgelaufen (rot),
+  Finanzamt-Angaben fehlen (auch, wenn es nur Überweisungen bis 300 € gibt – der Beleg braucht sie), „4
+  Zuwendungsbestätigungen fehlen“ mit Namen (ab fünf Namen drei und „und N weitere“) und dem Knopf **„Bestätigungen
+  erstellen“** – bis Teil 2 führt er zur Liste der Spenden, die eine Bestätigung brauchen (`/finanzen/spenden/alle?bestaetigung=noetig`);
+  „Adresse von Dieter Hoffmann fehlt“ → „Adresse eintragen“ (Mitglied bearbeiten bzw. Spender), Spenden ohne Spender,
+  Bescheid läuft in 90 Tagen ab (Bernstein) und als ruhige Info „Freistellungsbescheid vom 14.03.2024 – Gültig für
+  Bestätigungen bis 14.03.2029“. Das Datum ist taggenau (das Bild zeigte „31.12.2028“), der Satz zur fehlenden Anschrift
+  geschlechtsneutral. Auf der Übersicht erscheinen nur Bescheid abgelaufen bzw. läuft ab (eigene Dringlichkeiten 15 und 45).
+- **„Spende erfassen“** (ein Fenster wie „Neue Buchung“): Art als Umschaltleiste (Geld · Sachspende · Verzicht auf Auslagen),
+  „Von wem?“ (Mitglied · andere Person oder Firma mit „Neu eintragen …“ · ohne Namen, nur bei Geld), Betrag und Tag,
+  „Wie kam das Geld?“ (Überweisung · bar übergeben · PayPal o. ä., Vorgabe aus dem Konto), Konto, „Wofür?“ (frei,
+  Abteilung, Veranstaltung, anderer fester Zweck), bei Sach- und Aufwandsspenden ihre Pflichtangaben und das Pflicht-Häkchen,
+  „Zuwendungsbestätigung“ (wie üblich · möchte eine · braucht keine). Drei ruhige Hinweise gegen unrichtige Bestätigungen
+  (Sponsoring, Geld für eine bestimmte Person, Pflichtzahlungen von Mitgliedern) und die Fußzeile „Schon im Kassenbuch
+  gebucht? Dort über „⋯“ → „Als Spende kennzeichnen“.“
+- **Kassenbuch:** „⋯“ je Buchung bietet „Als Spende kennzeichnen“ (auch in abgeschlossenen Monaten) bzw. „Spender ändern“;
+  im Fenster „Neue Buchung“ steht bei der Kategorie „Spenden“ ein Hinweis auf „Spende erfassen“.
+- **„Alle Spenden“** (`/finanzen/spenden/alle`) und **„Spender“** (`/finanzen/spenden/spender`) haben kein eigenes Bild:
+  ruhige Tabellen im Stil des Kassenbuchs (Ben, 07.10.2026). „Alle Spenden“ mit Filter nach Bestätigung (Alle · Nötig ·
+  Adresse fehlt · Erstellt · Nicht nötig · Ohne Namen · Spender fehlt · Storniert; stornierte nur unter „Storniert“), Suche
+  und Jahr, Zeilenaktionen „Spender eintragen“, „Ändern“, „Stornieren“ (Sach/Aufwand), „Kennzeichnung zurücknehmen“ (Geld),
+  „Im Kassenbuch ansehen“. „Spender“: Summe, Anzahl, Status je Spender; andere Spender „Anschrift ändern“, „Sperren“,
+  „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“; `?bearbeiten=<id>` öffnet das Fenster direkt.
+- **Einstellungen → Finanzamt** (`/finanzen/einstellungen#finanzamt`): Finanzamt, Steuernummer, Art und Datum des Bescheids,
+  letzter Veranlagungszeitraum, Zwecke mit Live-Vorschau des Satzes („Wir sind wegen Förderung **des Sports** …“), Statuszeile
+  „Gültig für Bestätigungen bis …“ / „läuft in N Tagen ab“ / „abgelaufen seit …“ und „Keine Steuerberatung – im Zweifel
+  Steuerberater fragen.“ **Beleg für den vereinfachten Nachweis** (`/finanzen/spenden/beleg`): Druckansicht aus diesen Angaben,
+  als eigener Vorschlag gekennzeichnet (kein amtliches Muster).
+- **Demo-Daten:** `npm run db:reset` bzw. `npm run db:seed` richtet für den TSV Musterstadt ein Kassenbuch ab 1. Januar ein
+  (Girokonto 11.200,00 €, Barkasse 239,80 €), trägt die Finanzamt-Angaben ein und erfasst die 23 Spenden des Bildes über die
+  echten Dienste (Summen wie im Bild). Die Tests (`NODE_ENV=test`) bekommen das nicht – sie richten das Kassenbuch selbst ein.
+  Bis Teil 2 stehen die sechs im Bild „erstellten“ Spender noch unter „fehlen“ (10 statt 4).
 
 ## Ansichten prüfen
 

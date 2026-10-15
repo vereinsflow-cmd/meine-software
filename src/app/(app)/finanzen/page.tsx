@@ -12,13 +12,14 @@ import {
 } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { canFinance } from "@/modules/finance/access";
+import { DueList } from "@/modules/finance/components/due-list";
 import { EntryDialog } from "@/modules/finance/components/entry-dialog";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
 import { FinanceKpiCard } from "@/modules/finance/components/finance-kpi-card";
 import { MonthChart } from "@/modules/finance/components/month-chart";
 import { entryFormOptions } from "@/modules/finance/ledger";
 import { ACCOUNT_KIND_LABEL } from "@/modules/finance/ledger-format";
-import { financeTabCounts, getFinanceOverview, type DueItem } from "@/modules/finance/overview";
+import { financeTabCounts, getFinanceOverview } from "@/modules/finance/overview";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Finanzen" };
@@ -31,13 +32,6 @@ function monthPoints(year: number, values: number[]) {
     value,
   }));
 }
-
-const TONE_TEXT: Record<DueItem["tone"], string> = {
-  danger: "text-red-700 dark:text-red-400",
-  warning: "text-amber-700 dark:text-amber-400",
-  success: "text-emerald-700 dark:text-emerald-400",
-  neutral: "text-muted-foreground",
-};
 
 /**
  * Finanzen – Übersicht („Cockpit“, Entwurf 3, gewählt am 04.10.2026): vier Kennzahlen mit Farbverlauf (Kontostand, offene
@@ -63,8 +57,6 @@ export default async function FinancePage() {
       : yearStart;
   const { donations } = overview;
   const { payments } = overview;
-  const now = overview.due.filter((item) => !item.later);
-  const later = overview.due.filter((item) => item.later);
 
   return (
     <>
@@ -129,22 +121,25 @@ export default async function FinancePage() {
           lines={["Einnahmen minus Ausgaben", `seit ${formatCalendarDate(surplusSince)}`]}
           points={monthPoints(year, overview.surplusPoints)}
         />
+        {/* Dieselben Zahlen wie die Seite „Spenden“ (getDonationsPage) – auch Sach- und Aufwandsspenden ohne Buchung. */}
         <FinanceKpiCard
           label={`Spenden ${year}`}
           accent="violet"
           icon={<HandHeartIcon />}
           valueCents={donations.totalCents}
+          href="/finanzen/spenden"
           lines={[
             donations.count === 0
-              ? "Noch keine Spenden gebucht"
-              : donations.donors > 0
-                ? donations.donors === 1
-                  ? "von 1 Spender"
-                  : `von ${donations.donors} Spendern`
-                : donations.count === 1
-                  ? "1 Spende"
-                  : `${donations.count} Spenden`,
-          ]}
+              ? `Noch keine Spenden in ${year}`
+              : `${donations.count === 1 ? "1 Spende" : `${donations.count} Spenden`}${
+                  donations.donors > 0
+                    ? ` von ${donations.donors === 1 ? "1 Spender" : `${donations.donors} Spendern`}`
+                    : ""
+                }`,
+            donations.withoutEntryCents > 0
+              ? `davon ${formatEuroFromCents(donations.withoutEntryCents)} ohne Buchung (Sach- und Aufwandsspenden)`
+              : "",
+          ].filter(Boolean)}
           points={monthPoints(year, donations.cumulative)}
         />
       </section>
@@ -214,40 +209,7 @@ export default async function FinancePage() {
         <Card>
           <CardContent className="grid gap-1">
             <h2 className="text-lg font-semibold">Das steht an</h2>
-            {now.length === 0 && later.length === 0 ? (
-              <p className="py-6 text-sm text-muted-foreground">
-                Alles erledigt – gerade ist nichts zu tun.
-              </p>
-            ) : (
-              <>
-                <p className="mb-2 text-sm text-muted-foreground">
-                  {now.length === 0
-                    ? "Gerade ist nichts dringend."
-                    : overview.canManage
-                      ? now.length === 1
-                        ? "1 Punkt für dich"
-                        : `${now.length} Punkte für dich`
-                      : now.length === 1
-                        ? "1 offener Punkt"
-                        : `${now.length} offene Punkte`}
-                </p>
-                <ul className="grid">
-                  {now.map((item, index) => (
-                    <DueRow key={item.key} item={item} primary={index === 0} />
-                  ))}
-                </ul>
-                {later.length > 0 && (
-                  <>
-                    <h3 className="mt-4 text-sm font-semibold text-muted-foreground">Demnächst</h3>
-                    <ul className="grid">
-                      {later.map((item) => (
-                        <DueRow key={item.key} item={item} />
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </>
-            )}
+            <DueList items={overview.due} canManage={overview.canManage} />
           </CardContent>
         </Card>
       </div>
@@ -328,35 +290,6 @@ export default async function FinancePage() {
         </div>
       )}
     </>
-  );
-}
-
-function DueRow({ item, primary = false }: { item: DueItem; primary?: boolean }) {
-  return (
-    <li className="grid gap-1 border-t py-3 first:border-t-0 first:pt-1">
-      <p className="font-semibold">{item.title}</p>
-      <p className="text-sm text-muted-foreground">
-        {item.detail}
-        {item.statusText && (
-          <>
-            {" "}
-            <span className={cn("font-medium", TONE_TEXT[item.tone])}>{item.statusText}</span>
-          </>
-        )}
-      </p>
-      {primary ? (
-        <Button asChild size="sm" className="mt-1 justify-self-start">
-          <Link href={item.href}>{item.actionLabel}</Link>
-        </Button>
-      ) : (
-        <Link
-          href={item.href}
-          className="justify-self-start text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {item.actionLabel}
-        </Link>
-      )}
-    </li>
   );
 }
 

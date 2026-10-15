@@ -8,6 +8,7 @@
  * Entwicklung gedacht – das Skript verweigert die Ausführung in Produktion.
  */
 import "dotenv/config";
+import Module, { createRequire } from "node:module";
 import type { Prisma } from "../src/generated/prisma/client";
 import {
   addBerlinDays,
@@ -1057,6 +1058,17 @@ async function main() {
     },
   });
 
+  // Finanzen-Demo nur für Entwicklung und Website-Bilder: Die E2E-Tests richten das Kassenbuch selbst über die Oberfläche
+  // ein und erwarten dessen Zahlen (tests/setup/rebuild-database.ts setzt NODE_ENV=test).
+  if (process.env.NODE_ENV !== "test") {
+    await seedFinanceDemo({
+      clubId: club.id,
+      userId: accounts.vorstand!.userId,
+      youthDepartmentId: departments.jugend!.id,
+      nextNumber,
+    });
+  }
+
   await prisma.auditLog.create({
     data: {
       clubId: club.id,
@@ -1081,6 +1093,241 @@ async function main() {
   console.log("  mehrfach@demo-verein.local     Mitglied in zwei Vereinen");
   console.log(
     "  admin@anderer-verein.local     Administrator des zweiten Vereins (Mandantentrennung)\n",
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Finanzen-Demo (Entwurf „Spenden-Cockpit“, docs/adr/0013): eingerichtetes Kassenbuch ab 1. Januar und die 23 Spenden von
+// 14 Spendern aus dem Bild (4.185,00 €). Alles läuft über die echten Dienste mit Bernd Vorstand (Kassenwart) – Trigger,
+// Nummern, Protokoll und Prüfungen greifen wie in der Oberfläche. Die Dienste werden erst hier geladen, damit der Seed der
+// Tests sie gar nicht anfasst.
+// ---------------------------------------------------------------------------------------------
+
+/** Spender der Demo: Mitglieder (Vorname, Nachname) und andere Spender mit eigener Anschrift. */
+const DEMO_MEMBER_DONORS = {
+  vogel: ["Karin", "Vogel"],
+  krueger: ["Sophie", "Krüger"],
+  richter: ["Thomas", "Richter"],
+  wolff: ["Marta", "Wolff"],
+  becker: ["Jens", "Becker"],
+  schmitz: ["Helga", "Schmitz"],
+  brandt: ["Ursula", "Brandt"],
+  pkoch: ["Paul", "Koch"],
+  bkoch: ["Ben", "Koch"],
+  hoffmann: ["Dieter", "Hoffmann"],
+} as const;
+
+const DEMO_OTHER_DONORS = {
+  brinkmann: { kind: "COMPANY", name: "Autohaus Brinkmann GmbH", street: "Industriestraße 4" },
+  jansen: { kind: "COMPANY", name: "Getränke Jansen e.K.", street: "Bahnhofstraße 12" },
+  stiftung: {
+    kind: "ORGANIZATION",
+    name: "Sparkassenstiftung Musterstadt",
+    street: "Marktplatz 1",
+  },
+  lange: { kind: "COMPANY", name: "Bäckerei Lange GmbH", street: "Lindenweg 7" },
+} as const;
+
+type DemoDonorKey = keyof typeof DEMO_MEMBER_DONORS | keyof typeof DEMO_OTHER_DONORS;
+
+/**
+ * Die Spenden des Bildes (Tag im Seed-Jahr „MM-TT“). Ohne `from` = Spendendose. Geld kommt aufs Girokonto, `cash` in die
+ * Barkasse (Zahlart dann „bar übergeben“); Zweck Jugend = Abteilung „Jugendarbeit“, Vereinsheim = anderer fester Zweck.
+ */
+const DEMO_DONATIONS: {
+  on: string;
+  from?: DemoDonorKey;
+  box?: string;
+  kind?: "IN_KIND" | "EXPENSE_WAIVER";
+  amount: string;
+  cash?: boolean;
+  purpose?: "jugend" | "vereinsheim";
+  wanted?: boolean;
+}[] = [
+  { on: "01-15", from: "vogel", amount: "50,00" },
+  { on: "01-27", from: "krueger", amount: "25,00" },
+  { on: "02-12", from: "richter", amount: "50,00" },
+  { on: "03-20", from: "wolff", amount: "150,00", purpose: "jugend", wanted: true },
+  { on: "04-09", from: "becker", amount: "100,00", wanted: true },
+  { on: "04-25", from: "schmitz", amount: "50,00", cash: true },
+  { on: "05-06", from: "stiftung", amount: "1.000,00", purpose: "jugend" },
+  { on: "05-19", from: "richter", amount: "50,00" },
+  { on: "06-03", from: "wolff", amount: "150,00", purpose: "jugend", wanted: true },
+  { on: "06-10", from: "brandt", amount: "100,00", purpose: "vereinsheim", wanted: true },
+  { on: "06-14", from: "pkoch", kind: "EXPENSE_WAIVER", amount: "240,00" },
+  { on: "06-24", from: "richter", amount: "50,00" },
+  { on: "07-04", from: "jansen", kind: "IN_KIND", amount: "180,00" },
+  { on: "07-05", box: "Spendendose Sommerfest", amount: "62,40", cash: true },
+  { on: "07-18", from: "bkoch", amount: "300,00", cash: true, purpose: "jugend" },
+  { on: "08-07", from: "lange", amount: "100,00" },
+  { on: "08-21", from: "krueger", amount: "60,00" },
+  { on: "09-08", from: "vogel", amount: "50,00" },
+  { on: "09-16", from: "brinkmann", amount: "750,00", purpose: "vereinsheim" },
+  { on: "09-22", from: "brandt", amount: "150,00", wanted: true },
+  { on: "09-29", from: "hoffmann", amount: "350,00" },
+  { on: "09-30", box: "Spendendose Theke", amount: "47,60", cash: true },
+  { on: "10-02", from: "krueger", amount: "120,00" },
+];
+
+/**
+ * Wie im Server-Teil von Next: „next/navigation“ zeigt im Skript auf die Server-Fassung. Die Dienste importieren über
+ * `parseInput` (`server/action.ts`) `unstable_rethrow` von dort; die normale Fassung braucht `React.createContext`, das es
+ * unter `--conditions=react-server` nicht gibt.
+ */
+function preferServerNavigation() {
+  const require = createRequire(__filename);
+  const target = require.resolve("next/dist/client/components/navigation.react-server");
+  const loader = Module as unknown as {
+    _resolveFilename: (request: string, ...rest: unknown[]) => string;
+  };
+  const resolve = loader._resolveFilename;
+  loader._resolveFilename = function (request, ...rest) {
+    return request === "next/navigation" ? target : resolve.call(this, request, ...rest);
+  };
+}
+
+async function seedFinanceDemo(options: {
+  clubId: string;
+  userId: string;
+  youthDepartmentId: string;
+  nextNumber: () => string;
+}) {
+  preferServerNavigation();
+  const [{ loadTenantContextForUser }, { setupLedger }, donations, { attachDonationNote }] =
+    await Promise.all([
+      import("../src/server/tenancy/context-core"),
+      import("../src/modules/finance/ledger"),
+      import("../src/modules/donations/service"),
+      import("../src/modules/donations/evidence"),
+    ]);
+  const ctx = await loadTenantContextForUser(options.userId, options.clubId);
+  if (!ctx) throw new Error("Finanzen-Demo: Bernd Vorstand hat keinen Zugang zum Demo-Verein.");
+
+  // Seed-Jahr = Jahr von „heute − 120 Tage“: Im Januar zeigt die Demo noch das volle Vorjahr. Alles relativ dazu – feste
+  // Daten liefen ab (der Bescheid gilt nur 5 Jahre, K9). Spenden nach heute fehlen einfach.
+  const today = toDateInputValue(new Date());
+  const year = Number(toDateInputValue(addBerlinDays(new Date(), -120)).slice(0, 4));
+  const on = (monthDay: string) => `${year}-${monthDay}`;
+
+  await setupLedger(ctx, {
+    ledgerStartDate: on("01-01"),
+    bankName: "Girokonto",
+    bankInstitute: "Sparkasse Musterstadt",
+    bankOpening: "11.200,00",
+    withCash: true,
+    cashName: "Barkasse",
+    cashOpening: "239,80",
+  });
+  await donations.updateTaxSettings(ctx, {
+    taxOffice: "Musterstadt",
+    taxNumber: "12/345/67890",
+    exemptionKind: "EXEMPTION_NOTICE",
+    exemptionDate: `${year - 2}-03-14`,
+    exemptionLastYear: String(year - 4),
+    taxPurposes: "des Sports",
+    membershipFeesDeductible: false,
+  });
+
+  const bank = await ctx.db.financeAccount.findFirstOrThrow({ where: { kind: "BANK" } });
+  const cash = await ctx.db.financeAccount.findFirstOrThrow({ where: { kind: "CASH" } });
+
+  // Mitglieder als Spender: vorhandene Demo-Mitglieder nutzen (Sophie Krüger, Ben und Paul Koch), die übrigen anlegen –
+  // Dieter Hoffmann bewusst ohne Anschrift („Adresse fehlt“).
+  const memberIds = new Map<DemoDonorKey, string>();
+  for (const [key, [firstName, lastName]] of Object.entries(DEMO_MEMBER_DONORS)) {
+    const existing = await prisma.member.findFirst({
+      where: { clubId: options.clubId, firstName, lastName, deletedAt: null, anonymizedAt: null },
+      select: { id: true },
+    });
+    const withAddress = key !== "hoffmann";
+    const member =
+      existing ??
+      (await prisma.member.create({
+        data: {
+          clubId: options.clubId,
+          memberNumber: options.nextNumber(),
+          firstName,
+          lastName,
+          email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.org`,
+          street: withAddress ? `Am Sportplatz ${memberIds.size + 3}` : null,
+          postalCode: withAddress ? "12345" : null,
+          city: withAddress ? "Musterstadt" : null,
+          birthDate: parseCalendarDate(
+            `${1958 + memberIds.size * 4}-0${(memberIds.size % 9) + 1}-12`,
+          ),
+          joinedAt: parseCalendarDate(`${2010 + memberIds.size}-03-01`),
+          status: "ACTIVE",
+        },
+        select: { id: true },
+      }));
+    memberIds.set(key as DemoDonorKey, member.id);
+  }
+  const otherIds = new Map<DemoDonorKey, string>();
+  for (const [key, donor] of Object.entries(DEMO_OTHER_DONORS)) {
+    const { id } = await donations.createDonor(ctx, {
+      ...donor,
+      postalCode: "12345",
+      city: "Musterstadt",
+    });
+    otherIds.set(key as DemoDonorKey, id);
+  }
+
+  let recorded = 0;
+  for (const row of DEMO_DONATIONS) {
+    const receivedOn = on(row.on);
+    if (receivedOn > today) continue;
+    const kind = row.kind ?? "MONEY";
+    const memberId = row.from ? memberIds.get(row.from) : undefined;
+    const { donationId } = await donations.recordDonation(ctx, {
+      kind,
+      donorMode: row.box ? "ANONYMOUS" : memberId ? "MEMBER" : "DONOR",
+      memberId,
+      donorId: row.from && !memberId ? otherIds.get(row.from) : undefined,
+      anonymousLabel: row.box,
+      amount: row.amount,
+      receivedOn,
+      // Zahlart: Vorgabe aus dem Konto (Girokonto = Überweisung, Barkasse = bar übergeben).
+      accountId: kind === "MONEY" ? (row.cash ? cash.id : bank.id) : undefined,
+      target:
+        row.purpose === "jugend"
+          ? `a:${options.youthDepartmentId}`
+          : row.purpose === "vereinsheim"
+            ? "andere"
+            : "frei",
+      purposeText: row.purpose === "vereinsheim" ? "Vereinsheim" : undefined,
+      receiptWish: row.wanted ? "WANTED" : "AUTO",
+      ...(kind === "IN_KIND" && {
+        itemDescription:
+          "12 Kisten Mineralwasser und Apfelschorle, neu, für die Verpflegung beim Jugendturnier am 05.07.",
+        inKindOrigin: "BUSINESS",
+        valuationDocs: true,
+      }),
+      // Verzicht nur auf Fahrten VOR dem Verzicht (April und Mai, nicht Juni – K24); Grundlage Reisekostenordnung.
+      ...(kind === "EXPENSE_WAIVER" && {
+        activityText: "Fahrten zu Auswärtsspielen der D-Jugend im April und Mai, 800 km × 0,30 €",
+        waiverBasis: "STATUTE",
+        claimGrantedOn: on("01-01"),
+        activityFrom: on("04-01"),
+        activityTo: on("05-31"),
+        claimDueOn: on("05-31"),
+        regularActivity: false,
+        claimConfirmed: true,
+      }),
+    });
+    recorded += 1;
+    if (kind === "IN_KIND")
+      await attachDonationNote(ctx, {
+        donationId,
+        note: "Lieferschein und Rechnung von Getränke Jansen (Entnahmewert mit Umsatzsteuer) liegen beim Kassenwart.",
+      });
+    if (kind === "EXPENSE_WAIVER")
+      await attachDonationNote(ctx, {
+        donationId,
+        note: "Fahrtkostenabrechnung (Reisekostenordnung) und unterschriebene Verzichtserklärung liegen beim Kassenwart.",
+      });
+  }
+  console.log(
+    `Finanzen-Demo: Kassenbuch ab 01.01.${year}, ${recorded} von ${DEMO_DONATIONS.length} Spenden erfasst.`,
   );
 }
 

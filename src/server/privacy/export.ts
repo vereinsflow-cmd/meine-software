@@ -1,5 +1,7 @@
 import "server-only";
 import { calendarDateToInputValue } from "@/lib/dates";
+import { DONATION_KIND_LABEL, purposeLabel, receiptBadge } from "@/modules/donations/format";
+import { addressComplete, donationReceiptState } from "@/modules/donations/receipt-status";
 import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { prisma } from "@/server/db/client";
 
@@ -102,6 +104,29 @@ export async function buildUserDataExport(
               paymentMethod: true,
               note: true,
               payer: { select: { firstName: true, lastName: true } },
+            },
+          },
+          // Spenden, deren Spender das Mitglied ist (Aufzeichnung nach § 50 Abs. 7 EStDV).
+          donor: {
+            select: {
+              restrictedAt: true,
+              donations: {
+                select: {
+                  receivedOn: true,
+                  amountCents: true,
+                  kind: true,
+                  paymentMethod: true,
+                  receiptWish: true,
+                  voidedAt: true,
+                  purposeText: true,
+                  itemDescription: true,
+                  department: { select: { name: true } },
+                  event: { select: { title: true } },
+                  line: { select: { entry: { select: { reversedBy: { select: { id: true } } } } } },
+                },
+                orderBy: { receivedOn: "asc" },
+                take: LIMIT,
+              },
             },
           },
           paysFor: { select: { member: { select: { firstName: true, lastName: true } } } },
@@ -371,6 +396,33 @@ export async function buildUserDataExport(
               text: e.description,
               art: e.kind,
             })),
+            spenden: (member.donor?.donations ?? []).map((d) => {
+              const state = donationReceiptState({
+                void: d.voidedAt !== null || Boolean(d.line?.entry.reversedBy),
+                issuedOn: null,
+                hasDonor: true,
+                anonymous: false,
+                restricted: member.donor?.restrictedAt != null,
+                kind: d.kind,
+                paymentMethod: d.paymentMethod,
+                amountCents: d.amountCents,
+                wish: d.receiptWish,
+                addressComplete: addressComplete({
+                  name: `${member.firstName} ${member.lastName}`,
+                  street: member.street,
+                  postalCode: member.postalCode,
+                  city: member.city,
+                }),
+              });
+              return {
+                datum: day(d.receivedOn),
+                betragCent: d.amountCents,
+                art: DONATION_KIND_LABEL[d.kind],
+                zweck: purposeLabel(d) ?? "frei verwendbar",
+                zuwendungsbestaetigung: receiptBadge(state).label,
+                sachspende: d.itemDescription,
+              };
+            }),
             beitragseinstellungen: {
               zahlweg: member.finance?.paymentMethod ?? null,
               zahler: member.finance?.payer

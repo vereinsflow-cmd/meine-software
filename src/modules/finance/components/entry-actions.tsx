@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { EllipsisIcon, PaperclipIcon, PencilIcon, Undo2Icon } from "lucide-react";
+import { EllipsisIcon, HandHeartIcon, PaperclipIcon, PencilIcon, Undo2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMoreActions } from "@/components/shared/more-actions";
-import { formatCalendarDate } from "@/lib/dates";
+import { formatCalendarDate, formatEuroFromCents } from "@/lib/dates";
+import { AssignDonationDialog } from "@/modules/donations/components/assign-donation-dialog";
+import { EditDonationDialog } from "@/modules/donations/components/donation-dialog";
 import type { EntryFormOptions, LedgerAttachmentDto } from "../ledger";
 import { reverseEntryAction } from "../ledger-actions";
 import type { EntryInput } from "../ledger-schemas";
@@ -33,12 +35,14 @@ export const LEDGER_FOCUS_ID = "kassenbuch-anzahl";
 
 /**
  * Menü „⋯“ einer Buchung: „Belege“ (ansehen, anhängen, Eigenbeleg), „Korrigieren“ (Storno und neue Buchung, vorausgefüllt)
- * und „Stornieren“ (mit Grund). Gelöscht wird nie – das Kassenbuch bleibt lückenlos.
+ * und „Stornieren“ (mit Grund). Gelöscht wird nie – das Kassenbuch bleibt lückenlos. Bei Einnahmen der Kategorie „Spenden“
+ * außerdem „Als Spende kennzeichnen“ (Spender eintragen, auch in abgeschlossenen Monaten) bzw. „Spende ändern“.
  */
 export function EntryActions({
   entry,
   options,
   maxUploadMb,
+  donations,
 }: {
   entry: {
     id: string;
@@ -54,8 +58,23 @@ export function EntryActions({
   };
   options: EntryFormOptions | null;
   maxUploadMb: number;
+  /** Zeilen der Kategorie „Spenden“ (`LedgerEntryDto.donationLines`) und ob eine davon zugeordnet werden darf. */
+  donations?: {
+    lines: { lineId: string; amountCents: number; donationId: string | null }[];
+    canAssign: boolean;
+  };
 }) {
-  const { triggerRef, show, dialog } = useMoreActions<"receipts" | "reverse" | "correct">();
+  const { triggerRef, show, dialog } = useMoreActions<
+    "receipts" | "reverse" | "correct" | "assign" | "donation"
+  >();
+  // Welche Spenden-Zeile bzw. Spende das Fenster betrifft (eine Buchung mit zwei Spendern hat zwei Zeilen).
+  const [assignLineId, setAssignLineId] = useState<string | null>(null);
+  const [donationId, setDonationId] = useState<string | null>(null);
+  const unassigned = donations?.canAssign
+    ? donations.lines.filter((line) => line.donationId === null)
+    : [];
+  const linked = (donations?.lines ?? []).filter((line) => line.donationId !== null);
+  const several = (donations?.lines.length ?? 0) > 1;
   // Nach Erfolg verschwindet „⋯“ (die Buchung ist storniert bzw. fällt aus „Ohne Beleg“) – der Fokus geht dann zur Zeile
   // über der Tabelle. Bleibt die Zeile stehen, ist das genauso gut erreichbar.
   const done = useRef(false);
@@ -68,6 +87,8 @@ export function EntryActions({
   const receipts = dialog("receipts");
   const reverse = dialog("reverse");
   const correct = dialog("correct");
+  const assign = dialog("assign");
+  const donation = dialog("donation");
   return (
     <>
       <DropdownMenu>
@@ -92,6 +113,30 @@ export function EntryActions({
               ? `Belege (${entry.attachments.length})`
               : "Beleg anhängen"}
           </DropdownMenuItem>
+          {unassigned.map((line) => (
+            <DropdownMenuItem
+              key={line.lineId}
+              onSelect={() => {
+                setAssignLineId(line.lineId);
+                show("assign");
+              }}
+            >
+              <HandHeartIcon /> Als Spende kennzeichnen
+              {several && ` (${formatEuroFromCents(line.amountCents)})`}
+            </DropdownMenuItem>
+          ))}
+          {linked.map((line) => (
+            <DropdownMenuItem
+              key={line.lineId}
+              onSelect={() => {
+                setDonationId(line.donationId);
+                show("donation");
+              }}
+            >
+              <HandHeartIcon /> Spende ändern
+              {several && ` (${formatEuroFromCents(line.amountCents)})`}
+            </DropdownMenuItem>
+          ))}
           {options && (
             <DropdownMenuItem onSelect={() => show("correct")}>
               <PencilIcon /> Korrigieren
@@ -119,6 +164,22 @@ export function EntryActions({
         onCloseAutoFocus={closeFocus(reverse.onCloseAutoFocus)}
         onDone={() => (done.current = true)}
       />
+      {assignLineId && (
+        <AssignDonationDialog
+          ledgerLineId={assignLineId}
+          open={assign.open}
+          onOpenChange={assign.onOpenChange}
+          onCloseAutoFocus={assign.onCloseAutoFocus}
+        />
+      )}
+      {donationId && (
+        <EditDonationDialog
+          donationId={donationId}
+          open={donation.open}
+          onOpenChange={donation.onOpenChange}
+          onCloseAutoFocus={donation.onCloseAutoFocus}
+        />
+      )}
       {options && (
         <EntryDialog
           options={options}
