@@ -457,6 +457,9 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
   (Girokonto 11.200,00 €, Barkasse 239,80 €), trägt die Finanzamt-Angaben ein und erfasst die 23 Spenden des Bildes über die
   echten Dienste (Summen wie im Bild). Die Tests (`NODE_ENV=test`) bekommen das nicht – sie richten das Kassenbuch selbst ein.
   Bis Teil 2 stehen die sechs im Bild „erstellten“ Spender noch unter „fehlen“ (10 statt 4).
+- Geprüft in `tests/e2e/spenden.spec.ts` (Spende erfassen: Mitglied, Sachspende, Spendendose; Cockpit, „Alle Spenden“ mit
+  Filter und Suche, „Spender“, Finanzamt-Angaben, Beleg, „Als Spende kennzeichnen“, Rechte), `spenden.mobil.spec.ts`
+  (gestapelte Karten, 412 und 390 px), `tests/e2e/a11y.spec.ts`, Daten und Regeln in `tests/integration/donations*.test.ts`.
 
 ## Ansichten prüfen
 
