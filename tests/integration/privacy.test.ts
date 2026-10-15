@@ -331,7 +331,9 @@ describe("Löschantrag", () => {
     });
     expect(await getPendingDeletion(people.person.user.id)).toBeNull();
 
-    const now = new Date("2026-10-01T10:00:00Z");
+    // Bezogen auf jetzt, nicht auf ein festes Datum: Der Antrag bleibt offen und wäre nach Ablauf der Bedenkzeit fällig –
+    // dann verarbeiteten ihn die Tests der Ausführung mit (so geschehen ab dem 15.10.2026, 12 Uhr, mit dem 01.10.2026).
+    const now = new Date();
     const pending = await requestAccountDeletion(
       { userId: people.person.user.id, password: PASSWORD, reason: "  Ich ziehe um.  " },
       meta,
