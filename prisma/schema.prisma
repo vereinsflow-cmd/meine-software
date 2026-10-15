@@ -99,6 +99,13 @@ enum AssignmentStatus {
   CANCELLED
 }
 
+/// Anwesenheit bei einem Termin (z. B. Training): da, entschuldigt, unentschuldigt.
+enum AttendanceStatus {
+  PRESENT
+  EXCUSED
+  ABSENT
+}
+
 enum TaskStatus {
   OPEN
   IN_PROGRESS
@@ -326,6 +333,8 @@ model User {
   /// TOTP-Secret, AES-256-GCM-verschlüsselt (optionale Zwei-Faktor-Authentifizierung).
   totpSecretEnc      String?
   totpEnabledAt      DateTime? @db.Timestamptz(3)
+  /// Zuletzt angenommener TOTP-Zeitschritt (Unixzeit/30) – derselbe Code gilt nie zweimal.
+  totpLastStep       Int?
   /// Einmal-Wiederherstellungscodes, als Hash gespeichert.
   recoveryCodeHashes String[]
   lastLoginAt        DateTime? @db.Timestamptz(3)
@@ -609,6 +618,8 @@ model Member {
   groups                 GroupMember[]
   consents               Consent[]
   participations         EventParticipant[]
+  /// Anwesenheit bei Terminen (Training, Probe, Versammlung).
+  attendances            EventAttendance[]
   shiftAssignments       ShiftAssignment[]
   contactForEvents       Event[]                 @relation("EventContact")
   responsibleShifts      EventShift[]            @relation("ShiftResponsible")
@@ -830,6 +841,8 @@ model Event {
   messages      Message[]
   /// Buchungszeilen dieser Veranstaltung (Ergebnis z. B. des Sommerfests).
   ledgerLines   LedgerLine[]
+  /// Erfasste Anwesenheit (wer war da, entschuldigt, unentschuldigt).
+  attendances   EventAttendance[]
 
   @@unique([clubId, id])
   @@index([clubId, startsAt])
@@ -854,6 +867,27 @@ model EventParticipant {
 
   @@unique([eventId, memberId])
   @@index([clubId, eventId, status, createdAt])
+  @@index([clubId, memberId])
+}
+
+/// Anwesenheit eines Mitglieds bei einem Termin. Pro (Termin, Mitglied) genau eine Zeile; erneutes Erfassen ändert
+/// den Status. Bewusst OHNE Freitext (keine Krankheitsgründe o. Ä. – Gesundheitsdaten gehören nicht hierher).
+model EventAttendance {
+  id           String           @id @default(uuid(7))
+  clubId       String
+  eventId      String
+  memberId     String
+  status       AttendanceStatus
+  /// Wer zuletzt erfasst hat (Herkunftsangabe ohne Fremdschlüssel; wird beim Löschen des Kontos geleert).
+  recordedById String?
+  /// Zeitpunkt der letzten Erfassung (beim Ändern neu setzen).
+  recordedAt   DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+
+  event  Event  @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@unique([eventId, memberId])
   @@index([clubId, memberId])
 }
 

@@ -38,6 +38,8 @@ erDiagram
     Department |o--o{ Event : "gehoert zu"
     Event ||--o{ EventParticipant : "Zu- und Absagen"
     Member ||--o{ EventParticipant : ""
+    Event ||--o{ EventAttendance : "Anwesenheit"
+    Member ||--o{ EventAttendance : ""
     Event ||--o{ EventShift : plant
     EventShift ||--o{ ShiftAssignment : besetzt
     Member ||--o{ ShiftAssignment : leistet
@@ -56,14 +58,14 @@ erDiagram
 
 ### Plattform (ohne Verein)
 
-| Modell              | Zweck                                                                                                                                                                                     |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `User`              | Konto: E-Mail (klein geschrieben, per CHECK), Argon2id-Hash, Plattform-Administrator-Kennzeichen, Vorbereitung für Zwei-Faktor (`totpSecretEnc`, `totpEnabledAt`), Datenschutz-Zustimmung |
-| `Session`           | Sitzung: `id` ist der **Hash** des Tokens; Erstellung, letzte Aktivität, Ablauf, Gerät (gekürzt), IP-Präfix                                                                               |
-| `VerificationToken` | Einmal-Token für E-Mail-Bestätigung, Passwort-Reset (nur als Hash)                                                                                                                        |
-| `RateLimitBucket`   | Zähler für Anmelde- und andere Begrenzungen (Rate-Limit in PostgreSQL)                                                                                                                    |
-| `DeletionRequest`   | Löschantrag einer Person (Bedenkzeit, Status, Nachweis ohne Klarnamen)                                                                                                                    |
-| `Permission`        | Katalog aller Rechte (wird aus dem Code gepflegt, schreibgeschützt)                                                                                                                       |
+| Modell              | Zweck                                                                                                                                                                                                                                                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `User`              | Konto: E-Mail (klein geschrieben, per CHECK), Argon2id-Hash, Plattform-Administrator-Kennzeichen, Zwei-Faktor-Anmeldung (`totpSecretEnc` verschlüsselt, `totpEnabledAt`, `totpLastStep` = zuletzt angenommener Zeitschritt – derselbe Code gilt nie zweimal, `recoveryCodeHashes` nur als Hash), Datenschutz-Zustimmung |
+| `Session`           | Sitzung: `id` ist der **Hash** des Tokens; Erstellung, letzte Aktivität, Ablauf, Gerät (gekürzt), IP-Präfix                                                                                                                                                                                                             |
+| `VerificationToken` | Einmal-Token für E-Mail-Bestätigung, Passwort-Reset (nur als Hash)                                                                                                                                                                                                                                                      |
+| `RateLimitBucket`   | Zähler für Anmelde- und andere Begrenzungen (Rate-Limit in PostgreSQL)                                                                                                                                                                                                                                                  |
+| `DeletionRequest`   | Löschantrag einer Person (Bedenkzeit, Status, Nachweis ohne Klarnamen)                                                                                                                                                                                                                                                  |
+| `Permission`        | Katalog aller Rechte (wird aus dem Code gepflegt, schreibgeschützt)                                                                                                                                                                                                                                                     |
 
 ### Verein, Rollen, Benutzer
 
@@ -88,12 +90,13 @@ erDiagram
 
 ### Veranstaltungen und Helfer
 
-| Modell             | Zweck                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Event`            | Veranstaltung: Art, Status, Sichtbarkeit, Zeitraum, Ort, Abteilung, Teilnehmerlimit, Serien-ID                                             |
-| `EventParticipant` | Zu-/Absage, Warteliste; Trigger sichert das Teilnehmerlimit                                                                                |
-| `EventShift`       | Helferschicht: Zeitraum, benötigte Anzahl (1–500), Mindestalter, Treffpunkt, Verantwortliche/r, Status                                     |
-| `ShiftAssignment`  | Eintragung eines Mitglieds; Trigger sichern **Kapazität** und **Überlappungsfreiheit**; geleistete Minuten, Freigabe, Erinnerungszeitpunkt |
+| Modell             | Zweck                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Event`            | Veranstaltung: Art, Status, Sichtbarkeit, Zeitraum, Ort, Abteilung, Teilnehmerlimit, Serien-ID                                                                                                                                                                                                                                                                  |
+| `EventParticipant` | Zu-/Absage, Warteliste; Trigger sichert das Teilnehmerlimit                                                                                                                                                                                                                                                                                                     |
+| `EventShift`       | Helferschicht: Zeitraum, benötigte Anzahl (1–500), Mindestalter, Treffpunkt, Verantwortliche/r, Status                                                                                                                                                                                                                                                          |
+| `ShiftAssignment`  | Eintragung eines Mitglieds; Trigger sichern **Kapazität** und **Überlappungsfreiheit**; geleistete Minuten, Freigabe, Erinnerungszeitpunkt                                                                                                                                                                                                                      |
+| `EventAttendance`  | Anwesenheit eines Mitglieds bei einem Termin: `status` (`PRESENT` da, `EXCUSED` entschuldigt, `ABSENT` unentschuldigt), erfasst am/von (`recordedAt`, `recordedById` ohne Fremdschlüssel, wird beim Löschen des Kontos geleert); je Termin und Mitglied genau eine Zeile; **bewusst ohne Freitext** (keine Gesundheitsdaten); entfällt mit Termin bzw. Mitglied |
 
 ### Aufgaben, Nachrichten, Dokumente, Kalender
 
@@ -120,14 +123,16 @@ erDiagram
 | Regel                                                                                   | Umsetzung                                                            |
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | E-Mail-Adressen stets klein geschrieben; Vereinskennung nur `a-z0-9-`                   | CHECK                                                                |
+| Zwei-Faktor: zuletzt angenommener Zeitschritt leer oder ≥ 0                             | CHECK (`User_totp_last_step_chk`)                                    |
 | Ende nicht vor Beginn (Veranstaltung), nach Beginn (Schicht)                            | CHECK                                                                |
 | Schicht: 1–500 Helfer, Mindestalter 0–120; geleistete Minuten 0–1440                    | CHECK                                                                |
 | Nie mehr Helfer als benötigt                                                            | Trigger `shift_assignment_capacity_guard` (sperrt die Schicht)       |
 | Keine überlappenden Schichten je Mitglied                                               | Trigger `shift_assignment_overlap_guard` (Advisory-Lock je Mitglied) |
 | Teilnehmerlimit                                                                         | Trigger `event_participant_capacity_guard`                           |
+| Anwesenheit: je Termin und Mitglied höchstens eine Zeile, beide aus demselben Verein    | Unique (`eventId`, `memberId`), zusammengesetzte Fremdschlüssel      |
 | Änderungsprotokoll unveränderlich                                                       | Trigger `audit_log_guard` (Löschen nur in der Aufbewahrungsroutine)  |
 | Höchstens eine offene Einladung je E-Mail und Verein                                    | Teil-Unique-Index                                                    |
-| Benachrichtigungs-Links nur intern (kein Open-Redirect)                                 | CHECK                                                                |
+| Benachrichtigungs-Links und Seite einer Support-Meldung nur intern (kein Open-Redirect) | CHECK (`Notification_link_chk`, `SupportTicket_path_chk`)            |
 | Dokument gehört zu höchstens einem Bezugsobjekt                                         | CHECK                                                                |
 | Vereinslogo: alle Angaben oder keine; nur PNG/JPEG/WebP, 1 B – 1 MiB                    | CHECK (`Club_logo_*_chk`), auch Schlüssel- und Prüfsummenformat      |
 | Rechnung: Betrag 1 Cent – 10 Mio. €; offene Rechnung immer mit Betrag                   | CHECK (`Invoice_amount_chk`, `Invoice_open_amount_chk`)              |
@@ -138,11 +143,18 @@ erDiagram
 | Beitrittsantrag: offen ⇔ nicht entschieden; Mitglied nur bei „angenommen“               | CHECK (`MembershipApplication_decision_chk`)                         |
 | Beitrittsantrag: Fassung des Einwilligungstexts nie leer, höchstens 64 Zeichen          | CHECK (`MembershipApplication_consent_version_chk`)                  |
 
+Interne Pfade (`Notification.linkUrl`, `SupportTicket.pagePath`) beginnen mit `/`, ihr zweites Zeichen ist weder `/` noch `\`, und
+sie enthalten keine Steuerzeichen – Browser lesen `/\host` wie `//host` und entfernen Tabulator und Zeilenumbruch aus Adressen. Bis zur
+Migration `20261014120200_notification_link_check_fix` ließ die Regel wegen der LIKE-Maskierung (`NOT LIKE '/\%'`) Pfade wie `/\host` durch.
+
 Die gewünschte Abteilung eines Beitrittsantrags ist ein zusammengesetzter Fremdschlüssel mit `RESTRICT` (wie alle optionalen
 Verweise): Beim Löschen der Abteilung leert der Dienst das Feld vorher (`deleteDepartment`), ein Antrag verhindert das Löschen nie.
 Die E-Mail-Adresse ist bei Mitgliedern bewusst nicht eindeutig (Familien teilen Adressen); beim Annehmen eines Antrags verhindert
 deshalb eine Transaktionssperre je Verein und Adresse (`lockUntilCommit`), dass zwei gleichzeitig angenommene Anträge derselben Person
 zwei Mitglieder anlegen.
+
+**Ehrungen** (runde Mitgliedsjubiläen) haben kein eigenes Modell: Sie werden bei jedem Aufruf aus `Member.joinedAt`, `leftAt` und
+`status` berechnet (`src/lib/anniversaries.ts`). Die Stufen (10, 25, 40, 50, 60, 70 und 75 Jahre) sind für alle Vereine gleich.
 
 Ein Test gleicht die Einstufung aller Modelle (`MODEL_SCOPE`) mit den echten Datenbankspalten ab – ein Modell mit `clubId`, das
 nicht als mandantenbezogen geführt wird, fällt sofort auf.

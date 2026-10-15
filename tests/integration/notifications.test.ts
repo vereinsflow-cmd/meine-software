@@ -367,23 +367,33 @@ describe("Benachrichtigungen erzeugen (notifyUsers)", () => {
     ).toBe(1);
   });
 
-  // Bekannter Fehler (siehe docs/ROADMAP.md, „Bekannte Fehler“): Die Prüfregel `NOT LIKE '/\%'` sperrt wegen der
-  // LIKE-Maskierung nur den Text "/%", nicht "/\…" – Browser lesen "/\example.com" aber wie "//example.com" (fremde
-  // Seite). Der Test hält den heutigen Stand fest: Ist die Prüfregel korrigiert, schlägt er gezielt fehl – dann
-  // `.rejects.toThrow(/Notification_link_chk/)` erwarten und „BEKANNTER FEHLER“ aus dem Titel nehmen.
-  it("BEKANNTER FEHLER: die Datenbank nimmt '/\\…' an (wird im Browser zu einer fremden Adresse)", async () => {
+  // Browser lesen "/\example.com" wie "//example.com" (fremde Seite), und Tabulator/Zeilenumbruch entfernen sie aus
+  // Adressen ("/<Tab>/host" → "//host"). Bis Migration 20261014120200 sperrte die Prüfregel wegen der LIKE-Maskierung
+  // nur den Text "/%" – jetzt prüft sie das zweite Zeichen direkt und lehnt Steuerzeichen ab.
+  it("die Datenbank lehnt '/\\…' und Steuerzeichen ab (würden im Browser zu einer fremden Adresse)", async () => {
     const { clubA, paula } = await setup();
-    await expect(
-      prisma.notification.create({
-        data: {
-          clubId: clubA.id,
-          userId: paula.user.id,
-          type: "SYSTEM",
-          title: "Link",
-          linkUrl: "/\\example.com",
-        },
-      }),
-    ).resolves.toMatchObject({ linkUrl: "/\\example.com" }); // richtig wäre ein Fehler mit Notification_link_chk
+    for (const linkUrl of [
+      "/\\example.com",
+      "/\texample.com",
+      "/\t/example.com",
+      "/\n/example.com",
+      "/a\u0001",
+    ]) {
+      await expect(
+        prisma.notification.create({
+          data: { clubId: clubA.id, userId: paula.user.id, type: "SYSTEM", title: "Link", linkUrl },
+        }),
+        JSON.stringify(linkUrl),
+      ).rejects.toThrow(/Notification_link_chk/);
+    }
+    // Interne Pfade bleiben erlaubt – auch die Startseite "/" und ein "%" an zweiter Stelle.
+    for (const linkUrl of ["/", "/%25", "/veranstaltungen/1?tab=helfer#schicht"]) {
+      await expect(
+        prisma.notification.create({
+          data: { clubId: clubA.id, userId: paula.user.id, type: "SYSTEM", title: "Link", linkUrl },
+        }),
+      ).resolves.toMatchObject({ linkUrl });
+    }
   });
 });
 

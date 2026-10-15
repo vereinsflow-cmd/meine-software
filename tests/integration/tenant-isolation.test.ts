@@ -211,6 +211,41 @@ describe("Mandantentrennung (Datenbank-Integrität)", () => {
     ).rejects.toThrow();
   });
 
+  it("Anwesenheit: weder Termin noch Mitglied eines fremden Vereins; der Vereins-Client sieht nur die eigene", async () => {
+    const clubA = await createClub("Verein A");
+    const clubB = await createClub("Verein B");
+    const [eventA, eventB] = await Promise.all([createEvent(clubA.id), createEvent(clubB.id)]);
+    const [memberA, memberB] = await Promise.all([createMember(clubA.id), createMember(clubB.id)]);
+
+    // Selbst mit dem UNGESCHÜTZTEN Client: zusammengesetzte Fremdschlüssel (clubId, id).
+    for (const data of [
+      { clubId: clubA.id, eventId: eventA.id, memberId: memberB.id },
+      { clubId: clubA.id, eventId: eventB.id, memberId: memberA.id },
+      { clubId: clubB.id, eventId: eventA.id, memberId: memberA.id },
+    ])
+      await expect(
+        prisma.eventAttendance.create({ data: { ...data, status: "PRESENT" } }),
+        JSON.stringify(data),
+      ).rejects.toThrow();
+
+    await prisma.eventAttendance.create({
+      data: { clubId: clubB.id, eventId: eventB.id, memberId: memberB.id, status: "PRESENT" },
+    });
+    const dbA = createTenantDb(clubA.id);
+    await dbA.eventAttendance.create({
+      data: { clubId: clubA.id, eventId: eventA.id, memberId: memberA.id, status: "ABSENT" },
+    });
+    expect(await dbA.eventAttendance.findMany()).toEqual([
+      expect.objectContaining({ clubId: clubA.id, memberId: memberA.id }),
+    ]);
+    expect(
+      await dbA.eventAttendance.updateMany({
+        where: { eventId: eventB.id },
+        data: { status: "EXCUSED" },
+      }),
+    ).toEqual({ count: 0 });
+  });
+
   it("Abteilung eines fremden Vereins kann keiner Veranstaltung zugeordnet werden", async () => {
     const clubA = await createClub("Verein A");
     const clubB = await createClub("Verein B");
