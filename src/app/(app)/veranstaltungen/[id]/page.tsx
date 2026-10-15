@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlusIcon, MapPinIcon } from "lucide-react";
+import { CalendarPlusIcon, MapPinIcon, UserCheckIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { formatDateLong, formatDateTime, formatTimeRange } from "@/lib/dates";
 import { EVENT_TYPE_LABEL } from "@/lib/labels";
 import { phoneHref } from "@/lib/phone";
 import { EventDocumentsCard } from "@/modules/documents/components/event-documents-card";
+import { getEventAttendanceSummary } from "@/modules/events/attendance";
 import { EventActions } from "@/modules/events/components/event-actions";
 import { ParticipantsPanel } from "@/modules/events/components/participants-panel";
 import { RsvpPanel } from "@/modules/events/components/rsvp-panel";
@@ -41,6 +42,19 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     participants && event.can.manageParticipants
       ? await listParticipantCandidates(ctx, id).catch(() => [])
       : [];
+  // Anwesenheit (nur für Veranstalter): sichtbar, sobald erfasst werden kann oder schon erfasst wurde – bei Trainings auch
+  // vorher mit dem Hinweis, ab wann es geht. Für Feste o. Ä. in der Zukunft bleibt die Karte ruhig.
+  const attendanceInfo = await getEventAttendanceSummary(ctx, {
+    id: event.id,
+    status: event.status,
+    startsAt: event.startsAt,
+    departmentId: event.department?.id ?? null,
+  });
+  const showAttendance =
+    attendanceInfo !== null &&
+    (attendanceInfo.total > 0 ||
+      attendanceInfo.window.open ||
+      (event.type === "TRAINING" && event.status === "PUBLISHED"));
   const full = event.maxParticipants !== null && event.acceptedCount >= event.maxParticipants;
   const openShifts = event.shiftSummary.required - event.shiftSummary.filled;
   const whenLong = event.allDay ? "ganztägig" : formatTimeRange(event.startsAt, event.endsAt);
@@ -72,7 +86,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     </Card>
   );
 
-  const attendance = (
+  const participantCount = (
     <Card>
       <CardHeader>
         <CardTitle role="heading" aria-level={2}>
@@ -93,6 +107,41 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <ToneBadge tone="warning" className="w-fit">
             Ausgebucht
           </ToneBadge>
+        )}
+        {showAttendance && attendanceInfo && (
+          // Anwesenheit ist getrennt von Zu- und Absagen: Wer abgesagt hat, kann trotzdem da gewesen sein.
+          <div className="mt-3 grid gap-2 border-t pt-3">
+            <h3 className="font-medium">Anwesenheit</h3>
+            {attendanceInfo.total > 0 ? (
+              <p>
+                Anwesend:{" "}
+                <span className="font-semibold tabular-nums">{attendanceInfo.counts.present}</span>{" "}
+                von <span className="tabular-nums">{attendanceInfo.total}</span>
+                {attendanceInfo.counts.excused > 0 && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {attendanceInfo.counts.excused} entschuldigt
+                  </span>
+                )}
+              </p>
+            ) : (
+              <p className="text-muted-foreground">Noch nicht erfasst.</p>
+            )}
+            {attendanceInfo.window.open || attendanceInfo.total > 0 ? (
+              <Button asChild variant="outline" className="w-fit">
+                <Link href={`/veranstaltungen/${id}/anwesenheit`}>
+                  <UserCheckIcon />{" "}
+                  {attendanceInfo.window.open ? "Anwesenheit erfassen" : "Anwesenheit ansehen"}
+                </Link>
+              </Button>
+            ) : (
+              <p className="text-muted-foreground">
+                {event.status === "PUBLISHED"
+                  ? `Erfassen geht ab ${formatDateTime(attendanceInfo.window.opensAt)} Uhr.`
+                  : attendanceInfo.window.reason}
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -253,7 +302,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {/* Ab 640 px stehen die beiden kurzen Karten nebeneinander. */}
           <div className="grid gap-6 sm:grid-cols-2 lg:hidden">
             {helpers}
-            {attendance}
+            {participantCount}
           </div>
 
           {event.internalNotes && (
@@ -308,7 +357,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
         <div className="hidden content-start gap-6 lg:grid">
           {participation}
-          {attendance}
+          {participantCount}
           {helpers}
         </div>
       </div>

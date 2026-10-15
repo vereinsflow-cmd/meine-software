@@ -6,6 +6,7 @@ import {
   APPLICATION_PENDING_RETENTION_DAYS,
 } from "@/lib/membership-application";
 import { SUPPORT_RETENTION_MONTHS } from "@/lib/support";
+import { ATTENDANCE_RETENTION_MONTHS } from "@/modules/events/attendance-schemas";
 import { DOCUMENT_TRASH_DAYS } from "@/lib/uploads";
 import { prisma } from "@/server/db/client";
 import { anonymizeMemberData } from "@/server/privacy/anonymize";
@@ -17,7 +18,8 @@ import { deleteFile } from "@/server/storage/files";
  *  - Papierkorb: Mitglieder, die länger als `trashDays` im Papierkorb liegen, werden anonymisiert.
  *  - Ausgetretene Mitglieder: nach `leftMembersMonths` (0 = nie automatisch) anonymisiert.
  *  - Änderungsprotokoll: Einträge älter als `auditMonths` werden gelöscht (nur die Aufbewahrungsroutine darf das).
- *  - Feste Fristen ohne Einstellung: gelöschte Dokumente, erledigte Support-Meldungen, Beitrittsanträge.
+ *  - Feste Fristen ohne Einstellung: gelöschte Dokumente, erledigte Support-Meldungen, Beitrittsanträge, Anwesenheit
+ *    (24 Monate nach dem Termin).
  *
  * Jede Anonymisierung läuft in einer eigenen Transaktion und hinterlässt einen Protokolleintrag (ohne Namen).
  */
@@ -34,6 +36,8 @@ export interface RetentionResult {
   ticketsPurged: number;
   /** Gelöschte Beitrittsanträge (entschiedene nach 30, offene nach 180 Tagen). */
   applicationsPurged: number;
+  /** Gelöschte Anwesenheiten (Termin liegt mehr als 24 Monate zurück). */
+  attendancePurged: number;
 }
 
 /**
@@ -115,6 +119,17 @@ const subtractMonths = (date: Date, months: number): Date => {
   return result;
 };
 
+/**
+ * Löscht Anwesenheiten von Terminen, die mehr als {@link ATTENDANCE_RETENTION_MONTHS} Monate zurückliegen (gemessen am
+ * Beginn des Termins). Danach braucht es sie weder für Auswertungen noch für übliche Nachweise; der Termin selbst bleibt.
+ */
+export async function purgeOldAttendance(now: Date = new Date()): Promise<number> {
+  const result = await prisma.eventAttendance.deleteMany({
+    where: { event: { startsAt: { lt: subtractMonths(now, ATTENDANCE_RETENTION_MONTHS) } } },
+  });
+  return result.count;
+}
+
 async function anonymizeOne(
   clubId: string,
   memberId: string,
@@ -147,6 +162,7 @@ export async function applyRetention(now: Date = new Date()): Promise<RetentionR
     documentsPurged: 0,
     ticketsPurged: 0,
     applicationsPurged: 0,
+    attendancePurged: 0,
   };
   const clubs = await prisma.club.findMany({ select: { id: true, settings: true } });
 
@@ -213,5 +229,6 @@ export async function applyRetention(now: Date = new Date()): Promise<RetentionR
   result.documentsPurged = await purgeDeletedDocuments(now);
   result.ticketsPurged = await purgeOldTickets(now);
   result.applicationsPurged = await purgeOldApplications(now);
+  result.attendancePurged = await purgeOldAttendance(now);
   return result;
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AREA_ICON } from "@/components/shared/area-icons";
@@ -8,9 +9,12 @@ import { PageHeader } from "@/components/shared/page-header";
 import { PageStack } from "@/components/shared/page-section";
 import { MemberStatusBadge, ToneBadge } from "@/components/shared/status-badge";
 import { BackLink } from "@/components/shared/back-link";
-import { formatCalendarDate, formatDateTime } from "@/lib/dates";
+import { formatPercent } from "@/lib/charts/geometry";
+import { formatCalendarDate, formatDate, formatDateTime } from "@/lib/dates";
 import { CONSENT_TYPE_LABEL, MEMBER_FIELD_LABEL } from "@/lib/labels";
 import { phoneHref } from "@/lib/phone";
+import { memberAttendanceSummary } from "@/modules/events/attendance";
+import { ATTENDANCE_RESULT_LABEL } from "@/modules/events/attendance-schemas";
 import { ConsentPanel } from "@/modules/members/components/consent-panel";
 import { MemberActions } from "@/modules/members/components/member-actions";
 import { getMember, getMemberHistory } from "@/modules/members/service";
@@ -35,10 +39,13 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   });
   if (!member) notFound();
 
-  const [history, fee] = await Promise.all([
+  const [history, fee, attendance] = await Promise.all([
     member.private ? getMemberHistory(ctx, id) : Promise.resolve([]),
     getMemberFee(ctx, id),
+    // Nur für die Person selbst und Berechtigte (Teilnehmerlisten ihrer Abteilungen) – sonst `null`.
+    memberAttendanceSummary(ctx, id),
   ]);
+  const ownPage = ctx.memberId === id;
   const feeOptions = fee?.canManage ? await memberFeeOptions(ctx, id) : null;
   const name = `${member.firstName} ${member.lastName}`;
   const consentRows = CONSENT_ORDER.map((type) => {
@@ -170,6 +177,68 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
                 <div>
                   <h3 className="mb-2 text-sm font-medium">Einwilligungen</h3>
                   <ConsentPanel memberId={id} rows={consentRows} canEdit={member.can.consents} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {attendance && attendance.total > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle role="heading" aria-level={2}>
+                  Anwesenheit
+                </CardTitle>
+                <CardDescription>
+                  {ownPage
+                    ? "So oft warst du bei Terminen, für die Anwesenheit erfasst wurde."
+                    : "Erfasste Anwesenheit bei Terminen (Training, Probe, Versammlung)."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-5">
+                <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+                  {[
+                    { label: "Anwesend", value: String(attendance.present) },
+                    { label: "Entschuldigt", value: String(attendance.excused) },
+                    { label: "Gefehlt", value: String(attendance.absent) },
+                    {
+                      label: "Quote",
+                      value: attendance.rate === null ? "–" : formatPercent(attendance.rate),
+                    },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <dt className="text-muted-foreground">{item.label}</dt>
+                      <dd className="text-2xl font-semibold tabular-nums">{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div>
+                  <h3 className="mb-1 text-sm font-medium">Zuletzt</h3>
+                  <ol className="divide-y text-sm">
+                    {attendance.recent.map((entry) => (
+                      <li
+                        key={entry.eventId}
+                        className="flex items-baseline justify-between gap-3 py-2"
+                      >
+                        <span className="min-w-0">
+                          {entry.linkable ? (
+                            <Link
+                              href={`/veranstaltungen/${entry.eventId}`}
+                              className="font-medium underline-offset-4 hover:underline"
+                            >
+                              {entry.title}
+                            </Link>
+                          ) : (
+                            <span className="font-medium">{entry.title}</span>
+                          )}
+                          <span className="block text-xs text-muted-foreground">
+                            {formatDate(entry.startsAt)}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {ATTENDANCE_RESULT_LABEL[entry.status]}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
               </CardContent>
             </Card>
