@@ -557,7 +557,9 @@ function BottomBar({ note, children }: { note: string; children?: React.ReactNod
   return (
     <div className={cn(CARD_SURFACE, "flex flex-wrap items-center justify-between gap-3 p-4")}>
       <p className="min-w-0 flex-1 basis-64 text-sm text-muted-foreground">{note}</p>
-      <div className="flex shrink-0 flex-wrap gap-2">{children}</div>
+      {/* Darf schrumpfen, damit die Knöpfe am Handy untereinander rutschen: „Zurück zu Schritt 1“ und „22 Beiträge
+          erstellen“ passen ab etwa 375 px (in breiteren Schriften schon bei 412 px) nicht mehr nebeneinander. */}
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }

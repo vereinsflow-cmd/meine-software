@@ -189,9 +189,10 @@ function ChangeChip({
         {percent && <span className="font-semibold whitespace-nowrap"> {percent}</span>}
       </span>
       {/* Leerzeichen für den vorgelesenen Namen des Links (im Flex-Container sonst „…%)in 12 Monaten“). In schmalen Karten
-          nur für Screenreader – dort nennen die gedrückten Zeitraum-Knöpfe den Zeitraum sichtbar. */}{" "}
+          (unter 17 rem; der Container `kpi` ist 2,5 rem schmaler, siehe `KpiShell`) nur für Screenreader – dort nennen die
+          gedrückten Zeitraum-Knöpfe den Zeitraum sichtbar. */}{" "}
       {!hideSince && (
-        <span className="text-xs font-medium text-white @max-[17rem]/kpi:sr-only">
+        <span className="text-xs font-medium text-white @max-[14.5rem]/kpi:sr-only">
           {period.since}
         </span>
       )}
@@ -281,8 +282,11 @@ function QuoteStats({ quote, period }: { quote: Quote; period: QuotePeriod }) {
 /**
  * Hülle jeder Kennzahlenkarte (seit 02.10.2026, Mischung aus den Entwürfen 2 und 5): kräftiger Farbverlauf des Bereichs mit
  * weißer Schrift, ein heller Schein in der Ecke oben rechts und ein farbiger Schimmer unter der Karte (`KPI_ACCENT`). Oben Symbol
- * und Beschriftung, bei Links rechts ein kleiner Pfeil („führt weiter“) – nur, wenn die Karte breit genug ist (ab 15 rem,
- * Containerabfrage `kpi`).
+ * und Beschriftung, bei Links rechts ein kleiner Pfeil („führt weiter“) – nur, wenn die Karte breit genug ist (ab 15 rem).
+ *
+ * Breitenabfragen (`@container/kpi`) hängen nicht an der Karte, sondern an Kopf, Zahlenbereich und Kurszeile: Ein Container
+ * kann im Raster keine gemeinsamen Zeilen mit den Nachbarkarten teilen (`kpi-row` in globals.css). Diese Teile sind so breit
+ * wie die Karte ohne ihren Innenabstand (2,5 rem) – 15 rem Kartenbreite sind deshalb 12,5 rem im Container.
  *
  * Die ganze Karte führt weiter: Der Link umfasst Kopf, Zahl und Sätze und dehnt seine Klickfläche über die Karte (`after`).
  * Was darüber liegt und selbst bedienbar ist (Zeitraum-Knöpfe, Kurs mit Infofeld), steht außerhalb des Links (`extra`) –
@@ -310,34 +314,35 @@ export function KpiShell({
   const colors = KPI_ACCENT[accent];
   const head = (
     <>
-      <div className="flex items-start gap-2.5">
+      <div className="@container/kpi flex items-start gap-2.5">
         <span
           className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4"
           aria-hidden="true"
         >
           {icon}
         </span>
-        {/* Stehen drei oder vier Karten in einer Reihe, reserviert das Raster zwei Zeilen (`GRID_COLUMNS` in kpi-layout.ts). */}
+        {/* Stehen drei oder vier Karten in einer Reihe, teilen sie sich die Zeile des Kopfs (`kpi-row` in globals.css). */}
         <p data-slot="kpi-label" className="min-w-0 flex-1 pt-1 text-sm leading-snug font-semibold">
           {label}
         </p>
         {href && (
           <span
             aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/12 inset-ring inset-ring-white/15 transition-colors duration-200 group-hover/card:bg-white/25 motion-reduce:transition-none @max-[15rem]/kpi:hidden"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/12 inset-ring inset-ring-white/15 transition-colors duration-200 group-hover/card:bg-white/25 motion-reduce:transition-none @max-[12.5rem]/kpi:hidden"
           >
             <ArrowUpRightIcon className="size-4" />
           </span>
         )}
       </div>
-      {children}
+      {/* Zahl und Sätze in einer Hülle: In einer Reihe (`kpi-row`) ist sie die zweite gemeinsame Zeile. */}
+      <div className="@container/kpi">{children}</div>
     </>
   );
   return (
     <Card
       data-kpi={label}
       className={cn(
-        "@container/kpi relative isolate h-full gap-0 rounded-4xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
+        "relative isolate h-full gap-0 rounded-4xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
         "has-[[data-slot=kpi-link]:focus-visible]:ring-2 has-[[data-slot=kpi-link]:focus-visible]:ring-ring has-[[data-slot=kpi-link]:focus-visible]:ring-offset-2 has-[[data-slot=kpi-link]:focus-visible]:ring-offset-background",
         colors.card,
         href &&
@@ -360,12 +365,13 @@ export function KpiShell({
           <Link
             href={href}
             data-slot="kpi-link"
+            data-kpi-main=""
             className="block rounded-xl after:absolute after:inset-0 after:rounded-4xl after:content-[''] focus-visible:outline-hidden"
           >
             {head}
           </Link>
         ) : (
-          <div>{head}</div>
+          <div data-kpi-main="">{head}</div>
         )}
         {extra}
       </CardContent>
@@ -426,13 +432,17 @@ function QuoteArea({
         />
       </QuoteLink>
       <div
-        className={cn("mt-2 flex items-center justify-between gap-2", hero && "@bento/kpis:hidden")}
+        className={cn(
+          "@container/kpi mt-2 flex items-center justify-between gap-2",
+          hero && "@bento/kpis:hidden",
+        )}
       >
         <PeriodSwitch label={label} quote={quote} value={period.id} onChange={onPeriod} />
-        {/* In schmalen Karten entfällt die Beschriftung (sie würde zu „KW …“ abgeschnitten); die Knöpfe nennen den Zeitraum. */}
+        {/* In schmalen Karten (unter 17 rem) entfällt die Beschriftung (sie würde zu „KW …“ abgeschnitten); die Knöpfe nennen
+            den Zeitraum. */}
         <span
           aria-hidden="true"
-          className="truncate text-xs font-medium whitespace-nowrap text-white @max-[17rem]/kpi:hidden"
+          className="truncate text-xs font-medium whitespace-nowrap text-white @max-[14.5rem]/kpi:hidden"
         >
           {first?.label} – <span className="font-bold">jetzt</span>
         </span>
