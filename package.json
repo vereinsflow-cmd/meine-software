@@ -29,7 +29,8 @@
     "db:reset": "prisma migrate reset --force && prisma db seed",
     "db:studio": "prisma studio",
     "jobs:run": "tsx --conditions=react-server scripts/run-jobs.ts",
-    "admin:create": "tsx --conditions=react-server scripts/create-platform-admin.ts"
+    "admin:create": "tsx --conditions=react-server scripts/create-platform-admin.ts",
+    "admin:reset-2fa": "tsx --conditions=react-server scripts/reset-two-factor.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

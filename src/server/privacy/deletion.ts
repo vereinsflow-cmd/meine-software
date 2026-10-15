@@ -275,6 +275,11 @@ export async function executeDeletionRequest(
       // Rechnungen gehören dem Verein (Aufbewahrungspflichten) und bleiben; nur die Verweise auf das Konto werden gelöst.
       await tx.invoice.updateMany({ where: { createdById: user.id }, data: { createdById: null } });
       await tx.invoice.updateMany({ where: { paidById: user.id }, data: { paidById: null } });
+      // Anwesenheit: „erfasst von“ ist nur eine Herkunftsangabe – sie wird gelöst, die erfasste Anwesenheit bleibt.
+      await tx.eventAttendance.updateMany({
+        where: { recordedById: user.id },
+        data: { recordedById: null },
+      });
       // Wer über Beitrittsanträge entschieden hat, ist nur eine Herkunftsangabe – sie wird gelöst, die Anträge bleiben.
       await tx.membershipApplication.updateMany({
         where: { decidedById: user.id },

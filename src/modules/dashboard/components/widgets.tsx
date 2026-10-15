@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRightIcon,
+  AwardIcon,
   BellOffIcon,
   CakeIcon,
   CircleCheckBigIcon,
@@ -17,6 +18,7 @@ import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty as Empty } from "@/components/shared/compact-empty";
 import { ExpandableList } from "@/components/shared/expandable-list";
 import { TaskPriorityBadge, TaskStatusBadge, ToneBadge } from "@/components/shared/status-badge";
+import { yearsLabel } from "@/lib/anniversaries";
 import { auditActionLabel } from "@/lib/audit-labels";
 import {
   MONTH_NAMES,
@@ -718,6 +720,61 @@ export function Birthdays({
                   wird {b.turns} ·{" "}
                   <span className="whitespace-nowrap">
                     {formatDateShort(b.date)} ({inDaysLabel(b.inDays)})
+                  </span>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ExpandableList>
+      )}
+    </Widget>
+  );
+}
+
+/**
+ * Runde Mitgliedsjubiläen der nächsten 60 Tage (höchstens fünf) – aufgebaut wie „Geburtstage“: Datumsfläche, Name, Stufe und
+ * Tag. Die vollständige Liste eines Jahres (zum Drucken und Exportieren) steht unter „Ehrungen“.
+ */
+export function Anniversaries({
+  anniversaries,
+  size = DEFAULT_BLOCK_SIZE,
+}: {
+  anniversaries: NonNullable<DashboardData["anniversaries"]>;
+  size?: BlockSize;
+}) {
+  return (
+    <Widget
+      id="w-jubilaeen"
+      size={size}
+      title="Jubiläen"
+      icon={<AwardIcon />}
+      accent="blue"
+      description="Runde Mitgliedsjubiläen in den nächsten 60 Tagen"
+      more={{ href: "/mitglieder/ehrungen", label: "Alle Ehrungen" }}
+    >
+      {anniversaries.length === 0 ? (
+        <Empty icon={<AwardIcon />} accent="blue" title="Keine Jubiläen">
+          In den nächsten 60 Tagen hat niemand ein rundes Mitgliedsjubiläum.
+        </Empty>
+      ) : (
+        <ExpandableList className="divide-y" initial={initialRows(size, 3)} itemNoun="weitere">
+          {anniversaries.map((a) => (
+            <li
+              key={a.memberId}
+              className={cn("flex items-center gap-3 py-2.5 first:pt-0 last:pb-0", LIST_ROW)}
+            >
+              <DateTile value={a.date} accent="blue" />
+              <div className="grid min-w-0 gap-0.5">
+                <Link
+                  href={`/mitglieder/${a.memberId}`}
+                  className="text-base font-semibold underline-offset-4 hover:underline"
+                >
+                  {a.name}
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  {yearsLabel(a.years)} Mitglied ·{" "}
+                  <span className="whitespace-nowrap">
+                    {formatDateShort(a.date)} ({inDaysLabel(a.inDays)})
                   </span>
                 </span>
               </div>

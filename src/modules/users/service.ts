@@ -1,7 +1,8 @@
 import type { PermissionScope } from "@/generated/prisma/enums";
 import { recordAudit } from "@/server/audit/audit";
 import { issueInvitation } from "@/server/auth/invitations";
-import { forbidden, notFound } from "@/server/errors";
+import { getTwoFactorResetInfo, resetTwoFactor } from "@/server/auth/two-factor";
+import { badRequest, forbidden, notFound } from "@/server/errors";
 import { PERMISSIONS, isPermissionKey, type PermissionKey } from "@/server/permissions/catalog";
 import { assertCan, can } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
@@ -86,6 +87,8 @@ export interface ClubUser {
   lastLoginAt: Date | null;
   memberId: string | null;
   isSelf: boolean;
+  /** Zwei-Faktor-Anmeldung eingeschaltet? Nur für `users:manage` (sonst immer `false`). */
+  twoFactorEnabled: boolean;
 }
 
 export async function listClubUsers(ctx: TenantContext): Promise<ClubUser[]> {
@@ -94,7 +97,14 @@ export async function listClubUsers(ctx: TenantContext): Promise<ClubUser[]> {
   const rows = await ctx.db.clubMembership.findMany({
     include: {
       user: {
-        select: { id: true, firstName: true, lastName: true, email: true, lastLoginAt: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          lastLoginAt: true,
+          totpEnabledAt: true,
+        },
       },
       role: { select: { name: true } },
       member: { select: { id: true } },
@@ -113,6 +123,7 @@ export async function listClubUsers(ctx: TenantContext): Promise<ClubUser[]> {
     lastLoginAt: showLogin ? row.user.lastLoginAt : null,
     memberId: row.member?.id ?? null,
     isSelf: row.userId === ctx.userId,
+    twoFactorEnabled: showLogin && row.user.totpEnabledAt !== null,
   }));
 }
 
@@ -332,4 +343,54 @@ export async function removeUser(ctx: TenantContext, membershipId: string): Prom
       summary: `${membership.user.firstName} ${membership.user.lastName} wurde aus dem Verein entfernt (Konto-Zugang entzogen)`,
     });
   });
+}
+
+/**
+ * Setzt die Zwei-Faktor-Anmeldung einer Person zurück („Handy und Wiederherstellungscodes verloren“). Danach meldet sie
+ * sich nur mit dem Passwort an und richtet die Zwei-Faktor-Anmeldung neu ein; alle ihre Sitzungen enden, sie bekommt
+ * eine E-Mail.
+ *
+ * Regeln: Recht `users:manage`; nicht das eigene Konto (das geht im Profil mit Passwort und Code); nur Personen, deren
+ * Rechte man selbst vollständig hat. Das Konto gilt plattformweit – ist die Person auch in einem anderen Verein oder
+ * Plattform-Administrator, darf es nur der Betreiber (`npm run admin:reset-2fa`), nicht ein einzelner Verein.
+ */
+export async function resetUserTwoFactor(ctx: TenantContext, membershipId: string): Promise<void> {
+  const membership = await loadMembership(ctx, membershipId);
+  if (membership.userId === ctx.userId)
+    throw forbidden("Deine eigene Zwei-Faktor-Anmeldung verwaltest du unter „Mein Profil“.");
+  const current = await ctx.db.role.findFirstOrThrow({
+    where: { id: membership.roleId },
+    include: { permissions: true },
+  });
+  if (!grantsCoverRole(ctx, current)) throw forbidden("Diese Person hat mehr Rechte als du.");
+
+  const info = await getTwoFactorResetInfo(membership.userId, ctx.clubId);
+  const name = `${membership.user.firstName} ${membership.user.lastName}`;
+  // Erst „ist etwas eingerichtet?“, dann „nur der Betreiber“: Sonst verriete die Meldung bei JEDER Person, ob sie auch in
+  // einem anderen Verein oder Plattform-Administrator ist – eine Angabe, die dem Verein nicht zusteht. So erfährt er es nur
+  // dort, wo der Hinweis gebraucht wird.
+  if (!info.configured) throw badRequest(`${name} hat keine Zwei-Faktor-Anmeldung eingerichtet.`);
+  if (info.operatorOnly)
+    throw forbidden(
+      "Bei diesem Konto kann nur der Betreiber von VereinsFlow die Zwei-Faktor-Anmeldung zurücksetzen.",
+    );
+
+  // Zurücksetzen, Abmelden und der Eintrag im Vereinsprotokoll in EINER Transaktion; die E-Mail erst danach. Konto und
+  // Sitzungen sind plattformweit – deshalb schreibt `resetTwoFactor` den Eintrag (mit diesem Verein) selbst.
+  const actor = auditActor(ctx);
+  const result = await resetTwoFactor(membership.userId, {
+    by: `${ctx.user.firstName} ${ctx.user.lastName} (${ctx.club.name})`,
+    audit: (sessionsEnded) => ({
+      clubId: actor.clubId,
+      actorUserId: actor.userId,
+      actorType: "USER",
+      entityType: "ClubMembership",
+      entityId: membership.id,
+      summary: `Zwei-Faktor-Anmeldung von ${name} zurückgesetzt (${sessionsEnded === 1 ? "1 Gerät" : `${sessionsEnded} Geräte`} abgemeldet)`,
+      ipPrefix: actor.ipPrefix,
+      requestId: actor.requestId,
+    }),
+  });
+  // Inzwischen von jemand anderem zurückgesetzt (gleichzeitig geklickt): dieselbe Meldung wie oben.
+  if (!result) throw badRequest(`${name} hat keine Zwei-Faktor-Anmeldung eingerichtet.`);
 }

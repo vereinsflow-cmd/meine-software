@@ -78,6 +78,14 @@ export default async function EventsPage({
                 <AREA_ICON.kalender /> Kalender
               </Link>
             </Button>
+            {/* Auswertung der Anwesenheit – für alle, die Teilnehmerlisten verwalten (Abteilungsleiter: eigene Abteilungen) */}
+            {can(ctx, "events:manage_participants") && (
+              <Button asChild variant="outline">
+                <Link href="/veranstaltungen/anwesenheit">
+                  <AREA_ICON.auswertungen /> Anwesenheit
+                </Link>
+              </Button>
+            )}
           </>
         }
       />

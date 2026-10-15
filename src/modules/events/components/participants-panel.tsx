@@ -57,12 +57,14 @@ export function ParticipantsPanel({
   return (
     <div className="grid gap-4">
       {editable && candidates.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <NativeSelect
             aria-label="Mitglied hinzufügen"
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
-            className="w-auto min-w-56"
+            // Breite in Prozent bzw. fest statt „so breit wie der längste Name“: Ein sehr langer Name in der Liste machte die Seite
+            // am Handy sonst breiter als den Bildschirm. Am Handy füllt das Feld die Zeile neben „Anmelden“.
+            className="w-full min-w-0 flex-1 sm:w-64 sm:flex-none"
           >
             <option value="">Mitglied hinzufügen …</option>
             {candidates.map((c) => (

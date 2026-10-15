@@ -10,7 +10,7 @@ import { PageStack } from "@/components/shared/page-section";
 import { PrintButton } from "@/components/shared/print-button";
 import { clubLogoUrl } from "@/lib/club-logo";
 import { buildPosterPageStyle } from "@/lib/print";
-import { QrCode } from "@/modules/membership-applications/components/qr-code";
+import { QrCode } from "@/components/shared/qr-code";
 import { canManageApplications, getJoinLink } from "@/modules/membership-applications/service";
 import { requirePageContext } from "@/server/tenancy/context";
 

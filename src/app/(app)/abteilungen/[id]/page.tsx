@@ -37,6 +37,8 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   if (!department) notFound();
 
   const candidates = (department.members ?? []).map((m) => ({ id: m.id, name: m.name }));
+  // Auswertung der Anwesenheit je Gruppe – für alle, die die Teilnehmerlisten dieser Abteilung verwalten.
+  const canSeeAttendance = can(ctx, "events:manage_participants", { departmentIds: [id] });
   const addableMembers = department.canManageClubWide ? await listAddableMembers(ctx, id) : [];
 
   return (
@@ -157,14 +159,28 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
               <ul className="grid gap-5">
                 {department.groups.map((group) => (
                   <li key={group.id} className="grid gap-2 rounded-lg border p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-medium">{group.name}</h3>
+                    {/* Darf umbrechen: Am Handy passen Name, „Anwesenheit“ und „Bearbeiten“ nicht in eine Zeile – die Knöpfe
+                        rutschen dann unter den Namen, statt von der Karte abgeschnitten zu werden. */}
+                    <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                      <div className="min-w-0 flex-1 basis-40">
+                        <h3 className="font-medium break-words">{group.name}</h3>
                         {group.description && (
                           <p className="text-sm text-muted-foreground">{group.description}</p>
                         )}
                       </div>
-                      {department.canManage && <GroupDialog departmentId={id} group={group} />}
+                      <div className="flex flex-wrap items-center gap-1">
+                        {canSeeAttendance && (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link
+                              href={`/veranstaltungen/anwesenheit?gruppe=${group.id}`}
+                              aria-label={`Anwesenheit der Gruppe ${group.name}`}
+                            >
+                              <AREA_ICON.auswertungen /> Anwesenheit
+                            </Link>
+                          </Button>
+                        )}
+                        {department.canManage && <GroupDialog departmentId={id} group={group} />}
+                      </div>
                     </div>
                     {group.members.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Keine Mitglieder.</p>

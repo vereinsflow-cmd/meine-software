@@ -7,6 +7,7 @@ import {
   EllipsisIcon,
   MailPlusIcon,
   RefreshCwIcon,
+  ShieldOffIcon,
   TrashIcon,
   UserCheckIcon,
   XIcon,
@@ -37,6 +38,7 @@ import {
   inviteUserAction,
   removeUserAction,
   resendInvitationAction,
+  resetUserTwoFactorAction,
   revokeInvitationAction,
   setUserStatusAction,
 } from "../actions";
@@ -175,11 +177,17 @@ export function UserActions({
   name,
   status,
   isSelf,
+  twoFactorEnabled,
 }: {
   membershipId: string;
   name: string;
   status: "ACTIVE" | "SUSPENDED";
   isSelf: boolean;
+  /**
+   * Zwei-Faktor-Anmeldung eingeschaltet? `false` blendet „Zwei-Faktor-Anmeldung zurücksetzen“ aus. Ohne Angabe steht der
+   * Punkt immer da – der Server meldet dann, wenn es nichts zurückzusetzen gibt.
+   */
+  twoFactorEnabled?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -208,6 +216,21 @@ export function UserActions({
           {status === "ACTIVE" ? <BanIcon /> : <UserCheckIcon />}{" "}
           {status === "ACTIVE" ? "Zugang sperren" : "Zugang freigeben"}
         </DropdownMenuItem>
+        {twoFactorEnabled !== false && (
+          <ConfirmAction
+            trigger={
+              <DropdownMenuItem onSelect={(event) => event.preventDefault()}>
+                <ShieldOffIcon /> Zwei-Faktor-Anmeldung zurücksetzen
+              </DropdownMenuItem>
+            }
+            title="Zwei-Faktor-Anmeldung zurücksetzen?"
+            description={`Nur, wenn ${name} das Handy und die Wiederherstellungscodes verloren hat. Danach genügt zur Anmeldung das Passwort, ${name} wird auf allen Geräten abgemeldet und per E-Mail informiert. Die Zwei-Faktor-Anmeldung lässt sich danach im Profil neu einrichten.`}
+            confirmLabel="Zurücksetzen"
+            action={() => resetUserTwoFactorAction({ id: membershipId })}
+            successMessage="Die Zwei-Faktor-Anmeldung wurde zurückgesetzt."
+            onSuccess={() => router.refresh()}
+          />
+        )}
         <DropdownMenuSeparator />
         <ConfirmAction
           destructive

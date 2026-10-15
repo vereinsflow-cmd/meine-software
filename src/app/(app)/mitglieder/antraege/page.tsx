@@ -39,7 +39,7 @@ import {
   ResendInvitationButton,
   SetupJoinLinkButton,
 } from "@/modules/membership-applications/components/join-controls";
-import { QrCode } from "@/modules/membership-applications/components/qr-code";
+import { QrCode } from "@/components/shared/qr-code";
 import {
   canManageApplications,
   getJoinLink,

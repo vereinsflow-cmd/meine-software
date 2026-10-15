@@ -152,7 +152,7 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("region", { name: "Auswertungen" })).toContainText("Aufgaben");
 
     // Schnellzugriffe bleiben in jedem Reiter erreichbar (über den Reitern)
-    await expect(page.getByRole("link", { name: "Neue Veranstaltung" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Neue Veranstaltung", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Neues Mitglied" })).toBeVisible();
     // Der Hinweis auf unbesetzte Schichten steht über den Reitern und bleibt bei jedem Reiter sichtbar
     await expect(page.getByText("Helferschichten sind noch nicht besetzt")).toBeVisible();
@@ -196,7 +196,10 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("link", { name: /^Mitglieder \d+/ })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Geburtstage" })).toHaveCount(0);
     await expect(page.getByText("Helferschichten sind noch nicht besetzt")).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Neue Veranstaltung" })).toHaveCount(0);
+    // exact: Benachrichtigungen heißen „Neue Veranstaltung: …“ (andere Tests veröffentlichen Termine) – gemeint ist der Knopf.
+    await expect(page.getByRole("link", { name: "Neue Veranstaltung", exact: true })).toHaveCount(
+      0,
+    );
     await selectTab(page, "Aufgaben & Aktivität");
     await expect(page.getByRole("region", { name: "Letzte Aktivitäten" })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Auswertungen" })).toBeVisible(); // Aufgabenauswertung

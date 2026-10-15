@@ -145,6 +145,13 @@ describe("Support-Meldungen: erstellen", () => {
     await expect(
       prisma.supportTicket.create({ data: { ...base, pagePath: "//boese.example" } }),
     ).rejects.toThrow();
+    // "/\host" und "/<Tab>/host" öffnen im Browser eine fremde Seite (bis Migration 20261014120200 durchgelassen).
+    for (const pagePath of ["/\\boese.example", "/\t/boese.example", "/hilfe\n"]) {
+      await expect(
+        prisma.supportTicket.create({ data: { ...base, pagePath } }),
+        JSON.stringify(pagePath),
+      ).rejects.toThrow(/SupportTicket_path_chk/);
+    }
     await expect(
       prisma.supportTicket.create({ data: { ...base, subject: "   " } }),
     ).rejects.toThrow();

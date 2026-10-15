@@ -158,3 +158,77 @@ export function notificationEmail(input: {
     footer: `Benachrichtigung von ${input.clubName}. Du kannst E-Mail-Benachrichtigungen in deinem Profil abschalten.`,
   });
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Zwei-Faktor-Anmeldung: Jede Änderung meldet sich bei der Person – so fällt auf, wenn jemand anderes am Konto war.
+// ---------------------------------------------------------------------------------------------------------------------
+
+const NOT_YOU =
+  "Warst du das nicht? Ändere bitte sofort dein Passwort und melde dich beim Vereinsadministrator.";
+
+export function twoFactorEnabledEmail(input: { to: string }): MailMessage {
+  return render("Zwei-Faktor-Anmeldung eingeschaltet", input.to, {
+    title: "Zwei-Faktor-Anmeldung eingeschaltet",
+    paragraphs: [
+      "Für dein VereinsFlow-Konto ist jetzt die Zwei-Faktor-Anmeldung eingeschaltet. Bei jeder Anmeldung fragen wir nach dem Passwort zusätzlich nach dem Code aus deiner Authenticator-App.",
+      "Bewahre deine Wiederherstellungscodes gut auf. Mit ihnen kommst du in dein Konto, falls du dein Handy verlierst. Alle anderen Geräte wurden abgemeldet.",
+    ],
+    footer: NOT_YOU,
+  });
+}
+
+export function twoFactorDisabledEmail(input: { to: string }): MailMessage {
+  return render("Zwei-Faktor-Anmeldung ausgeschaltet", input.to, {
+    title: "Zwei-Faktor-Anmeldung ausgeschaltet",
+    paragraphs: [
+      "Für dein VereinsFlow-Konto wurde die Zwei-Faktor-Anmeldung ausgeschaltet. Ab jetzt genügt zur Anmeldung wieder dein Passwort.",
+      "Deine bisherigen Wiederherstellungscodes gelten nicht mehr.",
+    ],
+    footer: NOT_YOU,
+  });
+}
+
+export function twoFactorRecoveryUsedEmail(input: { to: string; remaining: number }): MailMessage {
+  return render("Anmeldung mit Wiederherstellungscode", input.to, {
+    title: "Anmeldung mit Wiederherstellungscode",
+    paragraphs: [
+      "Soeben hat sich jemand mit einem deiner Wiederherstellungscodes bei VereinsFlow angemeldet. Dieser Code gilt jetzt nicht mehr.",
+      input.remaining === 1
+        ? "Du hast noch 1 Wiederherstellungscode."
+        : `Du hast noch ${input.remaining} Wiederherstellungscodes.`,
+      "Hast du dein Handy verloren? Erstelle unter „Mein Profil“ neue Codes oder schalte die Zwei-Faktor-Anmeldung aus und richte sie mit dem neuen Handy wieder ein.",
+    ],
+    footer: NOT_YOU,
+  });
+}
+
+export function twoFactorRecoveryRenewedEmail(input: { to: string }): MailMessage {
+  return render("Neue Wiederherstellungscodes erstellt", input.to, {
+    title: "Neue Wiederherstellungscodes erstellt",
+    paragraphs: [
+      "Für dein VereinsFlow-Konto wurden neue Wiederherstellungscodes erstellt. Die bisherigen Codes gelten nicht mehr.",
+    ],
+    footer: NOT_YOU,
+  });
+}
+
+export function twoFactorLockedEmail(input: { to: string }): MailMessage {
+  return render("Mehrere falsche Codes bei der Anmeldung", input.to, {
+    title: "Mehrere falsche Codes bei der Anmeldung",
+    paragraphs: [
+      "Bei der Anmeldung in dein VereinsFlow-Konto wurde mehrmals ein falscher Code aus der Authenticator-App eingegeben. Die Anmeldung ist deshalb für eine Weile gesperrt.",
+      "Das Passwort war dabei richtig. Warst du das nicht, kennt vermutlich jemand dein Passwort: Ändere es bitte bald unter „Mein Profil“ oder über „Passwort vergessen?“.",
+    ],
+  });
+}
+
+export function twoFactorResetEmail(input: { to: string; by: string }): MailMessage {
+  return render("Zwei-Faktor-Anmeldung zurückgesetzt", input.to, {
+    title: "Zwei-Faktor-Anmeldung zurückgesetzt",
+    paragraphs: [
+      `Die Zwei-Faktor-Anmeldung deines VereinsFlow-Kontos wurde durch ${input.by} zurückgesetzt. Du wurdest auf allen Geräten abgemeldet.`,
+      "Du meldest dich jetzt nur mit deinem Passwort an. Richte die Zwei-Faktor-Anmeldung danach bitte unter „Mein Profil“ neu ein.",
+    ],
+    footer: "Hast du das nicht veranlasst? Melde dich bitte sofort beim Vereinsadministrator.",
+  });
+}

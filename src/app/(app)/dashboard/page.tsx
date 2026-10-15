@@ -26,6 +26,7 @@ import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
 import { OnboardingCard } from "@/modules/dashboard/components/onboarding-card";
 import { CardGrid, Group } from "@/modules/dashboard/components/layout";
 import {
+  Anniversaries,
   Birthdays,
   LatestNotifications,
   MyShifts,
@@ -82,7 +83,17 @@ export default async function DashboardPage({
     getDashboardLayout(ctx).catch(() => null),
     getOnboarding(ctx),
   ]);
-  const { members, events, shifts, tasks, notifications, birthdays, activity, payments } = data;
+  const {
+    members,
+    events,
+    shifts,
+    tasks,
+    notifications,
+    birthdays,
+    anniversaries,
+    activity,
+    payments,
+  } = data;
 
   // Einmal berechnen, von mehreren Reitern verwendet. Das `catch` verhindert eine „unbehandelte Ablehnung“, falls kein
   // Reiter die Daten abholt; die Reiter selbst bekommen einen Fehler weiterhin zu sehen.
@@ -185,6 +196,17 @@ export default async function DashboardPage({
         ? {
             geburtstage: (
               <Birthdays birthdays={birthdays} size={sizeOf("mitglieder", "geburtstage")} />
+            ),
+          }
+        : {}),
+      // Runde Mitgliedsjubiläen (Ehrungen) – nur, wer Mitglieder vereinsweit oder der eigenen Abteilungen sieht.
+      ...(anniversaries
+        ? {
+            jubilaeen: (
+              <Anniversaries
+                anniversaries={anniversaries}
+                size={sizeOf("mitglieder", "jubilaeen")}
+              />
             ),
           }
         : {}),

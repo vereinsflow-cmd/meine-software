@@ -17,6 +17,20 @@ describe("Beschriftung von Protokolleinträgen", () => {
     expect(auditActionLabel("zukunft.neu")).toBe("zukunft.neu");
   });
 
+  it("Zwei-Faktor-Anmeldung und Anwesenheit sind vorab beschriftet (Ziffern im Namen werden mitgefunden)", () => {
+    expect(auditActionLabel("auth.2fa_enabled")).toBe("Zwei-Faktor-Anmeldung eingeschaltet");
+    expect(auditActionLabel("user.2fa_reset")).toBe("Zwei-Faktor-Anmeldung zurückgesetzt");
+    expect(auditActionLabel("event.attendance_saved")).toBe("Anwesenheit erfasst");
+    for (const action of [
+      "auth.2fa_disabled",
+      "auth.2fa_recovery_used",
+      "auth.2fa_recovery_renewed",
+      "auth.2fa_locked",
+      "event.attendance_exported",
+    ])
+      expect(auditActionLabel(action), action).not.toBe(action);
+  });
+
   it("jede Aktion gehört zu genau einem Themenbereich des Filters", () => {
     for (const action of Object.keys(AUDIT_ACTION_LABEL)) {
       const hits = AUDIT_MODULES.filter((m) =>
@@ -44,7 +58,7 @@ describe("Beschriftung von Protokolleinträgen", () => {
     for (const file of files) {
       for (const match of fs
         .readFileSync(file, "utf8")
-        .matchAll(/\baction:\s*"([a-z_]+\.[a-z_.]+)"/g))
+        .matchAll(/\baction:\s*"([a-z_]+\.[a-z0-9_.]+)"/g))
         used.set(match[1]!, path.relative(root, file));
     }
     expect(used.size).toBeGreaterThan(40); // die Suche funktioniert überhaupt

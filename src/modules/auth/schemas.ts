@@ -88,3 +88,35 @@ export const changePasswordSchema = z
     message: "Die Passwörter stimmen nicht überein.",
   });
 export type ChangePasswordInput = z.input<typeof changePasswordSchema>;
+
+/** Leerzeichen und Bindestriche sind beim Abtippen egal („123 456“, „7KQ2M-9XD4T“). */
+const compactCode = (value: string) => value.replace(/[\s-]/g, "");
+
+/** 6 Ziffern aus der Authenticator-App. */
+export const totpCodeSchema = z
+  .string()
+  .transform(compactCode)
+  .pipe(
+    z
+      .string()
+      .min(1, { message: "Bitte gib den Code aus deiner App ein.", abort: true })
+      .regex(/^\d{6}$/, "Der Code aus der App hat 6 Ziffern."),
+  );
+
+/** Code aus der App ODER Wiederherstellungscode (10 Zeichen, z. B. 7KQ2M-9XD4T). Genau prüft der Server. */
+export const secondFactorCodeSchema = z
+  .string()
+  .max(40, "Der Code ist zu lang.")
+  .transform(compactCode)
+  .pipe(
+    z
+      .string()
+      .min(1, { message: "Bitte gib den Code ein.", abort: true })
+      .regex(
+        /^(\d{6}|[0-9A-Za-z]{10})$/,
+        "Bitte gib den 6-stelligen Code aus der App oder einen Wiederherstellungscode (10 Zeichen) ein.",
+      ),
+  );
+
+export const secondFactorSchema = z.object({ code: secondFactorCodeSchema });
+export type SecondFactorInput = z.input<typeof secondFactorSchema>;

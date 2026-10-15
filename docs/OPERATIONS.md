@@ -13,7 +13,7 @@ Anleitung, um VereinsFlow produktiv zu betreiben. Für die lokale Entwicklung ge
 Internet ──► Reverse-Proxy (TLS, Größenlimit) ──► VereinsFlow (Next.js, Port 3000) ──► PostgreSQL 18
                                                      │
                                                      ├──► Dateiablage (Verzeichnis / Volume)
-                                                     └──► SMTP-Server (Einladungen, Passwort-Reset, Erinnerungen)
+                                                     └──► SMTP-Server (Einladungen, Passwort-Reset, Erinnerungen, Sicherheitshinweise)
 Cron (alle 15 Minuten) ──► POST /api/cron/run
 ```
 
@@ -41,6 +41,13 @@ Alle Einstellungen sind Umgebungsvariablen (Vorlage: [`.env.example`](../.env.ex
 | `MAX_UPLOAD_MB`          | nein (10)   | Größe je Datei                                                                                                       |
 | `CLUB_STORAGE_QUOTA_MB`  | nein (1024) | Speicherplatz für Dokumente je Verein                                                                                |
 | `SUPPORT_EMAIL`          | nein        | Technischer Support des Betreibers: erscheint unter „Hilfe & Support“ (für Fragen, die der Verein nicht klären kann) |
+
+> **`APP_SECRET` nie mehr ändern, sobald jemand die Zwei-Faktor-Anmeldung nutzt.** Aus `APP_SECRET` werden die Schlüssel abgeleitet,
+> mit denen die Zwei-Faktor-Geheimnisse verschlüsselt und die Wiederherstellungscodes geprüft werden. Ein neuer Wert macht beides
+> unbrauchbar: Niemand mit Zwei-Faktor kann sich dann noch anmelden, bis jedes Konto einzeln zurückgesetzt ist (siehe
+> [unten](#zwei-faktor-anmeldung-zurücksetzen)). Sichere `APP_SECRET` deshalb zusammen mit der Datenbank – getrennt von ihr aufbewahrt,
+> aber genauso sorgfältig. Ist der Wert in falsche Hände geraten, ist ein Wechsel trotzdem richtig: Dann alle Zwei-Faktor-Anmeldungen
+> zurücksetzen und die Personen bitten, sie neu einzurichten.
 
 **Der Server startet nicht**, wenn `APP_SECRET`/`CRON_SECRET` noch Platzhalter (`dev-only`, `change-me`) enthalten, `APP_URL` kein `https://` hat
 oder `MAIL_TRANSPORT` nicht `smtp` ist. Die Meldung im Protokoll nennt jeden Fehler. `SEED_PASSWORD` gehört **nicht** in die Produktion.
@@ -82,6 +89,21 @@ docker compose -f docker-compose.prod.yml --env-file .env.production run --rm to
 Der Befehl legt das Konto an und gibt **einmalig einen Link** aus (24 Stunden gültig), über den du dein Passwort festlegst. Der Link wird
 nicht per E-Mail verschickt – so klappt der Start auch, bevor der Mailserver eingerichtet ist. Behandle die Ausgabe wie ein Passwort.
 Der Befehl ist wiederholbar: Für ein bestehendes Konto erzeugt er einen neuen Link (z. B. nach vergessenem Passwort vor dem Mailversand).
+
+### Zwei-Faktor-Anmeldung zurücksetzen
+
+Hat jemand Handy **und** Wiederherstellungscodes verloren, setzt normalerweise der Vereinsadministrator die Zwei-Faktor-Anmeldung
+zurück („Benutzer und Rollen“ → „⋯“ → „Zwei-Faktor-Anmeldung zurücksetzen“). Für Plattform-Administratoren und Personen, die in
+mehreren Vereinen sind, darf das nur der Betreiber:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production run --rm tools \
+  npm run admin:reset-2fa -- --email person@example.org
+```
+
+Danach meldet sich die Person nur mit ihrem Passwort an, alle ihre Sitzungen sind beendet, sie bekommt eine E-Mail, und das Protokoll
+vermerkt „Zwei-Faktor-Anmeldung zurückgesetzt“ (Akteur: System). **Prüfe vorher auf anderem Weg** (Telefon, persönlich), dass die
+Anfrage wirklich von der Person kommt – wer das Zurücksetzen erschleicht, braucht nur noch das Passwort.
 
 ## Reverse-Proxy
 
@@ -150,6 +172,8 @@ Gesichert werden müssen **zwei** Dinge, möglichst zeitnah zueinander:
 
 Hinweise:
 
+- **`APP_SECRET` mit aufbewahren** (getrennt von den Sicherungen, z. B. im Passwort-Manager des Betreibers): Ohne den alten Wert
+  lässt sich nach einer Wiederherstellung niemand mit Zwei-Faktor-Anmeldung mehr anmelden (siehe [Konfiguration](#konfiguration)).
 - **Sicherung wiederherstellen testen** – eine ungeprüfte Sicherung ist keine. Wiederherstellung: `pg_restore -d vereinsflow --clean --if-exists sicherung.dump`.
 - Ein Datenbank-Eintrag ohne Datei führt beim Download zu „nicht gefunden“ (kein Serverfehler); eine Datei ohne Eintrag ist harmlos und wird nicht ausgeliefert.
 - **Datenschutz:** Gelöschte Daten leben in Sicherungen bis zu deren Ablauf weiter. Begrenze die Aufbewahrungsdauer der Sicherungen (empfohlen ≤ 30 Tage),
@@ -180,6 +204,7 @@ Node-Abhängigkeiten (`npm audit`) aktuell.
 - Datenbank nicht ins Netz veröffentlichen (im Compose gibt es keinen veröffentlichten Port); eigene Datenbank-Rolle mit minimalen Rechten für die Laufzeit
   (`DATABASE_URL`), Besitzer-Rolle nur für Migrationen (`MIGRATION_DATABASE_URL`).
 - Festplattenverschlüsselung, automatische Sicherheitsupdates, Firewall (nur 80/443 offen), SSH nur mit Schlüssel.
+- Serveruhr automatisch stellen lassen (NTP): Zwei-Faktor-Codes gelten nur 30 Sekunden (plus/minus einen Schritt).
 - Dateiablage nicht für andere Dienste lesbar; Container läuft als unprivilegierter Benutzer (im Dockerfile so gebaut).
 
 ## Fehlersuche
@@ -190,5 +215,7 @@ Node-Abhängigkeiten (`npm audit`) aktuell.
 | Upload scheitert mit 413                                   | Proxy-Limit (`client_max_body_size` / `max_size`) kleiner als `MAX_UPLOAD_MB`                                              |
 | Alle Anmeldungen „zu viele Versuche“                       | `TRUST_PROXY` fehlt: alle Anfragen erscheinen als eine IP. `TRUST_PROXY=true` setzen (Proxy muss `X-Forwarded-For` setzen) |
 | Keine E-Mails / Erinnerungen                               | Cron läuft nicht? `MAIL_TRANSPORT=smtp` und `SMTP_*` korrekt? Benachrichtigungen mit `emailStatus=FAILED` prüfen           |
+| Zwei-Faktor-Codes werden immer abgelehnt                   | Serveruhr geht falsch (Codes gelten nur 30 Sekunden): Zeitabgleich einschalten, z. B. `timedatectl set-ntp true`           |
+| Nach Wechsel von `APP_SECRET` kein Zwei-Faktor mehr        | Alten Wert zurückholen; sonst jedes Konto zurücksetzen ([Anleitung](#zwei-faktor-anmeldung-zurücksetzen))                  |
 | Sonderzeichen „→“, „Ş“ kaputt (nur Windows-Entwicklung)    | Datenbank nicht in UTF-8 angelegt – siehe [ADR-0008](adr/0008-utf8-ueberall.md)                                            |
 | `EPERM`/Symlink-Fehler beim Docker-Build unter Windows     | Standalone-Build braucht Symlink-Rechte; im Container (Linux) tritt das nicht auf                                          |
