@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { defineConfig, devices } from "@playwright/test";
-import { E2E_BASE_URL, E2E_DATABASE, E2E_PORT } from "./tests/e2e/environment";
+import {
+  E2E_BASE_URL,
+  E2E_DATABASE,
+  E2E_DEFAULT_DATABASE,
+  E2E_PORT,
+} from "./tests/e2e/environment";
 
 /**
  * Ende-zu-Ende-Tests im Browser.
@@ -23,7 +28,9 @@ e2eUrl.pathname = `/${E2E_DATABASE}`;
 
 export default defineConfig({
   testDir: "tests/e2e",
-  outputDir: "test-results",
+  // Playwright leert diesen Ordner zu Beginn jedes Laufs – ein paralleler Lauf (E2E_DATABASE) bekommt deshalb einen eigenen.
+  outputDir:
+    E2E_DATABASE === E2E_DEFAULT_DATABASE ? "test-results" : `.local/test-results-${E2E_DATABASE}`,
   // Alle Tests teilen sich eine Datenbank und laufen deshalb nacheinander.
   workers: 1,
   fullyParallel: false,

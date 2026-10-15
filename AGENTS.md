@@ -18,4 +18,5 @@ E2E_PORT=3400 E2E_DATABASE=vf_e2e_zwei npx playwright test cron.spec.ts
 
 - Port frei wählen, am besten 3400–3499 (belegt: 3000/3001 Entwicklung, 3100 Standard-E2E, 3200 Website-Bilder, 3300 Rauchtest). Ein schon belegter Port wird nicht mitbenutzt – der Lauf bricht dann mit einer Meldung ab.
 - Der Datenbankname muss mit `vf_e2e` beginnen (Kleinbuchstaben, Ziffern, `_`). Die Extra-Datenbank wird nach dem Lauf automatisch gelöscht; nach einem abgebrochenen Lauf räumt der nächste Lauf mit demselben Namen sie mit auf.
+- Screenshots und Spuren eines solchen Laufs liegen in `.local/test-results-<Datenbank>` statt in `test-results`.
 - Jeder parallele Lauf braucht seinen eigenen Ordner (Worktree): Im selben Ordner teilen sich die Läufe `.next-e2e`, und Next.js verweigert den zweiten Testserver.
