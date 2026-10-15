@@ -19,6 +19,7 @@ import {
 } from "./ledger";
 import { overdueClose } from "./closing";
 import { monthLabel } from "./ledger-format";
+import { getDonationsPage } from "@/modules/donations/service";
 import { feeRunDue } from "@/modules/fees/run";
 import { whoPays } from "@/modules/fees/service";
 import { getOpenPayments, unbookedPaidInvoiceCount, type OpenPayments } from "./service";
@@ -44,6 +45,8 @@ export interface DueItem {
   actionLabel: string;
   /** Unter „Demnächst“ statt oben (nichts zu tun, nur zur Kenntnis). */
   later?: boolean;
+  /** Reine Info (z. B. „Bescheid gültig bis …“) – zählt nicht als Punkt „für dich“. */
+  info?: boolean;
 }
 
 export interface DepartmentSpending {
@@ -62,89 +65,84 @@ export interface FinanceOverview {
   year: YearSummary | null;
   /** Kumulierter Überschuss je Monat (für den Kurs der Kennzahl). */
   surplusPoints: number[];
-  /** `count`: Spenden-Buchungen ohne Storno; `donors`: davon mit Namen, je Spender einmal. */
-  donations: { totalCents: number; count: number; donors: number; cumulative: number[] };
+  /**
+   * Spenden des Jahres – dieselben Zahlen wie die Seite „Spenden“ (`getDonationsPage`): alle nicht stornierten Spenden
+   * (Geld, Sach, Aufwand) und Spenden-Buchungen ohne Spender. `donors`: verschiedene Spender; `withoutEntryCents`: davon
+   * Sach- und Aufwandsspenden, die nicht im Kassenbuch stehen („Überschuss“ zählt nur Gebuchtes).
+   */
+  donations: {
+    totalCents: number;
+    count: number;
+    donors: number;
+    cumulative: number[];
+    withoutEntryCents: number;
+  };
   departments: DepartmentSpending[];
   payments: OpenPayments;
   due: DueItem[];
 }
 
-async function donationsAndDepartments(
-  ctx: TenantContext,
-  year: number,
-): Promise<Pick<FinanceOverview, "donations" | "departments">> {
+/** Einnahmen und Ausgaben je Abteilung im Jahr (Storno zählt dorthin, wohin das Original gehörte). */
+async function departmentSpending(ctx: TenantContext, year: number): Promise<DepartmentSpending[]> {
   const from = new Date(Date.UTC(year, 0, 1));
   const to = new Date(Date.UTC(year, 11, 31));
   const lines = await ctx.db.ledgerLine.findMany({
     where: {
       bookingDate: { gte: from, lte: to },
       sphere: { not: "NEUTRAL" },
-      OR: [{ category: { systemKey: "DONATIONS" } }, { departmentId: { not: null } }],
+      departmentId: { not: null },
     },
     select: {
       amountCents: true,
-      bookingDate: true,
       departmentId: true,
-      category: { select: { systemKey: true } },
       department: { select: { name: true } },
-      entryId: true,
-      entry: {
-        select: {
-          kind: true,
-          counterpartyName: true,
-          counterpartyMemberId: true,
-          reversedBy: { select: { id: true } },
-        },
-      },
+      entry: { select: { kind: true } },
     },
   });
-  const monthly = Array.from({ length: 12 }, () => 0);
-  const donors = new Set<string>();
-  const donationEntries = new Set<string>();
-  let donationTotal = 0;
   const departments = new Map<string, DepartmentSpending>();
   for (const line of lines) {
+    if (!line.departmentId || !line.department) continue;
     const direction = line.entry.kind === "REVERSAL" ? -line.amountCents : line.amountCents;
-    if (line.category.systemKey === "DONATIONS") {
-      donationTotal += line.amountCents;
-      monthly[line.bookingDate.getUTCMonth()]! += line.amountCents;
-      const donor =
-        line.entry.counterpartyMemberId ?? line.entry.counterpartyName?.trim().toLowerCase();
-      // Stornierte Spenden zählen weder als Spende noch als Spender.
-      if (line.entry.kind !== "REVERSAL" && !line.entry.reversedBy) {
-        donationEntries.add(line.entryId);
-        if (donor) donors.add(donor);
-      }
-    }
-    if (line.departmentId && line.department) {
-      const entry = departments.get(line.departmentId) ?? {
-        departmentId: line.departmentId,
-        name: line.department.name,
-        expenseCents: 0,
-        incomeCents: 0,
-      };
-      if (direction > 0) entry.incomeCents += line.amountCents;
-      else entry.expenseCents -= line.amountCents;
-      departments.set(line.departmentId, entry);
-    }
+    const entry = departments.get(line.departmentId) ?? {
+      departmentId: line.departmentId,
+      name: line.department.name,
+      expenseCents: 0,
+      incomeCents: 0,
+    };
+    if (direction > 0) entry.incomeCents += line.amountCents;
+    else entry.expenseCents -= line.amountCents;
+    departments.set(line.departmentId, entry);
   }
-  const lastMonth =
-    todayCalendarDate().getUTCFullYear() === year ? todayCalendarDate().getUTCMonth() : 11;
-  const cumulative: number[] = [];
-  monthly.slice(0, lastMonth + 1).reduce((sum, value) => {
-    cumulative.push(sum + value);
-    return sum + value;
-  }, 0);
+  return [...departments.values()]
+    .filter((d) => d.expenseCents > 0 || d.incomeCents > 0)
+    .sort((a, b) => b.expenseCents - a.expenseCents || a.name.localeCompare(b.name, "de"));
+}
+
+/** Violette Karte und Punkte zum Bescheid: aus `getDonationsPage` (eine Quelle mit der Seite „Spenden“). */
+async function donationOverview(
+  ctx: TenantContext,
+  year: number,
+): Promise<{ donations: FinanceOverview["donations"]; due: DueItem[] }> {
+  const page = await getDonationsPage(ctx, year);
+  const { kpi, tax } = page;
+  const due: DueItem[] = [];
+  // Nur der Bescheid – mitten im Jahr keine weiteren Spenden-Punkte auf der Übersicht (kein Rauschen). Dringlichkeit auf
+  // der Skala der Übersicht (10 = überfällige Rechnung, 20 = Abschluss, 40 = Belege).
+  if (tax.state === "EXPIRED" || tax.state === "EXPIRING") {
+    const item = page.due.find(
+      (d) => d.key === (tax.state === "EXPIRED" ? "tax-expired" : "tax-expiring"),
+    );
+    if (item) due.push({ ...item, urgency: tax.state === "EXPIRED" ? 15 : 45 });
+  }
   return {
     donations: {
-      totalCents: donationTotal,
-      count: donationEntries.size,
-      donors: donors.size,
-      cumulative,
+      totalCents: kpi.totalCents,
+      count: kpi.count,
+      donors: kpi.donorCount,
+      cumulative: kpi.cumulative,
+      withoutEntryCents: kpi.byKind.IN_KIND + kpi.byKind.EXPENSE_WAIVER,
     },
-    departments: [...departments.values()]
-      .filter((d) => d.expenseCents > 0 || d.incomeCents > 0)
-      .sort((a, b) => b.expenseCents - a.expenseCents || a.name.localeCompare(b.name, "de")),
+    due,
   };
 }
 
@@ -261,23 +259,32 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
       balancePoints: [],
       year: null,
       surplusPoints: [],
-      donations: { totalCents: 0, count: 0, donors: 0, cumulative: [] },
+      donations: { totalCents: 0, count: 0, donors: 0, cumulative: [], withoutEntryCents: 0 },
       departments: [],
       payments,
       due: due.sort((a, b) => a.urgency - b.urgency),
     };
   }
 
-  const [accounts, balancePoints, year, extra, missingReceipts, unbookedInvoices] =
-    await Promise.all([
-      listAccounts(ctx),
-      balanceHistory(ctx, 12),
-      yearSummary(ctx, thisYear),
-      donationsAndDepartments(ctx, thisYear),
-      missingReceiptCount(ctx),
-      // Seit Beginn des Kassenbuchs – auch Zahlungen aus abgeschlossenen Monaten (die bucht „Ins Kassenbuch“ im offenen Zeitraum).
-      unbookedPaidInvoiceCount(ctx, setup.ledgerStartDate),
-    ]);
+  const [
+    accounts,
+    balancePoints,
+    year,
+    departments,
+    donationInfo,
+    missingReceipts,
+    unbookedInvoices,
+  ] = await Promise.all([
+    listAccounts(ctx),
+    balanceHistory(ctx, 12),
+    yearSummary(ctx, thisYear),
+    departmentSpending(ctx, thisYear),
+    donationOverview(ctx, thisYear),
+    missingReceiptCount(ctx),
+    // Seit Beginn des Kassenbuchs – auch Zahlungen aus abgeschlossenen Monaten (die bucht „Ins Kassenbuch“ im offenen Zeitraum).
+    unbookedPaidInvoiceCount(ctx, setup.ledgerStartDate),
+  ]);
+  due.push(...donationInfo.due);
   if (unbookedInvoices > 0)
     due.push({
       key: "invoices-unbooked",
@@ -329,7 +336,8 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
     balancePoints,
     year,
     surplusPoints,
-    ...extra,
+    donations: donationInfo.donations,
+    departments,
     payments,
     due: due.sort((a, b) => a.urgency - b.urgency),
   };

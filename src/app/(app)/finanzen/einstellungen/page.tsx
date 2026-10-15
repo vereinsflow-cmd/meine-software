@@ -15,8 +15,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageSection, PageStack } from "@/components/shared/page-section";
 import { TableCard } from "@/components/shared/table-card";
-import { formatEuroFromCents } from "@/lib/dates";
+import { calendarDateToInputValue, formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import {
+  TaxSettingsForm,
+  TaxSettingsSummary,
+} from "@/modules/donations/components/tax-settings-form";
+import { getTaxSettings } from "@/modules/donations/service";
 import { canFinance } from "@/modules/finance/access";
 import { HIDDEN_SYSTEM_KEYS, type SystemCategoryKey } from "@/modules/finance/default-categories";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
@@ -62,12 +67,13 @@ export default async function FinanceSettingsPage() {
   const ctx = await requirePageContext();
   if (!canFinance(ctx, "finance:read")) return <NoAccess what="die Finanzen" />;
   const canManage = canFinance(ctx, "finance:manage");
-  const [setup, accounts, categories, counts, feeSettings] = await Promise.all([
+  const [setup, accounts, categories, counts, feeSettings, taxSettings] = await Promise.all([
     getLedgerSetup(ctx),
     listAccounts(ctx, { includeArchived: true }),
     listCategories(ctx),
     financeTabCounts(ctx),
     getFeeSettings(ctx),
+    getTaxSettings(ctx),
   ]);
 
   if (!setup) {
@@ -280,6 +286,28 @@ export default async function FinanceSettingsPage() {
           </CardContent>
         </Card>
       </PageSection>
+
+      {/* Sprungziel „#finanzamt“ (Spenden-Seite, „Das steht an“) – Abstand für die feste Kopfleiste. */}
+      <div id="finanzamt" className="max-w-3xl scroll-mt-24">
+        <PageSection
+          id="finanzamt-titel"
+          title="Finanzamt"
+          description="Für Zuwendungsbestätigungen und den Beleg bis 300 € – genau so, wie es im Bescheid des Finanzamts steht."
+        >
+          <Card>
+            <CardContent>
+              {canManage ? (
+                <TaxSettingsForm
+                  settings={taxSettings}
+                  today={calendarDateToInputValue(todayCalendarDate())}
+                />
+              ) : (
+                <TaxSettingsSummary settings={taxSettings} />
+              )}
+            </CardContent>
+          </Card>
+        </PageSection>
+      </div>
 
       <PageSection
         id="bereiche-titel"

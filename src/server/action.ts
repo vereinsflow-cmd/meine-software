@@ -57,6 +57,8 @@ const FINANCE_CODES = [
   "FEE_RUN_LOCKED",
   "CHARGE_LOCKED",
   "CHARGE_INVALID",
+  "DONATION_INVALID",
+  "DONATION_LOCKED",
 ] as const;
 const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"]+)`);
 
@@ -94,6 +96,11 @@ export function mapDatabaseError(error: unknown): AppError | null {
           /reversalOf/.test(JSON.stringify(error.meta))
         )
           return conflict("Diese Buchung ist bereits storniert.");
+        if (
+          String(error.meta?.modelName ?? "") === "Donation" &&
+          /ledgerLineId/.test(JSON.stringify(error.meta))
+        )
+          return conflict("Diese Buchung ist schon als Spende gekennzeichnet.");
         return conflict("Ein Eintrag mit diesen Daten existiert bereits.");
       case "P2003":
         return conflict(

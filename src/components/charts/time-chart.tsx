@@ -35,7 +35,6 @@ const BAR_GAP = 2;
 /** Bis zu so vielen Balken mit Wert steht jeder Wert direkt am Balken – darüber nur der aktuelle und der höchste. */
 const LABEL_ALL_UP_TO = 8;
 
-const colorOf = seriesColor;
 /** Monate („Sep 26“) und Quartale („Q3 26“): oben Monat bzw. Quartal, darunter das Jahr – nur dort, wo es wechselt. */
 const TWO_LINE_KEY = /^\d{4}-(\d{2}|Q\d)$/;
 
@@ -55,6 +54,10 @@ function barPath(x: number, width: number, top: number, baseline: number): strin
  * Werte. Mit der Tastatur geht man mit den Pfeiltasten (Pos1/Ende springen) durch die Zeiträume – dasselbe wird
  * Screenreadern angesagt. Das Diagramm selbst ist für Screenreader ausgeblendet; seine Zusammenfassung steht im Namen der
  * Gruppe, und die Tabellenansicht (im Panel) liefert alle Werte.
+ *
+ * `stacked` (nur Balken): Die Reihen stehen je Zeitraum übereinander (Reihe 0 unten), die Skala reicht bis zur größten
+ * Summe, und über jedem Balken steht seine Summe (`totalLabel`) – so viele, wie sich nicht überdecken. Mit `axis={false}`
+ * entfallen Raster und Werte der y-Achse (die Summen stehen ja am Balken); `colors` ersetzt die Reihenfarben.
  */
 export function TimeChart({
   type,
@@ -65,6 +68,10 @@ export function TimeChart({
   values,
   unit,
   heights = [240, 300],
+  stacked = false,
+  axis = true,
+  colors,
+  totalLabel,
 }: {
   type: TimeChartType;
   title: string;
@@ -76,11 +83,21 @@ export function TimeChart({
   unit: ChartUnit;
   /** Höhe in px: schmal (unter 520 px Breite) und breit – das Dashboard stellt sie nach der eigenen Kartengröße ein. */
   heights?: readonly [number, number];
+  /** Balken je Zeitraum übereinander statt nebeneinander (nur `type="bar"`). */
+  stacked?: boolean;
+  /** Raster und Werte der y-Achse zeigen (Vorgabe). Ohne Achse bleibt nur die Grundlinie. */
+  axis?: boolean;
+  /** Eigene Reihenfarben (CSS-Werte) statt der festen Reihenfolge der Palette. */
+  colors?: readonly string[];
+  /** Beschriftung der Summe über einem gestapelten Balken; `narrow` = unter 520 px Breite. */
+  totalLabel?: (value: number, narrow: boolean) => string;
 }) {
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const [active, setActive] = useState<number | null>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const hatchId = (seriesIndex: number) => `${uid}-laufend-${seriesIndex}`;
+  const colorOf = (seriesIndex: number) => colors?.[seriesIndex] ?? seriesColor(seriesIndex);
+  const stack = stacked && type === "bar";
 
   const count = buckets.length;
   const twoLines = count > 0 && buckets.every((bucket) => TWO_LINE_KEY.test(bucket.key));
@@ -88,17 +105,24 @@ export function TimeChart({
     twoLines ? (bucket.label.split(" ")[0] ?? bucket.label) : bucket.label;
   const yearOf = (bucket: BucketLabel) => bucket.key.slice(0, 4);
   const marginBottom = twoLines ? BOTTOM.twoLines : BOTTOM.oneLine;
-  const height = width < 520 ? heights[0] : heights[1];
-  const max = Math.max(0, ...values.flat());
+  const narrow = width < 520;
+  const height = narrow ? heights[0] : heights[1];
+  // Gestapelt zählt die Summe je Zeitraum (sie bestimmt die Höhe des Balkens).
+  const totals = buckets.map((_, index) =>
+    values.reduce((sum, row) => sum + Math.max(0, row[index] ?? 0), 0),
+  );
+  const max = Math.max(0, ...(stack ? totals : values.flat()));
   const scale = niceScale(max, 4, unit.decimals === 0);
   // So viele Nachkommastellen, wie die Teilstriche brauchen (0,25 darf nicht als „0,3“ erscheinen).
   const tickDecimals =
     [0, 1, 2].find((d) => scale.ticks.every((t) => Math.abs(t - Number(t.toFixed(d))) < 1e-9)) ?? 2;
   const tickText = scale.ticks.map((tick) => formatNumber(tick, tickDecimals));
-  const left = Math.max(...tickText.map((text) => text.length)) * 7.6 + 16;
-  const plotWidth = Math.max(0, width - left - MARGIN.right);
+  const left = axis ? Math.max(...tickText.map((text) => text.length)) * 7.6 + 16 : 4;
+  const marginRight = axis ? MARGIN.right : 4;
+  const plotWidth = Math.max(0, width - left - marginRight);
   const baseline = height - marginBottom;
-  const y = linearScale([0, scale.max], [baseline, MARGIN.top]);
+  // Ohne Achse reicht die Skala genau bis zum größten Balken (die Werte stehen am Balken, nicht an Teilstrichen).
+  const y = linearScale([0, axis ? scale.max : Math.max(max, 1e-9)], [baseline, MARGIN.top]);
   const band = count > 0 ? plotWidth / count : 0;
   const centers = buckets.map((_, index) => left + band * (index + 0.5));
   const stride = labelStride(
@@ -117,7 +141,33 @@ export function TimeChart({
 
   // Direkte Werte (nur bei einer Reihe): bei wenigen Balken jeder Wert, sonst der aktuelle und der höchste.
   const directLabels = new Set<number>();
-  if (single && count > 0) {
+  // Gestapelt: die Summe über jedem Balken – zuerst der höchste und der laufende, dann von links nach rechts jede, die
+  // keine schon gesetzte überdeckt (nur nebeneinander UND auf gleicher Höhe stören sie sich).
+  const totalText = (value: number) =>
+    totalLabel ? totalLabel(value, narrow) : formatNumber(value, unit.decimals);
+  const totalLabels = new Set<number>();
+  if (stack && count > 0) {
+    const charWidth = narrow ? 6.4 : 7.2;
+    const placed: { x: number; y: number; half: number }[] = [];
+    const peak = totals.indexOf(Math.max(...totals));
+    const order = [peak, count - 1, ...buckets.map((_, index) => index)];
+    for (const index of order) {
+      if (totalLabels.has(index) || totals[index]! <= 0) continue;
+      const box = {
+        x: centers[index]!,
+        y: y(totals[index]!),
+        half: (totalText(totals[index]!).length * charWidth) / 2 + 2,
+      };
+      const clash = placed.some(
+        (other) =>
+          Math.abs(other.x - box.x) < other.half + box.half && Math.abs(other.y - box.y) < 14,
+      );
+      if (clash) continue;
+      placed.push(box);
+      totalLabels.add(index);
+    }
+  }
+  if (single && count > 0 && !stack) {
     const row = values[0]!;
     const filled = row.flatMap((value, index) => (value > 0 ? [index] : []));
     if (type === "bar" && filled.length <= LABEL_ALL_UP_TO && band >= 22) {
@@ -140,12 +190,15 @@ export function TimeChart({
       }
     }),
   );
+  const peakTotal = totals.indexOf(Math.max(0, ...totals));
   const summary =
     `${TYPE_LABEL[type]}: ${title}, ${rangeLabel}. ` +
     `${buckets[0]?.fullLabel ?? ""} bis ${buckets[count - 1]?.fullLabel ?? ""}. ` +
-    (max > 0
-      ? `Höchster Wert: ${formatWithUnit(values[peakSeries]?.[peakIndex] ?? 0, unit)} (${buckets[peakIndex]?.fullLabel}). `
-      : "Alle Werte sind 0. ");
+    (max <= 0
+      ? "Alle Werte sind 0. "
+      : stack
+        ? `Höchste Summe: ${formatWithUnit(totals[peakTotal] ?? 0, unit)} (${buckets[peakTotal]?.fullLabel}). `
+        : `Höchster Wert: ${formatWithUnit(values[peakSeries]?.[peakIndex] ?? 0, unit)} (${buckets[peakIndex]?.fullLabel}). `);
 
   const describe = (index: number) => {
     const bucket = buckets[index]!;
@@ -153,7 +206,8 @@ export function TimeChart({
       (s, seriesIndex) =>
         `${single ? "" : `${s.label}: `}${formatWithUnit(values[seriesIndex]![index]!, unit)}`,
     );
-    return `${bucket.fullLabel}${bucket.partial ? " (laufend)" : ""}: ${parts.join(", ")}`;
+    const total = stack ? `zusammen ${formatWithUnit(totals[index]!, unit)}, davon ` : "";
+    return `${bucket.fullLabel}${bucket.partial ? " (laufend)" : ""}: ${total}${parts.join(", ")}`;
   };
 
   function pick(event: PointerEvent<SVGSVGElement>) {
@@ -222,28 +276,40 @@ export function TimeChart({
             />
           )}
 
-          {/* Raster und y-Achse: solide Haarlinien, zurückhaltend; die Grundlinie ist einen Tick kräftiger. */}
-          {scale.ticks.map((tick, index) => (
-            <g key={tick}>
-              <line
-                x1={left}
-                x2={width - MARGIN.right}
-                y1={y(tick)}
-                y2={y(tick)}
-                stroke={tick === 0 ? "var(--chart-axis)" : "var(--chart-grid)"}
-                strokeWidth={1}
-              />
-              <text
-                x={left - 8}
-                y={y(tick)}
-                dy="0.32em"
-                textAnchor="end"
-                className="fill-muted-foreground text-xs tabular-nums"
-              >
-                {tickText[index]}
-              </text>
-            </g>
-          ))}
+          {/* Raster und y-Achse: solide Haarlinien, zurückhaltend; die Grundlinie ist einen Tick kräftiger. Ohne Achse
+              bleibt nur die Grundlinie. */}
+          {axis ? (
+            scale.ticks.map((tick, index) => (
+              <g key={tick}>
+                <line
+                  x1={left}
+                  x2={width - marginRight}
+                  y1={y(tick)}
+                  y2={y(tick)}
+                  stroke={tick === 0 ? "var(--chart-axis)" : "var(--chart-grid)"}
+                  strokeWidth={1}
+                />
+                <text
+                  x={left - 8}
+                  y={y(tick)}
+                  dy="0.32em"
+                  textAnchor="end"
+                  className="fill-muted-foreground text-xs tabular-nums"
+                >
+                  {tickText[index]}
+                </text>
+              </g>
+            ))
+          ) : (
+            <line
+              x1={left}
+              x2={width - marginRight}
+              y1={baseline}
+              y2={baseline}
+              stroke="var(--chart-axis)"
+              strokeWidth={1}
+            />
+          )}
 
           {/* Schraffur für den laufenden Zeitraum: kräftige Streifen in der Reihenfarbe – „noch nicht fertig“, aber nicht blass. */}
           <defs>
@@ -294,7 +360,69 @@ export function TimeChart({
 
           {/* Balken: oben 4 px gerundet, unten bündig. Der laufende Zeitraum ist schraffiert mit kräftigem Rand; eine gemessene
               0 ist ein flacher Strich auf der Grundlinie (sonst sähe „0“ aus wie „keine Daten“). */}
+          {/* Gestapelt: ein Balken je Zeitraum, Reihe 0 unten; nur das oberste Stück ist oben gerundet, zwischen den Stücken
+              trennt 1 px in der Kartenfarbe. */}
+          {stack &&
+            buckets.map((bucket, index) => {
+              const barWidth = Math.max(2, Math.min(BAR_MAX.single, band * 0.7));
+              const x = centers[index]! - barWidth / 2;
+              if (totals[index]! <= 0) {
+                return (
+                  <rect
+                    key={bucket.key}
+                    x={x}
+                    y={baseline - 2}
+                    width={barWidth}
+                    height={2}
+                    rx={1}
+                    fill={colorOf(0)}
+                    opacity={0.3}
+                  />
+                );
+              }
+              const topSeries = values.findLastIndex((row) => (row[index] ?? 0) > 0);
+              let base = 0;
+              return (
+                <g key={bucket.key}>
+                  {values.map((row, seriesIndex) => {
+                    const value = Math.max(0, row[index] ?? 0);
+                    if (value <= 0) return null;
+                    const bottom = y(base);
+                    base += value;
+                    const top = y(base);
+                    const fill = bucket.partial
+                      ? `url(#${hatchId(seriesIndex)})`
+                      : colorOf(seriesIndex);
+                    const stroke = bucket.partial ? colorOf(seriesIndex) : undefined;
+                    // Unter dem nächsten Stück bleibt 1 px frei (die Trennlinie), das oberste Stück ist oben rund.
+                    const gap = seriesIndex === topSeries ? 0 : Math.min(1, (bottom - top) / 2);
+                    return seriesIndex === topSeries ? (
+                      <path
+                        key={seriesIndex}
+                        d={barPath(x, barWidth, top, bottom)}
+                        fill={fill}
+                        stroke={stroke}
+                        strokeWidth={stroke ? 1.25 : undefined}
+                      />
+                    ) : (
+                      <rect
+                        key={seriesIndex}
+                        x={x}
+                        y={top + gap}
+                        width={barWidth}
+                        height={Math.max(0.5, bottom - top - gap)}
+                        fill={fill}
+                        stroke={stroke}
+                        strokeWidth={stroke ? 1.25 : undefined}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            })}
+
           {type === "bar" &&
+            !stack &&
             series.map((_, seriesIndex) => {
               const barMax = single ? BAR_MAX.single : BAR_MAX.multi;
               const group = Math.min(
@@ -415,6 +543,23 @@ export function TimeChart({
               {formatNumber(values[0]![index]!, unit.decimals)}
             </text>
           ))}
+
+          {/* Summen über den gestapelten Balken: siehe `totalLabels`. */}
+          {[...totalLabels].map((index) => (
+            <text
+              key={`summe-${buckets[index]!.key}`}
+              x={centers[index]}
+              y={y(totals[index]!) - 6}
+              textAnchor="middle"
+              className={cn(
+                "font-medium tabular-nums",
+                narrow ? "text-2xs" : "text-xs",
+                index === active ? "fill-foreground" : "fill-muted-foreground",
+              )}
+            >
+              {totalText(totals[index]!)}
+            </text>
+          ))}
         </svg>
       )}
 
@@ -425,13 +570,24 @@ export function TimeChart({
           containerWidth={width}
           title={activeBucket.fullLabel}
           note={activeBucket.partial ? "laufend, noch nicht abgeschlossen" : undefined}
-          rows={series.map((s, seriesIndex) => ({
-            color: colorOf(seriesIndex),
-            label: single ? "" : s.label,
-            value: single
-              ? formatWithUnit(values[seriesIndex]![active]!, unit)
-              : formatNumber(values[seriesIndex]![active]!, unit.decimals),
-          }))}
+          rows={[
+            ...series.map((s, seriesIndex) => ({
+              color: colorOf(seriesIndex),
+              label: single ? "" : s.label,
+              value: single
+                ? formatWithUnit(values[seriesIndex]![active]!, unit)
+                : formatNumber(values[seriesIndex]![active]!, unit.decimals),
+            })),
+            ...(stack && !single
+              ? [
+                  {
+                    color: "var(--chart-axis)",
+                    label: "zusammen",
+                    value: formatNumber(totals[active]!, unit.decimals),
+                  },
+                ]
+              : []),
+          ]}
         />
       )}
 

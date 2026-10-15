@@ -486,6 +486,9 @@ model Club {
   charges                Charge[]
   chargeLines            ChargeLine[]
   chargeCoverages        ChargeCoverage[]
+  donors                 Donor[]
+  donations              Donation[]
+  donationAttachments    DonationAttachment[]
   cashCounts             CashCount[]
   folders                DocumentFolder[]
   invitations            Invitation[]
@@ -645,6 +648,8 @@ model Member {
   charges                Charge[]                @relation("ChargeMember")
   chargesPaid            Charge[]                @relation("ChargePayer")
   chargeCoverages        ChargeCoverage[]
+  /// Als Spender (Name und Anschrift kommen aus dem Mitglied, siehe Donor).
+  donor                  Donor?
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -674,6 +679,8 @@ model Department {
   ledgerLines            LedgerLine[]
   feeTypes               FeeType[]
   chargeLines            ChargeLine[]
+  /// Spenden mit dieser Abteilung als Zweck.
+  donations              Donation[]
 
   @@unique([clubId, id])
   @@unique([clubId, name])
@@ -841,6 +848,8 @@ model Event {
   messages      Message[]
   /// Buchungszeilen dieser Veranstaltung (Ergebnis z. B. des Sommerfests).
   ledgerLines   LedgerLine[]
+  /// Spenden mit dieser Veranstaltung als Zweck.
+  donations     Donation[]
   /// Erfasste Anwesenheit (wer war da, entschuldigt, unentschuldigt).
   attendances   EventAttendance[]
 
@@ -1179,14 +1188,16 @@ model Document {
   createdAt    DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime       @updatedAt @db.Timestamptz(3)
 
-  club              Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  folder            DocumentFolder?    @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
-  event             Event?             @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
-  member            Member?            @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
-  task              Task?              @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
+  club                Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  folder              DocumentFolder?      @relation(fields: [clubId, folderId], references: [clubId, id], onDelete: Restrict)
+  event               Event?               @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
+  member              Member?              @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+  task                Task?                @relation(fields: [clubId, taskId], references: [clubId, id], onDelete: Cascade)
   /// Ist das Dokument eine Rechnung, stehen Betrag und Zahlungsstand hier.
-  invoice           Invoice?
-  ledgerAttachments LedgerAttachment[]
+  invoice             Invoice?
+  ledgerAttachments   LedgerAttachment[]
+  /// Nachweis einer Spende (Bewertung einer Sachspende, Abrechnung und Verzicht einer Aufwandsspende).
+  donationAttachments DonationAttachment[]
 
   @@unique([clubId, id])
   @@index([clubId, folderId])
@@ -1230,23 +1241,39 @@ model Invoice {
 
 /// Grundeinstellungen der Finanzen je Verein (1:1). Wird beim Einrichten des Kassenbuchs angelegt.
 model FinanceSettings {
-  id                      String       @id @default(uuid(7))
-  clubId                  String       @unique
+  id                       String         @id @default(uuid(7))
+  clubId                   String         @unique
   /// Ab diesem Tag führt der Verein das Kassenbuch in VereinsFlow; die Anfangsbestände tragen dieses Datum.
-  ledgerStartDate         DateTime     @db.Date
+  ledgerStartDate          DateTime       @db.Date
   /// Bis einschließlich zu diesem Tag ist abgeschlossen (festgeschrieben). Nur der Monatsabschluss setzt es – und nur nach vorn.
-  closedThrough           DateTime?    @db.Date
+  closedThrough            DateTime?      @db.Date
   /// Beiträge: Rhythmus des Beitragslaufs, Fälligkeit (Tag im ersten Monat), anteilige Berechnung, Altersregel.
-  feeInterval             FeeInterval  @default(QUARTERLY)
-  dueDay                  Int          @default(15)
-  proRataEntry            ProRataEntry @default(DAY)
-  proRataExit             ProRataExit  @default(DAY)
-  ageRule                 AgeRule      @default(EXACT_DAY)
-  missingBirthDateAsAdult Boolean      @default(true)
-  minDebitCents           Int          @default(500)
-  updatedById             String?
-  createdAt               DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt               DateTime     @updatedAt @db.Timestamptz(3)
+  feeInterval              FeeInterval    @default(QUARTERLY)
+  dueDay                   Int            @default(15)
+  proRataEntry             ProRataEntry   @default(DAY)
+  proRataExit              ProRataExit    @default(DAY)
+  ageRule                  AgeRule        @default(EXACT_DAY)
+  missingBirthDateAsAdult  Boolean        @default(true)
+  minDebitCents            Int            @default(500)
+  // --- Finanzamt (Spenden, Zuwendungsbestätigungen) ---------------------------------------------
+  /// Finanzamt nur mit Ort, so wie es im Satz „des Finanzamtes …“ steht: „Musterstadt“.
+  taxOffice                String?
+  /// Steuernummer des Vereins wie im Bescheid: „12/345/67890“.
+  taxNumber                String?
+  exemptionKind            ExemptionKind?
+  /// Datum des Bescheids (Freistellungsbescheid, Anlage KSt-Bescheid oder § 60a-Feststellung).
+  exemptionDate            DateTime?      @db.Date
+  /// „für den letzten Veranlagungszeitraum …“ – nur bei Freistellungsbescheid/Anlage.
+  exemptionLastYear        Int?
+  /// Begünstigte Zwecke wie im Bescheid, passend hinter „Förderung“: „des Sports“.
+  taxPurposes              String?
+  /// Nur § 60a: Zwecke passend hinter „Wir fördern nach unserer Satzung …“ (Akkusativ): „den Sport“.
+  taxPurposesStatute       String?
+  /// Mitgliedsbeiträge steuerlich abziehbar? Bei Sportvereinen nie (§ 10b Abs. 1 Satz 8 EStG) – Standard nein.
+  membershipFeesDeductible Boolean        @default(false)
+  updatedById              String?
+  createdAt                DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime       @updatedAt @db.Timestamptz(3)
 
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
@@ -1386,6 +1413,8 @@ model LedgerLine {
   department Department?     @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: Restrict)
   event      Event?          @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Restrict)
   invoice    Invoice?        @relation(fields: [clubId, invoiceId], references: [clubId, id], onDelete: Restrict)
+  /// Geldspende zu dieser Zeile (Kategorie Spenden) – höchstens eine.
+  donation   Donation?
 
   @@unique([clubId, id])
   @@unique([clubId, entryId, position])
@@ -1865,4 +1894,195 @@ model ChargeCoverage {
   @@index([clubId, chargeLineId])
   /// Abdeckungen, die einen Zeitraum berühren (Beitragslauf für den ganzen Verein).
   @@index([clubId, coversTo])
+}
+
+// ----------------------------------------------------------------------------
+// Finanzen: Spenden (Etappe 15, docs/adr/0013) – Aufzeichnungen nach § 50 Abs. 7 EStDV neben dem Kassenbuch
+// ----------------------------------------------------------------------------
+
+/// Art der Spende: Geld (immer mit Buchung), Sachspende, Verzicht auf Aufwandsersatz (beide ohne Buchung).
+enum DonationKind {
+  MONEY
+  IN_KIND
+  EXPENSE_WAIVER
+}
+
+/// Spender: Person (auch jedes Mitglied), Firma, Stiftung oder anderer Verein.
+enum DonorKind {
+  PERSON
+  COMPANY
+  ORGANIZATION
+}
+
+/// Wunsch des Spenders zur Zuwendungsbestätigung. AUTO = wie üblich (nötig ab 300 €, bar, Sach, Aufwand).
+enum DonationReceiptWish {
+  AUTO
+  WANTED
+  NOT_WANTED
+}
+
+/// Wie der Spender gezahlt hat (nur Geld) – entscheidet über den vereinfachten Nachweis bis 300 € (§ 50 Abs. 4 EStDV),
+/// nicht das Konto der Buchung. Vorgabe aus der Kontoart (Bank → TRANSFER, Barkasse → CASH, sonst OTHER), änderbar.
+enum DonationPaymentMethod {
+  /// Überweisung, Lastschrift oder Bareinzahlung des Spenders bei einer Bank (Spender hat einen Bankbeleg)
+  TRANSFER
+  /// bar übergeben (auch wenn der Verein das Geld danach selbst zur Bank bringt)
+  CASH
+  /// PayPal und Ähnliches – vorsichtshalber nie „nicht nötig“
+  OTHER
+}
+
+/// Herkunft einer Sachspende (Muster 034123 – nach Angabe des Spenders).
+enum InKindOrigin {
+  /// Betriebsvermögen (Entnahmewert + USt)
+  BUSINESS
+  /// Privatvermögen (gemeiner Wert, Unterlagen nötig)
+  PRIVATE
+  /// keine Angaben trotz Aufforderung
+  UNKNOWN
+}
+
+/// Grundlage des Erstattungsanspruchs bei einer Aufwandsspende (BMF 25.11.2014 Nr. 2).
+enum WaiverBasis {
+  /// Satzung bzw. Vereinsordnung auf Grundlage der Satzung (z. B. Reisekostenordnung)
+  STATUTE
+  /// Vorstandsbeschluss, zu dem die Satzung ermächtigt
+  BOARD_DECISION
+  /// schriftlicher Vertrag vor der Tätigkeit
+  CONTRACT
+}
+
+/// Art des Bescheids für Zuwendungsbestätigungen (§ 63 Abs. 5 AO).
+enum ExemptionKind {
+  /// Freistellungsbescheid (5 Jahre)
+  EXEMPTION_NOTICE
+  /// Anlage zum Körperschaftsteuerbescheid (5 Jahre)
+  KST_ANNEX
+  /// Feststellung nach § 60a AO (3 Jahre, nur solange es keinen der beiden anderen gibt)
+  FINDING_60A
+}
+
+/// Spender: ein Mitglied (Name und Anschrift kommen aus dem Mitglied – eine Quelle) oder eine andere Person, Firma,
+/// Stiftung mit eigener Anschrift. Änderbar und protokolliert; Bestätigungen speichern Name und Anschrift als Momentaufnahme.
+/// Gesperrt (Art. 18 DSGVO): keine neuen Spenden und Bestätigungen, die Aufzeichnungen bleiben bis zum Fristende. Beim
+/// Anonymisieren eines Mitglieds behält der gesperrte Spender Name und Anschrift als Momentaufnahme (§ 50 Abs. 7 EStDV).
+model Donor {
+  id               String    @id @default(uuid(7))
+  clubId           String
+  kind             DonorKind @default(PERSON)
+  memberId         String?
+  /// Nur ohne Mitglied (oder gesperrt): „Autohaus Brinkmann GmbH“, „Erika Muster“ – so, wie es auf der Bestätigung steht.
+  name             String?
+  street           String?
+  postalCode       String?
+  city             String?
+  /// ISO-Ländercode, leer = Deutschland.
+  country          String?
+  restrictedAt     DateTime? @db.Timestamptz(3)
+  restrictedReason String?
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  createdById      String?
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+  updatedById      String?
+
+  club      Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  member    Member?    @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: NoAction)
+  donations Donation[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, memberId])
+  @@index([clubId, name])
+}
+
+/// Spende (Aufzeichnung nach § 50 Abs. 7 EStDV). Geld: genau eine Zeile im Kassenbuch (Kategorie Spenden); Betrag, Tag,
+/// Abteilung und Veranstaltung setzt die Datenbank aus der Zeile und hält sie fest. Sach- und Aufwandsspende: ohne Buchung,
+/// mit Nachweisen. Ohne Spender = Spendendose. Storniert: Geld über das Storno der Buchung (berechnet), sonst `voidedAt`.
+/// Gesperrt, solange eine geltende Zuwendungsbestätigung sie enthält (Teil 2).
+model Donation {
+  id                 String                 @id @default(uuid(7))
+  clubId             String
+  kind               DonationKind
+  /// Leer = ohne Namen (Spendendose, Sammlung) – dann ist `anonymousLabel` Pflicht.
+  donorId            String?
+  anonymousLabel     String?
+  /// Nur Geld: die Zeile im Kassenbuch.
+  ledgerLineId       String?
+  /// Tag der Zuwendung (Geld: Buchungstag = Gutschrift bzw. Übergabe der Barspende; Sach: Übergabe; Aufwand: Zugang
+  /// der Verzichtserklärung).
+  receivedOn         DateTime               @db.Date
+  amountCents        Int
+  /// Nur Geld: Wie der Spender gezahlt hat (Pflicht bei Geld, sonst leer) – Grundlage für „nicht nötig“.
+  paymentMethod      DonationPaymentMethod?
+  /// Zweck: Abteilung ODER Veranstaltung, dazu optional ein Text; nur Text = anderer fester Zweck („Vereinsheim“);
+  /// alles leer = frei verwendbar. Bei Geld setzt die Datenbank Abteilung/Veranstaltung aus der Zeile und hält sie fest.
+  departmentId       String?
+  eventId            String?
+  purposeText        String?
+  receiptWish        DonationReceiptWish    @default(AUTO)
+  // --- Sachspende ---------------------------------------------------------------------------------
+  /// Genaue Bezeichnung mit Alter, Zustand, Kaufpreis (steht so auf der Bestätigung).
+  itemDescription    String?
+  inKindOrigin       InKindOrigin?
+  /// „Geeignete Unterlagen, die zur Wertermittlung gedient haben, … liegen vor.“
+  valuationDocs      Boolean                @default(false)
+  // --- Aufwandsspende -----------------------------------------------------------------------------
+  /// Wofür der Aufwand entstand („Fahrten zum Auswärtsspiel am 12.06., 180 km × 0,30 €“).
+  activityText       String?
+  waiverBasis        WaiverBasis?
+  /// Anspruch eingeräumt am (vor Beginn der Tätigkeit).
+  claimGrantedOn     DateTime?              @db.Date
+  /// Tätigkeit von/bis: Der Anspruch muss VOR Beginn der Tätigkeit eingeräumt sein, der Verzicht kommt NACH ihr.
+  activityFrom       DateTime?              @db.Date
+  activityTo         DateTime?              @db.Date
+  claimDueOn         DateTime?              @db.Date
+  /// Regelmäßige (monatliche) Tätigkeit – dann darf der Verzicht bis zu einem Jahr nach Fälligkeit kommen.
+  regularActivity    Boolean                @default(false)
+  /// Bestätigt: Anspruch stand vorher fest, war nicht an den Verzicht gebunden, Verein hätte zahlen können – Grundlage
+  /// des bestätigten Werts (§ 50 Abs. 7 Satz 3 EStDV).
+  claimConfirmedAt   DateTime?              @db.Timestamptz(3)
+  claimConfirmedById String?
+  // ------------------------------------------------------------------------------------------------
+  note               String?
+  voidedAt           DateTime?              @db.Timestamptz(3)
+  voidedById         String?
+  voidReason         String?
+  createdAt          DateTime               @default(now()) @db.Timestamptz(3)
+  createdById        String
+  updatedAt          DateTime               @updatedAt @db.Timestamptz(3)
+  updatedById        String?
+
+  club        Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  donor       Donor?               @relation(fields: [clubId, donorId], references: [clubId, id], onDelete: NoAction)
+  line        LedgerLine?          @relation(fields: [clubId, ledgerLineId], references: [clubId, id], onDelete: NoAction)
+  department  Department?          @relation(fields: [clubId, departmentId], references: [clubId, id], onDelete: NoAction)
+  event       Event?               @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: NoAction)
+  attachments DonationAttachment[]
+
+  @@unique([clubId, id])
+  @@unique([clubId, ledgerLineId])
+  @@index([clubId, receivedOn])
+  @@index([clubId, donorId, receivedOn])
+  @@index([clubId, departmentId])
+  @@index([clubId, eventId])
+}
+
+/// Nachweis einer Spende (Rechnung/Gutachten zur Bewertung, Abrechnung und Verzichtserklärung, Beschluss) – Datei
+/// (Dokument „Nur Finanzen“) oder kurzer Vermerk. Dateien werden 10 Jahre aufbewahrt (§ 50 Abs. 7 EStDV, § 147 AO).
+model DonationAttachment {
+  id           String   @id @default(uuid(7))
+  clubId       String
+  donationId   String
+  documentId   String?
+  /// Vermerk statt Datei („Eigenbeleg: Fahrtenbuch liegt beim Kassenwart“).
+  note         String?
+  attachedAt   DateTime @default(now()) @db.Timestamptz(3)
+  attachedById String?
+
+  club     Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  donation Donation  @relation(fields: [clubId, donationId], references: [clubId, id], onDelete: NoAction)
+  document Document? @relation(fields: [clubId, documentId], references: [clubId, id], onDelete: NoAction)
+
+  @@unique([clubId, id])
+  @@unique([clubId, donationId, documentId])
+  @@index([clubId, documentId])
 }

@@ -20,19 +20,25 @@ export function TimeTable({
   series,
   values,
   unit,
+  periodLabel = "Zeitraum",
+  format,
 }: {
   caption: string;
   buckets: BucketLabel[];
   series: SeriesInfo[];
   values: number[][];
   unit: ChartUnit;
+  /** Überschrift der ersten Spalte (z. B. „Monat“). */
+  periodLabel?: string;
+  /** Eigene Darstellung der Werte (z. B. Beträge immer mit zwei Nachkommastellen). */
+  format?: (value: number) => string;
 }) {
   return (
     <Table>
       <TableCaption className="sr-only">{caption}</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead scope="col">Zeitraum</TableHead>
+          <TableHead scope="col">{periodLabel}</TableHead>
           {series.map((s) => (
             <TableHead key={s.id} scope="col" className="text-right">
               {s.label}
@@ -49,7 +55,9 @@ export function TimeTable({
             </TableCell>
             {series.map((s, seriesIndex) => (
               <TableCell key={s.id} className="text-right tabular-nums">
-                {formatNumber(values[seriesIndex]![index]!, unit.decimals)}
+                {format
+                  ? format(values[seriesIndex]![index]!)
+                  : formatNumber(values[seriesIndex]![index]!, unit.decimals)}
               </TableCell>
             ))}
           </TableRow>

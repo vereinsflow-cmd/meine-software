@@ -3,8 +3,8 @@
 import { AreaError } from "@/components/shared/area-error";
 
 /**
- * Fehler in einem Bereich der Finanzen (Übersicht, Beiträge, Kassenbuch, Rechnungen, Abschluss, Einstellungen): ruhige
- * Meldung mit „Nochmal versuchen“ und dem Weg zur Finanzübersicht (`AreaError`).
+ * Fehler in einem Bereich der Finanzen (Übersicht, Beiträge, Kassenbuch, Rechnungen, Spenden, Abschluss, Einstellungen):
+ * ruhige Meldung mit „Nochmal versuchen“ und dem Weg zur Finanzübersicht (`AreaError`).
  */
 export default function FinanzenError(props: {
   error: Error & { digest?: string };

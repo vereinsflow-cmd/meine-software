@@ -52,7 +52,13 @@ Aufteilung, Storno/Korrektur, Umbuchung, Barkasse nie im Minus – Regeln in der
 Buchungen (Datei oder Eigenbeleg, 8 Jahre gesperrt, Filter „Ohne Beleg“), bezahlte Rechnungen „Ins Kassenbuch“, **Monatsabschluss**
 mit Checkliste und verketteter Prüfsumme, **Kassensturz** mit Zählhilfe sowie Konten und Kategorien verwalten; **Beiträge**: Beitragsarten
 mit Sätzen „ab“, Ermäßigungen/Befreiungen, Zahler, **Familien** mit Familienbeitrag und „Wer zahlt was“ tagesgenau ([ADR-0011](adr/0011-mitgliedsbeitraege.md)); **Beitragslauf** in drei
-Schritten (Prüfen, Vorschau, Erstellen) mit Nummern, Nachlauf, „rückgängig“ und „Offene Beiträge“ ([ADR-0012](adr/0012-beitragslauf.md)). Der weitere Bauplan
+Schritten (Prüfen, Vorschau, Erstellen) mit Nummern, Nachlauf, „rückgängig“ und „Offene Beiträge“ ([ADR-0012](adr/0012-beitragslauf.md)); **Spenden, Teil 1** (07.10.2026,
+Etappe 15): Seite „Spenden-Cockpit“, Spender (Mitglieder und andere), Geldspenden als Zeile im Kassenbuch, Sach- und Aufwandsspenden mit
+Nachweisen, Spendendose, „Als Spende kennzeichnen“, Status der Bestätigung je Spende, Listen „Alle Spenden“ und „Spender“, Finanzamt-Angaben
+und Beleg für den vereinfachten Nachweis bis 300 € ([ADR-0013](adr/0013-spenden.md)). **Offen bei den Spenden (Teil 2, Etappe 16):**
+Zuwendungsbestätigungen nach amtlichem Muster (Einzel, Sach, Sammel) mit lückenlosen Nummern, unveränderlichem Doppel, Druckansicht,
+Zweitschrift, Storno und optional maschineller Unterschrift; bis dahin führt „Bestätigungen erstellen“ zur Liste der Spenden, die eine
+brauchen. Der weitere Bauplan
 (22 Stufen: Beiträge, Beitragslauf, Kontoauszug und automatische Zuordnung, Lastschrift, Rücklastschriften,
 Erinnerungen, Spenden und Zuwendungsbestätigungen, Berichte, Export, Töpfe, „Mein Beitrag“) folgt Schritt für Schritt. Der Rest dieses Entwurfs hält die Entscheidungen fest, damit sie später
 nicht neu erfunden werden. Rechnungen sind dabei ausdrücklich **keine** Buchungen: Sie lassen sich ändern und auf „wieder offen“ setzen; das
@@ -96,12 +102,13 @@ Beitragslauf ist kein Job, sondern startet von Hand (Prüfen, Vorschau, Erstelle
 4. Kassenbuch mit Belegen (vorhandene Dokumentenablage, neue Zugriffsstufe „Nur Finanzen“). **Erledigt**
    ([ADR-0010](adr/0010-finanzen-kassenbuch.md)).
 5. SEPA-Lastschriftdatei (pain.008) und CSV/DATEV-Export; Jahresübersicht je Abteilung/Veranstaltung.
-6. Zuwendungsbestätigungen als PDF.
+6. Zuwendungsbestätigungen. **Teilweise erledigt:** Spenden erfassen (Teil 1, [ADR-0013](adr/0013-spenden.md)); die Bestätigungen selbst
+   kommen als A4-Druckansicht nach amtlichem Muster (Teil 2), nicht als PDF.
 7. Tests wie bei den Schichten: Mandantentrennung, parallele Buchungen, Abschlusssperre, Rundung, Aufbewahrung vs. Löschantrag.
 
 ## Bekannte Grenzen (Stand heute)
 
-- Finanzen bisher mit Kassenbuch und Rechnungen (noch keine Beiträge, Lastschrift und Spendenbescheinigungen), Zwei-Faktor-Anmeldung nur freiwillig, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
+- Finanzen bisher mit Kassenbuch, Rechnungen, Beiträgen und Spenden (noch keine Zahlungen, Lastschrift und Zuwendungsbestätigungen), Zwei-Faktor-Anmeldung nur freiwillig, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
 - Das Docker-Image ist nicht in einer Docker-Umgebung gestartet worden (siehe [OPERATIONS.md](OPERATIONS.md)).
 - Die Oberfläche ist nur Deutsch; Zeiten stets in `Europe/Berlin` (auch für Vereine in anderen Zeitzonen).
 - Die Barrierefreiheit ist beim Bau berücksichtigt (Beschriftungen, Tastatur, Fokus, Fehlertexte, Farbe nie als einziger Hinweis) und wird automatisch mit axe

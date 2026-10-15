@@ -34,6 +34,10 @@ export async function anonymizeMemberData(
       id: true,
       firstName: true,
       lastName: true,
+      street: true,
+      postalCode: true,
+      city: true,
+      country: true,
       anonymizedAt: true,
       archivedAt: true,
       deletedAt: true,
@@ -43,6 +47,25 @@ export async function anonymizeMemberData(
   if (!member || member.anonymizedAt) return false;
 
   const fullName = `${member.firstName} ${member.lastName}`.trim();
+
+  // Spender (§ 50 Abs. 7 EStDV): VOR dem Leeren des Mitglieds Name und Anschrift als Momentaufnahme in den Spender kopieren
+  // und ihn sperren (Art. 18 DSGVO). Die Aufzeichnung, wer was gegeben hat, bleibt so bis zum Fristende erhalten – wie die
+  // Zeile im Kassenbuch (Art. 17 Abs. 3 lit. b DSGVO) –, und eine noch fehlende Bestätigung lässt sich auf ausdrücklichen
+  // Wunsch noch ausstellen. `@updatedAt` greift bei updateMany nicht – deshalb von Hand.
+  const country = member.country?.trim().toUpperCase() ?? "";
+  await tx.donor.updateMany({
+    where: { clubId, memberId },
+    data: {
+      name: fullName.slice(0, 120) || null,
+      street: member.street?.trim().slice(0, 120) || null,
+      postalCode: member.postalCode?.trim().slice(0, 10) || null,
+      city: member.city?.trim().slice(0, 80) || null,
+      country: /^[A-Z]{2}$/.test(country) && country !== "DE" ? country : null,
+      restrictedAt: now,
+      restrictedReason: "Mitglied anonymisiert",
+      updatedAt: now,
+    },
+  });
 
   await tx.member.update({
     where: { id: member.id },

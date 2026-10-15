@@ -122,6 +122,10 @@ const browserEntries = files.filter((file) => {
   return (
     directive(source) === "client" ||
     /modules\/[^/]+\/schemas\.ts$/.test(rel(file)) ||
+    // Reine Rechnungen der Spenden (Status, Bescheid, Seitenzahlen, Beleg) – im Browser und auf dem Server genutzt.
+    /modules\/donations\/(receipt-status|tax-validity|summary|format|simplified-proof)\.ts$/.test(
+      rel(file),
+    ) ||
     rel(file).startsWith("lib/")
   );
 });
@@ -133,6 +137,7 @@ describe("Architektur: Browser-Code importiert keinen Server-Code", () => {
     expect(
       browserEntries.some((file) => rel(file).endsWith("privacy/components/privacy-panels.tsx")),
     ).toBe(true);
+    expect(browserEntries.some((file) => rel(file).endsWith("donations/summary.ts"))).toBe(true);
   });
 
   it("Client-Komponenten, Formular-Schemas und src/lib importieren – auch transitiv – keinen Server-Code", () => {

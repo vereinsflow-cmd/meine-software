@@ -410,6 +410,10 @@ export default async function LedgerPage({
                             }}
                             options={entry.kind === "TRANSFER" ? null : options}
                             maxUploadMb={env.MAX_UPLOAD_MB}
+                            donations={{
+                              lines: entry.donationLines,
+                              canAssign: entry.canAssignDonation,
+                            }}
                           />
                         ) : null
                       }
@@ -483,6 +487,7 @@ function EntryRow({
         {entry.reversedBy && (
           <span className="block text-sm">storniert durch Nr. {entry.reversedBy.label}</span>
         )}
+        <DonationHint entry={entry} struck={struck} />
         {/* „Storno zu Nr. …“ steht schon in der Beschreibung des Stornos. */}
         {entry.attachments.map((attachment) =>
           attachment.documentId ? (
@@ -533,5 +538,27 @@ function EntryRow({
       </TableCell>
       {canManage && <TableCell className="text-right align-top">{actions}</TableCell>}
     </TableRow>
+  );
+}
+
+/**
+ * Hinweis an Einnahmen der Kategorie „Spenden“: „Spende“ mit Link in die Liste „Alle Spenden“ (Suche nach der
+ * Buchungsnummer), sonst „Spender fehlt“ – eintragen über „⋯“ → „Als Spende kennzeichnen“.
+ */
+function DonationHint({ entry, struck }: { entry: LedgerEntryDto; struck: boolean }) {
+  if (struck || entry.donationLines.length === 0) return null;
+  const missing = entry.donationLines.some((line) => line.donationId === null);
+  const linked = entry.donationLines.some((line) => line.donationId !== null);
+  const href = `/finanzen/spenden/alle?jahr=${entry.bookingDate.getUTCFullYear()}&q=${encodeURIComponent(entry.label)}`;
+  return (
+    <span className="block text-sm text-muted-foreground">
+      {linked && (
+        <Link href={href} className="text-primary underline-offset-4 hover:underline">
+          Spende<span className="sr-only"> zu Buchung {entry.label} ansehen</span>
+        </Link>
+      )}
+      {linked && missing && " · "}
+      {missing && "Spende – Spender fehlt"}
+    </span>
   );
 }
