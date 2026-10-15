@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { violations } from "./axe";
+import { appUrlPattern } from "./environment";
 import { USERS, login, open, outboxMailsTo } from "./helpers";
 
 /**
@@ -30,7 +31,7 @@ test("neuer Verein: Einladung annehmen und Schritt für Schritt einrichten", asy
     await expect(create).toBeHidden();
     await expect.poll(() => outboxMailsTo(adminEmail).length, { timeout: 15_000 }).toBe(before + 1);
     const mail = outboxMailsTo(adminEmail).find((m) => m.subject === `Einladung zu ${name}`);
-    const url = /http:\/\/localhost:3100\/einladung\/[A-Za-z0-9_-]{43}/.exec(mail?.text ?? "")?.[0];
+    const url = appUrlPattern("/einladung/[A-Za-z0-9_-]{43}").exec(mail?.text ?? "")?.[0];
     expect(url).toBeTruthy();
     return url!;
   }

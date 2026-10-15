@@ -1,17 +1,18 @@
 import "dotenv/config";
 import { defineConfig, devices } from "@playwright/test";
+import { E2E_BASE_URL, E2E_DATABASE, E2E_PORT } from "./tests/e2e/environment";
 
 /**
  * Ende-zu-Ende-Tests im Browser.
  *
  * - Eigener Server auf Port 3100 mit eigener Datenbank (`vf_e2e`, wird vor dem Lauf neu aufgebaut und
  *   mit den Demo-Daten befüllt) – die Entwicklungsdatenbank bleibt unberührt.
+ * - Parallele Läufe (z. B. zweite Sitzung in einem anderen Worktree) brauchen eigenen Port und eigene Datenbank:
+ *   E2E_PORT=3400 E2E_DATABASE=vf_e2e_zwei npx playwright test (siehe tests/e2e/environment.ts).
  * - Browser: standardmäßig das von Playwright installierte Chromium (`npx playwright install chromium`).
  *   Wer bereits Edge/Chrome hat, kann es ohne Download nutzen: PLAYWRIGHT_CHANNEL=msedge (oder chrome).
  */
-const PORT = 3100;
 const channel = process.env.PLAYWRIGHT_CHANNEL || undefined;
-export const E2E_DATABASE = "vf_e2e";
 const E2E_STORAGE_DIR = "./.local/e2e-storage";
 
 const adminUrl =
@@ -32,7 +33,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
   globalSetup: "./tests/e2e/global-setup.ts",
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: E2E_BASE_URL,
     locale: "de-DE",
     timezoneId: "Europe/Berlin",
     trace: "retain-on-failure",
@@ -50,13 +51,14 @@ export default defineConfig({
   webServer: {
     // Immer der Dev-Server: Der Produktionsstart verlangt bewusst https, SMTP und echte Geheimnisse (siehe src/server/env.ts) –
     // das passt nicht zu einem Test auf http://localhost. Der Produktions-Build selbst wird in der CI separat geprüft.
-    command: `npm run dev -- -p ${PORT}`,
-    url: `http://localhost:${PORT}/anmelden`,
-    reuseExistingServer: !process.env.CI,
+    command: `npm run dev -- -p ${E2E_PORT}`,
+    url: `${E2E_BASE_URL}/anmelden`,
+    // Mit eigenem Port (paralleler Lauf) nie einen schon laufenden Server mitbenutzen – das wäre der einer anderen Sitzung.
+    reuseExistingServer: !process.env.CI && !process.env.E2E_PORT,
     timeout: 180_000,
     env: {
       DATABASE_URL: e2eUrl.toString(),
-      APP_URL: `http://localhost:${PORT}`,
+      APP_URL: E2E_BASE_URL,
       MAIL_TRANSPORT: "file",
       // Hochgeladene Dateien der Tests landen getrennt vom echten Speicher (wird vor jedem Lauf geleert, siehe global-setup).
       STORAGE_DIR: E2E_STORAGE_DIR,

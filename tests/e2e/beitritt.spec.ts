@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
+import { appUrlPattern } from "./environment";
 import { USERS, login, open, outboxMailsTo, setUpJoinLink } from "./helpers";
 
 /**
@@ -33,7 +34,7 @@ test.describe("Beitritt per QR-Code", () => {
 
     await login(page, USERS.admin);
     const link = await setUpJoinLink(page);
-    expect(link).toMatch(/^http:\/\/localhost:3100\/beitreten\/[A-Za-z0-9_-]{43}$/);
+    expect(link).toMatch(appUrlPattern("/beitreten/[A-Za-z0-9_-]{43}", { exact: true }));
     await expect(page.getByRole("img", { name: "QR-Code zum Beitrittsformular" })).toBeVisible();
 
     // Öffentliche Seite in einem Kontext ohne Anmeldung – wie das Handy, das den QR-Code scannt.
@@ -129,9 +130,7 @@ test.describe("Beitritt per QR-Code", () => {
     const invitation = outboxMailsTo(person.email)[0]!;
     expect(invitation.subject).toBe("Einladung zu TSV Musterstadt 1898 e.V.");
     expect(invitation.text).toContain("(Rolle: Mitglied)");
-    const invitationUrl = /http:\/\/localhost:3100\/einladung\/[A-Za-z0-9_-]{43}/.exec(
-      invitation.text,
-    )?.[0];
+    const invitationUrl = appUrlPattern("/einladung/[A-Za-z0-9_-]{43}").exec(invitation.text)?.[0];
     expect(invitationUrl).toBeTruthy();
     await guest.goto(invitationUrl!);
     await expect(guest.getByRole("heading", { name: "Konto anlegen und beitreten" })).toBeVisible();
