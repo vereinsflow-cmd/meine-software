@@ -77,6 +77,24 @@ export const FAQ: readonly FaqSection[] = [
         keywords: "kennwort sicherheit",
       },
       {
+        id: "zwei-faktor",
+        question: "Wie schütze ich mein Konto zusätzlich (Zwei-Faktor-Anmeldung)?",
+        answer: [
+          "Mit der Zwei-Faktor-Anmeldung fragt VereinsFlow beim Anmelden nach dem Passwort zusätzlich nach einem 6-stelligen Code. Den Code zeigt eine App auf deinem Handy an, er wechselt alle 30 Sekunden. Wer nur dein Passwort kennt, kommt so nicht in dein Konto.",
+        ],
+        steps: [
+          "Installiere eine Authenticator-App auf deinem Handy, zum Beispiel Google Authenticator, Microsoft Authenticator oder 2FAS.",
+          "Öffne „Mein Profil“ und klicke im Abschnitt „Zwei-Faktor-Anmeldung“ auf „Zwei-Faktor-Anmeldung einrichten“.",
+          "Scanne den QR-Code mit der App (oder tippe den Schlüssel darunter ab).",
+          "Gib dein Passwort und den Code ein, den die App anzeigt, und klicke auf „Einschalten“.",
+          "Speichere die 10 Wiederherstellungscodes (ausdrucken oder kopieren) und klicke auf „Ich habe sie gespeichert“.",
+        ],
+        tip: "Handy verloren? Wähle bei der Anmeldung „Kein Zugriff auf die App? Wiederherstellungscode verwenden“ – jeder Code gilt einmal. Hast du auch die Codes nicht mehr, kann der Vereinsadministrator die Zwei-Faktor-Anmeldung zurücksetzen.",
+        link: { href: "/profil", label: "Zu „Mein Profil“" },
+        keywords:
+          "2fa zwei faktor authenticator app code handy sicherheit wiederherstellungscode totp",
+      },
+      {
         id: "profil-aendern",
         question: "Wie ändere ich meinen Namen oder meine E-Mail-Benachrichtigungen?",
         steps: [
@@ -390,6 +408,18 @@ export const FAQ: readonly FaqSection[] = [
         ],
         keywords: "archivieren papierkorb kündigen austritt anonymisieren",
       },
+      {
+        id: "ehrungen",
+        question: "Wer hat in diesem Jahr ein rundes Mitgliedsjubiläum (Ehrungen)?",
+        steps: [
+          "Öffne „Mitglieder“ und klicke oben auf „Ehrungen“.",
+          "Wähle bei „Jahr“ das gewünschte Jahr und klicke auf „Anzeigen“. Du siehst je Stufe (10, 25, 40, 50, 60, 70 und 75 Jahre) eine eigene Liste.",
+          "Mit „Liste drucken“ bekommst du eine saubere Druckansicht. Mit „Export“ lädst du die Liste als CSV-Datei herunter – das geht mit dem Recht, Mitglieder zu exportieren.",
+        ],
+        tip: "Gezählt wird ab dem Eintrittsdatum. Fehlt es bei einem Mitglied, kann es nicht erscheinen – die Seite sagt dir, bei wie vielen das so ist. Wer am 29. Februar eingetreten ist, hat das Jubiläum in Jahren ohne Schalttag am 28. Februar. Die Jubiläen der nächsten Wochen zeigt auch das Dashboard unter „Mitglieder“.",
+        link: { href: "/mitglieder/ehrungen", label: "Zu den Ehrungen" },
+        keywords: "jubiläum jubilare ehrung ehrennadel mitgliedsjahre treue jahreshauptversammlung",
+      },
     ],
   },
   {
@@ -437,6 +467,18 @@ export const FAQ: readonly FaqSection[] = [
         keywords: "zugang konto anlegen einladung",
       },
       {
+        id: "zwei-faktor-zuruecksetzen",
+        question: "Jemand hat sein Handy verloren und kommt nicht mehr ins Konto – was tun?",
+        steps: [
+          "Kläre zuerst persönlich oder am Telefon, dass die Bitte wirklich von dieser Person kommt.",
+          "Öffne „Benutzer und Rollen“, klicke bei der Person auf „⋯“ und wähle „Zwei-Faktor-Anmeldung zurücksetzen“.",
+          "Bestätige mit „Zurücksetzen“. Die Person meldet sich danach nur mit ihrem Passwort an und richtet die Zwei-Faktor-Anmeldung im Profil neu ein.",
+        ],
+        tip: "Das geht mit dem Recht, Benutzer zu verwalten, und nur bei Personen, deren Rechte du selbst hast. Ist die Person auch in einem anderen Verein angemeldet, kann nur der Betreiber von VereinsFlow zurücksetzen.",
+        link: { href: "/benutzer", label: "Zu „Benutzer und Rollen“" },
+        keywords: "2fa zwei faktor handy verloren code zurücksetzen gesperrt authenticator",
+      },
+      {
         id: "rollen",
         question: "Welche Rollen gibt es und was dürfen sie?",
         answer: [
@@ -476,6 +518,20 @@ export const FAQ: readonly FaqSection[] = [
         tip: "Schneller geht es mit dem Häkchen „Gleich veröffentlichen“ im Fenster: Dann sehen die Mitglieder den Termin sofort und werden benachrichtigt – bei einer Serie nur einmal. Auf dem Smartphone nimmst du den Knopf „Neuer Termin“. Beschreibung, Anmeldung und Ansprechpartner ergänzt du auf der Seite des Termins mit „Bearbeiten“.",
         link: { href: "/kalender", label: "Zum Kalender" },
         keywords: "doppelklick schnell eintragen termin anlegen neuer termin datum",
+      },
+      {
+        id: "anwesenheit-erfassen",
+        question: "Wie halte ich fest, wer beim Training da war?",
+        steps: [
+          "Öffne die Veranstaltung. Ab einer Stunde vor Beginn steht dort „Anwesenheit erfassen“.",
+          "Wer zu- oder abgesagt hat, steht schon auf der Liste – wer abgesagt hat, gleich mit „Entschuldigt“. Mit „Gruppe laden“ holst du eine ganze Gruppe dazu, mit „Person“ einzelne Mitglieder.",
+          "Tippe bei jeder Person auf „Anwesend“, „Entschuldigt“ oder „Fehlt“ – oder auf „Alle anwesend“ und ändere danach nur die Ausnahmen.",
+          "Klicke unten auf „Speichern“ – das speichert auch die vorausgefüllten Absagen.",
+        ],
+        tip: "Wer wie oft da war, siehst du unter „Veranstaltungen“ → „Anwesenheit“ – auch als CSV-Datei. Anwesenheiten werden 24 Monate nach dem Termin automatisch gelöscht.",
+        link: { href: "/veranstaltungen/anwesenheit", label: "Zur Auswertung der Anwesenheit" },
+        keywords:
+          "anwesenheit anwesenheitsliste training trainer da gewesen gefehlt entschuldigt quote",
       },
     ],
   },

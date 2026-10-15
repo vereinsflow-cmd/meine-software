@@ -7,10 +7,22 @@ Web-Rahmen getrennt sind (siehe [ARCHITECTURE.md](ARCHITECTURE.md#erweiterbarkei
 
 | Vorhaben                            | Warum                                                                        | Schon vorbereitet                                                                                                                 |
 | ----------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Zwei-Faktor-Anmeldung (TOTP)**    | Erhöht den Schutz von Administrator-Konten deutlich                          | Felder `totpSecretEnc`, `totpEnabledAt`; Profil-Abschnitt; Datenexport kennt sie                                                  |
+| **Zwei-Faktor-Pflicht je Verein**   | Ein Verein soll sie für Administratoren (oder alle) vorschreiben können      | Zwei-Faktor-Anmeldung (TOTP) seit 14.10.2026 freiwillig je Konto; `totpEnabledAt` zeigt, wer sie eingeschaltet hat                |
 | **Öffentliche Veranstaltungsseite** | „Öffentlich“-Veranstaltungen sollen auf der Vereins-Webseite verlinkbar sein | `Event.visibility = PUBLIC`; Kalender-Export je Termin                                                                            |
 | **Virenscan für Uploads**           | Vereine nehmen Dateien von Dritten an (Bewerbungen, Formulare)               | `registerUploadScanner(...)` in `src/server/storage/scan.ts`                                                                      |
 | **Finanzen** (siehe unten)          | Beiträge und Kasse sind der nächste große Verwaltungsaufwand                 | Rechnungen; Stufen 1–7 gebaut (Kassenbuch, Belege, Abschluss, Beiträge, Familien, Beitragslauf); als Nächstes Zahlungen (Stufe 8) |
+
+## Zuletzt umgesetzt (14.10.2026)
+
+- **Zwei-Faktor-Anmeldung (TOTP):** freiwillig je Konto unter „Mein Profil“, mit 10 Wiederherstellungscodes; zurücksetzen kann sie der
+  Vereinsadministrator, bei Plattform-Administratoren und Personen in mehreren Vereinen nur der Betreiber (`npm run admin:reset-2fa`).
+  Einzelheiten in [SECURITY.md](SECURITY.md#anmeldung-und-sitzungen). **Offen:** die Pflicht je Verein (siehe oben) und die Einrichtung
+  für reine Plattform-Administratoren ohne Verein („Mein Profil“ setzt einen Verein voraus).
+- **Anwesenheit:** Trainer haken ab einer Stunde vor Beginn ab, wer da war, wer entschuldigt und wer unentschuldigt fehlte – getrennt von
+  Zu- und Absagen, bewusst ohne Gründe. Auswertung mit CSV-Export unter „Veranstaltungen“ → „Anwesenheit“, die eigene Anwesenheit auf
+  der Mitgliedsseite; gelöscht 24 Monate nach dem Termin (siehe [PRIVACY.md](PRIVACY.md#welche-daten-wozu)).
+- **Ehrungen:** runde Mitgliedsjubiläen (10, 25, 40, 50, 60, 70, 75 Jahre) je Jahr unter „Mitglieder“ → „Ehrungen“, gerechnet ab dem
+  Eintrittsdatum, mit Druckliste, CSV-Export und Dashboard-Karte „Jubiläen“. Offen: eigene Stufen je Verein.
 
 ## Weitere Vorhaben
 
@@ -89,20 +101,10 @@ Beitragslauf ist kein Job, sondern startet von Hand (Prüfen, Vorschau, Erstelle
 
 ## Bekannte Grenzen (Stand heute)
 
-- Finanzen bisher mit Kassenbuch und Rechnungen (noch keine Beiträge, Lastschrift und Spendenbescheinigungen), keine Zwei-Faktor-Anmeldung, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
+- Finanzen bisher mit Kassenbuch und Rechnungen (noch keine Beiträge, Lastschrift und Spendenbescheinigungen), Zwei-Faktor-Anmeldung nur freiwillig, keine öffentliche Veranstaltungsseite, kein Virenscan – siehe oben.
 - Das Docker-Image ist nicht in einer Docker-Umgebung gestartet worden (siehe [OPERATIONS.md](OPERATIONS.md)).
 - Die Oberfläche ist nur Deutsch; Zeiten stets in `Europe/Berlin` (auch für Vereine in anderen Zeitzonen).
 - Die Barrierefreiheit ist beim Bau berücksichtigt (Beschriftungen, Tastatur, Fokus, Fehlertexte, Farbe nie als einziger Hinweis) und wird automatisch mit axe
   geprüft (WCAG 2.1 A/AA, hell und dunkel, keine Verstöße auf den Hauptseiten). Ein Durchgang mit Screenreader und reiner Tastaturbedienung ist **nicht** erfolgt.
 - E-Mails (Text und schlichtes HTML) gibt es nur auf Deutsch.
 - Suche ist eine einfache Teilstring-Suche (kein Volltextindex); bei sehr großen Datenbeständen wäre ein Index (`pg_trgm`) sinnvoll.
-
-## Bekannte Fehler
-
-Noch nicht behoben; Tests halten den heutigen Stand fest. Wird ein Fehler behoben, schlägt der genannte Test gezielt fehl und wird
-auf das richtige Verhalten umgestellt.
-
-- **Ziel-Links von Benachrichtigungen:** Die Prüfregel `Notification_link_chk` (Migration `20260920191000_integrity_guards`) sperrt mit
-  `NOT LIKE '/\%'` wegen der LIKE-Maskierung nur den Text `/%`, nicht `/\…`. Browser lesen `/\example.com` wie `//example.com` – der Link
-  führt dann auf eine fremde Seite. Der Code lässt seit 14.10.2026 nur interne Pfade durch (`notifyUsers` → `safeRedirectPath`);
-  die Prüfregel selbst zu korrigieren braucht eine Migration. Test: `tests/integration/notifications.test.ts` („BEKANNTER FEHLER: die Datenbank nimmt '/\\…' an“).

@@ -426,3 +426,16 @@
     --tw-exit-scale: 1 !important;
   }
 }
+
+/*
+ * Farbige Hinweise (Sonner, `richColors`) im hellen Modus: Die Schriftfarben der Bibliothek erreichen auf ihren hellen
+ * Flächen nur 3:1 bis 4,4:1 – zu wenig für Text (WCAG AA verlangt 4,5:1). Gleiche Farbtöne, nur dunkler (jeweils über
+ * 5,5:1). Ohne Ebene und mit `:root` davor, damit diese Werte die mitgelieferten Stile der Bibliothek schlagen. Der dunkle
+ * Modus erreicht die Werte schon.
+ */
+:root [data-sonner-toaster][data-sonner-theme="light"] {
+  --success-text: hsl(140 100% 22%);
+  --info-text: hsl(210 92% 38%);
+  --warning-text: hsl(31 92% 30%);
+  --error-text: hsl(360 100% 38%);
+}

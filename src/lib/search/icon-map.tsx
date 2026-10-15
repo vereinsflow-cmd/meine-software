@@ -1,5 +1,6 @@
 import {
   ActivityIcon,
+  AwardIcon,
   FileIcon,
   InboxIcon,
   PencilIcon,
@@ -24,6 +25,7 @@ export const ICON_MAP = {
   drucken: PrinterIcon,
   // Unterseiten und Treffer
   aktivitaet: ActivityIcon,
+  ehrungen: AwardIcon,
   meldungen: InboxIcon,
   mitglied: UserIcon,
   dokument: FileIcon,

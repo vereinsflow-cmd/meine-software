@@ -29,6 +29,7 @@ export function PageSection({
   title,
   description,
   actions,
+  actionsClassName,
   focusTarget = false,
   className,
   children,
@@ -38,6 +39,8 @@ export function PageSection({
   title: string;
   description?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Zusätzliche Klassen für den Bereich der Knöpfe – etwa `max-sm:w-full`, damit ein Knopf am Handy die ganze Breite nimmt. */
+  actionsClassName?: string;
   /** Überschrift per Skript fokussierbar (`tabIndex={-1}`, ohne Fokusrahmen) – Ziel nach Löschen o. Ä. */
   focusTarget?: boolean;
   className?: string;
@@ -58,7 +61,9 @@ export function PageSection({
           </h2>
           {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{actions}</div>
+        )}
       </div>
       {children}
     </section>

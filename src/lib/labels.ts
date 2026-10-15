@@ -39,6 +39,16 @@ export const EVENT_TYPE_LABEL: Record<EventType, string> = {
   OTHER: "Sonstiges",
 };
 
+/** Mehrzahl, wenn alle Termine einer Art gemeint sind („Trainings vom … bis …“). */
+export const EVENT_TYPE_PLURAL_LABEL: Record<EventType, string> = {
+  EVENT: "Veranstaltungen",
+  TRAINING: "Trainings",
+  MEETING: "Sitzungen",
+  COMPETITION: "Wettkämpfe",
+  WORK_ASSIGNMENT: "Arbeitseinsätze",
+  OTHER: "Sonstige Termine",
+};
+
 export const PARTICIPANT_STATUS_LABEL: Record<ParticipantStatus, string> = {
   ACCEPTED: "Zugesagt",
   DECLINED: "Abgesagt",

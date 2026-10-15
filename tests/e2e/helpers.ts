@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD ?? "Vereinsflow-Demo-2026!";
@@ -138,6 +138,85 @@ export function outboxMailsTo(address: string): OutboxMail[] {
       }
     })
     .filter((mail): mail is OutboxMail => mail !== null && mail.to === address);
+}
+
+/** Wartet, bis React das (erste) Formular der Seite übernommen hat – vorher eingetippte Werte gingen verloren. */
+export async function waitForHydratedForm(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const form = document.querySelector("form");
+    return form !== null && Object.keys(form).some((key) => key.startsWith("__react"));
+  });
+}
+
+/**
+ * Lädt als Vereinsadministrator (`admin` ist angemeldet) eine neue Person mit der Rolle „Mitglied“ ein und nimmt die
+ * Einladung in einem eigenen Browser-Kontext an. Liefert die Seite der neuen, angemeldeten Person (auf dem Dashboard).
+ * Für Tests, die ein Konto verändern (Zwei-Faktor, Passwort …), ohne die Demo-Konten anderer Tests anzufassen.
+ */
+export async function inviteNewPerson(
+  admin: Page,
+  browser: Browser,
+  person: { email: string; firstName: string; lastName: string; password: string },
+  /** Für Smartphone-Tests: das Gerät der neuen Person (z. B. `devices["Pixel 7"]`). */
+  contextOptions: BrowserContextOptions = {},
+): Promise<Page> {
+  await open(admin, "/benutzer");
+  const dialog = admin.getByRole("dialog", { name: "Person einladen" });
+  await expect(async () => {
+    await admin.getByRole("button", { name: "Person einladen" }).click();
+    await expect(dialog).toBeVisible({ timeout: 1500 });
+  }).toPass({ timeout: 15_000 });
+  await dialog.getByLabel("E-Mail-Adresse").fill(person.email);
+  await dialog.getByRole("button", { name: "Einladung senden" }).click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => outboxMailsTo(person.email).length, { timeout: 15_000 }).toBe(1);
+  const url = /http:\/\/localhost:3100\/einladung\/[A-Za-z0-9_-]{43}/.exec(
+    outboxMailsTo(person.email)[0]!.text,
+  )?.[0];
+  expect(url, "Einladungslink in der E-Mail").toBeTruthy();
+
+  const context = await browser.newContext(contextOptions);
+  const page = await context.newPage();
+  await open(page, url!);
+  await waitForHydratedForm(page);
+  await page.getByLabel("Vorname").fill(person.firstName);
+  await page.getByLabel("Nachname").fill(person.lastName);
+  await page.locator('input[name="password"]').fill(person.password);
+  await page.locator('input[name="passwordRepeat"]').fill(person.password);
+  await page.getByRole("checkbox", { name: /Datenschutzerklärung/ }).check();
+  await page.getByRole("button", { name: "Konto anlegen und beitreten" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+  return page;
+}
+
+/**
+ * Legt als Berechtigte ein Training der Abteilung Fußball von gestern (18:00–19:30) an und veröffentlicht es – für die
+ * Anwesenheit, die erst ab einer Stunde vor Beginn erfasst werden kann. Liefert die Kennung der Veranstaltung.
+ */
+export async function createPublishedPastTraining(page: Page, title: string): Promise<string> {
+  const day = isoDaysAgo(1);
+  await open(page, "/veranstaltungen/neu");
+  await page.getByLabel("Titel").fill(title);
+  await page.getByLabel("Art der Veranstaltung").selectOption({ label: "Training" });
+  await page.getByLabel("Abteilung").selectOption({ label: "Fußball" });
+  await page.getByLabel("Beginn – Datum").fill(day);
+  await page.getByLabel("Beginn – Uhrzeit").fill("18:00");
+  await page.getByLabel("Ende – Datum").fill(day);
+  await page.getByLabel("Ende – Uhrzeit").fill("19:30");
+  await page.getByRole("button", { name: "Als Entwurf speichern" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible({
+    timeout: 20_000,
+  });
+  const id = /\/veranstaltungen\/([^/?#]+)$/.exec(page.url())?.[1];
+  expect(id, "Kennung der neuen Veranstaltung in der Adresse").toBeTruthy();
+  await page.waitForLoadState("networkidle");
+
+  await page.getByRole("button", { name: "Veröffentlichen" }).click();
+  const confirm = page.getByRole("alertdialog", { name: "Veranstaltung veröffentlichen?" });
+  await confirm.getByRole("button", { name: "Veröffentlichen" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText("Veröffentlicht", { exact: true }).first()).toBeVisible();
+  return id!;
 }
 
 /**
