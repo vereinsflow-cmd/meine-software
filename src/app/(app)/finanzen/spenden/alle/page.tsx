@@ -16,6 +16,7 @@ import {
   FilterToggle,
 } from "@/components/shared/filter-toggle";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { Pagination } from "@/components/shared/pagination";
 import { formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
 import {
@@ -57,7 +58,7 @@ const KINDS = [
 ] as const;
 
 /**
- * Alle Spenden eines Jahres – ruhige Tabelle im Stil des Kassenbuchs (am Handy eine Liste). Filter: Stand der Bestätigung
+ * Alle Spenden eines Jahres – ruhige Tabelle im Stil des Kassenbuchs (am Handy gestapelte Karten). Filter: Stand der Bestätigung
  * (`?bestaetigung=`, Ziel der Punkte unter „Das steht an“), Art, Zweck, Suche nach Name, Zweck oder Buchungsnummer; Jahr über
  * `?jahr=`. Stornierte zählen nur unter „Storniert“. Ansehen mit `finance:read`, Aktionen („⋯“) nur mit `finance:manage`.
  */
@@ -134,7 +135,14 @@ export default async function AllDonationsPage({
     `${BASE}${buildQuery(params, { jahr: target === today.getUTCFullYear() ? undefined : target, page: undefined })}`;
 
   return (
-    <>
+    <PageStack>
+      <BackLink
+        href={
+          year === today.getUTCFullYear() ? "/finanzen/spenden" : `/finanzen/spenden?jahr=${year}`
+        }
+      >
+        Spenden {year}
+      </BackLink>
       <FinanceHeader
         description={`Alle Spenden ${year}`}
         counts={counts}
@@ -147,13 +155,6 @@ export default async function AllDonationsPage({
           ) : undefined
         }
       />
-      <BackLink
-        href={
-          year === today.getUTCFullYear() ? "/finanzen/spenden" : `/finanzen/spenden?jahr=${year}`
-        }
-      >
-        Spenden {year}
-      </BackLink>
 
       {all.length === 0 && !q ? (
         <EmptyState
@@ -167,78 +168,83 @@ export default async function AllDonationsPage({
         />
       ) : (
         <>
-          <nav
-            aria-label="Nach Bestätigung filtern"
-            className={cn(SEGMENT_BAR, "mb-4 max-w-full flex-nowrap overflow-x-auto")}
-          >
-            {visibleFilters.map((f) => (
-              <Link
-                key={f}
-                href={statusHref(f)}
-                aria-current={status === f ? "page" : undefined}
-                className={segmentItem(status === f)}
-              >
-                {DONATION_STATUS_FILTER_LABEL[f]}
-                <span className="text-xs tabular-nums opacity-80">{statusCounts[f]}</span>
-              </Link>
-            ))}
-          </nav>
+          <div className="grid gap-4">
+            <nav
+              aria-label="Nach Bestätigung filtern"
+              className={cn(
+                SEGMENT_BAR,
+                "max-w-full flex-nowrap justify-self-start overflow-x-auto",
+              )}
+            >
+              {visibleFilters.map((f) => (
+                <Link
+                  key={f}
+                  href={statusHref(f)}
+                  aria-current={status === f ? "page" : undefined}
+                  className={segmentItem(status === f)}
+                >
+                  {DONATION_STATUS_FILTER_LABEL[f]}
+                  <span className="text-xs tabular-nums opacity-80">{statusCounts[f]}</span>
+                </Link>
+              ))}
+            </nav>
 
-          <form method="get" action={BASE} role="search" className={cn("mb-4", FILTER_FORM)}>
-            {year !== today.getUTCFullYear() && <input type="hidden" name="jahr" value={year} />}
-            {status !== "alle" && <input type="hidden" name="bestaetigung" value={status} />}
-            <Input
-              type="search"
-              name="q"
-              defaultValue={q}
-              placeholder="Name, Zweck oder Buchungsnummer …"
-              aria-label="Spenden durchsuchen"
-              className={FILTER_SEARCH}
-            />
-            <FilterToggle id="spenden-filter" active={[kind, purpose].filter(Boolean).length} />
-            <FilterFields id="spenden-filter">
-              <NativeSelect
-                className={FILTER_SELECT}
-                name="art"
-                defaultValue={kind ?? ""}
-                aria-label="Nach Art filtern"
-              >
-                <option value="">Alle Arten</option>
-                {KINDS.map((k) => (
-                  <option key={k.value} value={k.value}>
-                    {k.label}
-                  </option>
-                ))}
-              </NativeSelect>
-              <NativeSelect
-                className={FILTER_SELECT}
-                name="zweck"
-                defaultValue={purpose ?? ""}
-                aria-label="Nach Zweck filtern"
-              >
-                <option value="">Alle Zwecke</option>
-                {purposes.map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSelect>
-              <div className="flex gap-2">
-                <Button type="submit" variant="outline">
-                  Filtern
-                </Button>
-                {filtered && (
-                  <Button asChild variant="ghost">
-                    <Link
-                      href={`${BASE}${buildQuery(params, { art: undefined, zweck: undefined, q: undefined, page: undefined })}`}
-                    >
-                      Zurücksetzen
-                    </Link>
+            <form method="get" action={BASE} role="search" className={FILTER_FORM}>
+              {year !== today.getUTCFullYear() && <input type="hidden" name="jahr" value={year} />}
+              {status !== "alle" && <input type="hidden" name="bestaetigung" value={status} />}
+              <Input
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder="Name, Zweck oder Buchungsnummer …"
+                aria-label="Spenden durchsuchen"
+                className={FILTER_SEARCH}
+              />
+              <FilterToggle id="spenden-filter" active={[kind, purpose].filter(Boolean).length} />
+              <FilterFields id="spenden-filter">
+                <NativeSelect
+                  className={FILTER_SELECT}
+                  name="art"
+                  defaultValue={kind ?? ""}
+                  aria-label="Nach Art filtern"
+                >
+                  <option value="">Alle Arten</option>
+                  {KINDS.map((k) => (
+                    <option key={k.value} value={k.value}>
+                      {k.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <NativeSelect
+                  className={FILTER_SELECT}
+                  name="zweck"
+                  defaultValue={purpose ?? ""}
+                  aria-label="Nach Zweck filtern"
+                >
+                  <option value="">Alle Zwecke</option>
+                  {purposes.map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <div className="flex gap-2">
+                  <Button type="submit" variant="outline">
+                    Filtern
                   </Button>
-                )}
-              </div>
-            </FilterFields>
-          </form>
+                  {filtered && (
+                    <Button asChild variant="ghost">
+                      <Link
+                        href={`${BASE}${buildQuery(params, { art: undefined, zweck: undefined, q: undefined, page: undefined })}`}
+                      >
+                        Zurücksetzen
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </FilterFields>
+            </form>
+          </div>
 
           {total === 0 ? (
             <EmptyState
@@ -253,7 +259,7 @@ export default async function AllDonationsPage({
               }
             />
           ) : (
-            <>
+            <div>
               <p className="mb-2 text-sm text-muted-foreground tabular-nums">
                 {total === 1 ? "1 Spende" : `${total} Spenden`} · zusammen{" "}
                 {formatEuroFromCents(totalCents)}
@@ -272,12 +278,12 @@ export default async function AllDonationsPage({
                 total={total}
                 pageSize={pageSize}
               />
-            </>
+            </div>
           )}
         </>
       )}
 
-      <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+      <p className="max-w-3xl text-sm text-muted-foreground">
         „Nicht nötig“ heißt: Überweisung bis 300 € – dem Spender genügen sein Kontoauszug und der{" "}
         <Link
           href="/finanzen/spenden/beleg"
@@ -287,6 +293,6 @@ export default async function AllDonationsPage({
         </Link>
         . Eine Geldspende stornierst du über ihre Buchung im Kassenbuch.
       </p>
-    </>
+    </PageStack>
   );
 }

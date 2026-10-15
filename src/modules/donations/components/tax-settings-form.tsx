@@ -4,12 +4,7 @@ import Link from "next/link";
 import { useWatch } from "react-hook-form";
 import { CircleCheckIcon, PrinterIcon, TriangleAlertIcon } from "lucide-react";
 import { DescriptionList } from "@/components/shared/description-list";
-import {
-  CheckboxField,
-  FormError,
-  SubmitButton,
-  TextField,
-} from "@/components/shared/form-fields";
+import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import { calendarDateToInputValue, formatCalendarDate, parseCalendarDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -17,12 +12,7 @@ import { updateTaxSettingsAction } from "../actions";
 import { EXEMPTION_KIND_LABEL } from "../format";
 import { EXEMPTION_KINDS, taxSettingsSchema, type TaxSettingsInput } from "../schemas";
 import type { TaxSettingsDto } from "../service";
-import {
-  taxValidity,
-  taxWarnings,
-  type TaxSettings,
-  type TaxValidity,
-} from "../tax-validity";
+import { taxValidity, taxWarnings, type TaxSettings, type TaxValidity } from "../tax-validity";
 import { ChoiceField, type Choice } from "./form-parts";
 
 /**

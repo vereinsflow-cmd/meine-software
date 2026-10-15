@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { parseInput, runAction, type ActionResult } from "@/server/action";
+import { parseInput, type ActionResult } from "@/server/action";
+import { runActionAndRefresh } from "@/server/action-refresh";
 import { requireTenantContext } from "@/server/tenancy/context";
 import { attachDonationNote, removeDonationAttachment } from "./evidence";
 import {
@@ -47,12 +48,7 @@ function action<T>(
   scope: string,
   run: (input: unknown) => Promise<T>,
 ): (input: unknown) => Promise<ActionResult<T>> {
-  return async (input: unknown) =>
-    runAction(async () => {
-      const result = await run(input);
-      refresh();
-      return result;
-    }, scope);
+  return async (input: unknown) => runActionAndRefresh(scope, refresh, () => run(input));
 }
 
 /** „Spende erfassen“ – Rückgabe mit `entryId` (Geld), damit der Beleg danach an die Buchung kann. */

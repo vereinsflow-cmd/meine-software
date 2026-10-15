@@ -51,7 +51,7 @@ export function DonationMonthChart({
             <li key={series.id} className="flex items-center gap-2">
               <span
                 aria-hidden="true"
-                className="size-3 shrink-0 rounded-[3px]"
+                className="size-3 shrink-0 rounded-xs"
                 style={{ backgroundColor: COLORS[index] }}
               />
               {series.label}

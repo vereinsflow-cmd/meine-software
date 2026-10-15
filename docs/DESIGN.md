@@ -188,7 +188,7 @@ Seit 14.10.2026 zeigt jede Seite beim Laden sofort ihren Aufbau statt einer leer
 | eigene `loading.tsx`                          | Seiten mit eigenem Aufbau (Benutzer, Protokoll, Profil, Einstellungen, Hilfe …)                                                                 |
 
 - **Bausteine:** Eigene Gerüste bauen auf `page-skeletons.tsx` statt abzuschreiben: `PageLoading` (Live-Region und Seitenspalte, mit `label` und `className` für schmale Seiten), `PageHeaderSkeleton`, `ToolbarSkeleton`, `FieldSkeleton` (Beschriftung und Feld), `CardHeadSkeleton` (wie `CardHeader`), `FormCardSkeleton` (Karte mit Kopf und Feldern bzw. eigenem Inhalt), `PageSectionSkeleton` (wie `PageSection`), `TableSkeleton`, `CardSkeleton` und `lineWidth` (unterschiedlich lange Zeilen). Platzhalter mitten im Text: `<Skeleton as="span">`.
-- **Tabellen:** `TableSkeleton stack` nur, wo die Seite `<Table stack>` nutzt (Benutzer, Protokoll, Rechnungen, Konten, Helferstunden, Systemadministration) – dann am Handy gestapelte Karten. Ohne `stack` bleibt das Gerüst wie die echte Tabelle auch am Handy eine Tabelle mit Kopfzeile (dort die ersten drei Spalten).
+- **Tabellen:** `TableSkeleton stack` nur, wo die Seite `<Table stack>` nutzt (Benutzer, Protokoll, Rechnungen, Konten, Helferstunden, Systemadministration, Alle Spenden, Spender) – dann am Handy gestapelte Karten. Ohne `stack` bleibt das Gerüst wie die echte Tabelle auch am Handy eine Tabelle mit Kopfzeile (dort die ersten drei Spalten).
 - **Farbe:** Die Platzhalter sind 8 % der Schriftfarbe (`Skeleton`), nicht mehr `bg-muted` – das war auf dem hellen, bläulichen Seitengrund praktisch unsichtbar.
 - **Bewegung:** Sie pulsieren nur ohne „Bewegung reduzieren“ (`motion-safe:animate-pulse`); sonst stehen sie still.
 - Das Dashboard hat sein eigenes Gerüst (`app/(app)/dashboard/loading.tsx`, siehe „Ladezustand“ unter „Aufbau des Dashboards“).
@@ -440,7 +440,14 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
   Adresse fehlt · Erstellt · Nicht nötig · Ohne Namen · Spender fehlt · Storniert; stornierte nur unter „Storniert“), Suche
   und Jahr, Zeilenaktionen „Spender eintragen“, „Ändern“, „Stornieren“ (Sach/Aufwand), „Kennzeichnung zurücknehmen“ (Geld),
   „Im Kassenbuch ansehen“. „Spender“: Summe, Anzahl, Status je Spender; andere Spender „Anschrift ändern“, „Sperren“,
-  „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“; `?bearbeiten=<id>` öffnet das Fenster direkt.
+  „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“; `?bearbeiten=<id>` öffnet das Fenster direkt. Beide
+  stehen am Handy gestapelt (`<Table stack>`, seit 15.10.2026): der Spender als Titel der Karte, darunter Datum, Art und
+  Zweck, Bestätigung, Betrag bzw. Anschrift, Bestätigung und Summe; deshalb ist der Spender auch am Computer die erste Spalte.
+  „Letzte Spenden“ im Cockpit bleibt die kompakte Liste aus dem Bild (in einer Karte, nur fünf Zeilen).
+- **Seitenrhythmus und Laden:** alle Spenden-Seiten sind ein `PageStack` (der Zurück-Link steht über dem Kopf „Finanzen“);
+  jede hat ein eigenes Gerüst mit `FinanceLoading` (Cockpit, Alle Spenden, Spender) bzw. `PageLoading` (Beleg). Fehler fängt
+  `app/(app)/finanzen/error.tsx` (`AreaError`, „Zur Finanzübersicht“). Leere Karten zeigen `CompactEmpty`, ohne Kassenbuch
+  steht „Erst das Kassenbuch einrichten“ (`EmptyState`) wie in den Einstellungen.
 - **Einstellungen → Finanzamt** (`/finanzen/einstellungen#finanzamt`): Finanzamt, Steuernummer, Art und Datum des Bescheids,
   letzter Veranlagungszeitraum, Zwecke mit Live-Vorschau des Satzes („Wir sind wegen Förderung **des Sports** …“), Statuszeile
   „Gültig für Bestätigungen bis …“ / „läuft in N Tagen ab“ / „abgelaufen seit …“ und „Keine Steuerberatung – im Zweifel

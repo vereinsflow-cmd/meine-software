@@ -20,38 +20,12 @@ import {
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { useMoreActions } from "@/components/shared/more-actions";
 import { formatEuroFromCents } from "@/lib/dates";
-import type { DonationKind } from "@/generated/prisma/enums";
 import { unassignDonationAction, voidDonationAction } from "../actions";
 import { DONATION_KIND_LABEL } from "../format";
-import type { DonationRowDto } from "../summary";
+import type { DonationRowActionData } from "../row-action-data";
 import { AssignDonationDialog } from "./assign-donation-dialog";
 import { EditDonationDialog } from "./donation-dialog";
 import { ReasonDialog } from "./reason-dialog";
-
-/** Was das Menü einer Zeile braucht (nur das – nicht die ganze Zeile in den Browser). */
-export interface DonationRowActionData {
-  key: string;
-  donationId: string | null;
-  ledgerLineId: string | null;
-  kind: DonationKind;
-  name: string;
-  amountCents: number;
-  entryLabel: string | null;
-  actions: DonationRowDto["actions"];
-}
-
-export function rowActionData(row: DonationRowDto): DonationRowActionData {
-  return {
-    key: row.key,
-    donationId: row.donationId,
-    ledgerLineId: row.ledgerLineId,
-    kind: row.kind,
-    name: row.name,
-    amountCents: row.amountCents,
-    entryLabel: row.entry?.label ?? null,
-    actions: row.actions,
-  };
-}
 
 /** Ziel „Im Kassenbuch ansehen“: die Buchung über ihre Nummer gesucht. */
 export const ledgerHref = (entryLabel: string) =>

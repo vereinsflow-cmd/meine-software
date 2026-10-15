@@ -13,12 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
-import {
-  FormError,
-  SelectField,
-  SubmitButton,
-  TextField,
-} from "@/components/shared/form-fields";
+import { FormError, SelectField, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { PostalCodeCity } from "@/components/shared/postal-code-city";
 import { useActionForm } from "@/hooks/use-action-form";
 import type { DonorKind } from "@/generated/prisma/enums";
@@ -84,7 +79,10 @@ export function DonorDialog({
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg" onCloseAutoFocus={onCloseAutoFocus}>
+      <DialogContent
+        className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
         <DialogHeader>
           <DialogTitle>{donor ? "Spender ändern" : "Spender anlegen"}</DialogTitle>
           <DialogDescription>

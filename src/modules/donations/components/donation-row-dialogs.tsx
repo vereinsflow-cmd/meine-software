@@ -126,8 +126,8 @@ export function EvidenceDialog({
         <DialogHeader>
           <DialogTitle>Nachweise zur Spende</DialogTitle>
           <DialogDescription>
-            {donation.label} – zum Beispiel Rechnung, Gutachten, Abrechnung oder
-            Verzichtserklärung. Nachweise werden 10 Jahre aufbewahrt.
+            {donation.label} – zum Beispiel Rechnung, Gutachten, Abrechnung oder Verzichtserklärung.
+            Nachweise werden 10 Jahre aufbewahrt.
           </DialogDescription>
         </DialogHeader>
         <EvidenceBody donationId={donation.id} onBusy={setBusy} />
@@ -143,9 +143,7 @@ function EvidenceBody({
   donationId: string;
   onBusy: (busy: boolean) => void;
 }) {
-  const { state, retry, refresh } = useDialogData(() =>
-    loadDonationEvidenceAction({ donationId }),
-  );
+  const { state, retry, refresh } = useDialogData(() => loadDonationEvidenceAction({ donationId }));
   if (state.status === "loading") return <DialogLoading />;
   if (state.status === "error") return <DialogLoadError message={state.message} onRetry={retry} />;
   return (

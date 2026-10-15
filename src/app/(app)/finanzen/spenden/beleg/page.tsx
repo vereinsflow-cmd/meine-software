@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BackLink } from "@/components/shared/back-link";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageStack } from "@/components/shared/page-section";
 import { PrintButton } from "@/components/shared/print-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,39 +28,40 @@ export default async function SimplifiedProofPage() {
   const canManage = canFinance(ctx, "finance:manage");
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="print:hidden">
-        <BackLink href="/finanzen/spenden">Spenden</BackLink>
-        <PageHeader
-          title="Beleg bis 300 €"
-          description="Für Spenden per Überweisung bis 300 €: Zusammen mit dem Kontoauszug ersetzt dieser Beleg die Zuwendungsbestätigung."
-          actions={proof.ready ? <PrintButton label="Beleg drucken" /> : undefined}
-        />
-        {proof.blockers.length > 0 && (
-          <Card className="mb-6 ring-amber-300 dark:ring-amber-400/40">
-            <CardContent className="grid gap-3">
-              <h2 className="font-semibold">Noch nicht druckbar</h2>
-              <ul className="grid gap-1 text-sm">
-                {proof.blockers.map((blocker) => (
-                  <li key={blocker}>{blocker}</li>
-                ))}
-              </ul>
-              <Button asChild variant="outline" className="justify-self-start">
-                <Link href="/finanzen/einstellungen#finanzamt">
-                  {canManage ? "Finanzamt-Angaben eintragen" : "Finanzamt-Angaben ansehen"}
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-        {proof.hints.length > 0 && (
-          <ul className="mb-6 grid gap-1 text-sm text-muted-foreground">
-            {proof.hints.map((hint) => (
-              <li key={hint}>{hint}</li>
-            ))}
-          </ul>
-        )}
-      </div>
+    <PageStack className="mx-auto max-w-3xl">
+      <BackLink href="/finanzen/spenden" className="print:hidden">
+        Spenden
+      </BackLink>
+      <PageHeader
+        title="Beleg bis 300 €"
+        description="Für Spenden per Überweisung bis 300 €: Zusammen mit dem Kontoauszug ersetzt dieser Beleg die Zuwendungsbestätigung."
+        actions={proof.ready ? <PrintButton label="Beleg drucken" /> : undefined}
+        className="print:hidden"
+      />
+      {proof.blockers.length > 0 && (
+        <Card className="ring-amber-300 dark:ring-amber-400/40 print:hidden">
+          <CardContent className="grid gap-3">
+            <h2 className="font-semibold">Noch nicht druckbar</h2>
+            <ul className="grid gap-1 text-sm">
+              {proof.blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+            <Button asChild variant="outline" className="justify-self-start">
+              <Link href="/finanzen/einstellungen#finanzamt">
+                {canManage ? "Finanzamt-Angaben eintragen" : "Finanzamt-Angaben ansehen"}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      {proof.hints.length > 0 && (
+        <ul className="grid gap-1 text-sm text-muted-foreground print:hidden">
+          {proof.hints.map((hint) => (
+            <li key={hint}>{hint}</li>
+          ))}
+        </ul>
+      )}
 
       {proof.ready && (
         <article
@@ -82,6 +84,6 @@ export default async function SimplifiedProofPage() {
           <p className="mt-10 text-[9pt] text-neutral-600">{proof.footnote}</p>
         </article>
       )}
-    </div>
+    </PageStack>
   );
 }

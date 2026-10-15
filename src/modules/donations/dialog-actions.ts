@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { trimmedIdString } from "@/lib/id-schema";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
 import {
@@ -17,7 +18,7 @@ import {
  * Dienste: Kennzeichnen und Ändern brauchen `finance:manage`, Nachweise ansehen `finance:read`.
  */
 
-const id = z.string().trim().min(1).max(64);
+const id = trimmedIdString;
 
 export async function loadAssignDonationAction(
   input: unknown,

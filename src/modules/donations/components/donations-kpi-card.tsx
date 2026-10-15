@@ -40,7 +40,7 @@ export function DonationsKpiCard({
     <Card
       data-kpi={label}
       className={cn(
-        "relative isolate h-full gap-0 rounded-[1.75rem] bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
+        "relative isolate h-full gap-0 rounded-4xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
         KPI_ACCENT.violet.card,
         className,
       )}
@@ -55,14 +55,12 @@ export function DonationsKpiCard({
           <div className="@container/spenden min-w-0">
             <div className="flex items-start gap-2.5">
               <span
-                className="flex size-8 shrink-0 items-center justify-center rounded-[0.7rem] bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/18 inset-ring inset-ring-white/20 [&_svg]:size-4"
                 aria-hidden="true"
               >
                 <HandHeartIcon />
               </span>
-              <h2 className="min-w-0 flex-1 pt-1 text-[0.9375rem] leading-snug font-semibold">
-                {label}
-              </h2>
+              <h2 className="min-w-0 flex-1 pt-1 text-sm leading-snug font-semibold">{label}</h2>
             </div>
             <div className="mt-3" style={{ fontSize: fitSize(value.length) }}>
               <KpiValue className="whitespace-nowrap">{value}</KpiValue>
@@ -78,10 +76,10 @@ export function DonationsKpiCard({
           {byKind.length > 0 && (
             // Dunkler statt heller Kasten: Weiß auf Violett behält so mindestens 4,5 : 1.
             <div className="self-start rounded-2xl bg-black/15 p-3.5 ring-1 ring-white/10">
-              <h3 className="text-[0.6875rem] font-semibold tracking-wide text-white uppercase">
+              <h3 className="text-2xs font-semibold tracking-wide text-white uppercase">
                 Nach Art
               </h3>
-              <dl className="mt-2 grid gap-1.5 text-sm md:text-[0.8125rem]">
+              <dl className="mt-2 grid gap-1.5 text-sm md:text-xs">
                 {byKind.map((kind) => (
                   <div key={kind.label} className="flex items-baseline justify-between gap-3">
                     <dt className="min-w-0 text-white/90">{kind.label}</dt>

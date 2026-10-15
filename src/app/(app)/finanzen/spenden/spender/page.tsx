@@ -13,6 +13,7 @@ import { SEGMENT_BAR, segmentItem } from "@/components/ui/segment-styles";
 import { BackLink } from "@/components/shared/back-link";
 import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import { ToneBadge, type Tone } from "@/components/shared/status-badge";
 import { TableCard } from "@/components/shared/table-card";
 import { formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
@@ -63,7 +64,7 @@ function addressLines(donor: DonorRowDto): string[] {
  * Spender eines Jahres (mit `?alle=1` alle, auch ohne Spenden im Jahr): Summe, Anzahl, Stand der Bestätigungen und alles, was
  * über sie gespeichert ist (Anschrift, Sperre – zugleich die Auskunft für externe Spender). Mitglieder ändert man beim
  * Mitglied; „Adresse fehlt“ führt dorthin bzw. zum Spender. `?bearbeiten=<id>` hebt diesen Spender hervor (Ziel von „Adresse
- * eintragen“).
+ * eintragen“). Am Handy gestapelt (`<Table stack>`): jeder Spender eine kleine Karte.
  */
 export default async function DonorsPage({
   searchParams,
@@ -99,7 +100,10 @@ export default async function DonorsPage({
   const totalCents = donors.reduce((sum, donor) => sum + donor.totalCents, 0);
 
   return (
-    <>
+    <PageStack>
+      <BackLink href={currentYear ? "/finanzen/spenden" : `/finanzen/spenden?jahr=${year}`}>
+        Spenden {year}
+      </BackLink>
       <FinanceHeader
         description={`Spender ${year}`}
         counts={counts}
@@ -107,11 +111,8 @@ export default async function DonorsPage({
           years.length > 1 ? <YearSwitch years={years} current={year} href={yearHref} /> : undefined
         }
       />
-      <BackLink href={currentYear ? "/finanzen/spenden" : `/finanzen/spenden?jahr=${year}`}>
-        Spenden {year}
-      </BackLink>
 
-      <nav aria-label="Welche Spender" className={cn(SEGMENT_BAR, "mb-4")}>
+      <nav aria-label="Welche Spender" className={cn(SEGMENT_BAR, "self-start")}>
         <Link
           href={`${BASE}${buildQuery(params, { alle: undefined, bearbeiten: undefined })}`}
           aria-current={!all ? "page" : undefined}
@@ -139,23 +140,19 @@ export default async function DonorsPage({
           }
         />
       ) : (
-        <>
+        <div>
           <p className="mb-2 text-sm text-muted-foreground tabular-nums">
             {donors.length === 1 ? "1 Spender" : `${donors.length} Spender`} · zusammen{" "}
             {formatEuroFromCents(totalCents)} in {year}
           </p>
           <TableCard>
-            <Table>
+            <Table stack>
               <caption className="sr-only">Spender {year}, nach Summe der Spenden geordnet</caption>
               <TableHeader>
                 <TableRow>
                   <TableHead scope="col">Spender</TableHead>
-                  <TableHead scope="col" className="hidden md:table-cell">
-                    Anschrift
-                  </TableHead>
-                  <TableHead scope="col" className="hidden sm:table-cell">
-                    Bestätigung
-                  </TableHead>
+                  <TableHead scope="col">Anschrift</TableHead>
+                  <TableHead scope="col">Bestätigung</TableHead>
                   <TableHead scope="col" className="text-right">
                     Spenden {year}
                   </TableHead>
@@ -188,20 +185,11 @@ export default async function DonorsPage({
                             Gesperrt: {donor.restrictedReason}
                           </p>
                         )}
-                        {/* Am Handy und auf Tablets stehen Anschrift und Stand hier. */}
-                        <div className="mt-1 text-sm md:hidden">
-                          <Address donor={donor} lines={lines} />
-                        </div>
-                        {state && (
-                          <ToneBadge tone={state.tone} className="mt-1.5 sm:hidden">
-                            <span title={state.explanation}>Bestätigung {state.label}</span>
-                          </ToneBadge>
-                        )}
                       </TableCell>
-                      <TableCell className="hidden align-top whitespace-normal md:table-cell">
+                      <TableCell label="Anschrift" className="align-top whitespace-normal">
                         <Address donor={donor} lines={lines} />
                       </TableCell>
-                      <TableCell className="hidden align-top sm:table-cell">
+                      <TableCell label="Bestätigung" className="align-top">
                         {state ? (
                           <ToneBadge tone={state.tone}>
                             <span title={state.explanation}>{state.label}</span>
@@ -211,7 +199,10 @@ export default async function DonorsPage({
                           <span className="text-sm text-muted-foreground">keine Spende</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right align-top whitespace-nowrap tabular-nums">
+                      <TableCell
+                        label={`Spenden ${year}`}
+                        className="text-right align-top whitespace-nowrap tabular-nums"
+                      >
                         <span className="block font-semibold">
                           {formatEuroFromCents(donor.totalCents)}
                         </span>
@@ -220,7 +211,7 @@ export default async function DonorsPage({
                         </span>
                       </TableCell>
                       {canManage && (
-                        <TableCell className="text-right align-top">
+                        <TableCell className="text-right align-top max-md:mt-1">
                           <DonorRowActions
                             donor={{
                               id: donor.id,
@@ -238,14 +229,14 @@ export default async function DonorsPage({
               </TableBody>
             </Table>
           </TableCard>
-        </>
+        </div>
       )}
-      <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+      <p className="max-w-3xl text-sm text-muted-foreground">
         Name und Anschrift eines Mitglieds kommen aus dem Mitglied – du änderst sie dort.
         Spenderdaten werden 10 Jahre aufbewahrt; ein Spender ohne Spenden lässt sich löschen, sonst
         sperren.
       </p>
-    </>
+    </PageStack>
   );
 }
 

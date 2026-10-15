@@ -150,8 +150,8 @@ export function DonationDialog({
         <DialogHeader>
           <DialogTitle>Spende erfassen</DialogTitle>
           <DialogDescription>
-            Geldspenden landen gleich im Kassenbuch. Sach- und Aufwandsspenden stehen nur hier –
-            mit ihren Nachweisen.
+            Geldspenden landen gleich im Kassenbuch. Sach- und Aufwandsspenden stehen nur hier – mit
+            ihren Nachweisen.
           </DialogDescription>
         </DialogHeader>
         {/* Das Formular entsteht bei jedem Öffnen neu – nach dem Speichern beginnt die nächste Spende leer. */}
@@ -556,13 +556,7 @@ function DonationForm({
               hint="vor Beginn der Tätigkeit"
               required
             />
-            <TextField
-              form={form}
-              name="activityFrom"
-              label="Tätigkeit von"
-              type="date"
-              required
-            />
+            <TextField form={form} name="activityFrom" label="Tätigkeit von" type="date" required />
             <TextField form={form} name="activityTo" label="bis" type="date" required />
             <TextField
               form={form}

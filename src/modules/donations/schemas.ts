@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { trimmedIdString, trimmedOptionalIdString } from "@/lib/id-schema";
 import { COUNTRY_CODES } from "@/lib/countries";
 import { parseCalendarDate } from "@/lib/dates";
 import { calendarDateText } from "@/modules/finance/ledger-schemas";
@@ -21,13 +22,8 @@ export const EXEMPTION_KINDS = ["EXEMPTION_NOTICE", "KST_ANNEX", "FINDING_60A"] 
 
 export type DonorMode = (typeof DONOR_MODES)[number];
 
-const id = z.string().trim().min(1).max(64);
-const optionalId = z
-  .string()
-  .trim()
-  .max(64)
-  .optional()
-  .transform((value) => (value ? value : undefined));
+const id = trimmedIdString;
+const optionalId = trimmedOptionalIdString;
 const optionalText = (max: number, label: string) =>
   z
     .string()

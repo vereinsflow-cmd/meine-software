@@ -1,9 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { attachDonationFile } from "@/modules/donations/evidence";
 import { apiHandler, jsonOk } from "@/server/api";
-import { env } from "@/server/env";
 import { validationFailed } from "@/server/errors";
 import { requireTenantContext } from "@/server/tenancy/context";
+import { rejectOversizedDocumentUpload } from "@/server/upload-limit";
 
 /**
  * Nachweis zu einer Spende hochladen (multipart/form-data: `file`, `donationId`) – z. B. Rechnung zur Bewertung einer
@@ -14,15 +14,8 @@ import { requireTenantContext } from "@/server/tenancy/context";
 export const POST = apiHandler(async (request: NextRequest) => {
   const ctx = await requireTenantContext();
 
-  const limit = env.MAX_UPLOAD_MB * 1024 * 1024 + 256 * 1024;
-  const announced = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(announced) && announced > limit) {
-    const message = `Die Datei ist zu groß (höchstens ${env.MAX_UPLOAD_MB} MB).`;
-    return NextResponse.json(
-      { ok: false, error: { code: "VALIDATION", message, fieldErrors: { file: [message] } } },
-      { status: 413, headers: { "Cache-Control": "no-store" } },
-    );
-  }
+  const tooLarge = rejectOversizedDocumentUpload(request);
+  if (tooLarge) return tooLarge;
 
   const form = await request.formData();
   const file = form.get("file");

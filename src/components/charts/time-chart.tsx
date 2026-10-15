@@ -553,7 +553,7 @@ export function TimeChart({
               textAnchor="middle"
               className={cn(
                 "font-medium tabular-nums",
-                narrow ? "text-[0.6875rem]" : "text-xs",
+                narrow ? "text-2xs" : "text-xs",
                 index === active ? "fill-foreground" : "fill-muted-foreground",
               )}
             >

@@ -34,7 +34,12 @@ import { parseEuroToCents } from "@/lib/money";
 import { ALLOWED_EXTENSIONS_TEXT, clientFileError } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 import { ReceiptPicker } from "@/modules/finance/components/receipt-picker";
-import { DONOR_KIND_LABEL, PAYMENT_METHOD_LABEL, RECEIPT_WISH_LABEL, receiptBadge } from "../format";
+import {
+  DONOR_KIND_LABEL,
+  PAYMENT_METHOD_LABEL,
+  RECEIPT_WISH_LABEL,
+  receiptBadge,
+} from "../format";
 import { addressComplete, donationReceiptState } from "../receipt-status";
 import { DONOR_KINDS, PAYMENT_METHODS, RECEIPT_WISHES, type DonorMode } from "../schemas";
 import type { DonationFormOptions } from "../service";
@@ -634,9 +639,7 @@ export function FilePickList({
 // ---------------------------------------------------------------------------------------------
 
 export type Loaded<T> =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; data: T };
+  { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
 /**
  * Holt die Daten eines Fensters, sobald sein Inhalt erscheint (Radix baut ihn bei jedem Öffnen neu auf – so sind sie
@@ -733,7 +736,7 @@ export function BookingFacts({
       {facts.map((fact) => (
         <div key={fact.label} className="min-w-0">
           <dt className="text-xs text-muted-foreground">{fact.label}</dt>
-          <dd className={cn("tabular-nums wrap-anywhere", fact.strong && "font-semibold")}>
+          <dd className={cn("wrap-anywhere tabular-nums", fact.strong && "font-semibold")}>
             {fact.value}
           </dd>
         </div>
@@ -862,10 +865,19 @@ export function ReasonDialog({
             )}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => change(false)} disabled={pending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => change(false)}
+              disabled={pending}
+            >
               Abbrechen
             </Button>
-            <Button type="submit" variant={destructive ? "destructive" : "default"} disabled={pending}>
+            <Button
+              type="submit"
+              variant={destructive ? "destructive" : "default"}
+              disabled={pending}
+            >
               {pending ? "Einen Moment …" : confirmLabel}
             </Button>
           </DialogFooter>

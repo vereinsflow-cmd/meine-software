@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChartColumnIcon, HandHeartIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CARD_TITLE, Card, CardContent } from "@/components/ui/card";
+import { AREA_ICON } from "@/components/shared/area-icons";
+import { CompactEmpty } from "@/components/shared/compact-empty";
+import { EmptyState } from "@/components/shared/empty-state";
 import { NoAccess } from "@/components/shared/no-access";
+import { PageStack } from "@/components/shared/page-section";
 import {
   formatCalendarDate,
   formatEuroFromCents,
@@ -71,20 +76,19 @@ export default async function DonationsPage({
 
   if (!setup) {
     return (
-      <>
+      <PageStack>
         <FinanceHeader description="Spenden, Spender und Zuwendungsbestätigungen" counts={counts} />
-        <Card className="max-w-3xl">
-          <CardContent>
-            <p className="text-sm">
-              Richte zuerst das Kassenbuch ein. Danach erfasst du hier Spenden – Geld, Sachspenden
-              und Verzicht auf Auslagen.
-            </p>
-            <Button asChild className="mt-3">
+        <EmptyState
+          icon={<AREA_ICON.finanzen />}
+          title="Erst das Kassenbuch einrichten"
+          description="Danach erfasst du hier Spenden – Geld, Sachspenden und Verzicht auf Auslagen."
+          action={
+            <Button asChild>
               <Link href="/finanzen/kassenbuch">Zum Kassenbuch</Link>
             </Button>
-          </CardContent>
-        </Card>
-      </>
+          }
+        />
+      </PageStack>
     );
   }
 
@@ -104,7 +108,7 @@ export default async function DonationsPage({
   const lastMonth = page.months.at(-1)?.month ?? 11;
 
   return (
-    <>
+    <PageStack>
       <FinanceHeader
         description={
           current
@@ -128,7 +132,7 @@ export default async function DonationsPage({
         }
       />
 
-      <section aria-label="Kennzahlen" className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <section aria-label="Kennzahlen" className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <DonationsKpiCard
           className="col-span-2"
           label={`Spenden ${year}`}
@@ -161,7 +165,7 @@ export default async function DonationsPage({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)] xl:grid-rows-[auto_1fr] xl:items-start">
         <Card className="xl:col-start-2 xl:row-start-1">
           <CardContent className="grid gap-1">
-            <h2 className="text-lg font-semibold">Das steht an</h2>
+            <h2 className={CARD_TITLE}>Das steht an</h2>
             <DueList items={due} canManage={canManage} empty="Gerade ist hier nichts zu tun." />
           </CardContent>
         </Card>
@@ -171,7 +175,7 @@ export default async function DonationsPage({
             <CardContent className="grid gap-4">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div>
-                  <h2 className="text-lg font-semibold">Spenden je Monat</h2>
+                  <h2 className={CARD_TITLE}>Spenden je Monat</h2>
                   <p className="text-sm text-muted-foreground">
                     {current
                       ? `Januar bis ${formatCalendarDate(today)}`
@@ -191,9 +195,13 @@ export default async function DonationsPage({
                 </Link>
               </div>
               {empty ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">
-                  Noch keine Spenden in {year}.
-                </p>
+                <CompactEmpty
+                  icon={<ChartColumnIcon />}
+                  accent="slate"
+                  title={`Noch keine Spenden in ${year}`}
+                >
+                  Sobald eine Spende erfasst ist, stehen hier die Monate als Balken.
+                </CompactEmpty>
               ) : (
                 <DonationMonthChart year={year} months={page.months} current={current} />
               )}
@@ -204,7 +212,7 @@ export default async function DonationsPage({
             <CardContent className="grid gap-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div>
-                  <h2 className="text-lg font-semibold">Letzte Spenden</h2>
+                  <h2 className={CARD_TITLE}>Letzte Spenden</h2>
                   {!empty && (
                     <p className="text-sm text-muted-foreground">
                       {kpi.count > page.latest.length
@@ -225,10 +233,11 @@ export default async function DonationsPage({
                 )}
               </div>
               {empty ? (
-                <p className="py-6 text-sm text-muted-foreground">
-                  Noch keine Spenden.
-                  {canManage && " Mit „Spende erfassen“ trägst du die erste ein."}
-                </p>
+                <CompactEmpty icon={<HandHeartIcon />} accent="violet" title="Noch keine Spenden">
+                  {canManage
+                    ? "Mit „Spende erfassen“ trägst du die erste ein."
+                    : "Sobald der Verein Spenden erfasst, stehen sie hier."}
+                </CompactEmpty>
               ) : (
                 <LatestDonations rows={page.latest} caption={`Die neuesten Spenden ${year}`} />
               )}
@@ -240,7 +249,7 @@ export default async function DonationsPage({
           <Card className="xl:col-start-2 xl:row-start-2">
             <CardContent className="grid gap-4">
               <div>
-                <h2 className="text-lg font-semibold">Wofür gespendet wurde</h2>
+                <h2 className={CARD_TITLE}>Wofür gespendet wurde</h2>
                 <p className="text-sm text-muted-foreground">
                   {kpi.boundCents > 0
                     ? `${formatEuroFromCents(kpi.boundCents)} ${kpi.boundCents === 100 ? "hat" : "haben"} einen festen Zweck`
@@ -255,6 +264,6 @@ export default async function DonationsPage({
           </Card>
         )}
       </div>
-    </>
+    </PageStack>
   );
 }

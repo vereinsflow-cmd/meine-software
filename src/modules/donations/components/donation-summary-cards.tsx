@@ -24,13 +24,13 @@ function SummaryCard({
         <span
           aria-hidden="true"
           className={cn(
-            "hidden size-8 shrink-0 items-center justify-center rounded-[0.7rem] sm:flex [&_svg]:size-4",
+            "hidden size-8 shrink-0 items-center justify-center rounded-lg sm:flex [&_svg]:size-4",
             TILE_ACCENT.violet.chip,
           )}
         >
           {icon}
         </span>
-        <h2 className="min-w-0 flex-1 pt-1 text-[0.9375rem] leading-snug font-semibold break-words">
+        <h2 className="min-w-0 flex-1 pt-1 text-sm leading-snug font-semibold break-words">
           {title}
         </h2>
       </div>
@@ -39,7 +39,7 @@ function SummaryCard({
   );
 }
 
-const BIG = "text-[2.25rem] leading-none font-extrabold tracking-[-0.035em] tabular-nums";
+const BIG = "text-4xl leading-none font-extrabold tracking-[-0.035em] tabular-nums";
 
 /** „Spender 2026“: verschiedene Spender (ohne Spendendose), aufgeteilt nach Mitgliedern, Firmen/Stiftungen, weiteren Personen. */
 export function DonorsCard({
@@ -123,13 +123,13 @@ export function ReceiptsCard({
       ) : (
         <ul className="mt-2.5 grid gap-0.5 text-sm">
           <li className="flex items-baseline gap-2">
-            <span aria-hidden="true" className="size-2.5 shrink-0 rounded-[3px] bg-emerald-500" />
+            <span aria-hidden="true" className="size-2.5 shrink-0 rounded-xs bg-emerald-500" />
             <span className="font-medium">{issued} erstellt</span>
           </li>
           <li className="flex items-baseline gap-2">
             <span
               aria-hidden="true"
-              className="size-2.5 shrink-0 rounded-[3px] bg-foreground/25 dark:bg-white/30"
+              className="size-2.5 shrink-0 rounded-xs bg-foreground/25 dark:bg-white/30"
             />
             <span className="text-muted-foreground">
               {notNeeded} {notNeededLabel}
