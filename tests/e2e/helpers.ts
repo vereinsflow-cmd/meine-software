@@ -1,6 +1,12 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
+import {
+  expect,
+  type Browser,
+  type BrowserContextOptions,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD ?? "Vereinsflow-Demo-2026!";
@@ -242,4 +248,32 @@ export async function ensureLedger(page: Page): Promise<void> {
     await setup.click();
   }
   await expect(page.getByRole("button", { name: "Neue Buchung" })).toBeVisible({ timeout: 20_000 });
+}
+
+/**
+ * Öffnet auf einer Spenden-Seite (Cockpit oder „Alle Spenden“) das Fenster „Spende erfassen“. Ein Klick vor der Hydration
+ * ginge verloren – deshalb wird er wiederholt, bis das Fenster offen ist.
+ */
+export async function openDonationDialog(page: Page): Promise<Locator> {
+  const dialog = page.getByRole("dialog", { name: "Spende erfassen" });
+  await expect(async () => {
+    // Ist das Fenster nur langsam aufgegangen, nicht noch einmal klicken – der Knopf liegt dann hinter ihm.
+    if (!(await dialog.isVisible()))
+      await page.getByRole("button", { name: "Spende erfassen" }).click();
+    await expect(dialog).toBeVisible({ timeout: 1500 });
+  }).toPass({ timeout: 15_000 });
+  return dialog;
+}
+
+/**
+ * Im Spenden-Fenster „Von wem?“ → „Andere Person oder Firma“ → neuer Spender. Gibt es schon andere Spender, steht davor eine
+ * Auswahl mit „Neu eintragen …“ – je nach Reihenfolge der Tests mal ja, mal nein. Danach ist das Feld „Name“ zu sehen.
+ */
+export async function chooseNewDonor(dialog: Locator): Promise<void> {
+  await dialog.getByRole("radio", { name: /^Andere Person oder Firma/ }).check();
+  const known = dialog.getByRole("combobox", { name: "Person oder Firma" });
+  const name = dialog.getByRole("textbox", { name: "Name", exact: true });
+  await expect(known.or(name)).toBeVisible();
+  if (await known.isVisible()) await known.selectOption({ label: "Neu eintragen …" });
+  await expect(name).toBeVisible();
 }
