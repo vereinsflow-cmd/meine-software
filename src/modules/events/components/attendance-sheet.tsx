@@ -415,11 +415,14 @@ export function AttendanceSheet({
                       </IconButton>
                     )}
                   </div>
-                  {/* Am Handy bekommt die Mitte („Entschuldigt“, das längste Wort) mehr Platz, ab 768 px drei gleiche Spalten. */}
+                  {/* Am Handy bekommt die Mitte („Entschuldigt“, das längste Wort) mehr Platz, ab 768 px drei gleiche Spalten. Keine
+                      Spalte wird schmaler als ihre Beschriftung in Fettschrift (`max-content`): In breiteren Schriften (z. B.
+                      DejaVu Sans unter Linux) passt „Anwesend“ bei 360 px sonst nicht mehr in sein Feld – dann nimmt es sich
+                      den Platz, den „Fehlt“ nicht braucht. */}
                   <fieldset
                     aria-labelledby={nameId}
                     disabled={pending}
-                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)] gap-2 md:w-[26rem] md:grid-cols-3"
+                    className="grid grid-cols-[minmax(max-content,1fr)_minmax(max-content,1.3fr)_minmax(max-content,1fr)] gap-2 md:w-[26rem] md:grid-cols-3"
                   >
                     {ATTENDANCE_STATUSES.map((status) => (
                       <label
@@ -446,7 +449,14 @@ export function AttendanceSheet({
                           aria-hidden="true"
                           className="hidden size-4 shrink-0 sm:peer-checked:block"
                         />
-                        {ATTENDANCE_STATUS_LABEL[status]}
+                        {/* Unsichtbare fette Kopie (Höhe 0, für Screenreader stumm) hält die Breite der Fettschrift frei – so
+                            springen die Spalten beim Antippen nicht, wenn die gewählte Beschriftung fett wird. */}
+                        <span
+                          data-label={ATTENDANCE_STATUS_LABEL[status]}
+                          className="grid after:invisible after:h-0 after:overflow-hidden after:font-semibold after:content-[attr(data-label)]"
+                        >
+                          {ATTENDANCE_STATUS_LABEL[status]}
+                        </span>
                       </label>
                     ))}
                   </fieldset>

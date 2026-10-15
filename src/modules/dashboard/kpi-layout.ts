@@ -26,27 +26,28 @@ export const BENTO_CELL = [
 ] as const;
 
 /**
- * Einfaches Raster (Rollen ohne Mitgliederzahlen, oder wenn Karten fehlen): so viele Spalten wie Karten, keine leeren Plätze –
- * vier nebeneinander erst ab 58 rem, schmaler wären die Karten zu eng (darunter zwei Spalten). Stehen drei oder vier in einer
- * Reihe, bekommt jede Beschriftung Platz für zwei Zeilen, damit die Zahlen auf einer Höhe stehen, auch wenn nur manche
- * Beschriftungen umbrechen.
- */
-/**
- * Kennzahlen „Klein“: ohne Grafiken, deshalb schon ab 49 rem alle in einer Reihe (darunter zwei Spalten); jede Beschriftung
- * hat zwei Zeilen Platz.
+ * Kennzahlen „Klein“: ohne Grafiken, deshalb schon ab 49 rem alle in einer Reihe (darunter zwei Spalten).
+ *
+ * Stehen drei oder vier Karten in einer Reihe, teilen sie sich die Zeilen für Kopf, Zahl und Kurs (`kpi-row` in
+ * globals.css): Die Zahlen stehen auf einer Höhe, auch wenn manche Beschriftungen umbrechen – egal, auf wie viele Zeilen.
  */
 export const SMALL_COLUMNS = [
   "",
   "@bento/kpis:grid-cols-1",
   "@bento/kpis:grid-cols-2",
-  "@bento/kpis:grid-cols-3 @bento/kpis:[&_[data-slot=kpi-label]]:min-h-[calc(2lh+0.25rem)]",
-  "@bento/kpis:grid-cols-4 @bento/kpis:[&_[data-slot=kpi-label]]:min-h-[calc(2lh+0.25rem)]",
+  "@bento/kpis:grid-cols-3 @bento/kpis:kpi-row",
+  "@bento/kpis:grid-cols-4 @bento/kpis:kpi-row",
 ] as const;
 
+/**
+ * Einfaches Raster (Rollen ohne Mitgliederzahlen, oder wenn Karten fehlen): so viele Spalten wie Karten, keine leeren Plätze –
+ * vier nebeneinander erst ab 58 rem, schmaler wären die Karten zu eng (darunter zwei Spalten). In einer Reihe wie bei „Klein“
+ * mit gemeinsamen Zeilen (`kpi-row`).
+ */
 export const GRID_COLUMNS = [
   "",
   "@bento/kpis:grid-cols-1",
   "@bento/kpis:grid-cols-2",
-  "@bento/kpis:grid-cols-3 @bento/kpis:[&_[data-slot=kpi-label]]:min-h-[calc(2lh+0.25rem)]",
-  "@bento-wide/kpis:grid-cols-4 @bento-wide/kpis:[&_[data-slot=kpi-label]]:min-h-[calc(2lh+0.25rem)]",
+  "@bento/kpis:grid-cols-3 @bento/kpis:kpi-row",
+  "@bento-wide/kpis:grid-cols-4 @bento-wide/kpis:kpi-row",
 ] as const;

@@ -97,7 +97,7 @@ test.describe("Dashboard-Reiter", () => {
     expect((await look(second)).weight).toBeGreaterThan((await look(first)).weight);
   });
 
-  test("Fläche gleitet weich (300 ms); bei „Bewegung reduzieren“ springt sie ohne Übergang", async ({
+  test("Fläche gleitet weich (200 ms); bei „Bewegung reduzieren“ springt sie ohne Übergang", async ({
     page,
   }) => {
     await login(page, USERS.admin);
@@ -107,7 +107,8 @@ test.describe("Dashboard-Reiter", () => {
         const style = getComputedStyle(el);
         return { property: style.transitionProperty, duration: style.transitionDuration };
       });
-    await expect.poll(transition).toEqual({ property: "transform, width", duration: "0.3s" });
+    // 200 ms seit dem Feinschliff vom 05.10.2026 (vorher 300 ms) – kürzer wirkt der Wechsel direkter.
+    await expect.poll(transition).toEqual({ property: "transform, width", duration: "0.2s" });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect.poll(async () => (await transition()).property).toBe("none");
   });

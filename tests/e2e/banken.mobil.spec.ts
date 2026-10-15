@@ -87,15 +87,22 @@ test("Lange Liste am Handy: scrollt mit dem Finger, obwohl das Fenster das Scrol
   await expect(list.getByRole("option")).toHaveCount(8);
   expect(await list.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
 
-  // Wischen mit dem Finger (echte Touch-Ereignisse über das DevTools-Protokoll von Chromium).
+  // Wischen mit dem Finger: echte Touch-Ereignisse über das DevTools-Protokoll von Chromium, in mehreren Schritten (wie
+  // `swipe` in dashboard.mobil.spec.ts). Die Sperre des Fensters sieht genau diese Ereignisse. Nicht
+  // `Input.synthesizeScrollGesture`: Das scrollt im kopflosen Chromium unter Linux (CI) gar nichts, auch keine leere Seite.
   const box = (await list.boundingBox())!;
+  const x = Math.round(box.x + box.width / 2);
+  const from = Math.round(box.y + box.height * 0.8);
+  const to = Math.round(box.y + box.height * 0.2);
   const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Input.synthesizeScrollGesture", {
-    x: Math.round(box.x + box.width / 2),
-    y: Math.round(box.y + box.height * 0.8),
-    yDistance: -Math.round(box.height * 0.6),
-    gestureSourceType: "touch",
-    speed: 600,
-  });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: from }] });
+  for (let step = 1; step <= 10; step++) {
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x, y: from + ((to - from) * step) / 10 }],
+    });
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
   await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 });

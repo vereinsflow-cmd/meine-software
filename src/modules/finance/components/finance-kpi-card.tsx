@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { formatSignedEuro } from "../ledger-format";
 
 const fitSize = (chars: number) =>
-  `clamp(1.05rem, calc((100cqi - 2.5rem) / ${(0.64 * chars).toFixed(2)}), 2.15rem)`;
+  `clamp(1.05rem, calc(100cqi / ${(0.64 * chars).toFixed(2)}), 2.15rem)`;
 
 /**
  * Kennzahl der Finanzen im Stil der Dashboard-Karten (Farbverlauf, weiße Schrift, kleiner Kurs unten). Beträge kommen in
@@ -56,8 +56,9 @@ export function FinanceKpiCard({
         ) : undefined
       }
     >
-      {/* Lange Beträge werden kleiner, damit sie auch in schmalen Karten (vier nebeneinander) ganz zu sehen sind: Die Karte
-          ist ein Container (`@container/kpi`), 100cqi ist ihre Breite, 2,5rem der Innenabstand, ein Zeichen etwa 0,64em. */}
+      {/* Lange Beträge werden kleiner, damit sie auch in schmalen Karten (vier nebeneinander) ganz zu sehen sind: Der
+          Zahlenbereich der Karte ist ein Container (`@container/kpi`, siehe `KpiShell`), 100cqi ist seine Breite – die der
+          Karte ohne Innenabstand –, ein Zeichen etwa 0,64em. */}
       <div className="mt-3" style={{ fontSize: fitSize(value.length) }}>
         <KpiValue className="whitespace-nowrap">{value}</KpiValue>
       </div>
