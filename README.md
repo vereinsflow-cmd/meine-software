@@ -190,7 +190,9 @@ offen lassen (oder `docker compose up -d`) und erst dann `npm run dev` bzw. `npm
 - **Barrierefreiheit** (`tests/e2e/a11y.spec.ts`): axe-core prüft alle Hauptseiten (öffentlich und angemeldet, mehrere Rollen, hell und dunkel,
   geöffneter Dialog) nach WCAG 2.1 A/AA. Das findet nur einen Teil der Probleme – ein Durchgang mit Screenreader und Tastatur bleibt nötig.
 - **Ende-zu-Ende** (`tests/e2e`): Playwright startet einen eigenen Server (Port 3100) mit eigener Datenbank `vf_e2e`, die vor
-  jedem Lauf neu aufgebaut wird – die Entwicklungsdatenbank bleibt unberührt.
+  jedem Lauf neu aufgebaut wird – die Entwicklungsdatenbank bleibt unberührt. Für einen zweiten, gleichzeitigen Lauf aus einem
+  anderen Ordner: `E2E_PORT=3400 E2E_DATABASE=vf_e2e_zwei npx playwright test` (die Extra-Datenbank wird danach gelöscht,
+  Details in `AGENTS.md`).
 
 Die Tests brauchen einen laufenden PostgreSQL (siehe Schnellstart, Schritt 3). Die Verbindung für die Test-Datenbanken kommt
 aus `TEST_DATABASE_ADMIN_URL` (Vorgabe: `postgresql://vereinsflow:vereinsflow@localhost:5432/postgres`).

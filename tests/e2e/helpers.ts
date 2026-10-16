@@ -7,6 +7,7 @@ import {
   type Locator,
   type Page,
 } from "@playwright/test";
+import { appUrlPattern } from "./environment";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD ?? "Vereinsflow-Demo-2026!";
@@ -176,7 +177,7 @@ export async function inviteNewPerson(
   await dialog.getByRole("button", { name: "Einladung senden" }).click();
   await expect(dialog).toBeHidden();
   await expect.poll(() => outboxMailsTo(person.email).length, { timeout: 15_000 }).toBe(1);
-  const url = /http:\/\/localhost:3100\/einladung\/[A-Za-z0-9_-]{43}/.exec(
+  const url = appUrlPattern("/einladung/[A-Za-z0-9_-]{43}").exec(
     outboxMailsTo(person.email)[0]!.text,
   )?.[0];
   expect(url, "Einladungslink in der E-Mail").toBeTruthy();

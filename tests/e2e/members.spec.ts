@@ -1,6 +1,7 @@
 import path from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { E2E_BASE_URL } from "./environment";
 import { USERS, login } from "./helpers";
 
 test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
@@ -188,7 +189,7 @@ test.describe("Sichtbarkeit nach Rolle", () => {
   });
 
   test("Nicht angemeldet: API antwortet mit 401 statt Daten", async ({ playwright }) => {
-    const anonymous = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    const anonymous = await playwright.request.newContext({ baseURL: E2E_BASE_URL });
     const response = await anonymous.get("/api/members/export");
     expect(response.status()).toBe(401);
     expect(await response.json()).toMatchObject({ ok: false, error: { code: "UNAUTHENTICATED" } });
