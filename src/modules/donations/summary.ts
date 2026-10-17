@@ -169,8 +169,11 @@ export interface DonationRowDto {
   itemDescription: string | null;
   /** Reihenfolge bei gleichem Tag: erfasst bzw. gebucht. */
   recordedAt: Date;
-  /** Was der Kassenwart mit der Zeile tun kann (nur mit `finance:manage`). */
-  actions: { assign: boolean; edit: boolean; void: boolean; unassign: boolean };
+  /**
+   * Was der Kassenwart mit der Zeile tun kann (nur mit `finance:manage`). `evidence`: Nachweise anhängen und entfernen –
+   * ansehen lassen sie sich bei jeder Sach- und Aufwandsspende, auch storniert und mit `finance:read`.
+   */
+  actions: { assign: boolean; edit: boolean; void: boolean; unassign: boolean; evidence: boolean };
 }
 
 export function donorRef(donor: DonorRecord): DonorRefDto {
@@ -252,6 +255,7 @@ export function donationRow(d: DonationRecord, canManage: boolean): DonationRowD
       edit: canManage && live && state !== "ISSUED" && !(donor?.restricted ?? false),
       void: canManage && live && d.kind !== "MONEY" && state !== "ISSUED",
       unassign: canManage && live && d.kind === "MONEY" && state !== "ISSUED",
+      evidence: canManage && live && d.kind !== "MONEY",
     },
   };
 }
@@ -287,7 +291,7 @@ export function unassignedRow(line: UnassignedLineRecord, canManage: boolean): D
     note: line.note,
     itemDescription: null,
     recordedAt: line.entry.recordedAt,
-    actions: { assign: canManage, edit: false, void: false, unassign: false },
+    actions: { assign: canManage, edit: false, void: false, unassign: false, evidence: false },
   };
 }
 

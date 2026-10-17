@@ -13,110 +13,32 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ConfirmAction } from "@/components/shared/confirm-dialog";
+import type { MenuDialogProps } from "@/components/shared/more-actions";
 import { ALLOWED_EXTENSIONS_TEXT, clientFileError } from "@/lib/uploads";
 import { ReceiptPicker } from "@/modules/finance/components/receipt-picker";
-import {
-  attachDonationNoteAction,
-  removeDonationAttachmentAction,
-  unassignDonationAction,
-  voidDonationAction,
-} from "../actions";
+import { attachDonationNoteAction, removeDonationAttachmentAction } from "../actions";
 import { loadDonationEvidenceAction } from "../dialog-actions";
 import type { DonationEvidenceData } from "../dialog-data";
 import {
   DialogLoadError,
   DialogLoading,
-  ReasonDialog,
   uploadDonationEvidence,
   useDialogData,
 } from "./form-parts";
 
 /**
- * Kleine Fenster zu einer Spende (Zeilenaktionen der Liste „Alle Spenden“): stornieren (Sach- und Aufwandsspenden),
- * Kennzeichnung zurücknehmen (Geld) und Nachweise.
- */
-
-/** Sach- oder Aufwandsspende stornieren (mit Grund). Eine Geldspende storniert man über ihre Buchung. */
-export function VoidDonationDialog({
-  donation,
-  open,
-  onOpenChange,
-  onCloseAutoFocus,
-  onDone,
-}: {
-  /** `label`: „Sachspende 180,00 € von Getränke Jansen e.K.“ o. Ä. */
-  donation: { id: string; label: string };
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCloseAutoFocus?: (event: Event) => void;
-  onDone?: () => void;
-}) {
-  return (
-    <ReasonDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      onCloseAutoFocus={onCloseAutoFocus}
-      title="Spende stornieren?"
-      description={`„${donation.label}“ zählt danach nirgends mehr mit. Gelöscht wird nichts – die Spende bleibt mit dem Grund unter „Storniert“ sichtbar.`}
-      placeholder="z. B. doppelt erfasst"
-      confirmLabel="Stornieren"
-      destructive
-      action={(reason) => voidDonationAction({ id: donation.id, reason })}
-      successMessage="Spende storniert."
-      onDone={onDone}
-    />
-  );
-}
-
-/** Geld: „Kennzeichnung zurücknehmen“ – die Buchung bleibt im Kassenbuch, nur ohne Spender („Spender fehlt“). */
-export function UnassignDonationDialog({
-  donation,
-  open,
-  onOpenChange,
-  onCloseAutoFocus,
-  onDone,
-}: {
-  donation: { id: string; label: string };
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCloseAutoFocus?: (event: Event) => void;
-  onDone?: () => void;
-}) {
-  const router = useRouter();
-  return (
-    <ConfirmAction
-      open={open}
-      onOpenChange={onOpenChange}
-      onCloseAutoFocus={onCloseAutoFocus}
-      title="Kennzeichnung zurücknehmen?"
-      description={`„${donation.label}“ bleibt im Kassenbuch und zählt weiter als Spende – nur ohne Spender („Spender fehlt“). Angehängte Nachweise werden entfernt.`}
-      confirmLabel="Zurücknehmen"
-      action={() => unassignDonationAction({ id: donation.id })}
-      successMessage="Kennzeichnung zurückgenommen."
-      onSuccess={() => {
-        onDone?.();
-        router.refresh();
-      }}
-    />
-  );
-}
-
-/**
- * „Nachweise“ einer Spende: Rechnung oder Gutachten zur Bewertung, Abrechnung und Verzichtserklärung – als Datei oder
- * kurzer Vermerk. Ansehen mit `finance:read`; anhängen und entfernen mit `finance:manage` (nicht bei stornierten
- * Spenden). Nachweise werden 10 Jahre aufbewahrt.
+ * „Nachweise“ einer Sach- oder Aufwandsspende („⋯“ in „Alle Spenden“): Rechnung oder Gutachten zur Bewertung,
+ * Abrechnung und Verzichtserklärung – als Datei oder kurzer Vermerk. Ansehen mit `finance:read`; anhängen und entfernen
+ * mit `finance:manage` (nicht bei stornierten Spenden). Nachweise werden 10 Jahre aufbewahrt.
  */
 export function EvidenceDialog({
   donation,
   open,
   onOpenChange,
   onCloseAutoFocus,
-}: {
+}: MenuDialogProps & {
+  /** `label`: „Sachspende von Getränke Jansen e.K. über 180,00 €“ o. Ä. */
   donation: { id: string; label: string };
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCloseAutoFocus?: (event: Event) => void;
 }) {
   // Während des Hochladens lässt sich das Fenster nicht schließen.
   const [busy, setBusy] = useState(false);
