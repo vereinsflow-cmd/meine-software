@@ -148,30 +148,67 @@ test.describe("Dashboard", () => {
     );
     await page.keyboard.press("Escape");
 
-    // Anordnung bei 1280 px (der Inhalt ist schmaler als 58 rem): Mitglieder-Kachel und Aufgaben-Ring nebeneinander und gleich
-    // hoch, die übrigen Kennzahlen als Raster darunter – links Termine, freie Plätze und Offene Zahlungen untereinander, rechts
-    // die Helferstunden über alle drei Reihen (oben und unten bündig). Maus weg (eine gedrückte Karte gibt sonst nach).
+    // Anordnung nach Inhaltsbreite – in beiden Fällen Mitglieder-Kachel und Aufgaben-Ring nebeneinander und gleich hoch, nichts
+    // ragt aus dem Fenster. Maus weg (eine gedrückte Karte gibt sonst nach).
     await page.mouse.move(0, 0);
     const box = async (locator: Locator) => (await locator.boundingBox())!;
-    const [m, a, s] = [await box(heroCard), await box(tasksCard), await box(side)];
-    expect(Math.abs(a.y - m.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(a.height - m.height)).toBeLessThanOrEqual(1);
-    expect(a.x).toBeGreaterThan(m.x + m.width);
-    expect(s.y).toBeGreaterThan(m.y + m.height);
-    const [t, h, f, p] = [
-      await box(eventsCard),
-      await box(hoursCard),
-      await box(shiftsCard),
-      await box(paymentsTile),
-    ];
-    for (const each of [f, p]) expect(Math.abs(each.x - t.x)).toBeLessThanOrEqual(1);
-    expect(f.y).toBeGreaterThan(t.y + t.height); // freie Plätze unter den Terminen …
-    expect(p.y).toBeGreaterThan(f.y + f.height); // … Zahlungen unter den freien Plätzen
-    expect(h.x).toBeGreaterThan(t.x + t.width);
-    expect(Math.abs(h.y - t.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(h.y + h.height - (p.y + p.height))).toBeLessThanOrEqual(1);
-    const width = page.viewportSize()!.width;
-    for (const each of [a, h]) expect(each.x + each.width).toBeLessThanOrEqual(width);
+    const measure = async (label: string) => {
+      const [m, a] = [await box(heroCard), await box(tasksCard)];
+      expect(Math.abs(a.y - m.y), label).toBeLessThanOrEqual(1);
+      expect(Math.abs(a.height - m.height), label).toBeLessThanOrEqual(1);
+      expect(a.x, label).toBeGreaterThan(m.x + m.width);
+      const [t, h, f, p] = [
+        await box(eventsCard),
+        await box(hoursCard),
+        await box(shiftsCard),
+        await box(paymentsTile),
+      ];
+      const width = page.viewportSize()!.width;
+      for (const each of [m, a, t, h, f, p]) {
+        expect(each.x + each.width, label).toBeLessThanOrEqual(width);
+      }
+      return { m, a, t, h, f, p, s: await box(side) };
+    };
+    const arrangement = () => side.evaluate((element) => getComputedStyle(element).display);
+    const viewport = page.viewportSize()!;
+
+    // 1280 px: Neben der schmalen Symbolleiste ist der Inhalt mindestens 58 rem breit – die übrigen Kennzahlen stehen als
+    // schmale Spalte rechts neben dem Paar, untereinander in der Reihenfolge des Codes (Termine, Helferstunden, freie Plätze,
+    // Zahlungen).
+    await expect.poll(arrangement, { message: "1280 px" }).toBe("flex");
+    {
+      const { m, a, t, h, f, p, s } = await measure("1280 px");
+      expect(s.x).toBeGreaterThan(a.x + a.width); // rechts neben dem Paar …
+      expect(s.width).toBeLessThan(a.x + a.width - m.x); // … schmaler als das Paar …
+      // … und oben bündig mit dem Anfang des Reiters: mit „Erste Schritte“ davor (offene Schritte des Vereinsadministrators)
+      // beginnt die Spalte schon neben dieser Karte, sonst neben dem Paar.
+      const intro = page.getByRole("region", { name: "Erste Schritte" });
+      const start = (await intro.count()) > 0 ? (await box(intro)).y : m.y;
+      expect(Math.abs(s.y - start)).toBeLessThanOrEqual(2);
+      const column = [t, h, f, p];
+      for (const [index, each] of column.entries()) {
+        expect(Math.abs(each.x - s.x)).toBeLessThanOrEqual(1); // alle in der Spalte …
+        const previous = column[index - 1];
+        if (previous) expect(each.y).toBeGreaterThan(previous.y + previous.height); // … in der Reihenfolge des Codes
+      }
+    }
+
+    // 1100 px (Inhalt schmaler als 58 rem): die übrigen Kennzahlen als Raster unter dem Paar – links Termine, freie Plätze und
+    // Offene Zahlungen untereinander, rechts die Helferstunden über alle drei Reihen (oben und unten bündig).
+    await page.setViewportSize({ width: 1100, height: 800 });
+    await expect.poll(arrangement, { message: "1100 px" }).toBe("grid");
+    {
+      const { m, t, h, f, p, s } = await measure("1100 px");
+      expect(s.y).toBeGreaterThan(m.y + m.height);
+      for (const each of [f, p]) expect(Math.abs(each.x - t.x)).toBeLessThanOrEqual(1);
+      expect(f.y).toBeGreaterThan(t.y + t.height); // freie Plätze unter den Terminen …
+      expect(p.y).toBeGreaterThan(f.y + f.height); // … Zahlungen unter den freien Plätzen
+      expect(h.x).toBeGreaterThan(t.x + t.width);
+      expect(Math.abs(h.y - t.y)).toBeLessThanOrEqual(1);
+      expect(Math.abs(h.y + h.height - (p.y + p.height))).toBeLessThanOrEqual(1);
+    }
+    await page.setViewportSize(viewport); // zurück auf 1280 px für den Rest des Tests
+    await expect.poll(arrangement).toBe("flex");
 
     // Unten auf der Mitglieder-Kachel: Aktiv, Passiv und alle übrigen Status – zusammen genau die große Zahl
     await expect(heroCard.getByRole("term")).toHaveText(["Aktiv", "Passiv", "Weitere"]);
@@ -299,9 +336,26 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("region", { name: "Kommende Veranstaltungen" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Geburtstage" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Neues Mitglied" })).toHaveCount(0);
+    // Schmale Symbolleiste (Standard ab 1024 px): „Dashboard“ ist ein direkter Link und hier die aktuelle Seite; „Verein“ ist
+    // ein Knopf, der rechts daneben ein Menü mit den Seiten öffnet – die Links gibt es nur, solange das Menü offen ist.
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    await expect(nav.getByRole("button", { name: "Seitenleiste ausklappen" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    const calendar = nav.getByRole("link", { name: "Kalender", exact: true });
+    await expect(calendar).toHaveCount(0);
     await openNavGroup(nav, "Verein");
-    await expect(nav.getByRole("link", { name: "Kalender", exact: true })).toBeVisible();
+    await expect(calendar).toBeVisible();
+    await calendar.click();
+    await expect(page).toHaveURL(/\/kalender$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Kalender" })).toBeVisible();
+    // Das Menü schließt beim Seitenwechsel, und die Gruppe zeigt an, dass sie die aktuelle Seite enthält
+    await expect(calendar).toHaveCount(0);
+    await expect(
+      nav.getByRole("button", { name: "Verein", exact: true }),
+    ).toHaveAccessibleDescription(/enthält die aktuelle Seite/);
   });
 
   test("Abteilungsleiterin sieht Kennzahlen und Auswertung nur für ihre Abteilung", async ({

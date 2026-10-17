@@ -1,6 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, chooseNewDonor, ensureLedger, login, open, openDonationDialog } from "./helpers";
+import {
+  USERS,
+  chooseNewDonor,
+  ensureLedger,
+  login,
+  loginSettled,
+  open,
+  openDonationDialog,
+  openNavGroup,
+} from "./helpers";
 
 /**
  * Spenden-Cockpit (Teil 1) im Browser: Der Kassenwart (Vorstand) erfasst Spenden – Geld eines Mitglieds, eine Sachspende
@@ -582,13 +591,13 @@ test.describe("Spenden – Rechte", () => {
     page,
   }) => {
     test.setTimeout(90_000);
-    await login(page, USERS.mitglied);
-    await expect(
-      page
-        .getByRole("navigation", { name: "Hauptnavigation" })
-        .first()
-        .getByRole("link", { name: "Finanzen" }),
-    ).toHaveCount(0);
+    await loginSettled(page, USERS.mitglied);
+    // Die Gruppe „Organisation“ hat das Mitglied (Dokumente) – in ihrem Menü fehlt „Finanzen“. Ohne Öffnen wäre die Prüfung
+    // wertlos: Die Symbolleiste zeigt die Seiten einer Gruppe erst in ihrem Menü.
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
+    await openNavGroup(nav, "Organisation");
+    await expect(nav.getByRole("link", { name: "Dokumente", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Finanzen" })).toHaveCount(0);
     for (const path of [
       "/finanzen/spenden",
       "/finanzen/spenden/alle",

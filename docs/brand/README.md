@@ -26,7 +26,7 @@ Die Farben gehören nur zum Logo; die Farbpalette der Oberfläche (`src/app/glob
 | `logo.svg`, `logo-weiss.svg`                      | horizontal (Symbol links, Name rechts) – Seitenleiste, Smartphone-Menü, Kopfzeilen |
 | `logo-gestapelt.svg`, `logo-gestapelt-weiss.svg`  | gestapelt (Symbol über dem Namen) – Anmelde- und Hinweisseiten                     |
 | `symbol.svg`, `symbol-weiss.svg`                  | nur das V                                                                          |
-| `symbol-klein.svg`, `symbol-klein-weiss.svg` (\*) | nur das V, vereinfacht für bis 32 px – eingeklappte Seitenleiste                   |
+| `symbol-klein.svg`, `symbol-klein-weiss.svg` (\*) | nur das V, vereinfacht für bis 32 px – derzeit in der Oberfläche nicht verwendet   |
 
 `-weiss` ist jeweils die Fassung für dunklen Grund (Schwarz → Weiß, Vereinsblau → Himmel).
 
@@ -45,7 +45,8 @@ Wo das Logo steht:
 
 - **Anmelde- und Hinweisseiten** (Anmeldung, Passwort vergessen/zurücksetzen, Einladung): gestapelte Fassung, mittig über der Karte.
 - **Seitenleiste, Smartphone-Menü, Impressum, Datenschutzerklärung, Einrichtung, Plattformverwaltung, Seite „nicht gefunden“:**
-  horizontale Fassung. Die eingeklappte Seitenleiste zeigt nur das Symbol (2 rem, vereinfachte Form).
+  horizontale Fassung (die breite Seitenleiste ist dunkel und zeigt deshalb `logo-weiss.svg`). Die schmale, dunkle Symbolleiste
+  (Standard seit 17.10.2026) zeigt das Symbol `symbol.svg` – immer die helle Fassung – auf einer weißen Kachel (2,25 rem).
 - E-Mails und Ausdrucke (Helferplan, Aushang „Mitglied werden“) zeigen kein VereinsFlow-Logo, nur das Vereinslogo.
 
 ## App-Symbole (Browser-Tab, Lesezeichen, Startbildschirm)

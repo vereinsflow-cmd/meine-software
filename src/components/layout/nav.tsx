@@ -63,6 +63,13 @@ const verein: NavDefinition[] = [
     area: "helferplanung",
     permission: "shifts:read",
   },
+  // Seit 17.10.2026 unter „Verein“ (auf Wunsch: „Organisation“ nur noch mit Dokumenten und Finanzen).
+  {
+    href: "/aufgaben",
+    label: "Aufgaben",
+    area: "aufgaben",
+    permission: "tasks:read",
+  },
   {
     href: "/abteilungen",
     label: "Abteilungen",
@@ -72,12 +79,6 @@ const verein: NavDefinition[] = [
 ];
 
 const organisation: NavDefinition[] = [
-  {
-    href: "/aufgaben",
-    label: "Aufgaben",
-    area: "aufgaben",
-    permission: "tasks:read",
-  },
   {
     href: "/dokumente",
     label: "Dokumente",
@@ -150,7 +151,7 @@ function withBadge(items: NavItem[], href: string, count: number | undefined): N
 
 /** Zähler für die kleinen Badges an Menüpunkten. */
 export interface NavBadges {
-  /** Meine offenen Aufgaben → Badge am Menüpunkt „Aufgaben“. */
+  /** Meine offenen Aufgaben → Badge am Menüpunkt „Aufgaben“ (Gruppe „Verein“). */
   tasks?: number;
   /** Ungelesene Benachrichtigungen → Badge am Menüpunkt „Benachrichtigungen“. */
   notifications?: number;
@@ -163,16 +164,12 @@ export function getNavigation(
 ): NavGroup[] {
   const groups: NavGroup[] = [{ items: visible(dashboard, holder) }];
 
-  const vereinItems = visible(verein, holder);
+  const vereinItems = withBadge(visible(verein, holder), "/aufgaben", options.badges?.tasks);
   if (vereinItems.length > 0) {
     groups.push({ label: "Verein", items: vereinItems, collapsible: true });
   }
 
-  const organisationItems = withBadge(
-    visible(organisation, holder),
-    "/aufgaben",
-    options.badges?.tasks,
-  );
+  const organisationItems = visible(organisation, holder);
   if (organisationItems.length > 0) {
     groups.push({ label: "Organisation", items: organisationItems, collapsible: true });
   }

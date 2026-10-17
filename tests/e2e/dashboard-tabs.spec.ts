@@ -12,6 +12,27 @@ const tabBar = (page: Page) => page.getByRole("tablist", { name: "Bereiche des D
 const NAMES = ["Übersicht", "Termine & Helfer", "Mitglieder", "Aufgaben & Aktivität"];
 
 /**
+ * Gruppen der Seitenleiste – in der Symbolleiste (Standard ab 1024 px) je ein Knopf mit Ausklapp-Menü. „Persönlich“ trägt dort
+ * das Kürzel der Person im Namen („Persönlich (AA)“).
+ */
+const GROUPS: (string | RegExp)[] = [
+  "Verein",
+  "Organisation",
+  "Kommunikation",
+  "Einstellungen",
+  /^Persönlich/,
+];
+/** Schließt das Ausklapp-Menü einer Gruppe mit Escape (wie `openNavGroup`: Name exakt bzw. als regulärer Ausdruck). */
+async function closeNavGroup(page: Page, group: string | RegExp): Promise<void> {
+  const trigger =
+    typeof group === "string"
+      ? nav(page).getByRole("button", { name: group, exact: true })
+      : nav(page).getByRole("button", { name: group });
+  await page.keyboard.press("Escape");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+}
+
+/**
  * Große Fassung der Kennzahlen (Stil „Analytics“, `StudioFrame`): das Paar aus Mitglieder-Kachel und Aufgaben-Ring und die
  * übrigen Kennzahlen (Spalte rechts bzw. Raster darunter). `exact`, weil „Kennzahlen“ sonst auch „Weitere Kennzahlen“ träfe.
  */
@@ -38,32 +59,43 @@ test.describe("Dashboard-Reiter", () => {
       nav(page)
         .getByRole("link")
         .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
-    await expect(nav(page).getByRole("link", { name: "Dashboard", exact: true })).toHaveCount(1);
-    // „Verein“ aufklappen, bevor die Ausgangslage gemerkt wird: So werden auch dessen Punkte geprüft, und der Vergleich
-    // unten stellt sicher, dass ein Reiterwechsel die geöffnete Gruppe nicht verändert.
-    await openNavGroup(nav(page), "Verein");
-    const before = await hrefs();
-    expect(before.some((href) => href?.includes("tab="))).toBe(false); // kein Reiter als Menüpunkt
+    const dashboard = nav(page).getByRole("link", { name: "Dashboard", exact: true });
+    await expect(dashboard).toHaveCount(1);
+    await expect(dashboard).toHaveAttribute("aria-current", "page");
 
-    // Reiter, die es sonst nirgends in der Seitenleiste gibt, erscheinen dort nicht
-    for (const name of ["Übersicht", "Termine & Helfer", "Aufgaben & Aktivität"]) {
-      await expect(nav(page).getByText(name, { exact: true })).toHaveCount(0);
+    // In der Symbolleiste (Standard ab 1024 px) stehen die Seiten einer Gruppe nur im geöffneten Ausklapp-Menü – deshalb jede
+    // Gruppe einmal öffnen: Kein Reiter erscheint dort als Menüpunkt, und Reiter, die es sonst nirgends in der Seitenleiste
+    // gibt, auch nicht als Text.
+    for (const group of GROUPS) {
+      await openNavGroup(nav(page), group);
+      expect((await hrefs()).some((href) => href?.includes("tab="))).toBe(false);
+      for (const name of ["Übersicht", "Termine & Helfer", "Aufgaben & Aktivität"]) {
+        await expect(nav(page).getByText(name, { exact: true })).toHaveCount(0);
+      }
+      await closeNavGroup(page, group);
     }
-    // „Mitglieder“ ist zugleich ein echter Bereich der Anwendung (Mitgliederliste) – genau einmal, mit eigenem Ziel
+
+    // „Mitglieder“ ist zugleich ein echter Bereich der Anwendung (Mitgliederliste) – im Menü „Verein“ genau einmal, mit eigenem
+    // Ziel. Mit dem offenen Menü die Ausgangslage merken: Der Vergleich unten prüft so auch dessen Punkte.
+    await openNavGroup(nav(page), "Verein");
     await expect(nav(page).getByRole("link", { name: "Mitglieder", exact: true })).toHaveAttribute(
       "href",
       "/mitglieder",
     );
+    const before = await hrefs();
+    expect(before).toContain("/dashboard");
+    await closeNavGroup(page, "Verein");
 
-    // Reiterwechsel ändert die Seitenleiste nicht: gleiche Punkte, „Dashboard“ bleibt der aktive
+    // Reiterwechsel ändert die Seitenleiste nicht: „Dashboard“ bleibt der eine aktive Punkt, „Verein“ zeigt dieselben Punkte.
+    // Das offene Menü liegt über dem Anfang der Seite (auch über den Reitern) und schließt beim Klick daneben – deshalb vor
+    // jedem Wechsel zu, danach wieder auf.
     for (const name of NAMES) {
       await chooseTab(page, name);
+      await expect(dashboard).toHaveCount(1);
+      await expect(dashboard).toHaveAttribute("aria-current", "page");
+      await openNavGroup(nav(page), "Verein");
       expect(await hrefs()).toEqual(before);
-      await expect(nav(page).getByRole("link", { name: "Dashboard", exact: true })).toHaveCount(1);
-      await expect(nav(page).getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute(
-        "aria-current",
-        "page",
-      );
+      await closeNavGroup(page, "Verein");
     }
   });
 
@@ -236,7 +268,7 @@ test.describe("Dashboard-Reiter", () => {
     await expect(page.getByRole("region", { name: "Geburtstage" })).toBeInViewport();
   });
 
-  test("Kennzahlen am Desktop (1280 px): Mitglieder und Aufgaben-Ring nebeneinander, darunter „Weitere Kennzahlen“ in zwei Spalten – Termine, freie Plätze und Zahlungen links, Helferstunden rechts über alle drei; kein Karussell, nichts abgeschnitten", async ({
+  test("Kennzahlen am Desktop (1280 px): Mitglieder und Aufgaben-Ring nebeneinander, rechts daneben „Weitere Kennzahlen“ als schmale Spalte – Termine, Helferstunden, freie Plätze und Zahlungen untereinander; kein Karussell, nichts abgeschnitten", async ({
     page,
   }) => {
     // Ohne Einblenden: Die Karten gleiten beim ersten Aufruf sonst 8 px von unten herein – gemessen würde mitten in der Bewegung.
@@ -266,29 +298,26 @@ test.describe("Dashboard-Reiter", () => {
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
 
     const [members, tasks] = (await boxes(pair)) as [Box, Box];
-    const [events, hours, free, payments] = (await boxes(side)) as [Box, Box, Box, Box];
+    const cards = await boxes(side);
+    const [events] = cards as [Box];
     // Das Paar: Mitglieder links, der Ring rechts daneben, oben und unten bündig
     expect(tasks.x).toBeGreaterThan(members.x + members.width);
     expect(Math.abs(tasks.y - members.y)).toBeLessThanOrEqual(1);
     expect(Math.abs(tasks.y + tasks.height - (members.y + members.height))).toBeLessThanOrEqual(2);
-    // Die übrigen Kennzahlen stehen unter dem Paar (erst ab 58 rem Inhaltsbreite rechts daneben)
-    const pairBottom = Math.max(members.y + members.height, tasks.y + tasks.height);
-    for (const card of [events, hours, free, payments]) expect(card.y).toBeGreaterThan(pairBottom);
-    // Links untereinander Termine, freie Plätze, Zahlungen …
-    expect(Math.abs(free.x - events.x)).toBeLessThanOrEqual(1);
-    expect(Math.abs(payments.x - events.x)).toBeLessThanOrEqual(1);
-    expect(free.y).toBeGreaterThan(events.y + events.height);
-    expect(payments.y).toBeGreaterThan(free.y + free.height);
-    // … rechts die Helferstunden, gleich breit, über die Höhe aller drei (oben bündig mit den Terminen, unten mit den Zahlungen)
-    expect(hours.x).toBeGreaterThan(events.x + events.width);
-    expect(Math.abs(hours.width - events.width)).toBeLessThanOrEqual(1);
-    expect(Math.abs(hours.y - events.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(hours.y + hours.height - (payments.y + payments.height))).toBeLessThanOrEqual(
-      1,
-    );
+    // Neben der schmalen Symbolleiste ist der Inhalt bei 1280 px schon breiter als 58 rem: Die übrigen Kennzahlen stehen als
+    // Spalte rechts neben dem Paar – oben bündig (mit „Erste Schritte“ davor beginnt sie schon darüber), alle gleich breit und
+    // untereinander in der Reihenfolge des Codes
+    expect(events.y).toBeLessThanOrEqual(members.y + 1);
+    for (const [index, card] of cards.entries()) {
+      expect(card.x).toBeGreaterThan(tasks.x + tasks.width);
+      expect(Math.abs(card.x - events.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(card.width - events.width)).toBeLessThanOrEqual(1);
+      if (index > 0) expect(card.y).toBeGreaterThan(cards[index - 1]!.y + cards[index - 1]!.height);
+    }
+    expect(events.width).toBeLessThan(tasks.x + tasks.width - members.x); // schmaler als das Paar
 
     const width = page.viewportSize()!.width;
-    for (const box of [members, tasks, events, hours, free, payments]) {
+    for (const box of [members, tasks, ...cards]) {
       expect(box.x + box.width).toBeLessThanOrEqual(width);
     }
     expect(
@@ -298,7 +327,7 @@ test.describe("Dashboard-Reiter", () => {
     ).toBeLessThanOrEqual(1); // kein seitliches Scrollen
   });
 
-  test("Kennzahlen nach Inhaltsbreite: unter 58 rem „Weitere Kennzahlen“ als zwei Spalten unter dem Paar, ab 58 rem als schmale Spalte rechts daneben; „Meine Aufgaben“ über die volle Breite links", async ({
+  test("Kennzahlen nach Inhaltsbreite: unter 58 rem (1024 und 1100 px) „Weitere Kennzahlen“ in zwei Spalten unter dem Paar – Termine, freie Plätze und Zahlungen links, Helferstunden rechts über alle drei –, ab 58 rem (1280 und 1470 px) als schmale Spalte rechts daneben; „Meine Aufgaben“ so breit wie das Paar", async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" }); // kein erneutes Einblenden beim Umbau nach der Breite
@@ -317,39 +346,68 @@ test.describe("Dashboard-Reiter", () => {
       });
     const rect = async (locator: Locator) => (await locator.boundingBox())!;
 
-    for (const width of [1100, 1280]) {
+    // Neben der schmalen Symbolleiste (Standard ab 1024 px) bleibt der Inhalt bis etwa 1150 px Fensterbreite unter 58 rem
+    for (const width of [1024, 1100]) {
+      const at = `${width} px`;
       await page.setViewportSize({ width, height: 800 });
-      await expect
-        .poll(async () => (await arrangement(side)).columns, { message: `${width} px` })
-        .toBe(2);
-      expect((await arrangement(pair)).columns, `${width} px`).toBe(2); // Mitglieder | Ring
+      await expect.poll(async () => (await arrangement(side)).columns, { message: at }).toBe(2);
+      expect((await arrangement(pair)).columns, at).toBe(2); // Mitglieder | Ring
       const [top, below, list] = [await rect(pair), await rect(side), await rect(myTasks)];
-      expect(below.y, `${width} px`).toBeGreaterThan(top.y + top.height); // unter dem Paar …
-      expect(Math.abs(below.x - top.x)).toBeLessThanOrEqual(1); // … in derselben Breite
-      expect(Math.abs(below.width - top.width)).toBeLessThanOrEqual(1);
-      expect(list.y).toBeGreaterThan(below.y + below.height); // „Meine Aufgaben“ danach, über die volle Breite
-      expect(Math.abs(list.width - top.width)).toBeLessThanOrEqual(1);
+      expect(below.y, at).toBeGreaterThan(top.y + top.height); // unter dem Paar …
+      expect(Math.abs(below.x - top.x), at).toBeLessThanOrEqual(1); // … in derselben Breite
+      expect(Math.abs(below.width - top.width), at).toBeLessThanOrEqual(1);
+      expect(list.y, at).toBeGreaterThan(below.y + below.height); // „Meine Aufgaben“ danach, über die volle Breite
+      expect(Math.abs(list.width - top.width), at).toBeLessThanOrEqual(1);
+      const [events, hours, free, payments] = (await boxes(side.locator('[data-slot="card"]'))) as [
+        Box,
+        Box,
+        Box,
+        Box,
+      ];
+      // Links untereinander Termine, freie Plätze, Zahlungen …
+      expect(Math.abs(free.x - events.x), at).toBeLessThanOrEqual(1);
+      expect(Math.abs(payments.x - events.x), at).toBeLessThanOrEqual(1);
+      expect(free.y, at).toBeGreaterThan(events.y + events.height);
+      expect(payments.y, at).toBeGreaterThan(free.y + free.height);
+      // … rechts die Helferstunden, gleich breit, über die Höhe aller drei (oben bündig mit den Terminen, unten mit den Zahlungen)
+      expect(hours.x, at).toBeGreaterThan(events.x + events.width);
+      expect(Math.abs(hours.width - events.width), at).toBeLessThanOrEqual(1);
+      expect(Math.abs(hours.y - events.y), at).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(hours.y + hours.height - (payments.y + payments.height)),
+        at,
+      ).toBeLessThanOrEqual(1);
     }
 
-    await page.setViewportSize({ width: 1470, height: 900 }); // ab 58 rem: Spalte rechts, Karten untereinander
-    await expect.poll(async () => (await arrangement(side)).display).toBe("flex");
-    expect((await arrangement(side)).direction).toBe("column");
-    expect((await arrangement(pair)).columns).toBe(2); // das Paar bleibt nebeneinander
-    const [left, right, list] = [await rect(pair), await rect(side), await rect(myTasks)];
-    expect(right.x).toBeGreaterThan(left.x + left.width); // rechts neben dem Paar …
-    expect(right.width).toBeLessThan(left.width); // … schmaler als das Paar …
-    expect(right.y).toBeLessThanOrEqual(left.y + 1); // … und oben bündig (mit „Erste Schritte“ davor beginnt sie schon darüber)
-    const cards = await boxes(side.locator('[data-slot="card"]'));
-    expect(cards).toHaveLength(4);
-    for (const [index, card] of cards.entries()) {
-      expect(Math.abs(card.x - right.x)).toBeLessThanOrEqual(1); // alle in der Spalte …
-      if (index > 0) expect(card.y).toBeGreaterThan(cards[index - 1]!.y + cards[index - 1]!.height); // … in der Reihenfolge des Codes
+    // Ab 58 rem Inhaltsbreite: Spalte rechts, Karten untereinander
+    for (const [width, height] of [
+      [1280, 800],
+      [1470, 900],
+    ] as const) {
+      const at = `${width} px`;
+      await page.setViewportSize({ width, height });
+      await expect
+        .poll(async () => (await arrangement(side)).display, { message: at })
+        .toBe("flex");
+      expect((await arrangement(side)).direction, at).toBe("column");
+      expect((await arrangement(pair)).columns, at).toBe(2); // das Paar bleibt nebeneinander
+      const [left, right, list] = [await rect(pair), await rect(side), await rect(myTasks)];
+      expect(right.x, at).toBeGreaterThan(left.x + left.width); // rechts neben dem Paar …
+      expect(right.width, at).toBeLessThan(left.width); // … schmaler als das Paar …
+      expect(right.y, at).toBeLessThanOrEqual(left.y + 1); // … und oben bündig (mit „Erste Schritte“ davor beginnt sie schon darüber)
+      const cards = await boxes(side.locator('[data-slot="card"]'));
+      expect(cards).toHaveLength(4);
+      for (const [index, card] of cards.entries()) {
+        expect(Math.abs(card.x - right.x), at).toBeLessThanOrEqual(1); // alle in der Spalte …
+        if (index > 0)
+          expect(card.y, at).toBeGreaterThan(cards[index - 1]!.y + cards[index - 1]!.height); // … in der Reihenfolge des Codes
+      }
+      // „Meine Aufgaben“ steht links unter dem Paar, so breit wie das Paar und neben der Spalte
+      expect(list.y, at).toBeGreaterThan(left.y + left.height);
+      expect(Math.abs(list.x - left.x), at).toBeLessThanOrEqual(1);
+      expect(Math.abs(list.width - left.width), at).toBeLessThanOrEqual(1);
+      expect(list.x + list.width, at).toBeLessThan(right.x);
     }
-    // „Meine Aufgaben“ steht links unter dem Paar, so breit wie das Paar und neben der Spalte
-    expect(list.y).toBeGreaterThan(left.y + left.height);
-    expect(Math.abs(list.x - left.x)).toBeLessThanOrEqual(1);
-    expect(Math.abs(list.width - left.width)).toBeLessThanOrEqual(1);
-    expect(list.x + list.width).toBeLessThan(right.x);
   });
 
   test("Ohne Mitgliederzahlen (Helfer): einfaches Raster gleich großer Karten statt der großen Fassung, Zahlen auf einer Höhe, „Ungelesen“ ohne Grafik", async ({
