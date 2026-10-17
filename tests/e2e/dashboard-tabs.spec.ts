@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { violations } from "./axe";
 import { USERS, chooseTab, loginSettled as login, open, openNavGroup } from "./helpers";
 
@@ -10,6 +10,24 @@ import { USERS, chooseTab, loginSettled as login, open, openNavGroup } from "./h
 const nav = (page: Page) => page.getByRole("navigation", { name: "Hauptnavigation" });
 const tabBar = (page: Page) => page.getByRole("tablist", { name: "Bereiche des Dashboards" });
 const NAMES = ["Übersicht", "Termine & Helfer", "Mitglieder", "Aufgaben & Aktivität"];
+
+/**
+ * Große Fassung der Kennzahlen (Stil „Analytics“, `StudioFrame`): das Paar aus Mitglieder-Kachel und Aufgaben-Ring und die
+ * übrigen Kennzahlen (Spalte rechts bzw. Raster darunter). `exact`, weil „Kennzahlen“ sonst auch „Weitere Kennzahlen“ träfe.
+ */
+const kpiPair = (page: Page) => page.getByRole("group", { name: "Kennzahlen", exact: true });
+const kpiSide = (page: Page) =>
+  page.getByRole("group", { name: "Weitere Kennzahlen", exact: true });
+
+type Box = { x: number; y: number; width: number; height: number };
+/** Lage und Größe aller Treffer, in der Reihenfolge des Codes. */
+const boxes = (locator: Locator): Promise<Box[]> =>
+  locator.evaluateAll((elements) =>
+    elements.map((element) => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return { x, y, width, height };
+    }),
+  );
 
 test.describe("Dashboard-Reiter", () => {
   test("Seitenleiste: weiterhin genau ein Punkt „Dashboard“, die Reiter erscheinen dort nicht", async ({
@@ -218,78 +236,132 @@ test.describe("Dashboard-Reiter", () => {
     await expect(page.getByRole("region", { name: "Geburtstage" })).toBeInViewport();
   });
 
-  test("Kennzahlen am Desktop (1280 px): Kachelraster – Mitglieder links über beide Reihen, Termine über Helferstunden, rechts freie Plätze über den Offenen Zahlungen; kein Karussell, nichts abgeschnitten", async ({
+  test("Kennzahlen am Desktop (1280 px): Mitglieder und Aufgaben-Ring nebeneinander, darunter „Weitere Kennzahlen“ in zwei Spalten – Termine, freie Plätze und Zahlungen links, Helferstunden rechts über alle drei; kein Karussell, nichts abgeschnitten", async ({
     page,
   }) => {
+    // Ohne Einblenden: Die Karten gleiten beim ersten Aufruf sonst 8 px von unten herein – gemessen würde mitten in der Bewegung.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, USERS.admin);
-    const cards = page.getByRole("group", { name: "Kennzahlen" }).locator('[data-slot="card"]');
-    await expect(cards).toHaveCount(5); // mit Finanzrecht: die Offenen Zahlungen als fünfte Kachel
-    await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
-    const boxes = await cards.evaluateAll((elements) =>
-      elements.map((element) => {
-        const { x, y, width, height } = element.getBoundingClientRect();
-        return { x, y, width, height };
-      }),
+    await page.mouse.move(0, 0);
+    await expect(page.locator('[data-layout="studio"]')).toHaveAttribute("data-size", "m");
+    await expect(page.locator('[data-layout="grid"]')).toHaveCount(0); // nicht das einfache Raster
+    const pair = kpiPair(page).locator('[data-slot="card"]');
+    const side = kpiSide(page).locator('[data-slot="card"]');
+    await expect(pair).toHaveCount(2);
+    await expect(side).toHaveCount(4); // mit Finanzrecht: die Offenen Zahlungen als vierte Karte
+    // Reihenfolge im Code (Tastatur, Screenreader): Mitglieder, Ring – dann Termine, Helferstunden, freie Plätze, Zahlungen
+    await expect(pair.nth(0).getByRole("link", { name: /^Mitglieder\s*\d/ })).toBeVisible();
+    await expect(
+      pair.nth(1).getByRole("link", { name: /^Aufgaben im Verein\s*\d+\s*offen/ }),
+    ).toHaveAttribute("href", "/aufgaben");
+    await expect(side.nth(0).getByRole("link", { name: /^Termine in 30 Tagen/ })).toBeVisible();
+    await expect(side.nth(1).getByRole("link", { name: /^Helferstunden \d{4}/ })).toBeVisible();
+    await expect(side.nth(2).getByRole("link", { name: /^Freie Helferplätze/ })).toBeVisible();
+    await expect(side.nth(3)).toHaveAttribute("aria-labelledby", "w-offene-zahlungen-kachel");
+    // Die Zahlungen stehen nur in den Kennzahlen, nicht noch einmal als eigene Karte darunter
+    await expect(page.getByRole("region", { name: "Offene Zahlungen", exact: true })).toHaveCount(
+      1,
     );
-    // Reihenfolge Spalte für Spalte: Mitglieder, Termine, Helferstunden, freie Plätze, Zahlungen
-    const [members, events, hours, free, payments] = boxes as [
-      (typeof boxes)[0],
-      (typeof boxes)[0],
-      (typeof boxes)[0],
-      (typeof boxes)[0],
-      (typeof boxes)[0],
-    ];
-    expect(members.x).toBeLessThan(events.x); // Mitglieder links …
-    expect(events.x).toBeLessThan(free.x); // … freie Plätze rechts …
-    expect(Math.abs(events.x - hours.x)).toBeLessThanOrEqual(1); // … Termine und Helferstunden in der Mitte übereinander
-    expect(hours.y).toBeGreaterThan(events.y);
-    expect(members.height).toBeGreaterThan(events.height * 1.8); // die große Kachel reicht über beide Reihen
-    expect(Math.abs(free.x - payments.x)).toBeLessThanOrEqual(1); // rechts der Stapel: freie Plätze über den Zahlungen
+    await expect(page.locator('[aria-roledescription="Karussell"]')).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
+
+    const [members, tasks] = (await boxes(pair)) as [Box, Box];
+    const [events, hours, free, payments] = (await boxes(side)) as [Box, Box, Box, Box];
+    // Das Paar: Mitglieder links, der Ring rechts daneben, oben und unten bündig
+    expect(tasks.x).toBeGreaterThan(members.x + members.width);
+    expect(Math.abs(tasks.y - members.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(tasks.y + tasks.height - (members.y + members.height))).toBeLessThanOrEqual(2);
+    // Die übrigen Kennzahlen stehen unter dem Paar (erst ab 58 rem Inhaltsbreite rechts daneben)
+    const pairBottom = Math.max(members.y + members.height, tasks.y + tasks.height);
+    for (const card of [events, hours, free, payments]) expect(card.y).toBeGreaterThan(pairBottom);
+    // Links untereinander Termine, freie Plätze, Zahlungen …
+    expect(Math.abs(free.x - events.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(payments.x - events.x)).toBeLessThanOrEqual(1);
+    expect(free.y).toBeGreaterThan(events.y + events.height);
     expect(payments.y).toBeGreaterThan(free.y + free.height);
-    expect(
-      Math.abs(payments.y + payments.height - (members.y + members.height)),
-    ).toBeLessThanOrEqual(1);
+    // … rechts die Helferstunden, gleich breit, über die Höhe aller drei (oben bündig mit den Terminen, unten mit den Zahlungen)
+    expect(hours.x).toBeGreaterThan(events.x + events.width);
+    expect(Math.abs(hours.width - events.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(hours.y - events.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(hours.y + hours.height - (payments.y + payments.height))).toBeLessThanOrEqual(
+      1,
+    );
+
     const width = page.viewportSize()!.width;
-    for (const box of boxes) expect(box.x + box.width).toBeLessThanOrEqual(width);
+    for (const box of [members, tasks, events, hours, free, payments]) {
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(1); // kein seitliches Scrollen
   });
 
-  test("Kennzahlen nach Inhaltsbreite: zwei Spalten, drei gleich breite, dann wie im Entwurf (Mitglieder breiter, freie Plätze schmaler)", async ({
+  test("Kennzahlen nach Inhaltsbreite: unter 58 rem „Weitere Kennzahlen“ als zwei Spalten unter dem Paar, ab 58 rem als schmale Spalte rechts daneben; „Meine Aufgaben“ über die volle Breite links", async ({
     page,
   }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" }); // kein erneutes Einblenden beim Umbau nach der Breite
     await login(page, USERS.admin);
-    const group = page.getByRole("group", { name: "Kennzahlen" });
-    const columns = () =>
-      group.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
-    const widths = () =>
-      group
-        .locator('[data-slot="card"]')
-        .evaluateAll((elements) =>
-          elements.map((element) => element.getBoundingClientRect().width),
-        );
+    const pair = kpiPair(page);
+    const side = kpiSide(page);
+    const myTasks = page.getByRole("region", { name: "Meine Aufgaben", exact: true });
+    const arrangement = (group: Locator) =>
+      group.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          display: style.display,
+          direction: style.flexDirection,
+          columns: style.display === "grid" ? style.gridTemplateColumns.split(" ").length : 0,
+        };
+      });
+    const rect = async (locator: Locator) => (await locator.boundingBox())!;
 
-    await page.setViewportSize({ width: 1100, height: 800 }); // Inhalt schmaler als 49 rem
-    await expect.poll(columns).toBe(2);
+    for (const width of [1100, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      await expect
+        .poll(async () => (await arrangement(side)).columns, { message: `${width} px` })
+        .toBe(2);
+      expect((await arrangement(pair)).columns, `${width} px`).toBe(2); // Mitglieder | Ring
+      const [top, below, list] = [await rect(pair), await rect(side), await rect(myTasks)];
+      expect(below.y, `${width} px`).toBeGreaterThan(top.y + top.height); // unter dem Paar …
+      expect(Math.abs(below.x - top.x)).toBeLessThanOrEqual(1); // … in derselben Breite
+      expect(Math.abs(below.width - top.width)).toBeLessThanOrEqual(1);
+      expect(list.y).toBeGreaterThan(below.y + below.height); // „Meine Aufgaben“ danach, über die volle Breite
+      expect(Math.abs(list.width - top.width)).toBeLessThanOrEqual(1);
+    }
 
-    await page.setViewportSize({ width: 1280, height: 800 }); // ab 49 rem: Kachelraster, drei gleich breite Spalten
-    await expect.poll(columns).toBe(12);
-    const [members, events, , free] = await widths();
-    expect(Math.abs(members! - events!)).toBeLessThanOrEqual(2);
-    expect(Math.abs(free! - events!)).toBeLessThanOrEqual(2);
-
-    await page.setViewportSize({ width: 1470, height: 900 }); // ab 58 rem: 5/12, 4/12, 3/12
-    await expect.poll(async () => (await widths())[0]! > (await widths())[1]!).toBe(true);
-    const [wide, middle, , narrow] = await widths();
-    expect(middle!).toBeGreaterThan(narrow!);
-    expect(wide!).toBeGreaterThan(middle!);
+    await page.setViewportSize({ width: 1470, height: 900 }); // ab 58 rem: Spalte rechts, Karten untereinander
+    await expect.poll(async () => (await arrangement(side)).display).toBe("flex");
+    expect((await arrangement(side)).direction).toBe("column");
+    expect((await arrangement(pair)).columns).toBe(2); // das Paar bleibt nebeneinander
+    const [left, right, list] = [await rect(pair), await rect(side), await rect(myTasks)];
+    expect(right.x).toBeGreaterThan(left.x + left.width); // rechts neben dem Paar …
+    expect(right.width).toBeLessThan(left.width); // … schmaler als das Paar …
+    expect(right.y).toBeLessThanOrEqual(left.y + 1); // … und oben bündig (mit „Erste Schritte“ davor beginnt sie schon darüber)
+    const cards = await boxes(side.locator('[data-slot="card"]'));
+    expect(cards).toHaveLength(4);
+    for (const [index, card] of cards.entries()) {
+      expect(Math.abs(card.x - right.x)).toBeLessThanOrEqual(1); // alle in der Spalte …
+      if (index > 0) expect(card.y).toBeGreaterThan(cards[index - 1]!.y + cards[index - 1]!.height); // … in der Reihenfolge des Codes
+    }
+    // „Meine Aufgaben“ steht links unter dem Paar, so breit wie das Paar und neben der Spalte
+    expect(list.y).toBeGreaterThan(left.y + left.height);
+    expect(Math.abs(list.x - left.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(list.width - left.width)).toBeLessThanOrEqual(1);
+    expect(list.x + list.width).toBeLessThan(right.x);
   });
 
-  test("Ohne Mitgliederzahlen (Helfer): gleich große Karten statt Kachelraster, Zahlen auf einer Höhe, „Ungelesen“ ohne Grafik", async ({
+  test("Ohne Mitgliederzahlen (Helfer): einfaches Raster gleich großer Karten statt der großen Fassung, Zahlen auf einer Höhe, „Ungelesen“ ohne Grafik", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1470, height: 900 });
     await login(page, USERS.helfer);
-    const group = page.getByRole("group", { name: "Kennzahlen" });
+    const group = page.getByRole("group", { name: "Kennzahlen", exact: true });
     await expect(page.locator('[data-layout="grid"]')).toHaveCount(1);
+    await expect(page.locator('[data-layout="studio"]')).toHaveCount(0);
+    await expect(kpiSide(page)).toHaveCount(0); // keine zweite Gruppe: alle Kennzahlen im einen Raster
+    await expect(group).toHaveAttribute("aria-roledescription", "Karussell");
     await expect(group.locator('[data-slot="card"]')).toHaveCount(4);
     await expect
       .poll(() =>

@@ -16,9 +16,10 @@
      Schriftfarbe (nie gedämpft), nie für Sätze oder Hinweise. Ohne eigene Zeilenhöhe: sie erbt die der Umgebung, wie
      vorher `text-[0.6875rem]`. */
   --text-2xs: 0.6875rem;
-  /* Inhaltsbreiten für die Kennzahlen des Dashboards (Containerabfragen `@bento/kpis` und `@bento-wide/kpis`, Aufteilung in
-     modules/dashboard/kpi-layout.ts) – in rem, wachsen also mit der Grundschrift. 49 rem sind bei 1280 px Fensterbreite mit
-     Seitenleiste erreicht, 58 rem z. B. bei 1470 px. */
+  /* Inhaltsbreiten für die Kennzahlen des Dashboards (Containerabfragen `@bento/kpis`, `@bento-wide/kpis` – einfaches Raster in
+     modules/dashboard/kpi-layout.ts – und `@bento-wide/studio` – große Fassung, `StudioFrame` in
+     modules/dashboard/components/layout.tsx) – in rem, wachsen also mit der Grundschrift. 49 rem sind bei 1280 px Fensterbreite
+     mit Seitenleiste erreicht, 58 rem z. B. bei 1470 px. */
   --container-bento: 49rem;
   --container-bento-wide: 58rem;
   /* Schrift der Ausdrucke (Helferplan, `font-print`): schlicht wie ein selbst getipptes Word-Blatt – Arial, auf dem Mac
@@ -317,7 +318,8 @@
 }
 
 /*
- * Getönte Kacheln des Dashboards (seit 02.10.2026, Mischung aus den Entwürfen 2 und 5): ein weicher Schein in der Farbe des
+ * Getönte Kacheln (seit 02.10.2026, Mischung aus den Entwürfen 2 und 5; auf dem Dashboard seit 17.10.2026 nicht mehr, noch in den
+ * Spenden): ein weicher Schein in der Farbe des
  * Bereichs aus der linken oberen Ecke, über der normalen Kartenfläche. Die Farbe kommt aus `--tile-tint` (gesetzt in
  * `TILE_ACCENT`, components/shared/accent.ts) – hell höchstens Stufe 100, damit grauer Text 4,5 : 1 behält.
  */
