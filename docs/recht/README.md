@@ -4,6 +4,8 @@
 
 Erstellt am 17.10.2026 für den geplanten Online-Verkauf (Monatsabo, Online-Checkout, Verbraucher und Vereine) durch die künftige **H&B Software Solution UG (haftungsbeschränkt)**. Die Website verkauft heute noch nichts; die Texte gehören zusammen mit Checkout, UG-Gründung und ausgefüllten Platzhaltern online.
 
+**Stand 17.10.2026 – Gründungsphase.** Die H&B Software Solution UG (haftungsbeschränkt) befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen ist beantragt. Geschäftsführer und allein vertretungsberechtigt ist Luis Heidecker; Gesellschafter (Mitgründer) sind Luis Heidecker und Ben Bleckert. Alle UG-Texte führen die Firma deshalb als „H&B Software Solution UG (haftungsbeschränkt) i. G.“, nennen „vertreten durch den Geschäftsführer Luis Heidecker“ und den Satz „Die Gesellschaft befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen ist beantragt.“ HRB-Nummer und USt-IdNr. gibt es noch nicht; die Stellen stehen als Kommentar „nach Eintragung ergänzen“ bzw. „nach Erteilung ergänzen“ (Platzhalterliste Nr. 73 und 74). Die Website selbst bleibt bis zur notariellen Beurkundung bei der VereinsFlow GbR (`impressum.html` Fassung A, aktiv); die Umstell-Anleitung steht im Kommentar von `impressum.html`.
+
 | Datei | Inhalt |
 |---|---|
 | `agb.html` | AGB (16 Paragrafen), Website-Gerüst |
@@ -13,7 +15,7 @@ Erstellt am 17.10.2026 für den geplanten Online-Verkauf (Monatsabo, Online-Chec
 | `barrierefreiheit.html`, `bfsg-checkliste.md` | Erklärung zur Barrierefreiheit (BFSG, derzeit freiwillig) und WCAG-Prüfung der Startseite |
 | `footer-vorschlag.html` | Fußzeile für alle Seiten mit den neuen Links (teils auskommentiert) |
 | `checkout-vorgabe.md` | Bauanleitung für Checkout, Bestätigungs-E-Mail, Kündigungs- und Widerrufsschaltfläche, Rechnungen |
-| `platzhalter-gesamt.md` | Alle 72 Platzhalter und Entscheidungen mit Zuständigkeit |
+| `platzhalter-gesamt.md` | Alle Platzhalter und Entscheidungen mit Zuständigkeit (74 Nummern, davon 69 offen; Stand 17.10.2026) |
 | `quellen.md`, `quellen-datenschutz.md` | Geprüfte Gesetzesstellen mit amtlicher Fundstelle und Abrufdatum |
 
 ## So kommen die Texte online

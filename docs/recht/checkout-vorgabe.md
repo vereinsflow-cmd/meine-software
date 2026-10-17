@@ -8,7 +8,7 @@ Stand: 17.10.2026. Gilt für den noch zu bauenden Bestellvorgang auf vereins-flo
 
 | Punkt | Festlegung |
 |---|---|
-| Anbieter | H&B Software Solution UG (haftungsbeschränkt) i. G., Oberschlesienstraße 6a, 45711 Datteln (bis zur Handelsregister-Eintragung mit Zusatz „i. G.“) |
+| Anbieter | H&B Software Solution UG (haftungsbeschränkt) i. G., Oberschlesienstraße 6a, 45711 Datteln, vertreten durch den Geschäftsführer Luis Heidecker. Die Gesellschaft befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen ist beantragt. (Stand 17.10.2026: Zusatz „i. G.“ bis zur Eintragung, keine HRB-Nummer, keine USt-IdNr.; Gesellschafter sind Luis Heidecker und Ben Bleckert, Ben Bleckert ist nicht Geschäftsführer) |
 | Kontakt | kontakt@vereins-flow.com, +49 176 56792302 |
 | Produkt | VereinsFlow, Web-Anwendung (SaaS) zur Vereinsverwaltung: Mitglieder, Termine, Helferschichten, Nachrichten, Dokumente, Finanzen/Kassenbuch; Browser und Android-App |
 | Vertragstyp | Abonnement, Dauerschuldverhältnis; rechtlich eine **digitale Dienstleistung** (§ 327 Abs. 2 Satz 2 BGB) und für das Widerrufsrecht eine **Dienstleistung** (§ 356 Abs. 5, § 357a Abs. 2 BGB) |
@@ -51,7 +51,8 @@ Hinweise:
 | § 36 VSBG | Hinweis zur Verbraucherschlichtung auf der Website und mit den AGB (Formulierung in AGB § 15) |
 | § 37 VSBG | nach gescheiterter Beschwerde: Hinweis in Textform auf zuständige Verbraucherschlichtungsstelle und (Nicht-)Teilnahme – als Textbaustein im Support hinterlegen |
 | § 14 Abs. 4 UStG, § 27 Abs. 38 UStG, § 147 AO | Rechnungspflichtangaben, E-Rechnung im B2B-Inland mit Übergangsfristen, Aufbewahrung |
-| § 5 DDG | Anbieterkennzeichnung (Impressum) überall erreichbar – inkl. Registergericht/HRB und USt-IdNr., sobald vorhanden |
+| § 5 DDG | Anbieterkennzeichnung (Impressum) überall erreichbar – Firma mit „i. G.“, Vertretungsberechtigter (Geschäftsführer Luis Heidecker), Satz zur Gründung; Registergericht Amtsgericht Recklinghausen mit HRB-Nummer und USt-IdNr., sobald vorhanden |
+| § 35a GmbHG | Pflichtangaben auf allen Geschäftsbriefen an bestimmte Empfänger (auch E-Mails und Rechnungen): Rechtsform, Sitz der Gesellschaft, Registergericht und Registernummer – sobald eingetragen –, alle Geschäftsführer mit Familiennamen und mindestens einem ausgeschriebenen Vornamen (derzeit: Luis Heidecker). In der Gründungsphase Firma mit „i. G.“; die Handelnden haften bis zur Eintragung persönlich (§ 11 Abs. 2 GmbHG) |
 | VO (EU) 2024/3228 | OS-Plattform eingestellt, VO (EU) Nr. 524/2013 mit Wirkung vom 20.7.2025 aufgehoben – **kein OS-Link** mehr auf der Website |
 
 ## 3. Ablauf des Checkouts (Schritte und Pflichtinhalte)
@@ -161,7 +162,7 @@ Versand sofort nach Bestellung (automatisch), spätestens vor Freischaltung des 
 3. Für Verbraucher: Protokoll des Opt-ins im Wortlaut mit Datum/Uhrzeit (entsprechend § 312f Abs. 3 BGB) – oder der Hinweis, dass der Zugang am [Datum] freigeschaltet wird.
 4. Hinweis auf Kundenkonto (Link), auf „Verträge hier kündigen“ und für Verbraucher auf „Vertrag widerrufen“ (Link, 14 Tage).
 5. Anhänge als PDF: AGB in der Vertragsfassung inkl. Anlage 1 (AV-Vertrag) und Anlage 2 (Leistungsbeschreibung, Preisstaffel); Widerrufsbelehrung mit Muster-Widerrufsformular (nur Verbraucher; schadet aber nicht, allen beizufügen); Rechnung (oder gesonderte E-Mail).
-6. Fußzeile mit vollständiger Anbieterkennzeichnung (§ 5 DDG).
+6. Fußzeile mit vollständiger Anbieterkennzeichnung (§ 5 DDG) und den Pflichtangaben für Geschäftsbriefe nach § 35a GmbHG: „H&B Software Solution UG (haftungsbeschränkt) i. G., Oberschlesienstraße 6a, 45711 Datteln, Sitz Datteln, vertreten durch den Geschäftsführer Luis Heidecker. Die Gesellschaft befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen ist beantragt.“ Nach der Eintragung: „i. G.“ und den Satz zur Gründung streichen, stattdessen „Registergericht Amtsgericht Recklinghausen, HRB [nach Eintragung ergänzen]“.
 
 PDFs werden serverseitig aus derselben Textquelle wie die HTML-Seiten erzeugt (eine Quelle, kein Abweichen). Jede Version erhält Datum und Versionsnummer; die Prüfsumme wird mit der Bestellung gespeichert.
 
@@ -210,7 +211,8 @@ Die Kündigung per E-Mail an kontakt@vereins-flow.com und im Kundenkonto bleibt 
 ## 11. Rechnungsstellung
 
 - Rechnung automatisch zu Beginn jedes Abrechnungsmonats (Variante A/B nach erfolgreichem Einzug; Variante C mit Zahlungsziel 14 Tage), per E-Mail als PDF und im Kundenkonto. Zustimmung zum elektronischen Versand steht in AGB § 4 Abs. 5 (§ 14 Abs. 1 Satz 5 UStG).
-- Pflichtangaben (§ 14 Abs. 4 UStG): vollständiger Name und Anschrift von Anbieter und Kunde; Steuernummer oder USt-IdNr. des Anbieters [BITTE ERGÄNZEN]; Ausstellungsdatum; fortlaufende Rechnungsnummer; Art und Umfang der Leistung („Nutzung VereinsFlow, Tarif bis [n] Mitglieder, Leistungszeitraum [Monat]“); Leistungszeitraum; Entgelt netto, Steuersatz und Steuerbetrag (bzw. Hinweis „Steuerbefreiung für Kleinunternehmer (§ 19 UStG)“); bei Vereinen als juristische Personen, die nicht Unternehmer sind, besteht Rechnungspflicht innerhalb von sechs Monaten (§ 14 Abs. 2 Satz 2 Nr. 2 UStG).
+- Anbieterangaben auf der Rechnung in der Gründungsphase (Stand 17.10.2026): Firma „H&B Software Solution UG (haftungsbeschränkt) i. G.“, Oberschlesienstraße 6a, 45711 Datteln, Geschäftsführer Luis Heidecker. Rechnungen sind Geschäftsbriefe im Sinne von § 35a GmbHG; Pflichtangaben: Rechtsform, Sitz der Gesellschaft (Datteln), Registergericht und Registernummer – sobald eingetragen (Amtsgericht Recklinghausen; HRB-Nummer nach Eintragung ergänzen) –, alle Geschäftsführer mit Familiennamen und mindestens einem ausgeschriebenen Vornamen (derzeit nur Luis Heidecker). Bis zur Eintragung zusätzlich der Satz „Die Gesellschaft befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen ist beantragt.“ Nach der Eintragung „i. G.“ streichen. Die Rechnungsvorlage wortgleich mit impressum.html (Fassung B) und agb.html („Anbieter“) halten.
+- Pflichtangaben (§ 14 Abs. 4 UStG): vollständiger Name und Anschrift von Anbieter und Kunde; Steuernummer oder USt-IdNr. des Anbieters (in der Gründungsphase noch nicht vorhanden – Steuernummer bzw. USt-IdNr. nach Erteilung ergänzen; ohne eine der beiden Angaben ist keine ordnungsgemäße Rechnung möglich, also vor der ersten Rechnung klären); Ausstellungsdatum; fortlaufende Rechnungsnummer; Art und Umfang der Leistung („Nutzung VereinsFlow, Tarif bis [n] Mitglieder, Leistungszeitraum [Monat]“); Leistungszeitraum; Entgelt netto, Steuersatz und Steuerbetrag (bzw. Hinweis „Steuerbefreiung für Kleinunternehmer (§ 19 UStG)“); bei Vereinen als juristische Personen, die nicht Unternehmer sind, besteht Rechnungspflicht innerhalb von sechs Monaten (§ 14 Abs. 2 Satz 2 Nr. 2 UStG).
 - E-Rechnung: Für Leistungen an inländische Unternehmer ist die Rechnung grundsätzlich als strukturierte E-Rechnung (EN 16931, z. B. XRechnung oder ZUGFeRD) auszustellen (§ 14 Abs. 2 Satz 2 Nr. 1 UStG). Übergang: bis 31.12.2026 PDF/Papier mit Zustimmung des Empfängers zulässig, bis 31.12.2027, wenn der Gesamtumsatz des Anbieters im Vorjahr höchstens 800.000 € betrug (§ 27 Abs. 38 UStG). Empfehlung: von Beginn an ZUGFeRD-PDF (hybrid) erzeugen – erfüllt beides. Mit Steuerberatung abstimmen [BITTE ERGÄNZEN: Entscheidung Rechnungsformat].
 - Gutschriften bei Widerruf/Minderung als Stornorechnung mit Bezug auf die Ursprungsrechnung.
 
@@ -255,7 +257,7 @@ Alle Rechtstexte versioniert ablegen (Datum, Versionsnummer, Prüfsumme); jede B
 
 - [ ] Anwaltliche Prüfung aller Texte (AGB, Widerrufsbelehrung, AV-Vertrag, Datenschutzerklärung der Anwendung, Checkout-Texte).
 - [ ] Alle `[BITTE ERGÄNZEN]`-Stellen aus `platzhalter-gesamt.md` gefüllt; `.draft-notice` und `.fill` aus den HTML-Seiten entfernt.
-- [ ] Impressum, Datenschutzerklärung, Fußzeile aller Seiten auf H&B Software Solution UG (haftungsbeschränkt) i. G. umgestellt; nach Eintragung „i. G.“ entfernen und HRB/Registergericht eintragen.
+- [ ] Impressum, Datenschutzerklärung, Fußzeile aller Seiten auf H&B Software Solution UG (haftungsbeschränkt) i. G., vertreten durch den Geschäftsführer Luis Heidecker, umgestellt (frühestens ab notarieller Beurkundung, mit dem Satz zur Gründung); nach Eintragung „i. G.“ und den Satz zur Gründung entfernen, HRB-Nummer beim Registergericht Amtsgericht Recklinghausen eintragen; USt-IdNr. nach Erteilung eintragen (Impressum, AGB, Rechnungen).
 - [ ] Button-Texte exakt wie Abschnitt 14, auch auf Mobilgeräten vollständig lesbar (kein Abschneiden, kein Umbruch in ein anderes Wort).
 - [ ] Widerrufsbelehrung und Opt-in erscheinen nur bei „Privatperson“; Vereine/Unternehmen sehen beides nicht; kein Kundentyp vorbelegt.
 - [ ] Bestätigungs-E-Mail enthält AGB + AV-Vertrag + Widerrufsbelehrung + Formular als PDF und das Opt-in-Protokoll.
