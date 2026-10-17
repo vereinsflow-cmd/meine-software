@@ -12,7 +12,6 @@ import {
   donationNoteSchema,
   donationUpdateSchema,
   donorIdSchema,
-  donorSchema,
   donorUpdateSchema,
   restrictDonorSchema,
   taxSettingsSchema,
@@ -21,7 +20,6 @@ import {
 } from "./schemas";
 import {
   assignDonation,
-  createDonor,
   deleteDonor,
   recordDonation,
   restrictDonor,
@@ -84,12 +82,6 @@ export async function voidDonationAction(input: unknown): Promise<ActionResult<v
 export async function unassignDonationAction(input: unknown): Promise<ActionResult<void>> {
   return action("donation-unassign", async (value) =>
     unassignDonation(await requireTenantContext(), parseInput(unassignDonationSchema, value)),
-  )(input);
-}
-
-export async function createDonorAction(input: unknown): Promise<ActionResult<{ id: string }>> {
-  return action("donor-create", async (value) =>
-    createDonor(await requireTenantContext(), parseInput(donorSchema, value)),
   )(input);
 }
 

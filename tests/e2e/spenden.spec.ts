@@ -5,8 +5,9 @@ import { USERS, chooseNewDonor, ensureLedger, login, open, openDonationDialog } 
 /**
  * Spenden-Cockpit (Teil 1) im Browser: Der Kassenwart (Vorstand) erfasst Spenden – Geld eines Mitglieds, eine Sachspende
  * einer Firma und die Spendendose ohne Namen –, sieht sie im Cockpit, unter „Alle Spenden“ (Filter nach Bestätigung, Suche)
- * und unter „Spender“, trägt die Finanzamt-Angaben ein, ruft den Beleg bis 300 € auf und kennzeichnet eine Buchung im
- * Kassenbuch nachträglich als Spende. Mitglieder ohne `finance:read` sehen nichts davon.
+ * und unter „Spender“, trägt die Finanzamt-Angaben ein, ruft den Beleg bis 300 € auf, kennzeichnet eine Buchung im
+ * Kassenbuch nachträglich als Spende, trägt die fehlende Anschrift der Spenderin nach, hängt Nachweise an die Sachspende
+ * und storniert sie. Mitglieder ohne `finance:read` sehen nichts davon.
  *
  * Die E2E-Datenbank startet ohne Kassenbuch und ohne Spenden (Seed mit NODE_ENV=test); die Tests laufen nacheinander und
  * bauen aufeinander auf. Namen tragen eine Endung je Lauf, die Summe wird als Zuwachs geprüft – so stören weder die Spende
@@ -25,6 +26,9 @@ const BOX = `Spendendose Theke ${suffix}`;
 // Erst im Kassenbuch als Spende gebucht (Gegenüber), danach über „⋯“ als Spende gekennzeichnet.
 const LATE_DONOR = `Erika Sommer ${suffix}`;
 const LATE_TEXT = `Spende Sommerfest ${suffix}`;
+// Nachweise der Sachspende von COMPANY (Datei und Vermerk), danach storniert.
+const EVIDENCE_FILE = `lieferschein-${suffix}.pdf`;
+const EVIDENCE_NOTE = `Lieferschein ${suffix} liegt beim Kassenwart`;
 
 /** „1.234,56 €“ → 123456 */
 function toCents(text: string): number {
@@ -384,7 +388,7 @@ test.describe.serial("Spenden – Kassenwart", () => {
     await expect(donorsTable(page)).toContainText(COMPANY);
   });
 
-  test("Kassenbuch: eine gebuchte Spende ohne Spender über „⋯“ → „Als Spende kennzeichnen“ zuordnen", async ({
+  test("Kassenbuch: eine gebuchte Spende ohne Spender über „⋯“ → „Als Spende kennzeichnen“ zuordnen, danach die Anschrift eintragen", async ({
     page,
   }) => {
     test.setTimeout(90_000);
@@ -447,14 +451,126 @@ test.describe.serial("Spenden – Kassenwart", () => {
     await expect(donation.getByText("Adresse fehlt", { exact: true })).toBeVisible();
     await expect(donationsTable(page).getByRole("row")).toHaveCount(2);
 
-    // Unter „Spender“ steht sie mit „Adresse fehlt“; „Adresse eintragen“ holt sie nach oben.
+    // Unter „Spender“ steht sie mit „Adresse fehlt“; „Adresse eintragen“ öffnet gleich das Fenster „Spender ändern“.
     await open(page, "/finanzen/spenden/spender");
     const donor = donorsTable(page).getByRole("row").filter({ hasText: LATE_DONOR });
     await expect(donor).toContainText("Adresse fehlt");
     await expect(donor).toContainText("50,00 €");
-    await donor.getByRole("link", { name: `Adresse eintragen für ${LATE_DONOR}` }).click();
-    await expect(page).toHaveURL(/\/finanzen\/spenden\/spender\?bearbeiten=/);
+    const edit = page.getByRole("dialog", { name: "Spender ändern" });
+    await donor.getByRole("button", { name: `Adresse eintragen für ${LATE_DONOR}` }).click();
+    await expect(edit.getByRole("textbox", { name: "Name", exact: true })).toHaveValue(LATE_DONOR);
+    // Der Cursor steht gleich in der Straße (der Name bleibt unberührt).
+    await expect(edit.getByRole("textbox", { name: "Straße und Hausnummer" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(edit).toHaveCount(0);
+
+    // `?bearbeiten=<id>` (Ziel von „Adresse eintragen“ im Cockpit) öffnet das Fenster direkt und holt sie nach oben;
+    // geschlossen steht der Fokus auf ihrem „⋯“. (Solange das Fenster offen ist, ist die Tabelle für Screenreader verdeckt.)
+    const donorId = (await donor.getAttribute("id"))?.replace(/^spender-/, "");
+    expect(donorId).toBeTruthy();
+    await open(page, `/finanzen/spenden/spender?bearbeiten=${donorId}`);
+    await expect(edit.getByRole("textbox", { name: "Name", exact: true })).toHaveValue(LATE_DONOR);
+    expect(await violations(page)).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(edit).toHaveCount(0);
     await expect(donorsTable(page).getByRole("row").nth(1)).toContainText(LATE_DONOR);
+    const menu = donor.getByRole("button", { name: `Weitere Aktionen für ${LATE_DONOR}` });
+    await expect(menu).toBeFocused();
+
+    // „⋯“ → „Anschrift ändern“: Anschrift eintragen – danach ist die Bestätigung „nötig“ statt „Adresse fehlt“.
+    await menu.click();
+    await page.getByRole("menuitem", { name: "Anschrift ändern" }).click();
+    await edit.getByRole("textbox", { name: "Straße und Hausnummer" }).fill("Lindenweg 7");
+    // Erst der Ort, dann die Postleitzahl – die App ergänzt den Ort sonst selbst (hier derselbe).
+    await edit.getByRole("textbox", { name: "Ort", exact: true }).fill("Bielefeld");
+    await edit.getByRole("textbox", { name: "PLZ" }).fill("33602");
+    await edit.getByRole("button", { name: "Speichern" }).click();
+    await expect(edit).toHaveCount(0);
+    await expect(page.getByText("Spender gespeichert.")).toBeVisible();
+    await expect(donor).toContainText("Lindenweg 7");
+    await expect(donor).toContainText("33602 Bielefeld");
+    await expect(donor).not.toContainText("Adresse fehlt");
+    await open(page, `/finanzen/spenden/alle?q=${encodeURIComponent(LATE_DONOR)}`);
+    const receipt = donationsTable(page).getByRole("row").filter({ hasText: LATE_DONOR });
+    await expect(receipt.getByText("nötig", { exact: true })).toBeVisible();
+    await expect(receipt.getByText("Adresse fehlt", { exact: true })).toHaveCount(0);
+  });
+
+  test("Alle Spenden: Nachweise einer Sachspende anhängen, herunterladen und entfernen – storniert nur noch ansehen", async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    await login(page, USERS.vorstand);
+    const search = encodeURIComponent(`Brinkmann ${suffix}`);
+    await open(page, `/finanzen/spenden/alle?q=${search}`);
+    const row = donationsTable(page).getByRole("row").filter({ hasText: COMPANY });
+    const more = row.getByRole("button", {
+      name: `Weitere Aktionen: Sachspende von ${COMPANY} über 89,90 €`,
+    });
+
+    // „⋯“ einer Sachspende: ändern, Nachweise, stornieren – keine Kennzeichnung (die gibt es nur bei Geld).
+    await more.click();
+    await expect(page.getByRole("menuitem", { name: "Ändern" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Stornieren" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Kennzeichnung zurücknehmen" })).toHaveCount(0);
+    await page.getByRole("menuitem", { name: "Nachweise", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Nachweise zur Spende" });
+    await expect(dialog.getByText("Noch kein Nachweis angehängt.")).toBeVisible();
+
+    // Eine Datei: liegt danach als Dokument „Nur Finanzen“ an der Spende und lässt sich herunterladen.
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: EVIDENCE_FILE,
+      mimeType: "application/pdf",
+      buffer: Buffer.from(
+        "%PDF-1.4\n% Lieferschein\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n",
+      ),
+    });
+    await expect(page.getByText(`„${EVIDENCE_FILE}“ angehängt.`)).toBeVisible();
+    const list = dialog.getByRole("list", { name: "Angehängte Nachweise" });
+    const download = list.getByRole("link", { name: `Nachweis herunterladen: ${EVIDENCE_FILE}` });
+    await expect(download).toBeVisible();
+    const file = await page.request.get((await download.getAttribute("href"))!);
+    expect(file.status()).toBe(200);
+    expect(file.headers()["content-disposition"]).toContain("attachment");
+
+    // Ein Vermerk statt Datei – und wieder entfernt (erst nach Rückfrage am selben Knopf).
+    await dialog.getByRole("textbox", { name: "Oder ein Vermerk" }).fill(EVIDENCE_NOTE);
+    await dialog.getByRole("button", { name: "Vermerk speichern" }).click();
+    await expect(page.getByText("Vermerk gespeichert.")).toBeVisible();
+    await expect(list.getByRole("listitem")).toHaveCount(2);
+    await expect(list).toContainText(`Vermerk: ${EVIDENCE_NOTE}`);
+    expect(await violations(page)).toEqual([]);
+    await list.getByRole("button", { name: "Vermerk entfernen" }).click();
+    await list.getByRole("button", { name: /^Wirklich entfernen\?/ }).click();
+    await expect(page.getByText("Vermerk entfernt.")).toBeVisible();
+    await expect(list.getByRole("listitem")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(more).toBeFocused();
+
+    // Stornieren: Die Spende zählt nirgends mehr und steht nur noch unter „Storniert“ – die Nachweise bleiben, aber nur
+    // zum Ansehen.
+    await more.click();
+    await page.getByRole("menuitem", { name: "Stornieren" }).click();
+    const voidDialog = page.getByRole("dialog", { name: "Sachspende stornieren?" });
+    await voidDialog.getByRole("textbox", { name: "Grund" }).fill("doppelt erfasst");
+    await voidDialog.getByRole("button", { name: "Stornieren" }).click();
+    await expect(voidDialog).toHaveCount(0);
+    await expect(page.getByText("Spende storniert.")).toBeVisible();
+    await expect(row).toHaveCount(0);
+
+    await open(page, `/finanzen/spenden/alle?bestaetigung=storniert&q=${search}`);
+    await expect(row.getByText("storniert", { exact: true })).toBeVisible();
+    await more.click();
+    await expect(page.getByRole("menuitem", { name: "Ändern" })).toHaveCount(0);
+    await expect(page.getByRole("menuitem", { name: "Stornieren" })).toHaveCount(0);
+    await page.getByRole("menuitem", { name: "Nachweise ansehen" }).click();
+    await expect(
+      dialog.getByRole("link", { name: `Nachweis herunterladen: ${EVIDENCE_FILE}` }),
+    ).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /entfernen/ })).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: "Vermerk speichern" })).toHaveCount(0);
+    await expect(dialog.locator('input[type="file"]')).toHaveCount(0);
   });
 });
 
