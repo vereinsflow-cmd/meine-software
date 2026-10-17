@@ -152,8 +152,11 @@ test.describe.serial("Spenden – mobil", () => {
       "/finanzen/spenden/beleg",
     ]) {
       await open(page, path);
+      // Nur sichtbare Treffer: Im Cockpit steht der Name auch in der Tabelle „Letzte Spenden“, die am Handy versteckt ist.
+      // Sind mehr als drei Bestätigungen offen, fehlt er unter „Das steht an“ („… und 4 weitere“) – dann wäre der erste
+      // Treffer die versteckte Tabellenzelle.
       if (path !== "/finanzen/spenden/beleg")
-        await expect(page.getByText(DONOR).first()).toBeVisible();
+        await expect(page.getByText(DONOR).filter({ visible: true }).first()).toBeVisible();
       expect(await overflow(page), path).toBeLessThanOrEqual(1);
     }
     // Die Karte in „Alle Spenden“ bleibt im Bild.
