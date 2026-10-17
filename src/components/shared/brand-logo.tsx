@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  *
  *   horizontal  Symbol links, Wortmarke rechts – für Kopfzeilen und Seitenleisten
  *   stacked     Symbol oben, Wortmarke darunter – für die Anmeldung
- *   icon        nur das Symbol, ohne Wortmarke – für die eingeklappte Seitenleiste
+ *   icon        nur das Symbol, ohne Wortmarke
  */
 export type LogoVariant = "horizontal" | "stacked" | "icon";
 
@@ -33,31 +33,17 @@ const LOGOS: Record<LogoVariant, LogoFiles> = {
   icon: { light: "/brand/symbol.svg", dark: "/brand/symbol-weiss.svg", width: 1000, height: 1000 },
 };
 
-/**
- * Symbol für kleine Größen (bis 32 px): die ruhigere Form des Favicons – zwei statt drei Etappen, ohne Tempo-Striche –, damit das V
- * klar erkennbar bleibt. Abgeleitet aus `src/app/icon.svg` des Logo-Pakets (ohne die dunkle Kachel).
- */
-const SMALL_ICON: LogoFiles = {
-  light: "/brand/symbol-klein.svg",
-  dark: "/brand/symbol-klein-weiss.svg",
-  width: 32,
-  height: 32,
-};
-
 export function BrandLogo({
   variant = "horizontal",
-  small = false,
   decorative = false,
   className,
 }: {
   variant?: LogoVariant;
-  /** Nur für `icon`: Darstellung bis 32 px (z. B. eingeklappte Seitenleiste) – nimmt die vereinfachte Form. */
-  small?: boolean;
   /** `true`, wenn der Name bereits anderswo steht (z. B. in der Beschriftung des umgebenden Links). */
   decorative?: boolean;
   className?: string;
 }) {
-  const logo = variant === "icon" && small ? SMALL_ICON : LOGOS[variant];
+  const logo = LOGOS[variant];
   const alt = decorative ? "" : "VereinsFlow";
   // Breite und Höhe der Datei: Der Browser hält damit schon vor dem Laden den richtigen Platz frei (kein Springen der Seite).
   // Die angezeigte Größe bestimmt `className` (Höhe oder Breite), die andere Seite folgt dem Seitenverhältnis.

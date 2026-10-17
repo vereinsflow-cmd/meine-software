@@ -69,7 +69,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "passwort-aendern",
         question: "Wie ändere ich mein Passwort?",
         steps: [
-          "Öffne im Menü unter „Persönlich“ den Punkt „Mein Profil“.",
+          "Klicke links unten in der Seitenleiste auf dein Kürzel (in der breiten Seitenleiste und im Menü am Smartphone: unter „Persönlich“) und wähle „Mein Profil“ – oder oben rechts auf deinen Namen.",
           "Gib im Abschnitt „Passwort ändern“ dein aktuelles Passwort und zweimal das neue ein.",
         ],
         tip: "Dabei wirst du auf allen anderen Geräten abgemeldet.",
@@ -324,7 +324,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "daten-herunterladen",
         question: "Welche Daten sind über mich gespeichert – kann ich sie herunterladen?",
         steps: [
-          "Öffne im Menü unter „Persönlich“ den Punkt „Datenschutz“.",
+          "Klicke links unten in der Seitenleiste auf dein Kürzel (in der breiten Seitenleiste und im Menü am Smartphone: unter „Persönlich“) und wähle „Datenschutz“.",
           "Klicke im Abschnitt „Meine Daten herunterladen“ auf „Daten herunterladen (JSON)“.",
         ],
         tip: "Du bekommst eine Datei mit allen Angaben, die zu dir gespeichert sind (Auskunft und Datenübertragbarkeit).",

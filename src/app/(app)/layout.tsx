@@ -63,8 +63,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SetupFrame locked={false}>
       <SearchProvider staticEntries={staticSearchEntries}>
         <SidebarCollapseProvider>
-          {/* Kopf fest, Navigation scrollt; die letzte Gruppe („Persönlich“ mit Hilfe & Support) bleibt unten immer sichtbar. */}
-          <Sidebar groups={groups} />
+          {/* Schmale, dunkle Symbolleiste (Standard) oder breit mit Text; „Persönlich“ (mit Hilfe & Support) bleibt unten erreichbar. */}
+          <Sidebar groups={groups} userName={name} />
 
           <div className="flex min-w-0 flex-col">
             <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">

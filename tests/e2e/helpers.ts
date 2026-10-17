@@ -83,9 +83,15 @@ export async function open(page: Page, path: string): Promise<void> {
  */
 export async function openNavGroup(
   nav: ReturnType<Page["getByRole"]>,
-  groupLabel: string,
+  groupLabel: string | RegExp,
 ): Promise<void> {
-  const trigger = nav.getByRole("button", { name: groupLabel, exact: true });
+  // Breite Seitenleiste und schmale Symbolleiste (seit 17.10.2026 Standard ab 1024 px): Der Knopf heißt wie die Gruppe und
+  // steuert sein Untermenü (`aria-expanded`/`aria-controls`) – in der Symbolleiste ein Ausklapp-Menü rechts daneben, das im
+  // Code innerhalb der Navigation steht. „Persönlich“ heißt dort „Persönlich (BA)“ (Kürzel) – dafür ein regulärer Ausdruck.
+  const trigger =
+    typeof groupLabel === "string"
+      ? nav.getByRole("button", { name: groupLabel, exact: true })
+      : nav.getByRole("button", { name: groupLabel });
   if ((await trigger.getAttribute("aria-expanded")) === "true") return;
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -93,6 +99,20 @@ export async function openNavGroup(
   await content.evaluate((element) =>
     Promise.allSettled(element.getAnimations().map((animation) => animation.finished)),
   );
+}
+
+/**
+ * Für Tests der breiten Seitenleiste mit Text: Seit 17.10.2026 ist ab 1024 px die schmale, dunkle Symbolleiste der Standard; die
+ * breite gilt, wenn `vf:sidebar-breit` gesetzt ist (wie nach „Seitenleiste ausklappen“). Vor dem ersten Aufruf der Seite rufen.
+ */
+export async function preferWideSidebar(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("vf:sidebar-breit", "1");
+    } catch {
+      // ohne Speicher bleibt die Symbolleiste
+    }
+  });
 }
 
 export async function logout(page: Page): Promise<void> {

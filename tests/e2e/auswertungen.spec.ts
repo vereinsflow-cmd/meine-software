@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, login, open, openNavGroup } from "./helpers";
+import { USERS, login, open, openNavGroup, preferWideSidebar } from "./helpers";
 
 /**
  * Auswertungen auf dem Dashboard: Themen als Reiter, Ansicht, Diagrammtyp und Zeitraum wählbar, Tabellenansicht,
@@ -273,20 +273,36 @@ test.describe("Auswertungen – Barrierefreiheit (axe) in verschiedenen Zuständ
   });
 });
 
-test.describe("Seitenleiste – Animationen", () => {
+/**
+ * Die Effekte der breiten Seitenleiste mit Text (`SidebarNav` – ausgeklappt ab 1024 px und im mobilen Menü). Seit 17.10.2026 ist
+ * ab 1024 px die schmale Symbolleiste der Standard; diese Tests wählen deshalb vorher die breite Leiste (`preferWideSidebar`).
+ */
+test.describe("Breite Seitenleiste – Animationen", () => {
   const nav = (page: Page) => page.getByRole("navigation", { name: "Hauptnavigation" });
   /** Symbolfläche des Menüpunkts (erstes aria-hidden-Element im Link). */
   const tile = (page: Page, name: string) =>
     nav(page).getByRole("link", { name, exact: true }).locator("span[aria-hidden='true']").first();
   const style = (locator: ReturnType<typeof tile>, property: string) =>
     locator.evaluate((element, prop) => getComputedStyle(element).getPropertyValue(prop), property);
+  /**
+   * Meldet an und wartet auf die breite Leiste: Die Wahl steht im Browserspeicher, den der Server nicht kennt – nach dem Laden
+   * steht kurz die schmale Symbolleiste da (deren „Verein“ hieße genauso), bis die breite sie ablöst.
+   */
+  const loginWide = async (page: Page) => {
+    await login(page, USERS.admin);
+    await expect(page.getByRole("button", { name: "Seitenleiste einklappen" })).toBeVisible();
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await preferWideSidebar(page); // vor dem ersten Aufruf einer Seite
+  });
 
   // Seit dem Feinschliff vom 05.10.2026 ruhiger: Überfahren und Fokus färben das Symbol nur noch (kein Anheben, kein
   // Vergrößern) – die Liste wird dutzende Male am Tag benutzt. Bewegung gibt es nur noch beim Drücken.
   test("Überfahren: Symbol bekommt Farbe und Grund, bewegt sich aber nicht; Drücken federt es ein", async ({
     page,
   }) => {
-    await login(page, USERS.admin);
+    await loginWide(page);
     await openNavGroup(nav(page), "Verein");
     const icon = tile(page, "Kalender");
     const link = nav(page).getByRole("link", { name: "Kalender", exact: true });
@@ -307,8 +323,8 @@ test.describe("Seitenleiste – Animationen", () => {
   });
 
   test("Tastaturfokus reagiert wie der Zeiger", async ({ page }) => {
-    await login(page, USERS.admin);
-    await openNavGroup(nav(page), "Organisation");
+    await loginWide(page);
+    await openNavGroup(nav(page), "Verein");
     const icon = tile(page, "Aufgaben");
     const before = await style(icon, "background-color");
     await nav(page).getByRole("link", { name: "Aufgaben", exact: true }).focus();
@@ -320,7 +336,7 @@ test.describe("Seitenleiste – Animationen", () => {
 
   test("„Bewegung reduzieren“: keine Bewegung, aber die Farbänderung bleibt", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await login(page, USERS.admin);
+    await loginWide(page);
     await openNavGroup(nav(page), "Verein");
     const icon = tile(page, "Kalender");
     const before = await style(icon, "background-color");
@@ -333,7 +349,7 @@ test.describe("Seitenleiste – Animationen", () => {
   test("aktiver Menüpunkt ist klar gekennzeichnet (aria-current und gefüllter Grund)", async ({
     page,
   }) => {
-    await login(page, USERS.admin);
+    await loginWide(page);
     const active = nav(page).getByRole("link", { name: "Dashboard", exact: true });
     await expect(active).toHaveAttribute("aria-current", "page");
     expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(
@@ -343,5 +359,38 @@ test.describe("Seitenleiste – Animationen", () => {
     await expect(
       nav(page).getByRole("link", { name: "Kalender", exact: true }),
     ).not.toHaveAttribute("aria-current", "page");
+  });
+});
+
+/**
+ * Die schmale Symbolleiste (Standard ab 1024 px, `NavRail`): Die aktuelle Seite trägt eine graue, runde Fläche hinter ihrem
+ * Symbol – ein eigenes Element direkt vor dem Link, damit sie über den Rand der Leiste ragen kann. Überfahren tönt den Grund
+ * eines Symbols nur hell, ohne Bewegung (wie in der breiten Leiste).
+ */
+test.describe("Symbolleiste – Kennzeichnung", () => {
+  const nav = (page: Page) => page.getByRole("navigation", { name: "Hauptnavigation" });
+
+  test("aktiver Punkt mit aria-current und grauer Fläche; Überfahren einer Gruppe tönt nur ihren Grund", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    const active = nav(page).getByRole("link", { name: "Dashboard", exact: true });
+    await expect(active).toHaveAttribute("aria-current", "page");
+    await expect(active.locator("xpath=preceding-sibling::span[1]")).not.toHaveCSS(
+      "background-color",
+      "rgba(0, 0, 0, 0)",
+    );
+    // „Verein“ enthält die aktuelle Seite nicht: keine Fläche davor
+    const group = nav(page).getByRole("button", { name: "Verein", exact: true });
+    await expect(group.locator("xpath=preceding-sibling::span")).toHaveCount(0);
+    const look = () =>
+      group.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { background: style.backgroundColor, scale: style.scale };
+      });
+    const before = await look();
+    await group.hover();
+    await expect.poll(async () => (await look()).background).not.toBe(before.background);
+    expect((await look()).scale).toBe("none");
   });
 });

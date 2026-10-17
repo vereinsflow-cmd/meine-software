@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { USERS, login } from "./helpers";
+import { USERS, login, open, openNavGroup } from "./helpers";
 
 /**
  * Helferplanung im Browser. Tests, die Daten verändern, legen eigene Schichten mit eindeutigem Namen an und räumen
@@ -55,7 +55,8 @@ test.describe("Helferplanung – Veranstalter", () => {
     page,
   }) => {
     await login(page, USERS.admin);
-    await page.goto("/helferplanung");
+    // Fertig geladen (hydratisiert) – sonst ginge der Klick auf „Verein“ unten verloren.
+    await open(page, "/helferplanung");
     await expect(page.getByRole("heading", { level: 1, name: "Helferplanung" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Meine Einsätze" })).toBeVisible();
     await expect(
@@ -74,7 +75,13 @@ test.describe("Helferplanung – Veranstalter", () => {
     const hours = page.getByRole("main").getByRole("link", { name: "Helferstunden", exact: true });
     await expect(hours).toBeVisible();
     await expect(hours).toHaveAttribute("href", "/helferplanung/stunden");
+    // In der Symbolleiste zeigt die Gruppe „Verein“, dass sie die aktuelle Seite enthält; in ihrem Menü ist „Helferplanung“
+    // markiert – einen eigenen Menüpunkt „Helferstunden“ gibt es dort nicht.
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" });
+    await expect(
+      nav.getByRole("button", { name: "Verein", exact: true }),
+    ).toHaveAccessibleDescription(/enthält die aktuelle Seite/);
+    await openNavGroup(nav, "Verein");
     await expect(nav.getByRole("link", { name: "Helferplanung", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
