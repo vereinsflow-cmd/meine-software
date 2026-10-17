@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erklärung zur Barrierefreiheit – VereinsFlow</title>
+  <meta name="description" content="Erklärung zur Barrierefreiheit der Website vereins-flow.com nach dem Barrierefreiheitsstärkungsgesetz (BFSG): Stand, bekannte Einschränkungen, Feedback und Durchsetzung.">
+  <!-- Die Information nach § 14 Abs. 1 Nr. 2 BFSG muss der Allgemeinheit zugänglich sein – anders als Impressum und
+       Datenschutz deshalb indexierbar. -->
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://vereins-flow.com/barrierefreiheit.html">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="favicon.svg?v=2026100401" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico?v=2026100401" sizes="48x48">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026100401">
+  <link rel="manifest" href="site.webmanifest?v=2026100401">
+  <link rel="stylesheet" href="assets/css/site.css?v=2026100602">
+  <script src="assets/js/site.js?v=2026100602" defer></script>
+</head>
+<body class="subpage">
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<!-- Symbole: lucide (ISC-Lizenz), wie auf der Startseite -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <!-- Rücklink zur Startseite -->
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+  <!-- Fußzeile: E-Mail und Telefon -->
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="index.html" aria-label="VereinsFlow – zur Startseite">
+      <picture>
+        <img src="assets/img/logo.svg?v=2026100401" alt="" width="178" height="40">
+      </picture>
+    </a>
+    <a class="btn btn-primary btn-sm header-cta" href="index.html#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
+      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
+    </button>
+    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
+      <div class="nav-links">
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helferschichten</a></li>
+          <li><a href="index.html#rollen">Rollen</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+          <li><a href="index.html#faq">Fragen</a></li>
+        </ul>
+      </div>
+      <a class="header-link" href="index.html#benachrichtigen">Beim Start benachrichtigen</a>
+      <a class="btn btn-primary btn-sm btn-header" href="index.html#kontakt">Demo anfragen</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inhalt">
+  <div class="container">
+    <div class="page-head">
+      <p><a class="text-link back-link" href="index.html"><svg class="icon icon-back" aria-hidden="true"><use href="#i-arrow-left"/></svg>Zur Startseite</a></p>
+      <h1>Erklärung zur Barrierefreiheit</h1>
+    </div>
+
+    <!-- ENTWURFSKASTEN: vor dem Live-Gang entfernen. Stil .draft-notice und .fill (Platzhalter) stehen bereits in site.css. -->
+    <div class="draft-notice" role="note">
+      ENTWURF – keine Rechtsberatung. Vor dem Live-Gang anwaltlich prüfen lassen. Der Stand der Vereinbarkeit und die
+      Liste der Einschränkungen beruhen auf einer Code-Prüfung (siehe bfsg-checkliste.md) und sind nach einer Prüfung mit
+      Screenreadern und Hilfsmitteln zu bestätigen. Gelb markierte Stellen sind Platzhalter.
+    </div>
+
+    <div class="legal-layout">
+      <section class="summary tint" aria-labelledby="kurz-gesagt">
+        <h2 id="kurz-gesagt">Kurz gesagt</h2>
+        <ul class="checks">
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Maßstab WCAG&nbsp;2.1, Stufe AA</strong> (EN&nbsp;301&nbsp;549) für die gesamte Website.</span></li>
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Mit Tastatur und Vorlesesoftware bedienbar</strong>, Zoom bis 200&nbsp;% ohne Verlust, Bewegung lässt sich abschalten.</span></li>
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Bekannte Einschränkungen</strong> stehen unten offen beschrieben, mit dem Plan zur Behebung.</span></li>
+          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Barriere gefunden?</strong> Schreiben Sie uns; wir antworten und helfen mit einer zugänglichen Alternative.</span></li>
+        </ul>
+      </section>
+
+      <nav class="toc" aria-label="Inhalt der Erklärung zur Barrierefreiheit">
+        <p class="toc-title label">Inhalt</p>
+        <ol>
+          <li><a href="#geltung">1. Geltungsbereich</a></li>
+          <li><a href="#dienstleistung">2. Die Dienstleistung</a></li>
+          <li><a href="#bedienung">3. Bedienung</a></li>
+          <li><a href="#massnahmen">4. Maßnahmen</a></li>
+          <li><a href="#stand">5. Stand der Vereinbarkeit</a></li>
+          <li><a href="#einschraenkungen">6. Einschränkungen</a></li>
+          <li><a href="#erstellung">7. Erstellung</a></li>
+          <li><a href="#feedback">8. Feedback</a></li>
+          <li><a href="#durchsetzung">9. Durchsetzung</a></li>
+        </ol>
+      </nav>
+
+      <div class="prose">
+        <!-- Anbieter: Fassung wie im Impressum (GbR heute, UG künftig). Bei Umstellung mitziehen (zwei Stellen: hier und
+             Abschnitt 8). Stand 17.10.2026: Die UG befindet sich in Gründung, die Eintragung in das Handelsregister des
+             Amtsgerichts Recklinghausen wird beantragt; Geschäftsführer ist Luis Heidecker. Die Erklärung nennt nach
+             Anlage 3 BFSG nur Name, Anschrift und Kontakt des Dienstleistungserbringers – Vertreter und Registerangaben
+             stehen im Impressum. Nach der Eintragung „i. G.“ streichen. -->
+        <p>Die VereinsFlow GbR <span class="fill">[künftig: H&amp;B Software Solution UG (haftungsbeschränkt) i.&nbsp;G. – mit dem Impressum umstellen (impressum.html Fassung B)]</span> ist bemüht, ihre Website vereins-flow.com barrierefrei zugänglich zu machen. Diese Erklärung informiert nach §&nbsp;14 Abs.&nbsp;1 Nr.&nbsp;2 in Verbindung mit Anlage&nbsp;3 Nr.&nbsp;1 des Barrierefreiheitsstärkungsgesetzes (BFSG) darüber, wie unsere Dienstleistung die Anforderungen an die Barrierefreiheit erfüllt, wo sie es noch nicht tut und an wen Sie sich wenden können.</p>
+
+        <h2 id="geltung">1. Geltungsbereich und Rechtsgrundlage</h2>
+        <p>Diese Erklärung gilt für die Website <strong>vereins-flow.com</strong> mit allen Unterseiten, einschließlich des Anmeldeformulars für E&#8209;Mail-Benachrichtigungen, sowie&nbsp;– ab ihrer Einführung&nbsp;– für Kundenkonto, Online-Bestellvorgang, Rechnungsbereich und Kündigungsschaltfläche. Mit dem Online-Abschluss von Verträgen wird die Website zu einer <em>Dienstleistung im elektronischen Geschäftsverkehr</em> im Sinne von §&nbsp;1 Abs.&nbsp;3 Nr.&nbsp;5 und §&nbsp;2 Nr.&nbsp;26 BFSG, für die seit dem 28.&nbsp;Juni 2025 die Barrierefreiheitsanforderungen des BFSG und der Verordnung zum BFSG (BFSGV) gelten, insbesondere §&nbsp;12 Nr.&nbsp;3 BFSGV (Websites wahrnehmbar, bedienbar, verständlich und robust) und §&nbsp;19 BFSGV (Identifizierungs-, Sicherheits- und Zahlungsfunktionen barrierefrei).</p>
+        <!-- KLEINSTUNTERNEHMEN: § 3 Abs. 3 BFSG nimmt Kleinstunternehmen (weniger als zehn Beschäftigte und höchstens
+             2 Mio. € Jahresumsatz oder Bilanzsumme, § 2 Nr. 17 BFSG), die Dienstleistungen anbieten, von § 3 Abs. 1 aus.
+             Solange das zutrifft, ist diese Erklärung freiwillig. Sie wird trotzdem veröffentlicht: a) die Pflicht greift
+             sofort, wenn ein Schwellenwert überschritten wird; b) der Zugang zu einer Vereinssoftware für Ehrenamtliche
+             soll ohnehin barrierefrei sein; c) Transparenz gegenüber Vereinen mit eigenen Pflichten (öffentliche Stellen,
+             Behindertenverbände). Die Zahlen jährlich prüfen. -->
+        <p>Als Kleinstunternehmen im Sinne von §&nbsp;2 Nr.&nbsp;17 BFSG (<span class="fill">[BITTE ERGÄNZEN: weniger als zehn Beschäftigte und Jahresumsatz oder Bilanzsumme bis 2&nbsp;Mio.&nbsp;€ – jährlich prüfen]</span>) sind wir nach §&nbsp;3 Abs.&nbsp;3 BFSG von der Pflicht zur Barrierefreiheit unserer Dienstleistung derzeit ausgenommen. Wir wenden die Anforderungen dennoch freiwillig an und veröffentlichen diese Erklärung, weil eine Software für ehrenamtliche Vereinsarbeit allen Beteiligten offenstehen soll und weil die Pflicht mit dem Wachstum des Unternehmens eintritt. Als Stand der Technik (§&nbsp;3 BFSGV) legen wir die harmonisierte europäische Norm EN&nbsp;301&nbsp;549 und damit die Web Content Accessibility Guidelines (WCAG) 2.1 in der Konformitätsstufe AA zugrunde.</p>
+
+        <h2 id="dienstleistung">2. Beschreibung der Dienstleistung</h2>
+        <p>Die Website informiert über VereinsFlow, eine Software zur Vereinsverwaltung mit Helferplanung, die im Browser läuft. Sie besteht aus einer Startseite mit Beschreibung der Funktionen, bebilderten Vorführungen der Anwendung, häufigen Fragen und Kontaktmöglichkeiten per E&#8209;Mail und Telefon, einem Formular zur Anmeldung für E&#8209;Mail-Benachrichtigungen (mit Bestätigung per E&#8209;Mail) sowie den Rechtstexten (Impressum, Datenschutzerklärung, diese Erklärung). Künftig kommen ein Kundenkonto, der Abschluss eines monatlichen Abos mit Online-Zahlung, der Abruf von Rechnungen und eine Kündigungsschaltfläche hinzu. Alle Inhalte liegen als HTML-Text vor; es gibt keine PDF-Dokumente, keine Videos und keine Audioinhalte. Die Seiten laden ausschließlich eigene Dateien.</p>
+
+        <h2 id="bedienung">3. So bedienen Sie die Website</h2>
+        <ul>
+          <li><strong>Tastatur:</strong> Alle Funktionen sind mit der Tastatur erreichbar. Mit <kbd>Tab</kbd> springen Sie von Element zu Element, der erste Sprung bietet „Zum Inhalt springen“ an. In der Reiterleiste „Abläufe“ und in den Funktionskacheln wechseln die Pfeiltasten zwischen den Einträgen; <kbd>Esc</kbd> schließt geöffnete Karten und das Menü auf dem Smartphone. Der Fokus ist immer durch einen deutlichen Rahmen sichtbar.</li>
+          <li><strong>Vorlesesoftware:</strong> Die Seiten sind in Überschriften gegliedert (eine Hauptüberschrift, darunter Abschnitte), Bilder der Anwendung haben Textbeschreibungen, dekorative Grafiken werden übersprungen. Bedienelemente haben sprechende Namen und Rollen; geöffnete Karten werden als Dialog angekündigt.</li>
+          <li><strong>Vergrößern:</strong> Die Seite lässt sich im Browser auf 200&nbsp;% vergrößern, ohne dass Inhalte oder Funktionen verloren gehen; Schriftgrößen sind relativ definiert. Auf schmalen Bildschirmen ordnet sich alles untereinander an, ohne waagerechtes Scrollen.</li>
+          <li><strong>Bewegung:</strong> Haben Sie in Ihrem Betriebssystem „Bewegung reduzieren“ eingeschaltet, zeigt die Website alle Inhalte ohne Animationen. Laufende Vorführungen der Anwendung lassen sich jederzeit mit der Schaltfläche „Anhalten“ stoppen. Es gibt keine automatisch startenden Töne und keine blinkenden Inhalte.</li>
+          <li><strong>Alternativen:</strong> Jede Information und jede Funktion der Website erhalten Sie auch per E&#8209;Mail oder Telefon (Abschnitt&nbsp;8), künftig einschließlich Vertragsabschluss, Rechnungszustellung und Kündigung.</li>
+        </ul>
+
+        <h2 id="massnahmen">4. Wie die Anforderungen erfüllt werden</h2>
+        <p>Zur Erfüllung der Barrierefreiheitsanforderungen (§&nbsp;12 Nr.&nbsp;2 und 3, §&nbsp;19 BFSGV; WCAG&nbsp;2.1 AA) haben wir unter anderem folgende Maßnahmen umgesetzt:</p>
+        <ul>
+          <li>Semantische HTML-Struktur mit Sprachangabe (<code>lang="de"</code>), Sprungmarke zum Inhalt, logischer Überschriftenhierarchie, Listen- und Dialog-Rollen sowie Formularfeldern mit sichtbaren Beschriftungen und Autovervollständigungs-Attributen.</li>
+          <li>Textalternativen für alle informativen Bilder; dekorative Grafiken und Symbole sind für Hilfsmittel ausgeblendet.</li>
+          <li>Farbkontraste von mindestens 4,5&nbsp;:&nbsp;1 für Text (Fließtext über 13&nbsp;:&nbsp;1, Nebentext über 6&nbsp;:&nbsp;1, Linkfarbe 4,7&nbsp;:&nbsp;1) und mindestens 3&nbsp;:&nbsp;1 für Eingabefelder und den Fokusrahmen; Links sind zusätzlich unterstrichen, Zustände nicht allein durch Farbe gekennzeichnet.</li>
+          <li>Vollständige Tastaturbedienung mit sichtbarem Fokus, Pfeiltasten-Navigation in Reitern und Kacheln, Rückkehr des Fokus nach dem Schließen von Dialogen, keine Tastaturfallen; auf dem Smartphone wird der Seiteninhalt hinter dem geöffneten Menü für Fokus und Vorlesesoftware gesperrt.</li>
+          <li>Respektieren der Systemeinstellung „Bewegung reduzieren“, Pausenschaltflächen für laufende Vorführungen, einmalige kurze Einblendungen statt Dauerbewegung.</li>
+          <li>Relative Schriftgrößen, kein Verbot des Zoomens, Anpassung an Bildschirmbreiten ab 320&nbsp;px, Tippflächen von mindestens 44&nbsp;px Höhe für Schaltflächen, Menüeinträge, Eingabefelder und die Links der Fußzeile.</li>
+          <li>Statusmeldungen (etwa „Adresse kopiert“) werden Hilfsmitteln über Live-Regionen mitgeteilt; Formularergebnisse erscheinen als eigene Seiten mit Überschrift.</li>
+          <li>Keine fremden Inhalte, keine Werbung, keine Cookie-Banner, die den Zugang erschweren.</li>
+        </ul>
+        <p>Für den künftigen Bestellvorgang gilt zusätzlich: Identifizierung, Anmeldung und Zahlung werden so gestaltet, dass sie wahrnehmbar, bedienbar, verständlich und robust sind (§&nbsp;19 Nr.&nbsp;2 und 3 BFSGV). Setzen wir für die Zahlung die Bezahlseite eines Zahlungsdienstleisters ein, wählen wir einen Anbieter, dessen Bezahlseite die WCAG&nbsp;2.1 AA erfüllt, und prüfen sie vor dem Start mit Tastatur und Vorlesesoftware.</p>
+
+        <h2 id="stand">5. Stand der Vereinbarkeit</h2>
+        <!-- Nach der Prüfung mit Hilfsmitteln eine der drei Formulierungen wählen: „vollständig vereinbar“, „teilweise
+             vereinbar“ (wegen der unter 6 genannten Einschränkungen), „nicht vereinbar“. Bis dahin „teilweise vereinbar“. -->
+        <p>Diese Website ist mit den Anforderungen der WCAG&nbsp;2.1, Konformitätsstufe AA, <span class="fill">[BITTE ERGÄNZEN nach Prüfung: „vollständig vereinbar“ oder „teilweise vereinbar“ – vorläufig: teilweise vereinbar]</span>. Die Einschätzung beruht auf einer Prüfung des Quellcodes aller Seiten gegen die Erfolgskriterien der WCAG&nbsp;2.1 AA im Oktober 2026. Eine ergänzende Prüfung mit Vorlesesoftware (NVDA, VoiceOver) und mit Vergrößerung auf 400&nbsp;% steht noch aus; die darunter genannten Einschränkungen sind uns bekannt.</p>
+
+        <h2 id="einschraenkungen">6. Nicht barrierefreie Inhalte und bekannte Einschränkungen</h2>
+        <p>Die folgenden Inhalte sind aus den genannten Gründen noch nicht oder nicht vollständig barrierefrei:</p>
+        <ul>
+          <li><strong>Fokusrahmen der Funktionskacheln.</strong> Auf der Startseite im Abschnitt „Funktionen“ wird der Fokusrahmen der Kacheln über eine neuere CSS-Technik (<code>:has()</code>) auf die ganze Kachel gelegt. In älteren Browsern ohne diese Technik ist der Fokus auf diesen zwölf Schaltflächen nicht sichtbar (WCAG&nbsp;2.4.7). Behebung: Rückfalllösung mit einem Rahmen direkt auf der Schaltfläche, geplant <span class="fill">[BITTE ERGÄNZEN: Termin]</span>.</li>
+          <li><strong>Fehlermeldungen im Anmeldeformular.</strong> Fehlende oder ungültige E&#8209;Mail-Adressen meldet derzeit nur der Browser mit seiner Standardmeldung (WCAG&nbsp;3.3.1, 3.3.3 erfüllt, aber ohne eigene, im Seitentext verankerte Hinweise). Behebung: eigene Fehlertexte beim Feld, geplant mit dem Kundenkonto.</li>
+          <li><strong>Bewegte Vorführungen.</strong> Die Darstellungen der Anwendung in Laptop und Smartphone sind animiert und folgen dem Scrollen. Sie sind dekorativ; die Inhalte stehen daneben als Text und als beschriebene Bilder. Mit „Bewegung reduzieren“ entfällt die Animation, laufende Szenen lassen sich anhalten. Für Menschen mit vestibulären Störungen ohne diese Systemeinstellung kann die Bewegung dennoch störend sein (WCAG&nbsp;2.3.3 ist eine AAA-Anforderung und nicht Teil des Maßstabs). Behebung: zusätzlicher Schalter „Bewegung aus“ auf der Seite, geplant <span class="fill">[BITTE ERGÄNZEN: Termin oder „nicht geplant“]</span>.</li>
+          <li><strong>Prüfung mit Hilfsmitteln steht aus.</strong> Die Website wurde bislang anhand des Quellcodes geprüft, noch nicht durchgängig mit Vorlesesoftware, Bildschirmlupe und bei 400&nbsp;% Vergrößerung (WCAG&nbsp;1.4.10, 1.4.12). Behebung: Prüfung vor dem Start des Online-Abos, <span class="fill">[BITTE ERGÄNZEN: Termin]</span>.</li>
+          <li><strong>Kundenkonto, Bestellvorgang und Zahlung</strong> existieren noch nicht und sind daher noch nicht geprüft. Die Bezahlseite eines Zahlungsdienstleisters ist Inhalt eines Dritten, auf dessen Gestaltung wir nur begrenzt Einfluss haben; wir prüfen sie vor dem Start und bieten als zugängliche Alternative die Zahlung auf Rechnung und den Vertragsabschluss per E&#8209;Mail an <span class="fill">[BITTE ERGÄNZEN: tatsächlich angebotene Alternative]</span>.</li>
+        </ul>
+        <p>Die Rechtstexte in der Fußzeile (Impressum, Datenschutzerklärung) sind reine Textseiten und ohne bekannte Einschränkungen.</p>
+
+        <h2 id="erstellung">7. Erstellung dieser Erklärung</h2>
+        <p>Diese Erklärung wurde am <strong>17.&nbsp;Oktober 2026</strong> erstellt <span class="fill">[BITTE ERGÄNZEN: Datum der Veröffentlichung]</span>. Grundlage ist eine Selbstbewertung: Prüfung des Quellcodes der Website (HTML, CSS, JavaScript) gegen alle Erfolgskriterien der WCAG&nbsp;2.1 der Stufen A und AA mit Messung der Farbkontraste. Zuletzt überprüft am <span class="fill">[BITTE ERGÄNZEN: Datum der letzten Prüfung]</span>. Wir überprüfen die Erklärung bei jeder wesentlichen Änderung der Website, spätestens jährlich, und bewahren sie auf, solange wir die Dienstleistung anbieten (§&nbsp;14 Abs.&nbsp;2 BFSG).</p>
+
+        <h2 id="feedback">8. Feedback und Kontakt</h2>
+        <p>Sind Ihnen Barrieren aufgefallen, oder benötigen Sie Inhalte in einer anderen Form? Schreiben Sie uns oder rufen Sie an:</p>
+        <p>
+          VereinsFlow GbR <span class="fill">[künftig: H&amp;B Software Solution UG (haftungsbeschränkt) i.&nbsp;G. – mit dem Impressum umstellen]</span><br>
+          Oberschlesienstraße&nbsp;6a, 45711&nbsp;Datteln<br>
+          E&#8209;Mail: <a href="mailto:kontakt@vereins-flow.com?subject=Barrierefreiheit%20vereins-flow.com">kontakt@vereins-flow.com</a><br>
+          Telefon: <a href="tel:+4917656792302">+49&nbsp;176&nbsp;56792302</a>
+        </p>
+        <p>Wir antworten in der Regel innerhalb von <span class="fill">[BITTE ERGÄNZEN: z.&nbsp;B. zwei Wochen]</span> und stellen die gewünschten Informationen in einer für Sie zugänglichen Form bereit, etwa als einfache Textdatei oder im Gespräch.</p>
+
+        <!-- MARKTÜBERWACHUNG: Nach § 2 Nr. 22 BFSG ist die nach Landesrecht zuständige Behörde Marktüberwachungsbehörde. Alle
+             16 Länder, auch NRW (GV. NRW. Nr. 20 vom 10.04.2025, Staatsvertrag), haben die Aufgabe auf die gemeinsame
+             Marktüberwachungsstelle der Länder für die Barrierefreiheit von Produkten und Dienstleistungen (MLBF AöR) in
+             Magdeburg übertragen. Angaben geprüft am 17.10.2026 im Impressum von mlbf-barrierefrei.de. Es gibt also keine
+             eigene NRW-Behörde. -->
+        <h2 id="durchsetzung">9. Durchsetzungsverfahren und Marktüberwachung</h2>
+        <p>Wenn Sie der Ansicht sind, dass unsere Dienstleistung die Anforderungen des BFSG nicht erfüllt, und Sie auf eine Nachricht an uns keine zufriedenstellende Antwort erhalten, können Sie sich an die zuständige Marktüberwachungsbehörde wenden. Für Nordrhein-Westfalen wie für alle anderen Länder ist das die gemeinsame Stelle der Länder:</p>
+        <p>
+          Marktüberwachungsstelle der Länder für die Barrierefreiheit von Produkten und Dienstleistungen (MLBF AöR)<br>
+          Carl-Miller-Straße&nbsp;6, 39112&nbsp;Magdeburg<br>
+          Telefon: <a href="tel:+4939128923023">+49 391 289 230 23</a><br>
+          E&#8209;Mail: <a href="mailto:kontakt@mlbf-barrierefrei.de">kontakt@mlbf-barrierefrei.de</a><br>
+          <a href="https://www.mlbf-barrierefrei.de">www.mlbf-barrierefrei.de</a>
+        </p>
+        <p>Dort können Sie eine Barriere formlos melden oder als Verbraucherin oder Verbraucher nach §&nbsp;32 Abs.&nbsp;1 BFSG beantragen, dass die Behörde ein Verfahren gegen uns einleitet; beides ist über Online-Formulare auf der Website der MLBF möglich. Daneben steht Ihnen für Streitigkeiten nach dem BFSG das Schlichtungsverfahren bei der Schlichtungsstelle nach §&nbsp;16 des Behindertengleichstellungsgesetzes offen (§&nbsp;34 BFSG): Schlichtungsstelle BGG, <span class="fill">[BITTE PRÜFEN: Anschrift laut schlichtungsstelle-bgg.de – derzeit Mauerstraße 53, 10117 Berlin]</span>, <a href="https://www.schlichtungsstelle-bgg.de">www.schlichtungsstelle-bgg.de</a>.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Fußzeile: Fassung aus footer-vorschlag.html (neu: Link „Barrierefreiheit“; AGB, Widerruf und Kündigungsschaltfläche
+     vorbereitet, aber auskommentiert, bis die Seiten existieren). Bei Umstellung auf die UG Absender und ©-Zeile ändern. -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <picture>
+          <img src="assets/img/logo.svg?v=2026100401" alt="VereinsFlow" width="200" height="45">
+        </picture>
+        <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+        <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
+        <address class="footer-contact">
+          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        </address>
+      </div>
+      <div>
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helfer&shy;schichten</a></li>
+          <li><a href="index.html#suche">Zentrale Suche</a></li>
+          <li><a href="index.html#rollen">Rollen und Rechte</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Kontakt</h2>
+        <ul>
+          <li><a href="index.html#kontakt">Demo anfragen</a></li>
+          <li><a href="index.html#benachrichtigen">Beim Start benachrichtigen</a></li>
+          <li><a href="index.html#ablauf">So starten Sie</a></li>
+          <li><a href="index.html#faq">Häufige Fragen</a></li>
+        </ul>
+      </div>
+    </div>
+    <!-- Unterste Zeile: © mit den Rechtstexten, daneben der Hinweis zur Website -->
+    <div class="footer-bottom">
+      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="impressum.html">Impressum</a> <a href="datenschutz.html">Datenschutz</a> <a href="barrierefreiheit.html">Barrierefreiheit</a><!-- ab Online-Abo freischalten: <a href="agb.html">AGB</a> <a href="widerruf.html">Widerruf</a> <a href="kuendigen.html">Verträge hier kündigen</a> (kuendigen.html ist noch zu bauen, siehe checkout-vorgabe.md Abschnitt 8) --></p>
+      <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

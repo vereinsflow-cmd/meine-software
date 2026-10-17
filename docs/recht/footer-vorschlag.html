@@ -1,0 +1,85 @@
+<!-- =====================================================================================================
+     FUSSZEILE – VORSCHLAG (nur das Fragment). Ersetzt den <footer>-Block in ALLEN Seiten:
+       index.html, impressum.html, datenschutz.html, barrierefreiheit.html (neu), agb.html (neu), widerruf.html (neu),
+       404.html, newsletter.php (vf_seite). agb.html und widerruf.html tragen bereits die Fassung ab Online-Abo und UG
+       (siehe Punkt 6); in den übrigen Seiten gilt zunächst die Fassung unten.
+     In 404.html und newsletter.php die Links mit führendem „/“ schreiben (dort absolute Pfade: /impressum.html usw.).
+
+     Was sich gegenüber heute ändert:
+       1. Neuer Link „Barrierefreiheit“ (barrierefreiheit.html) – sofort, sobald die Seite hochgeladen ist. Die Erklärung
+          nach § 14 Abs. 1 Nr. 2 BFSG muss „der Allgemeinheit“ zugänglich sein; der Fußzeilen-Link auf jeder Seite erfüllt das.
+       2. „AGB“ und „Widerruf“ – erst freischalten, wenn die Seiten agb.html und widerruf.html existieren (mit dem
+          Online-Abo). Bis dahin auskommentiert lassen, sonst 404.
+       3. „Verträge hier kündigen“ – Kündigungsschaltfläche nach § 312k Abs. 2 BGB. Pflicht, sobald Verbraucher über die
+          Website ein entgeltliches Dauerschuldverhältnis (Abo) abschließen können. Muss „ständig verfügbar sowie
+          unmittelbar und leicht zugänglich“ sein – die Fußzeile auf jeder Seite ist dafür der übliche Ort. Beschriftung
+          gesetzlich vorgegeben: „Verträge hier kündigen“ (oder eine entsprechend eindeutige Formulierung). Führt auf die
+          Bestätigungsseite (§ 312k Abs. 2 Satz 3 BGB) mit der Schaltfläche „jetzt kündigen“. Die Zielseite
+          kuendigen.html ist noch zu bauen (checkout-vorgabe.md, Abschnitt 8); ebenso widerrufen.html (Abschnitt 9).
+       4. Der Satz „Diese Website setzt keine Cookies …“ ist heute wahr. Setzt der Checkout ein technisch notwendiges
+          Sitzungs-Cookie, den Satz ändern in: „Diese Website setzt kein Tracking ein und lädt nichts von fremden
+          Servern. Nur im Kundenkonto und im Bestellvorgang wird ein technisch notwendiges Sitzungs-Cookie gesetzt.“
+          (siehe Datenschutzerklärung Abschnitte 2 und 6).
+       5. Absenderzeile und ©-Zeile bei der Umstellung auf die UG ändern (siehe Kommentar im Impressum). Stand
+          17.10.2026: Die UG befindet sich in Gründung, die Eintragung in das Handelsregister des Amtsgerichts
+          Recklinghausen wird beantragt; Geschäftsführer ist Luis Heidecker. Die Fußzeile nennt nur Firma und Ort –
+          Vertretung, Registergericht und der Satz zur Gründung stehen im Impressum (impressum.html Fassung B).
+       6. Fassung ab Online-Abo und UG (so in agb.html und widerruf.html eingebaut):
+          - Absender und ©: „H&B Software Solution UG (haftungsbeschränkt) i. G.“ (nach der Eintragung ins
+            Handelsregister „i. G.“ streichen; bis dahin ohne HRB-Nummer)
+          - Rechtstexte: Impressum, Datenschutz, Barrierefreiheit, AGB, Widerruf, Verträge hier kündigen (alle in
+            der untersten Zeile, die Kündigungsschaltfläche steht nicht in der Spalte „Kontakt“)
+          - Hinweissatz wie in Punkt 4
+
+     Barrierefreiheit der Fußzeile: Linktexte sind eindeutig (2.4.4), Überschriften h2 passen in die Gliederung der
+     Seiten (h1 im Hauptteil), die Symbole sind aria-hidden mit sr-only-Text davor (1.1.1), Tippflächen ≥ 44 px
+     kommen aus site.css (.footer-contact a, .footer-legal a).
+     ===================================================================================================== -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <picture>
+          <img src="assets/img/logo.svg?v=2026100401" alt="VereinsFlow" width="200" height="45">
+        </picture>
+        <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
+        <!-- Absender und Kontakt: dieselben Angaben wie im Impressum.
+             HEUTE:   VereinsFlow GbR · Datteln (NRW)
+             KÜNFTIG: H&B Software Solution UG (haftungsbeschränkt) i. G. · Datteln (NRW)   [Gründungsphase; nach der Eintragung
+                      ins Handelsregister des Amtsgerichts Recklinghausen „i. G.“ streichen] -->
+        <address class="footer-contact">
+          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        </address>
+      </div>
+      <div>
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="index.html#funktionen">Funktionen</a></li>
+          <li><a href="index.html#helferschichten">Helfer&shy;schichten</a></li>
+          <li><a href="index.html#suche">Zentrale Suche</a></li>
+          <li><a href="index.html#rollen">Rollen und Rechte</a></li>
+          <li><a href="index.html#sicherheit">Sicherheit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Kontakt</h2>
+        <ul>
+          <li><a href="index.html#kontakt">Demo anfragen</a></li>
+          <li><a href="index.html#benachrichtigen">Beim Start benachrichtigen</a></li>
+          <li><a href="index.html#ablauf">So starten Sie</a></li>
+          <li><a href="index.html#faq">Häufige Fragen</a></li>
+        </ul>
+      </div>
+    </div>
+    <!-- Unterste Zeile: © mit den Rechtstexten, daneben der Hinweis zur Website.
+         Reihenfolge der Rechtstexte: Impressum, Datenschutz, Barrierefreiheit, (AGB, Widerruf, Verträge hier kündigen).
+         ©-Zeile HEUTE: VereinsFlow GbR · KÜNFTIG: H&B Software Solution UG (haftungsbeschränkt) i. G. (nach der Eintragung
+         „i. G.“ streichen) -->
+    <div class="footer-bottom">
+      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="impressum.html">Impressum</a> <a href="datenschutz.html">Datenschutz</a> <a href="barrierefreiheit.html">Barrierefreiheit</a><!-- ab Online-Abo freischalten: <a href="agb.html">AGB</a> <a href="widerruf.html">Widerruf</a> <a href="kuendigen.html">Verträge hier kündigen</a> (kuendigen.html ist noch zu bauen, siehe checkout-vorgabe.md Abschnitt 8) --></p>
+      <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
+    </div>
+  </div>
+</footer>
