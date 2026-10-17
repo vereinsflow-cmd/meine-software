@@ -55,9 +55,13 @@ export function KpiCarousel({
   const columns = size === "s" ? SMALL_COLUMNS : GRID_COLUMNS;
   const scroller = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
-  const [enter] = useState(() => !entered);
+  const [enter, setEnter] = useState(() => !entered);
   useEffect(() => {
     entered = true;
+    // Nach dem Einblenden die Animation ganz entfernen: Wird eine Zelle später neu aufgebaut (der Stapel rechts wechselt mit
+    // der Breite zwischen `contents` und `flex`), liefe sie sonst noch einmal ab – samt kurz unsichtbarer Karte.
+    const timer = window.setTimeout(() => setEnter(false), 1000);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function onScroll() {
