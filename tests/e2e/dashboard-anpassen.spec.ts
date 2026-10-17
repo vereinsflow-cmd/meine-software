@@ -63,6 +63,8 @@ test.describe("Dashboard selbst einstellen", () => {
   test("Größe je Karte: Kennzahlen „Klein“ als schmale Reihe ohne Grafiken, „Meine Aufgaben“ „Groß“ über die volle Breite – bleibt nach dem Neuladen", async ({
     page,
   }) => {
+    // Ohne Bewegung: Die Kennzahlen blenden beim Laden versetzt ein und stünden beim Messen sonst kurz auf verschiedenen Höhen.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, USERS.vorstand);
     const kpis = page.locator("[data-layout]");
     const group = page.getByRole("group", { name: "Kennzahlen" });

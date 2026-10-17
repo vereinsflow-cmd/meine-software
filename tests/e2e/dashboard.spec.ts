@@ -25,7 +25,7 @@ test.describe("Dashboard", () => {
   }) => {
     await login(page, USERS.admin);
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Anna!" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Anna" })).toBeVisible();
     await expect(
       page.locator("main").getByText("Vereinsadministrator", { exact: true }),
     ).toBeVisible();
@@ -102,23 +102,27 @@ test.describe("Dashboard", () => {
       ringBefore,
     );
     await page.keyboard.press("Escape");
-    // Kachelraster (ab 1280 px): Mitglieder und freie Plätze reichen über beide Reihen, Termine und Helferstunden teilen sich
-    // die Mitte – oben und unten schließt alles bündig ab. Ohne Bewegung (eine überfahrene Karte hebt sich sonst an).
+    // Kachelraster (ab 1280 px, Entwurf 4): Mitglieder über beide Reihen, Termine über Helferstunden in der Mitte, rechts die
+    // freien Plätze über den Offenen Zahlungen (der Stapel füllt die Spalte) – oben und unten schließt alles bündig ab.
+    // Ohne Bewegung (eine gedrückte Karte gibt sonst nach).
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.mouse.move(0, 0);
     const [m, t, f, h] = await Promise.all(cards.map(async (each) => (await each.boundingBox())!));
+    const p = (await page.getByRole("region", { name: "Offene Zahlungen" }).boundingBox())!;
     for (const box of [t, f]) expect(Math.abs(box.y - m.y)).toBeLessThanOrEqual(1);
-    for (const box of [h, f]) {
+    for (const box of [h, p]) {
       expect(Math.abs(box.y + box.height - (m.y + m.height))).toBeLessThanOrEqual(1);
     }
     expect(Math.abs(t.height - h.height)).toBeLessThanOrEqual(1);
     expect(h.y).toBeGreaterThan(t.y + t.height);
-    // Die hohe Kachel zeigt die freien Plätze im Ring; die schmale Fassung (Leiste) ist ausgeblendet – die Zahl steht genau
-    // einmal im Namen des Links, die Aufschlüsselung unter dem Ring wird nicht vorgelesen.
-    await expect(freeShifts.locator('svg[data-slot="fill-meter"]')).toBeVisible();
-    await expect(freeShifts.getByText(/^(Plätze|Platz) frei$/)).toBeVisible();
+    expect(p.y).toBeGreaterThan(f.y + f.height); // Zahlungen unter den freien Plätzen
+    expect(Math.abs(p.x - f.x)).toBeLessThanOrEqual(1);
+    // Die große Kachel zeigt unter dem Kurs, wie sich der Verein zusammensetzt
+    await expect(cards[0]!.getByText("So setzt sich der Verein zusammen")).toBeVisible();
+    await expect(cards[0]!.getByRole("term").filter({ hasText: "Aktiv" })).toBeVisible();
+    // Die Zahl der freien Plätze steht genau einmal im Namen des Links
     await expect(freeShifts).toHaveAccessibleName(
-      /^Freie Helferplätze \d+ (Plätze|Platz) frei (\d+ von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant)$/,
+      /^Freie Helferplätze \d+ (▲|▼)?.*(\d+ von \d+ (Plätzen|Platz) besetzt|Keine Schichten geplant)$/,
     );
     await expect(page.getByRole("heading", { level: 2, name: "Für dich" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Aufgaben" })).toBeVisible();
@@ -176,7 +180,7 @@ test.describe("Dashboard", () => {
     page,
   }) => {
     await login(page, USERS.helfer);
-    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Hans!" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Hans" })).toBeVisible();
     // Kein Reiter „Mitglieder“ (Mitgliederzahlen sind nicht für Helfer)
     await expect(page.getByRole("tab")).toHaveText([
       "Übersicht",
@@ -209,7 +213,7 @@ test.describe("Dashboard", () => {
     page,
   }) => {
     await login(page, USERS.mitglied);
-    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Maria!" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Maria" })).toBeVisible();
     await expect(page.getByRole("tab")).toHaveText(["Übersicht", "Termine & Helfer"]);
     await expect(
       page

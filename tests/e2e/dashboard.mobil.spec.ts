@@ -315,14 +315,17 @@ test.describe("Dashboard – Kennzahlen als Karussell", () => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await login(page, USERS.admin);
     const scroller = page.getByRole("group", { name: "Kennzahlen" });
-    await expect(scroller.getByRole("link")).toHaveCount(4);
+    const kpiLinks = scroller.locator('[data-slot="kpi-link"]');
+    await expect(kpiLinks).toHaveCount(4);
+    // Ab Tablet-Breite steht auch die Kachel „Offene Zahlungen“ im Raster (am Handy als Karte darunter)
+    await expect(scroller.getByRole("region", { name: "Offene Zahlungen" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
     const scrollable = await scroller.evaluate(
       (element) => element.scrollWidth > element.clientWidth + 1,
     );
     expect(scrollable).toBe(false);
-    const one = (await scroller.getByRole("link").nth(0).boundingBox())!;
-    const two = (await scroller.getByRole("link").nth(1).boundingBox())!;
+    const one = (await kpiLinks.nth(0).boundingBox())!;
+    const two = (await kpiLinks.nth(1).boundingBox())!;
     expect(Math.abs(one.y - two.y)).toBeLessThan(2);
     // genau zwei Spalten (das Kachelraster beginnt erst bei 49 rem Inhaltsbreite)
     expect(

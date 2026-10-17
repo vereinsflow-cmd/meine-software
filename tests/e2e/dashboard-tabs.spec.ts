@@ -218,12 +218,12 @@ test.describe("Dashboard-Reiter", () => {
     await expect(page.getByRole("region", { name: "Geburtstage" })).toBeInViewport();
   });
 
-  test("Kennzahlen am Desktop (1280 px): Kachelraster – Mitglieder links über beide Reihen, Termine über Helferstunden, freie Plätze rechts; kein Karussell, nichts abgeschnitten", async ({
+  test("Kennzahlen am Desktop (1280 px): Kachelraster – Mitglieder links über beide Reihen, Termine über Helferstunden, rechts freie Plätze über den Offenen Zahlungen; kein Karussell, nichts abgeschnitten", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     const cards = page.getByRole("group", { name: "Kennzahlen" }).locator('[data-slot="card"]');
-    await expect(cards).toHaveCount(4);
+    await expect(cards).toHaveCount(5); // mit Finanzrecht: die Offenen Zahlungen als fünfte Kachel
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
     const boxes = await cards.evaluateAll((elements) =>
       elements.map((element) => {
@@ -231,7 +231,9 @@ test.describe("Dashboard-Reiter", () => {
         return { x, y, width, height };
       }),
     );
-    const [members, events, free, hours] = boxes as [
+    // Reihenfolge Spalte für Spalte: Mitglieder, Termine, Helferstunden, freie Plätze, Zahlungen
+    const [members, events, hours, free, payments] = boxes as [
+      (typeof boxes)[0],
       (typeof boxes)[0],
       (typeof boxes)[0],
       (typeof boxes)[0],
@@ -241,8 +243,12 @@ test.describe("Dashboard-Reiter", () => {
     expect(events.x).toBeLessThan(free.x); // … freie Plätze rechts …
     expect(Math.abs(events.x - hours.x)).toBeLessThanOrEqual(1); // … Termine und Helferstunden in der Mitte übereinander
     expect(hours.y).toBeGreaterThan(events.y);
-    expect(members.height).toBeGreaterThan(events.height * 1.8); // die großen Kacheln reichen über beide Reihen
-    expect(free.height).toBeGreaterThan(events.height * 1.8);
+    expect(members.height).toBeGreaterThan(events.height * 1.8); // die große Kachel reicht über beide Reihen
+    expect(Math.abs(free.x - payments.x)).toBeLessThanOrEqual(1); // rechts der Stapel: freie Plätze über den Zahlungen
+    expect(payments.y).toBeGreaterThan(free.y + free.height);
+    expect(
+      Math.abs(payments.y + payments.height - (members.y + members.height)),
+    ).toBeLessThanOrEqual(1);
     const width = page.viewportSize()!.width;
     for (const box of boxes) expect(box.x + box.width).toBeLessThanOrEqual(width);
   });
@@ -266,13 +272,13 @@ test.describe("Dashboard-Reiter", () => {
 
     await page.setViewportSize({ width: 1280, height: 800 }); // ab 49 rem: Kachelraster, drei gleich breite Spalten
     await expect.poll(columns).toBe(12);
-    const [members, events, free] = await widths();
+    const [members, events, , free] = await widths();
     expect(Math.abs(members! - events!)).toBeLessThanOrEqual(2);
     expect(Math.abs(free! - events!)).toBeLessThanOrEqual(2);
 
     await page.setViewportSize({ width: 1470, height: 900 }); // ab 58 rem: 5/12, 4/12, 3/12
     await expect.poll(async () => (await widths())[0]! > (await widths())[1]!).toBe(true);
-    const [wide, middle, narrow] = await widths();
+    const [wide, middle, , narrow] = await widths();
     expect(middle!).toBeGreaterThan(narrow!);
     expect(wide!).toBeGreaterThan(middle!);
   });

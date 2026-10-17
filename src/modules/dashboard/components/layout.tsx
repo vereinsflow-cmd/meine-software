@@ -17,12 +17,8 @@ export function Group({
 }) {
   return (
     <section aria-labelledby={id} className="grid gap-4">
-      <h2
-        id={id}
-        className="flex items-center gap-3 text-sm font-semibold tracking-[0.12em] text-foreground/70 uppercase after:h-px after:flex-1 after:bg-border"
-      >
-        {/* Kleiner Punkt in der Markenfarbe vor der Überschrift (wie in den Entwürfen 2 und 5), rein optisch. */}
-        <span className="size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+      {/* Schlichte Zwischenüberschrift in normaler Schreibweise (seit 17.10.2026) – keine Großbuchstaben-Überzeile mit Punkt. */}
+      <h2 id={id} className="text-lg font-semibold tracking-tight">
         {title}
       </h2>
       {children}

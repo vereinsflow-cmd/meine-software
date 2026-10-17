@@ -1,7 +1,7 @@
 import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EyeOffIcon, PlusIcon, ShieldCheckIcon } from "lucide-react";
+import { EyeOffIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty } from "@/components/shared/compact-empty";
@@ -33,6 +33,7 @@ import {
   MyTasks,
   OpenPayments,
   OpenShifts,
+  PaymentsTile,
   RecentActivity,
   StaffingWarnings,
   UpcomingEvents,
@@ -56,6 +57,7 @@ import {
   type DashboardTabId,
 } from "@/modules/dashboard/tabs";
 import { can } from "@/server/permissions/policy";
+import { formatDateLong } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { requirePageContext } from "@/server/tenancy/context";
 
@@ -103,9 +105,17 @@ export default async function DashboardPage({
   /** Eigene Größe einer Karte („Anpassen“); ohne Einstellung „Mittel“. */
   const sizeOf = (tab: DashboardTabId, id: string) => blockSize(layout?.tabs[tab], id);
   const kpiSize = sizeOf("uebersicht", "kennzahlen");
-  // Kachelraster der Kennzahlen (Entwurf 2): nur, wenn alle vier Karten da sind – mit „Ungelesen“ statt Mitgliederzahl oder mit
+  // Kachelraster der Kennzahlen (Entwurf 4): nur, wenn alle vier Karten da sind – mit „Ungelesen“ statt Mitgliederzahl oder mit
   // weniger Karten stehen sie gleich groß nebeneinander; bei „Klein“ als schmale Reihe ohne Grafiken.
   const bento = Boolean(members && events && shifts) && kpiSize !== "s";
+  // Im Kachelraster stehen die Offenen Zahlungen als fünfte Kachel oben (Entwurf 4: Geld, das drängt, nicht weit unten) – nur,
+  // solange weder sie noch die Kennzahlen über „Anpassen“ ausgeblendet sind. Sonst bleiben sie eine eigene Karte.
+  const hiddenOverview = new Set(layout?.tabs.uebersicht?.hidden ?? []);
+  const paymentsInKpis =
+    bento &&
+    payments !== null &&
+    !hiddenOverview.has("zahlungen") &&
+    !hiddenOverview.has("kennzahlen");
 
   // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
   const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
@@ -119,7 +129,11 @@ export default async function DashboardPage({
           }
         : {}),
       kennzahlen: (
-        <KpiCarousel layout={bento ? "bento" : "grid"} size={kpiSize}>
+        <KpiCarousel
+          layout={bento ? "bento" : "grid"}
+          size={kpiSize}
+          lastFromTablet={paymentsInKpis}
+        >
           {members ? (
             <MembersStat members={members} size={bento ? "hero" : "regular"} density={kpiSize} />
           ) : (
@@ -134,10 +148,12 @@ export default async function DashboardPage({
             />
           )}
           {events && <NextEventsStat events={events} density={kpiSize} />}
-          {shifts && (
-            <FreeShiftsStat shifts={shifts} size={bento ? "tall" : "regular"} density={kpiSize} />
-          )}
-          {shifts && <HelperHours hours={shifts.hours} density={kpiSize} />}
+          {/* Mit Zahlungen Spalte für Spalte (rechts der Stapel Helferplätze über Zahlungen), sonst Zeile für Zeile –
+              Aufteilung in `modules/dashboard/kpi-layout.ts`. */}
+          {shifts && paymentsInKpis && <HelperHours hours={shifts.hours} density={kpiSize} />}
+          {shifts && <FreeShiftsStat shifts={shifts} density={kpiSize} />}
+          {shifts && !paymentsInKpis && <HelperHours hours={shifts.hours} density={kpiSize} />}
+          {paymentsInKpis && payments && <PaymentsTile payments={payments} />}
         </KpiCarousel>
       ),
       // Offene Zahlungen nur für Berechtigte (Vereinsadministrator, Vorstand) – vor „Für dich“, weil Fristen drängen.
@@ -253,7 +269,15 @@ export default async function DashboardPage({
   /** Inhalt eines Reiters: Karten in eigener Reihenfolge; Karten derselben Gruppe unter einer Überschrift. */
   function tabContent(tab: DashboardTabId) {
     const available = blocks[tab];
-    const { shown } = arrangeBlocks(tab, Object.keys(available), layout?.tabs[tab]);
+    const { shown: arranged } = arrangeBlocks(tab, Object.keys(available), layout?.tabs[tab]);
+    // Steht „Offene Zahlungen“ schon im Kachelraster, als Karte darunter nur am Handy (dort fehlt die Kachel im Karussell) –
+    // direkt nach den Kennzahlen.
+    const inKpis = tab === "uebersicht" && paymentsInKpis;
+    const shown = inKpis
+      ? arranged.flatMap((id) =>
+          id === "zahlungen" ? [] : id === "kennzahlen" ? [id, "zahlungen"] : [id],
+        )
+      : arranged;
     if (shown.length === 0) {
       return (
         <CompactEmpty card icon={<EyeOffIcon />} accent="slate" title="Alle Karten ausgeblendet">
@@ -306,6 +330,14 @@ export default async function DashboardPage({
               />
             </Group>
           );
+          // Die Karte „Offene Zahlungen“ neben der Kachel im Raster: nur am Handy sichtbar (siehe oben)
+          if (inKpis && segment.group === "finanzen") {
+            return (
+              <div key={`${segment.group}-${index}`} className="sm:hidden">
+                {group}
+              </div>
+            );
+          }
           return pair ? (
             <div key={`${segment.group}-${index}`} className="min-w-0">
               {group}
@@ -345,26 +377,25 @@ export default async function DashboardPage({
       <PageHeader
         inline
         align="center"
-        title={`Willkommen, ${ctx.user.firstName}!`}
-        titleClassName="text-4xl font-extrabold tracking-[-0.03em] sm:text-[2.625rem]"
-        // Die Rolle als kleines Schild neben der Begrüßung (Entwürfe 2 und 5).
+        title={`Willkommen, ${ctx.user.firstName}`}
+        // Seit 17.10.2026 (Entwurf 4) etwas kleiner als zuvor und ohne Schild: Rolle und Datum als ruhige Zeile darunter – wie die
+        // Untertitel der übrigen Seiten.
+        titleClassName="text-3xl font-bold tracking-[-0.025em] sm:text-4xl"
         description={
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 align-middle text-sm font-medium text-primary ring-1 ring-primary/20 ring-inset">
-            <ShieldCheckIcon className="size-3.5 shrink-0" aria-hidden="true" />
-            {ctx.roleName}
-          </span>
+          <>
+            <span>{ctx.roleName}</span>
+            <span aria-hidden="true"> · </span>
+            <span className="sr-only">, </span>
+            {formatDateLong(new Date())}
+          </>
         }
         // Am Handy: die Hauptaktion über die volle Breite, die übrigen gleich breit daneben – statt eines Umbruchs irgendwo.
-        // Runde Knöpfe passend zu den runden Reitern (nur auf dem Dashboard).
-        actionsClassName="*:rounded-full max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
+        actionsClassName="max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
         actions={
           <>
-            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten; mit leichtem Schein in der Markenfarbe. */}
+            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten. */}
             {can(ctx, "events:create") && (
-              <Button
-                asChild
-                className="shadow-[0_8px_22px_-10px_var(--color-primary)] hover:shadow-[0_10px_26px_-10px_var(--color-primary)]"
-              >
+              <Button asChild>
                 <Link href="/veranstaltungen/neu">
                   <PlusIcon /> Neue Veranstaltung
                 </Link>
