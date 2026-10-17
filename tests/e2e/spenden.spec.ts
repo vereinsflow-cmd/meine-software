@@ -5,8 +5,9 @@ import { USERS, chooseNewDonor, ensureLedger, login, open, openDonationDialog } 
 /**
  * Spenden-Cockpit (Teil 1) im Browser: Der Kassenwart (Vorstand) erfasst Spenden – Geld eines Mitglieds, eine Sachspende
  * einer Firma und die Spendendose ohne Namen –, sieht sie im Cockpit, unter „Alle Spenden“ (Filter nach Bestätigung, Suche)
- * und unter „Spender“, trägt die Finanzamt-Angaben ein, ruft den Beleg bis 300 € auf und kennzeichnet eine Buchung im
- * Kassenbuch nachträglich als Spende. Mitglieder ohne `finance:read` sehen nichts davon.
+ * und unter „Spender“, trägt die Finanzamt-Angaben ein, ruft den Beleg bis 300 € auf, kennzeichnet eine Buchung im
+ * Kassenbuch nachträglich als Spende und trägt die fehlende Anschrift der Spenderin nach. Mitglieder ohne `finance:read`
+ * sehen nichts davon.
  *
  * Die E2E-Datenbank startet ohne Kassenbuch und ohne Spenden (Seed mit NODE_ENV=test); die Tests laufen nacheinander und
  * bauen aufeinander auf. Namen tragen eine Endung je Lauf, die Summe wird als Zuwachs geprüft – so stören weder die Spende
@@ -384,7 +385,7 @@ test.describe.serial("Spenden – Kassenwart", () => {
     await expect(donorsTable(page)).toContainText(COMPANY);
   });
 
-  test("Kassenbuch: eine gebuchte Spende ohne Spender über „⋯“ → „Als Spende kennzeichnen“ zuordnen", async ({
+  test("Kassenbuch: eine gebuchte Spende ohne Spender über „⋯“ → „Als Spende kennzeichnen“ zuordnen, danach die Anschrift eintragen", async ({
     page,
   }) => {
     test.setTimeout(90_000);
@@ -447,14 +448,49 @@ test.describe.serial("Spenden – Kassenwart", () => {
     await expect(donation.getByText("Adresse fehlt", { exact: true })).toBeVisible();
     await expect(donationsTable(page).getByRole("row")).toHaveCount(2);
 
-    // Unter „Spender“ steht sie mit „Adresse fehlt“; „Adresse eintragen“ holt sie nach oben.
+    // Unter „Spender“ steht sie mit „Adresse fehlt“; „Adresse eintragen“ öffnet gleich das Fenster „Spender ändern“.
     await open(page, "/finanzen/spenden/spender");
     const donor = donorsTable(page).getByRole("row").filter({ hasText: LATE_DONOR });
     await expect(donor).toContainText("Adresse fehlt");
     await expect(donor).toContainText("50,00 €");
-    await donor.getByRole("link", { name: `Adresse eintragen für ${LATE_DONOR}` }).click();
-    await expect(page).toHaveURL(/\/finanzen\/spenden\/spender\?bearbeiten=/);
+    const edit = page.getByRole("dialog", { name: "Spender ändern" });
+    await donor.getByRole("button", { name: `Adresse eintragen für ${LATE_DONOR}` }).click();
+    await expect(edit.getByRole("textbox", { name: "Name", exact: true })).toHaveValue(LATE_DONOR);
+    // Der Cursor steht gleich in der Straße (der Name bleibt unberührt).
+    await expect(edit.getByRole("textbox", { name: "Straße und Hausnummer" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(edit).toHaveCount(0);
+
+    // `?bearbeiten=<id>` (Ziel von „Adresse eintragen“ im Cockpit) öffnet das Fenster direkt und holt sie nach oben;
+    // geschlossen steht der Fokus auf ihrem „⋯“. (Solange das Fenster offen ist, ist die Tabelle für Screenreader verdeckt.)
+    const donorId = (await donor.getAttribute("id"))?.replace(/^spender-/, "");
+    expect(donorId).toBeTruthy();
+    await open(page, `/finanzen/spenden/spender?bearbeiten=${donorId}`);
+    await expect(edit.getByRole("textbox", { name: "Name", exact: true })).toHaveValue(LATE_DONOR);
+    expect(await violations(page)).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(edit).toHaveCount(0);
     await expect(donorsTable(page).getByRole("row").nth(1)).toContainText(LATE_DONOR);
+    const menu = donor.getByRole("button", { name: `Weitere Aktionen für ${LATE_DONOR}` });
+    await expect(menu).toBeFocused();
+
+    // „⋯“ → „Anschrift ändern“: Anschrift eintragen – danach ist die Bestätigung „nötig“ statt „Adresse fehlt“.
+    await menu.click();
+    await page.getByRole("menuitem", { name: "Anschrift ändern" }).click();
+    await edit.getByRole("textbox", { name: "Straße und Hausnummer" }).fill("Lindenweg 7");
+    // Erst der Ort, dann die Postleitzahl – die App ergänzt den Ort sonst selbst (hier derselbe).
+    await edit.getByRole("textbox", { name: "Ort", exact: true }).fill("Bielefeld");
+    await edit.getByRole("textbox", { name: "PLZ" }).fill("33602");
+    await edit.getByRole("button", { name: "Speichern" }).click();
+    await expect(edit).toHaveCount(0);
+    await expect(page.getByText("Spender gespeichert.")).toBeVisible();
+    await expect(donor).toContainText("Lindenweg 7");
+    await expect(donor).toContainText("33602 Bielefeld");
+    await expect(donor).not.toContainText("Adresse fehlt");
+    await open(page, `/finanzen/spenden/alle?q=${encodeURIComponent(LATE_DONOR)}`);
+    const receipt = donationsTable(page).getByRole("row").filter({ hasText: LATE_DONOR });
+    await expect(receipt.getByText("nötig", { exact: true })).toBeVisible();
+    await expect(receipt.getByText("Adresse fehlt", { exact: true })).toHaveCount(0);
   });
 });
 

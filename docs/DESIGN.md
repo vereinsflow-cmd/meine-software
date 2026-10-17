@@ -440,7 +440,8 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
   Adresse fehlt · Erstellt · Nicht nötig · Ohne Namen · Spender fehlt · Storniert; stornierte nur unter „Storniert“), Suche
   und Jahr, Zeilenaktionen „Spender eintragen“, „Ändern“, „Stornieren“ (Sach/Aufwand), „Kennzeichnung zurücknehmen“ (Geld),
   „Im Kassenbuch ansehen“. „Spender“: Summe, Anzahl, Status je Spender; andere Spender „Anschrift ändern“, „Sperren“,
-  „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“; `?bearbeiten=<id>` öffnet das Fenster direkt. Beide
+  „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“; `?bearbeiten=<id>` öffnet das Fenster direkt, ebenso
+  „Adresse eintragen“ unter „Adresse fehlt“ (bei Mitgliedern ein Link zum Mitglied; ohne `finance:manage` nicht da). Beide
   stehen am Handy gestapelt (`<Table stack>`, seit 15.10.2026): der Spender als Titel der Karte, darunter Datum, Art und
   Zweck, Bestätigung, Betrag bzw. Anschrift, Bestätigung und Summe; deshalb ist der Spender auch am Computer die erste Spalte.
   „Letzte Spenden“ im Cockpit bleibt die kompakte Liste aus dem Bild (in einer Karte, nur fünf Zeilen).
