@@ -1,6 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, ensureLedger, isoDaysAgo, login, open, openNavGroup } from "./helpers";
+import {
+  USERS,
+  ensureLedger,
+  isoDaysAgo,
+  login,
+  loginSettled,
+  open,
+  openNavGroup,
+} from "./helpers";
 
 /**
  * Finanzen im Browser: Der Vorstand (Kassenwart) öffnet den Bereich, richtet das Kassenbuch ein, bucht, storniert und
@@ -37,11 +45,17 @@ test.describe("Finanzen – Kassenwart", () => {
   test("Vorstand findet die Finanzen unter „Organisation“; die Übersicht zeigt die offenen Rechnungen", async ({
     page,
   }) => {
-    await login(page, USERS.vorstand);
+    // Fertig geladen abwarten: Das Menü der Gruppe in der Symbolleiste öffnet erst, wenn die Seite hydratisiert ist.
+    await loginSettled(page, USERS.vorstand);
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
+    const organisation = nav.getByRole("button", { name: "Organisation", exact: true });
     await openNavGroup(nav, "Organisation");
     await nav.getByRole("link", { name: "Finanzen" }).click();
     await expect(page).toHaveURL(/\/finanzen$/);
+    // Beim Seitenwechsel schließt das Menü; die Gruppe zeigt danach, dass sie die aktuelle Seite enthält.
+    await expect(nav.getByRole("link", { name: "Finanzen" })).toHaveCount(0);
+    await expect(organisation).toHaveAttribute("aria-expanded", "false");
+    await expect(organisation).toHaveAccessibleDescription(/enthält die aktuelle Seite/);
     await expect(page.getByRole("heading", { level: 1, name: "Finanzen" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Bereiche der Finanzen" })).toBeVisible();
     // Seed: zwei offene Rechnungen (349,50 € und 1.200,00 €, eine davon überfällig).
@@ -254,13 +268,13 @@ test.describe("Finanzen – Belege", () => {
 test.describe("Finanzen – ohne Berechtigung", () => {
   test("Mitglied und Helfer haben weder Menüpunkt noch Zugriff", async ({ page }) => {
     for (const email of [USERS.mitglied, USERS.helfer]) {
-      await login(page, email);
-      await expect(
-        page
-          .getByRole("navigation", { name: "Hauptnavigation" })
-          .first()
-          .getByRole("link", { name: "Finanzen" }),
-      ).toHaveCount(0);
+      await loginSettled(page, email);
+      // Beide haben die Gruppe „Organisation“ (Dokumente) – in ihrem Menü fehlt „Finanzen“. Ohne
+      // Öffnen wäre die Prüfung wertlos: Die Symbolleiste zeigt die Seiten einer Gruppe erst in ihrem Menü.
+      const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
+      await openNavGroup(nav, "Organisation");
+      await expect(nav.getByRole("link", { name: "Dokumente", exact: true })).toBeVisible();
+      await expect(nav.getByRole("link", { name: "Finanzen" })).toHaveCount(0);
       for (const path of [
         "/finanzen",
         "/finanzen/kassenbuch",

@@ -2,7 +2,7 @@ import path from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { E2E_BASE_URL } from "./environment";
-import { USERS, login } from "./helpers";
+import { USERS, login, open, openNavGroup } from "./helpers";
 
 test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
   test.beforeEach(async ({ page }) => {
@@ -153,16 +153,15 @@ test.describe("Sichtbarkeit nach Rolle", () => {
     page,
   }) => {
     await login(page, USERS.mitglied);
-    await page.goto("/mitglieder");
+    await open(page, "/mitglieder");
     await expect(page.getByRole("link", { name: /Mitglied, Maria/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toHaveCount(0);
-    // Kein Menüpunkt "Mitglieder" (die Rolle sieht nur den eigenen Datensatz)
-    await expect(
-      page
-        .getByRole("navigation", { name: "Hauptnavigation" })
-        .first()
-        .getByRole("link", { name: "Mitglieder" }),
-    ).toHaveCount(0);
+    // Kein Menüpunkt "Mitglieder" (die Rolle sieht nur den eigenen Datensatz). In der Symbolleiste stehen die Seiten erst im
+    // Menü ihrer Gruppe – „Verein“ hat das Mitglied (Kalender, Veranstaltungen …), also öffnen und dort nachsehen.
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
+    await openNavGroup(nav, "Verein");
+    await expect(nav.getByRole("link", { name: "Kalender", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Mitglieder" })).toHaveCount(0);
 
     // Keine Verwaltungsfunktionen
     await expect(page.getByRole("link", { name: "Neues Mitglied" })).toHaveCount(0);

@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { USERS, login, open } from "./helpers";
+import { USERS, login, loginSettled, open, openNavGroup } from "./helpers";
 
 const unique = (prefix: string) => `${prefix} ${Date.now() % 1_000_000}`;
 
@@ -16,12 +16,22 @@ async function as<T>(browser: Browser, email: string, run: (page: Page) => Promi
 
 const nav = (page: Page) => page.getByRole("navigation", { name: "Hauptnavigation" }).first();
 
+/**
+ * Klickt „Hilfe & Support“ in der Seitenleiste. In der schmalen Symbolleiste (Standard ab 1024 px) steht der Link im Menü
+ * „Persönlich“ am Kürzel der Person (Knopf z. B. „Persönlich (MM)“) – das Menü erst öffnen.
+ */
+async function openHelpFromNav(page: Page): Promise<void> {
+  await openNavGroup(nav(page), /^Persönlich/);
+  await nav(page).getByRole("link", { name: "Hilfe & Support" }).click();
+}
+
 test.describe("Hilfe & Support – Mitglied", () => {
   test("Menüpunkt, Ansprechpartner und Anleitung sind da; Verwaltungsfunktionen nicht", async ({
     page,
   }) => {
-    await login(page, USERS.mitglied);
-    await nav(page).getByRole("link", { name: "Hilfe & Support" }).click();
+    // Fertig geladen abwarten: Das Menü „Persönlich“ öffnet erst, wenn die Seite hydratisiert ist.
+    await loginSettled(page, USERS.mitglied);
+    await openHelpFromNav(page);
     await expect(page).toHaveURL(/\/hilfe\?von=%2Fdashboard$/); // merkt sich die Seite, von der man kam
     await expect(page.getByRole("heading", { level: 1, name: "Hilfe & Support" })).toBeVisible();
 
@@ -100,9 +110,9 @@ test.describe("Hilfe & Support – Mitglied", () => {
   }) => {
     await login(page, USERS.mitglied);
 
-    // Über die Seitenleiste von einer anderen Seite aus
+    // Über „Persönlich“ in der Seitenleiste von einer anderen Seite aus
     await open(page, "/kalender");
-    await nav(page).getByRole("link", { name: "Hilfe & Support" }).click();
+    await openHelpFromNav(page);
     await expect(page).toHaveURL(/von=%2Fkalender/);
     await page.getByRole("button", { name: "Problem melden" }).click();
     await expect(page.getByRole("dialog").getByText("/kalender")).toBeVisible();

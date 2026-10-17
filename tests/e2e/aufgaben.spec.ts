@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { USERS, login, open } from "./helpers";
+import { USERS, login, loginSettled, open, openNavGroup } from "./helpers";
 
 /** Aufgaben und Checklisten im Browser. Alle Änderungen werden am Ende der Tests wieder zurückgenommen bzw. sind eindeutig benannt. */
 const uniqueTitle = (prefix: string) => `${prefix} ${Date.now() % 100000}`;
@@ -227,13 +227,13 @@ test.describe("Aufgaben – Sichtbarkeit nach Rolle", () => {
   test("Mitglied ohne Aufgabenrecht: kein Menüpunkt, Seite verweigert den Zugriff", async ({
     page,
   }) => {
-    await login(page, USERS.mitglied);
-    await expect(
-      page
-        .getByRole("navigation", { name: "Hauptnavigation" })
-        .first()
-        .getByRole("link", { name: "Aufgaben" }),
-    ).toHaveCount(0);
+    await loginSettled(page, USERS.mitglied);
+    // „Aufgaben“ steht seit 17.10.2026 unter „Verein“ – die Gruppe hat das Mitglied (Kalender), in ihrem Menü fehlt „Aufgaben“.
+    // Ohne Öffnen wäre die Prüfung wertlos: Die Symbolleiste zeigt die Seiten einer Gruppe erst in ihrem Menü.
+    const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
+    await openNavGroup(nav, "Verein");
+    await expect(nav.getByRole("link", { name: "Kalender", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Aufgaben" })).toHaveCount(0);
     await open(page, "/aufgaben");
     await expect(page.getByText("Kein Zugriff")).toBeVisible();
     await expect(page.getByRole("listitem", { name: /Aufgabe / })).toHaveCount(0);

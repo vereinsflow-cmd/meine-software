@@ -18,8 +18,8 @@
   --text-2xs: 0.6875rem;
   /* Inhaltsbreiten für die Kennzahlen des Dashboards (Containerabfragen `@bento/kpis`, `@bento-wide/kpis` – einfaches Raster in
      modules/dashboard/kpi-layout.ts – und `@bento-wide/studio` – große Fassung, `StudioFrame` in
-     modules/dashboard/components/layout.tsx) – in rem, wachsen also mit der Grundschrift. 49 rem sind bei 1280 px Fensterbreite
-     mit Seitenleiste erreicht, 58 rem z. B. bei 1470 px. */
+     modules/dashboard/components/layout.tsx) – in rem, wachsen also mit der Grundschrift. Mit der schmalen Symbolleiste (Standard) sind 49 rem ab etwa 1024 px
+     Fensterbreite erreicht, 58 rem ab etwa 1150 px; mit der breiten Seitenleiste bei 1280 px bzw. etwa 1420 px. */
   --container-bento: 49rem;
   --container-bento-wide: 58rem;
   /* Schrift der Ausdrucke (Helferplan, `font-print`): schlicht wie ein selbst getipptes Word-Blatt – Arial, auf dem Mac
@@ -183,8 +183,10 @@
   --chat-bubble-other: #ffffff;
   --chat-bubble-foreground: #111b21;
   --chat-meta: #54656f;
-  /* Breite der festen Seitenleiste (ab `lg`); die Provider-Komponente überschreibt diesen Wert inline, wenn eingeklappt. */
-  --sidebar-w: 17rem;
+  /* Breite der festen Seitenleiste (ab `lg`): seit 17.10.2026 standardmäßig die schmale, dunkle Symbolleiste (`NavRail`); klappt man
+     sie aus, setzt `SidebarCollapseProvider` inline `--sidebar-w: var(--sidebar-w-wide)`. */
+  --sidebar-w: 6.5rem;
+  --sidebar-w-wide: 17rem;
   /* Höhe der Kopfzeile (und des Seitenleisten-Kopfs); auf niedrigen Bildschirmen etwas flacher. Die Nachrichten-Seite
      rechnet damit ihre volle Höhe aus. */
   --app-header-height: 4rem;
@@ -192,7 +194,7 @@
 
 @media (width >= 80rem) {
   :root {
-    --sidebar-w: 18.5rem;
+    --sidebar-w-wide: 18.5rem;
   }
 }
 

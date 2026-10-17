@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRightIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { NavGroup, NavItem } from "./nav";
 
@@ -28,7 +27,8 @@ function activeCollapsibleGroup(groups: NavGroup[], pathname: string): string | 
 }
 
 /**
- * Navigationsliste mit Hervorhebung der aktuellen Seite (aria-current). Wird in Sidebar und mobilem Menü verwendet.
+ * Navigationsliste mit Hervorhebung der aktuellen Seite (aria-current). Wird in der breiten Seitenleiste und im mobilen Menü
+ * verwendet; die schmale Symbolleiste (Standard ab `lg`) ist `NavRail` (nav-rail.tsx).
  *
  * Bewegung ist dezent und immer optional: Beim Überfahren oder Fokussieren bekommt das Symbol Farbe und einen hellen
  * Grund, beim Drücken federt es kurz ein. Mehr nicht – die Liste wird dutzende Male am Tag benutzt. Im ausklappenden Menü
@@ -51,7 +51,6 @@ export function SidebarNav({
   onNavigate,
   pinLast = false,
   animateIn = false,
-  collapsedRail = false,
   variant = "sidebar",
 }: {
   groups: NavGroup[];
@@ -60,14 +59,11 @@ export function SidebarNav({
   pinLast?: boolean;
   /** Blendet die Einträge beim Erscheinen gestaffelt ein (für das ausklappende Menü). */
   animateIn?: boolean;
-  /** Nur reine Symbole, ohne Gruppen/Text – für die eingeklappte feste Seitenleiste (ab `lg`, nie im mobilen Menü). */
-  collapsedRail?: boolean;
   /** Feste Seitenleiste (`sidebar`) oder ausklappendes Menü für kleine Bildschirme (`sheet`, größere Ziele). */
   variant?: "sidebar" | "sheet";
 }) {
   const pathname = usePathname();
   const navId = useId();
-  const railRef = useRef<HTMLElement>(null);
   const sheet = variant === "sheet";
   const [openGroup, setOpenGroup] = useState<string | null>(() =>
     activeCollapsibleGroup(groups, pathname),
@@ -80,45 +76,6 @@ export function SidebarNav({
     setTrackedPathname(pathname);
     const active = activeCollapsibleGroup(groups, pathname);
     if (active) setOpenGroup(active);
-  }
-
-  // Eingeklappt passen nicht immer alle Symbole: das der aktuellen Seite ins Bild holen – oberhalb der unten angehefteten
-  // Gruppe (`scroll-mb-40` an den Kacheln hält es davon frei).
-  useEffect(() => {
-    if (!collapsedRail) return;
-    railRef.current
-      ?.querySelector<HTMLElement>('[aria-current="page"]:not([data-pinned] *)')
-      ?.scrollIntoView({ block: "nearest" });
-  }, [collapsedRail, pathname]);
-
-  if (collapsedRail) {
-    // Wie ausgeklappt bleibt die letzte Gruppe („Persönlich“: Profil, Datenschutz, Hilfe) unten angeheftet – sonst rutschte
-    // sie bei 17 Symbolen unter den Bildrand. Etwas kleinere Kacheln und halbe Gruppenabstände lassen mehr Platz.
-    return (
-      <nav
-        ref={railRef}
-        aria-label="Hauptnavigation"
-        className="flex flex-1 flex-col items-center gap-1"
-      >
-        {groups.map((group, groupIndex) => (
-          <div
-            key={group.label ?? groupIndex}
-            data-pinned={groupIndex === groups.length - 1 && groupIndex > 0 ? "" : undefined}
-            className={cn(
-              "flex flex-col items-center gap-1",
-              groupIndex > 0 && "mt-1 border-t pt-1",
-              groupIndex === groups.length - 1 &&
-                groupIndex > 0 &&
-                "sticky bottom-0 z-10 -mx-3 mt-auto self-stretch bg-sidebar px-3 pt-2 pb-2",
-            )}
-          >
-            {group.items.map((item) => (
-              <RailItem key={item.href} item={item} active={isActive(item.href, pathname)} />
-            ))}
-          </div>
-        ))}
-      </nav>
-    );
   }
 
   // Wie viele Einträge vor einer Gruppe stehen – Grundlage für die gestaffelte Einblendung.
@@ -299,40 +256,5 @@ function NavLink({
         </span>
       )}
     </Link>
-  );
-}
-
-/** Symbol-Kachel eines Menüpunkts in der eingeklappten Seitenleiste, mit Tooltip statt sichtbarem Text. */
-function RailItem({ item, active }: { item: NavItem; active: boolean }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link
-          href={item.href}
-          aria-current={active ? "page" : undefined}
-          aria-label={item.badge ? `${item.label} (${item.badge})` : item.label}
-          className={cn(
-            "relative grid size-10 shrink-0 scroll-mb-40 place-items-center rounded-lg transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none",
-            active
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          )}
-        >
-          {item.icon}
-          {!!item.badge && (
-            <span
-              aria-hidden="true"
-              className="absolute -top-0.5 -right-0.5 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-primary px-1 text-xs leading-none font-semibold text-primary-foreground ring-2 ring-sidebar"
-            >
-              {item.badge > 9 ? "9+" : item.badge}
-            </span>
-          )}
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="right">
-        {item.label}
-        {!!item.badge && ` (${item.badge})`}
-      </TooltipContent>
-    </Tooltip>
   );
 }

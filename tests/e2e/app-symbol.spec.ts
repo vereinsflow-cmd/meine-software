@@ -37,7 +37,7 @@ test.describe("App-Symbol", () => {
     expect(await svg.text()).toContain('fill="#0F1C2E"'); // dunkle Kachel (Tinte) wie das Favicon der Website
 
     // Die Logo-Dateien der Oberfläche stehen schon auf der Anmeldeseite – auch sie brauchen keine Anmeldung.
-    for (const file of ["logo.svg", "logo-weiss.svg", "logo-gestapelt.svg", "symbol-klein.svg"]) {
+    for (const file of ["logo.svg", "logo-weiss.svg", "logo-gestapelt.svg", "symbol.svg"]) {
       const logo = await get(`/brand/${file}`);
       expect(logo.status(), file).toBe(200);
       expect(logo.headers()["content-type"], file).toContain("image/svg+xml");

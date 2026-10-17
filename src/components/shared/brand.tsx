@@ -11,14 +11,11 @@ export function Brand({
   logoClassName,
   href = "/",
   variant = "horizontal",
-  small = false,
 }: {
   className?: string;
   logoClassName?: string;
   href?: string | null;
   variant?: LogoVariant;
-  /** Nur für `icon`: kleine Darstellung (bis 32 px) mit der vereinfachten Form des Symbols. */
-  small?: boolean;
 }) {
   // gestapelt: 16 rem breit; horizontal: 2,75 rem hoch – die SVG-Datei hat oben und unten Schutzraum, sichtbar sind gut 2 rem
   // (passt in Seitenleiste und Menü); Symbol: 2 rem.
@@ -26,11 +23,11 @@ export function Brand({
   const classes = cn("inline-flex", className);
   return href ? (
     <Link href={href} className={classes} aria-label="VereinsFlow – Startseite">
-      <BrandLogo variant={variant} small={small} decorative className={cn(size, logoClassName)} />
+      <BrandLogo variant={variant} decorative className={cn(size, logoClassName)} />
     </Link>
   ) : (
     <span className={classes}>
-      <BrandLogo variant={variant} small={small} className={cn(size, logoClassName)} />
+      <BrandLogo variant={variant} className={cn(size, logoClassName)} />
     </span>
   );
 }
