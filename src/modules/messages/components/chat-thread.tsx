@@ -3,8 +3,10 @@ import Link from "next/link";
 import { ArrowLeftIcon, CheckCheckIcon, MailIcon } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { dayLabel, nameTone, withRuns } from "../chat-format";
+import { dayLabel, membersAddedText, nameTone, withRuns } from "../chat-format";
+import type { AddMembersOptions } from "../chat-members";
 import type { ChatBubble, ChatDetail } from "../chats";
+import { AddMembersDialog } from "./add-members-dialog";
 import { BubbleActions } from "./bubble-actions";
 import { ChatAvatar } from "./chat-avatar";
 import { ChatComposer } from "./chat-composer";
@@ -18,13 +20,28 @@ import { ChatStream } from "./chat-stream";
  * Farben: die von WhatsApp, die Grautöne für Uhrzeit und Häkchen etwas dunkler – so erreichen sie auch auf Grün das
  * nötige Kontrastverhältnis (4,5 : 1). Sie stehen als `--chat-*` in globals.css (hell und dunkel), hier nur die Namen
  * (`bg-chat-wallpaper`, `bg-chat-bubble-own` …); Hinweise im Verlauf (Datum, „Ältere Nachrichten laden“) teilen sich
- * `bg-chat-day`.
+ * `bg-chat-day`. Hinweise wie „Anna hat Hans hinzugefügt“ stehen ebenso in der Mitte.
+ *
+ * `addMembers`: Wer der Gruppe Mitglieder hinzufügen darf (Vorstand bei Abteilungen, wer die Teilnehmerliste verwaltet bei
+ * Veranstaltungen), hat oben rechts „Mitglieder hinzufügen“.
  */
-export function ChatThread({ chat }: { chat: ChatDetail }) {
+export function ChatThread({
+  chat,
+  addMembers = null,
+}: {
+  chat: ChatDetail;
+  addMembers?: AddMembersOptions | null;
+}) {
   const messages = withRuns(
     chat.messages.map((message) => ({
       ...message,
-      authorKey: message.mine ? "ich" : (message.author ?? "?"),
+      // Ein Hinweis unterbricht den Block: Die nächste Blase trägt wieder Name und Spitze.
+      authorKey:
+        message.kind !== "TEXT"
+          ? `hinweis-${message.id}`
+          : message.mine
+            ? "ich"
+            : (message.author ?? "?"),
     })),
   );
   const subtitle =
@@ -49,6 +66,7 @@ export function ChatThread({ chat }: { chat: ChatDetail }) {
           <h2 className="truncate font-semibold">{chat.title}</h2>
           <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
         </div>
+        {addMembers && <AddMembersDialog chatKey={chat.key} options={addMembers} />}
       </header>
 
       <ChatStream
@@ -80,15 +98,23 @@ export function ChatThread({ chat }: { chat: ChatDetail }) {
                     </span>
                   </li>
                 )}
-                <li
-                  className={cn(
-                    "flex",
-                    message.mine ? "justify-end" : "justify-start",
-                    message.firstOfRun && !message.newDay && "mt-1.5",
-                  )}
-                >
-                  <Bubble message={message} />
-                </li>
+                {message.kind === "TEXT" ? (
+                  <li
+                    className={cn(
+                      "flex",
+                      message.mine ? "justify-end" : "justify-start",
+                      message.firstOfRun && !message.newDay && "mt-1.5",
+                    )}
+                  >
+                    <Bubble message={message} />
+                  </li>
+                ) : (
+                  <li id={`nachricht-${message.id}`} className="my-1.5 scroll-m-4 text-center">
+                    <span className="inline-block max-w-[85%] rounded-lg bg-chat-day px-2.5 py-1 text-xs text-muted-foreground shadow-sm">
+                      {membersAddedText(message, message.body)}
+                    </span>
+                  </li>
+                )}
               </Fragment>
             ))}
           </ol>

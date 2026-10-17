@@ -155,6 +155,13 @@ enum MessageAudience {
   EVENT_HELPERS
 }
 
+/// TEXT = von einer Person geschrieben. MEMBERS_ADDED = Hinweis im Chat-Verlauf „Anna hat Hans hinzugefügt“ (im Text
+/// stehen die Namen der Hinzugefügten, der Verfasser ist, wer hinzugefügt hat).
+enum MessageKind {
+  TEXT
+  MEMBERS_ADDED
+}
+
 enum ConsentType {
   PRIVACY_POLICY
   DATA_PROCESSING
@@ -1063,6 +1070,7 @@ model Message {
   id             String          @id @default(uuid(7))
   clubId         String
   authorUserId   String?
+  kind           MessageKind     @default(TEXT)
   subject        String
   /// Reiner Text (wird nie als HTML gerendert).
   body           String

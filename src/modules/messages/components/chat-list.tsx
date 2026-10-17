@@ -5,7 +5,8 @@ import type { ChatSummary } from "../chats";
 import { ChatAvatar } from "./chat-avatar";
 
 /**
- * Chatliste wie bei WhatsApp: Bild, Name, Zeit der letzten Nachricht, darunter ihr Anfang („Du: …“ bzw. der Vorname) und
+ * Chatliste wie bei WhatsApp: Bild, Name, Zeit der letzten Nachricht, darunter ihr Anfang („Du: …“ bzw. der Vorname; ein
+ * Hinweis wie „Anna Admin hat Hans Helfer hinzugefügt“ steht als ganzer Satz) und
  * – in Grün – die Zahl der ungelesenen Nachrichten. Der gewählte Chat ist hervorgehoben.
  */
 export function ChatList({ chats, activeKey }: { chats: ChatSummary[]; activeKey?: string }) {
@@ -42,7 +43,13 @@ export function ChatList({ chats, activeKey }: { chats: ChatSummary[]; activeKey
                 </span>
                 <span className="flex items-center justify-between gap-2">
                   <span className="truncate text-sm text-muted-foreground">
-                    {chat.last.mine ? "Du: " : firstName ? `${firstName}: ` : ""}
+                    {chat.last.note
+                      ? ""
+                      : chat.last.mine
+                        ? "Du: "
+                        : firstName
+                          ? `${firstName}: `
+                          : ""}
                     {chat.last.preview}
                   </span>
                   {chat.unread > 0 && (

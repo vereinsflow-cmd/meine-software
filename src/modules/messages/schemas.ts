@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalIdString as optionalId } from "@/lib/id-schema";
+import { idString, optionalIdString as optionalId } from "@/lib/id-schema";
 
 export const AUDIENCES = [
   "ALL_MEMBERS",
@@ -63,6 +63,21 @@ export type MessageFormInput = z.input<typeof messageFormSchema>;
 export type MessageInput = z.output<typeof messageFormSchema>;
 
 export { idSchema } from "@/lib/id-schema";
+
+/** Höchstens so viele Personen auf einmal fügt man einer Chat-Gruppe hinzu. */
+export const MAX_MEMBERS_PER_ADD = 100;
+
+/** Mitglieder einer Chat-Gruppe hinzufügen: der Chat (Schlüssel wie in der Adresse, `abteilung-…`) und die Auswahl. */
+export const addChatMembersSchema = z.object({
+  chat: z.string().min(1).max(80),
+  memberIds: z
+    .array(idString)
+    .min(1, "Bitte wähle mindestens eine Person aus.")
+    .max(
+      MAX_MEMBERS_PER_ADD,
+      `Bitte füge höchstens ${MAX_MEMBERS_PER_ADD} Personen auf einmal hinzu.`,
+    ),
+});
 
 export const emptyMessage = (over: Partial<MessageFormInput> = {}): MessageFormInput => ({
   subject: "",

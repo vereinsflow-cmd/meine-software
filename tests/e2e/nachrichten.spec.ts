@@ -359,3 +359,67 @@ test.describe("Nachrichten – Mitglieder schreiben", () => {
     await expect(page.getByLabel("Als Ankündigung kennzeichnen")).toHaveCount(0);
   });
 });
+
+test.describe("Nachrichten – Mitglieder hinzufügen", () => {
+  test("Vorstand fügt im Chat einer Abteilung ein Mitglied hinzu – es findet den Chat mit dem Hinweis und schreibt mit", async ({
+    page,
+    browser,
+  }) => {
+    test.setTimeout(90_000);
+    // Eine eigene Abteilung nur für diesen Test – die Demo-Abteilungen bleiben, wie andere Tests sie erwarten.
+    const name = uniqueSubject("Chatgruppe");
+    await login(page, USERS.admin);
+    await open(page, "/abteilungen");
+    await page.getByRole("button", { name: "Neue Abteilung" }).click();
+    const create = page.getByRole("dialog", { name: "Neue Abteilung" });
+    await create.locator('input[name="name"]').fill(name);
+    await create.getByRole("button", { name: "Abteilung anlegen" }).click();
+    await expect(page).toHaveURL(/\/abteilungen\/[0-9a-f-]{36}$/);
+    const departmentId = new URL(page.url()).pathname.split("/").at(-1)!;
+
+    await open(page, `/nachrichten?chat=abteilung-${departmentId}`);
+    await expect(page.getByRole("heading", { level: 2, name: `Abteilung ${name}` })).toBeVisible();
+    await page.getByRole("button", { name: "Mitglieder hinzufügen" }).click();
+    const add = page.getByRole("dialog", { name: "Mitglieder hinzufügen" });
+    await expect(add).toContainText(`gehört danach zur Abteilung ${name}`);
+    await expect(add.getByRole("button", { name: "Hinzufügen" })).toBeDisabled(); // erst auswählen
+    await add.getByRole("searchbox", { name: "Name suchen" }).fill("maria mit");
+    await expect(add.getByRole("checkbox")).toHaveCount(1);
+    await add.getByRole("checkbox", { name: "Mitglied, Maria" }).check();
+    await add.getByRole("button", { name: "1 Person hinzufügen" }).click();
+    await expect(add).toBeHidden();
+    await expect(page.getByText("1 Person hinzugefügt.")).toBeVisible();
+    // Der Hinweis steht im Verlauf und als Vorschau in der Chatliste.
+    const thread = page.getByRole("region", { name: `Chat Abteilung ${name}` });
+    await expect(thread.getByText("Du hast Maria Mitglied hinzugefügt")).toBeVisible();
+    await expect(
+      chatList(page).getByRole("link", { name: new RegExp(`^Abteilung ${name}`) }),
+    ).toContainText("Du hast Maria Mitglied hinzugefügt");
+    await expect(page.getByText("Erreicht 1 Person")).toBeVisible();
+
+    // Maria findet die Gruppe in ihrer Chatliste – ungelesen, mit dem Hinweis – und schreibt dort mit.
+    const marias = await browser.newContext();
+    const maria = await marias.newPage();
+    await login(maria, USERS.mitglied);
+    await open(maria, "/nachrichten");
+    const entry = chatList(maria).getByRole("link", { name: new RegExp(`^Abteilung ${name}`) });
+    await expect(entry).toContainText("Anna Admin hat Maria Mitglied hinzugefügt");
+    await expect(entry).toContainText(/1 ungelesene Nachricht/);
+    await openChat(maria, `Abteilung ${name}`);
+    await expect(
+      maria
+        .getByRole("region", { name: `Chat Abteilung ${name}` })
+        .getByText("Anna Admin hat Maria Mitglied hinzugefügt"),
+    ).toBeVisible();
+    await expect(
+      maria.getByRole("textbox", { name: `Nachricht an Abteilung ${name}` }),
+    ).toBeVisible();
+    // Hinzufügen darf sie selbst nicht – das bleibt Vorstand und Verwaltung.
+    await expect(maria.getByRole("button", { name: "Mitglieder hinzufügen" })).toHaveCount(0);
+    await marias.close();
+
+    // Auf der Seite der Abteilung steht sie jetzt als Mitglied.
+    await open(page, `/abteilungen/${departmentId}`);
+    await expect(page.getByRole("link", { name: /Mitglied, Maria/ })).toBeVisible();
+  });
+});

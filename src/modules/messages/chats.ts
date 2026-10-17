@@ -5,6 +5,7 @@ import {
   chatKeyOf,
   chatPreview,
   chatTitle,
+  membersAddedText,
   parseChatKey,
   showSubject,
   type ChatTarget,
@@ -20,6 +21,7 @@ const CHAT_SCAN = 500; // jüngste Nachrichten, aus denen die Chatliste entsteht
 
 const select = {
   id: true,
+  kind: true,
   audience: true,
   departmentId: true,
   eventId: true,
@@ -53,7 +55,8 @@ export interface ChatSummary {
   key: string;
   target: ChatTarget;
   title: string;
-  last: { preview: string; author: string | null; mine: boolean; sentAt: Date };
+  /** `note`: ein Hinweis im Verlauf („Anna hat Hans hinzugefügt“) – die Vorschau ist dann der ganze Satz. */
+  last: { preview: string; author: string | null; mine: boolean; note: boolean; sentAt: Date };
   unread: number;
 }
 
@@ -95,16 +98,21 @@ export async function listChats(ctx: TenantContext): Promise<ChatSummary[]> {
       key,
       target,
       title: chatTitle(row.audience, { department: row.department?.name, event: row.event?.title }),
-      last: { preview: "", author: null, mine: false, sentAt: new Date(0) },
+      last: { preview: "", author: null, mine: false, note: false, sentAt: new Date(0) },
       unread: 0,
     };
     if (unread.has(row.id)) chat.unread += 1;
     if (at > (lastAt.get(key) ?? -1)) {
       lastAt.set(key, at);
+      const author = row.authorUserId ? (names.get(row.authorUserId) ?? null) : null;
+      const mine = row.authorUserId === ctx.userId;
+      const note = row.kind === "MEMBERS_ADDED";
+      const text = note ? membersAddedText({ author, mine }, row.body) : null;
       chat.last = {
-        preview: chatPreview(row.subject, row.body),
-        author: row.authorUserId ? (names.get(row.authorUserId) ?? null) : null,
-        mine: row.authorUserId === ctx.userId,
+        preview: text ? chatPreview(text, text) : chatPreview(row.subject, row.body),
+        author,
+        mine,
+        note,
         sentAt: row.sentAt ?? new Date(0),
       };
     }
@@ -115,6 +123,8 @@ export async function listChats(ctx: TenantContext): Promise<ChatSummary[]> {
 
 export interface ChatBubble {
   id: string;
+  /** TEXT = Sprechblase; MEMBERS_ADDED = Hinweis in der Mitte („Anna hat Hans hinzugefügt“, im Text die Namen). */
+  kind: "TEXT" | "MEMBERS_ADDED";
   subject: string;
   body: string;
   /** Betreff eigens zeigen (nicht, wenn er nur der Anfang des Textes ist). */
@@ -278,6 +288,7 @@ export async function getChat(
     hasOlder: rows.length > limit,
     messages: page.map((row) => ({
       id: row.id,
+      kind: row.kind,
       subject: row.subject,
       body: row.body,
       showSubject: showSubject(row.subject, row.body),
@@ -287,8 +298,9 @@ export async function getChat(
       isAnnouncement: row.isAnnouncement,
       sendEmail: row.sendEmail,
       recipientCount: row.recipientCount,
-      readCount: manages(ctx, row) ? (readCounts.get(row.id) ?? 0) : null,
-      canDelete: manages(ctx, row),
+      // Hinweise im Verlauf haben weder Häkchen noch Zurückrufen – sie gehören zur Gruppe, nicht zu einer Person.
+      readCount: row.kind === "TEXT" && manages(ctx, row) ? (readCounts.get(row.id) ?? 0) : null,
+      canDelete: row.kind === "TEXT" && manages(ctx, row),
     })),
   };
 }
