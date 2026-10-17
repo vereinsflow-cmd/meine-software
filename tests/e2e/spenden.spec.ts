@@ -308,7 +308,10 @@ test.describe.serial("Spenden – Kassenwart", () => {
     await expect(page).toHaveURL(/[?&]q=Brinkmann/);
     await expect(table.getByRole("row")).toHaveCount(2); // Kopf + eine Spende
     await expect(row(COMPANY)).toBeVisible();
-    await expect(page.getByText(/^1 Spende · zusammen 89,90\s€$/)).toBeVisible();
+    // Nur im Seiteninhalt suchen: Die Suche lädt die Seite neu, und React streamt den Inhalt versteckt ans Ende von <body>
+    // (`<div hidden id="S:…">`). Beim Aufdecken steht er dort kurz noch, wenn er schon in <main> steht – `getByText` zählt
+    // auch Verstecktes mit und fände zwei (die Rollen-Locator oben übergehen Verstecktes).
+    await expect(page.getByRole("main").getByText(/^1 Spende · zusammen 89,90\s€$/)).toBeVisible();
 
     // Suche nach der Buchungsnummer der Spendendose.
     await open(page, "/finanzen/spenden/alle");
