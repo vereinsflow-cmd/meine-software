@@ -23,7 +23,10 @@
  * Administrator-Konto an (/einrichten), danach führt der Assistent „Verein einrichten“ Schritt für Schritt durch den Start.
  *
  * Hängt eine schon laufende Kopie (antwortet nicht oder nur mit Fehler 500), wird sie beendet und neu gestartet – aber
- * nur, wenn sie aus diesem Projektordner stammt; fremde Programme werden nie angefasst.
+ * nur, wenn sie aus diesem Projektordner stammt; fremde Programme werden nie angefasst. Dabei wird auch der Zwischenspeicher
+ * von `next dev` (`.next/dev`) gelöscht: Ein beschädigter Speicher ist die häufigste Ursache für „nur noch Fehler 500“.
+ * Meldet die laufende Anwendung beschädigte Übersetzungen (Zeichensalat „�“ in einer CSS-Fehlermeldung, gesehen am
+ * 17.10.2026), löscht das Skript den Speicher ebenfalls und startet sie einmal von selbst neu.
  *
  * Protokoll: Was im Fenster steht, landet mit Uhrzeit auch in `.local/start.log` (leere Version: `.local/start-leer.log`)
  * – so lässt sich später nachlesen, warum ein Start nicht geklappt hat. Jeder Start beginnt das Protokoll neu.
@@ -32,7 +35,7 @@
  * Unter Windows genügt ein Doppelklick auf `Start-VereinsFlow.cmd`, auf dem Mac auf `Start-VereinsFlow.command`.
  */
 import { spawn, spawnSync } from "node:child_process";
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -125,6 +128,18 @@ if (leer) {
 
 const prismaCli = path.join(root, "node_modules", "prisma", "build", "index.js");
 const nextCli = path.join(root, "node_modules", "next", "dist", "bin", "next");
+
+/** Zwischenspeicher von `next dev` (Turbopack) – wird bei Beschädigung gelöscht und beim nächsten Start neu aufgebaut. */
+const devCacheDir = path.join(root, process.env.NEXT_DIST_DIR || ".next", "dev");
+
+function clearDevCache() {
+  try {
+    rmSync(devCacheDir, { recursive: true, force: true });
+    console.log("✔ Zwischenspeicher gelöscht – die erste Seite braucht diesmal etwas länger.");
+  } catch (error) {
+    console.error(`! Zwischenspeicher ${devCacheDir} ließ sich nicht löschen:`, error);
+  }
+}
 
 /** Nur gesetzt, wenn DIESES Skript die Datenbank gestartet hat – nur dann wird sie beim Beenden auch gestoppt. */
 let database = null;
@@ -343,7 +358,9 @@ async function main() {
       process.exitCode = 1;
       return;
     }
-    console.log("✔ Die hängende Kopie ist beendet.\n");
+    console.log("✔ Die hängende Kopie ist beendet.");
+    clearDevCache();
+    console.log("");
   }
   if (await isPortOpen(appPort)) {
     console.log(
@@ -400,15 +417,54 @@ async function main() {
   // 4. Anwendung
   console.log(`\n✔ VereinsFlow startet – gleich erreichbar unter ${appUrl}`);
   console.log("  Dieses Fenster offen lassen. Beenden mit Strg+C.\n");
-  app = spawn(process.execPath, [nextCli, "dev", "-p", String(appPort)], {
+  startApp();
+  if (args.has("--open")) void openBrowserWhenReady();
+}
+
+/** Wurde schon einmal wegen eines beschädigten Zwischenspeichers neu gestartet? (Nur einmal je Start – keine Schleife.) */
+let repaired = false;
+
+function startApp() {
+  const child = spawn(process.execPath, [nextCli, "dev", "-p", String(appPort)], {
     stdio: ["inherit", "pipe", "pipe"],
     cwd: root,
     env: childEnv,
   });
-  forwardOutput(app);
-  app.on("error", () => void stop(1));
-  app.on("exit", (code) => void stop(code ?? 0));
-  if (args.has("--open")) void openBrowserWhenReady();
+  app = child;
+  forwardOutput(child);
+  let restart = false;
+  const watch = (chunk) => {
+    const text = chunk.toString();
+    // Beschädigter Speicher: Next.js meldet einen CSS-Fehler, dessen Quelltext unlesbare Zeichen enthält. Echte Fehler im
+    // Code enthalten „�“ nicht (globals.css ist sauberes UTF-8).
+    if (
+      repaired ||
+      restart ||
+      !text.includes("Parsing CSS source code failed") ||
+      !text.includes("\uFFFD")
+    ) {
+      return;
+    }
+    repaired = true;
+    restart = true;
+    console.log(
+      "\n! Der Zwischenspeicher von VereinsFlow ist beschädigt (Seiten zeigen Fehler 500). Er wird gelöscht und " +
+        "VereinsFlow neu gestartet …",
+    );
+    killTree(child.pid);
+  };
+  child.stdout?.on("data", watch);
+  child.stderr?.on("data", watch);
+  child.on("error", () => void stop(1));
+  child.on("exit", (code) => {
+    if (restart && !stopping) {
+      clearDevCache();
+      console.log(`✔ VereinsFlow startet neu – gleich wieder erreichbar unter ${appUrl}\n`);
+      startApp();
+      return;
+    }
+    void stop(code ?? 0);
+  });
 }
 
 main().catch((error) => {
