@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SOFT_CARD_SURFACE } from "@/components/ui/surface";
 import { ACCENT, type Accent } from "@/components/shared/accent";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CountUp } from "@/components/shared/count-up";
@@ -106,9 +107,9 @@ export function Widget({
   const dims = WIDGET_SIZE[size];
   return (
     <section aria-labelledby={id} className="h-full">
-      {/* Seit 17.10.2026 (Entwurf 4) eine schlichte weiße Karte wie überall in der Anwendung (Finanzen, Mitglieder …) – keine
-          getönten Kacheln mehr: Farbe tragen nur die Kennzahlen oben und, was etwas bedeutet (überfällig, ungelesen). */}
-      <Card className={cn("h-full", dims.card)}>
+      {/* Weiße Karte im Stil der Vorlage „Analytics“ (seit 17.10.2026): große Rundung, weicher Schatten statt Rand. Farbe tragen
+          nur die Kennzahlen oben und, was etwas bedeutet (überfällig, ungelesen). */}
+      <Card className={cn("h-full", SOFT_CARD_SURFACE, dims.card)}>
         <CardHeader>
           <div className="flex items-center gap-3">
             <span
@@ -152,13 +153,22 @@ export function Widget({
 }
 
 /** Datumsfläche (Monat über Tag) zum schnellen Überfliegen von Terminlisten; der Text daneben nennt das Datum ausgeschrieben. */
-function DateTile({ value, accent }: { value: Date | string; accent: Accent }) {
+function DateTile({
+  value,
+  accent,
+  className,
+}: {
+  value: Date | string;
+  accent: Accent;
+  className?: string;
+}) {
   const { day, month } = berlinParts(value);
   return (
     <div
       className={cn(
         "flex size-12 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
         ACCENT[accent].tile,
+        className,
       )}
       aria-hidden="true"
     >
@@ -171,7 +181,7 @@ function DateTile({ value, accent }: { value: Date | string; accent: Accent }) {
 }
 
 /**
- * Leerer Inhalt einer Dashboard-Karte als eine ruhige Zeile (Entwurf 4): kleines Symbol, kurzer fetter Satz, Erklärung dahinter
+ * Leerer Inhalt einer Dashboard-Karte als eine ruhige Zeile (seit 17.10.2026): kleines Symbol, kurzer fetter Satz, Erklärung dahinter
  * – statt eines grauen Kastens, der die Karte hoch und leer wirken ließ. Meist ist „nichts da“ eine gute Nachricht.
  */
 function Empty({
@@ -454,7 +464,7 @@ function InvoiceList({
 }: {
   payments: Payments;
   initial: number;
-  /** In der schmalen Kachel: Knopf unter dem Namen statt daneben. */
+  /** In der schmalen Karte der Kennzahlen-Spalte: Knopf unter dem Namen statt daneben. */
   compact?: boolean;
 }) {
   return (
@@ -545,7 +555,7 @@ const ALL_INVOICES = { href: "/finanzen/rechnungen?stand=offen", label: "Alle of
 
 /**
  * Offene Zahlungen (nur für Rollen mit `finance:read`): oben die Summe, darunter die offenen Rechnungen. Als eigene Karte
- * unter den Kennzahlen – im Kachelraster steht stattdessen `PaymentsTile`.
+ * unter den Kennzahlen – in der großen Fassung (Stil „Analytics“) steht stattdessen `PaymentsTile` in der Spalte der Kennzahlen.
  */
 export function OpenPayments({
   payments,
@@ -592,17 +602,17 @@ export function OpenPayments({
 }
 
 /**
- * Offene Zahlungen als fünfte Kachel im Kachelraster der Kennzahlen (Entwurf 4, 17.10.2026): weiß zwischen den Farbkarten,
- * damit Geld nicht wie eine weitere Statistik aussieht. Summe groß, darunter die dringendste Rechnung mit „Bezahlt“ – die
- * übrigen hinter „weitere anzeigen“ (nichts geht verloren). Dieselbe Region „Offene Zahlungen“ wie die Karte; ob sie hier
- * oder als Karte steht, entscheidet die Seite (ausgeblendet über „Anpassen“ fehlt sie hier wie dort).
+ * Offene Zahlungen in der rechten Spalte der Kennzahlen (große Fassung im Stil „Analytics“, `StudioFrame`): Summe groß,
+ * darunter die dringendste Rechnung mit „Bezahlt“ – die übrigen hinter „weitere anzeigen“ (nichts geht verloren). Dieselbe Region
+ * „Offene Zahlungen“ wie die Karte; ob sie hier oder als Karte steht, entscheidet die Seite (ausgeblendet über „Anpassen“ fehlt
+ * sie hier wie dort).
  */
 export function PaymentsTile({ payments }: { payments: Payments }) {
   return (
     <section
       aria-labelledby="w-offene-zahlungen-kachel"
       data-slot="card"
-      className="flex h-full flex-col gap-3 rounded-2xl bg-card p-5 text-card-foreground shadow-sm ring-1 ring-foreground/10 dark:ring-foreground/15"
+      className={cn(SOFT_CARD_SURFACE, "flex h-full flex-col gap-3 p-5")}
     >
       <div className="flex items-center gap-2.5">
         <span
@@ -644,13 +654,35 @@ export function PaymentsTile({ payments }: { payments: Payments }) {
 
 type MyTask = NonNullable<DashboardData["tasks"]>["mine"][number];
 
-/** Zeilenfarbe: Überfällig = rötlich, hohe Priorität = bernsteinfarben. Der Grund steht immer auch als Text in der Zeile. */
-function taskRowTone(task: MyTask): string {
-  if (task.overdue) return "border-red-300 bg-red-50 dark:border-red-400/30 dark:bg-red-400/10";
-  if (task.priority === "URGENT" || task.priority === "HIGH") {
-    return "border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10";
+/**
+ * Fläche vor einer Aufgabe (wie die Bilder vor den Zeilen der Vorlage): die Frist als Monat über Tag – rot, wenn überfällig,
+ * bernsteinfarben bei hoher Priorität, sonst blau; ohne Frist grau „ohne“. Der Grund steht immer auch als Text in der Zeile.
+ */
+function TaskTile({ task }: { task: MyTask }) {
+  if (!task.dueDate) {
+    return (
+      <div
+        aria-hidden="true"
+        className={cn(
+          "flex size-12 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
+          ACCENT.slate.tile,
+        )}
+      >
+        <span className="text-xs font-semibold">ohne</span>
+        <span className="mt-0.5 text-lg font-bold">–</span>
+      </div>
+    );
   }
-  return "bg-muted/40";
+  const high = task.priority === "URGENT" || task.priority === "HIGH";
+  return (
+    <DateTile
+      value={task.dueDate}
+      accent={task.overdue ? "rose" : high ? "amber" : "blue"}
+      className={
+        task.overdue ? "bg-red-100 text-red-700 dark:bg-red-400/15 dark:text-red-300" : undefined
+      }
+    />
+  );
 }
 
 export function MyTasks({
@@ -685,8 +717,11 @@ export function MyTasks({
           Dir sind keine offenen Aufgaben zugewiesen.
         </Empty>
       ) : (
+        // Zeilen wie die Liste der Vorlage: Fläche mit der Frist, Titel und Satz, rechts Priorität und Stand. Überfällige Zeilen
+        // sind leicht rot hinterlegt. Ob Priorität und Stand neben dem Text Platz haben, entscheidet die Breite der Karte
+        // (`@container`), nicht die des Fensters – auch eine halbe Karte am großen Bildschirm ist schmal.
         <ExpandableList
-          className="grid gap-2.5"
+          className="@container divide-y"
           initial={initialRows(size, 3)}
           itemNoun="weitere Aufgaben"
         >
@@ -694,32 +729,36 @@ export function MyTasks({
             <li
               key={task.id}
               className={cn(
-                "flex flex-wrap items-start justify-between gap-2 rounded-xl border p-3 transition-shadow hover:shadow-sm motion-reduce:transition-none",
-                taskRowTone(task),
+                "flex flex-wrap items-center gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0 @md:flex-nowrap",
+                LIST_ROW,
+                // Hinterlegte Zeilen behalten oben und unten Luft (sonst säße die Fläche bündig am Rand der Farbe).
+                task.overdue &&
+                  "bg-red-50/70 first:pt-3 last:pb-3 hover:bg-red-50 dark:bg-red-400/[0.06] dark:hover:bg-red-400/10",
               )}
             >
-              <div className="min-w-0">
+              <TaskTile task={task} />
+              {/* In schmalen Karten füllt der Text die Zeile neben der Fläche, Priorität und Stand rutschen darunter. */}
+              <div className="min-w-0 flex-1 @max-md:basis-[calc(100%-3.75rem)]">
                 <Link
                   href="/aufgaben"
                   className="text-base font-semibold underline-offset-4 hover:underline"
                 >
                   {task.title}
                 </Link>
-                {task.dueDate && (
-                  <p
-                    className={cn(
-                      "text-sm",
-                      task.overdue
-                        ? "font-semibold text-red-700 dark:text-red-300"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    Fällig: {formatCalendarDate(task.dueDate)}
-                    {task.overdue ? " – überfällig" : ""}
-                  </p>
-                )}
+                <p
+                  className={cn(
+                    "text-sm",
+                    task.overdue
+                      ? "font-semibold text-red-700 dark:text-red-300"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {task.dueDate
+                    ? `Fällig: ${formatCalendarDate(task.dueDate)}${task.overdue ? " – überfällig" : ""}`
+                    : "Ohne Frist"}
+                </p>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1.5 @max-md:pl-15">
                 <TaskPriorityBadge priority={task.priority} />
                 <TaskStatusBadge status={task.status} />
               </div>

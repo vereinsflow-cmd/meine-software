@@ -22,14 +22,6 @@ import {
 } from "../quote";
 
 /**
- * Rolle einer Kennzahlenkarte im Kachelraster (`KpiCarousel` mit `layout="bento"`, Breiten in `kpi-layout.ts`): `hero` = die große
- * Mitglieder-Kachel über zwei Reihen (größere Zahl, Kurs mit Monaten und Zu- und Abgängen, darunter die Aufteilung nach Status).
- * Schmaler als das Raster sehen alle Karten gleich aus (`regular`); die Rolle gilt nur innerhalb des Rasters (Containerabfrage
- * `kpis`). Seit 17.10.2026 (Entwurf 4) gibt es keine hohe Ring-Kachel mehr – sie stand ohne geplante Schichten fast leer da.
- */
-export type StatSize = "regular" | "hero";
-
-/**
  * Maße der Kennzahlenkarten je eigener Größe („Anpassen“, `BlockSize`): „Mittel“ (Standard) kompakt, „Groß“ mit Hoch/Tief/Ø
  * unter dem Kurs, „Klein“ eine schmale Reihe ohne Kurve (nur Zahl und Veränderung).
  */
@@ -38,34 +30,26 @@ const KPI_DENSITY: Record<
   {
     content: string;
     value: string;
-    heroValue: string;
     chart: string;
-    heroChart: string;
     stats: boolean;
   }
 > = {
   s: {
     content: "pt-4 pb-4",
     value: "mt-2.5 text-3xl",
-    heroValue: "",
     chart: "",
-    heroChart: "",
     stats: false,
   },
   m: {
     content: "pt-4 pb-3.5",
     value: "mt-3 text-4xl",
-    heroValue: "@bento/kpis:mt-4 @bento/kpis:text-6xl",
     chart: "h-14",
-    heroChart: "@bento/kpis:h-20",
     stats: false,
   },
   l: {
     content: "pt-5 pb-4",
     value: "mt-4 text-5xl",
-    heroValue: "@bento/kpis:mt-6 @bento/kpis:text-7xl",
     chart: "h-16",
-    heroChart: "@bento/kpis:h-24",
     stats: true,
   },
 };
@@ -84,7 +68,7 @@ const COMPARE_ON_COLOR: Record<Tone, string | null> = {
   danger: "bg-white text-red-700",
 };
 
-function CompareLine({ compare, className }: { compare: Compare; className?: string }) {
+export function CompareLine({ compare, className }: { compare: Compare; className?: string }) {
   const pill = COMPARE_ON_COLOR[compare.tone];
   if (!pill) {
     return <p className={cn("text-sm font-medium text-white/95", className)}>{compare.text}</p>;
@@ -139,7 +123,14 @@ const DIRECTION_TEXT = {
   flat: "text-slate-600",
 } as const;
 
-const withUnit = (quote: Quote, value: number) =>
+/** Dasselbe auf dem grauen Schild einer weißen Karte – im Dunkeln hell (alle ≥ 4,5 : 1 auf `--muted`). */
+const DIRECTION_TEXT_ON_CARD = {
+  up: "text-emerald-800 dark:text-emerald-300",
+  down: "text-red-700 dark:text-red-300",
+  flat: "text-slate-600 dark:text-slate-300",
+} as const;
+
+export const withUnit = (quote: Quote, value: number) =>
   `${formatNumber(value, quote.unit.decimals)} ${Math.abs(value) === 1 ? quote.unit.singular : quote.unit.plural}`;
 
 /**
@@ -147,7 +138,7 @@ const withUnit = (quote: Quote, value: number) =>
  * 6 Wochen“, „±0 (0,0 %)“. Pfeil und Vorzeichen tragen die Richtung auch ohne Farbe.
  */
 /** Die Veränderung als Text (für das Schild und die Ansage nach einem Wechsel des Zeitraums). */
-function changeText(quote: Quote, period: QuotePeriod) {
+export function changeText(quote: Quote, period: QuotePeriod) {
   const change = quoteChange(period.points, quote.kind, quote.unit.decimals);
   const signed = formatSigned(change.diff, quote.unit.decimals);
   const amount = quote.showPercent
@@ -160,24 +151,29 @@ function changeText(quote: Quote, period: QuotePeriod) {
   return { change, amount, percent };
 }
 
-function ChangeChip({
+export function ChangeChip({
   quote,
   period,
   hideSince = false,
+  tone = "color",
 }: {
   quote: Quote;
   period: QuotePeriod;
   /** Ohne „in 6 Wochen“ – wenn die gedrückten Zeitraum-Knöpfe direkt daneben stehen. */
   hideSince?: boolean;
+  /** `color`: auf einer farbigen Kennzahlenkarte (weißes Schild); `card`: auf einer weißen Karte (graues Schild). */
+  tone?: "color" | "card";
 }) {
   const { change, amount, percent } = changeText(quote, period);
+  const onCard = tone === "card";
   return (
     <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
       {/* Darf umbrechen statt am Kartenrand abgeschnitten zu werden (schmale Karten, größere Schrift) */}
       <span
         className={cn(
-          "inline-flex min-h-6 flex-wrap items-center gap-x-1 rounded-2xl bg-white px-2.5 py-0.5 text-xs font-bold tabular-nums shadow-sm",
-          DIRECTION_TEXT[change.direction],
+          "inline-flex min-h-6 flex-wrap items-center gap-x-1 rounded-2xl px-2.5 py-0.5 text-xs font-bold tabular-nums",
+          onCard ? "bg-muted" : "bg-white shadow-sm",
+          onCard ? DIRECTION_TEXT_ON_CARD[change.direction] : DIRECTION_TEXT[change.direction],
         )}
       >
         <span className="whitespace-nowrap">
@@ -192,7 +188,12 @@ function ChangeChip({
           (unter 17 rem; der Container `kpi` ist 2,5 rem schmaler, siehe `KpiShell`) nur für Screenreader – dort nennen die
           gedrückten Zeitraum-Knöpfe den Zeitraum sichtbar. */}{" "}
       {!hideSince && (
-        <span className="text-xs font-medium text-white @max-[14.5rem]/kpi:sr-only">
+        <span
+          className={cn(
+            "text-xs font-medium @max-[14.5rem]/kpi:sr-only",
+            onCard ? "text-muted-foreground" : "text-white",
+          )}
+        >
           {period.since}
         </span>
       )}
@@ -201,18 +202,22 @@ function ChangeChip({
 }
 
 /** Knöpfe für den Zeitraum des Kurses („6 M · 12 M · 5 J“) – liegen über dem Link der Karte und wechseln nur den Verlauf. */
-function PeriodSwitch({
+export function PeriodSwitch({
   label,
   quote,
   value,
   onChange,
+  tone = "color",
 }: {
   label: string;
   quote: Quote;
   value: string;
   onChange: (id: string) => void;
+  /** `color`: dunkle Schiene auf der farbigen Kennzahlenkarte; `card`: helle Schiene auf einer weißen Karte. */
+  tone?: "color" | "card";
 }) {
   if (quote.periods.length < 2) return null;
+  const onCard = tone === "card";
   // Dunkle Schiene statt einer hellen: weiße Schrift behält so auch auf dem helleren Teil des Verlaufs 4,5 : 1
   // (tests/unit/dashboard-contrast.test.ts). Fokus: der übliche Rahmen mit Abstand, hier in Weiß (sichtbar auch am gewählten,
   // weißen Knopf). In Windows-Kontrastfarben trägt der gewählte Knopf die Systemfarbe „Highlight“.
@@ -220,7 +225,12 @@ function PeriodSwitch({
     <div
       role="group"
       aria-label={`Zeitraum für „${label}“`}
-      className="relative z-10 inline-flex shrink-0 gap-0.5 rounded-full bg-black/15 p-0.5 inset-ring inset-ring-white/20"
+      className={cn(
+        "relative z-10 inline-flex shrink-0 gap-0.5 rounded-full p-0.5",
+        onCard
+          ? "bg-muted ring-1 ring-foreground/5 dark:ring-foreground/10"
+          : "bg-black/15 inset-ring inset-ring-white/20",
+      )}
     >
       {quote.periods.map((period) => (
         <button
@@ -231,8 +241,15 @@ function PeriodSwitch({
           aria-label={`${period.label}: Verlauf ${period.since}`}
           onClick={() => onChange(period.id)}
           className={cn(
-            "h-6 min-w-6 rounded-full px-2 text-xs font-bold whitespace-nowrap transition-colors focus-visible:outline-white motion-reduce:transition-none forced-colors:aria-pressed:bg-[Highlight] forced-colors:aria-pressed:text-[HighlightText] forced-colors:aria-pressed:forced-color-adjust-none",
-            period.id === value ? "bg-white text-slate-900" : "text-white hover:bg-black/20",
+            "h-6 min-w-6 rounded-full px-2 text-xs font-bold whitespace-nowrap transition-colors motion-reduce:transition-none forced-colors:aria-pressed:bg-[Highlight] forced-colors:aria-pressed:text-[HighlightText] forced-colors:aria-pressed:forced-color-adjust-none",
+            onCard
+              ? period.id === value
+                ? "bg-card text-foreground shadow-sm dark:bg-foreground/15"
+                : "text-muted-foreground hover:text-foreground"
+              : period.id === value
+                ? "bg-white text-slate-900"
+                : "text-white hover:bg-black/20",
+            onCard ? "focus-visible:outline-ring" : "focus-visible:outline-white",
           )}
         >
           {period.label}
@@ -244,8 +261,20 @@ function PeriodSwitch({
 
 const STEP_BEST = { Woche: "Beste Woche", Monat: "Bester Monat", Jahr: "Bestes Jahr" } as const;
 
-/** Hoch, Tief und Durchschnitt des Zeitraums (bei Summen: bester Abschnitt und Durchschnitt je Abschnitt). */
-function QuoteStats({ quote, period }: { quote: Quote; period: QuotePeriod }) {
+/**
+ * Hoch, Tief und Durchschnitt des Zeitraums (bei Summen: bester Abschnitt und Durchschnitt je Abschnitt). `tone="card"` für eine
+ * weiße Karte (gedämpfte Beschriftung, feine Linie in der Rahmenfarbe) statt Weiß auf der Farbkarte.
+ */
+export function QuoteStats({
+  quote,
+  period,
+  tone = "color",
+}: {
+  quote: Quote;
+  period: QuotePeriod;
+  tone?: "color" | "card";
+}) {
+  const onCard = tone === "card";
   const stats = quoteStats(period.points, quote.kind);
   const fmt = (value: number, decimals = quote.unit.decimals) => formatNumber(value, decimals);
   const items =
@@ -268,10 +297,22 @@ function QuoteStats({ quote, period }: { quote: Quote; period: QuotePeriod }) {
           [`Ø je ${period.step}`, fmt(stats.average, 1)],
         ];
   return (
-    <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/15 pt-2.5">
+    <dl
+      className={cn(
+        "mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t pt-2.5",
+        onCard ? "border-border" : "border-white/15",
+      )}
+    >
       {items.map(([term, value]) => (
         <div key={term}>
-          <dt className="text-2xs font-semibold tracking-wide text-white uppercase">{term}</dt>
+          <dt
+            className={cn(
+              "text-2xs font-semibold tracking-wide uppercase",
+              onCard ? "text-muted-foreground" : "text-white",
+            )}
+          >
+            {term}
+          </dt>
           <dd className="text-sm font-bold tabular-nums">{value}</dd>
         </div>
       ))}
@@ -302,6 +343,7 @@ export function KpiShell({
   density,
   children,
   extra,
+  className,
 }: {
   label: string;
   accent: KpiAccent;
@@ -310,6 +352,8 @@ export function KpiShell({
   density: BlockSize;
   children: React.ReactNode;
   extra?: React.ReactNode;
+  /** Zusätzliche Klassen der Karte (z. B. eine größere Rundung für die große Mitglieder-Kachel). */
+  className?: string;
 }) {
   const colors = KPI_ACCENT[accent];
   const head = (
@@ -352,6 +396,7 @@ export function KpiShell({
             "transition-[background-color,box-shadow,scale] duration-200 ease-out has-[[data-slot=kpi-link]:active]:scale-[0.985] motion-reduce:transition-none",
             colors.hover,
           ),
+        className,
       )}
     >
       {/* Der Schein sitzt genau in der Ecke und reicht nur bis zum Pfeil: Weiter innen hellte er den Grund hinter der Beschriftung
@@ -388,7 +433,6 @@ function QuoteArea({
   period,
   onPeriod,
   density,
-  hero,
   href,
 }: {
   label: string;
@@ -396,7 +440,6 @@ function QuoteArea({
   period: QuotePeriod;
   onPeriod: (id: string) => void;
   density: BlockSize;
-  hero: boolean;
   href?: string;
 }) {
   const dims = KPI_DENSITY[density];
@@ -404,35 +447,24 @@ function QuoteArea({
   // Summen beginnen mit dem Startpunkt 0 – die Beschriftung nennt den ersten echten Abschnitt („Jan 26 – jetzt“).
   const first = quote.kind === "total" ? period.points[1] : period.points[0];
   return (
-    <div className={cn("flex flex-col pt-4", !hero && "mt-auto", hero && "@bento/kpis:pt-5")}>
-      {hero && (
-        <div className="mb-2 hidden justify-end @bento/kpis:flex">
-          <PeriodSwitch label={label} quote={quote} value={period.id} onChange={onPeriod} />
-        </div>
-      )}
+    <div className="mt-auto flex flex-col pt-4">
       <QuoteLink href={href} className="-mx-5">
         <QuoteChart
           key={period.id}
           points={period.points}
           format={format}
           describe={(value) => withUnit(quote, value)}
-          detailClassName={hero ? "@bento/kpis:block" : undefined}
           syntheticStart={quote.kind === "total"}
-          // Zu- und Abgänge unter dem Kurs: bei „Groß“ und auf der großen Kachel im Raster
+          // Zu- und Abgänge unter dem Kurs: bei „Groß“
           volume={
-            period.volume && (density === "l" || hero)
+            period.volume && density === "l"
               ? { ...period.volume, label: "Zu- / Abgänge" }
               : undefined
           }
-          className={cn(dims.chart, hero && dims.heroChart)}
+          className={dims.chart}
         />
       </QuoteLink>
-      <div
-        className={cn(
-          "@container/kpi mt-2 flex items-center justify-between gap-2",
-          hero && "@bento/kpis:hidden",
-        )}
-      >
+      <div className="@container/kpi mt-2 flex items-center justify-between gap-2">
         <PeriodSwitch label={label} quote={quote} value={period.id} onChange={onPeriod} />
         {/* In schmalen Karten (unter 17 rem) entfällt die Beschriftung (sie würde zu „KW …“ abgeschnitten); die Knöpfe nennen
             den Zeitraum. */}
@@ -443,7 +475,7 @@ function QuoteArea({
           {first?.label} – <span className="font-bold">jetzt</span>
         </span>
       </div>
-      {/* Hoch/Tief/Ø bei „Groß“ (auf der großen Kachel steht stattdessen die Aufteilung nach Status) */}
+      {/* Hoch/Tief/Ø bei „Groß“ */}
       {dims.stats && <QuoteStats quote={quote} period={period} />}
     </div>
   );
@@ -454,7 +486,7 @@ function QuoteArea({
  * „in neuem Tab öffnen“), ohne einen zweiten Tabulator-Halt – für Tastatur und Screenreader ist er verborgen, dort genügt der
  * Link der Karte. Ohne Ziel bleibt es ein einfacher Block.
  */
-function QuoteLink({
+export function QuoteLink({
   href,
   className,
   children,
@@ -481,7 +513,7 @@ function QuoteLink({
  * Ansage nach einem Wechsel des Zeitraums (für Screenreader): Die Veränderung steht im Link der Karte, also vor den Knöpfen –
  * ohne Ansage müsste man zurückspringen, um das Ergebnis zu hören. Beim Laden der Seite bleibt sie still.
  */
-function usePeriod(quote: Quote | undefined, label: string) {
+export function usePeriod(quote: Quote | undefined, label: string) {
   const [periodId, setPeriodId] = useState(quote?.defaultPeriod);
   const [announcement, setAnnouncement] = useState("");
   const period = quote?.periods.find((entry) => entry.id === periodId) ?? quote?.periods[0];
@@ -510,9 +542,7 @@ export function StatCard({
   href,
   icon,
   quote,
-  size = "regular",
   density = DEFAULT_BLOCK_SIZE,
-  breakdown,
 }: {
   label: string;
   /** Farbe des Bereichs (Mitglieder blau, Termine violett, Helferplätze grün, Stunden orange). */
@@ -525,13 +555,9 @@ export function StatCard({
   icon: React.ReactNode;
   /** Kursverlauf („wie eine Aktie“): Veränderung, Kurve und Zeiträume; ohne Angabe nur Zahl und Satz. */
   quote?: Quote;
-  size?: StatSize;
   /** Eigene Größe der Kennzahlen („Anpassen“): Klein ohne Kurve, Mittel (Standard) kompakt, Groß mit Hoch/Tief/Ø. */
   density?: BlockSize;
-  /** Nur auf der großen Kachel (`hero`): Aufteilung unter dem Kurs, füllt die Kachel bis zum Boden (`StatusBreakdown`). */
-  breakdown?: React.ReactNode;
 }) {
-  const hero = size === "hero";
   const dims = KPI_DENSITY[density];
   const { period, choose, live } = usePeriod(quote, label);
   const chart = Boolean(quote && period && density !== "s" && period.points.length > 1);
@@ -551,12 +577,8 @@ export function StatCard({
               period={period!}
               onPeriod={choose}
               density={density}
-              hero={hero}
               href={href}
             />
-            {hero && breakdown && (
-              <div className="mt-auto hidden pt-5 @bento/kpis:block">{breakdown}</div>
-            )}
             {live}
           </>
         ) : !quote ? (
@@ -570,7 +592,7 @@ export function StatCard({
         ) : null
       }
     >
-      <KpiValue className={cn(dims.value, hero && dims.heroValue)}>{value}</KpiValue>
+      <KpiValue className={dims.value}>{value}</KpiValue>
       {quote && period && (
         <div className="mt-2.5">
           <ChangeChip quote={quote} period={period} />
@@ -584,8 +606,8 @@ export function StatCard({
 
 /**
  * Freie Helferplätze: die Zahl mit dem Vergleichssatz, dazu der Kurs der Besetzung (besetzte Plätze der heute offenen
- * Schichten je Woche) mit Veränderung („▲ +6 Plätze in 6 Wochen“). Im Kachelraster steht sie seit 17.10.2026 (Entwurf 4) nur
- * noch eine Reihe hoch rechts oben – ohne geplante Schichten bleibt sie so kurz (Zahl und „Keine Schichten geplant“).
+ * Schichten je Woche) mit Veränderung („▲ +6 Plätze in 6 Wochen“). Nur im einfachen Raster; die große Fassung zeigt die freien
+ * Plätze als schmale Karte (`QuotePill` in kpi-studio.tsx).
  */
 export function FreeShiftsCard({
   freeSpots,
@@ -625,7 +647,6 @@ export function FreeShiftsCard({
               period={period}
               onPeriod={choose}
               density={density}
-              hero={false}
               href={href}
             />
           )}
@@ -643,62 +664,5 @@ export function FreeShiftsCard({
       )}
       <CompareLine compare={compare} className="mt-2" />
     </KpiShell>
-  );
-}
-
-/** Deckkraft je Status auf der farbigen Kachel – fest je Status (nicht nach Rang), damit die Farbe zum Eintrag gehört. */
-const STATUS_SHADE: Record<string, string> = {
-  ACTIVE: "bg-white",
-  PASSIVE: "bg-white/70",
-  HONORARY: "bg-white/50",
-  BLOCKED: "bg-white/35",
-  LEFT: "bg-white/25",
-};
-
-/**
- * Aufteilung der Mitglieder nach Status auf der großen Mitglieder-Kachel (Entwurf 4): ein geteilter Balken in Weißtönen und
- * darunter die Liste mit Anzahl und Anteil. Die Bedeutung steht immer im Text; der Balken ist nur Zierde (`aria-hidden`).
- */
-export function StatusBreakdown({
-  title,
-  items,
-}: {
-  title: string;
-  items: readonly { key: string; label: string; count: number }[];
-}) {
-  const total = items.reduce((sum, item) => sum + item.count, 0);
-  if (total === 0) return null;
-  const share = (count: number) => Math.round((count / total) * 100);
-  return (
-    <div className="border-t border-white/15 pt-4">
-      <p className="text-sm font-semibold">{title}</p>
-      <div aria-hidden="true" className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full">
-        {items.map((item) => (
-          <span
-            key={item.key}
-            className={cn(
-              "h-full first:rounded-l-full last:rounded-r-full",
-              STATUS_SHADE[item.key],
-            )}
-            style={{ flexGrow: item.count, flexBasis: 0 }}
-          />
-        ))}
-      </div>
-      <dl className="mt-3 grid gap-1.5 text-sm">
-        {items.map((item) => (
-          <div key={item.key} className="flex items-center gap-2.5">
-            <span
-              aria-hidden="true"
-              className={cn("size-2.5 shrink-0 rounded-[3px]", STATUS_SHADE[item.key])}
-            />
-            <dt className="min-w-0 flex-1 truncate font-medium">{item.label}</dt>
-            <dd className="font-bold tabular-nums">{formatNumber(item.count, 0)}</dd>
-            <dd className="w-11 text-right text-xs font-medium tabular-nums">
-              {share(item.count)} %
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
   );
 }

@@ -11,11 +11,16 @@ import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
 import {
+  FreeShiftsPill,
   FreeShiftsStat,
   HelperHours,
+  HelperHoursChart,
+  MembersHero,
   MembersStat,
+  NextEventsPill,
   NextEventsStat,
   StatCard,
+  TasksDonut,
 } from "@/modules/dashboard/components/kpi-stats";
 import {
   CustomizeDashboard,
@@ -24,7 +29,8 @@ import {
 import { DashboardTabs, type DashboardTab } from "@/modules/dashboard/components/dashboard-tabs";
 import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
 import { OnboardingCard } from "@/modules/dashboard/components/onboarding-card";
-import { CardGrid, Group } from "@/modules/dashboard/components/layout";
+import { Entrance } from "@/modules/dashboard/components/entrance";
+import { CardGrid, Group, StudioFrame } from "@/modules/dashboard/components/layout";
 import {
   Anniversaries,
   Birthdays,
@@ -105,17 +111,71 @@ export default async function DashboardPage({
   /** Eigene Größe einer Karte („Anpassen“); ohne Einstellung „Mittel“. */
   const sizeOf = (tab: DashboardTabId, id: string) => blockSize(layout?.tabs[tab], id);
   const kpiSize = sizeOf("uebersicht", "kennzahlen");
-  // Kachelraster der Kennzahlen (Entwurf 4): nur, wenn alle vier Karten da sind – mit „Ungelesen“ statt Mitgliederzahl oder mit
-  // weniger Karten stehen sie gleich groß nebeneinander; bei „Klein“ als schmale Reihe ohne Grafiken.
-  const bento = Boolean(members && events && shifts) && kpiSize !== "s";
-  // Im Kachelraster stehen die Offenen Zahlungen als fünfte Kachel oben (Entwurf 4: Geld, das drängt, nicht weit unten) – nur,
-  // solange weder sie noch die Kennzahlen über „Anpassen“ ausgeblendet sind. Sonst bleiben sie eine eigene Karte.
+  // Große Fassung der Kennzahlen (seit 17.10.2026 Stil der Vorlage „Analytics“ in VereinsFlow-Farben, `StudioFrame`): nur, wenn
+  // Mitglieder, Termine und Schichten da sind und die Kennzahlen nicht auf „Klein“ stehen – sonst gleich große Farbkarten im
+  // einfachen Raster (mit „Ungelesen“ statt Mitgliederzahl, oder als schmale Reihe ohne Grafiken).
+  const studio = Boolean(members && events && shifts) && kpiSize !== "s";
+  // In der rechten Spalte stehen auch die Offenen Zahlungen (Geld, das drängt, gehört nach oben) – nur, solange weder sie noch
+  // die Kennzahlen über „Anpassen“ ausgeblendet sind. Sonst bleiben sie eine eigene Karte.
   const hiddenOverview = new Set(layout?.tabs.uebersicht?.hidden ?? []);
-  const paymentsInKpis =
-    bento &&
+  const paymentsInStudio =
+    studio &&
     payments !== null &&
     !hiddenOverview.has("zahlungen") &&
     !hiddenOverview.has("kennzahlen");
+  const organizer = can(ctx, "tasks:manage");
+
+  // Große Fassung: oben links die Mitglieder-Kachel und der Aufgaben-Ring, rechts die Spalte mit Terminen, Helferstunden,
+  // freien Plätzen und Zahlungen. Schmaler als die Spalte (unter 58 rem Inhaltsbreite) steht sie als Raster unter dem Paar.
+  const studioTop =
+    studio && members ? (
+      // Die Breitenabfrage misst die äußere Hülle (ein Element kann nicht nach seiner eigenen Breite fragen).
+      <div className="@container/pair">
+        <div role="group" aria-label="Kennzahlen" className="grid gap-6 @[34rem]/pair:grid-cols-2">
+          <Entrance index={0} className={cn(!tasks && "@[34rem]/pair:col-span-2")}>
+            <MembersHero members={members} size={kpiSize} />
+          </Entrance>
+          {tasks && (
+            <Entrance index={1}>
+              <TasksDonut tasks={tasks} organizer={organizer} />
+            </Entrance>
+          )}
+        </div>
+      </div>
+    ) : null;
+  const studioSide =
+    studio && events && shifts ? (
+      <div
+        role="group"
+        aria-label="Weitere Kennzahlen"
+        className="grid gap-5 sm:grid-cols-2 @bento-wide/studio:flex @bento-wide/studio:flex-col"
+      >
+        <Entrance index={2} className="[&>*]:h-full">
+          <NextEventsPill events={events} size={kpiSize} />
+        </Entrance>
+        <Entrance
+          index={3}
+          className={cn(
+            "[&>*]:h-full",
+            // Mit Zahlungen rechts über die Höhe der drei übrigen Karten; ohne sie unter Terminen und freien Plätzen über beide
+            // Spalten (sonst stünden unter den beiden schmalen Karten große Lücken).
+            paymentsInStudio
+              ? "sm:col-start-2 sm:row-span-3 sm:row-start-1"
+              : "sm:col-span-2 sm:row-start-2",
+          )}
+        >
+          <HelperHoursChart hours={shifts.hours} size={kpiSize} />
+        </Entrance>
+        <Entrance index={4} className="[&>*]:h-full">
+          <FreeShiftsPill shifts={shifts} size={kpiSize} />
+        </Entrance>
+        {paymentsInStudio && payments && (
+          <Entrance index={5} className="[&>*]:h-full">
+            <PaymentsTile payments={payments} />
+          </Entrance>
+        )}
+      </div>
+    ) : null;
 
   // Die Karten je Reiter, die die Rolle sehen darf – Reihenfolge und Sichtbarkeit bestimmt danach die eigene Einstellung.
   const blocks: Record<DashboardTabId, Record<string, React.ReactNode>> = {
@@ -128,14 +188,11 @@ export default async function DashboardPage({
             ),
           }
         : {}),
-      kennzahlen: (
-        <KpiCarousel
-          layout={bento ? "bento" : "grid"}
-          size={kpiSize}
-          lastFromTablet={paymentsInKpis}
-        >
+      // In der großen Fassung ordnet `StudioFrame` die Kennzahlen an (siehe `tabContent`); hier steht dann nur das Paar oben.
+      kennzahlen: studioTop ?? (
+        <KpiCarousel size={kpiSize}>
           {members ? (
-            <MembersStat members={members} size={bento ? "hero" : "regular"} density={kpiSize} />
+            <MembersStat members={members} density={kpiSize} />
           ) : (
             <StatCard
               density={kpiSize}
@@ -148,12 +205,8 @@ export default async function DashboardPage({
             />
           )}
           {events && <NextEventsStat events={events} density={kpiSize} />}
-          {/* Mit Zahlungen Spalte für Spalte (rechts der Stapel Helferplätze über Zahlungen), sonst Zeile für Zeile –
-              Aufteilung in `modules/dashboard/kpi-layout.ts`. */}
-          {shifts && paymentsInKpis && <HelperHours hours={shifts.hours} density={kpiSize} />}
           {shifts && <FreeShiftsStat shifts={shifts} density={kpiSize} />}
-          {shifts && !paymentsInKpis && <HelperHours hours={shifts.hours} density={kpiSize} />}
-          {paymentsInKpis && payments && <PaymentsTile payments={payments} />}
+          {shifts && <HelperHours hours={shifts.hours} density={kpiSize} />}
         </KpiCarousel>
       ),
       // Offene Zahlungen nur für Berechtigte (Vereinsadministrator, Vorstand) – vor „Für dich“, weil Fristen drängen.
@@ -169,7 +222,7 @@ export default async function DashboardPage({
             aufgaben: (
               <MyTasks
                 tasks={tasks}
-                organizer={can(ctx, "tasks:manage")}
+                organizer={organizer}
                 size={sizeOf("uebersicht", "aufgaben")}
               />
             ),
@@ -270,14 +323,11 @@ export default async function DashboardPage({
   function tabContent(tab: DashboardTabId) {
     const available = blocks[tab];
     const { shown: arranged } = arrangeBlocks(tab, Object.keys(available), layout?.tabs[tab]);
-    // Steht „Offene Zahlungen“ schon im Kachelraster, als Karte darunter nur am Handy (dort fehlt die Kachel im Karussell) –
-    // direkt nach den Kennzahlen.
-    const inKpis = tab === "uebersicht" && paymentsInKpis;
-    const shown = inKpis
-      ? arranged.flatMap((id) =>
-          id === "zahlungen" ? [] : id === "kennzahlen" ? [id, "zahlungen"] : [id],
-        )
-      : arranged;
+    // Stehen die Offenen Zahlungen schon in der Spalte der Kennzahlen, nicht noch einmal als Karte.
+    const shown =
+      tab === "uebersicht" && paymentsInStudio
+        ? arranged.filter((id) => id !== "zahlungen")
+        : arranged;
     if (shown.length === 0) {
       return (
         <CompactEmpty card icon={<EyeOffIcon />} accent="slate" title="Alle Karten ausgeblendet">
@@ -285,7 +335,34 @@ export default async function DashboardPage({
         </CompactEmpty>
       );
     }
-    const seen = new Set<string>();
+    // Große Fassung der Übersicht: Die Karten vor und nach den Kennzahlen stehen links, die Spalte der Kennzahlen rechts daneben.
+    const at = shown.indexOf("kennzahlen");
+    if (tab === "uebersicht" && studioTop && studioSide && at >= 0) {
+      const before = shown.slice(0, at);
+      const after = shown.slice(at + 1);
+      // Gemeinsam für beide Seiten: Steht „Für dich“ vor und nach den Kennzahlen, bekommt die zweite Gruppe eine eigene Kennung.
+      const seen = new Set<string>();
+      return (
+        <StudioFrame
+          before={before.length > 0 ? renderBlocks(tab, before, true, seen) : null}
+          top={studioTop}
+          side={studioSide}
+          after={after.length > 0 ? renderBlocks(tab, after, true, seen) : null}
+          size={kpiSize}
+        />
+      );
+    }
+    return renderBlocks(tab, shown);
+  }
+
+  /** Karten in der angegebenen Reihenfolge; aufeinanderfolgende Karten derselben Gruppe unter einer Überschrift. */
+  function renderBlocks(
+    tab: DashboardTabId,
+    shown: string[],
+    inStudio = false,
+    seen = new Set<string>(),
+  ) {
+    const available = blocks[tab];
     const segments = segmentBlocks(tab, shown);
     // Eine einzelne Liste (z. B. Geburtstage) und die Auswertungen: ab 1280 px nebeneinander – Liste ein Drittel, Diagramm
     // zwei Drittel –, statt eine fast leere, breite Karte über einem Diagramm. Gibt es keine Auswertung (Rolle), wird der
@@ -299,7 +376,9 @@ export default async function DashboardPage({
     return (
       <div
         className={cn(
-          "grid gap-10",
+          // `grid-cols-1` (= minmax(0, 1fr)): Die Karten dürfen schmaler werden als ihr Inhalt es von selbst wäre – neben der
+          // Spalte der Kennzahlen ist weniger Platz.
+          "grid grid-cols-1 gap-10",
           pair &&
             "xl:grid-cols-3 xl:items-start xl:gap-7 xl:has-[>[data-analytics]:empty]:grid-cols-1",
         )}
@@ -316,8 +395,11 @@ export default async function DashboardPage({
               content
             );
           }
-          // Die erste Gruppe behält ihre bekannte Kennung (z. B. „g-fuer-dich“); kommt sie ein zweites Mal vor, eine eigene.
-          const id = seen.has(segment.group) ? `g-${segment.group}-${index}` : `g-${segment.group}`;
+          // Die erste Gruppe behält ihre bekannte Kennung (z. B. „g-fuer-dich“); kommt sie ein zweites Mal vor, eine eigene
+          // (an ihrer ersten Karte festgemacht – jede Karte gibt es je Reiter nur einmal, auch über beide Seiten der Kennzahlen).
+          const id = seen.has(segment.group)
+            ? `g-${segment.group}-${segment.ids[0]}`
+            : `g-${segment.group}`;
           seen.add(segment.group);
           const group = (
             <Group key={`${segment.group}-${index}`} id={id} title={GROUP_TITLE[segment.group]}>
@@ -325,19 +407,15 @@ export default async function DashboardPage({
                 items={segment.ids.map((blockId) => ({
                   id: blockId,
                   node: available[blockId],
-                  wide: sizeOf(tab, blockId) === "l",
+                  // Neben der Spalte der Kennzahlen steht „Meine Aufgaben“ über die volle Breite (wie die Liste der Vorlage),
+                  // außer man hat sie auf „Klein“ gestellt.
+                  wide:
+                    sizeOf(tab, blockId) === "l" ||
+                    (inStudio && blockId === "aufgaben" && sizeOf(tab, blockId) !== "s"),
                 }))}
               />
             </Group>
           );
-          // Die Karte „Offene Zahlungen“ neben der Kachel im Raster: nur am Handy sichtbar (siehe oben)
-          if (inKpis && segment.group === "finanzen") {
-            return (
-              <div key={`${segment.group}-${index}`} className="sm:hidden">
-                {group}
-              </div>
-            );
-          }
           return pair ? (
             <div key={`${segment.group}-${index}`} className="min-w-0">
               {group}
@@ -378,9 +456,8 @@ export default async function DashboardPage({
         inline
         align="center"
         title={`Willkommen, ${ctx.user.firstName}`}
-        // Seit 17.10.2026 (Entwurf 4) etwas kleiner als zuvor und ohne Schild: Rolle und Datum als ruhige Zeile darunter – wie die
-        // Untertitel der übrigen Seiten.
-        titleClassName="text-3xl font-bold tracking-[-0.025em] sm:text-4xl"
+        // Groß wie die Überschrift der Vorlage „Analytics“; Rolle und Datum als ruhige Zeile darunter.
+        titleClassName="text-4xl font-extrabold tracking-[-0.03em] sm:text-[2.75rem]"
         description={
           <>
             <span>{ctx.roleName}</span>
@@ -390,12 +467,16 @@ export default async function DashboardPage({
           </>
         }
         // Am Handy: die Hauptaktion über die volle Breite, die übrigen gleich breit daneben – statt eines Umbruchs irgendwo.
-        actionsClassName="max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
+        // Runde Knöpfe wie in der Vorlage (nur auf dem Dashboard).
+        actionsClassName="*:rounded-full max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
         actions={
           <>
-            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten. */}
+            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten; mit leichtem Schein in der Markenfarbe. */}
             {can(ctx, "events:create") && (
-              <Button asChild>
+              <Button
+                asChild
+                className="shadow-[0_10px_22px_-12px_var(--color-primary)] hover:shadow-[0_12px_26px_-12px_var(--color-primary)]"
+              >
                 <Link href="/veranstaltungen/neu">
                   <PlusIcon /> Neue Veranstaltung
                 </Link>

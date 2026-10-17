@@ -60,9 +60,8 @@ function ownsGesture(target: Element, boundary: Element): boolean {
  * erscheint er sofort. Die Adresse wird per `replaceState` nachgeführt (`?tab=mitglieder`): verlinkbar, Neuladen bleibt darauf,
  * „Zurück“ verlässt das Dashboard statt durch alle Bereiche zu laufen. Wischen ist nur eine Zugabe – jede Funktion geht auch ohne.
  *
- * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen. Seit 17.10.2026 (Entwurf 4) sieht sie aus wie die übrigen
- * Umschaltleisten der Anwendung (z. B. Finanzen, `segment-styles.ts`): helle Leiste, kleine Rundung, ohne Symbole; eine helle
- * Fläche gleitet hinter den aktiven Reiter. Auf schmalen
+ * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen. Seit 17.10.2026 (Stil der Vorlage „Analytics“) eine runde, helle
+ * Schiene ohne Symbole; eine weiße, runde Fläche gleitet hinter den aktiven Reiter. Auf schmalen
  * Bildschirmen lässt sie sich seitlich wischen (ein Verlauf am Rand zeigt, dass es weitergeht), der gewählte Reiter wird
  * ins Bild geholt. Hat eine Rolle nur einen Bereich,
  * gibt es keine Leiste – nur den Inhalt.
@@ -211,7 +210,7 @@ export function DashboardTabs({
             ref={list}
             variant="line"
             aria-label="Bereiche des Dashboards"
-            className="relative isolate w-max gap-1 bg-muted/90 p-1 shadow-sm ring-1 ring-foreground/5 backdrop-blur-md group-data-horizontal/tabs:h-11 data-[variant=line]:rounded-lg max-sm:group-data-horizontal/tabs:h-13 dark:bg-muted/90 dark:ring-foreground/10 pointer-coarse:group-data-horizontal/tabs:h-13"
+            className="relative isolate w-max gap-1 bg-muted/90 p-1 shadow-sm ring-1 ring-foreground/5 backdrop-blur-md group-data-horizontal/tabs:h-12 data-[variant=line]:rounded-full max-sm:group-data-horizontal/tabs:h-13 dark:bg-muted/90 dark:ring-foreground/10 pointer-coarse:group-data-horizontal/tabs:h-13"
           >
             {/* `transition-colors` statt `transition-all`: Die fette Schrift des gewählten Reiters darf nicht einblenden. Sonst wächst
                 der Reiter erst nach dem Hereinholen – die Leiste bliebe ein paar Pixel vor dem Ende stehen, und der Verlauf am
@@ -221,7 +220,7 @@ export function DashboardTabs({
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="h-full flex-none gap-2 rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-foreground dark:data-active:text-foreground"
+                  className="h-full flex-none gap-2 rounded-full px-4 text-[0.95rem] font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-foreground dark:data-active:text-foreground"
                 >
                   {tab.label}
                 </TabsTrigger>
@@ -233,7 +232,7 @@ export function DashboardTabs({
               ref={line}
               data-slot="tab-indicator"
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-md bg-card opacity-0 shadow-sm transition-[transform,width] duration-200 ease-out motion-reduce:transition-none dark:bg-foreground/15 dark:shadow-none dark:inset-ring-1 dark:inset-ring-foreground/20"
+              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-full bg-card opacity-0 shadow-sm transition-[transform,width] duration-200 ease-out motion-reduce:transition-none dark:bg-foreground/15 dark:shadow-none dark:inset-ring-1 dark:inset-ring-foreground/20"
               style={{ transition: "none" }}
             />
           </TabsList>
