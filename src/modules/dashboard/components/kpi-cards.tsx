@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRightIcon, CircleAlertIcon, TriangleAlertIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { FillRing } from "@/components/charts/fill-meter";
 import { QuoteChart } from "@/components/charts/quote-chart";
+import { CountUp } from "@/components/shared/count-up";
 import { KPI_ACCENT, type KpiAccent } from "@/components/shared/accent";
 import type { Tone } from "@/components/shared/status-badge";
 import { formatNumber } from "@/lib/charts/geometry";
@@ -23,11 +23,11 @@ import {
 
 /**
  * Rolle einer Kennzahlenkarte im Kachelraster (`KpiCarousel` mit `layout="bento"`, Breiten in `kpi-layout.ts`): `hero` = die große
- * Mitglieder-Kachel (größere Zahl, große Kurve mit Monaten, Zu- und Abgängen, Hoch/Tief/Ø), `tall` = die hohe Kachel „Freie Helferplätze“
- * (Ring). Schmaler als das Raster sehen alle Karten gleich aus (`regular`); die Rollen gelten nur innerhalb des Rasters
- * (Containerabfrage `kpis`).
+ * Mitglieder-Kachel über zwei Reihen (größere Zahl, Kurs mit Monaten und Zu- und Abgängen, darunter die Aufteilung nach Status).
+ * Schmaler als das Raster sehen alle Karten gleich aus (`regular`); die Rolle gilt nur innerhalb des Rasters (Containerabfrage
+ * `kpis`). Seit 17.10.2026 (Entwurf 4) gibt es keine hohe Ring-Kachel mehr – sie stand ohne geplante Schichten fast leer da.
  */
-export type StatSize = "regular" | "hero" | "tall";
+export type StatSize = "regular" | "hero";
 
 /**
  * Maße der Kennzahlenkarten je eigener Größe („Anpassen“, `BlockSize`): „Mittel“ (Standard) kompakt, „Groß“ mit Hoch/Tief/Ø
@@ -57,7 +57,7 @@ const KPI_DENSITY: Record<
     value: "mt-3 text-4xl",
     heroValue: "@bento/kpis:mt-4 @bento/kpis:text-6xl",
     chart: "h-14",
-    heroChart: "@bento/kpis:h-auto @bento/kpis:min-h-28 @bento/kpis:flex-1",
+    heroChart: "@bento/kpis:h-20",
     stats: false,
   },
   l: {
@@ -65,7 +65,7 @@ const KPI_DENSITY: Record<
     value: "mt-4 text-5xl",
     heroValue: "@bento/kpis:mt-6 @bento/kpis:text-7xl",
     chart: "h-16",
-    heroChart: "@bento/kpis:h-auto @bento/kpis:min-h-36 @bento/kpis:flex-1",
+    heroChart: "@bento/kpis:h-24",
     stats: true,
   },
 };
@@ -342,12 +342,14 @@ export function KpiShell({
     <Card
       data-kpi={label}
       className={cn(
-        "relative isolate h-full gap-0 rounded-4xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
+        "relative isolate h-full gap-0 rounded-2xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
         "has-[[data-slot=kpi-link]:focus-visible]:ring-2 has-[[data-slot=kpi-link]:focus-visible]:ring-ring has-[[data-slot=kpi-link]:focus-visible]:ring-offset-2 has-[[data-slot=kpi-link]:focus-visible]:ring-offset-background",
         colors.card,
         href &&
           cn(
-            "transition-[background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
+            // Beim Drücken gibt die Karte minimal nach (Rückmeldung, dass der Klick ankam) – nur über ihren Link, nicht über die
+            // Zeitraum-Knöpfe darin.
+            "transition-[background-color,box-shadow,scale] duration-200 ease-out has-[[data-slot=kpi-link]:active]:scale-[0.985] motion-reduce:transition-none",
             colors.hover,
           ),
       )}
@@ -366,7 +368,7 @@ export function KpiShell({
             href={href}
             data-slot="kpi-link"
             data-kpi-main=""
-            className="block rounded-xl after:absolute after:inset-0 after:rounded-4xl after:content-[''] focus-visible:outline-hidden"
+            className="block rounded-xl after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-hidden"
           >
             {head}
           </Link>
@@ -402,18 +404,13 @@ function QuoteArea({
   // Summen beginnen mit dem Startpunkt 0 – die Beschriftung nennt den ersten echten Abschnitt („Jan 26 – jetzt“).
   const first = quote.kind === "total" ? period.points[1] : period.points[0];
   return (
-    <div
-      className={cn("mt-auto flex flex-col pt-4", hero && "@bento/kpis:flex-1 @bento/kpis:pt-5")}
-    >
+    <div className={cn("flex flex-col pt-4", !hero && "mt-auto", hero && "@bento/kpis:pt-5")}>
       {hero && (
         <div className="mb-2 hidden justify-end @bento/kpis:flex">
           <PeriodSwitch label={label} quote={quote} value={period.id} onChange={onPeriod} />
         </div>
       )}
-      <QuoteLink
-        href={href}
-        className={cn("-mx-5", hero && "@bento/kpis:flex @bento/kpis:flex-1 @bento/kpis:flex-col")}
-      >
+      <QuoteLink href={href} className="-mx-5">
         <QuoteChart
           key={period.id}
           points={period.points}
@@ -428,7 +425,6 @@ function QuoteArea({
               : undefined
           }
           className={cn(dims.chart, hero && dims.heroChart)}
-          rootClassName={hero ? "@bento/kpis:flex-1" : undefined}
         />
       </QuoteLink>
       <div
@@ -447,12 +443,8 @@ function QuoteArea({
           {first?.label} – <span className="font-bold">jetzt</span>
         </span>
       </div>
-      {/* Hoch/Tief/Ø bei „Groß“ – und auf der großen Kachel im Raster immer (sie hat den Platz) */}
-      {(dims.stats || hero) && (
-        <div className={cn(!dims.stats && "hidden @bento/kpis:block")}>
-          <QuoteStats quote={quote} period={period} />
-        </div>
-      )}
+      {/* Hoch/Tief/Ø bei „Groß“ (auf der großen Kachel steht stattdessen die Aufteilung nach Status) */}
+      {dims.stats && <QuoteStats quote={quote} period={period} />}
     </div>
   );
 }
@@ -520,6 +512,7 @@ export function StatCard({
   quote,
   size = "regular",
   density = DEFAULT_BLOCK_SIZE,
+  breakdown,
 }: {
   label: string;
   /** Farbe des Bereichs (Mitglieder blau, Termine violett, Helferplätze grün, Stunden orange). */
@@ -535,6 +528,8 @@ export function StatCard({
   size?: StatSize;
   /** Eigene Größe der Kennzahlen („Anpassen“): Klein ohne Kurve, Mittel (Standard) kompakt, Groß mit Hoch/Tief/Ø. */
   density?: BlockSize;
+  /** Nur auf der großen Kachel (`hero`): Aufteilung unter dem Kurs, füllt die Kachel bis zum Boden (`StatusBreakdown`). */
+  breakdown?: React.ReactNode;
 }) {
   const hero = size === "hero";
   const dims = KPI_DENSITY[density];
@@ -559,6 +554,9 @@ export function StatCard({
               hero={hero}
               href={href}
             />
+            {hero && breakdown && (
+              <div className="mt-auto hidden pt-5 @bento/kpis:block">{breakdown}</div>
+            )}
             {live}
           </>
         ) : !quote ? (
@@ -584,68 +582,32 @@ export function StatCard({
   );
 }
 
-/** Farbe des besetzten Teils im Ring (und des Satzes darunter) nach Besetzung: voll weiß, teilweise bernsteinfarben. */
-const RING_TONE: Record<Tone, { ring?: string; text: string }> = {
-  neutral: { text: "text-white/95" },
-  ended: { text: "text-white/95" },
-  info: { text: "text-white" },
-  success: { text: "text-white" },
-  warning: { ring: "stroke-amber-300", text: "text-amber-200" },
-  danger: { ring: "stroke-red-300", text: "text-red-200" },
-};
-
 /**
  * Freie Helferplätze: die Zahl mit dem Vergleichssatz, dazu der Kurs der Besetzung (besetzte Plätze der heute offenen
- * Schichten je Woche) mit Veränderung („▲ +6 Plätze in 6 Wochen“). Als hohe Kachel im Raster (`size="tall"`, wie im Entwurf 2)
- * steht die Zahl in einem Ring, darunter die Auslastung wie ein Kurs. Beide Fassungen stehen im Code, sichtbar ist je nach
- * Breite genau eine (die andere ist `display: none` und damit auch für Screenreader nicht da – nichts wird doppelt vorgelesen).
+ * Schichten je Woche) mit Veränderung („▲ +6 Plätze in 6 Wochen“). Im Kachelraster steht sie seit 17.10.2026 (Entwurf 4) nur
+ * noch eine Reihe hoch rechts oben – ohne geplante Schichten bleibt sie so kurz (Zahl und „Keine Schichten geplant“).
  */
 export function FreeShiftsCard({
   freeSpots,
-  filled,
-  required,
   compare,
   quote,
-  size,
+  required,
   density = DEFAULT_BLOCK_SIZE,
   icon,
 }: {
   freeSpots: number;
-  filled: number;
   required: number;
   compare: Compare;
   quote: Quote;
-  size?: StatSize;
   density?: BlockSize;
   icon: React.ReactNode;
 }) {
   const label = "Freie Helferplätze";
   const href = "/helferplanung";
-  const tall = size === "tall";
-  const big = density === "l";
   const dims = KPI_DENSITY[density];
   const { period: chosen, choose, live } = usePeriod(quote, "Besetzung");
   const period = chosen!;
   const chart = required > 0 && density !== "s";
-  // Gerundet, aber nie „100 %“, solange noch Plätze frei sind, und nie „0 %“, sobald einer besetzt ist.
-  const percent =
-    required <= 0 || filled <= 0
-      ? 0
-      : filled >= required
-        ? 100
-        : Math.min(99, Math.max(1, Math.round((filled / required) * 100)));
-  // Drei- und vierstellige Zahlen passen sonst nicht in die Öffnung des Rings.
-  const ringNumber = big
-    ? freeSpots >= 1000
-      ? "text-4xl"
-      : freeSpots >= 100
-        ? "text-5xl"
-        : "text-6xl"
-    : freeSpots >= 1000
-      ? "text-3xl"
-      : freeSpots >= 100
-        ? "text-4xl"
-        : "text-5xl";
 
   return (
     <KpiShell
@@ -657,106 +619,86 @@ export function FreeShiftsCard({
       extra={
         <>
           {chart && (
-            <div className={cn("contents", tall && "@bento/kpis:hidden")}>
-              <QuoteArea
-                label={label}
-                quote={quote}
-                period={period}
-                onPeriod={choose}
-                density={density}
-                hero={false}
-                href={href}
-              />
-            </div>
-          )}
-          {/* Die hohe Kachel gibt es nur im Kachelraster, und das nie bei „Klein“ – hier also immer mit Kurs. */}
-          {tall && required > 0 && (
-            // Auslastung wie ein Kurs – unter dem Ring; füllt den freien Platz der Kachel (die Kurve wächst mit). Klicks fallen
-            // bis auf Knöpfe und Kurve auf den Link der Karte durch (kein eigenes `z-10`).
-            <div className="mt-4 hidden w-full flex-1 flex-col rounded-2xl bg-black/15 p-3.5 ring-1 ring-white/10 @bento/kpis:flex">
-              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                <p className="text-2xs font-semibold tracking-wide text-white uppercase">
-                  Auslastung
-                </p>
-                <PeriodSwitch label={label} quote={quote} value={period.id} onChange={choose} />
-              </div>
-              <p className="mt-1 text-3xl leading-none font-extrabold tabular-nums">
-                {percent}
-                <span className="ml-0.5 text-lg font-bold">%</span>
-              </p>
-              <div className="mt-2">
-                <ChangeChip quote={quote} period={period} hideSince />
-              </div>
-              <QuoteLink href={href} className="-mx-3.5 mt-2 flex min-h-10 flex-1 flex-col">
-                <QuoteChart
-                  key={period.id}
-                  points={period.points}
-                  format={(value) => formatNumber(value, 0)}
-                  describe={(value) => withUnit(quote, value)}
-                  className="h-auto min-h-10 flex-1"
-                  rootClassName="flex-1"
-                />
-              </QuoteLink>
-              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-white/15 pt-2 text-sm">
-                <div>
-                  <dt className="text-2xs font-semibold tracking-wide text-white uppercase">
-                    besetzt
-                  </dt>
-                  <dd className="font-bold tabular-nums">{filled}</dd>
-                </div>
-                <div>
-                  <dt className="text-2xs font-semibold tracking-wide text-white uppercase">
-                    frei
-                  </dt>
-                  <dd className="font-bold tabular-nums">{freeSpots}</dd>
-                </div>
-              </dl>
-            </div>
+            <QuoteArea
+              label={label}
+              quote={quote}
+              period={period}
+              onPeriod={choose}
+              density={density}
+              hero={false}
+              href={href}
+            />
           )}
           {live}
         </>
       }
     >
-      <div className={cn(tall && "@bento/kpis:hidden")}>
-        <KpiValue className={dims.value}>{freeSpots}</KpiValue>
-        {required > 0 && (
-          <div className="mt-2.5">
-            <ChangeChip quote={quote} period={period} />
-          </div>
-        )}
-        <CompareLine compare={compare} className="mt-2" />
-      </div>
-      {tall && (
-        <div className="hidden flex-col items-center gap-3 pt-3 pb-3 @bento/kpis:flex">
-          <FillRing
-            filled={filled}
-            total={required}
-            fillClassName={RING_TONE[compare.tone].ring}
-            className={cn("w-full", big ? "max-w-44" : "max-w-36")}
-          >
-            <KpiValue className={ringNumber}>{freeSpots}</KpiValue>
-            <p className="mt-1 text-sm font-medium text-white/95">
-              {freeSpots === 1 ? "Platz frei" : "Plätze frei"}
-            </p>
-          </FillRing>
-          {/* Wie im Entwurf 2: der Satz in der Farbe des Rings, ohne Schild – in der schmalen Kachel bräche ein Schild auf drei
-              Zeilen um. Helles Bernstein/Rot auf dem dunklen Grün hat genug Kontrast (tests/unit/dashboard-contrast.test.ts). */}
-          <p
-            className={cn(
-              "text-center text-sm font-semibold text-balance",
-              RING_TONE[compare.tone].text,
-            )}
-          >
-            {compare.tone === "warning" && (
-              <TriangleAlertIcon
-                className="mr-1 inline size-3.5 -translate-y-px align-middle"
-                aria-hidden="true"
-              />
-            )}
-            {compare.text}
-          </p>
+      <KpiValue className={dims.value}>
+        <CountUp value={freeSpots} />
+      </KpiValue>
+      {required > 0 && (
+        <div className="mt-2.5">
+          <ChangeChip quote={quote} period={period} />
         </div>
       )}
+      <CompareLine compare={compare} className="mt-2" />
     </KpiShell>
+  );
+}
+
+/** Deckkraft je Status auf der farbigen Kachel – fest je Status (nicht nach Rang), damit die Farbe zum Eintrag gehört. */
+const STATUS_SHADE: Record<string, string> = {
+  ACTIVE: "bg-white",
+  PASSIVE: "bg-white/70",
+  HONORARY: "bg-white/50",
+  BLOCKED: "bg-white/35",
+  LEFT: "bg-white/25",
+};
+
+/**
+ * Aufteilung der Mitglieder nach Status auf der großen Mitglieder-Kachel (Entwurf 4): ein geteilter Balken in Weißtönen und
+ * darunter die Liste mit Anzahl und Anteil. Die Bedeutung steht immer im Text; der Balken ist nur Zierde (`aria-hidden`).
+ */
+export function StatusBreakdown({
+  title,
+  items,
+}: {
+  title: string;
+  items: readonly { key: string; label: string; count: number }[];
+}) {
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+  if (total === 0) return null;
+  const share = (count: number) => Math.round((count / total) * 100);
+  return (
+    <div className="border-t border-white/15 pt-4">
+      <p className="text-sm font-semibold">{title}</p>
+      <div aria-hidden="true" className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full">
+        {items.map((item) => (
+          <span
+            key={item.key}
+            className={cn(
+              "h-full first:rounded-l-full last:rounded-r-full",
+              STATUS_SHADE[item.key],
+            )}
+            style={{ flexGrow: item.count, flexBasis: 0 }}
+          />
+        ))}
+      </div>
+      <dl className="mt-3 grid gap-1.5 text-sm">
+        {items.map((item) => (
+          <div key={item.key} className="flex items-center gap-2.5">
+            <span
+              aria-hidden="true"
+              className={cn("size-2.5 shrink-0 rounded-[3px]", STATUS_SHADE[item.key])}
+            />
+            <dt className="min-w-0 flex-1 truncate font-medium">{item.label}</dt>
+            <dd className="font-bold tabular-nums">{formatNumber(item.count, 0)}</dd>
+            <dd className="w-11 text-right text-xs font-medium tabular-nums">
+              {share(item.count)} %
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }

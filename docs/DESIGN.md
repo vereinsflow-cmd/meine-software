@@ -18,6 +18,28 @@ Kurzfassung der Gestaltungsentscheidungen, damit neue Seiten zum Rest passen. Di
 
 Ruhe vor Vollständigkeit: Zuerst kommt, was man braucht, der Rest ist einen Klick entfernt.
 
+- **Neues Aussehen „Kacheln, aber gefüllt“ (17.10.2026, Entwurf 4 aus vier Bildern; Ben: „wirkt tot, leblos, passt nicht zum Rest“):**
+  Alle Funktionen, Daten und Einstellungen („Anpassen“) bleiben, nur die Darstellung ist neu. Ziel: keine halb leeren Kacheln,
+  eine klare Rangfolge und dieselbe Sprache wie Finanzen und Mitglieder.
+  - **Kopf wie die übrigen Seiten:** „Willkommen, Ben“ etwas kleiner und ohne Ausrufezeichen, darunter Rolle und Datum als
+    graue Zeile (statt Schild), normale Knöpfe ohne Schein. **Reiter** in der hellen Umschaltleiste wie überall
+    (`segment-styles.ts`), ohne Symbole; Gleiten, Wischen, feste Leiste bleiben.
+  - **Kachelraster** (`kpi-layout.ts`): Mitglieder links über beide Reihen, darin unter dem Kurs **„So setzt sich der Verein
+    zusammen“** (geteilter Balken in Weißtönen und Liste Aktiv/Passiv/Ehrenmitglied/Gesperrt/Ausgetreten mit Anzahl und Anteil,
+    `StatusBreakdown`; Daten `members.byStatus`, schon vorhanden). Mitte Termine über Helferstunden. Rechts ein **Stapel**: Freie
+    Helferplätze nur so hoch wie ihr Inhalt, darunter **Offene Zahlungen als weiße Kachel** (`PaymentsTile`: Summe groß,
+    dringendste Rechnung mit „Bezahlt“, die übrigen hinter „weitere anzeigen“). Ohne Finanzrecht (oder ausgeblendet) reichen die
+    Helferstunden über Mitte und rechts. Die hohe Ring-Kachel gibt es nicht mehr – ohne Schichten war sie fast leer.
+    Am Handy fehlt die Zahlungs-Kachel im Karussell; dort steht „Offene Zahlungen“ als Karte direkt unter den Kennzahlen.
+  - **Kennzahlenkarten** (auch in den Finanzen) mit kleinerer Rundung (`rounded-2xl`); beim Drücken geben sie minimal nach.
+  - **Inhaltskarten schlicht weiß** (`Widget`, Auswertungen) wie im Rest der Anwendung: keine getönten Kacheln, kleine farbige
+    Symbolfläche. Gruppenüberschriften („Für dich“, „Anstehend“) in normaler Schreibweise statt Großbuchstaben mit Punkt.
+    **Leere Zustände als eine Zeile** („Noch keine Einsätze. Du bist …“) statt grauer Kästen. Der Hinweis zu unbesetzten
+    Schichten ohne Streifen und Schein.
+  - **Leben:** Die Zahlen zählen beim ersten Öffnen je Sitzung 0,7 s hoch (`components/shared/count-up.tsx`, direkt im
+    Textknoten, Server liefert die fertige Zahl); die Kennzahlen blenden einmal je Seitenaufruf nacheinander ein (50 ms versetzt).
+    Beides entfällt bei „Bewegung reduzieren“.
+
 - **Erste Schritte** (seit 30.09.2026, `modules/dashboard/onboarding.ts`, `components/onboarding-card.tsx`): Für den Vereinsadministrator steht oben in der Übersicht eine Liste, die sich an den Daten selbst abhakt – Logo, Vereinsdaten, Abteilungen, Mitglieder, Vorstand einladen, erster Termin, QR-Code (nur Schritte, für die das Recht da ist). Seit 01.10.2026 kompakt: Offene Schritte sind blau getönte, ganz anklickbare Kacheln (ab mittlerer Breite zwei nebeneinander) mit kurzem Hinweis, erledigte stehen in **einer** Zeile mit grünem Häkchen (nicht durchgestrichen – das las sich wie „abgesagt“); darüber ein schmaler Fortschrittsbalken, „Ausblenden“ rechts im Kartenkopf (`Widget`-Eigenschaft `action`). Die Karte bleibt so niedrig, dass die Kennzahlen darunter ins Bild rücken. Ist alles erledigt, verschwindet die Karte; „Ausblenden“ nutzt die eigene Dashboard-Einstellung (Karte „erste-schritte“), „Anpassen“ holt sie zurück.
 - **Selbst einstellbar** (seit 30.09.2026, `modules/dashboard/layout-prefs.ts`, `components/customize-dashboard.tsx`): Knopf „Anpassen“ im Kopf öffnet „Dashboard anpassen“ – je Reiter jede Karte ein- oder ausblenden (Kästchen) und mit „nach oben“/„nach unten“ verschieben (auch per Tastatur, Screenreader hört die neue Stelle). Seit 02.10.2026 (auf Wunsch: „das man die Felder anpassen kann in der Größe“) hat jede Karte zusätzlich eine **Größe** – Klein, Mittel (Standard), Groß – als natives Auswahlfeld in derselben Zeile (`BlockSize`, gespeichert nur Abweichungen von „Mittel“, `sizes` je Reiter; ältere Einstellungen bleiben gültig, unbekannte Größen fallen weg). Was die Größe heißt: **Kennzahlen** – Klein eine schmale Reihe ohne Grafiken (ab 49 rem alle nebeneinander, am Handy zwei Karten im Bild), Mittel das Kachelraster kompakt (niedrigere Reihen, kleinere Zahlen, flachere Grafiken, ohne Aufschlüsselung unter dem Ring), Groß das volle Kachelraster. **Listenkarten** – Klein enger mit kleinerem Kopf und einem Eintrag weniger, Mittel wie gewohnt, Groß mit mehr Luft, zwei Einträgen mehr und über die volle Breite (an ihrem Platz; die Karten davor und danach bilden eigene Abschnitte, `CardGrid`). **Auswertungen** – die Verlaufsdiagramme flacher oder höher (`TimeChart heights`); steht eine der Karten auf „Groß“, stehen Liste und Auswertung nicht mehr nebeneinander. Gleichzeitig ist der Standard etwas kompakter geworden („ein bisschen zu groß“): Mittel entspricht nicht mehr dem ersten neuen Aussehen, das ist jetzt „Groß“. Gespeichert je Person und Verein (`ClubMembership.dashboardLayout`), also auf allen Geräten gleich; „Standard wiederherstellen“ führt zur Ansicht der Rolle zurück. Welche Karten es gibt, entscheidet weiter die Rolle; neue Karten (etwa nach einem neuen Recht) erscheinen am Ende. Aufeinanderfolgende Karten derselben Gruppe stehen unter einer Überschrift („Für dich“); ohne eigene Einstellung sieht alles aus wie zuvor. Ist ein Reiter leer, steht dort „Alle Karten ausgeblendet“. Geprüft in `tests/e2e/dashboard-anpassen.spec.ts`, `tests/integration/dashboard-layout.test.ts`, `tests/unit/dashboard-layout.test.ts`.
 

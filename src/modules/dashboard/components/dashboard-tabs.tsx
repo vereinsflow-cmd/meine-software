@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, type LucideIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AREA_ICON } from "@/components/shared/area-icons";
 import { cn } from "@/lib/utils";
 import { resolveSwipe, type DashboardTabId } from "../tabs";
 
@@ -14,14 +13,6 @@ export interface DashboardTab {
   /** Vom Server gerenderter Inhalt des Reiters. */
   content: React.ReactNode;
 }
-
-/** Symbole der Reiter: die des Bereichs, dem der Reiter entspricht (wie in der Seitenleiste). */
-const ICON: Record<DashboardTabId, LucideIcon> = {
-  uebersicht: AREA_ICON.dashboard,
-  termine: AREA_ICON.veranstaltungen,
-  mitglieder: AREA_ICON.mitglieder,
-  aktivitaet: AREA_ICON.aufgaben,
-};
 
 interface Fade {
   start: boolean;
@@ -69,8 +60,9 @@ function ownsGesture(target: Element, boundary: Element): boolean {
  * erscheint er sofort. Die Adresse wird per `replaceState` nachgeführt (`?tab=mitglieder`): verlinkbar, Neuladen bleibt darauf,
  * „Zurück“ verlässt das Dashboard statt durch alle Bereiche zu laufen. Wischen ist nur eine Zugabe – jede Funktion geht auch ohne.
  *
- * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen. Seit 02.10.2026 (Entwürfe 2 und 5) ist sie eine runde Schiene; eine
- * helle Fläche gleitet hinter den aktiven Reiter (vorher ein Strich darunter). Auf schmalen
+ * Die Leiste bleibt beim Scrollen unter der Kopfzeile stehen. Seit 17.10.2026 (Entwurf 4) sieht sie aus wie die übrigen
+ * Umschaltleisten der Anwendung (z. B. Finanzen, `segment-styles.ts`): helle Leiste, kleine Rundung, ohne Symbole; eine helle
+ * Fläche gleitet hinter den aktiven Reiter. Auf schmalen
  * Bildschirmen lässt sie sich seitlich wischen (ein Verlauf am Rand zeigt, dass es weitergeht), der gewählte Reiter wird
  * ins Bild geholt. Hat eine Rolle nur einen Bereich,
  * gibt es keine Leiste – nur den Inhalt.
@@ -198,7 +190,7 @@ export function DashboardTabs({
       onValueChange={(value) => select(value as DashboardTabId)}
       className="scroll-mt-16 gap-6"
     >
-      {/* Leiste: bleibt beim Scrollen unter der Kopfzeile stehen (`sticky`) und schwebt dann als runde Schiene über dem Inhalt
+      {/* Leiste: bleibt beim Scrollen unter der Kopfzeile stehen (`sticky`) und schwebt dann als Leiste über dem Inhalt
           (hell deckend, damit die gedämpfte Schrift auch über den farbigen Kennzahlen lesbar bleibt). Auf kleinen Bildschirmen
           reicht der Bereich bis an den Rand (negativer Rand = Seitenrand) und lässt sich wischen; ab `lg` ist er nur so breit wie
           die Schiene – daneben bleibt der Inhalt anklickbar. Läuft die Schiene seitlich weiter, blendet die scrollende Fläche zum
@@ -219,31 +211,29 @@ export function DashboardTabs({
             ref={list}
             variant="line"
             aria-label="Bereiche des Dashboards"
-            className="relative isolate w-max gap-1 bg-slate-200 p-1 shadow-sm ring-1 ring-slate-300/50 backdrop-blur-md group-data-horizontal/tabs:h-12 data-[variant=line]:rounded-full max-sm:group-data-horizontal/tabs:h-13 dark:bg-card/90 dark:ring-white/10 pointer-coarse:group-data-horizontal/tabs:h-13"
+            className="relative isolate w-max gap-1 bg-muted/90 p-1 shadow-sm ring-1 ring-foreground/5 backdrop-blur-md group-data-horizontal/tabs:h-11 data-[variant=line]:rounded-lg max-sm:group-data-horizontal/tabs:h-13 dark:bg-muted/90 dark:ring-foreground/10 pointer-coarse:group-data-horizontal/tabs:h-13"
           >
             {/* `transition-colors` statt `transition-all`: Die fette Schrift des gewählten Reiters darf nicht einblenden. Sonst wächst
                 der Reiter erst nach dem Hereinholen – die Leiste bliebe ein paar Pixel vor dem Ende stehen, und der Verlauf am
                 rechten Rand bliebe sichtbar (besonders bei Schriften mit festen Schnitten, z. B. unter Linux). */}
             {tabs.map((tab) => {
-              const Icon = ICON[tab.id];
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="h-full flex-none gap-2 rounded-full px-4 text-base font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-foreground dark:data-active:text-white"
+                  className="h-full flex-none gap-2 rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors after:hidden hover:text-foreground dark:text-muted-foreground data-active:font-semibold data-active:text-foreground dark:data-active:text-foreground"
                 >
-                  <Icon className="hidden xl:block" aria-hidden="true" />
                   {tab.label}
                 </TabsTrigger>
               );
             })}
-            {/* Die gleitende Fläche hinter dem aktiven Reiter (rein optisch; hell weiß wie eine Karte, dunkel hellgrau
-                durchscheinend mit weißer Schrift wie im Entwurf 2). Bis zur ersten Messung unsichtbar und ohne Übergang. */}
+            {/* Die gleitende Fläche hinter dem aktiven Reiter (rein optisch; wie der gewählte Eintrag der Umschaltleisten: hell eine
+                Kachel in Kartenfarbe, dunkel eine hellere Kachel mit feinem Rand). Bis zur ersten Messung unsichtbar und ohne Übergang. */}
             <span
               ref={line}
               data-slot="tab-indicator"
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-full bg-card opacity-0 shadow-sm ring-1 ring-black/5 transition-[transform,width] duration-200 ease-out motion-reduce:transition-none dark:bg-white/15 dark:ring-white/40"
+              className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-md bg-card opacity-0 shadow-sm transition-[transform,width] duration-200 ease-out motion-reduce:transition-none dark:bg-foreground/15 dark:shadow-none dark:inset-ring-1 dark:inset-ring-foreground/20"
               style={{ transition: "none" }}
             />
           </TabsList>
@@ -289,7 +279,7 @@ export function DashboardTabs({
               variant="outline"
               onClick={() => go(previous.id)}
               aria-label={`Zurück: ${previous.label}`}
-              className="w-full rounded-full sm:w-auto"
+              className="w-full sm:w-auto"
             >
               <ArrowLeftIcon aria-hidden="true" /> {previous.label}
             </Button>
@@ -301,7 +291,7 @@ export function DashboardTabs({
               variant="outline"
               onClick={() => go(next.id)}
               aria-label={`Weiter: ${next.label}`}
-              className="w-full rounded-full sm:w-auto"
+              className="w-full sm:w-auto"
             >
               {next.label} <ArrowRightIcon aria-hidden="true" />
             </Button>

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { USERS, login, open } from "./helpers";
 
 /**
@@ -22,6 +22,12 @@ const pdf = (text: string) =>
 const euro = (text: string) => new RegExp(text.replace(/\./g, "\\.").replace(" €", "\\s€"));
 const payments = (page: Page) => page.getByRole("region", { name: "Offene Zahlungen" });
 
+/** Klappt verborgene Rechnungen auf, falls es welche gibt (die Kachel im Kennzahlen-Raster zeigt zuerst nur eine). */
+async function showAllInvoices(card: Locator) {
+  const more = card.getByRole("button", { name: /weitere Rechnung(en)? anzeigen/ });
+  if (await more.isVisible()) await more.click();
+}
+
 test.describe.configure({ mode: "serial" }); // die Tests bauen auf dem Stand des vorigen auf
 
 test("Dashboard: nur Vorstand und Verwaltung sehen die offenen Zahlungen – Summe, Überfälliges, dringendste zuerst", async ({
@@ -38,6 +44,8 @@ test("Dashboard: nur Vorstand und Verwaltung sehen die offenen Zahlungen – Sum
   const rows = card.getByRole("listitem");
   await expect(rows.first()).toContainText(euro("1.200,00 €"));
   await expect(rows.first()).toContainText("seit 3 Tagen überfällig");
+  // Als Kachel im Kennzahlen-Raster steht zuerst nur die dringendste – die übrigen hinter „weitere anzeigen“
+  await showAllInvoices(card);
   await expect(rows.nth(1)).toContainText("fällig in 14 Tagen");
   await expect(card.getByRole("link", { name: /Alle offenen Rechnungen/ })).toHaveAttribute(
     "href",
@@ -125,6 +133,7 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
   const card = payments(page);
   await expect(card).toContainText(euro("1.639,40 €"));
   await expect(card).toContainText("offen in 3 Rechnungen");
+  await showAllInvoices(card);
   const mine = card.getByRole("listitem").filter({ hasText: name });
   await expect(mine).toContainText(euro("89,90 €"));
 

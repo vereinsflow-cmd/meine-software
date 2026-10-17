@@ -12,7 +12,7 @@ export default function DonationsLoading() {
   return (
     <FinanceLoading label="Spenden werden geladen …" actions={["w-36"]}>
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <Skeleton className="col-span-2 h-60 rounded-4xl" />
+        <Skeleton className="col-span-2 h-60 rounded-2xl" />
         {Array.from({ length: 2 }, (_, index) => (
           <div key={index} className={cn(CARD_SURFACE, "grid content-start gap-3 p-4 sm:p-5")}>
             <Skeleton className="h-5 w-28 max-w-full" />

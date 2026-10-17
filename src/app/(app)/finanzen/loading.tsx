@@ -13,7 +13,7 @@ export default function FinanzenLoading() {
     <FinanceLoading label="Finanzen werden geladen …" actions={["w-64"]}>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
-          <Skeleton key={index} className="h-60 rounded-4xl" />
+          <Skeleton key={index} className="h-60 rounded-2xl" />
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)]">

@@ -40,7 +40,7 @@ export function DonationsKpiCard({
     <Card
       data-kpi={label}
       className={cn(
-        "relative isolate h-full gap-0 rounded-4xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
+        "relative isolate h-full gap-0 rounded-2xl bg-linear-160 py-0 text-white shadow-[0_22px_40px_-24px_var(--kpi-glow),0_10px_20px_-14px_var(--kpi-glow)] inset-shadow-[0_1px_0_rgb(255_255_255/0.28)] ring-white/15 dark:ring-white/10",
         KPI_ACCENT.violet.card,
         className,
       )}
