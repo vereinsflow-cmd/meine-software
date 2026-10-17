@@ -13,12 +13,11 @@ import {
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { useMoreActions } from "@/components/shared/more-actions";
 import { deleteDonorAction, restrictDonorAction } from "../actions";
+import { DonorDialog, type DonorDialogDonor } from "./donor-dialogs";
 import { ReasonDialog } from "./reason-dialog";
 
-/** Was das Menü eines Spenders braucht. */
-export interface DonorRowActionData {
-  id: string;
-  name: string;
+/** Was das Menü eines Spenders braucht (Art und Anschrift für „Anschrift ändern“). */
+export interface DonorRowActionData extends DonorDialogDonor {
   /** Mitglied: Anschrift ändert man beim Mitglied. */
   memberEditHref: string | null;
   /** Spenden des Spenders in „Alle Spenden“ (im gewählten Jahr). */
@@ -27,13 +26,23 @@ export interface DonorRowActionData {
 }
 
 /**
- * Menü „⋯“ eines Spenders: „Im Mitglied ändern“ (Mitglieder), „Spenden ansehen“, „Sperren“ (Art. 18 DSGVO, mit Grund –
- * keine neuen Spenden und Bestätigungen, die Aufzeichnungen bleiben) und „Löschen“ (nur ohne Spenden).
+ * Menü „⋯“ eines Spenders: „Anschrift ändern“ (andere Spender, nicht gesperrt) bzw. „Im Mitglied ändern“ (Mitglieder),
+ * „Spenden ansehen“, „Sperren“ (Art. 18 DSGVO, mit Grund – keine neuen Spenden und Bestätigungen, die Aufzeichnungen
+ * bleiben) und „Löschen“ (nur ohne Spenden). `openEdit` öffnet „Anschrift ändern“ gleich (`?bearbeiten=<id>`).
  */
-export function DonorRowActions({ donor }: { donor: DonorRowActionData }) {
-  const { triggerRef, show, dialog } = useMoreActions<"restrict" | "delete">();
-  const { restrict, delete: remove } = donor.actions;
-  if (!donor.memberEditHref && !donor.donationsHref && !restrict && !remove) return null;
+export function DonorRowActions({
+  donor,
+  openEdit = false,
+}: {
+  donor: DonorRowActionData;
+  openEdit?: boolean;
+}) {
+  const { edit, restrict, delete: remove } = donor.actions;
+  const { triggerRef, show, dialog } = useMoreActions<"edit" | "restrict" | "delete">(
+    openEdit && edit ? "edit" : null,
+  );
+  if (!edit && !donor.memberEditHref && !donor.donationsHref && !restrict && !remove) return null;
+  const editDialog = dialog("edit");
   const restrictDialog = dialog("restrict");
   const deleteDialog = dialog("delete");
   return (
@@ -54,6 +63,11 @@ export function DonorRowActions({ donor }: { donor: DonorRowActionData }) {
           collisionPadding={16}
           className="min-w-52 [&>[data-slot=dropdown-menu-item]]:gap-2 [&>[data-slot=dropdown-menu-item]]:py-2"
         >
+          {edit && (
+            <DropdownMenuItem onSelect={() => show("edit")}>
+              <PencilIcon /> Anschrift ändern
+            </DropdownMenuItem>
+          )}
           {donor.memberEditHref && (
             <DropdownMenuItem asChild>
               <Link href={donor.memberEditHref}>
@@ -68,7 +82,7 @@ export function DonorRowActions({ donor }: { donor: DonorRowActionData }) {
               </Link>
             </DropdownMenuItem>
           )}
-          {(restrict || remove) && (donor.memberEditHref || donor.donationsHref) && (
+          {(restrict || remove) && (edit || donor.memberEditHref || donor.donationsHref) && (
             <DropdownMenuSeparator />
           )}
           {restrict && (
@@ -83,6 +97,7 @@ export function DonorRowActions({ donor }: { donor: DonorRowActionData }) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+      {edit && <DonorDialog donor={donor} {...editDialog} />}
       {restrict && (
         <ReasonDialog
           {...restrictDialog}

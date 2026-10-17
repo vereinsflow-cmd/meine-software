@@ -20,9 +20,10 @@ export interface MenuDialogProps {
  * Zustand der Rückfragen hinter „Weitere Aktionen“. Er liegt bewusst außerhalb des Menüs: Das Menü schließt sich nach
  * der Auswahl – läge der Dialog darin, ginge er gleich mit zu. `show(name)` öffnet einen Dialog, `dialog(name)` liefert
  * dessen Props; nach dem Schließen kehrt der Fokus zum Menüknopf zurück (es gibt keinen eigenen Auslöser-Knopf).
+ * `initial` öffnet einen Dialog gleich beim ersten Anzeigen (z. B. per Link mit `?bearbeiten=<id>`).
  */
-export function useMoreActions<T extends string>() {
-  const [active, setActive] = useState<T | null>(null);
+export function useMoreActions<T extends string>(initial: T | null = null) {
+  const [active, setActive] = useState<T | null>(initial);
   const triggerRef = useRef<HTMLButtonElement>(null);
   return {
     triggerRef,

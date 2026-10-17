@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { DonationKind, DonationReceiptWish, DonorKind } from "@/generated/prisma/enums";
 import {
   buildDonationsPage,
+  donationRow,
   matchesStatusFilter,
   type DonationRecord,
   type DonationsPageInput,
@@ -283,6 +284,18 @@ describe("Sonderfälle der Seite", () => {
     expect(page.kpi).toMatchObject({ totalCents: 418_500, count: 23, donorCount: 14 });
     expect(page.months[8]!.moneyCents).toBe(134_760);
     expect(page.purposes.find((p) => p.key === "frei")!.count).toBe(17);
+  });
+
+  it("Nachweise anhängen: nur Sach- und Aufwandsspenden, nicht storniert, nur mit finance:manage", () => {
+    const inKind = donation([9, 1], jansen, 500, { kind: "IN_KIND" });
+    expect(donationRow(inKind, true).actions.evidence).toBe(true);
+    expect(donationRow(inKind, false).actions.evidence).toBe(false);
+    const waiver = donation([9, 1], vogel, 120, { kind: "EXPENSE_WAIVER" });
+    expect(donationRow(waiver, true).actions.evidence).toBe(true);
+    const voided = donation([9, 1], jansen, 500, { kind: "IN_KIND", voided: true });
+    expect(donationRow(voided, true).actions.evidence).toBe(false);
+    // Belege einer Geldspende hängen an ihrer Buchung.
+    expect(donationRow(donation([9, 2], vogel, 90), true).actions.evidence).toBe(false);
   });
 
   it("Spenden-Buchungen ohne Spender zählen mit, aber nicht als Spender", () => {

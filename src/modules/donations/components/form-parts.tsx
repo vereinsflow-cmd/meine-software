@@ -1,22 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useEffect, useId, useRef, useState } from "react";
 import { useWatch, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
 import { LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   errorOf,
@@ -758,131 +746,5 @@ export function NotADonationHints() {
         <li>Was ein Mitglied zahlen muss (Umlage, Aufnahmegebühr).</li>
       </ul>
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------------------------
-// Rückfrage mit Grund (Spende stornieren, Spender sperren)
-// ---------------------------------------------------------------------------------------------
-
-/**
- * Fenster mit Pflichtfeld „Grund“ und einem Knopf – wie „Buchung stornieren“. Jedes Öffnen beginnt leer; während des
- * Speicherns lässt es sich nicht schließen.
- */
-export function ReasonDialog({
-  open,
-  onOpenChange,
-  onCloseAutoFocus,
-  title,
-  description,
-  placeholder,
-  confirmLabel,
-  destructive = false,
-  action,
-  successMessage,
-  onDone,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCloseAutoFocus?: (event: Event) => void;
-  title: string;
-  description: React.ReactNode;
-  placeholder: string;
-  confirmLabel: string;
-  destructive?: boolean;
-  action: (reason: string) => Promise<ActionResult<unknown>>;
-  successMessage: string;
-  onDone?: () => void;
-}) {
-  const router = useRouter();
-  const id = useId();
-  const [reason, setReason] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-  function change(next: boolean) {
-    if (pending) return;
-    if (next) {
-      setReason("");
-      setError(null);
-    }
-    onOpenChange(next);
-  }
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (reason.trim().length < 3) {
-      setError("Bitte gib kurz den Grund an.");
-      return;
-    }
-    startTransition(async () => {
-      let result: ActionResult<unknown>;
-      try {
-        result = await action(reason.trim());
-      } catch {
-        setError(
-          "Die Verbindung wurde unterbrochen. Bitte lade die Seite neu und prüfe, ob es geklappt hat.",
-        );
-        return;
-      }
-      if (!result.ok) {
-        setError(result.error.fieldErrors?.reason?.join(" ") ?? result.error.message);
-        return;
-      }
-      toast.success(successMessage);
-      onDone?.();
-      onOpenChange(false);
-      router.refresh();
-    });
-  }
-  return (
-    <Dialog open={open} onOpenChange={change}>
-      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <form method="post" onSubmit={submit} noValidate className="grid gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor={`${id}-grund`}>
-              Grund{" "}
-              <span aria-hidden="true" className="text-destructive">
-                *
-              </span>
-            </Label>
-            <Input
-              id={`${id}-grund`}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder={placeholder}
-              maxLength={200}
-              aria-required
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `${id}-fehler` : undefined}
-            />
-            {error && (
-              <p id={`${id}-fehler`} role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => change(false)}
-              disabled={pending}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              type="submit"
-              variant={destructive ? "destructive" : "default"}
-              disabled={pending}
-            >
-              {pending ? "Einen Moment …" : confirmLabel}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

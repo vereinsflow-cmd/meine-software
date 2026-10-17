@@ -19,6 +19,10 @@ import { TableCard } from "@/components/shared/table-card";
 import { formatEuroFromCents, todayCalendarDate } from "@/lib/dates";
 import { buildQuery, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
+import {
+  DonorAddressButton,
+  type DonorDialogDonor,
+} from "@/modules/donations/components/donor-dialogs";
 import { DonorRowActions } from "@/modules/donations/components/donor-row-actions";
 import { donationYears, YearSwitch } from "@/modules/donations/components/year-switch";
 import type { DonorReceiptState } from "@/modules/donations/receipt-status";
@@ -60,11 +64,18 @@ function addressLines(donor: DonorRowDto): string[] {
     .filter((part) => part !== "");
 }
 
+/** Was „Anschrift ändern“ über einen Spender braucht (nur das – nicht die ganze Zeile in den Browser). */
+function dialogDonor(donor: DonorRowDto): DonorDialogDonor {
+  const { id, kind, name, street, postalCode, city, country } = donor;
+  return { id, kind, name, street, postalCode, city, country };
+}
+
 /**
  * Spender eines Jahres (mit `?alle=1` alle, auch ohne Spenden im Jahr): Summe, Anzahl, Stand der Bestätigungen und alles, was
  * über sie gespeichert ist (Anschrift, Sperre – zugleich die Auskunft für externe Spender). Mitglieder ändert man beim
- * Mitglied; „Adresse fehlt“ führt dorthin bzw. zum Spender. `?bearbeiten=<id>` hebt diesen Spender hervor (Ziel von „Adresse
- * eintragen“). Am Handy gestapelt (`<Table stack>`): jeder Spender eine kleine Karte.
+ * Mitglied; andere Spender über „⋯“ → „Anschrift ändern“ bzw. „Adresse eintragen“ unter „Adresse fehlt“. `?bearbeiten=<id>`
+ * (Ziel von „Adresse eintragen“ im Cockpit) stellt diesen Spender nach oben, hebt ihn hervor und öffnet „Anschrift ändern“
+ * gleich. Am Handy gestapelt (`<Table stack>`): jeder Spender eine kleine Karte.
  */
 export default async function DonorsPage({
   searchParams,
@@ -213,9 +224,9 @@ export default async function DonorsPage({
                       {canManage && (
                         <TableCell className="text-right align-top max-md:mt-1">
                           <DonorRowActions
+                            openEdit={highlighted}
                             donor={{
-                              id: donor.id,
-                              name: donor.name,
+                              ...dialogDonor(donor),
                               memberEditHref: donor.memberId ? donor.editHref : null,
                               donationsHref: donor.count > 0 ? donationsHref(donor) : null,
                               actions: donor.actions,
@@ -240,7 +251,10 @@ export default async function DonorsPage({
   );
 }
 
-/** Anschrift in Zeilen – oder rot „Adresse fehlt“ mit Link zum Eintragen (bei Mitgliedern im Mitglied). */
+/**
+ * Anschrift in Zeilen – oder rot „Adresse fehlt“ mit „Adresse eintragen“: bei Mitgliedern ein Link zum Mitglied, bei
+ * anderen Spendern das Fenster „Anschrift ändern“ (nur mit `finance:manage`).
+ */
 function Address({ donor, lines }: { donor: DonorRowDto; lines: string[] }) {
   if (donor.addressComplete)
     return (
@@ -256,13 +270,15 @@ function Address({ donor, lines }: { donor: DonorRowDto; lines: string[] }) {
     <span className="block">
       {lines.length > 0 && <span className="block break-words">{lines.join(", ")}</span>}
       <span className="block font-medium text-red-700 dark:text-red-400">Adresse fehlt</span>
-      {!donor.restricted && (
+      {donor.memberId && !donor.restricted ? (
         <Link
           href={donor.editHref}
           className="text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
           Adresse eintragen<span className="sr-only"> für {donor.name}</span>
         </Link>
+      ) : (
+        donor.actions.edit && <DonorAddressButton donor={dialogDonor(donor)} />
       )}
     </span>
   );

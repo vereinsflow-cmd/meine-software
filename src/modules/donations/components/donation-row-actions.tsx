@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BookOpenIcon,
   EllipsisIcon,
+  PaperclipIcon,
   PencilIcon,
   Undo2Icon,
   UnlinkIcon,
@@ -25,18 +26,20 @@ import { DONATION_KIND_LABEL } from "../format";
 import type { DonationRowActionData } from "../row-action-data";
 import { AssignDonationDialog } from "./assign-donation-dialog";
 import { EditDonationDialog } from "./donation-dialog";
+import { EvidenceDialog } from "./evidence-dialog";
 import { ReasonDialog } from "./reason-dialog";
 
 /** Ziel „Im Kassenbuch ansehen“: die Buchung über ihre Nummer gesucht. */
 export const ledgerHref = (entryLabel: string) =>
   `/finanzen/kassenbuch?q=${encodeURIComponent(entryLabel)}`;
 
-type RowDialog = "assign" | "edit" | "void" | "unassign";
+type RowDialog = "assign" | "edit" | "evidence" | "void" | "unassign";
 
 /**
- * Menü „⋯“ einer Zeile in „Alle Spenden“: „Spender eintragen“ (Spenden-Buchung ohne Spender), „Ändern“, „Im Kassenbuch
- * ansehen“, „Kennzeichnung zurücknehmen“ (Geld – die Buchung bleibt und steht wieder als „Spender fehlt“ da) und
- * „Stornieren“ (Sach-/Aufwandsspende, mit Grund). Eine Geldspende storniert man über ihre Buchung im Kassenbuch.
+ * Menü „⋯“ einer Zeile in „Alle Spenden“: „Spender eintragen“ (Spenden-Buchung ohne Spender), „Ändern“, „Nachweise“
+ * (Sach-/Aufwandsspende; ohne `finance:manage` oder storniert nur „Nachweise ansehen“), „Im Kassenbuch ansehen“,
+ * „Kennzeichnung zurücknehmen“ (Geld – die Buchung bleibt und steht wieder als „Spender fehlt“ da) und „Stornieren“
+ * (Sach-/Aufwandsspende, mit Grund). Eine Geldspende storniert man über ihre Buchung im Kassenbuch.
  */
 export function DonationRowActions({ row }: { row: DonationRowActionData }) {
   const { triggerRef, show, dialog } = useMoreActions<RowDialog>();
@@ -45,7 +48,10 @@ export function DonationRowActions({ row }: { row: DonationRowActionData }) {
   const canEdit = row.actions.edit && row.donationId !== null;
   const canVoid = row.actions.void && row.donationId !== null;
   const canUnassign = row.actions.unassign && row.donationId !== null;
-  if (!canAssign && !canEdit && !canVoid && !canUnassign && !row.entryLabel) return null;
+  // Belege einer Geldspende hängen an ihrer Buchung – Nachweise gibt es nur bei Sach- und Aufwandsspenden.
+  const hasEvidence = row.kind !== "MONEY" && row.donationId !== null;
+  if (!canAssign && !canEdit && !hasEvidence && !canVoid && !canUnassign && !row.entryLabel)
+    return null;
   return (
     <>
       <DropdownMenu>
@@ -74,6 +80,11 @@ export function DonationRowActions({ row }: { row: DonationRowActionData }) {
               <PencilIcon /> Ändern
             </DropdownMenuItem>
           )}
+          {hasEvidence && (
+            <DropdownMenuItem onSelect={() => show("evidence")}>
+              <PaperclipIcon /> {row.actions.evidence ? "Nachweise" : "Nachweise ansehen"}
+            </DropdownMenuItem>
+          )}
           {row.entryLabel && (
             <DropdownMenuItem asChild>
               <Link href={ledgerHref(row.entryLabel)}>
@@ -81,7 +92,7 @@ export function DonationRowActions({ row }: { row: DonationRowActionData }) {
               </Link>
             </DropdownMenuItem>
           )}
-          {(canVoid || canUnassign) && (canAssign || canEdit || row.entryLabel) && (
+          {(canVoid || canUnassign) && (canAssign || canEdit || hasEvidence || row.entryLabel) && (
             <DropdownMenuSeparator />
           )}
           {canUnassign && (
@@ -101,6 +112,9 @@ export function DonationRowActions({ row }: { row: DonationRowActionData }) {
       )}
       {canEdit && row.donationId && (
         <EditDonationDialog donationId={row.donationId} {...dialog("edit")} />
+      )}
+      {hasEvidence && row.donationId && (
+        <EvidenceDialog donation={{ id: row.donationId, label }} {...dialog("evidence")} />
       )}
       {canVoid && (
         <ReasonDialog

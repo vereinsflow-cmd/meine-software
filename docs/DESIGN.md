@@ -438,12 +438,15 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
 - **„Alle Spenden“** (`/finanzen/spenden/alle`) und **„Spender“** (`/finanzen/spenden/spender`) haben kein eigenes Bild:
   ruhige Tabellen im Stil des Kassenbuchs (Ben, 07.10.2026). „Alle Spenden“ mit Filter nach Bestätigung (Alle · Nötig ·
   Adresse fehlt · Erstellt · Nicht nötig · Ohne Namen · Spender fehlt · Storniert; stornierte nur unter „Storniert“), Suche
-  und Jahr, Zeilenaktionen „Spender eintragen“, „Ändern“, „Stornieren“ (Sach/Aufwand), „Kennzeichnung zurücknehmen“ (Geld),
-  „Im Kassenbuch ansehen“. „Spender“: Summe, Anzahl, Status je Spender; andere Spender „Anschrift ändern“, „Sperren“,
-  „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“; `?bearbeiten=<id>` öffnet das Fenster direkt. Beide
-  stehen am Handy gestapelt (`<Table stack>`, seit 15.10.2026): der Spender als Titel der Karte, darunter Datum, Art und
-  Zweck, Bestätigung, Betrag bzw. Anschrift, Bestätigung und Summe; deshalb ist der Spender auch am Computer die erste Spalte.
-  „Letzte Spenden“ im Cockpit bleibt die kompakte Liste aus dem Bild (in einer Karte, nur fünf Zeilen).
+  und Jahr, Zeilenaktionen „Spender eintragen“, „Ändern“, „Nachweise“ (Sach/Aufwand: Datei „Nur Finanzen“ oder Vermerk
+  anhängen, herunterladen, entfernen – ohne `finance:manage` oder storniert „Nachweise ansehen“), „Stornieren“
+  (Sach/Aufwand), „Kennzeichnung zurücknehmen“ (Geld), „Im Kassenbuch ansehen“. „Spender“: Summe, Anzahl, Status je Spender;
+  andere Spender „Anschrift ändern“, „Sperren“, „Löschen“ (nur ohne Spenden), Mitglieder „Im Mitglied ändern“;
+  `?bearbeiten=<id>` öffnet das Fenster direkt, ebenso „Adresse eintragen“ unter „Adresse fehlt“ (bei Mitgliedern ein Link
+  zum Mitglied; ohne `finance:manage` nicht da). Beide stehen am Handy gestapelt (`<Table stack>`, seit 15.10.2026): der
+  Spender als Titel der Karte, darunter Datum, Art und Zweck, Bestätigung, Betrag bzw. Anschrift, Bestätigung und Summe;
+  deshalb ist der Spender auch am Computer die erste Spalte. „Letzte Spenden“ im Cockpit bleibt die kompakte Liste aus dem
+  Bild (in einer Karte, nur fünf Zeilen).
 - **Seitenrhythmus und Laden:** alle Spenden-Seiten sind ein `PageStack` (der Zurück-Link steht über dem Kopf „Finanzen“);
   jede hat ein eigenes Gerüst mit `FinanceLoading` (Cockpit, Alle Spenden, Spender) bzw. `PageLoading` (Beleg). Fehler fängt
   `app/(app)/finanzen/error.tsx` (`AreaError`, „Zur Finanzübersicht“). Leere Karten zeigen `CompactEmpty`, ohne Kassenbuch
@@ -458,8 +461,9 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
   echten Dienste (Summen wie im Bild). Die Tests (`NODE_ENV=test`) bekommen das nicht – sie richten das Kassenbuch selbst ein.
   Bis Teil 2 stehen die sechs im Bild „erstellten“ Spender noch unter „fehlen“ (10 statt 4).
 - Geprüft in `tests/e2e/spenden.spec.ts` (Spende erfassen: Mitglied, Sachspende, Spendendose; Cockpit, „Alle Spenden“ mit
-  Filter und Suche, „Spender“, Finanzamt-Angaben, Beleg, „Als Spende kennzeichnen“, Rechte), `spenden.mobil.spec.ts`
-  (gestapelte Karten, 412 und 390 px), `tests/e2e/a11y.spec.ts`, Daten und Regeln in `tests/integration/donations*.test.ts`.
+  Filter und Suche, „Spender“, Finanzamt-Angaben, Beleg, „Als Spende kennzeichnen“, Nachweise und Storno einer
+  Sachspende, Rechte), `spenden.mobil.spec.ts` (gestapelte Karten, 412 und 390 px), `tests/e2e/a11y.spec.ts`, Daten und
+  Regeln in `tests/integration/donations*.test.ts`.
 
 ## Ansichten prüfen
 
