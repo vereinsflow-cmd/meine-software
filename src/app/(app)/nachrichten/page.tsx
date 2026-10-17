@@ -15,6 +15,7 @@ import { CARD_SURFACE } from "@/components/ui/surface";
 import { formatDateTime } from "@/lib/dates";
 import { intParam, pageRequest, param, type RawSearchParams } from "@/lib/search-params";
 import { cn } from "@/lib/utils";
+import { getAddMembersOptions } from "@/modules/messages/chat-members";
 import { countDrafts, getChat, listChats } from "@/modules/messages/chats";
 import { ChatList } from "@/modules/messages/components/chat-list";
 import { ChatThread } from "@/modules/messages/components/chat-thread";
@@ -48,7 +49,12 @@ export default async function MessagesPage({
   const chat = key
     ? await getChat(ctx, key, { limit: intParam(params, "anzahl", 50, 50, 1000) })
     : null;
-  const [chats, drafts] = await Promise.all([listChats(ctx), countDrafts(ctx)]);
+  const [chats, drafts, addMembers] = await Promise.all([
+    listChats(ctx),
+    countDrafts(ctx),
+    // „Mitglieder hinzufügen“ nur, wer der Gruppe (Abteilung bzw. Teilnehmern) Mitglieder hinzufügen darf.
+    chat ? getAddMembersOptions(ctx, chat.target) : Promise.resolve(null),
+  ]);
   const chatOpen = key !== undefined;
 
   return (
@@ -111,7 +117,7 @@ export default async function MessagesPage({
           className={cn("min-h-0 min-w-0 flex-1 flex-col", chatOpen ? "flex" : "hidden md:flex")}
         >
           {chat ? (
-            <ChatThread chat={chat} />
+            <ChatThread chat={chat} addMembers={addMembers} />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-chat-wallpaper p-6 text-center">
               {chatOpen ? (

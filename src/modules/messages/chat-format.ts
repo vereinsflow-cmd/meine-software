@@ -88,6 +88,24 @@ export function chatPreview(subject: string, body: string, max = 120): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
+/** Namen als Aufzählung: „Hans“, „Hans und Maria“, „Hans, Maria und Paul“. */
+export function joinNames(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} und ${names.at(-1)}`;
+}
+
+/**
+ * Hinweis im Verlauf, wenn jemand der Gruppe Mitglieder hinzugefügt hat (wie bei WhatsApp): „Anna Admin hat Hans Helfer
+ * hinzugefügt“, für die Person selbst „Du hast …“. `added` sind die Namen, wie sie im Hinweis gespeichert sind.
+ */
+export function membersAddedText(
+  by: { author: string | null; mine: boolean },
+  added: string,
+): string {
+  if (by.mine) return `Du hast ${added} hinzugefügt`;
+  return `${by.author ?? "Ein früheres Mitglied"} hat ${added} hinzugefügt`;
+}
+
 /** Zeit in der Chatliste: heute „14:32“, dann „Gestern“, in der Woche davor der Wochentag, sonst das Datum. */
 export function chatListTime(date: Date, now: Date = new Date()): string {
   const days = daysUntil(date, now);

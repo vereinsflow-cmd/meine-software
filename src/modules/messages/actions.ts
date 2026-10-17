@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
-import { audienceSchema, idSchema, messageFormSchema } from "./schemas";
+import { addChatMembers } from "./chat-members";
+import { addChatMembersSchema, audienceSchema, idSchema, messageFormSchema } from "./schemas";
 import { deleteMessage, discardDraft, previewRecipients, saveDraft, sendDraft } from "./service";
 
 const refresh = () => {
@@ -68,4 +69,21 @@ export async function previewRecipientsAction(
     const data = parseInput(audienceSchema, input);
     return previewRecipients(await requireTenantContext(), data);
   }, "message-preview");
+}
+
+/**
+ * Fügt der Gruppe eines Chats Mitglieder hinzu (Abteilung bzw. zugesagte Teilnehmer) – Rechte prüft der Dienst. Auch die
+ * Seiten der Abteilung bzw. Veranstaltung zeigen danach die neuen Mitglieder.
+ */
+export async function addChatMembersAction(
+  input: unknown,
+): Promise<ActionResult<{ added: number; messageId: string }>> {
+  return runAction(async () => {
+    const data = parseInput(addChatMembersSchema, input);
+    const result = await addChatMembers(await requireTenantContext(), data);
+    refresh();
+    revalidatePath("/abteilungen", "layout");
+    revalidatePath("/veranstaltungen", "layout");
+    return result;
+  }, "message-add-members");
 }

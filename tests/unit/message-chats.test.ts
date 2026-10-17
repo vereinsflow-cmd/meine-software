@@ -6,6 +6,8 @@ import {
   chatPreview,
   chatTitle,
   dayLabel,
+  joinNames,
+  membersAddedText,
   nameTone,
   parseChatKey,
   showSubject,
@@ -125,5 +127,26 @@ describe("Chats: Zeitangaben wie bei WhatsApp", () => {
   it("gleiche Person, gleiche Namensfarbe", () => {
     expect(nameTone("Anna Admin")).toBe(nameTone("Anna Admin"));
     expect(nameTone("Anna Admin")).toMatch(/^text-\w+-800 dark:text-\w+-300$/);
+  });
+});
+
+describe("Chats: Hinweis „… hat … hinzugefügt“", () => {
+  it("zählt Namen auf wie im Satz", () => {
+    expect(joinNames([])).toBe("");
+    expect(joinNames(["Hans"])).toBe("Hans");
+    expect(joinNames(["Hans", "Maria"])).toBe("Hans und Maria");
+    expect(joinNames(["Hans", "Maria", "Paul"])).toBe("Hans, Maria und Paul");
+  });
+
+  it("„Du hast …“ für den, der hinzugefügt hat, sonst mit Namen – auch ohne Konto", () => {
+    expect(membersAddedText({ author: "Anna Admin", mine: true }, "Hans Helfer")).toBe(
+      "Du hast Hans Helfer hinzugefügt",
+    );
+    expect(membersAddedText({ author: "Anna Admin", mine: false }, "Hans und Maria")).toBe(
+      "Anna Admin hat Hans und Maria hinzugefügt",
+    );
+    expect(membersAddedText({ author: null, mine: false }, "Hans")).toBe(
+      "Ein früheres Mitglied hat Hans hinzugefügt",
+    );
   });
 });

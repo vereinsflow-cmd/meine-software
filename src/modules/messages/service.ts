@@ -98,7 +98,7 @@ export const MEMBER_MESSAGES_PER_HOUR = 30;
 export const MEMBER_DRAFT_SAVES_PER_HOUR = 100;
 const sendLimitKey = (ctx: TenantContext) => `message-send:${ctx.userId}`;
 
-const ACTIVE_STATUSES = ["ACTIVE", "HONORARY", "PASSIVE"] as const;
+export const ACTIVE_STATUSES = ["ACTIVE", "HONORARY", "PASSIVE"] as const;
 
 /** Empfänger einer Zielgruppe: aktive Mitglieder (Status aktiv, Ehren- oder passives Mitglied), je nach Art eingegrenzt. */
 function audienceWhere(
@@ -240,7 +240,7 @@ export interface RecipientResolution {
   unreachable: number;
 }
 
-async function resolveRecipients(
+export async function resolveRecipients(
   db: Db,
   audience: Audience,
   target: { departmentId?: string; eventId?: string },
