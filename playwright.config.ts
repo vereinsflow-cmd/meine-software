@@ -73,6 +73,10 @@ export default defineConfig({
       NEXT_DIST_DIR: ".next-e2e",
       NEXT_TELEMETRY_DISABLED: "1",
       SESSION_IDLE_MINUTES: "60",
+      // Rechnungen auslesen ist an, aber nie mit echtem Schlüssel: Anfragen laufen ins Leere (Port 9 nimmt nichts an) und
+      // enden als „ließ sich nicht auslesen“. Den Erfolgsfall täuscht der Test im Browser vor (rechnungen.spec.ts).
+      ANTHROPIC_API_KEY: "e2e-kein-echter-schluessel",
+      ANTHROPIC_BASE_URL: "http://127.0.0.1:9",
     },
   },
 });

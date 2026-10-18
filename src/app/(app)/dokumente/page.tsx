@@ -54,6 +54,7 @@ import { canFinance } from "@/modules/finance/access";
 import { InvoiceBadge } from "@/modules/finance/components/invoice-badge";
 import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
 import { invoiceBaseName } from "@/modules/finance/invoice-format";
+import { invoiceReadingEnabled } from "@/modules/finance/invoice-reader";
 import { env } from "@/server/env";
 import { can, scopeOf } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
@@ -116,6 +117,7 @@ export default async function DocumentsPage({
               requireEvent={scopeOf(ctx, "documents:upload") === "DEPARTMENT"}
               defaultEventId={eventId}
               invoiceName={financeManage ? invoiceBaseName(todayCalendarDate()) : null}
+              invoiceReading={financeManage && invoiceReadingEnabled()}
             />
           ) : undefined
         }

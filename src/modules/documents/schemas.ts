@@ -42,16 +42,18 @@ export const uploadMetaSchema = z
     paymentDue: formCheckbox,
     amount: amountText,
     dueDate: dueDateText,
+    /** Name der Rechnung („Telekom – Internet Oktober 2026“) – leer: „Rechnung vom <Tag>“. */
+    title: optionalText(100, "Der Name der Rechnung"),
   })
   .superRefine((data, ctx) => {
     if (data.isInvoice && data.paymentDue) checkAmount(data.amount, ctx, ["amount"]);
   })
-  .transform(({ isInvoice, paymentDue, amount, dueDate, ...meta }) => ({
+  .transform(({ isInvoice, paymentDue, amount, dueDate, title, ...meta }) => ({
     ...meta,
     invoice: isInvoice
       ? paymentDue
-        ? { status: "OPEN" as const, amountCents: parseEuroToCents(amount!), dueDate }
-        : { status: "PAID" as const, amountCents: null, dueDate: undefined }
+        ? { status: "OPEN" as const, amountCents: parseEuroToCents(amount!), dueDate, title }
+        : { status: "PAID" as const, amountCents: null, dueDate: undefined, title }
       : null,
   }));
 export type UploadMeta = z.output<typeof uploadMetaSchema>;
