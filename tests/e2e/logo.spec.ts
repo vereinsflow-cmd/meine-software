@@ -85,7 +85,7 @@ test.describe("Logo", () => {
     await expect(logo).toHaveAttribute("src", "/brand/symbol.svg");
   });
 
-  test("breite Seitenleiste zeigt das waagerechte Logo in heller Fassung, nicht angeschnitten; eingeklappt wieder das Symbol", async ({
+  test("breite Seitenleiste zeigt das waagerechte Logo, nicht angeschnitten; eingeklappt wieder das Symbol", async ({
     page,
   }) => {
     await preferWideSidebar(page);
@@ -96,7 +96,8 @@ test.describe("Logo", () => {
     const link = page.getByRole("link", { name: "VereinsFlow – Startseite" });
     const logo = link.locator("img:visible");
     await expect(logo).toHaveCount(1);
-    await expect(logo).toHaveAttribute("src", "/brand/logo-weiss.svg"); // die Leiste ist dunkel
+    // Die Leiste folgt seit 18.10.2026 der Darstellung der Seite (hier hell) – also die dunkle Schrift
+    await expect(logo).toHaveAttribute("src", "/brand/logo.svg");
     // Die gemerkte Wahl greift erst nach dem Einhängen: Die Leiste wächst dann kurz von schmal auf breit – erst danach messen.
     await expect(logo).toBeInViewport({ ratio: 1 });
     await expect(async () => {

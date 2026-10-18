@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
 
-/** Farben der Kopfzeile (hell: Weiß, dunkel: `--card`), gleich wie in `viewport.themeColor` in app/layout.tsx. */
-const STATUS_BAR = { light: "#ffffff", dark: "#121a25" } as const;
+/** Farben der Kopfzeile (= Seitengrund `--background`), gleich wie in `viewport.themeColor` in app/layout.tsx. */
+const STATUS_BAR = { light: "#f4f4f6", dark: "#0b0b0c" } as const;
 
 /**
  * Hält die Farbe der Statusleiste auf dem Handy passend zum gewählten Design: Wer im Profilmenü „Hell“ oder „Dunkel“ fest

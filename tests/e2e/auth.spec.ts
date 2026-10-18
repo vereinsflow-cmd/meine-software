@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { USERS, login, logout } from "./helpers";
+import { USERS, login, logout, greeting } from "./helpers";
 
 test.describe("Anmeldung und Zugriffsschutz", () => {
   test("nicht angemeldete Besucher werden zur Anmeldung geleitet und kehren danach zurück", async ({
@@ -43,7 +43,7 @@ test.describe("Anmeldung und Zugriffsschutz", () => {
   }) => {
     await login(page, USERS.admin);
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Willkommen, Anna");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(greeting("Anna"));
     await expect(page.getByRole("navigation", { name: "Hauptnavigation" }).first()).toBeVisible();
 
     await logout(page);

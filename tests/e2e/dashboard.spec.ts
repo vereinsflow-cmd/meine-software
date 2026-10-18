@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { USERS, chooseTab, loginSettled as login, open, openNavGroup } from "./helpers";
+import { USERS, chooseTab, greeting, loginSettled as login, open, openNavGroup } from "./helpers";
 
 /**
  * Listen auf dem Dashboard zeigen zunächst nur die ersten Einträge; „N weitere … anzeigen“ klappt den Rest auf. Ein Klick vor
@@ -28,7 +28,7 @@ test.describe("Dashboard", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, USERS.admin);
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Anna" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: greeting("Anna") })).toBeVisible();
     await expect(
       page.locator("main").getByText("Vereinsadministrator", { exact: true }),
     ).toBeVisible();
@@ -42,21 +42,26 @@ test.describe("Dashboard", () => {
     // Reiter „Übersicht“ (zuerst offen): Kennzahlen (Karten sind Links in die jeweiligen Bereiche), eigene Aufgaben,
     // Einsätze und Benachrichtigungen
     await expect(page.getByRole("tab", { name: "Übersicht", selected: true })).toBeVisible();
-    // Große Fassung (Stil „Analytics“): oben das Paar aus Mitglieder-Kachel und Aufgaben-Ring, dazu die Gruppe der übrigen
-    // Kennzahlen – kein Karussell. exact: „Kennzahlen“ steckt auch in „Weitere Kennzahlen“.
+    // Große Fassung (Stil „Vertix“): die Mitglieder-Karte, der Viererblock aus Kacheln (die erste blau) und die Helferstunden in
+    // einer Gruppe – kein Karussell.
     await expect(page.locator('[data-layout="studio"]')).toHaveAttribute("data-size", "m");
     await expect(page.locator('[aria-roledescription="Karussell"]')).toHaveCount(0);
-    const pair = page.getByRole("group", { name: "Kennzahlen", exact: true });
-    const side = page.getByRole("group", { name: "Weitere Kennzahlen", exact: true });
-    await expect(pair.locator('[data-slot="card"]')).toHaveCount(2);
-    // Reihenfolge im Code (Tastatur, Screenreader): Termine, Helferstunden, freie Plätze, zuletzt die Offenen Zahlungen
-    const sideCards = side.locator('[data-slot="card"]');
-    await expect(sideCards).toHaveCount(4);
-    await expect(sideCards.nth(0)).toHaveAttribute("data-kpi", "Termine in 30 Tagen");
-    await expect(sideCards.nth(1)).toHaveAttribute("data-kpi", /^Helferstunden \d{4}$/);
-    await expect(sideCards.nth(2)).toHaveAttribute("data-kpi", "Freie Helferplätze");
-    await expect(sideCards.nth(3)).toHaveAttribute("aria-labelledby", "w-offene-zahlungen-kachel");
-    // Die Offenen Zahlungen stehen damit genau einmal da – die eigene Karte unter den Kennzahlen entfällt.
+    const kpis = page.getByRole("group", { name: "Kennzahlen", exact: true });
+    // Reihenfolge im Code (Tastatur, Screenreader): Mitglieder, die Kacheln (Zahlungen zuerst), zuletzt die Helferstunden
+    const kpiCards = kpis.locator("[data-kpi]");
+    await expect(kpiCards).toHaveCount(6);
+    const order = await kpiCards.evaluateAll((cards) =>
+      cards.map((card) => card.getAttribute("data-kpi")),
+    );
+    expect(order.slice(0, 5)).toEqual([
+      "Mitglieder",
+      "Offene Zahlungen",
+      "Termine in 30 Tagen",
+      "Aufgaben im Verein",
+      "Freie Helferplätze",
+    ]);
+    expect(order[5]).toMatch(/^Helferstunden \d{4}$/);
+    // Die Summe steht als Kachel, die Rechnungen (mit „Bezahlt“) weiter als eigene Karte darunter.
     await expect(page.getByRole("region", { name: "Offene Zahlungen" })).toHaveCount(1);
 
     // Ob zwischen Zahl und Text ein Leerzeichen im Namen des Links steht, hängt vom Aufbau der Karte ab – daher `\s*`.
@@ -65,11 +70,14 @@ test.describe("Dashboard", () => {
     const nextEvents = page.getByRole("link", { name: /^Termine in 30 Tagen\s*\d+/ });
     const hours = page.getByRole("link", { name: /^Helferstunden \d{4}/ });
     const freeShifts = page.getByRole("link", { name: /^Freie Helferplätze\s*\d+/ });
-    for (const link of [members, tasks, nextEvents, hours, freeShifts]) {
+    const payments = page.getByRole("link", { name: /^Offene Zahlungen\s*[\d.]+,\d\d\s*€/ });
+    for (const link of [members, tasks, nextEvents, hours, freeShifts, payments]) {
       await expect(link).toBeVisible();
     }
+    await expect(payments).toHaveAttribute("href", "/finanzen/rechnungen?stand=offen");
+    await expect(payments).toContainText(/in \d+ Rechnung/);
 
-    // Jede Kennzahlenkarte nennt einen kurzen Vergleich zur Einordnung der Zahl …
+    // Jede Kennzahl nennt einen kurzen Satz zur Einordnung der Zahl …
     await expect(members).toContainText(/gegenüber dem Vormonat/);
     await expect(nextEvents).toContainText(/Nächster Termin|Keine kommenden Termine/);
     // Die Demo-Daten haben offene Schichten (siehe den Hinweis über den Reitern am Ende des Tests)
@@ -77,31 +85,18 @@ test.describe("Dashboard", () => {
     await expect(hours).toContainText(/gegenüber letzter Woche|Diese Woche noch keine Stunden/);
     // … und wie eine Aktie die Veränderung im Zeitraum (▲/▼/±) – sie gehört zum Namen des Links.
     await expect(members).toHaveAccessibleName(/[+−±]\d+ \([+−±]\d+,\d %\) in 12 Monaten/);
-    await expect(nextEvents).toHaveAccessibleName(/[+−±]\d+.*in 12 Wochen$/);
+    await expect(nextEvents).toHaveAccessibleName(/^Termine in 30 Tagen\s*\d+\s*[+−±]\d+/);
     await expect(hours).toContainText(/seit 01\.01\.\d{4}/);
-    // Die Zahl der freien Plätze steht genau einmal im Namen des Links: Zahl, Besetzung, Veränderung der besetzten Plätze
+    // Die Zahl der freien Plätze steht genau einmal im Namen des Links: Zahl, Veränderung der besetzten Plätze, Besetzung
     await expect(freeShifts).toHaveAccessibleName(
-      /^Freie Helferplätze\s*\d+\s*\d+ von \d+ (Plätzen|Platz) besetzt\s*[+−±]\d+ besetzt\s*in \d+ Wochen$/,
+      /^Freie Helferplätze\s*\d+\s*[+−±]\d+ besetzt\s*\d+ von \d+ (Plätzen|Platz) besetzt$/,
     );
 
-    // Die Karten (der Link liegt darin, Kurs und Zeitraum-Knöpfe daneben)
-    const card = (group: Locator, link: Locator) =>
-      group.locator('[data-slot="card"]').filter({ has: link });
-    const heroCard = card(pair, members);
-    const tasksCard = card(pair, tasks);
-    const eventsCard = card(side, nextEvents);
-    const hoursCard = card(side, hours);
-    const shiftsCard = card(side, freeShifts);
-    const paymentsTile = side.getByRole("region", { name: "Offene Zahlungen" });
-    // Den großen Kursverlauf hat nur die Mitglieder-Kachel; Termine und freie Plätze zeigen eine kleine Linie, die
-    // Helferstunden Balken je Abschnitt, der Aufgaben-Ring keinen Verlauf.
-    await expect(heroCard.locator('[data-slot="quote-chart"]:visible')).toHaveCount(1);
-    await expect(tasksCard.locator('[data-slot="quote-chart"]')).toHaveCount(0);
-    await expect(side.locator('[data-slot="quote-chart"]')).toHaveCount(0);
-    await expect(eventsCard.locator('[data-slot="sparkline"]')).toHaveCount(1);
-    await expect(shiftsCard.locator('[data-slot="sparkline"]')).toHaveCount(1);
-    // Der Balken der freien Plätze zeigt die besetzten von den benötigten (nur, wenn Schichten geplant sind – hier ja)
-    await expect(shiftsCard.locator('[data-slot="pill-bar"]')).toHaveCount(1);
+    // Die Karten (der Link liegt darin, Zeitraum-Knöpfe und Balken daneben)
+    const card = (link: Locator) => kpis.locator('[data-slot="card"]').filter({ has: link });
+    const heroCard = card(members);
+    const tilesCard = kpis.locator("[data-kpi-tiles]");
+    const hoursCard = card(hours);
     // Helferstunden: im laufenden Jahr ein Balken je Monat seit Januar (Berliner Kalender)
     const month = Number(
       new Intl.DateTimeFormat("de-DE", { month: "numeric", timeZone: "Europe/Berlin" }).format(
@@ -109,17 +104,11 @@ test.describe("Dashboard", () => {
       ),
     );
     await expect(hoursCard.locator('[data-slot="step-bar"]')).toHaveCount(month);
+    // Die Kacheln haben keine eigenen Zeitraum-Knöpfe (wie in der Vorlage)
+    await expect(tilesCard.getByRole("group", { name: /^Zeitraum für/ })).toHaveCount(0);
 
-    // Jede Karte mit Verlauf hat Zeitraum-Knöpfe; ein Klick wechselt nur den Verlauf dieser Karte (und führt nicht weg), die
-    // Veränderung nennt den neuen Zeitraum
-    const eventPeriods = eventsCard.getByRole("group", {
-      name: "Zeitraum für „Termine in 30 Tagen“",
-    });
-    await expect(eventPeriods.getByRole("button")).toHaveText(["12 W", "6 M", "12 M"]);
-    await expect(eventPeriods.getByRole("button", { pressed: true })).toHaveText("12 W");
-    await expect(
-      shiftsCard.getByRole("group", { name: "Zeitraum für „Freie Helferplätze“" }),
-    ).toBeVisible();
+    // Zeitraum-Knöpfe: ein Klick wechselt nur den Verlauf dieser Karte (und führt nicht weg), die Veränderung nennt den neuen
+    // Zeitraum
     let navigated = false;
     page.on("framenavigated", (frame) => {
       if (frame === page.mainFrame()) navigated = true;
@@ -148,83 +137,55 @@ test.describe("Dashboard", () => {
     );
     await page.keyboard.press("Escape");
 
-    // Anordnung nach Inhaltsbreite – in beiden Fällen Mitglieder-Kachel und Aufgaben-Ring nebeneinander und gleich hoch, nichts
-    // ragt aus dem Fenster. Maus weg (eine gedrückte Karte gibt sonst nach).
+    // Anordnung nach Inhaltsbreite; nichts ragt aus dem Fenster. Maus weg (eine gedrückte Karte gibt sonst nach).
     await page.mouse.move(0, 0);
     const box = async (locator: Locator) => (await locator.boundingBox())!;
     const measure = async (label: string) => {
-      const [m, a] = [await box(heroCard), await box(tasksCard)];
-      expect(Math.abs(a.y - m.y), label).toBeLessThanOrEqual(1);
-      expect(Math.abs(a.height - m.height), label).toBeLessThanOrEqual(1);
-      expect(a.x, label).toBeGreaterThan(m.x + m.width);
-      const [t, h, f, p] = [
-        await box(eventsCard),
-        await box(hoursCard),
-        await box(shiftsCard),
-        await box(paymentsTile),
-      ];
+      const [m, t, h] = [await box(heroCard), await box(tilesCard), await box(hoursCard)];
       const width = page.viewportSize()!.width;
-      for (const each of [m, a, t, h, f, p]) {
-        expect(each.x + each.width, label).toBeLessThanOrEqual(width);
-      }
-      return { m, a, t, h, f, p, s: await box(side) };
+      for (const each of [m, t, h]) expect(each.x + each.width, label).toBeLessThanOrEqual(width);
+      // Mitglieder-Karte und Kacheln immer nebeneinander, oben bündig und gleich hoch
+      expect(Math.abs(t.y - m.y), label).toBeLessThanOrEqual(1);
+      expect(Math.abs(t.height - m.height), label).toBeLessThanOrEqual(1);
+      expect(t.x, label).toBeGreaterThan(m.x + m.width);
+      return { m, t, h };
     };
-    const arrangement = () => side.evaluate((element) => getComputedStyle(element).display);
     const viewport = page.viewportSize()!;
 
-    // 1280 px: Neben der schmalen Symbolleiste ist der Inhalt mindestens 58 rem breit – die übrigen Kennzahlen stehen als
-    // schmale Spalte rechts neben dem Paar, untereinander in der Reihenfolge des Codes (Termine, Helferstunden, freie Plätze,
-    // Zahlungen).
-    await expect.poll(arrangement, { message: "1280 px" }).toBe("flex");
+    // 1280 px: zwei Spalten – die Helferstunden darunter über die ganze Breite
     {
-      const { m, a, t, h, f, p, s } = await measure("1280 px");
-      expect(s.x).toBeGreaterThan(a.x + a.width); // rechts neben dem Paar …
-      expect(s.width).toBeLessThan(a.x + a.width - m.x); // … schmaler als das Paar …
-      // … und oben bündig mit dem Anfang des Reiters: mit „Erste Schritte“ davor (offene Schritte des Vereinsadministrators)
-      // beginnt die Spalte schon neben dieser Karte, sonst neben dem Paar.
-      const intro = page.getByRole("region", { name: "Erste Schritte" });
-      const start = (await intro.count()) > 0 ? (await box(intro)).y : m.y;
-      expect(Math.abs(s.y - start)).toBeLessThanOrEqual(2);
-      const column = [t, h, f, p];
-      for (const [index, each] of column.entries()) {
-        expect(Math.abs(each.x - s.x)).toBeLessThanOrEqual(1); // alle in der Spalte …
-        const previous = column[index - 1];
-        if (previous) expect(each.y).toBeGreaterThan(previous.y + previous.height); // … in der Reihenfolge des Codes
-      }
+      const { m, t, h } = await measure("1280 px");
+      expect(h.y).toBeGreaterThan(m.y + m.height);
+      expect(Math.abs(h.x - m.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(h.x + h.width - (t.x + t.width))).toBeLessThanOrEqual(1);
     }
-
-    // 1100 px (Inhalt schmaler als 58 rem): die übrigen Kennzahlen als Raster unter dem Paar – links Termine, freie Plätze und
-    // Offene Zahlungen untereinander, rechts die Helferstunden über alle drei Reihen (oben und unten bündig).
-    await page.setViewportSize({ width: 1100, height: 800 });
-    await expect.poll(arrangement, { message: "1100 px" }).toBe("grid");
+    // 1600 px: drei Spalten nebeneinander wie in der Vorlage
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await expect
+      .poll(async () => Math.abs((await box(hoursCard)).y - (await box(heroCard)).y), {
+        message: "1600 px",
+      })
+      .toBeLessThanOrEqual(1);
     {
-      const { m, t, h, f, p, s } = await measure("1100 px");
-      expect(s.y).toBeGreaterThan(m.y + m.height);
-      for (const each of [f, p]) expect(Math.abs(each.x - t.x)).toBeLessThanOrEqual(1);
-      expect(f.y).toBeGreaterThan(t.y + t.height); // freie Plätze unter den Terminen …
-      expect(p.y).toBeGreaterThan(f.y + f.height); // … Zahlungen unter den freien Plätzen
+      const { t, h } = await measure("1600 px");
       expect(h.x).toBeGreaterThan(t.x + t.width);
-      expect(Math.abs(h.y - t.y)).toBeLessThanOrEqual(1);
-      expect(Math.abs(h.y + h.height - (p.y + p.height))).toBeLessThanOrEqual(1);
     }
     await page.setViewportSize(viewport); // zurück auf 1280 px für den Rest des Tests
-    await expect.poll(arrangement).toBe("flex");
 
-    // Unten auf der Mitglieder-Kachel: Aktiv, Passiv und alle übrigen Status – zusammen genau die große Zahl
+    // Unten auf der Mitglieder-Karte: Aktiv, Passiv und alle übrigen Status – zusammen genau die große Zahl
     await expect(heroCard.getByRole("term")).toHaveText(["Aktiv", "Passiv", "Weitere"]);
     const digits = (text: string | null) => Number((text ?? "").replace(/\D/g, ""));
-    const parts = (await heroCard.getByRole("definition").allTextContents()).map(digits);
+    const parts = (await heroCard.locator('[data-slot="split-count"]').allTextContents()).map(
+      digits,
+    );
     const total = digits(await heroCard.locator('[data-slot="kpi-value"]').textContent());
     expect(total).toBeGreaterThan(0);
     expect(parts.reduce((sum, part) => sum + part, 0)).toBe(total);
-    // Der Aufgaben-Ring führt zu den Aufgaben und teilt die offenen auf: überfällig und im Zeitplan
+    // Die Aufgaben-Kachel führt zu den Aufgaben und nennt Überfälliges (oder „Im Zeitplan“)
     await expect(tasks).toHaveAttribute("href", "/aufgaben");
-    const ring = (await tasks.textContent())!.match(
-      /^Aufgaben im Verein\s*(\d+)\s*offen(?:\s*davon \d+ für dich)?\s*Überfällig\s*(\d+)\s*Im Zeitplan\s*(\d+)$/,
+    await expect(tasks).toHaveText(
+      /^Aufgaben im Verein\s*\d+\s*offen\s*(\d+ überfällig|Im Zeitplan|Alles erledigt)(\s*davon \d+ für dich)?$/,
     );
-    expect(ring).not.toBeNull();
-    const [openTasks, overdue, onTime] = ring!.slice(1).map(Number);
-    expect(overdue! + onTime!).toBe(openTasks);
 
     await expect(page.getByRole("heading", { level: 2, name: "Für dich" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Meine Aufgaben" })).toBeVisible();
@@ -288,7 +249,7 @@ test.describe("Dashboard", () => {
     page,
   }) => {
     await login(page, USERS.helfer);
-    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Hans" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: greeting("Hans") })).toBeVisible();
     // Kein Reiter „Mitglieder“ (Mitgliederzahlen sind nicht für Helfer)
     await expect(page.getByRole("tab")).toHaveText([
       "Übersicht",
@@ -325,7 +286,7 @@ test.describe("Dashboard", () => {
     page,
   }) => {
     await login(page, USERS.mitglied);
-    await expect(page.getByRole("heading", { level: 1, name: "Willkommen, Maria" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: greeting("Maria") })).toBeVisible();
     await expect(page.getByRole("tab")).toHaveText(["Übersicht", "Termine & Helfer"]);
     await expect(
       page
@@ -373,7 +334,9 @@ test.describe("Dashboard", () => {
 
   test("Anderer Verein: eigene Daten, keine Termine des TSV", async ({ page }) => {
     await login(page, USERS.otherAdmin);
-    await expect(page.getByRole("heading", { level: 1, name: /Willkommen/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: /^Guten (Morgen|Tag|Abend), / }),
+    ).toBeVisible();
     await open(page, "/dashboard?tab=termine");
     await expect(page.getByText("Sommerfest 2026")).toHaveCount(0);
     await expect(page.getByText("Vorstandssitzung")).toHaveCount(0);

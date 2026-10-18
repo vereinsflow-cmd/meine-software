@@ -25,13 +25,13 @@ export function SearchTrigger() {
         variant="outline"
         onClick={() => setOpen(true)}
         aria-label={`Suche öffnen (${shortcut})`}
-        className="hidden h-9 w-full max-w-sm items-center justify-start gap-2.5 px-3 font-normal text-muted-foreground shadow-none sm:flex"
+        className="hidden h-10 w-full max-w-sm items-center justify-start gap-2.5 rounded-full border-transparent bg-card px-4 font-normal text-muted-foreground shadow-xs sm:flex dark:bg-card"
       >
         <SearchIcon className="size-4 shrink-0" aria-hidden="true" />
         <span className="truncate">Suchen …</span>
         <span
           aria-hidden="true"
-          className="ml-auto rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
+          className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
         >
           {shortcut}
         </span>

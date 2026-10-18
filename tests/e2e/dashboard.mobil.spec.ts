@@ -252,31 +252,21 @@ test.describe("Dashboard-Folien – Wischen (Touch)", () => {
     await expect(selected(page)).toHaveText("Übersicht");
   });
 
-  test("Große Fassung (ohne Karussell): Wischen auf einer Kennzahl blättert den Bereich, auf dem Kursverlauf nicht", async ({
+  test("Große Fassung (ohne Karussell): Wischen auf einer Kennzahl blättert den Bereich", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     await expect(page.locator('[aria-roledescription="Karussell"]')).toHaveCount(0);
-    const pair = page.getByRole("group", { name: "Kennzahlen", exact: true });
+    const kpis = page.getByRole("group", { name: "Kennzahlen", exact: true });
 
-    // Der Kurs der Mitglieder-Kachel gehört sich selbst (Infofeld mit dem Finger) – kein Reiterwechsel
-    const chart = pair.locator('[data-slot="quote-chart"]');
-    await expect(chart).toHaveCount(1);
-    await chart.scrollIntoViewIfNeeded();
-    const box = (await chart.boundingBox())!;
-    const from = { x: box.x + box.width - 40, y: box.y + box.height / 2 };
-    await swipe(page, from, { x: from.x - 240, y: from.y });
-    await expect(selected(page)).toHaveText("Übersicht");
-    await expect(page).toHaveURL(/\/dashboard$/);
-
-    // Die Karten selbst scrollen nicht seitlich: Auf dem Aufgaben-Ring blättert Wischen wie überall sonst den Bereich
-    // (und öffnet nicht etwa den Link der Karte).
-    const ring = pair
+    // Die Karten selbst scrollen nicht seitlich: Auf der Aufgaben-Kachel blättert Wischen wie überall sonst den Bereich
+    // (und öffnet nicht etwa den Link der Kachel).
+    const tile = kpis
       .locator('[data-slot="card"]')
       .filter({ has: page.getByRole("link", { name: /^Aufgaben im Verein/ }) });
-    await ring.scrollIntoViewIfNeeded();
-    const card = (await ring.boundingBox())!;
-    const start = { x: card.x + card.width - 40, y: card.y + card.height / 2 };
+    await tile.scrollIntoViewIfNeeded();
+    const card = (await tile.boundingBox())!;
+    const start = { x: card.x + card.width - 20, y: card.y + card.height / 2 };
     await swipe(page, start, { x: start.x - 220, y: start.y + 6 });
     await expect(selected(page)).toHaveText("Termine & Helfer");
     await expect(page).toHaveURL(/\/dashboard\?tab=termine$/);
@@ -390,18 +380,15 @@ const cardBoxes = (group: Locator) =>
   );
 
 /**
- * Große Fassung der Kennzahlen (Vorstand, Vereinsadministrator – Mitglieder, Termine und Schichten sind da): oben das Paar aus
- * Mitglieder-Kachel und Aufgaben-Ring („Kennzahlen“), dazu die Spalte „Weitere Kennzahlen“ (Termine, Helferstunden, freie
- * Plätze, Offene Zahlungen). Am Smartphone steht alles untereinander – ohne Karussell –, auf dem Tablet das Paar nebeneinander
- * und die Spalte als Raster aus zwei Spalten darunter. Gemessen wird ohne Einblenden („Bewegung reduzieren“): sonst stünden
- * die Karten in den ersten Augenblicken noch ein paar Pixel tiefer.
+ * Große Fassung der Kennzahlen (Vorstand, Vereinsadministrator – Mitglieder, Termine und Schichten sind da; Stil „Vertix“): die
+ * Mitglieder-Karte, der Viererblock der Kacheln und die Helferstunden in der Gruppe „Kennzahlen“. Am Smartphone steht alles
+ * untereinander – ohne Karussell –, auf dem Tablet Mitglieder und Kacheln nebeneinander und die Helferstunden darunter. Gemessen
+ * wird ohne Einblenden („Bewegung reduzieren“): sonst stünden die Karten in den ersten Augenblicken noch ein paar Pixel tiefer.
  */
 test.describe("Dashboard – große Fassung der Kennzahlen", () => {
-  const pairOf = (page: Page) => page.getByRole("group", { name: "Kennzahlen", exact: true });
-  const sideOf = (page: Page) =>
-    page.getByRole("group", { name: "Weitere Kennzahlen", exact: true });
+  const kpisOf = (page: Page) => page.getByRole("group", { name: "Kennzahlen", exact: true });
 
-  test("Smartphone: kein Karussell und keine Punkte – Ring unter der Mitglieder-Kachel, die übrigen Karten gleich breit darunter", async ({
+  test("Smartphone: kein Karussell und keine Punkte – Mitglieder, Kacheln (zwei je Reihe) und Helferstunden untereinander, gleich breit", async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -413,94 +400,52 @@ test.describe("Dashboard – große Fassung der Kennzahlen", () => {
     await expect(page.locator('[aria-roledescription="Karussell"]')).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
 
-    const pair = pairOf(page);
-    const side = sideOf(page);
-    await expect(pair.getByRole("link", { name: /^Mitglieder\s*\d/ })).toBeVisible();
+    const kpis = kpisOf(page);
+    await expect(kpis.getByRole("link", { name: /^Mitglieder\s*\d/ })).toBeVisible();
     await expect(
-      pair.getByRole("link", { name: /^Aufgaben im Verein\s*\d+\s*offen/ }),
+      kpis.getByRole("link", { name: /^Aufgaben im Verein\s*\d+\s*offen/ }),
     ).toHaveAttribute("href", "/aufgaben");
-    // Spalte in der Reihenfolge im Code: Termine, Helferstunden, freie Plätze, Offene Zahlungen
-    const sideCards = side.locator("xpath=./*");
-    await expect(sideCards).toHaveCount(4);
-    await expect(
-      sideCards.nth(0).getByRole("link", { name: /^Termine in 30 Tagen/ }),
-    ).toBeVisible();
-    await expect(
-      sideCards.nth(1).getByRole("link", { name: /^Helferstunden \d{4}/ }),
-    ).toBeVisible();
-    await expect(sideCards.nth(2).getByRole("link", { name: /^Freie Helferplätze/ })).toBeVisible();
-    await expect(
-      sideCards.nth(3).getByRole("region", { name: "Offene Zahlungen", exact: true }),
-    ).toBeVisible();
-    // Die Zahlungen stehen nur einmal da – in der Spalte, nicht noch einmal als eigene Karte weiter unten
-    await expect(page.getByRole("region", { name: "Offene Zahlungen", exact: true })).toHaveCount(
-      1,
-    );
+    const tiles = kpis.locator("[data-kpi-tiles]");
+    await expect(tiles.locator("[data-kpi]")).toHaveCount(4);
 
-    const [hero, ring] = await cardBoxes(pair);
-    const cards = await cardBoxes(side);
+    const [members, block, hours] = await cardBoxes(kpis);
     const view = page.viewportSize()!;
-    // Untereinander: der Ring unter der Mitglieder-Kachel, die Spalte unter dem Ring, jede Karte unter der vorigen …
-    expect(ring!.y).toBeGreaterThanOrEqual(hero!.bottom - 1);
-    expect(cards[0]!.y).toBeGreaterThanOrEqual(ring!.bottom - 1);
-    for (let index = 1; index < cards.length; index++) {
-      expect(cards[index]!.y, `Karte ${index + 1} der Spalte`).toBeGreaterThanOrEqual(
-        cards[index - 1]!.bottom - 1,
-      );
+    expect(block!.y).toBeGreaterThanOrEqual(members!.bottom - 1);
+    expect(hours!.y).toBeGreaterThanOrEqual(block!.bottom - 1);
+    for (const each of [block!, hours!]) {
+      expect(Math.abs(each.x - members!.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(each.width - members!.width)).toBeLessThanOrEqual(1);
     }
-    // … alle an derselben Stelle, gleich breit und vollständig im Bild
-    for (const card of [ring!, ...cards]) {
-      expect(Math.abs(card.x - hero!.x)).toBeLessThanOrEqual(1);
-      expect(Math.abs(card.width - hero!.width)).toBeLessThanOrEqual(1);
-    }
-    expect(hero!.x).toBeGreaterThanOrEqual(0);
-    expect(hero!.right).toBeLessThanOrEqual(view.width + 1);
+    // Im Block zwei Kacheln je Reihe
+    const [first, second, third] = await cardBoxes(tiles);
+    expect(Math.abs(second!.y - first!.y)).toBeLessThanOrEqual(1);
+    expect(second!.x).toBeGreaterThanOrEqual(first!.right - 1);
+    expect(third!.y).toBeGreaterThanOrEqual(first!.bottom - 1);
+    expect(members!.x).toBeGreaterThanOrEqual(0);
+    expect(members!.right).toBeLessThanOrEqual(view.width + 1);
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
 
-  test("Tablet-Breite (820 px): Mitglieder-Kachel und Ring nebeneinander, darunter die Spalte in zwei Spalten – Helferstunden rechts neben den Terminen", async ({
+  test("Tablet-Breite (820 px): Mitglieder-Karte und Kacheln nebeneinander, die Helferstunden darunter über die ganze Breite", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 820, height: 1180 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, USERS.admin);
-    const pair = pairOf(page);
-    const side = sideOf(page);
+    const kpis = kpisOf(page);
     await expect(page.locator('[aria-roledescription="Karussell"]')).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^Kennzahl \d von/ })).toHaveCount(0);
-    // Paar: Mitglieder-Kachel und Ring; Spalte: Termine, Helferstunden, freie Plätze – und die Kachel „Offene Zahlungen“
-    await expect(pair.locator('[data-slot="kpi-link"]')).toHaveCount(2);
-    await expect(side.locator('[data-slot="kpi-link"]')).toHaveCount(3);
-    await expect(side.getByRole("region", { name: "Offene Zahlungen", exact: true })).toBeVisible();
-    expect(await pair.evaluate((element) => element.scrollWidth > element.clientWidth + 1)).toBe(
+    // Mitglieder, vier Kacheln, Helferstunden
+    await expect(kpis.locator('[data-slot="kpi-link"]')).toHaveCount(6);
+    expect(await kpis.evaluate((element) => element.scrollWidth > element.clientWidth + 1)).toBe(
       false,
     );
-
-    // Das Paar nebeneinander (ab 34 rem Breite), oben bündig
-    const [hero, ring] = await cardBoxes(pair);
-    expect(Math.abs(ring!.y - hero!.y)).toBeLessThanOrEqual(1);
-    expect(ring!.x).toBeGreaterThanOrEqual(hero!.right - 1);
-
-    // Die Spalte steht unter dem Paar (neben ihm erst ab 58 rem Inhaltsbreite), als Raster aus zwei Spalten
-    expect(
-      await side.evaluate(
-        (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
-      ),
-    ).toBe(2);
-    const [termine, stunden, plaetze, zahlungen] = await cardBoxes(side);
-    expect(termine!.y).toBeGreaterThanOrEqual(Math.max(hero!.bottom, ring!.bottom) - 1);
-    // Helferstunden rechts neben den Terminen, oben bündig, über die Höhe der drei Karten links
-    expect(stunden!.x).toBeGreaterThanOrEqual(termine!.right - 1);
-    expect(Math.abs(stunden!.y - termine!.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(stunden!.bottom - zahlungen!.bottom)).toBeLessThanOrEqual(1);
-    // Links untereinander: Termine, freie Plätze, Offene Zahlungen
-    for (const [above, below] of [
-      [termine!, plaetze!],
-      [plaetze!, zahlungen!],
-    ] as const) {
-      expect(Math.abs(below.x - termine!.x)).toBeLessThanOrEqual(1);
-      expect(below.y).toBeGreaterThanOrEqual(above.bottom - 1);
-    }
+    const [members, block, hours] = await cardBoxes(kpis);
+    expect(Math.abs(block!.y - members!.y)).toBeLessThanOrEqual(1);
+    expect(block!.x).toBeGreaterThanOrEqual(members!.right - 1);
+    expect(hours!.y).toBeGreaterThanOrEqual(Math.max(members!.bottom, block!.bottom) - 1);
+    expect(Math.abs(hours!.x - members!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(hours!.right - block!.right)).toBeLessThanOrEqual(1);
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
 });

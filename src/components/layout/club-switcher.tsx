@@ -32,7 +32,7 @@ export function ClubSwitcher({ clubs, activeId }: { clubs: ClubOption[]; activeI
 
   if (clubs.length <= 1) {
     return (
-      <div className="flex min-w-0 items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-2.5 rounded-full bg-card py-1 pr-4 pl-1 shadow-xs">
         {active && <ClubLogo name={active.name} logoUrl={active.logoUrl} />}
         <p className="truncate text-base font-semibold">{active?.name}</p>
       </div>
@@ -53,7 +53,7 @@ export function ClubSwitcher({ clubs, activeId }: { clubs: ClubOption[]; activeI
         <Button
           variant="outline"
           disabled={pending}
-          className="h-10 max-w-[45vw] min-w-0 shrink justify-between gap-2 px-1.5 sm:max-w-64 sm:px-2"
+          className="h-10 max-w-[45vw] min-w-0 shrink justify-between gap-2 rounded-full border-transparent bg-card px-1.5 shadow-xs sm:max-w-64 sm:pr-3 sm:pl-1.5 dark:bg-card"
           aria-label="Verein wechseln"
         >
           {active && <ClubLogo name={active.name} logoUrl={active.logoUrl} size="sm" />}

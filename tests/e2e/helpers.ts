@@ -23,6 +23,10 @@ export const USERS = {
   otherAdmin: "admin@anderer-verein.local",
 } as const;
 
+/** Begrüßung auf dem Dashboard nach der Tageszeit („Guten Morgen, Anna“, „Guten Tag, …“, „Guten Abend, …“). */
+export const greeting = (firstName: string) =>
+  new RegExp(`^Guten (Morgen|Tag|Abend), ${firstName}$`);
+
 /** Meldet über die Oberfläche an – genau wie ein echter Benutzer. */
 export async function login(page: Page, email: string, password = DEMO_PASSWORD): Promise<void> {
   await page.goto("/anmelden");

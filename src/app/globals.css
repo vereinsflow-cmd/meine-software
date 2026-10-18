@@ -124,8 +124,9 @@
 }
 
 :root {
-  /* Der Seitengrund ist einen Hauch bläulich-grau, die Karten sind weiß: so heben sich Inhalte ab, ohne dass es Rahmen braucht. */
-  --background: oklch(0.972 0.005 258);
+  /* Seit 18.10.2026 wie die Vorlage „Vertix“ (Instagram-Reel, Ben: „mache dashboard genau so“): neutral hellgrauer Seitengrund,
+     weiße Karten – so heben sich Inhalte ab, ohne dass es Rahmen braucht. */
+  --background: oklch(0.972 0.002 286);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -205,45 +206,44 @@
 }
 
 .dark {
-  /* Dunkle Darstellung mit leichtem Blaustich (passend zum Logo): Seitengrund, Seitenleiste und Karten liegen in drei erkennbar
-     verschiedenen Stufen, statt überall fast dasselbe Grau zu zeigen. */
-  --background: oklch(0.15 0.02 258);
+  /* Dunkle Darstellung seit 18.10.2026 wie die Vorlage „Vertix“: fast schwarz und neutral (ohne Blaustich). Seitengrund,
+     Seitenleiste und Karten liegen in drei erkennbar verschiedenen Stufen; graue Flächen in Karten (`--muted`) eine Stufe heller. */
+  --background: oklch(0.145 0.002 286);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.215 0.026 258);
+  --card: oklch(0.205 0.004 286);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.235 0.028 258);
+  --popover: oklch(0.23 0.005 286);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.72 0.14 258);
   --primary-foreground: oklch(0.17 0.03 258);
-  --secondary: oklch(0.29 0.03 258);
+  --secondary: oklch(0.27 0.005 286);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.27 0.03 258);
-  --muted-foreground: oklch(0.75 0.015 258);
-  --accent: oklch(0.29 0.035 258);
+  --muted: oklch(0.255 0.005 286);
+  --muted-foreground: oklch(0.75 0.008 286);
+  --accent: oklch(0.28 0.006 286);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  /* Feldrand deckend statt durchscheinend: 3,8:1 auf der Karte, 4,2:1 auf dem Seitengrund, 3,6:1 im Dialog und 3,3:1 gegen
-     die eigene, leicht aufgehellte Feldfläche (vorher 1,4–1,9:1). */
-  --field-border: oklch(0.56 0.02 258);
-  /* Fokusring auch im Dunkeln in der Markenfarbe (wie --primary) statt Grau: 7,0:1 auf der Karte, 7,9:1 auf dem Seitengrund. */
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  /* Feldrand deckend statt durchscheinend: mindestens 3:1 auf Karte, Seitengrund und Dialog. */
+  --field-border: oklch(0.57 0.008 286);
+  /* Fokusring auch im Dunkeln in der Markenfarbe (wie --primary) statt Grau. */
   --ring: oklch(0.72 0.14 258);
-  /* Dieselben sechs Farbtöne, für den dunklen Grund nachgestuft und gegen die dunkle Kartenfläche (#121a25) validiert: alle ≥ 3:1. */
+  /* Dieselben sechs Farbtöne, für den dunklen Grund nachgestuft (gegen eine dunkle Kartenfläche validiert: alle ≥ 3:1). */
   --chart-1: #3987e5;
   --chart-2: #d95926;
   --chart-3: #199e70;
   --chart-4: #c98500;
   --chart-5: #d55181;
   --chart-6: #008300;
-  --chart-neutral: oklch(0.62 0.012 258);
+  --chart-neutral: oklch(0.62 0.008 286);
   --chart-grid: oklch(1 0 0 / 8%);
   --chart-axis: oklch(1 0 0 / 22%);
-  --sidebar: oklch(0.185 0.03 258);
+  --sidebar: oklch(0.205 0.004 286);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.72 0.14 258);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.29 0.04 258);
+  --sidebar-accent: oklch(0.28 0.006 286);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.72 0.14 258);
@@ -440,6 +440,30 @@
       }
     }
   }
+}
+
+/*
+ * Wechsel Hell ↔ Dunkel wie in der Vorlage „Vertix“ (18.10.2026): Die neue Darstellung wächst als Kreis vom gedrückten Knopf
+ * über die ganze Seite (View Transitions, `useThemeSwitch` in components/layout/theme-switch.ts). Die Bewegung selbst setzt das
+ * Skript (`clip-path`); hier werden nur das Überblenden des Browsers abgeschaltet und die neue Ansicht nach oben gelegt.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* Schraffierte Balken (Helferstunden-Diagramm, Vorlage „Vertix“): schräge Streifen in der Farbe aus `--hatch` und einem
+   helleren Ton davon. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--hatch) 0 3px,
+    color-mix(in oklab, var(--hatch) 72%, white) 3px 6px
+  );
 }
 
 /*

@@ -1,7 +1,7 @@
 import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EyeOffIcon, PlusIcon } from "lucide-react";
+import { ChartColumnIcon, EyeOffIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty } from "@/components/shared/compact-empty";
@@ -11,16 +11,17 @@ import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
 import {
-  FreeShiftsPill,
   FreeShiftsStat,
+  FreeShiftsTile,
   HelperHours,
   HelperHoursChart,
   MembersHero,
   MembersStat,
-  NextEventsPill,
   NextEventsStat,
+  NextEventsTile,
+  PaymentsTile,
   StatCard,
-  TasksDonut,
+  TasksTile,
 } from "@/modules/dashboard/components/kpi-stats";
 import {
   CustomizeDashboard,
@@ -31,6 +32,7 @@ import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
 import { OnboardingCard } from "@/modules/dashboard/components/onboarding-card";
 import { Entrance } from "@/modules/dashboard/components/entrance";
 import { CardGrid, Group, StudioFrame } from "@/modules/dashboard/components/layout";
+import { SOFT_CARD_SURFACE } from "@/components/ui/surface";
 import {
   Anniversaries,
   Birthdays,
@@ -39,7 +41,6 @@ import {
   MyTasks,
   OpenPayments,
   OpenShifts,
-  PaymentsTile,
   RecentActivity,
   StaffingWarnings,
   UpcomingEvents,
@@ -68,6 +69,20 @@ import { cn } from "@/lib/utils";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Dashboard" };
+
+/** Gruß nach der Tageszeit in Deutschland (wie „Good morning“ der Vorlage „Vertix“). */
+function greeting(now: Date): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("de-DE", {
+      hour: "numeric",
+      hourCycle: "h23",
+      timeZone: "Europe/Berlin",
+    }).format(now),
+  );
+  if (hour >= 5 && hour < 11) return "Guten Morgen";
+  if (hour >= 11 && hour < 18) return "Guten Tag";
+  return "Guten Abend";
+}
 
 /**
  * Das Dashboard in vier Reitern (Aufteilung und Begründung: `modules/dashboard/tabs.ts`). Die Seite bleibt EINE Seite – der
@@ -111,69 +126,96 @@ export default async function DashboardPage({
   /** Eigene Größe einer Karte („Anpassen“); ohne Einstellung „Mittel“. */
   const sizeOf = (tab: DashboardTabId, id: string) => blockSize(layout?.tabs[tab], id);
   const kpiSize = sizeOf("uebersicht", "kennzahlen");
-  // Große Fassung der Kennzahlen (seit 17.10.2026 Stil der Vorlage „Analytics“ in VereinsFlow-Farben, `StudioFrame`): nur, wenn
-  // Mitglieder, Termine und Schichten da sind und die Kennzahlen nicht auf „Klein“ stehen – sonst gleich große Farbkarten im
-  // einfachen Raster (mit „Ungelesen“ statt Mitgliederzahl, oder als schmale Reihe ohne Grafiken).
+  // Große Fassung der Kennzahlen (seit 18.10.2026 Stil der Vorlage „Vertix“ in VereinsFlow-Blau): nur, wenn Mitglieder, Termine
+  // und Schichten da sind und die Kennzahlen nicht auf „Klein“ stehen – sonst gleich große Farbkarten im einfachen Raster (mit
+  // „Ungelesen“ statt Mitgliederzahl, oder als schmale Reihe ohne Grafiken).
   const studio = Boolean(members && events && shifts) && kpiSize !== "s";
-  // In der rechten Spalte stehen auch die Offenen Zahlungen (Geld, das drängt, gehört nach oben) – nur, solange weder sie noch
-  // die Kennzahlen über „Anpassen“ ausgeblendet sind. Sonst bleiben sie eine eigene Karte.
+  // Die Summe der offenen Zahlungen steht als erste (blaue) Kachel im Viererblock – nur, solange sie nicht über „Anpassen“
+  // ausgeblendet sind. Die Karte mit den einzelnen Rechnungen (und „Bezahlt“) bleibt weiter unten.
   const hiddenOverview = new Set(layout?.tabs.uebersicht?.hidden ?? []);
-  const paymentsInStudio =
-    studio &&
-    payments !== null &&
-    !hiddenOverview.has("zahlungen") &&
-    !hiddenOverview.has("kennzahlen");
+  const paymentsTile = studio && payments !== null && !hiddenOverview.has("zahlungen");
   const organizer = can(ctx, "tasks:manage");
 
-  // Große Fassung: oben links die Mitglieder-Kachel und der Aufgaben-Ring, rechts die Spalte mit Terminen, Helferstunden,
-  // freien Plätzen und Zahlungen. Schmaler als die Spalte (unter 58 rem Inhaltsbreite) steht sie als Raster unter dem Paar.
+  // Große Fassung (wie die Vorlage): links die Mitglieder-Karte, in der Mitte vier Kacheln in einer Karte (die erste blau), rechts
+  // die Helferstunden. Gemessen wird die Breite des Reiters: ab 66 rem drei Spalten, ab 40 rem zwei (Stunden darunter über die
+  // ganze Breite), am Handy alles untereinander.
+  // Je Kachel: Schlüssel und Inhalt (`hot`: die erste ist blau).
+  const tiles: { key: string; render: (hot: boolean) => React.ReactNode }[] =
+    studio && events && shifts
+      ? [
+          ...(paymentsTile && payments
+            ? [
+                {
+                  key: "zahlungen",
+                  render: (hot: boolean) => (
+                    <PaymentsTile payments={payments} size={kpiSize} hot={hot} />
+                  ),
+                },
+              ]
+            : []),
+          {
+            key: "termine",
+            render: (hot: boolean) => <NextEventsTile events={events} size={kpiSize} hot={hot} />,
+          },
+          ...(tasks
+            ? [
+                {
+                  key: "aufgaben",
+                  render: (hot: boolean) => (
+                    <TasksTile tasks={tasks} organizer={organizer} size={kpiSize} hot={hot} />
+                  ),
+                },
+              ]
+            : []),
+          {
+            key: "plaetze",
+            render: (hot: boolean) => <FreeShiftsTile shifts={shifts} size={kpiSize} hot={hot} />,
+          },
+        ]
+      : [];
   const studioTop =
-    studio && members ? (
-      // Die Breitenabfrage misst die äußere Hülle (ein Element kann nicht nach seiner eigenen Breite fragen).
-      <div className="@container/pair">
-        <div role="group" aria-label="Kennzahlen" className="grid gap-6 @[34rem]/pair:grid-cols-2">
-          <Entrance index={0} className={cn(!tasks && "@[34rem]/pair:col-span-2")}>
-            <MembersHero members={members} size={kpiSize} />
-          </Entrance>
-          {tasks && (
-            <Entrance index={1}>
-              <TasksDonut tasks={tasks} organizer={organizer} />
-            </Entrance>
-          )}
-        </div>
-      </div>
-    ) : null;
-  const studioSide =
-    studio && events && shifts ? (
+    studio && members && shifts ? (
       <div
         role="group"
-        aria-label="Weitere Kennzahlen"
-        className="grid gap-5 sm:grid-cols-2 @bento-wide/studio:flex @bento-wide/studio:flex-col"
+        aria-label="Kennzahlen"
+        className="grid gap-4 @[40rem]/studio:grid-cols-2 @[66rem]/studio:grid-cols-[minmax(0,1.05fr)_minmax(0,1.25fr)_minmax(0,1.1fr)]"
       >
-        <Entrance index={2} className="[&>*]:h-full">
-          <NextEventsPill events={events} size={kpiSize} />
+        <Entrance index={0} className="[&>*]:h-full">
+          <MembersHero
+            members={members}
+            size={kpiSize}
+            actions={[
+              { href: "/mitglieder", label: "Alle Mitglieder", icon: <AREA_ICON.mitglieder /> },
+              ...(can(ctx, "members:read")
+                ? [{ href: "/mitglieder/statistik", label: "Statistik", icon: <ChartColumnIcon /> }]
+                : []),
+            ]}
+          />
+        </Entrance>
+        <Entrance index={1} className="[&>*]:h-full">
+          <div
+            data-kpi-tiles=""
+            className={cn(SOFT_CARD_SURFACE, "grid grid-cols-2 gap-2.5 p-2.5")}
+          >
+            {tiles.map((tile, index) => (
+              <div
+                key={tile.key}
+                className={cn(
+                  "min-w-0 [&>*]:h-full",
+                  tiles.length % 2 === 1 && index === tiles.length - 1 && "col-span-2",
+                )}
+              >
+                {tile.render(index === 0)}
+              </div>
+            ))}
+          </div>
         </Entrance>
         <Entrance
-          index={3}
-          className={cn(
-            "[&>*]:h-full",
-            // Mit Zahlungen rechts über die Höhe der drei übrigen Karten; ohne sie unter Terminen und freien Plätzen über beide
-            // Spalten (sonst stünden unter den beiden schmalen Karten große Lücken).
-            paymentsInStudio
-              ? "sm:col-start-2 sm:row-span-3 sm:row-start-1"
-              : "sm:col-span-2 sm:row-start-2",
-          )}
+          index={2}
+          className="@[40rem]/studio:col-span-2 @[66rem]/studio:col-span-1 [&>*]:h-full"
         >
           <HelperHoursChart hours={shifts.hours} size={kpiSize} />
         </Entrance>
-        <Entrance index={4} className="[&>*]:h-full">
-          <FreeShiftsPill shifts={shifts} size={kpiSize} />
-        </Entrance>
-        {paymentsInStudio && payments && (
-          <Entrance index={5} className="[&>*]:h-full">
-            <PaymentsTile payments={payments} />
-          </Entrance>
-        )}
       </div>
     ) : null;
 
@@ -323,11 +365,7 @@ export default async function DashboardPage({
   function tabContent(tab: DashboardTabId) {
     const available = blocks[tab];
     const { shown: arranged } = arrangeBlocks(tab, Object.keys(available), layout?.tabs[tab]);
-    // Stehen die Offenen Zahlungen schon in der Spalte der Kennzahlen, nicht noch einmal als Karte.
-    const shown =
-      tab === "uebersicht" && paymentsInStudio
-        ? arranged.filter((id) => id !== "zahlungen")
-        : arranged;
+    const shown = arranged;
     if (shown.length === 0) {
       return (
         <CompactEmpty card icon={<EyeOffIcon />} accent="slate" title="Alle Karten ausgeblendet">
@@ -335,9 +373,9 @@ export default async function DashboardPage({
         </CompactEmpty>
       );
     }
-    // Große Fassung der Übersicht: Die Karten vor und nach den Kennzahlen stehen links, die Spalte der Kennzahlen rechts daneben.
+    // Große Fassung der Übersicht: Die Kennzahlen stehen über die ganze Breite, die übrigen Karten davor und danach.
     const at = shown.indexOf("kennzahlen");
-    if (tab === "uebersicht" && studioTop && studioSide && at >= 0) {
+    if (tab === "uebersicht" && studioTop && at >= 0) {
       const before = shown.slice(0, at);
       const after = shown.slice(at + 1);
       // Gemeinsam für beide Seiten: Steht „Für dich“ vor und nach den Kennzahlen, bekommt die zweite Gruppe eine eigene Kennung.
@@ -346,7 +384,6 @@ export default async function DashboardPage({
         <StudioFrame
           before={before.length > 0 ? renderBlocks(tab, before, true, seen) : null}
           top={studioTop}
-          side={studioSide}
           after={after.length > 0 ? renderBlocks(tab, after, true, seen) : null}
           size={kpiSize}
         />
@@ -407,8 +444,8 @@ export default async function DashboardPage({
                 items={segment.ids.map((blockId) => ({
                   id: blockId,
                   node: available[blockId],
-                  // Neben der Spalte der Kennzahlen steht „Meine Aufgaben“ über die volle Breite (wie die Liste der Vorlage),
-                  // außer man hat sie auf „Klein“ gestellt.
+                  // Unter den Kennzahlen steht „Meine Aufgaben“ über die volle Breite (wie die Liste der Vorlage), außer man hat
+                  // sie auf „Klein“ gestellt.
                   wide:
                     sizeOf(tab, blockId) === "l" ||
                     (inStudio && blockId === "aufgaben" && sizeOf(tab, blockId) !== "s"),
@@ -455,9 +492,9 @@ export default async function DashboardPage({
       <PageHeader
         inline
         align="center"
-        title={`Willkommen, ${ctx.user.firstName}`}
-        // Groß wie die Überschrift der Vorlage „Analytics“; Rolle und Datum als ruhige Zeile darunter.
-        titleClassName="text-4xl font-extrabold tracking-[-0.03em] sm:text-[2.75rem]"
+        title={`${greeting(new Date())}, ${ctx.user.firstName}`}
+        // Wie die Überschrift der Vorlage „Vertix“: groß, aber nicht fett; Rolle und Datum als ruhige Zeile darunter.
+        titleClassName="text-3xl font-semibold tracking-[-0.025em] sm:text-[2.5rem]"
         description={
           <>
             <span>{ctx.roleName}</span>
