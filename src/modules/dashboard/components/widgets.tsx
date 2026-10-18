@@ -555,7 +555,7 @@ const ALL_INVOICES = { href: "/finanzen/rechnungen?stand=offen", label: "Alle of
 
 /**
  * Offene Zahlungen (nur für Rollen mit `finance:read`): oben die Summe, darunter die offenen Rechnungen. Als eigene Karte
- * unter den Kennzahlen – in der großen Fassung (Stil „Analytics“) steht stattdessen `PaymentsTile` in der Spalte der Kennzahlen.
+ * unter den Kennzahlen; in der großen Fassung (Stil „Vertix“) steht die Summe zusätzlich als blaue Kachel bei den Kennzahlen.
  */
 export function OpenPayments({
   payments,
@@ -598,57 +598,6 @@ export function OpenPayments({
         </div>
       )}
     </Widget>
-  );
-}
-
-/**
- * Offene Zahlungen in der rechten Spalte der Kennzahlen (große Fassung im Stil „Analytics“, `StudioFrame`): Summe groß,
- * darunter die dringendste Rechnung mit „Bezahlt“ – die übrigen hinter „weitere anzeigen“ (nichts geht verloren). Dieselbe Region
- * „Offene Zahlungen“ wie die Karte; ob sie hier oder als Karte steht, entscheidet die Seite (ausgeblendet über „Anpassen“ fehlt
- * sie hier wie dort).
- */
-export function PaymentsTile({ payments }: { payments: Payments }) {
-  return (
-    <section
-      aria-labelledby="w-offene-zahlungen-kachel"
-      data-slot="card"
-      className={cn(SOFT_CARD_SURFACE, "flex h-full flex-col gap-3 p-5")}
-    >
-      <div className="flex items-center gap-2.5">
-        <span
-          aria-hidden="true"
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-lg [&_svg]:size-4",
-            payments.overdueCount > 0 ? "bg-primary text-primary-foreground" : ACCENT.teal.tile,
-          )}
-        >
-          <AREA_ICON.finanzen />
-        </span>
-        <h3 id="w-offene-zahlungen-kachel" className="text-sm leading-snug font-semibold">
-          Offene Zahlungen
-        </h3>
-      </div>
-      {payments.count === 0 ? (
-        <Empty icon={<CircleCheckBigIcon />} accent="teal" title="Alles bezahlt">
-          Es gibt keine offenen Rechnungen.
-        </Empty>
-      ) : (
-        <>
-          <PaymentsSum payments={payments} />
-          <InvoiceList payments={payments} initial={1} compact />
-          <Link
-            href={ALL_INVOICES.href}
-            className="group mt-auto inline-flex w-fit items-center gap-1.5 rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          >
-            {ALL_INVOICES.label}
-            <ArrowRightIcon
-              className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-              aria-hidden="true"
-            />
-          </Link>
-        </>
-      )}
-    </section>
   );
 }
 

@@ -1,17 +1,17 @@
 import { AREA_ICON } from "@/components/shared/area-icons";
+import { formatNumber } from "@/lib/charts/geometry";
 import { CountUp } from "@/components/shared/count-up";
 import { hoursCompare, memberCompare, nextEventCompare, staffingCompare } from "../compare";
 import type { BlockSize } from "../layout-prefs";
 import type { DashboardData } from "../service";
 import { FreeShiftsCard, StatCard } from "./kpi-cards";
-import { HoursChartCard, MembersHeroCard, QuotePill } from "./kpi-studio";
-import { PillBar, TasksDonutCard } from "./studio-cards";
+import { Chip, HoursChartCard, MembersHeroCard, QuoteTile, StudioTile } from "./kpi-studio";
 
 /**
  * Die Kennzahlen der Übersicht (laufen im Server und reichen die Daten an die Karten weiter). Zwei Fassungen:
  *  - die Farbkarten (`StatCard`, `kpi-cards.tsx`) für das einfache Raster – Rollen ohne Mitgliederzahlen und die Größe „Klein“;
- *  - seit 17.10.2026 der Stil der Vorlage „Analytics“ in VereinsFlow-Farben (große Mitglieder-Kachel, Aufgaben-Ring, schmale
- *    Karten und Stunden-Balken, `kpi-studio.tsx`/`studio-cards.tsx`), angeordnet von `StudioFrame` in der Seite.
+ *  - seit 18.10.2026 der Stil der Vorlage „Vertix“ in VereinsFlow-Blau (Mitglieder-Karte, Viererblock aus Kacheln und
+ *    Stunden-Balken, `kpi-studio.tsx`), angeordnet in der Seite (`studioTop`).
  * Jede Kennzahl mit Verlauf zeigt ihren Kurs „wie eine Aktie“ (`modules/dashboard/quote.ts`) und den kurzen Vergleichssatz.
  */
 
@@ -49,15 +49,17 @@ export function MembersStat({
 }
 
 /**
- * Große Mitglieder-Kachel: unten Aktiv, Passiv und alle übrigen Status zusammen („Weitere“: Ehrenmitglieder, Gesperrte,
- * Ausgetretene im Bestand) – die drei Spalten ergeben genau die große Zahl.
+ * Mitglieder-Karte: unten Aktiv, Passiv und alle übrigen Status zusammen („Weitere“: Ehrenmitglieder, Gesperrte, Ausgetretene im
+ * Bestand) – die drei Kärtchen ergeben genau die große Zahl. `actions`: die beiden runden Knöpfe (von der Seite nach Rechten).
  */
 export function MembersHero({
   members,
   size,
+  actions,
 }: {
   members: NonNullable<DashboardData["members"]>;
   size?: BlockSize;
+  actions: React.ComponentProps<typeof MembersHeroCard>["actions"];
 }) {
   const count = (status: string) =>
     members.byStatus.find((entry) => entry.status === status)?.count ?? 0;
@@ -70,13 +72,13 @@ export function MembersHero({
       value={<CountUp value={members.total} />}
       compare={memberCompare(members.trend) ?? undefined}
       href="/mitglieder"
-      icon={<AREA_ICON.mitglieder />}
       quote={members.quote}
       split={[
-        { label: "Aktiv", count: active },
-        { label: "Passiv", count: passive },
-        { label: "Weitere", count: rest },
+        { label: "Aktiv", count: active, dot: "bg-emerald-500" },
+        { label: "Passiv", count: passive, dot: "bg-blue-600 dark:bg-blue-400" },
+        { label: "Weitere", count: rest, dot: "bg-slate-400" },
       ]}
+      actions={actions}
       size={size}
     />
   );
@@ -103,23 +105,25 @@ export function NextEventsStat({
   );
 }
 
-/** Termine als schmale Karte; der Kurs als kleine Linie mit Zeitraum-Knöpfen (12 W · 6 M · 12 M). */
-export function NextEventsPill({
+/** Termine als Kachel: Veränderung im Standard-Zeitraum, darunter wann der nächste Termin ist. */
+export function NextEventsTile({
   events,
   size,
+  hot,
 }: {
   events: NonNullable<DashboardData["events"]>;
   size?: BlockSize;
+  hot?: boolean;
 }) {
   return (
-    <QuotePill
+    <QuoteTile
       label="Termine in 30 Tagen"
       value={<CountUp value={events.countNext30Days} />}
-      sub={nextEventsCompare(events).text}
+      caption={nextEventsCompare(events).text}
       href="/veranstaltungen"
       icon={<AREA_ICON.veranstaltungen />}
-      accent="violet"
       quote={events.quote}
+      hot={hot}
       size={size}
     />
   );
@@ -144,48 +148,107 @@ export function FreeShiftsStat({
   );
 }
 
-/**
- * Freie Helferplätze als schmale Karte: der Balken zeigt die besetzten von den benötigten Plätzen, darunter der Kurs der Besetzung
- * mit Zeitraum-Knöpfen (6 W · 12 W) – beides nur, wenn Schichten geplant sind.
- */
-export function FreeShiftsPill({
+/** Freie Helferplätze als Kachel: Veränderung der Besetzung (nur, wenn Schichten geplant sind) und wie viele besetzt sind. */
+export function FreeShiftsTile({
   shifts,
   size,
+  hot,
 }: {
   shifts: NonNullable<DashboardData["shifts"]>;
   size?: BlockSize;
+  hot?: boolean;
 }) {
   const { filled, required } = shifts.staffing;
   return (
-    <QuotePill
+    <QuoteTile
       label="Freie Helferplätze"
       value={<CountUp value={shifts.freeSpots} />}
-      sub={staffingCompare(filled, required).text}
+      caption={staffingCompare(filled, required).text}
       href="/helferplanung"
       icon={<AREA_ICON.helferplanung />}
-      accent="emerald"
-      quote={shifts.staffingQuote}
-      chart={required > 0}
-      extra={<PillBar value={filled} total={required} accent="emerald" />}
+      quote={required > 0 ? shifts.staffingQuote : undefined}
+      hot={hot}
       size={size}
     />
   );
 }
 
-/** Aufgaben-Ring; „Aufgaben im Verein“ nur für Organisierende, sonst die für die Person sichtbaren offenen Aufgaben. */
-export function TasksDonut({
+/** Offene Aufgaben als Kachel; „Aufgaben im Verein“ nur für Organisierende, sonst die für die Person sichtbaren offenen Aufgaben. */
+export function TasksTile({
   tasks,
   organizer,
+  size,
+  hot,
 }: {
   tasks: NonNullable<DashboardData["tasks"]>;
   organizer: boolean;
+  size?: BlockSize;
+  hot?: boolean;
 }) {
+  const { open, overdue, mineOpen } = tasks.stats;
+  const on = hot ? "hot" : "muted";
   return (
-    <TasksDonutCard
+    <StudioTile
       label={organizer ? "Aufgaben im Verein" : "Offene Aufgaben"}
-      open={tasks.stats.open}
-      overdue={tasks.stats.overdue}
-      mine={organizer ? tasks.stats.mineOpen : undefined}
+      value={
+        <>
+          <CountUp value={open} />{" "}
+          <span className="text-[0.5em] font-semibold tracking-normal">offen</span>
+        </>
+      }
+      chip={
+        overdue > 0 ? (
+          <Chip tone="down" on={on}>
+            {formatNumber(overdue, 0)} überfällig
+          </Chip>
+        ) : (
+          <Chip tone="up" on={on}>
+            {open === 0 ? "Alles erledigt" : "Im Zeitplan"}
+          </Chip>
+        )
+      }
+      caption={
+        organizer && mineOpen !== open ? `davon ${formatNumber(mineOpen, 0)} für dich` : undefined
+      }
+      href="/aufgaben"
+      icon={<AREA_ICON.aufgaben />}
+      hot={hot}
+      size={size}
+    />
+  );
+}
+
+/** Offene Zahlungen als Kachel: Summe, Überfälliges als Schild, Anzahl der Rechnungen. */
+export function PaymentsTile({
+  payments,
+  size,
+  hot,
+}: {
+  payments: NonNullable<DashboardData["payments"]>;
+  size?: BlockSize;
+  hot?: boolean;
+}) {
+  const on = hot ? "hot" : "muted";
+  return (
+    <StudioTile
+      label="Offene Zahlungen"
+      value={<CountUp value={payments.totalCents} kind="euro" />}
+      chip={
+        payments.overdueCount > 0 ? (
+          <Chip tone="down" on={on}>
+            {formatNumber(payments.overdueCount, 0)} überfällig
+          </Chip>
+        ) : (
+          <Chip tone="up" on={on}>
+            Nichts überfällig
+          </Chip>
+        )
+      }
+      caption={`in ${formatNumber(payments.count, 0)} ${payments.count === 1 ? "Rechnung" : "Rechnungen"}`}
+      href="/finanzen/rechnungen?stand=offen"
+      icon={<AREA_ICON.finanzen />}
+      hot={hot}
+      size={size}
     />
   );
 }
@@ -221,7 +284,7 @@ export function HelperHours({
   );
 }
 
-/** Helferstunden als weiße Karte mit Balken je Abschnitt (Stil der Vorlage). */
+/** Helferstunden als weiße Karte mit Balken je Abschnitt (Stil der Vorlage „Vertix“). */
 export function HelperHoursChart({
   hours,
   size,
@@ -235,7 +298,6 @@ export function HelperHoursChart({
       value={compactHours(hours.minutes)}
       compare={hoursCompare(hours.trend) ?? undefined}
       href="/helferplanung/stunden"
-      icon={<AREA_ICON.helferstunden />}
       quote={hours.quote}
       size={size}
     />

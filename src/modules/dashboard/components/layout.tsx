@@ -70,45 +70,27 @@ export function CardGrid({
 }
 
 /**
- * Aufteilung der Übersicht im Stil der Vorlage „Analytics“ (seit 17.10.2026): links die Mitglieder-Kachel mit dem Aufgaben-Ring
- * (`top`) und darunter die übrigen Karten (`after`; was in „Anpassen“ vor die Kennzahlen gestellt wurde, steht darüber –
- * `before`), rechts die Spalte der Kennzahlen (`side`) über die ganze Höhe.
- *
- * Gemessen wird die Breite des Reiters (Containerabfrage `studio`): erst ab 58 rem hat die rechte Spalte neben dem Paar Platz
- * (z. B. 1470 px Fenster); schmaler steht sie als Raster unter dem Paar, am Handy alles untereinander. Die Reihenfolge im Code
- * (Tastatur, Screenreader) ist immer: davor, Paar, Spalte, danach. Die rechte Spalte reicht über alle Reihen; die letzte Reihe
- * (`1fr`) nimmt die übrige Höhe auf, damit zwischen den Karten links keine Lücken entstehen.
+ * Aufteilung der Übersicht im Stil der Vorlage „Vertix“ (seit 18.10.2026): oben die Kennzahlen über die ganze Breite (`top`; die
+ * Spalten ordnet die Seite nach der Breite dieses Rahmens, Containerabfrage `studio`), darunter die übrigen Karten (`after`); was
+ * in „Anpassen“ vor die Kennzahlen gestellt wurde, steht darüber (`before`).
  */
 export function StudioFrame({
   before,
   top,
-  side,
   after,
   size,
 }: {
   before: React.ReactNode;
   top: React.ReactNode;
-  side: React.ReactNode;
   after: React.ReactNode;
   /** Eigene Größe der Kennzahlen („Anpassen“) – als `data-size` lesbar, wie beim einfachen Raster (`KpiCarousel`). */
   size: string;
 }) {
-  const rows = [before ? "auto" : null, "auto", after ? "auto" : null, "1fr"]
-    .filter(Boolean)
-    .join(" ");
   return (
-    <div data-layout="studio" data-size={size} className="@container/studio">
-      <div
-        style={{ "--studio-rows": rows } as React.CSSProperties}
-        className="grid @bento-wide/studio:grid-cols-[minmax(0,1fr)_minmax(19rem,22rem)] @bento-wide/studio:grid-rows-(--studio-rows) @bento-wide/studio:gap-x-6"
-      >
-        {before && <div className="mb-10 min-w-0">{before}</div>}
-        <div className="mb-8 min-w-0">{top}</div>
-        <div className="mb-10 min-w-0 @bento-wide/studio:col-start-2 @bento-wide/studio:row-[1/-1] @bento-wide/studio:mb-0">
-          {side}
-        </div>
-        {after && <div className="min-w-0">{after}</div>}
-      </div>
+    <div data-layout="studio" data-size={size} className="@container/studio grid gap-10">
+      {before && <div className="min-w-0">{before}</div>}
+      <div className="min-w-0">{top}</div>
+      {after && <div className="min-w-0">{after}</div>}
     </div>
   );
 }

@@ -88,15 +88,15 @@ test.describe("Dashboard selbst einstellen", () => {
     await login(page, USERS.vorstand);
     const kpis = page.locator("[data-layout]");
     const group = kpiGroup(page);
-    const side = page.getByRole("group", { name: "Weitere Kennzahlen" });
+    const tiles = group.locator("[data-kpi-tiles]");
     const payments = page.getByRole("region", { name: "Offene Zahlungen", exact: true });
-    // Standard für den Vorstand (Mitglieder, Termine und Schichten): große Fassung („Studio“) in „Mittel“ – Mitglieder mit Kurs im
-    // Paar, Termine, Helferstunden, freie Plätze und Zahlungen in der Gruppe „Weitere Kennzahlen“
+    // Standard für den Vorstand (Mitglieder, Termine und Schichten): große Fassung („Studio“, Stil „Vertix“) in „Mittel“ –
+    // Mitglieder-Karte, Viererblock der Kacheln und die Helferstunden als Balken
     await expect(kpis).toHaveAttribute("data-layout", "studio");
     await expect(kpis).toHaveAttribute("data-size", "m"); // Standard: Mittel
-    expect(await group.locator('[data-slot="quote-chart"]').count()).toBeGreaterThan(0);
-    await expect(side).toBeVisible();
-    await expect(payments).toHaveCount(1); // als Kachel in der Spalte, nicht noch einmal als Karte
+    expect(await group.locator('[data-slot="step-bar"]').count()).toBeGreaterThan(0);
+    await expect(tiles).toBeVisible();
+    await expect(payments).toHaveCount(1); // die Karte mit den Rechnungen; die Summe steht zusätzlich als Kachel
     // Neben den Kennzahlen steht „Meine Aufgaben“ schon ohne eigene Einstellung über die volle Breite
     await expectTasksWide(page);
 
@@ -110,7 +110,7 @@ test.describe("Dashboard selbst einstellen", () => {
       // „Klein“: zurück zum einfachen Raster (Karussell am Handy) – keine große Fassung, keine Spalte daneben
       await expect(kpis).toHaveAttribute("data-layout", "grid");
       await expect(kpis).toHaveAttribute("data-size", "s");
-      await expect(side).toHaveCount(0);
+      await expect(tiles).toHaveCount(0);
       await expect(group.locator('[data-slot="quote-chart"]')).toHaveCount(0); // kein Kursverlauf
       // Die Offenen Zahlungen stehen wieder als eigene Karte – einmal
       await expect(payments).toHaveCount(1);
@@ -140,8 +140,7 @@ test.describe("Dashboard selbst einstellen", () => {
     await expect(page.getByText("Standard-Ansicht wiederhergestellt.")).toBeVisible();
     await expect(kpis).toHaveAttribute("data-layout", "studio");
     await expect(kpis).toHaveAttribute("data-size", "m");
-    expect(await group.locator('[data-slot="quote-chart"]').count()).toBeGreaterThan(0);
-    await expect(side).toBeVisible();
+    expect(await group.locator('[data-slot="step-bar"]').count()).toBeGreaterThan(0);
   });
 
   test("Kennzahlen „Groß“: große Fassung mit Hoch, Tief und Ø unter dem Mitglieder-Kurs – bleibt nach dem Neuladen", async ({
@@ -154,7 +153,7 @@ test.describe("Dashboard selbst einstellen", () => {
       .filter({ has: page.getByRole("link", { name: /^Mitglieder/ }) });
     const term = (name: string) =>
       members.getByRole("term").filter({ hasText: new RegExp(`^${name}$`) });
-    // „Mittel“ (Standard): unter dem Kurs nur die Aufteilung Aktiv · Passiv · Weitere
+    // „Mittel“ (Standard): ohne Kurs, nur die Aufteilung Aktiv · Passiv · Weitere
     await expect(kpis).toHaveAttribute("data-size", "m");
     await expect(term("Aktiv")).toBeVisible();
     await expect(term("Hoch")).toHaveCount(0);
@@ -168,7 +167,7 @@ test.describe("Dashboard selbst einstellen", () => {
       // Bleibt die große Fassung (kein einfaches Raster wie bei „Klein“), nur größer
       await expect(kpis).toHaveAttribute("data-layout", "studio");
       await expect(kpis).toHaveAttribute("data-size", "l");
-      await expect(page.getByRole("group", { name: "Weitere Kennzahlen" })).toBeVisible();
+      await expect(kpiGroup(page).locator("[data-kpi-tiles]")).toBeVisible();
       await expect(members.locator('[data-slot="quote-chart"]')).toHaveCount(1);
       await expect(term("Hoch")).toBeVisible();
       await expect(term("Tief")).toBeVisible();

@@ -363,26 +363,22 @@ test.describe("Breite Seitenleiste – Animationen", () => {
 });
 
 /**
- * Die schmale Symbolleiste (Standard ab 1024 px, `NavRail`): Die aktuelle Seite trägt eine graue, runde Fläche hinter ihrem
- * Symbol – ein eigenes Element direkt vor dem Link, damit sie über den Rand der Leiste ragen kann. Überfahren tönt den Grund
- * eines Symbols nur hell, ohne Bewegung (wie in der breiten Leiste).
+ * Die schmale Symbolleiste (Standard ab 1024 px, `NavRail`; seit 18.10.2026 Stil „Vertix“): Die aktuelle Seite ist ein gefüllter
+ * Kreis. Überfahren tönt den Grund eines Symbols nur hell, ohne Bewegung (wie in der breiten Leiste).
  */
 test.describe("Symbolleiste – Kennzeichnung", () => {
   const nav = (page: Page) => page.getByRole("navigation", { name: "Hauptnavigation" });
 
-  test("aktiver Punkt mit aria-current und grauer Fläche; Überfahren einer Gruppe tönt nur ihren Grund", async ({
+  test("aktiver Punkt mit aria-current und gefülltem Kreis; Überfahren einer Gruppe tönt nur ihren Grund", async ({
     page,
   }) => {
     await login(page, USERS.admin);
     const active = nav(page).getByRole("link", { name: "Dashboard", exact: true });
     await expect(active).toHaveAttribute("aria-current", "page");
-    await expect(active.locator("xpath=preceding-sibling::span[1]")).not.toHaveCSS(
-      "background-color",
-      "rgba(0, 0, 0, 0)",
-    );
-    // „Verein“ enthält die aktuelle Seite nicht: keine Fläche davor
+    await expect(active).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    // „Verein“ enthält die aktuelle Seite nicht: ohne Fläche
     const group = nav(page).getByRole("button", { name: "Verein", exact: true });
-    await expect(group.locator("xpath=preceding-sibling::span")).toHaveCount(0);
+    await expect(group).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     const look = () =>
       group.evaluate((element) => {
         const style = getComputedStyle(element);

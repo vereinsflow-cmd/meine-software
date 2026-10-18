@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 export function NotificationBell({ unread }: { unread: number }) {
   const label = unread > 0 ? `Benachrichtigungen, ${unread} ungelesen` : "Benachrichtigungen";
   return (
-    <Button asChild variant="ghost" size="icon" className="relative">
+    <Button asChild variant="ghost" size="icon" className="relative size-10 rounded-full">
       <Link href="/benachrichtigungen" aria-label={label}>
         <AREA_ICON.benachrichtigungen className="size-5" />
         {unread > 0 && (

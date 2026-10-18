@@ -1,7 +1,7 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import { LogOutIcon, MoonIcon, MonitorIcon, SunIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/modules/auth/actions";
+import { useThemeSwitch, type ThemeChoice } from "./theme-switch";
 
 export function UserMenu({
   name,
@@ -27,7 +28,9 @@ export function UserMenu({
   email: string;
   roleName: string;
 }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, switchTo, originOf } = useThemeSwitch();
+  // Der Kreis beim Wechsel der Darstellung wächst vom Knopf des Menüs aus (das Menü selbst ist dann schon zu).
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const initials = name
     .split(/\s+/)
     .map((part) => part[0])
@@ -40,8 +43,9 @@ export function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          ref={triggerRef}
           variant="ghost"
-          className="h-10 gap-2 px-1.5 sm:px-2"
+          className="h-10 gap-2 rounded-full px-1.5 sm:pr-3 sm:pl-1.5"
           aria-label={`Benutzermenü von ${name}`}
         >
           <Avatar className="size-8">
@@ -71,7 +75,10 @@ export function UserMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">Darstellung</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={theme ?? "system"} onValueChange={setTheme}>
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(value) => switchTo(value as ThemeChoice, originOf(triggerRef.current))}
+        >
           <DropdownMenuRadioItem value="light">
             <SunIcon /> Hell
           </DropdownMenuRadioItem>

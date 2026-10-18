@@ -67,7 +67,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Sidebar groups={groups} userName={name} />
 
           <div className="flex min-w-0 flex-col">
-            <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:px-6 xl:px-8 print:hidden">
+            {/* Kopfzeile wie in der Vorlage „Vertix“ (18.10.2026): ohne eigene Fläche und Linie, die Teile als weiße Pillen. */}
+            <header className="sticky top-0 z-30 flex h-(--app-header-height) items-center gap-2 bg-background/90 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/75 sm:px-6 xl:px-8 print:hidden">
               <MobileNav
                 groups={groups}
                 clubName={ctx.club.name}
@@ -77,7 +78,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <div className="flex flex-1 justify-center px-2 sm:px-4">
                 <SearchTrigger />
               </div>
-              <div className="ml-auto flex items-center gap-1">
+              <div className="ml-auto flex items-center gap-1 rounded-full bg-card p-1 shadow-xs">
                 <NotificationBell unread={unread} />
                 <UserMenu name={name} email={ctx.user.email} roleName={ctx.roleName} />
               </div>

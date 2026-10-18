@@ -14,17 +14,18 @@ import { Popover as PopoverPrimitive } from "radix-ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { NavGroup, NavItem } from "./nav";
+import { ThemeToggle } from "./theme-toggle";
 
 /**
- * Schmale, dunkle Symbolleiste (seit 17.10.2026, nach der Vorlage „Analytics“, die Ben schickte: „mach die sidebar links genau
- * so“). Statt aller 17 Menüpunkte steht je Gruppe ein Symbol (Ben wählte „Gruppen + Ausklapp-Menü“): Dashboard führt direkt
+ * Schmale Symbolleiste (seit 17.10.2026, nach der Vorlage „Analytics“, die Ben schickte: „mach die sidebar links genau so“; seit
+ * 18.10.2026 im Aussehen der Vorlage „Vertix“: helle, schwebende Pillen statt einer dunklen Leiste). Statt aller 17 Menüpunkte steht je Gruppe ein Symbol (Ben wählte „Gruppen + Ausklapp-Menü“): Dashboard führt direkt
  * hin, Verein, Organisation, Kommunikation und Einstellungen öffnen rechts daneben ein kleines Menü mit ihren Seiten. Unten das
  * Kürzel der angemeldeten Person – es öffnet „Persönlich“ (Profil, Datenschutz, Hilfe & Support) – und der Knopf, der die
  * breite Seitenleiste mit Text ausklappt.
  *
- * Die aktuelle Seite (bzw. ihre Gruppe) trägt eine graue, runde Fläche mit einem Punkt, die ein Stück über den Rand der Leiste
- * hinausragt – wie in der Vorlage. Zähler (offene Aufgaben, Ungelesenes) stehen als blauer Kreis an der Gruppe und im Menü an
- * der Seite. Farben: die dunkle Fassung der Seitenleiste (`dark` an der Leiste, `--sidebar`), Akzent Markenblau.
+ * Die aktuelle Seite (bzw. ihre Gruppe) trägt einen gefüllten, dunklen Kreis (im Dunkeln hell) – wie der gewählte Punkt der
+ * Vorlage. Zähler (offene Aufgaben, Ungelesenes) stehen als blauer Kreis an der Gruppe und im Menü an der Seite. Oben über den
+ * Gruppen Hell/Dunkel (`ThemeToggle`).
  */
 
 /**
@@ -51,37 +52,25 @@ function RailBadge({ value }: { value: number }) {
   return (
     <span
       aria-hidden="true"
-      className="absolute -top-0.5 -right-0.5 z-10 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-primary px-1 text-xs leading-none font-semibold text-primary-foreground ring-2 ring-sidebar"
+      className="absolute -top-0.5 -right-0.5 z-10 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-primary px-1 text-xs leading-none font-semibold text-primary-foreground ring-2 ring-card"
     >
       {value > 9 ? "9+" : value}
     </span>
   );
 }
 
-/**
- * Hülle eines Symbols: 48 px groß, mittig in der Leiste. Aktiv liegt dahinter die graue Fläche, die rechts über die Leiste
- * hinausragt (`-right-5`), mit dem Punkt an ihrem Ende. Deckend (Schiefergrau 500, weißes Symbol 4,7 : 1) – durchscheinend wäre
- * das überstehende Stück auf dem hellen Seitengrund kaum zu sehen.
- */
-function RailSlot({ active, children }: { active: boolean; children: React.ReactNode }) {
-  return (
-    <div className="relative flex w-full justify-center">
-      {active && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-[-1.25rem] left-[calc(50%-1.5rem)] rounded-full bg-slate-500 shadow-[0_6px_14px_-6px_rgb(0_0_0/0.5)] after:absolute after:top-1/2 after:right-4 after:size-1.5 after:-translate-y-1/2 after:rounded-full after:bg-white after:content-['']"
-        />
-      )}
-      {children}
-    </div>
-  );
+/** Hülle eines Symbols: mittig in der Pille der Leiste. */
+function RailSlot({ children }: { active?: boolean; children: React.ReactNode }) {
+  return <div className="relative flex w-full justify-center">{children}</div>;
 }
 
 /** Aussehen eines Symbol-Knopfs bzw. -Links in der Leiste. */
 function railButton(active: boolean) {
   return cn(
-    "relative grid size-12 shrink-0 place-items-center rounded-full transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-safe:active:scale-95 motion-reduce:transition-none",
-    active ? "text-white" : "text-white/70 hover:bg-white/10 hover:text-white",
+    "relative grid size-10 shrink-0 place-items-center rounded-full transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card motion-safe:active:scale-95 motion-reduce:transition-none [&_svg]:size-[1.125rem]",
+    active
+      ? "bg-foreground text-background"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }
 
@@ -129,10 +118,10 @@ function MenuLink({
       aria-current={active ? "page" : undefined}
       className={cn(
         // Abstand zwischen Fokusrahmen und Fläche – sonst verschwände der Rahmen an der blau gefüllten aktuellen Seite.
-        "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar motion-reduce:transition-none",
+        "flex items-center gap-3 rounded-xl px-3 py-2 text-base font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover motion-reduce:transition-none",
         active
           ? "bg-primary font-semibold text-primary-foreground"
-          : "text-foreground/90 hover:bg-white/10 hover:text-foreground",
+          : "text-foreground/90 hover:bg-muted hover:text-foreground",
       )}
     >
       <span aria-hidden="true" className="grid size-5 shrink-0 place-items-center">
@@ -159,7 +148,7 @@ function MenuLink({
 
 /**
  * Gruppe als Symbol mit Ausklapp-Menü rechts daneben (Klick, Enter oder Leertaste; Escape schließt). Enthält die Gruppe die
- * aktuelle Seite, trägt ihr Symbol die helle Fläche. Das Menü ist selbst dunkel, wie die Leiste, und steht im Code innerhalb der
+ * aktuelle Seite, ist ihr Symbol gefüllt. Das Menü steht im Code innerhalb der
  * Navigation (ohne Portal) – seine Links gehören so für Screenreader zur „Hauptnavigation“. Es liegt `fixed` über der Seite und
  * wird deshalb vom Rand der Leiste nicht abgeschnitten. Der Name des Knopfs ist genau der Name der Gruppe; Zähler und „enthält
  * die aktuelle Seite“ stehen in der Beschreibung (wie in der breiten Seitenleiste).
@@ -206,7 +195,7 @@ function RailGroup({
             type="button"
             aria-label={name ?? label}
             aria-describedby={description ? describedId : undefined}
-            className={cn(railButton(active), open && !active && "bg-white/10 text-white")}
+            className={cn(railButton(active), open && !active && "bg-muted text-foreground")}
           >
             {trigger ?? icon}
             <RailBadge value={pending} />
@@ -221,7 +210,7 @@ function RailGroup({
           side="right"
           align="start"
           // Vom Knopf (mittig in der 6,5 rem breiten Leiste) bis knapp hinter den Rand der Leiste
-          sideOffset={44}
+          sideOffset={40}
           collisionPadding={12}
           aria-label={label}
           // Der Fokus springt auf die aktuelle Seite bzw. den ersten Eintrag (statt auf die unsichtbare Fläche des Menüs).
@@ -233,7 +222,7 @@ function RailGroup({
               box.querySelector<HTMLElement>("a")
             )?.focus();
           }}
-          className="z-50 grid w-64 gap-0.5 rounded-2xl bg-sidebar p-2 text-sidebar-foreground shadow-xl ring-1 ring-white/10 outline-hidden"
+          className="z-50 grid w-64 gap-0.5 rounded-2xl bg-popover p-2 text-popover-foreground shadow-xl ring-1 ring-foreground/10 outline-hidden"
         >
           <p
             aria-hidden="true"
@@ -284,7 +273,8 @@ export function NavRail({
     <nav aria-label="Hauptnavigation" className="flex min-h-0 flex-1 flex-col items-stretch">
       {/* Auf sehr niedrigen Fenstern scrollen nur die Gruppen – Kürzel und Ausklappen bleiben unten erreichbar (die überstehende
           Fläche wird dann am Rand abgeschnitten; die Menüs liegen `fixed` darüber und nicht). */}
-      <div className="flex flex-col gap-2 pt-6 [@media(max-height:35em)]:min-h-0 [@media(max-height:35em)]:overflow-x-hidden [@media(max-height:35em)]:overflow-y-auto">
+      <ThemeToggle className="mx-auto mt-4 shrink-0" />
+      <div className="mx-auto mt-4 flex w-13 flex-col gap-1.5 rounded-full bg-card p-1.5 shadow-xs [@media(max-height:35em)]:min-h-0 [@media(max-height:35em)]:overflow-x-hidden [@media(max-height:35em)]:overflow-y-auto">
         {main.flatMap((group, index) =>
           group.collapsible && group.label
             ? [
@@ -305,7 +295,7 @@ export function NavRail({
               )),
         )}
       </div>
-      <div className="mt-auto flex shrink-0 flex-col items-stretch gap-3 pt-6 pb-5">
+      <div className="mx-auto mt-auto mb-5 flex w-13 shrink-0 flex-col items-stretch gap-1.5 rounded-full bg-card p-1.5 shadow-xs">
         {personal && personal.label && (
           <RailGroup
             label={personal.label}
@@ -313,12 +303,7 @@ export function NavRail({
             icon={null}
             items={personal.items}
             pathname={pathname}
-            trigger={
-              // Ohne eigene Tönung: Weiß auf der grauen Fläche der aktuellen Seite behält so 4,7 : 1.
-              <span className="grid size-11 place-items-center rounded-2xl border-2 border-white/85 text-sm font-bold text-white">
-                {initialsOf(userName)}
-              </span>
-            }
+            trigger={<span className="text-xs font-bold">{initialsOf(userName)}</span>}
           />
         )}
         <div className="flex justify-center">
@@ -329,7 +314,7 @@ export function NavRail({
                 data-sidebar-toggle=""
                 onClick={onExpand}
                 aria-label="Seitenleiste ausklappen"
-                className="grid size-10 place-items-center rounded-full text-white/60 transition-colors duration-150 outline-none hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+                className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors duration-150 outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
               >
                 <ChevronsRightIcon className="size-5" />
               </button>

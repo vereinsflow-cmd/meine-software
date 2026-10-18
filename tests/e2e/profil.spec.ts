@@ -116,7 +116,9 @@ test.describe("Profil", () => {
 
     // Das erste bleibt angemeldet.
     await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { level: 1, name: /Willkommen, Maria/ })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: /^Guten (Morgen|Tag|Abend), Maria$/ }),
+    ).toBeVisible();
   });
 
   test("einzelnes Gerät abmelden", async ({ page, browser }) => {
