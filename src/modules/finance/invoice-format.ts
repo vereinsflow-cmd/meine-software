@@ -1,4 +1,5 @@
 import { formatCalendarDate } from "@/lib/dates";
+import { sanitizeFileName } from "@/lib/uploads";
 
 /**
  * Rechnungen – reine Funktionen für Namen und Anzeige, im Browser und auf dem Server nutzbar, einzeln getestet.
@@ -7,6 +8,19 @@ import { formatCalendarDate } from "@/lib/dates";
 /** Grundname einer Rechnung nach dem Tag des Hochladens, z. B. „Rechnung vom 27.09.2026“. */
 export function invoiceBaseName(invoiceDate: Date): string {
   return `Rechnung vom ${formatCalendarDate(invoiceDate)}`;
+}
+
+/**
+ * Grundname aus einem angegebenen Namen („Telekom – Internet Oktober 2026“): bereinigt wie ein Dateiname, ohne eine
+ * angehängte Dateiendung (die kommt aus dem Inhalt). `null`, wenn nichts Brauchbares übrig bleibt.
+ */
+export function invoiceTitleBase(title: string | null | undefined): string | null {
+  if (!title) return null;
+  // Schrägstriche würden als Ordner gelesen („Strom/Gas“ → „Gas“) – darum vorher zu Bindestrichen.
+  const base = sanitizeFileName(title.replace(/[\\/]+/g, "-"))
+    .replace(/\.(pdf|png|jpe?g|gif|webp)$/i, "")
+    .trim();
+  return base && base !== "Dokument" ? base : null;
 }
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

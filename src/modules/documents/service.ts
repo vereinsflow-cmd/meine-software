@@ -19,7 +19,11 @@ import { enforceRateLimit } from "@/server/security/rate-limit";
 import { deleteFile, openFile, saveFile } from "@/server/storage/files";
 import { scanUpload } from "@/server/storage/scan";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
-import { invoiceBaseName, nextInvoiceName } from "@/modules/finance/invoice-format";
+import {
+  invoiceBaseName,
+  invoiceTitleBase,
+  nextInvoiceName,
+} from "@/modules/finance/invoice-format";
 import type { DocumentInput } from "./schemas";
 import { likeText } from "@/lib/like-pattern";
 
@@ -285,6 +289,8 @@ export interface UploadInput {
     status: InvoiceStatus;
     amountCents: number | null;
     dueDate?: string | undefined;
+    /** Name statt „Rechnung vom <Tag>“, z. B. aus dem Auslesen („Telekom – Internet Oktober 2026“). */
+    title?: string | undefined;
   } | null;
 }
 
@@ -358,10 +364,11 @@ export async function uploadDocument(
   const stored = await saveFile(ctx.clubId, input.bytes);
   try {
     return await ctx.db.$transaction(async (tx) => {
-      // Rechnungen heißen nach dem Tag; gezählt wird über alle nicht gelöschten Dokumente, gleich wer sie sehen darf.
+      // Rechnungen heißen nach dem Tag (oder wie angegeben); gezählt wird über alle nicht gelöschten Dokumente, gleich
+      // wer sie sehen darf – zwei gleichnamige bekommen „(2)“.
       let name = check.safeName;
       if (invoice) {
-        const base = invoiceBaseName(invoiceDate);
+        const base = invoiceTitleBase(invoice.title) ?? invoiceBaseName(invoiceDate);
         const taken = await tx.document.findMany({
           where: { deletedAt: null, name: { startsWith: base } },
           select: { name: true },

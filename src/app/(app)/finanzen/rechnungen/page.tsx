@@ -34,6 +34,7 @@ import { canFinance } from "@/modules/finance/access";
 import { FinanceHeader } from "@/modules/finance/components/finance-header";
 import { MarkPaidButton } from "@/modules/finance/components/mark-paid-button";
 import { dueText, invoiceBaseName } from "@/modules/finance/invoice-format";
+import { invoiceReadingEnabled } from "@/modules/finance/invoice-reader";
 import {
   BookInvoiceButton,
   INVOICE_LIST_FOCUS_ID,
@@ -125,6 +126,7 @@ export default async function InvoicesPage({
               maxMb={env.MAX_UPLOAD_MB}
               requireEvent={scopeOf(ctx, "documents:upload") === "DEPARTMENT"}
               invoiceName={invoiceBaseName(todayCalendarDate())}
+              invoiceReading={invoiceReadingEnabled()}
               invoiceOnly
             />
           ) : undefined

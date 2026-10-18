@@ -2,7 +2,16 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { FileIcon, InfoIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  FileIcon,
+  InfoIcon,
+  Loader2Icon,
+  PencilIcon,
+  TrashIcon,
+  UploadIcon,
+  XIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -30,6 +39,7 @@ import {
 } from "@/lib/uploads";
 import { parseEuroToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import type { InvoicePrefill } from "@/modules/finance/invoice-prefill";
 import { AMOUNT_HINT, INVOICE_STATUSES, INVOICE_STATUS_LABEL } from "@/modules/finance/schemas";
 import { deleteDocumentAction, updateDocumentAction } from "../actions";
 import {
@@ -41,7 +51,7 @@ import {
 
 const ACCEPT = ALLOWED_TYPES.map((type) => `.${type.ext}`).join(",");
 /** Angaben, die für alle Dateien gelten und eine eigene Fehlerzeile haben. */
-const SHARED_FIELDS = ["category", "access", "eventId", "amount", "dueDate"] as const;
+const SHARED_FIELDS = ["category", "access", "eventId", "amount", "dueDate", "title"] as const;
 /** Die beiden Antworten zum Zahlungsstand einer hochgeladenen Rechnung. */
 const PAYMENT_CHOICES = [
   { due: true, label: "Muss noch bezahlt werden" },
@@ -86,6 +96,78 @@ async function uploadOne(body: FormData): Promise<UploadOutcome> {
   }
 }
 
+/** Stand beim Auslesen einer Rechnung (nur mit `invoiceReading`). */
+type Reading =
+  | { state: "idle" }
+  | { state: "reading" }
+  | { state: "done"; note: string | null; paid: boolean }
+  | { state: "failed"; reason: string };
+
+/** Schickt eine Rechnung zum Auslesen – liefert Vorschläge oder den Grund, warum es nicht ging. Speichert nichts. */
+async function readInvoiceFile(
+  file: File,
+): Promise<{ ok: true; prefill: InvoicePrefill } | { ok: false; reason: string }> {
+  try {
+    const body = new FormData();
+    body.set("file", file);
+    const response = await fetch("/api/rechnungen/auslesen", { method: "POST", body });
+    const json = (await response.json().catch(() => null)) as {
+      ok: boolean;
+      data?: { ok: true; prefill: InvoicePrefill } | { ok: false; reason: string };
+      error?: { message: string; fieldErrors?: Record<string, string[]> };
+    } | null;
+    if (response.ok && json?.ok && json.data) return json.data;
+    return {
+      ok: false,
+      reason:
+        json?.error?.fieldErrors?.file?.join(" ") ??
+        json?.error?.message ??
+        "Die Rechnung ließ sich gerade nicht auslesen.",
+    };
+  } catch {
+    return { ok: false, reason: "Die Rechnung ließ sich gerade nicht auslesen." };
+  }
+}
+
+/** Zeile über den Rechnungsfeldern: liest gerade aus / ausgelesen, bitte prüfen / ging nicht. */
+function ReadingStatus({ reading, hasFile }: { reading: Reading; hasFile: boolean }) {
+  const base = "flex items-start gap-2 rounded-md px-3 py-2 text-sm";
+  if (reading.state === "reading")
+    return (
+      <p role="status" className={cn(base, "bg-muted text-muted-foreground")}>
+        <Loader2Icon className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden="true" />
+        Rechnung wird ausgelesen …
+      </p>
+    );
+  if (reading.state === "done")
+    return (
+      <p role="status" className={cn(base, "bg-primary/5")}>
+        <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+        <span>
+          {reading.note ??
+            (reading.paid
+              ? "Ausgelesen – laut Rechnung schon bezahlt. Bitte kurz prüfen."
+              : "Ausgelesen – bitte kurz prüfen, ob alles stimmt.")}
+        </span>
+      </p>
+    );
+  if (reading.state === "failed")
+    return (
+      <p role="status" className={cn(base, "bg-muted text-muted-foreground")}>
+        <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        {reading.reason} Bitte trag die Angaben selbst ein.
+      </p>
+    );
+  // Mehrere Dateien gewählt: Rechnungen gehen nur einzeln – das sagt die Prüfung beim Hochladen.
+  if (hasFile) return null;
+  return (
+    <p className="text-sm text-muted-foreground">
+      Sobald du die Rechnung auswählst, werden Betrag, Fälligkeit und Name ausgelesen (mit Claude
+      von Anthropic).
+    </p>
+  );
+}
+
 /**
  * Dokumente hochladen – über den Knopf oder indem man Dateien irgendwo auf die Seite zieht: Dann öffnet sich dieses
  * Fenster mit den Dateien. Mehrere Dateien auf einmal gehen; jede wird einzeln hochgeladen und bekommt dieselben Angaben
@@ -103,6 +185,7 @@ export function UploadDialog({
   defaultEventId,
   invoiceName = null,
   invoiceOnly = false,
+  invoiceReading = false,
 }: {
   categories: string[];
   events: { id: string; label: string }[];
@@ -118,6 +201,11 @@ export function UploadDialog({
   invoiceName?: string | null;
   /** Nur Rechnungen (Seite „Finanzen › Rechnungen“): ohne Kästchen „Das ist eine Rechnung“, zunächst „Nur Vorstand“. */
   invoiceOnly?: boolean;
+  /**
+   * Rechnungen automatisch auslesen (Claude): Sobald eine Rechnung gewählt ist, werden Name, Betrag und Fälligkeit
+   * vorausgefüllt – man prüft sie nur noch. Leer gebliebene Felder füllt das Auslesen, Eingetipptes bleibt stehen.
+   */
+  invoiceReading?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -136,6 +224,13 @@ export function UploadDialog({
   const [access, setAccess] = useState<AccessLevel>(invoiceAccess);
   // Hat das Häkchen „Rechnung“ die Zugriffsstufe angehoben? Dann nimmt es sie beim Abwählen wieder zurück.
   const [accessRaised, setAccessRaised] = useState(invoiceOnly && invoiceAccess === "BOARD");
+  // Rechnungsfelder (gesteuert, damit das Auslesen sie füllen kann).
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [reading, setReading] = useState<Reading>({ state: "idle" });
+  /** Für welche Datei das Auslesen zuletzt gestartet wurde – spätere Antworten für andere Dateien zählen nicht. */
+  const readKey = useRef<number | null>(null);
 
   const presetEvent = events.some((event) => event.id === defaultEventId) ? defaultEventId : "";
   const ready = files.filter((entry) => !entry.error);
@@ -149,17 +244,57 @@ export function UploadDialog({
     setPaymentDue(true);
     setAccess(invoiceAccess);
     setAccessRaised(invoiceOnly && invoiceAccess === "BOARD");
+    setTitle("");
+    setAmount("");
+    setDueDate("");
+    setReading({ state: "idle" });
+    readKey.current = null;
+  }
+
+  /** Liest die (einzige) Rechnung aus und füllt leere Felder. Nur einmal je Datei. */
+  function startReading(entries: ChosenFile[]) {
+    const valid = entries.filter((entry) => !entry.error);
+    const entry = valid.length === 1 ? valid[0]! : null;
+    if (!invoiceReading || !entry || readKey.current === entry.key) return;
+    readKey.current = entry.key;
+    setReading({ state: "reading" });
+    void readInvoiceFile(entry.file).then((result) => {
+      if (readKey.current !== entry.key) return; // inzwischen andere Datei gewählt oder Fenster zurückgesetzt
+      if (!result.ok) {
+        setReading({ state: "failed", reason: result.reason });
+        return;
+      }
+      const { prefill } = result;
+      setTitle((current) => current.trim() || prefill.title);
+      setAmount((current) => current.trim() || prefill.amount);
+      setDueDate((current) => current || prefill.dueDate);
+      if (prefill.paid) setPaymentDue(false);
+      setReading({ state: "done", note: prefill.note, paid: prefill.paid });
+    });
   }
 
   function choose(list: File[]) {
     if (pending) return;
     // Rechnungen einzeln (jede hat ihren Betrag) – auch wenn mehrere auf die Seite gezogen werden.
     const chosen = invoiceOnly ? list.slice(0, 1) : list;
-    setFiles(
-      chosen.map((file) => ({ key: nextKey.current++, file, error: clientFileError(file, maxMb) })),
-    );
+    const entries = chosen.map((file) => ({
+      key: nextKey.current++,
+      file,
+      error: clientFileError(file, maxMb),
+    }));
+    setFiles(entries);
     setErrors({});
     setFormError(null);
+    // Neue Datei: Vorschläge der alten verwerfen, dann (falls Rechnung) neu auslesen.
+    if (readKey.current !== null) {
+      readKey.current = null;
+      setTitle("");
+      setAmount("");
+      setDueDate("");
+      setPaymentDue(true);
+      setReading({ state: "idle" });
+    }
+    if (isInvoice) startReading(entries);
   }
 
   // Dateien, die irgendwo auf die Seite fallen, öffnen das Fenster (oder ersetzen die Auswahl darin).
@@ -177,9 +312,8 @@ export function UploadDialog({
     if (requireEvent && !fields.get("eventId"))
       next.eventId = "Bitte wähle eine Veranstaltung deiner Abteilung.";
     if (isInvoice && paymentDue) {
-      const amount = String(fields.get("amount") ?? "").trim();
-      const cents = amount ? parseEuroToCents(amount) : null;
-      if (!amount) next.amount = "Bitte gib den Betrag ein.";
+      const cents = amount.trim() ? parseEuroToCents(amount.trim()) : null;
+      if (!amount.trim()) next.amount = "Bitte gib den Betrag ein.";
       else if (cents === null || cents <= 0)
         next.amount = `Bitte gib einen gültigen Betrag ein (${AMOUNT_HINT}).`;
     }
@@ -375,9 +509,11 @@ export function UploadDialog({
                   {invoiceOnly ? (
                     <>
                       <input type="hidden" name="isInvoice" value="on" />
-                      <p className="text-sm text-muted-foreground">
-                        Die Rechnung heißt automatisch „{invoiceName}“.
-                      </p>
+                      {!invoiceReading && (
+                        <p className="text-sm text-muted-foreground">
+                          Ohne eigenen Namen heißt die Rechnung „{invoiceName}“.
+                        </p>
+                      )}
                     </>
                   ) : (
                     <label className="flex items-start gap-2.5 text-sm">
@@ -403,19 +539,43 @@ export function UploadDialog({
                           }
                           setErrors({});
                           setFormError(null);
+                          if (checked) startReading(files);
                         }}
                         className="mt-0.5 size-4 shrink-0 accent-primary"
                       />
                       <span>
                         <span className="font-medium">Das ist eine Rechnung</span>
                         <span className="block text-muted-foreground">
-                          Sie heißt dann automatisch „{invoiceName}“.
+                          {invoiceReading
+                            ? "Betrag, Fälligkeit und Name werden dann automatisch ausgelesen."
+                            : `Ohne eigenen Namen heißt sie dann „${invoiceName}“.`}
                         </span>
                       </span>
                     </label>
                   )}
                   {isInvoice && (
                     <>
+                      {invoiceReading && (
+                        <ReadingStatus reading={reading} hasFile={ready.length > 0} />
+                      )}
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="upload-rechnungsname">Name der Rechnung</Label>
+                        <Input
+                          id="upload-rechnungsname"
+                          name="title"
+                          value={title}
+                          onChange={(event) => setTitle(event.target.value)}
+                          maxLength={100}
+                          autoComplete="off"
+                          placeholder={invoiceName}
+                          aria-invalid={errors.title ? true : undefined}
+                        />
+                        {errors.title && (
+                          <p role="alert" className="text-sm text-destructive">
+                            {errors.title}
+                          </p>
+                        )}
+                      </div>
                       {/* Zwei Antworten statt eines vorab angehakten Kästchens: Ein Klick auf die gewünschte Antwort wählt sie
                           immer aus. Das Kästchen ließ sich versehentlich abwählen – die Rechnung landete dann ohne Betrag als
                           bezahlt. Der Server liest `paymentDue` wie bisher („true“ = offen, „false“ = bezahlt). */}
@@ -450,6 +610,8 @@ export function UploadDialog({
                             <Input
                               id="upload-betrag"
                               name="amount"
+                              value={amount}
+                              onChange={(event) => setAmount(event.target.value)}
                               inputMode="decimal"
                               autoComplete="off"
                               placeholder={AMOUNT_HINT}
@@ -473,6 +635,8 @@ export function UploadDialog({
                               id="upload-faellig"
                               name="dueDate"
                               type="date"
+                              value={dueDate}
+                              onChange={(event) => setDueDate(event.target.value)}
                               aria-invalid={errors.dueDate ? true : undefined}
                             />
                             {errors.dueDate && (
@@ -566,11 +730,13 @@ export function UploadDialog({
                 </div>
               )}
               <SubmitButton
-                pending={pending}
+                pending={pending || (isInvoice && reading.state === "reading")}
                 pendingLabel={
-                  progress && progress.total > 1
-                    ? `Wird hochgeladen … (${progress.done + 1} von ${progress.total})`
-                    : "Wird hochgeladen …"
+                  !pending
+                    ? "Rechnung wird ausgelesen …"
+                    : progress && progress.total > 1
+                      ? `Wird hochgeladen … (${progress.done + 1} von ${progress.total})`
+                      : "Wird hochgeladen …"
                 }
               >
                 {ready.length > 1 ? `${ready.length} Dateien hochladen` : "Hochladen"}

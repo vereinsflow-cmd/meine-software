@@ -9,7 +9,7 @@ import { rejectOversizedDocumentUpload } from "@/server/upload-limit";
 
 /**
  * Dokument hochladen (multipart/form-data: `file`, `access`, optional `category` und `eventId`; Rechnungen zusätzlich
- * `isInvoice`, `paymentDue`, `amount` und `dueDate`).
+ * `isInvoice`, `paymentDue`, `amount`, `dueDate` und `title`).
  *
  * Schutz: Anmeldung und Berechtigung werden VOR dem Lesen des Inhalts geprüft; die Herkunft des Aufrufs wird geprüft
  * (`apiHandler`, gegen CSRF); die angekündigte Größe wird abgelehnt, bevor der Inhalt gelesen wird. Dateityp, Größe,
@@ -33,6 +33,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
     paymentDue: form.get("paymentDue") ?? undefined,
     amount: form.get("amount") ?? undefined,
     dueDate: form.get("dueDate") ?? undefined,
+    title: form.get("title") ?? undefined,
   });
 
   const bytes = new Uint8Array(await file.arrayBuffer());

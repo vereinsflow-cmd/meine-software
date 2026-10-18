@@ -38,6 +38,12 @@ const schema = z.object({
 
   /** Technischer Support des Plattformbetreibers: erscheint unter „Hilfe & Support“ (optional). */
   SUPPORT_EMAIL: z.preprocess(emptyToUndefined, z.email().optional()),
+
+  /**
+   * Rechnungen automatisch auslesen (Betrag, Firma, Fälligkeit) mit Claude von Anthropic (optional). Ohne Schlüssel
+   * bleibt das Hochladen wie bisher: Betrag und Fälligkeit trägt man selbst ein.
+   */
+  ANTHROPIC_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 
 export type Env = z.infer<typeof schema>;

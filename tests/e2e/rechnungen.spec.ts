@@ -78,9 +78,12 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
 
   const invoiceBox = dialog.getByRole("checkbox", { name: /Das ist eine Rechnung/ });
   await invoiceBox.check();
-  await expect(
-    dialog.getByText(`Sie heißt dann automatisch „Rechnung vom ${berlinDay(0)}“.`),
-  ).toBeVisible();
+  // Auslesen klappt hier nicht (kein echter Schlüssel im Test) – dann trägt man selbst ein, der Name bleibt automatisch.
+  await expect(dialog.getByText(/ließ sich gerade nicht auslesen/)).toBeVisible();
+  await expect(dialog.getByLabel("Name der Rechnung")).toHaveAttribute(
+    "placeholder",
+    `Rechnung vom ${berlinDay(0)}`,
+  );
   await expect(dialog.getByLabel(/^Wer darf es sehen/)).toHaveValue("BOARD"); // Rechnungen: zunächst „Nur Vorstand“
   // Zwei Antworten statt eines Häkchens: Ein Klick auf die schon gewählte Antwort wählt sie nicht ab (mit dem
   // vorab angehakten Kästchen landete eine Rechnung so versehentlich ohne Betrag als bezahlt).
@@ -232,4 +235,55 @@ test("Dokumente: Filter „Nur offene Rechnungen“ und Zahlungsstand im Bearbei
   await other.getByRole("button", { name: /bearbeiten$/ }).click();
   await expect(edit.getByLabel("Zahlungsstand")).toHaveValue("PAID");
   await page.keyboard.press("Escape");
+});
+
+test("Rechnung auslesen: Name, Betrag, Fälligkeit und „schon bezahlt“ werden vorausgefüllt", async ({
+  page,
+}) => {
+  // Die Antwort der KI wird vorgetäuscht – geprüft wird, was das Fenster daraus macht und was gespeichert wird.
+  let calls = 0;
+  await page.route("**/api/rechnungen/auslesen", async (route) => {
+    calls += 1;
+    await route.fulfill({
+      json: {
+        ok: true,
+        data: {
+          ok: true,
+          prefill: {
+            title: "Getränke Müller – Sommerfest",
+            amount: "45,80",
+            dueDate: isoDay(7),
+            paid: true,
+            note: null,
+          },
+        },
+      },
+    });
+  });
+  await login(page, USERS.vorstand);
+  await open(page, "/finanzen/rechnungen");
+  await page.getByRole("button", { name: "Rechnung hochladen" }).click();
+  const dialog = page.getByRole("dialog", { name: "Rechnung hochladen" });
+  await expect(dialog.getByText(/werden Betrag, Fälligkeit und Name ausgelesen/)).toBeVisible();
+  await dialog.getByLabel(/^Datei/).setInputFiles({
+    name: "IMG_2041.pdf",
+    mimeType: "application/pdf",
+    buffer: pdf("Getränke Sommerfest"),
+  });
+
+  await expect(dialog.getByText(/Ausgelesen – laut Rechnung schon bezahlt/)).toBeVisible();
+  expect(calls).toBe(1);
+  await expect(dialog.getByLabel("Name der Rechnung")).toHaveValue("Getränke Müller – Sommerfest");
+  await expect(dialog.getByRole("radio", { name: "Ist schon bezahlt" })).toBeChecked();
+  // Wechselt man auf „muss noch bezahlt werden“, stehen Betrag und Fälligkeit schon da.
+  await dialog.getByRole("radio", { name: "Muss noch bezahlt werden" }).check();
+  await expect(dialog.getByLabel(/^Betrag/)).toHaveValue("45,80");
+  await expect(dialog.getByLabel("Fällig am")).toHaveValue(isoDay(7));
+  await dialog.getByRole("radio", { name: "Ist schon bezahlt" }).check();
+
+  await dialog.getByRole("button", { name: "Hochladen", exact: true }).click();
+  await expect(page.getByText("Rechnung hochgeladen – als schon bezahlt abgelegt.")).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+  await open(page, "/finanzen/rechnungen?stand=alle");
+  await expect(page.getByText("Getränke Müller – Sommerfest.pdf").first()).toBeVisible();
 });
