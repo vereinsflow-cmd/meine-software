@@ -73,9 +73,14 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
    (`_headers` / `.htaccess`) anpassen.
 4. **Aussagen abgleichen.** Alle Aussagen stammen aus dem Stand der Anwendung vom 22.09.2026 (`README.md`, `docs/SECURITY.md`,
    `docs/PRIVACY.md`, `docs/DESIGN.md`, `src/server/permissions/defaults.ts`, `src/lib/search/registry.ts`,
-   `src/app/(app)/helferplanung/drucken/page.tsx`, `src/server/jobs/reminders.ts`, `src/modules/dashboard/compare.ts`). Kommen
-   Funktionen hinzu (z. B. Finanzen), die FAQ (auch die Frage zur Planung) und die Zahl der Bereiche („12 Bereiche“)
-   anpassen. Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite. Die Fußzeile nennt Absender, E-Mail und
+   `src/app/(app)/helferplanung/drucken/page.tsx`, `src/server/jobs/reminders.ts`, `src/modules/dashboard/compare.ts`), die
+   Finanzen (Laptop „Am Rechner“, Karte „Finanzen“ unter „Funktionen“, FAQ „Gibt es eine Finanzverwaltung …“) und die
+   Zwei-Faktor-Anmeldung (Sicherheit, „Mehr dazu“, auch der Satz zu den Cookies: bei Zwei-Faktor kurzzeitig ein zweites,
+   notwendiges Cookie, `docs/PRIVACY.md` „Cookie-Konzept“) aus dem Stand vom 18.10.2026 (`src/app/(app)/finanzen/`, `src/modules/finance`, `src/modules/fees`,
+   `src/modules/donations`, `docs/SECURITY.md`). Noch geplant und deshalb in der FAQ als „geplant“: Zuwendungsbestätigungen
+   (die Anwendung hat bisher nur den „Beleg bis 300 €“), öffentliche Veranstaltungsseite, Push und mobile Apps; Lastschrift
+   (SEPA) nennt die Seite bewusst nicht. Kommen Funktionen hinzu, die FAQ (auch die Frage zur Planung) und die Zahl der
+   Bereiche („Dreizehn Bereiche“ unter „Funktionen“, eine Karte je Bereich) anpassen. Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite. Die Fußzeile nennt Absender, E-Mail und
    Telefon wie das Impressum – ändern sie sich, alle Kopien der Fußzeile nachziehen (siehe „Seiten des Skripts“).
 5. `node tools/check-site.mjs --strict` muss ohne Meldung durchlaufen.
 
@@ -126,7 +131,8 @@ HTTPS ist Pflicht (bei den genannten Anbietern meist kostenlos). Danach die Seit
 ## Werkzeuge
 
 Alle laufen mit Node ohne weitere Installation. Die Bild-Werkzeuge leihen sich Playwright und sharp aus dem Hauptordner des
-Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (`VF_BROWSER_CHANNEL`, Standard `msedge`).
+Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (`VF_BROWSER_CHANNEL`, Standard `msedge`;
+fehlt Edge, nimmt `capture-screenshots.mjs` das Chromium von Playwright).
 
 | Befehl                                     | Wirkung                                                                                                   |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
@@ -136,25 +142,31 @@ Repositories (`npm install` dort; änderbar mit `VF_APP_DIR`) und starten Edge (
 | `node tools/paket-bauen.mjs`               | Baut `upload/vereinsflow-website.zip` für den Webspace Explorer (Stildatei ohne Kommentare; ohne Abhängigkeiten) |
 | `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` – dieselben Dateien wie das Paket, die Stildatei ebenso bereinigt (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/demo-vorbereiten.mjs`          | Füllt den Demo-Verein der Aufnahme-Datenbank `vf_website` für die Bilder auf (siehe unten); `--entfernen` nimmt alles wieder heraus. Arbeitet mit keiner anderen Datenbank |
-| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`, Demo vorbereitet; `--only dashboard`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
+| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`, Demo vorbereitet; `--only dashboard`; Bilder, die die Seite nicht zeigt, nur mit `--only <Name>`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
 | `node tools/make-logo-assets.mjs <Logo-Paket>` | Übernimmt Logo-Dateien, Favicons, Vorschaubild und Mail-Logo aus dem Logo-Paket (Ordner `02-website`) und prüft Bildgrößen und die `width`/`height` der Logo-`<img>` (siehe „Logo“); `--pruefen` nur prüfen; ohne Abhängigkeiten |
 | `node tools/make-og-image.mjs <ziel.png>`  | Erzeugt eine zweite Fassung des Vorschaubilds mit den beiden Telefonen (`tools/og-template.html`, mit `site.css`, dem Logo und den Telefonbildern); `--ersetzen` statt eines Ziels ersetzt `assets/img/og-image.png` aus dem Logo-Paket |
 | `node tools/make-showcase-keyframes.mjs`   | Erzeugt die Keyframes der Vorführungen (Laptop und Telefon drehen sich beim Scrollen) aus den Bewegungsformeln und ersetzt sie am Ende von `assets/css/site.css`; ohne Abhängigkeiten |
 
 Hinweise zu den Aufnahmen:
 
-- **Reihenfolge:** Demo-App mit eigener Datenbank starten (siehe unten), `node tools/demo-vorbereiten.mjs`, dann
-  `node tools/capture-screenshots.mjs` und die beiden Nacharbeiten weiter unten (Positionen, `?v=`). Das Vorschaubild
+- **Reihenfolge:** Demo-App mit eigener Datenbank starten (siehe unten), `node tools/demo-vorbereiten.mjs`, für die
+  Laptop-Bilder der Finanzen danach `finanzen-demo.mjs` (Kassenbuch mit Belegen, Rechnungen, Beitragslauf – liegt im
+  Reel-Projekt `VereinsFlow-Medien`, nicht im Repository; arbeitet ebenfalls nur mit `vf_website`, vor einem erneuten
+  `demo-vorbereiten.mjs` erst mit `--entfernen`), dann `node tools/capture-screenshots.mjs` und die beiden Nacharbeiten
+  weiter unten (Positionen, `?v=`). Das Vorschaubild
   `og-image.png` kommt aus dem Logo-Paket und zeigt keine Aufnahmen; nur wer die Fassung mit den Telefonen nutzt
   (`node tools/make-og-image.mjs --ersetzen`), erzeugt es danach neu. Für Bilder in genau dem Stand der Website am selben Tag vorbereiten und aufnehmen
   (Eintritte, Helferstunden und Hinweise wie „dringend“ rechnet die Anwendung vom heutigen Tag aus).
 - **`tools/demo-vorbereiten.mjs`** macht aus dem kleinen Seed einen lebendigen Verein und arbeitet nur mit der Datenbank
   `vf_website` (bricht bei jedem anderen Namen ab; Verbindung über `VF_DATABASE_URL`, Standard
   `postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website`). Es blendet im Dashboard des Demo-Administrators die
-  Karten „Erste Schritte“ (Einrichtungs-Checkliste) und „Offene Zahlungen“ (Finanzen gibt es auf der Website noch nicht) aus –
-  wie über „Anpassen“ in der Anwendung –, legt rund 210 erfundene Mitglieder mit leichtem Wachstum über zwölf Monate an
+  Karten „Erste Schritte“ (Einrichtungs-Checkliste) und „Offene Zahlungen“ aus – wie über „Anpassen“ in der Anwendung.
+  „Offene Zahlungen“ bleibt bewusst aus: Der Einstieg zeigt den Vereinsüberblick (Mitglieder, Termine, Helfer), seine
+  Zuschnitte (`.hero-visual`) sind auf die Kennzahl-Karten abgestimmt, und mit den Finanz-Demodaten stünden dort rote
+  Hinweise auf überfällige Rechnungen; die Finanzen zeigt der Laptop. Außerdem legt es rund 210 erfundene Mitglieder mit leichtem Wachstum über zwölf Monate an
   (Bestand etwa 213 → 232), wöchentliche Trainings seit gut drei Monaten bis nach dem Sommerfest (sonst zeigte der Verlauf der Kennzahl „Termine in 30 Tagen“ einen Sprung von 1 auf 16), einzelne Termine rund um das Sommerfest,
-  abgeschlossene Einsätze mit Helferstunden und einige Nachrichten der Seed-Konten (Bild im Laptop). **Termine:** Der Seed
+  abgeschlossene Einsätze mit Helferstunden und einige Nachrichten der Seed-Konten (kein eigenes Bild mehr; bis Oktober 2026
+  zeigte der Laptop die Nachrichten). **Termine:** Der Seed
   legt Sommerfest, Arbeitseinsatz & Co. ein bis zwei Wochen nach seinem Lauf an – auf der Website wären sie nach wenigen
   Tagen vorbei. Das Skript verschiebt deshalb alle kommenden Termine des Seeds (mit Schichten, Anmeldeschluss und
   Aufgaben) so, dass das Sommerfest auf `FEST_DAY` fällt (derzeit Samstag, 12. Juni 2027, „Sommerfest 2027“;
@@ -169,20 +181,62 @@ Hinweise zu den Aufnahmen:
   „Hans Hellwig“, „Claudia Abel“ usw. (gleicher Anfangsbuchstabe, Sortierung und Initialen bleiben); Anmeldeadressen
   `…@demo-verein.local` werden zu `…@example.org`. Von Hand angelegte Einträge, die nicht aus dem Seed stammen, bekommen
   ebenfalls einen erfundenen Namen (Liste `DEMO_RENAME` im Skript) – das Repository ist öffentlich.
+- **Bildqualität:** Jede Datei wird in ihrer Breite eigens gezeichnet – der Browser rendert den Ausschnitt mit genau der
+  Pixeldichte, die diese Breite ergibt (680 px aus 960 CSS-Pixeln = 0,708-fach), statt ein großes Bild herunterzurechnen –,
+  und verlustfrei gespeichert (WebP lossless bzw. near-lossless). Nur Einzelbilder mit großen Farbverläufen (Dashboard,
+  Finanz-Übersicht, Suche am Smartphone) nehmen Qualität 92, wenn verlustfrei mehr als 1,5-mal so groß wäre; Bildfolgen
+  bleiben immer verlustfrei, damit unveränderte Flächen beim Überblenden nicht flimmern. Weiche Muster kosten verlustfrei
+  viel: Hinter dem Suchdialog ist die Abdunkelung im Bild deshalb eine ruhige, deckende Fläche in ihrer Farbe (statt der
+  weichgezeichneten Seite; `flatBackdrop` im Skript) – die Bildfolge der Suche wiegt so bei doppelter Dichte gut 150 statt
+  über 700 KB. Ergebnis am 18.10.2026: alle Bilder zusammen 6,5 MB in 168 Dateien (vorher 7,3 MB; mit dem neuen
+  Laptop-Bild und den zusätzlichen Breiten 680/1360, 700/1400, 1340 und 240/480).
+- **Seitenleiste:** Die Anwendung zeigt seit 17.10.2026 standardmäßig die schmale, dunkle Symbolleiste. Ganze Fenster
+  (Laptop) zeigen sie so; die Ausschnitte rechts neben der Leiste entstehen mit der breiten Leiste (`sidebar: "breit"` im
+  Skript), damit der Inhalt wie früher genau 960 CSS-Pixel breit ist und die über den Rand ragende Markierung des aktiven
+  Eintrags nicht ins Bild fällt.
 - Die Detailbilder (Mitglieder, Kalender, Auswertungen) sind Ausschnitte rechts neben der Seitenleiste, die Suche ein Ausschnitt
-  um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt); das
+  um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt; geöffnet
+  über der Mitgliederliste, die das erste Bild der Folge ohne Dialog zeigt, dahinter die deckende Abdunkelung, siehe
+  „Bildqualität“). Bei den Auswertungen (Rechner und Telefon) sind Kopfzeile und Reiterleiste im Bild deckend
+  (`solidBars`), am Rechner ist außerdem ausgeblendet, was über der Karte liegt (`hideAboveCard`) – sonst schienen Kopf und
+  Knopf der Karte bzw. der Rand der vorigen Karte durch die leicht durchsichtigen Leisten. Das
   Kapitelbild Helferschichten ist ebenfalls ein Ausschnitt rechts neben der Seitenleiste (Fenster 1440 px breit, vom Titel des
   Helferplans über die Zeitleiste „Tagesablauf“ bis zum Ende der Schicht „Getränkestand“; alle Schichten zugeklappt, der
-  eigene Name steht dort als „Name (du)“, an seinem Balken in der Zeitleiste ein „Du“), der Helferplan-Aushang die Druckansicht (A4, nur hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests
-  (`FEST_WEEK` in `capture-screenshots.mjs`). Der Laptop der Vorführung „Am Rechner“ zeigt `nachrichten` (Chat „Alle
-  Mitglieder“ mit Ankündigung und Lesestatistik). Das Bild im Einstieg ist das Dashboard, wie ein Foto zugeschnitten: im
-  hohen Rahmen neben dem Text (ab 900 px) `einstieg-dashboard` (Tablet-Breite 768, die vier Kennzahl-Karten zwei mal zwei,
-  unten weich ausgeblendet), am Smartphone hochkant `phone-dashboard`, dazwischen (560 bis 899 px, breit unter dem Text)
-  `dashboard` ohne Seitenleiste. Die Bildpunkte der Ausschnitte stehen bei `.hero-visual` in `site.css` – nach einer
-  Neuaufnahme prüfen. Montags blendet `einstieg-dashboard` den leeren Wochenvergleich „−100 % gegenüber letzter Woche“ aus.
-- Breiten: Einstieg neben dem Text 490, 660, 980, 1280 und 1536 px, Browserfenster 960, 1440 und 1920 px (1440 für Fenster um 700 CSS-Pixel bei doppelter Pixeldichte), Laptop 880
-  (verlustfrei, erscheint bei 100 % so groß), 960 (Smartphone, dreifache Dichte), 1320 und 1760, Helferplan-Aushang 640,
-  800 und 1280. Das große Bild am Rechner lädt nur auf Tablet und Handy quer.
+  eigene Name steht dort als „Name (du)“, an seinem Balken in der Zeitleiste ein „Du“), der Helferplan-Aushang das erste Blatt „Helferplan Sommerfest …“ aus der Vorschau der Druckseite
+  (`/helferplanung/drucken?inhalt=aushang`, weißes A4-Blatt mit Rand und Kopfzeile, Ausschnitt im Seitenverhältnis A4; nur
+  hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests (`FEST_WEEK` in `capture-screenshots.mjs`). Der
+  Laptop der Vorführung „Am Rechner“ zeigt `laptop-finanzen-uebersicht` (Finanzen › Übersicht: Kontostand, offene
+  Rechnungen, Überschuss, Spenden; ganzes Fenster 1280 × 800, 16 : 10) als ruhiges Einzelbild – eine Bildfolge im
+  gedrehten Deckel brächte eigene Grafikebenen in die rückseitig ausgeblendete Fläche (Risiko für Drehung und Schärfe,
+  siehe `.laptop-screen` in `site.css`). Die Überschrift darüber („Finanzen auf einen Blick“) braucht am Smartphone eine
+  Zeile statt zwei wie früher „Nachrichten mit Lesestatistik“: Unter 600 px Breite steht der Laptop deshalb gut 30 px
+  höher (Abschnitt 588 statt 620 px hoch bei 390 px Breite), Aufbau und Bewegung sind unverändert (gemessen am
+  18.10.2026). Im selben Format gibt es `laptop-finanzen-rechnungen`, `-kassenbuch` (mit
+  Belegen) und `-beitraege` (die Zeile „… per Lastschrift“ ist dort ausgeblendet), gleich gerahmt; sie sind `optional`
+  und entstehen nur mit `--only laptop-finanzen-rechnungen,…` – sonst lüden Paket und SFTP-Upload unbenutzte Dateien
+  hoch (`check-site.mjs` meldet sie dann als unbenutzt). Das Bild im Einstieg ist das Dashboard, wie ein Foto zugeschnitten: im
+  hohen Rahmen neben dem Text (ab 900 px) `einstieg-dashboard` (Tablet-Breite 768, oben „Mitglieder“ und „Aufgaben im
+  Verein“, unten weich ausgeblendet), am Smartphone hochkant `phone-dashboard`, dazwischen (560 bis 899 px, breit unter
+  dem Text) `dashboard`: schon im Skript als 5 : 4 zugeschnitten (Inhalt rechts der schmalen Seitenleiste, Fenster
+  1280 × 1000). Im Dashboard blendet das Skript das Schild „Start · …“ der Mitglieder-Karte aus (es überdeckt dort die
+  Achsenbeschriftung). Die Bildpunkte der Ausschnitte stehen bei `.hero-visual` in `site.css` – nach einer Neuaufnahme
+  prüfen. Montags blendet `einstieg-dashboard` den leeren Wochenvergleich „−100 % gegenüber letzter Woche“ aus.
+- Breiten: Einstieg neben dem Text 490, 660, 980, 1280 und 1536 px; Browserfenster der Reiter „Im Detail“ 680, 960, 1360
+  und 1920 px (680 und 1360 = einfache und doppelte Dichte der 680 CSS-Pixel breiten Fenster), Helferschichten 700, 960,
+  1400 und 1920; Laptop 720 und 880 (einfache Dichte), 960 (Smartphone, dreifache Dichte), 1340 und 1760 (MacBook &
+  Co.; 1340 passt genau zum Fenster 1440 × 900 mit doppelter Dichte); Einstieg breit 720, 960, 1440, 1920 und 2328;
+  Helferplan-Aushang 240 und 480 (einfache und doppelte Dichte), 640, 800 und 1280. Das große Bild am Rechner lädt
+  nur auf Tablet und Handy quer. Die Karten unter „Funktionen“ teilen sich die Dateien mit den großen Bildern: Mitglieder
+  und Auswertungen (620 CSS-Pixel, `sizes="620px"`) nehmen dieselbe 680er bzw. 1360er Datei wie die Browserfenster, die
+  Karte „Finanzen“ (670 CSS-Pixel, Ausschnitt ab der Reiterleiste) dieselbe 720er bzw. 1340er wie der Laptop – so wird
+  jedes Motiv nur einmal geladen. Am Smartphone zeigen die Karten keine Bilder (sie werden dann auch nicht geladen).
+- **Datum in den Bildern:** Die Aufnahmen zeigen, was die Anwendung am Aufnahmetag ausrechnet – beim Laptop „Stand
+  18.10.2026“ und die Fälligkeiten der beiden offenen Rechnungen des Seeds („davon 2 überfällig“, „seit 21 Tagen
+  überfällig“ in Rot; ihre Fälligkeit rechnet der Seed vom Tag seines Laufs aus, `finanzen-demo.mjs` lässt sie unverändert),
+  im Einstieg das Datum der Begrüßung, am Telefon Angaben wie „in 230 Tagen“. Wer die Bilder später erneuert, nimmt sie
+  deshalb alle am selben Tag neu auf. Ruhiger wirkte der Laptop mit Rechnungen, die noch nicht fällig sind (das hieße,
+  die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das Reel-Projekt, daher bisher
+  nicht geändert).
 - Telefonbilder: Einstieg `phone-dashboard`, Vorführung „Unterwegs“ `phone-helferplanung` (ab „Meine Einsätze“, damit
   „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten` (die Schicht „Getränkestand“ nach dem Eintragen, wie das ruhige Bild des
   Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster;
@@ -204,7 +258,11 @@ Hinweise zu den Aufnahmen:
   der Bilder in `index.html` angleichen. (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
   Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst noch die alten.
 - Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
-  `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`
+  `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`.
+  Läuft im App-Ordner schon ein Entwicklungsserver, eine zweite Instanz mit eigenem Build-Ordner danebenstellen (wie die
+  E2E-Tests), z. B. `PORT=3100 NEXT_DIST_DIR=.next-leer DATABASE_URL=… MIGRATION_DATABASE_URL=… APP_URL=http://localhost:3100
+  node node_modules/next/dist/bin/next dev -p 3100` (vorher `prisma migrate deploy` mit derselben `MIGRATION_DATABASE_URL`),
+  und beim Aufnehmen `VF_APP_URL=http://localhost:3100` setzen.
 - Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo. Parallel laufende E2E-Tests der Anwendung nicht
   stören: Aufnahme und Tests belasten denselben Rechner.
 

@@ -1,20 +1,29 @@
 // Erzeugt die Produkt-Screenshots der Website aus einer laufenden VereinsFlow-Demo (Seed-Daten).
 //
-//   node tools/capture-screenshots.mjs                    alle Bilder (hell – die Website ist immer hell)
+//   node tools/capture-screenshots.mjs                    alle Bilder der Website (hell – die Website ist immer hell)
 //   node tools/capture-screenshots.mjs --only dashboard   nur ein Bild (mehrere: --only a,b)
+//   node tools/capture-screenshots.mjs --only laptop-finanzen-rechnungen,laptop-finanzen-kassenbuch
+//                                                         Bilder, die die Website derzeit nicht zeigt (optional, siehe
+//                                                         unten), entstehen nur so – mit ihrem Namen nach --only
 //   node tools/capture-screenshots.mjs --scheme dark      dunkle Darstellung (wird derzeit nicht verwendet)
 //
 // Voraussetzungen: Die Demo-App läuft (Standard http://localhost:3000, `npm run dev:all` im Ordner der App), der
-// Demo-Verein ist mit tools/demo-vorbereiten.mjs aufgefüllt, und im App-Ordner sind Playwright und sharp installiert.
+// Demo-Verein ist mit tools/demo-vorbereiten.mjs aufgefüllt (für die Laptop-Bilder der Finanzen zusätzlich mit
+// finanzen-demo.mjs aus dem Reel-Projekt, siehe README), und im App-Ordner sind Playwright und sharp installiert.
 // Ist nur Edge (kein Chromium) installiert, funktioniert das Skript trotzdem: es startet standardmäßig den Kanal
-// „msedge“ (änderbar mit VF_BROWSER_CHANNEL).
+// „msedge“ (änderbar mit VF_BROWSER_CHANNEL); fehlt Edge, nimmt es das Chromium von Playwright.
+//
+// Bildqualität: Jede Datei wird in ihrer Breite eigens gezeichnet – der Browser rendert den Ausschnitt mit genau der
+// Pixeldichte, die diese Breite ergibt (680 px aus 960 CSS-Pixeln = 0,708-fach), statt ein großes Bild herunterzurechnen.
+// Schrift und Linien sitzen so auf ganzen Pixeln wie in einem echten Browser mit dieser Dichte; gespeichert wird
+// verlustfrei (WebP lossless bzw. near-lossless, je nachdem, was kleiner ist) – keine Kompressionsschleier an der Schrift.
 //
 // Umgebungsvariablen (alle optional):
 //   VF_APP_DIR         Ordner mit node_modules (Playwright, sharp)  (Standard: der übergeordnete Ordner = Repository-Hauptordner)
 //   VF_APP_URL         Adresse der laufenden Demo                 (http://localhost:3000)
 //   VF_DEMO_EMAIL      Demo-Benutzer (Vereinsadmin)               (admin@demo-verein.local)
 //   VF_DEMO_PASSWORD   Passwort der Demo-Benutzer, siehe SEED_PASSWORD in der .env der App
-//   VF_BROWSER_CHANNEL Browserkanal für Playwright                (msedge)
+//   VF_BROWSER_CHANNEL Browserkanal für Playwright                (msedge, ersatzweise chromium)
 import { createRequire } from "node:module";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -42,19 +51,32 @@ const only = flag("only")?.split(",");
 const schemes = flag("scheme") ? [flag("scheme")] : ["light"];
 
 /**
- * Browserfenster der Website: 960 und 1920 für einfache und doppelte Pixeldichte, dazu 1440 – die meisten Fenster stehen
- * 600 bis 700 CSS-Pixel breit (bei doppelter Dichte 1200 bis 1400 Pixel, bei 1,5-facher gut 1000), das Einstiegsfenster
- * bei einfacher Dichte 1120. Ohne die Zwischengröße lüden diese Bildschirme die 1920er-Datei.
+ * Browserfenster der Website (Detailbilder der vier Reiter „Im Detail“, 4 : 3): Auf dem Rechner stehen sie 680 CSS-Pixel
+ * breit – 680 und 1360 sind genau die einfache und doppelte Pixeldichte, der Browser zeichnet sie Pixel für Pixel. 960 für
+ * 1,25-fache Dichte und schmalere Fenster, 1920 für Tablets und Smartphones (92 % der Breite bei zwei- bis dreifacher Dichte).
+ * Die Karten Mitglieder und Auswertungen unter „Funktionen“ zeigen dieselben Bilder 620 CSS-Pixel breit und nehmen so
+ * dieselben Dateien (680 bzw. 1360). Andere Bilder nennen eigene `widths`. `scale`: Pixeldichte beim Bedienen
+ * (Klicken, Tippen); die Dateien selbst entstehen je Breite mit passender Dichte (siehe capture).
  */
-const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [960, 1440, 1920] };
+const DESKTOP = { viewport: { width: 1280, height: 800 }, scale: 2, widths: [680, 960, 1360, 1920] };
 /**
  * Telefonbilder: je Bild die 1-, 1,5-, 2- und 3-fache Breite des Bildschirms, in dem es auf der Website steht (siehe
  * .phone in site.css: Abschnitt „Mobil“ 260 CSS-Pixel, Kapitel 208 (bzw. 182), Vorführung 312 – dort je Bild eigene
  * `widths`), dazu 260, 520 und 780 für das Smartphone (dort sind die Bildschirme 260 px breit). So zeichnet der Browser das
  * Bild Pixel für Pixel, statt es selbst unscharf umzurechnen. Geänderte Größen hier, in site.css und in „sizes“ im HTML
- * angleichen. `crisp`: die Breiten, in denen das Bild bei 100 % Skalierung erscheint (siehe encode).
+ * angleichen.
  */
-const PHONE = { viewport: { width: 390, height: 844 }, scale: 3, widths: [260, 390, 520, 780], crisp: [260] };
+const PHONE = { viewport: { width: 390, height: 844 }, scale: 3, widths: [260, 390, 520, 780] };
+/**
+ * Laptop der Vorführung „Am Rechner“ (.laptop-screen, 16 : 10): das ganze Fenster der Anwendung (1280 × 800, schmale
+ * Seitenleiste wie in der Anwendung voreingestellt). Auf der Website je nach Fensterhöhe 550 bis 880 CSS-Pixel breit
+ * (`min(880px, 80vw, (100vh − 218px) · 0,98)`): 720 und 880 für einfache Dichte (Full HD bzw. 1440p), 960 für
+ * Smartphones (gut 300 CSS-Pixel bei dreifacher Dichte), 1340 und 1760 für Bildschirme mit doppelter Dichte (MacBook:
+ * 570 bis 770 CSS-Pixel). 1340 statt 1320: Im häufigen Fenster 1440 × 900 ist der Laptop 668 CSS-Pixel breit, bei
+ * doppelter Dichte also 1337 – mit 1320 nahm der Browser die 1760er Datei und rechnete sie um ein Drittel herunter.
+ * Die Karte „Finanzen“ unter „Funktionen“ zeigt dasselbe Bild 670 CSS-Pixel breit und nimmt so dieselben Dateien.
+ */
+const LAPTOP = { viewport: { width: 1280, height: 800 }, widths: [720, 880, 960, 1340, 1760] };
 /**
  * Sichtbarer Teil des Telefonbildschirms auf der Website: zwischen Statusleiste und Home-Balken (.phone-screen picture
  * in site.css: 26/28 der Gerätebreite, 90 % der Bildschirmhöhe) – bei 390 Punkten Breite 760 hoch. Aufnahmen in dieser
@@ -63,18 +85,109 @@ const PHONE = { viewport: { width: 390, height: 844 }, scale: 3, widths: [260, 3
 const PHONE_SCREEN = { width: 390, height: 760 };
 
 /**
- * Breiten aus `crisp` (das Bild erscheint so groß auf der Seite, die Schrift ist dort nur wenige Pixel hoch) verlustfrei
- * und leicht nachgeschärft – bewusst größer als manche 1,5×-Datei, dafür bei 100 % Skalierung gestochen scharf. Übrige Telefonbilder verlustbehaftet mit voller Farbauflösung (smartSubsample) – bei hoher
- * Pixeldichte fallen Artefakte nicht auf –, übrige Desktop-Bilder wie bisher.
+ * Speichert eine Aufnahme: WebP verlustfrei oder near-lossless (Stufe 60 – nur in unruhigen Flächen werden Farbwerte um
+ * wenige Stufen gerundet, Schriftkanten bleiben exakt); genommen wird die kleinere Datei, verlustfrei aber schon, wenn sie
+ * höchstens 10 % größer ist. Bildschirmfotos mit flächigen Farben sind so meist sogar kleiner als die frühere
+ * verlustbehaftete Fassung (Qualität 82), die an der Schrift Schlieren und Farbsäume zeigte.
+ * `allowLossy` (nur Einzelbilder): Bei großen Farbverläufen (Kacheln des Dashboards, weichgezeichneter Hintergrund hinter
+ * der Suche) wird verlustfrei sehr groß – ist es mehr als 1,5-mal so groß wie Qualität 92 mit voller Farbauflösung
+ * (smartSubsample), wird diese genommen; die Schrift bleibt dank der Aufnahme in Zielgröße scharf. Bildfolgen bleiben
+ * immer verlustfrei: Nur so sind unveränderte Flächen in allen Bildern Pixel für Pixel gleich und flimmern beim
+ * Überblenden nicht.
  */
-function encode(png, width, shot, spec) {
-  const resized = sharp(png).resize({ width, withoutEnlargement: true, kernel: "lanczos3" });
-  if ((shot.crisp ?? spec.crisp ?? []).includes(width)) {
-    return resized.sharpen({ sigma: 0.5 }).webp({ lossless: true, effort: 6 });
+async function encode(png, { allowLossy = false } = {}) {
+  const [lossless, near, lossy] = await Promise.all([
+    sharp(png).webp({ lossless: true, effort: 6 }).toBuffer(),
+    sharp(png).webp({ nearLossless: true, quality: 60, effort: 6 }).toBuffer(),
+    allowLossy ? sharp(png).webp({ quality: 92, smartSubsample: true, effort: 6 }).toBuffer() : null,
+  ]);
+  const exact = lossless.length <= near.length * 1.1 ? lossless : near;
+  return lossy && exact.length > lossy.length * 1.5 ? lossy : exact;
+}
+
+/** CDP-Sitzung je Seite (für die Aufnahme mit passender Pixeldichte). */
+const cdpSessions = new WeakMap();
+
+/**
+ * Nimmt den Ausschnitt (`clip` in CSS-Pixeln, sonst das ganze Fenster) in jeder Breite einzeln auf: Für jede Breite stellt
+ * der Browser die Pixeldichte so ein, dass der Ausschnitt genau so breit wird, und zeichnet neu. Am Layout ändert das
+ * nichts (es rechnet in CSS-Pixeln), Mauszeiger, Fokus und offene Dialoge bleiben. Danach gilt wieder die Dichte der
+ * Sitzung. Ergibt das Runden eine um ein Pixel abweichende Breite, wird auf die genaue Breite gebracht.
+ */
+async function capture(page, clip, widths, spec) {
+  const viewport = page.viewportSize();
+  const area = clip ?? { x: 0, y: 0, width: viewport.width, height: viewport.height };
+  let cdp = cdpSessions.get(page);
+  if (!cdp) {
+    cdp = await page.context().newCDPSession(page);
+    cdpSessions.set(page, cdp);
   }
-  return spec === PHONE
-    ? resized.webp({ quality: 90, smartSubsample: true, effort: 5 })
-    : resized.webp({ quality: 82, effort: 5 });
+  const mobile = spec === PHONE;
+  const metrics = (deviceScaleFactor) => ({
+    width: viewport.width,
+    height: viewport.height,
+    deviceScaleFactor,
+    mobile,
+    screenWidth: viewport.width,
+    screenHeight: viewport.height,
+    ...(mobile ? { screenOrientation: { angle: 0, type: "portraitPrimary" } } : {}),
+  });
+  const shots = new Map();
+  try {
+    for (const width of widths) {
+      await cdp.send("Emulation.setDeviceMetricsOverride", metrics(width / area.width));
+      // neu zeichnen lassen; Bilder der Seite (Logo, Avatare) laden je nach Dichte eine andere Größe nach (höchstens
+      // 3 s warten – Bilder mit loading="lazy" außerhalb des Fensters laden nie)
+      await page.evaluate(async () => {
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const pending = [...document.images].filter((img) => !img.complete && img.loading !== "lazy");
+        const loaded = pending.map(
+          (img) =>
+            new Promise((done) => {
+              img.addEventListener("load", done, { once: true });
+              img.addEventListener("error", done, { once: true });
+            }),
+        );
+        await Promise.race([Promise.all(loaded), new Promise((resolve) => setTimeout(resolve, 3000))]);
+      });
+      await page.waitForTimeout(250);
+      // Page.captureScreenshot misst den Ausschnitt ab dem Anfang des Dokuments, nicht des Fensters (wie Playwright
+      // selbst: Scrollstand dazurechnen – nach dem Umstellen der Dichte, die ihn auf ganze Pixel runden kann)
+      const { cssVisualViewport: scrolled } = await cdp.send("Page.getLayoutMetrics");
+      const region = { ...area, x: area.x + scrolled.pageX, y: area.y + scrolled.pageY, scale: 1 };
+      const { data } = await cdp.send("Page.captureScreenshot", { format: "png", clip: region });
+      let png = Buffer.from(data, "base64");
+      const { width: got } = await sharp(png).metadata();
+      if (got !== width) png = await sharp(png).resize({ width, kernel: "lanczos3" }).png().toBuffer();
+      shots.set(width, png);
+    }
+  } finally {
+    await cdp.send("Emulation.setDeviceMetricsOverride", metrics(spec.scale));
+  }
+  return shots;
+}
+
+/**
+ * Gibt die CDP-Sitzung von capture frei. Nötig, bevor sich die Fenstergröße ändert: Chrome wendet die Einstellung der
+ * Sitzung bei jedem Seitenwechsel erneut an und überschriebe damit die neue Größe von Playwright (gesehen am 18.10.2026:
+ * nach dem Laptop-Bild 1280 statt 1249 px). Innerhalb einer Bildfolge stimmt sie mit Playwright überein (siehe capture).
+ */
+async function releaseCapture(page) {
+  const cdp = cdpSessions.get(page);
+  if (!cdp) return;
+  cdpSessions.delete(page);
+  await cdp.detach().catch(() => {});
+}
+
+/** Schreibt alle Breiten einer Aufnahme; gibt die Maße der größten zurück (für die Ausgabe). */
+async function save(shots, name, scheme, { allowLossy = false } = {}) {
+  let largest = { width: 0, height: 0 };
+  for (const [width, png] of shots) {
+    await fs.writeFile(path.join(out, `${name}-${scheme}-${width}.webp`), await encode(png, { allowLossy }));
+    const meta = await sharp(png).metadata();
+    if (meta.width > largest.width) largest = { width: meta.width, height: meta.height };
+  }
+  return largest;
 }
 
 /**
@@ -82,15 +195,20 @@ function encode(png, width, shot, spec) {
  * 1920 × 1440). Das Fenster ist so breit, dass neben der Seitenleiste (17 rem bei 17 px Grundschrift = 289 px) genau
  * 960 px Inhalt stehen – knapp unter 1280 px, sonst blendet die Mitgliederliste eine zusätzliche Kontaktspalte ein und
  * wird zu breit. Über 820 px Höhe gelten die normalen (nicht die gestauchten) Abstände der Anwendung. So erscheint die
- * Oberfläche auf der Website gut ein Drittel größer als bei einer Aufnahme des ganzen Fensters.
+ * Oberfläche auf der Website gut ein Drittel größer als bei einer Aufnahme des ganzen Fensters. Der Ausschnitt beginnt ein
+ * Pixel rechts der Seitenleiste (contentLeft) – bei Pixeldichten wie 1,4167 fiele sonst ein halbes Pixel der dunklen
+ * Leiste als Strich an den linken Bildrand –, das Fenster ist dafür ein Pixel breiter.
  */
-const DETAIL = { width: 1249, height: 900 };
+const DETAIL = { width: 1250, height: 900 };
 const CONTENT_CROP = { width: 960, height: 720 };
 /**
  * Zentrale Suche: Der Dialog steht in der Mitte des Fensters. So breit, dass ein 960 px breiter Ausschnitt um den Dialog
  * genau an der Seitenleiste (289 px) beginnt – im Bild steht die Seitenleiste dann gar nicht statt angeschnitten.
  */
 const SEARCH = { width: 2 * 289 + CONTENT_CROP.width, height: 800 };
+
+/** Linker Rand der Ausschnitte rechts neben der Seitenleiste: ein Pixel Abstand zu ihr (siehe DETAIL). */
+const contentLeft = (page) => page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? -1) + 1);
 
 /** Ein Klick auf den ersten Link mit diesem Text; wartet, bis die neue Seite wirklich da und ruhig ist. */
 const followLink = (name) => async (page) => {
@@ -100,24 +218,66 @@ const followLink = (name) => async (page) => {
   await page.waitForLoadState("networkidle");
 };
 
-/** Klappt eine Gruppe der Seitenleiste auf (alle Gruppen sind sonst zu und die Leiste wirkt im Bild leer). */
-const openNavGroup = (label) => async (page) => {
-  await page.getByRole("button", { name: label, exact: true }).first().click();
-  await page.waitForTimeout(300); // Aufklapp-Animation
-};
-
 /**
  * Blendet Textzeilen mit genau diesem Inhalt aus (der Platz bleibt frei, nichts verrutscht). Für die Kennzahl
  * „Helferstunden“: Sind in den letzten zwei Wochen keine Stunden dazugekommen, steht unter der Jahressumme „Noch keine
  * Stunden erfasst“ – im Bild wirkt das wie ein Widerspruch zu „9 Std.“.
  */
 const hideText = (text) => async (page) => {
-  await page.evaluate((wanted) => {
+  const pattern = text instanceof RegExp ? [text.source, text.flags] : null;
+  await page.evaluate(([wanted, regex]) => {
+    const matches = regex ? (t) => new RegExp(regex[0], regex[1]).test(t) : (t) => t === wanted;
     for (const el of document.querySelectorAll("p, span, div")) {
-      if (el.children.length === 0 && el.textContent?.trim() === wanted) el.style.setProperty("visibility", "hidden");
+      if (el.children.length === 0 && matches(el.textContent?.replace(/\s+/g, " ").trim() ?? "")) {
+        el.style.setProperty("visibility", "hidden");
+      }
     }
-  }, text);
+  }, [pattern ? null : text, pattern]);
 };
+
+/**
+ * Seitenleiste am Rechner (ab 1024 px): Seit 17.10.2026 zeigt die Anwendung standardmäßig die schmale, dunkle
+ * Symbolleiste; wer sie ausklappt, bekommt die breite mit Text (gemerkt in localStorage, `vf:sidebar-breit`). Die
+ * Ausschnitte rechts neben der Seitenleiste (Detailbilder, Suche, Helferplan) entstehen mit der breiten Leiste: Dann ist der
+ * Inhalt genau so breit wie früher (960 CSS-Pixel bei 1249 px Fenster), und die graue Markierung des aktiven Eintrags,
+ * die bei der schmalen Leiste über deren Rand ragt, liegt nicht im Bild. Ganze Fenster (Laptop, Einstieg) zeigen die
+ * schmale Leiste wie die Anwendung selbst.
+ */
+async function setSidebar(page, mode) {
+  await page.evaluate((wide) => {
+    try {
+      localStorage.setItem("vf:sidebar-breit", wide ? "1" : "0");
+    } catch {
+      // ohne Speicher bleibt die schmale Leiste
+    }
+  }, mode === "breit");
+}
+
+/** Wartet, bis die Seitenleiste ihre gemerkte Breite hat (sie liest sie erst nach dem Laden) und der Übergang vorbei ist. */
+async function waitForSidebar(page) {
+  if ((page.viewportSize()?.width ?? 0) < 1024) return; // darunter gibt es keine feste Seitenleiste
+  const ok = await page
+    .waitForFunction(
+      () => {
+        const aside = document.querySelector("aside");
+        if (!aside) return true;
+        const wide = localStorage.getItem("vf:sidebar-breit") === "1";
+        const width = aside.getBoundingClientRect().width;
+        return wide ? width > 200 : width < 160;
+      },
+      undefined,
+      { timeout: 10_000 },
+    )
+    .then(() => true, () => false);
+  if (!ok) console.error("WARNUNG: Seitenleiste hat nicht die erwartete Breite");
+  await page.waitForTimeout(350); // Übergang der Spaltenbreite (200 ms)
+}
+
+/** Öffnet eine Seite der Anwendung und wartet, bis sie ruhig ist (auch die Seitenleiste). */
+async function gotoApp(page, url) {
+  await page.goto(url, { waitUntil: "networkidle" });
+  await waitForSidebar(page);
+}
 
 /**
  * Scrollt so, dass die Karte mit dieser Überschrift direkt unter Kopfzeile und fester Reiterleiste beginnt
@@ -183,8 +343,74 @@ const solidHeader = async (page) => {
 };
 
 /**
+ * Auswertungen (Rechner und Telefon): Wie solidHeader, dazu die oben haftende Reiterleiste des Dashboards. Ihre Schiene
+ * ist ebenfalls leicht durchsichtig – darunter schienen Kopf und Knopf der Karte durch („Einklappen ×“, „Entwicklung der
+ * Mitglieder“). Durchsichtige Flächen werden deckend in derselben Farbe; die Leiste selbst (am Telefon über die ganze
+ * Breite, sonst durchsichtig) bekommt die Farbe des Seitengrunds.
+ */
+const solidBars = async (page) => {
+  await page.evaluate(() => {
+    const alpha = (color) => {
+      const slash = color.match(/\/\s*([\d.]+)(%?)\)$/);
+      if (slash) return slash[2] ? Number(slash[1]) / 100 : Number(slash[1]);
+      const rgba = color.match(/^rgba\((?:[^,]+,){3}\s*([\d.]+)\)$/);
+      return rgba ? Number(rgba[1]) : 1;
+    };
+    const opaque = (color) => color.replace(/\s*\/\s*[\d.]+%?\)$/, ")").replace(/^rgba\((.+),\s*[\d.]+\)$/, "rgb($1)");
+    const pageColor = (() => {
+      for (let el = document.querySelector("main"); el; el = el.parentElement) {
+        const color = getComputedStyle(el).backgroundColor;
+        if (alpha(color) > 0) return opaque(color);
+      }
+      return "rgb(255, 255, 255)";
+    })();
+    const bars = [...document.querySelectorAll("body *")].filter((el) => {
+      const style = getComputedStyle(el);
+      return el.tagName !== "ASIDE" && style.position === "sticky" && style.top !== "auto" && el.getBoundingClientRect().top < innerHeight / 3;
+    });
+    for (const bar of bars) {
+      // nur die Leiste und Flächen mit Weichzeichner darin (nicht etwa die getönte Fläche hinter den Initialen)
+      for (const el of [bar, ...bar.querySelectorAll("*")]) {
+        const style = getComputedStyle(el);
+        if (el !== bar && style.backdropFilter === "none") continue;
+        const a = alpha(style.backgroundColor);
+        if (a > 0 && a < 1) el.style.setProperty("background-color", opaque(style.backgroundColor), "important");
+        el.style.setProperty("backdrop-filter", "none", "important");
+      }
+      if (bar.tagName !== "HEADER" && alpha(getComputedStyle(bar).backgroundColor) === 0) {
+        bar.style.setProperty("background-color", pageColor, "important");
+      }
+    }
+  });
+};
+
+/**
+ * Rechner: Blendet aus, was in der Seite über der Karte mit dieser Überschrift steht (der Platz bleibt). Neben der
+ * schmalen Reiterleiste läge sonst der untere Rand der vorigen Karte im Bild – sie ist fast ganz unter die Kopfzeile
+ * gerollt.
+ */
+const hideAboveCard = (title) => async (page) => {
+  await page.evaluate((text) => {
+    const heading = [...document.querySelectorAll("h1, h2, h3, [data-slot='card-title']")].find(
+      (el) => el.textContent?.trim() === text,
+    );
+    const card = heading?.closest("[data-slot='card']") ?? heading;
+    const main = document.querySelector("main");
+    if (!card || !main) return;
+    const top = card.getBoundingClientRect().top;
+    for (let node = card; node && node !== main; node = node.parentElement) {
+      for (let before = node.previousElementSibling; before; before = before.previousElementSibling) {
+        const style = getComputedStyle(before);
+        if (style.position === "sticky" || style.position === "fixed" || before.querySelector("[role='tablist']")) continue;
+        if (before.getBoundingClientRect().bottom <= top) before.style.setProperty("visibility", "hidden");
+      }
+    }
+  }, title);
+};
+
+/**
  * Bricht ab, wenn das Dashboard noch die Einrichtungs-Checkliste („Erste Schritte“) oder Finanzen zeigt – dann fehlt
- * tools/demo-vorbereiten.mjs (die Website soll den Vereinsüberblick mit Kennzahlen zeigen, Finanzen gibt es noch nicht).
+ * tools/demo-vorbereiten.mjs (der Einstieg soll den Vereinsüberblick mit Kennzahlen zeigen; die Finanzen zeigt der Laptop).
  */
 const assertPreparedDashboard = async (page) => {
   for (const title of ["Erste Schritte", "Offene Zahlungen"]) {
@@ -193,6 +419,59 @@ const assertPreparedDashboard = async (page) => {
     }
   }
 };
+
+/**
+ * Mitglieder-Karte des Dashboards: Das Schild „Start · 211“ am Anfang der Verlaufslinie überdeckt in diesen Breiten die
+ * Achsenbeschriftung „Okt 25“ (Darstellungsfehler der Anwendung, Stand 18.10.2026) – im Bild ausgeblendet.
+ */
+const hideStartChip = hideText(/^Start · [\d.]+$/);
+
+/** Erstes Blatt des Aushangs „Helferplan Sommerfest …“ in der Vorschau der Druckseite (siehe helferplan-druck). */
+const printSheet = (page) =>
+  page
+    .locator("#helferplan-ausdruck section")
+    .filter({ has: page.getByRole("heading", { name: /^Helferplan Sommerfest 20\d\d$/ }) })
+    .locator(":scope > div")
+    .first();
+
+/** Bricht ab, wenn die Finanzen noch nicht eingerichtet sind (dann fehlt finanzen-demo.mjs, siehe README). */
+const assertFinance = async (page) => {
+  for (const title of ["Kassenbuch einrichten", "Noch keine Buchungen"]) {
+    if (await page.getByText(title, { exact: true }).count()) {
+      throw new Error(`„${title}“ in den Finanzen – zuerst finanzen-demo.mjs ausführen (README, „Hinweise zu den Aufnahmen“)`);
+    }
+  }
+};
+
+/**
+ * Warnt vor allem, was nicht ins Bild gehört: Fehlermeldungen der Anwendung oder von Next.js und Zusagen, die die
+ * Website nicht macht (Lastschrift/SEPA). Geprüft wird nur sichtbarer Text im Ausschnitt.
+ */
+async function checkProblems(page, clip, name) {
+  const found = await page.evaluate((area) => {
+    const words = [/Application error/, /Unhandled Runtime Error/, /Internal Server Error/, /Etwas ist schiefgelaufen/, /Lastschrift/, /\bSEPA\b/];
+    const box = area ?? { x: 0, y: 0, width: innerWidth, height: innerHeight };
+    const hits = new Set();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const el = node.parentElement;
+      const text = node.nodeValue ?? "";
+      if (!el || !words.some((word) => word.test(text))) continue;
+      const r = el.getBoundingClientRect();
+      const inside = r.width && r.right > box.x && r.left < box.x + box.width && r.bottom > box.y && r.top < box.y + box.height;
+      const style = getComputedStyle(el);
+      if (inside && style.visibility !== "hidden" && style.display !== "none") hits.add(text.trim().slice(0, 60));
+    }
+    if (document.querySelector("nextjs-portal")?.shadowRoot?.querySelector("[data-nextjs-dialog], [data-nextjs-error-overlay]")) {
+      hits.add("Fehleranzeige von Next.js");
+    }
+    return [...hits];
+  }, clip);
+  if (found.length) {
+    console.error(`WARNUNG ${name}: im Bild: ${found.join(" | ")}`);
+    process.exitCode = 1;
+  }
+}
 
 /** Öffnet die zentrale Suche (Strg+K) und tippt einen Suchbegriff; wartet, bis die Treffer aus der Datenbank da sind. */
 const openSearch = (query, { viaButton = false } = {}) => async (page) => {
@@ -249,13 +528,18 @@ async function liveFrames(page, snap) {
   const button = (name) => drinksButton(page, name);
   const action = (name) => page.getByRole("button", { name, exact: true }).or(page.getByRole("link", { name, exact: true })).first();
   const fresh = async () => {
-    await page.goto(url, { waitUntil: "networkidle" });
+    await gotoApp(page, url);
     await drinksRow(page).waitFor();
     await collapseShifts(page);
   };
   const toggle = async (from, to) => {
     await fresh();
-    await button(from).click();
+    // einmal neu laden und wiederholen, falls der Knopf noch nicht klickbar ist (gesehen: erster Klick nach dem Wechsel
+    // von den Laptop-Bildern lief in die Zeitüberschreitung)
+    await button(from).click({ timeout: 15_000 }).catch(async () => {
+      await fresh();
+      await button(from).click();
+    });
     await button(to).waitFor();
     await page.waitForLoadState("networkidle");
     await fresh();
@@ -263,7 +547,7 @@ async function liveFrames(page, snap) {
   // Ausschnitt: rechts neben der Seitenleiste bis zum Fensterrand, vom Titel bis zum Ende des Eintrags „Getränkestand“
   // in der Karte „Tagesablauf“. Oben nichts vom Rücklink „Helferplanung“ (der unterste Link über dem Titel).
   const planArea = async () => {
-    const x = await page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? 0));
+    const x = await contentLeft(page);
     const title = await page.locator("main h1").first().boundingBox();
     const shift = await drinksRow(page).boundingBox();
     if (!title) throw new Error("Titel des Helferplans nicht gefunden");
@@ -284,9 +568,9 @@ async function liveFrames(page, snap) {
     const y = Math.max(0, Math.floor(title.y - 16), Math.ceil(back + 1));
     return { x, y, width: page.viewportSize().width - x, height: Math.floor(shift.y + shift.height) - y };
   };
-  // Ausgangslage: nicht eingetragen
+  // Ausgangslage: nicht eingetragen (erst prüfen, wenn die Liste da ist – die Seite zeigt zunächst Platzhalter)
+  await fresh();
   if (await button(GETRAENKE.leave).count()) await toggle(GETRAENKE.leave, GETRAENKE.join);
-  else await fresh();
   const clip = await planArea();
   // Leerer Rand des Ausschnitts neben Titel und Karte: Nur so weit dürfen Telefon und Blatt auf der Website über das
   // Fenster reichen (site.css, --story-lap und --story-tuck, ausgelegt auf gut 3 % je Seite)
@@ -341,13 +625,18 @@ async function phoneFrames(page, snap) {
   const shift = () => drinksRow(page);
   const button = (name) => drinksButton(page, name);
   const fresh = async () => {
-    await page.goto(url, { waitUntil: "networkidle" });
+    await gotoApp(page, url);
     await shift().waitFor();
     await collapseShifts(page);
   };
   const toggle = async (from, to) => {
     await fresh();
-    await button(from).click();
+    // einmal neu laden und wiederholen, falls der Knopf noch nicht klickbar ist (gesehen: erster Klick nach dem Wechsel
+    // von den Laptop-Bildern lief in die Zeitüberschreitung)
+    await button(from).click({ timeout: 15_000 }).catch(async () => {
+      await fresh();
+      await button(from).click();
+    });
     await button(to).waitFor();
     await page.waitForLoadState("networkidle");
   };
@@ -359,12 +648,39 @@ async function phoneFrames(page, snap) {
     await snap(name);
     return join;
   };
+  await fresh(); // erst prüfen, wenn die Liste da ist (die Seite zeigt zunächst Platzhalter)
   if (await button(GETRAENKE.leave).count()) await toggle(GETRAENKE.leave, GETRAENKE.join);
   const join = await frame("phone-schichten-live-1");
   await toggle(GETRAENKE.join, GETRAENKE.leave);
   await frame("phone-schichten");
   if (join) console.log(`      Positionen: Eintragen ${join.at} (Fingertipp, .story-tap in site.css)`);
 }
+
+/**
+ * Zentrale Suche: Hinter dem Dialog liegt die Seite leicht abgedunkelt und weichgezeichnet (bg-black/10, blur 4 px). Im
+ * verlustfrei gespeicherten Bild kostet dieses weiche Muster mehr als der Dialog selbst (18.10.2026: knapp 100 statt gut
+ * 40 KB je Bild bei doppelter Dichte). Im Bild ist die Abdunkelung deshalb eine ruhige, deckende Fläche in genau der
+ * Farbe, die sie über dem Seitengrund hat.
+ */
+const flatBackdrop = async (page) => {
+  await page.evaluate(() => {
+    const overlay = document.querySelector("[data-slot='dialog-overlay']");
+    if (!overlay) throw new Error("Abdunkelung hinter dem Dialog nicht gefunden");
+    // Farbe der Abdunkelung über dem Seitengrund – der Browser mischt sie selbst (auch lab/oklab)
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.fillStyle = "#ffffff";
+    context.fillStyle = getComputedStyle(document.body).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    context.fillStyle = getComputedStyle(overlay).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+    overlay.style.setProperty("background-color", `rgb(${r}, ${g}, ${b})`, "important");
+    overlay.style.setProperty("backdrop-filter", "none", "important");
+  });
+};
 
 /** Mittelpunkt eines Elements in Prozent des Ausschnitts (für die Zielpunkte in site.js, LIVE_SCENES). */
 async function spot(page, locator, clip, { dx = 0.5 } = {}) {
@@ -377,8 +693,9 @@ async function spot(page, locator, clip, { dx = 0.5 } = {}) {
 }
 
 /**
- * Zentrale Suche: ohne Dialog (Tastenkürzel), Dialog leer, „H“, „He“, „Hel“ (= Standbild „suche“), dann Zeiger auf
- * „Schicht bearbeiten“. Ausschnitt wie beim Standbild: um den Dialog mit „Hel“ – für alle Bilder derselbe.
+ * Zentrale Suche (über der Mitgliederliste, siehe Bildliste): ohne Dialog (Tastenkürzel), Dialog leer, „H“, „He“, „Hel“
+ * (= Standbild „suche“), dann Zeiger auf „Schicht bearbeiten“. Ausschnitt wie beim Standbild: um den Dialog mit „Hel“ –
+ * für alle Bilder derselbe.
  */
 async function searchFrames(page, snap) {
   const input = () => page.getByRole("combobox", { name: "Suchen" }).or(page.getByLabel("Suchen", { exact: true })).first();
@@ -391,7 +708,11 @@ async function searchFrames(page, snap) {
     await page.keyboard.press("Control+k");
     await input().waitFor();
     await page.waitForTimeout(400);
+    await flatBackdrop(page);
   };
+  // Die Mitgliederliste dahinter einmal gründlich umbenennen („Nachname, Vorname“ steht in mehreren Textknoten, siehe
+  // normalizeDemoNames) – solange noch kein Dialog offen ist; die Liste selbst ändert sich danach nicht mehr
+  await normalizeDemoNames(page);
   await open();
   await input().pressSequentially("Hel", { delay: 60 });
   await settle();
@@ -509,15 +830,28 @@ const FEST_WEEK = "2027-06-09";
  * Veranstaltung bei 1280 px Breite (der Titel wird dort von den Schaltflächen überdeckt).
  */
 const shots = [
-  // Browserfenster im Einstieg
+  // Einstieg breit unter dem Text (560 bis 899 px, Rahmen 5 : 4, siehe .hero-visual in site.css): der Inhalt des
+  // Dashboards rechts neben der schmalen Seitenleiste, schon als 5 : 4 zugeschnitten (die Seite zeigt das Bild ganz). Das
+  // Fenster ist so hoch, dass die drei Spalten der Übersicht samt Karten im Bild stehen. Der Rahmen ist dort 92 % der
+  // Breite bzw. die Breite minus 64 px (bis gut 830 CSS-Pixel) – 720 bis 2328 (doppelte Dichte des Ausschnitts) decken
+  // einfache bis dreifache Pixeldichte ab.
   {
     name: "dashboard",
     path: "/dashboard",
     steps: async (page) => {
       await assertPreparedDashboard(page);
-      await openNavGroup("Verein")(page);
       await hideText("Noch keine Stunden erfasst")(page);
+      await hideStartChip(page);
     },
+    viewport: { width: 1280, height: 1000 },
+    crop: async (page) => {
+      // Die graue Markierung des aktiven Eintrags ragt über den Rand der schmalen Leiste – sie gehört zur Leiste
+      await page.addStyleTag({ content: "aside { clip-path: inset(0) !important; }" });
+      const x = await contentLeft(page);
+      const width = page.viewportSize().width - x;
+      return { x, y: 0, width, height: Math.round(width * 0.8) };
+    },
+    widths: [720, 960, 1440, 1920, 2328],
   },
   // Einstieg ab 900 px: das Dashboard in Tablet-Breite (768) als hohes Bild neben dem Text. In dieser Breite stehen die
   // vier Kennzahl-Karten zwei mal zwei und nichts wird gekürzt (schmaler kürzt die Anwendung den Vereinsnamen, breiter
@@ -537,57 +871,96 @@ const shots = [
           }
         }
       });
+      await hideStartChip(page);
     },
     viewport: { width: 768, height: 1600 },
     widths: [490, 660, 980, 1280, 1536],
   },
-  // Bildschirm des Laptops in der Vorführung „Am Rechner“ (.laptop-screen, bis 880 CSS-Pixel breit, am Smartphone gut
-  // 300): der Chat „Alle Mitglieder“ mit der Ankündigung zum Arbeitseinsatz und der Lesestatistik an jeder eigenen
-  // Nachricht (Nachrichten aus tools/demo-vorbereiten.mjs). 880 verlustfrei (erscheint bei 100 % so groß), 960 für das
-  // Smartphone mit dreifacher Pixeldichte, 1320 und 1760 für 1,5- und 2-fache.
-  {
-    name: "nachrichten",
-    path: "/nachrichten?chat=alle",
+  // Bildschirm des Laptops in der Vorführung „Am Rechner“ (.laptop-screen, siehe LAPTOP): die Finanzen – Übersicht mit
+  // Kontostand, offenen Rechnungen, Überschuss und Spenden, die Rechnungen, das Kassenbuch mit Belegen und die Beiträge.
+  // Daten aus finanzen-demo.mjs (Reel-Projekt, siehe README). Alle vier gleich groß und gleich gerahmt (Kopfzeile,
+  // Titel „Finanzen“ und Reiterleiste stehen an derselben Stelle) – nacheinander gezeigt wirken sie wie ein Klick durch
+  // die Reiter. Die Website zeigt nur die Übersicht (ruhiges Einzelbild, siehe Kommentar am Laptop in index.html); die
+  // übrigen drei sind `optional` und entstehen nur mit --only <Name>, damit keine unbenutzten Dateien hochgeladen werden.
+  ...[
+    ["uebersicht", "/finanzen", "Kontostand gesamt"],
+    ["rechnungen", "/finanzen/rechnungen", "Rechnung hochladen"],
+    ["kassenbuch", "/finanzen/kassenbuch", /^\d+ Buchungen$/],
+    ["beitraege", "/finanzen/beitraege", "Beiträge zusammen"],
+  ].map(([key, url, ready]) => ({
+    name: `laptop-finanzen-${key}`,
+    optional: key !== "uebersicht",
+    path: url,
     steps: async (page) => {
-      await page.getByText("Arbeitseinsatz am Vereinsheim", { exact: true }).first().waitFor();
-      await page.waitForTimeout(600); // der Verlauf rollt zur jüngsten Nachricht
+      await (typeof ready === "string" ? page.getByText(ready, { exact: true }) : page.getByText(ready)).first().waitFor();
+      await assertFinance(page);
+      // Beiträge: „0 per Lastschrift, … per Überweisung“ – Lastschrift (SEPA) bietet die Website nicht an
+      await hideText(/^\d+ per Lastschrift, \d+ per Überweisung$/)(page);
+      await page.waitForTimeout(1200); // Verlaufslinien der Karten
     },
-    widths: [880, 960, 1320, 1760],
-    crisp: [880],
-  },
+    viewport: LAPTOP.viewport,
+    widths: LAPTOP.widths,
+  })),
   // Der Helferplan als Ausschnitt ohne Seitenleiste: Kopf mit „Neue Schicht“ und „Drucken“, darunter die Zeitleiste
   // „Tagesablauf“ und aus der Liste „Aufbau“ (voll besetzt) und „Getränkestand“ (teilweise besetzt, hier trägt sich der
   // Mauszeiger ein). 1440 px breit: Die Liste steht in vier Spalten (ab 1280 px), die Einträge werden flach – der
   // Ausschnitt ist knapp 3 : 2 statt hochkant. Zusammen mit der Bildfolge für das Live-Fenster aufgenommen (siehe
   // liveFrames) – beide müssen denselben Stand zeigen.
-  { name: "schichten", path: "/helferplanung", steps: followLink(FEST_LINK), viewport: { width: 1440, height: 1000 }, frames: liveFrames },
-  { name: "mitglieder", path: "/mitglieder", viewport: DETAIL, crop: "content", frames: memberFrames },
+  // Auf der Website 700 CSS-Pixel breit: 700 und 1400 für einfache und doppelte Dichte.
+  {
+    name: "schichten",
+    path: "/helferplanung",
+    sidebar: "breit",
+    steps: followLink(FEST_LINK),
+    viewport: { width: 1440, height: 1000 },
+    widths: [700, 960, 1400, 1920],
+    frames: liveFrames,
+  },
+  { name: "mitglieder", path: "/mitglieder", sidebar: "breit", viewport: DETAIL, crop: "content", frames: memberFrames },
   // Monat des Sommerfests (dort legt tools/demo-vorbereiten.mjs Trainings und weitere Termine an); das Datum steht in
   // der Adresse – bei einem anderen FEST_DAY in tools/demo-vorbereiten.mjs hier mitändern (FEST_WEEK).
-  { name: "kalender", path: `/kalender?ansicht=monat&datum=${FEST_WEEK}`, viewport: DETAIL, crop: "content", frames: calendarFrames },
+  { name: "kalender", path: `/kalender?ansicht=monat&datum=${FEST_WEEK}`, sidebar: "breit", viewport: DETAIL, crop: "content", frames: calendarFrames },
   // Diagramme („Auswertungen“) liegen weiter unten auf dem Reiter „Mitglieder“: Verlauf statt Donut, und ein
   // niedrigeres Fenster (720 px), damit die Seite weit genug scrollt, um mit der Karte zu beginnen.
   {
     name: "auswertung",
     path: "/dashboard?tab=mitglieder",
+    sidebar: "breit",
     steps: async (page) => {
       await page.getByText("Entwicklung", { exact: true }).first().click(); // Umschalter „Ansicht“ (SegmentedControl)
       await scrollToCard("Auswertungen")(page);
+      await solidBars(page);
+      await hideAboveCard("Auswertungen")(page);
     },
     viewport: { width: DETAIL.width, height: 720 },
     crop: "content",
     frames: chartFrames,
   },
-  // Zentrale Suche: Treffer aus mehreren Gruppen (Aktionen, Seiten, Mitglieder) – nur lesen, nichts auswählen
-  { name: "suche", path: "/dashboard", viewport: SEARCH, crop: "dialog", frames: searchFrames },
-  // Der Helferplan zum Aushängen, so wie er gedruckt wird (A4 hoch, 794 px = 210 mm bei 96 dpi). Papier ist in beiden
-  // Darstellungen weiß, deshalb nur hell.
+  // Zentrale Suche: Treffer aus mehreren Gruppen (Aktionen, Seiten, Mitglieder) – nur lesen, nichts auswählen. Geöffnet
+  // über der Mitgliederliste statt über dem Dashboard: Dessen farbige Kacheln lägen weichgezeichnet hinter dem Dialog,
+  // und weiche Farbverläufe machen die verlustfreie Bildfolge gut doppelt so groß (18.10.2026: 736 statt gut 300 KB
+  // bei doppelter Dichte). Die ruhige, helle Liste zeigt dasselbe – die Suche geht von jeder Seite aus.
+  { name: "suche", path: "/mitglieder", sidebar: "breit", viewport: SEARCH, crop: "dialog", frames: searchFrames },
+  // Der Helferplan zum Aushängen: das erste Blatt des Aushangs „Helferplan Sommerfest …“, wie es die Vorschau der
+  // Druckseite zeigt – ein weißes A4-Blatt (210 mm = 794 CSS-Pixel breit) mit Rand und angedeuteter Kopfzeile. (Mit
+  // `media: "print"` fehlten seit dem neuen Druckbild vom Oktober 2026 die Ränder – die setzt beim Drucken erst `@page`.)
+  // Ausschnitt im Seitenverhältnis A4 ab dem oberen Blattrand. Papier ist in beiden Darstellungen weiß, deshalb nur hell.
   {
     name: "helferplan-druck",
-    path: "/helferplanung/drucken",
-    viewport: { width: 794, height: 1123 },
-    media: "print",
-    widths: [640, 800, 1280], // 800 für Smartphones mit dreifacher Pixeldichte (das Blatt ist dort gut 230 CSS-Pixel breit)
+    path: "/helferplanung/drucken?inhalt=aushang",
+    viewport: { width: 1000, height: 1400 },
+    steps: scrollBelowHeader((page) => printSheet(page), { gap: 0 }),
+    crop: async (page) => {
+      const box = await printSheet(page).boundingBox();
+      if (!box) throw new Error("Blatt „Helferplan Sommerfest“ nicht gefunden");
+      const x = Math.ceil(box.x);
+      const width = Math.floor(box.x + box.width) - x;
+      return { x, y: Math.ceil(box.y), width, height: Math.round((width * 297) / 210) };
+    },
+    // Auf der Website 176 bis 236 CSS-Pixel breit: 240 und 480 für einfache und doppelte Dichte (vorher zeichnete der
+    // Browser bei einfacher Dichte die 640er Datei auf 236 Pixel), 640 und 800 für Smartphones mit dreifacher Dichte
+    // (das Blatt ist dort gut 210 bis 230 CSS-Pixel breit), 1280 für Vergrößerung
+    widths: [240, 480, 640, 800, 1280],
     schemes: ["light"],
   },
   // Einstieg am Smartphone (unter 560 px): das Dashboard in der Ansicht fürs Smartphone, ohne Telefonrahmen als großes
@@ -596,7 +969,10 @@ const shots = [
     name: "phone-dashboard",
     device: "phone",
     path: "/dashboard",
-    steps: assertPreparedDashboard,
+    steps: async (page) => {
+      await assertPreparedDashboard(page);
+      await hideStartChip(page);
+    },
     viewport: PHONE_SCREEN,
     widths: [332, 442, 520, 663, 780, 1170],
   },
@@ -609,7 +985,6 @@ const shots = [
     steps: scrollBelowHeader((page) => page.getByRole("heading", { name: "Meine Einsätze" })),
     viewport: PHONE_SCREEN,
     widths: [260, 312, 468, 520, 624, 780],
-    crisp: [260, 312],
   },
   // Kapitel Helferschichten: die Schicht „Getränkestand“ aus Sicht des Helfers vor und nach dem Eintragen (siehe
   // phoneFrames), darunter „Grillstand“ (unbesetzt). Neben dem Live-Fenster 208 CSS-Pixel breit (1000–1199 px: 182),
@@ -622,7 +997,6 @@ const shots = [
     frames: phoneFrames,
     viewport: PHONE_SCREEN,
     widths: [182, 208, 260, 273, 312, 364, 390, 416, 520, 546, 624, 780],
-    crisp: [182, 208, 260],
   },
   // „Im Detail“ auf dem Smartphone (unter 720 px statt der Browserfenster): Suche über die Lupe, Mitgliederliste,
   // Kalender als Liste, Auswertung – je 260 CSS-Pixel breit wie die übrigen Telefone dort
@@ -655,6 +1029,7 @@ const shots = [
       await page.getByText("Entwicklung", { exact: true }).first().click();
       await page.waitForTimeout(1200); // Diagramm-Animation
       await scrollBelowHeader((p) => p.getByText("Nach Status", { exact: true }))(page); // Umschalter, Diagramm ganz im Bild
+      await solidBars(page);
     },
     viewport: PHONE_SCREEN,
   },
@@ -746,13 +1121,18 @@ async function checkDemoNames(page, clip, name) {
   }
 }
 
-/** Das Symbol der Next.js-Entwicklungsumgebung und Einblendungen gehören nicht ins Bild. */
-const HIDE_DEV_UI = "nextjs-portal, [data-nextjs-toast], [data-nextjs-dev-tools-button] { display: none !important; }";
+/**
+ * Das Symbol der Next.js-Entwicklungsumgebung und Einblendungen gehören nicht ins Bild, ebenso die blinkende Schreibmarke
+ * (sie stünde mal im Bild und mal nicht – in einer Bildfolge flackerte sie).
+ */
+const HIDE_DEV_UI =
+  "nextjs-portal, [data-nextjs-toast], [data-nextjs-dev-tools-button] { display: none !important; } * { caret-color: transparent !important; }";
 
 /** Bildausschnitt in Fensterkoordinaten (Playwright `clip`) – oder undefined für das ganze Fenster. */
 async function cropArea(page, crop) {
+  if (typeof crop === "function") return crop(page);
   if (crop === "content") {
-    const x = await page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? 0));
+    const x = await contentLeft(page);
     return { x, y: 0, ...CONTENT_CROP };
   }
   if (crop === "dialog") {
@@ -761,7 +1141,7 @@ async function cropArea(page, crop) {
     const viewport = page.viewportSize();
     const { width, height } = CONTENT_CROP;
     // nie mitten durch die Seitenleiste: frühestens an ihrer rechten Kante
-    const aside = await page.evaluate(() => Math.ceil(document.querySelector("aside")?.getBoundingClientRect().right ?? 0));
+    const aside = await contentLeft(page);
     const x = Math.round(Math.min(Math.max(aside, box.x + box.width / 2 - width / 2), viewport.width - width));
     const y = Math.round(Math.min(Math.max(0, box.y - 56), viewport.height - height));
     return { x, y, width, height };
@@ -793,8 +1173,13 @@ async function newSession(browser, scheme, device) {
 
 async function main() {
   await fs.mkdir(out, { recursive: true });
-  const browser = await chromium.launch({ channel: CHANNEL });
-  const selected = shots.filter((s) => !only || only.includes(s.name));
+  const browser = await chromium.launch({ channel: CHANNEL }).catch((error) => {
+    if (CHANNEL === "chromium" || process.env.VF_BROWSER_CHANNEL) throw error;
+    console.log(`Browser „${CHANNEL}“ nicht gefunden – nehme das Chromium von Playwright.`);
+    return chromium.launch({ channel: "chromium" });
+  });
+  // Ohne --only alle Bilder, die die Website verwendet; `optional` (derzeit nicht eingebunden) nur ausdrücklich
+  const selected = shots.filter((s) => (only ? only.includes(s.name) : !s.optional));
   if (!selected.length) throw new Error(`Kein Bild mit diesem Namen: ${only?.join(", ")}`);
 
   try {
@@ -807,9 +1192,11 @@ async function main() {
         const { context, page, spec } = await newSession(browser, scheme, device);
         for (const shot of list) {
           try {
+            await releaseCapture(page);
             await page.setViewportSize(shot.viewport ?? spec.viewport);
             await page.emulateMedia({ media: shot.media ?? "screen" });
-            await page.goto(shot.path, { waitUntil: "networkidle" });
+            if (device === "desktop") await setSidebar(page, shot.sidebar ?? "schmal");
+            await gotoApp(page, shot.path);
             await shot.steps?.(page);
             if (shot.frames) {
               // Bildfolge: jedes Bild wie ein einzelnes, der Mauszeiger bleibt, wo ihn die Folge hinstellt
@@ -820,11 +1207,8 @@ async function main() {
                 await normalizeDemoNames(page, { gentle });
                 await page.waitForTimeout(500);
                 await checkDemoNames(page, clip, name);
-                const png = await page.screenshot({ type: "png", clip });
-                for (const width of shot.widths ?? spec.widths) {
-                  await encode(png, width, shot, spec).toFile(path.join(out, `${name}-${scheme}-${width}.webp`));
-                }
-                const { width, height } = await sharp(png).metadata();
+                await checkProblems(page, clip, name);
+                const { width, height } = await save(await capture(page, clip, shot.widths ?? spec.widths, spec), name, scheme);
                 console.log(`${scheme.padEnd(5)} ${name}  ${width}×${height}`);
               };
               await shot.frames(page, snap);
@@ -836,12 +1220,10 @@ async function main() {
             await page.mouse.move(0, 0); // kein Hover-Zustand im Bild
             await page.waitForTimeout(500); // Übergänge und Diagramm-Animationen abwarten
             const clip = await cropArea(page, shot.crop);
-            const png = await page.screenshot({ type: "png", clip });
-            for (const width of shot.widths ?? spec.widths) {
-              const file = path.join(out, `${shot.name}-${scheme}-${width}.webp`);
-              await encode(png, width, shot, spec).toFile(file);
-            }
-            const { width, height } = await sharp(png).metadata();
+            await checkDemoNames(page, clip, shot.name);
+            await checkProblems(page, clip, shot.name);
+            const captured = await capture(page, clip, shot.widths ?? spec.widths, spec);
+            const { width, height } = await save(captured, shot.name, scheme, { allowLossy: true });
             console.log(`${scheme.padEnd(5)} ${shot.name}  ${width}×${height}  (${page.url().replace(BASE, "")})`);
           } catch (error) {
             console.error(`FEHLER ${scheme} ${shot.name}: ${String(error.message).split("\n")[0]}`);

@@ -5,9 +5,12 @@
 //
 // Was es tut (nur in der Aufnahme-Datenbank `vf_website`, siehe README „Hinweise zu den Aufnahmen“):
 // - Dashboard des Demo-Administrators: Die Karten „Erste Schritte“ (Einrichtungs-Checkliste) und „Offene Zahlungen“
-//   (Finanzen gibt es auf der Website noch nicht, siehe FAQ) werden ausgeblendet – wie über „Anpassen“ in der Anwendung
-//   (ClubMembership.dashboardLayout). Danach beginnt die Übersicht mit den Kennzahlen. Die Auswertungen auf dem Reiter
-//   „Mitglieder“ stehen klein (CARD_SIZES), damit das Diagramm ganz ins Bild „auswertung“ passt.
+//   werden ausgeblendet – wie über „Anpassen“ in der Anwendung (ClubMembership.dashboardLayout). Danach beginnt die
+//   Übersicht mit den Kennzahlen. „Offene Zahlungen“ bleibt bewusst aus, obwohl die Website die Finanzen zeigt: Das
+//   Dashboard im Einstieg steht für Mitglieder, Termine und Helfer (wie die Überschrift daneben), seine Zuschnitte in
+//   site.css (.hero-visual) sind auf die Kennzahl-Karten abgestimmt, und mit den Finanz-Demodaten zeigte die Karte rote
+//   Hinweise auf überfällige Rechnungen – die Finanzen stellt der Laptop „Am Rechner“ vor. Die Auswertungen auf dem
+//   Reiter „Mitglieder“ stehen klein (CARD_SIZES), damit das Diagramm ganz ins Bild „auswertung“ passt.
 // - Mitglieder: rund 210 weitere, erfundene Mitglieder mit leichtem Wachstum über die letzten zwölf Monate (einige
 //   Eintritte je Monat, wenige Austritte zum Monatsende), verteilt auf die vier Abteilungen des Seeds.
 // - Termine des Seeds: Der Seed legt Sommerfest, Arbeitseinsatz, Vorstandssitzung, Training usw. ein bis sechs Wochen
@@ -20,9 +23,10 @@
 //   nach dem Sommerfest – so stimmen die Kennzahl „Termine in 30 Tagen“ samt ihrem Verlauf über zwölf Wochen und der Monat
 //   des Sommerfests im Kalender –, dazu einzelne Termine rund um das Sommerfest.
 // - Helferstunden: abgeschlossene Einsätze der letzten Wochen mit eingetragenen Stunden (Verlauf der Kennzahl).
-// - Nachrichten: einige gesendete Nachrichten der Seed-Konten (Bild „nachrichten“ im Laptop der Website: der Chat „Alle
-//   Mitglieder“ mit einer Ankündigung zum Arbeitseinsatz und der Lesestatistik). Empfänger sind wie beim echten Versand
-//   nur Mitglieder mit Benutzerkonto, also die Seed-Konten; die Willkommensnachricht des Seeds haben danach alle gelesen.
+// - Nachrichten: einige gesendete Nachrichten der Seed-Konten, damit der Demo-Verein belebt wirkt. Bis Oktober 2026 zeigte
+//   der Laptop der Website den Chat „Alle Mitglieder“ mit einer Ankündigung zum Arbeitseinsatz; heute zeigt er die
+//   Finanzen, kein Bild hat die Nachrichten mehr als Motiv. Empfänger sind wie beim echten Versand nur Mitglieder mit
+//   Benutzerkonto, also die Seed-Konten; die Willkommensnachricht des Seeds haben danach alle gelesen.
 //
 // Alle Namen sind erfunden (übliche Vor- und Nachnamen, zufällig kombiniert; Anschriften in „Musterstadt“, E-Mail-Adressen
 // unter example.org) – das Repository und die Website sind öffentlich. Vermieden werden Namen mit „hel“ und „Koch“: Die
@@ -348,8 +352,7 @@ function buildEvents(fest, today, herren) {
  * Gesendete Nachrichten der Seed-Konten (`from`: Teil der Anmeldeadresse vor „@“), je Chat eine oder zwei, vom heutigen
  * Tag aus zurückgerechnet. Bewusst ohne Datum im Text, damit nichts davon veraltet. `read`: so viele Empfänger haben sie
  * gelesen – der Demo-Administrator immer zuerst (sonst stiege die Zahl ungelesener Nachrichten in den übrigen Bildern).
- * Die Ankündigung zum Arbeitseinsatz ist das Bild im Laptop der Website (Chat „Alle Mitglieder“, siehe
- * capture-screenshots.mjs, `nachrichten`).
+ * Die Ankündigung zum Arbeitseinsatz war bis Oktober 2026 das Bild im Laptop der Website (heute die Finanzen).
  */
 const MESSAGES = [
   {
