@@ -2,12 +2,12 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>VereinsFlow – Vereinsverwaltung mit Helferplanung</title>
   <meta name="description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt.">
   <link rel="canonical" href="https://vereins-flow.com/">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#060B16">
+  <meta name="color-scheme" content="dark">
 
   <link rel="icon" href="favicon.svg?v=2026100401" type="image/svg+xml">
   <link rel="icon" href="favicon.ico?v=2026100401" sizes="48x48">
@@ -29,8 +29,10 @@
   <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026101802">
-  <script src="assets/js/site.js?v=2026101801" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=2026102001">
+  <script src="assets/js/site.js?v=2026102001" defer></script>
+  <!-- Nur die Startseite: Kamerafahrt, Wortwalze, Magnet-Knöpfe, Lichtkanten und der Lichtfluss (fluss.js, als Modul) -->
+  <script type="module" src="assets/js/buehne.js?v=2026102001"></script>
 
   <script type="application/ld+json">
   {
@@ -84,9 +86,11 @@
 <body id="top">
 <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
 
-<!-- Symbole: lucide (ISC-Lizenz), dieselbe Bibliothek wie in der Anwendung -->
+<!-- Symbole: lucide (ISC-Lizenz), dieselbe Bibliothek wie in der Anwendung; dazu die Pinnnadel aus dem Logo und das Zeichen
+     auf Deckel und Rückseite der Geräte (wörtlich wie bisher) -->
 <svg class="sprite" aria-hidden="true" focusable="false">
   <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
+  <symbol id="i-user-check" viewBox="0 0 24 24"><path d="m16 11 2 2 4-4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></symbol>
   <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
   <symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></symbol>
   <symbol id="i-hand-heart" viewBox="0 0 24 24"><path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m14.45 13.39 5.05-4.694C20.196 8 21 6.85 21 5.75a2.75 2.75 0 0 0-4.797-1.837.276.276 0 0 1-.406 0A2.75 2.75 0 0 0 11 5.75c0 1.2.802 2.248 1.5 2.946L16 11.95"/><path d="m2 15 6 6"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a1 1 0 0 0-2.75-2.91"/></symbol>
@@ -102,24 +106,22 @@
   <symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
   <symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1"/><rect x="3" y="10" width="18" height="12" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></symbol>
-  <symbol id="i-file-check" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m9 15 2 2 4-4"/></symbol>
-  
-  
-  
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
-  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 8h16"/><path d="M4 16h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
-  
-  
-  
-  
+  <!-- Pinnnadel: Punkt mit zwei Tempo-Strichen aus dem Logo (Formen und Maße wie im Logo-Paket) -->
+  <symbol id="pin" viewBox="39.5 135.9 113 53.2"><rect x="64.93" y="157.22" width="26.25" height="10.5" rx="5.25"/><rect x="40.93" y="157.22" width="15" height="10.5" rx="5.25"/><circle cx="126.68" cy="162.47" r="25"/></symbol>
+  <symbol id="pin-striche" viewBox="39.5 135.9 113 53.2"><rect x="64.93" y="157.22" width="26.25" height="10.5" rx="5.25"/><rect x="40.93" y="157.22" width="15" height="10.5" rx="5.25"/></symbol>
+  <symbol id="pin-punkt" viewBox="39.5 135.9 113 53.2"><circle cx="126.68" cy="162.47" r="25"/></symbol>
   <!-- Zeichen von VereinsFlow: das V aus dem Logo-Paket in der ruhigeren Form für kleine Größen (wie favicon.svg: je Seite
        zwei Etappen, ohne Tempo-Striche, darunter der Punkt) – auf Deckel und Rückseite ist es nur etwa 15 bis 55 px hoch.
        Spiegelpoliert für den Deckel des Laptops: ein gemeinsamer Metallverlauf mit dunklerem Band (sonst verschwänden die
@@ -140,296 +142,127 @@
   <symbol id="i-status" viewBox="0 0 72 12"><rect x="0" y="8" width="3" height="4" rx="0.8" fill="currentColor"/><rect x="4.5" y="6" width="3" height="6" rx="0.8" fill="currentColor"/><rect x="9" y="3.5" width="3" height="8.5" rx="0.8" fill="currentColor"/><rect x="13.5" y="1" width="3" height="11" rx="0.8" fill="currentColor"/><path d="M23 4.6a10.2 10.2 0 0 1 14.2 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M25.9 7.5a6 6 0 0 1 8.4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="30.1" cy="10.6" r="1.4" fill="currentColor"/><rect x="44.5" y="1" width="23.5" height="10.5" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.4"/><rect x="46.5" y="3" width="17" height="6.5" rx="1.6" fill="currentColor"/><path d="M69.5 4.3v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity="0.45"/></symbol>
 </svg>
 
-<header class="site-header">
-  <div class="container header-inner">
-    <a class="brand" href="#top" aria-label="VereinsFlow – zum Seitenanfang">
-      <picture>
-        <img src="assets/img/logo.svg?v=2026100401" alt="" width="178" height="40">
-      </picture>
+<!-- ===== Kopfzeile: schwebende Glasinsel (über der Nacht dunkles, über Papier helles Glas), darunter der Kapitel-Faden
+     (zehn Anker mit Namen, die Pinnnadel rastet am aktuellen Kapitel ein). Unter 900 px: Logo, „Demo“ und Menüknopf;
+     das Menü bedeckt dann das Fenster (alles andere ist inert). site.js: Glas hell/dunkel, Kapitel, Menü. ===== -->
+<header class="kopf" data-kopf data-kapitel="1">
+  <div class="kopf-insel">
+    <span class="kopf-glas" aria-hidden="true"></span>
+    <a class="kopf-marke" href="#top" aria-label="VereinsFlow – zum Seitenanfang" data-navi="1">
+      <img class="marke-nacht" src="assets/img/logo-dark.svg?v=2026100401" alt="" width="125" height="28">
+      <img class="marke-papier" src="assets/img/logo.svg?v=2026100401" alt="" width="125" height="28">
     </a>
-    <!-- Unter 900 px: „Demo anfragen“ (am Handy kurz „Demo“) neben dem Menüknopf, sobald gescrollt ist. Beide stehen vor der
-         Navigation: So führt die Tabulatortaste vom geöffneten Menüknopf direkt zu den Menüpunkten (sichtbar ändert das
-         nichts – breit ist der Menüknopf ausgeblendet, schmal liegt das geöffnete Menü unter der Kopfzeile). -->
-    <a class="btn btn-primary btn-sm header-cta" href="#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
-      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
-      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
-    </button>
-    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
-      <div class="nav-links">
-        <span class="nav-indicator" aria-hidden="true"></span>
-        <ul>
-          <li><a href="#funktionen">Funktionen</a></li>
-          <li><a href="#helferschichten">Helferschichten</a></li>
-          <li><a href="#rollen">Rollen</a></li>
-          <li><a href="#sicherheit">Sicherheit</a></li>
-          <li><a href="#faq">Fragen</a></li>
-        </ul>
-      </div>
-      <!-- Rechts wie ein schlichter Textlink neben dem schwarzen Knopf (ab 1200 px; im Handy-Menü unter den Menüpunkten) -->
-      <a class="header-link" href="#benachrichtigen">Beim Start benachrichtigen</a>
-      <a class="btn btn-primary btn-sm btn-header" href="#kontakt">Demo anfragen</a>
+    <nav class="kopf-navi" aria-label="Hauptnavigation">
+      <a href="#helferschichten" data-navi="2 3 4">Helferplanung</a>
+      <a href="#funktionen" data-navi="5">Funktionen</a>
+      <a href="#finanzen" data-navi="6">Finanzen</a>
+      <a href="#sicherheit" data-navi="7">Sicherheit</a>
+      <a href="#faq" data-navi="8 9">Fragen</a>
     </nav>
+    <a class="knopf knopf-signal knopf-klein kopf-demo" href="#kontakt" data-navi="10"><span>Demo<span class="nur-breit"> anfragen</span></span><span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+    <button class="menue-knopf" type="button" aria-expanded="false" aria-controls="menue" data-menue-knopf>
+      <svg class="i i-auf" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="i i-zu" aria-hidden="true"><use href="#i-x"/></svg>
+      <span class="sr-only" data-menue-label>Menü öffnen</span>
+    </button>
+    <!-- Kapitel-Faden: Rastpunkte sind echte Anker (24 × 24 px), ihr Name ist zugleich der zugängliche Name; Füllung und
+         Pinnnadel sind nur Zeichen. Unter 900 px nur ein Fortschrittsstrich (die Anker stehen dann im Menü). -->
+    <div class="faden" data-faden>
+      <span class="faden-spur" aria-hidden="true"></span>
+      <span class="faden-fuellung" aria-hidden="true"></span>
+      <nav class="faden-navi" aria-label="Kapitel">
+        <ol class="faden-rast" role="list">
+          <li><a class="faden-ziel" tabindex="-1" href="#top" data-ziel="1" aria-current="location"><i aria-hidden="true"></i><span class="faden-name">Einstieg</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#ausgangslage" data-ziel="2"><i aria-hidden="true"></i><span class="faden-name">Ausgangslage</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#helferschichten" data-ziel="3"><i aria-hidden="true"></i><span class="faden-name">Helferplanung</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#unterwegs" data-ziel="4"><i aria-hidden="true"></i><span class="faden-name">Unterwegs</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#funktionen" data-ziel="5"><i aria-hidden="true"></i><span class="faden-name">Funktionen</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#finanzen" data-ziel="6"><i aria-hidden="true"></i><span class="faden-name">Finanzen</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#sicherheit" data-ziel="7"><i aria-hidden="true"></i><span class="faden-name">Vertrauen</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#ablauf" data-ziel="8"><i aria-hidden="true"></i><span class="faden-name">So starten Sie</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#faq" data-ziel="9"><i aria-hidden="true"></i><span class="faden-name">Fragen</span></a></li>
+          <li><a class="faden-ziel" tabindex="-1" href="#kontakt" data-ziel="10"><i aria-hidden="true"></i><span class="faden-name">Demo</span></a></li>
+        </ol>
+      </nav>
+      <span class="faden-pin" aria-hidden="true"><span class="faden-richtung"><svg class="faden-striche" data-faden-striche><use href="#pin-striche"/></svg></span><svg class="faden-punkt"><use href="#pin-punkt"/></svg></span>
+    </div>
   </div>
-  <span class="scroll-progress" aria-hidden="true"></span>
+  <div class="menue" id="menue" hidden data-menue>
+    <nav class="menue-liste" aria-label="Menü">
+      <a href="#helferschichten" data-navi="2 3 4">Helferplanung<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="#funktionen" data-navi="5">Funktionen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="#finanzen" data-navi="6">Finanzen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="#sicherheit" data-navi="7">Sicherheit<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="#ablauf" data-navi="8">So starten Sie<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="#faq" data-navi="9">Häufige Fragen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+    </nav>
+    <div class="menue-fuss">
+      <a class="knopf knopf-signal" href="#kontakt">Demo anfragen<span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+      <a class="knopf knopf-glas" href="#benachrichtigen">Beim Start benachrichtigen</a>
+      <a class="menue-tel" href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Anrufen: </span>+49&nbsp;176&nbsp;56792302</span></a>
+    </div>
+  </div>
 </header>
+<span class="kopf-waechter" aria-hidden="true" data-kopf-waechter></span>
 
 <main id="inhalt">
 
-  <!-- ===== Einstieg ===== -->
-  <!-- Ruhig und aufgeräumt: links groß die Überschrift, darunter Einleitung, drei Punkte, der schwarze Knopf und eine
-       kleine graue Zeile; rechts ein großes Bild der Anwendung (das echte Dashboard), so hoch wie der Text daneben.
-       Schmal steht alles untereinander, das Bild zuletzt. -->
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="container">
-      <div class="hero-copy">
-        <!-- Das Zeichen von VereinsFlow groß und blass hinter der Überschrift (nur Schmuck): Beim Aufruf gleiten die drei
-             schwarzen Etappen von links und die drei blauen von rechts herein und fügen sich zum V, zuletzt rollt der orange
-             Punkt mit den Tempo-Strichen an. Formen wie im Logo-Paket (01-logo/svg/vereinsflow-symbol.svg); Farben,
-             Größe und Bewegung in site.css (.hero-mark). width/height 0: ohne Stildatei bleibt es unsichtbar. -->
-        <div class="hero-title">
-          <svg class="hero-mark" viewBox="40.93 -53.25 246.81 240.72" width="0" height="0" aria-hidden="true" focusable="false">
-            <g class="hero-mark-l">
-              <path class="hm-1" d="M42.32 -40.00 L91.40 -40.00 L104.49 21.58 L55.41 21.58 Z"/>
-              <path class="hm-2" d="M57.33 30.58 L106.40 30.58 L116.87 79.84 L67.80 79.84 Z"/>
-              <path class="hm-3" d="M69.71 88.84 L118.78 88.84 L127.16 128.25 L78.09 128.25 Z"/>
-            </g>
-            <g class="hero-mark-r">
-              <path class="hm-1" d="M286.49 -52.00 L232.13 -52.00 L193.00 21.58 L247.37 21.58 Z"/>
-              <path class="hm-2" d="M242.58 30.58 L188.22 30.58 L162.03 79.84 L216.39 79.84 Z"/>
-              <path class="hm-3" d="M211.60 88.84 L157.24 88.84 L136.29 128.25 L190.65 128.25 Z"/>
-            </g>
-            <g class="hero-mark-dot">
-              <rect x="64.93" y="157.22" width="26.25" height="10.50" rx="5.25"/>
-              <rect x="40.93" y="157.22" width="15.00" height="10.50" rx="5.25"/>
-              <circle cx="126.68" cy="162.47" r="25.00"/>
-            </g>
-          </svg>
-          <h1 id="hero-title"><span class="word word-1">Bringt</span> <span class="word word-2">Vereinsarbeit</span> <span class="word word-3"><span class="flow-word">in Fluss</span></span></h1>
+  <!-- ===== Kapitel 1 · Einstieg (Nacht): die Kinobühne. Laptop und Telefon stehen in eigenen 3D-Posen; beim Laden laufen
+       ihre echten Bewegungen (wie bisher, site.js), danach drehen sie sich in die Pose. Ab 1024 × 720 mit Bewegung klebt
+       die Bühne, und beim Scrollen fährt die Kamera in den Laptop hinein (buehne.js, site.css „Kamerafahrt“): Die
+       Überschrift fliegt vorbei, das Telefon dreht sich weg, der Laptop steht frontal, zuletzt füllt die App das Bild und
+       die Tafel „Zahlen, die dem Vorstand helfen“ schiebt sich darüber. Ohne Bewegung, ohne JavaScript und schmal: die
+       Bühne in Ruhe, „Im Detail“ als eigener Abschnitt darunter. ===== -->
+  <section class="kapitel k01 nacht" data-kapitel="1" aria-labelledby="einstieg-titel">
+    <div class="fahrt" data-fahrt>
+      <span class="fahrt-anker" id="im-detail" aria-hidden="true"></span>
+      <span class="fahrt-waechter fw-start" aria-hidden="true" data-fahrt-waechter="start"></span>
+      <span class="fahrt-waechter fw-mitte" aria-hidden="true" data-fahrt-waechter="mitte"></span>
+      <span class="fahrt-waechter fw-ende" aria-hidden="true" data-fahrt-waechter="ende"></span>
+      <div class="buehne" data-buehne>
+        <div class="buehne-licht" aria-hidden="true">
+          <span class="licht licht-blau la"></span>
+          <span class="licht licht-signal lb"></span>
+          <span class="licht licht-himmel lc"></span>
+          <span class="lichtkegel"></span>
+          <span class="horizont"></span>
+          <span class="boden"></span>
+          <span class="bodenlache"></span>
         </div>
-        <p class="lead intro intro-3">Vereinsverwaltung mit Helferplanung: VereinsFlow bündelt Mitglieder, Termine, Helferschichten und Nachrichten an einem Ort.</p>
-        <!-- Drei kurze Aussagen; sie erscheinen beim Aufruf nacheinander (site.css, „Bewegung“: .hero-points li) -->
-        <ul class="hero-points">
-          <li>Helfer tragen sich <strong>selbst ein</strong></li>
-          <li><strong>Im Browser</strong>, ohne Installation</li>
-          <li>Daten jedes Vereins <strong>strikt getrennt</strong></li>
-        </ul>
-        <div class="hero-actions intro intro-5">
-          <a class="btn btn-primary btn-lg" href="#kontakt">Demo anfragen</a>
-          <a class="hero-link" href="#benachrichtigen">Beim Start benachrichtigen</a>
-        </div>
-        <!-- Zwei kurze Sätze; umgebrochen wird nur zwischen ihnen -->
-        <p class="hero-note intro intro-5"><span>Die Demo ist persönlich und unverbindlich.</span> <span>Passend zu den Fragen Ihres Vereins.</span></p>
-      </div>
+        <canvas class="fluss fluss-einstieg" aria-hidden="true" data-fluss data-leise=".einstieg-titel .w" data-leise-anteil="0.42" data-seed="11" data-anzahl="860" data-straenge="6" data-orange="0.06" data-strich="1.2" data-staerke="1.32" data-breite="0.033"
+          data-pfad="-0.03,0.356 0.12,0.352 0.22,0.344 0.29,0.324 0.345,0.284 0.41,0.246 0.56,0.234 0.7,0.24 0.79,0.278 0.845,0.368 0.88,0.424 0.93,0.352 0.97,0.232 1.04,0.11"
+          data-pfad-kompakt="-0.05,0.62 0.15,0.6 0.35,0.58 0.55,0.585 0.75,0.57 0.9,0.5 1.05,0.4" data-anzahl-kompakt="260" data-breite-kompakt="0.03"></canvas>
+        <span class="hof hof-signal" aria-hidden="true"></span>
 
-      <!-- Bild der Anwendung, zugeschnitten wie ein Foto (Ausschnitte in site.css, .hero-visual): Neben der Überschrift
-           (ab 900 px) das Dashboard in Tablet-Breite als hohes Bild, am Smartphone (unter 560 px) die Ansicht fürs
-           Smartphone. Dazwischen (Tablet, Handy quer) steht das Bild breit unter dem Text – nur dort das Dashboard am
-           Rechner, die große Datei lädt sonst gar nicht erst. sizes nach der gezeichneten Breite (hochkant so breit wie der
-           Rahmen; am Rechner zugeschnitten 1,343-mal so breit). -->
-      <div class="hero-visual intro intro-6">
-        <picture>
-          <source media="(min-width: 900px)" srcset="assets/img/app/einstieg-dashboard-light-490.webp?v=2026101801 490w, assets/img/app/einstieg-dashboard-light-660.webp?v=2026101801 660w, assets/img/app/einstieg-dashboard-light-980.webp?v=2026101801 980w, assets/img/app/einstieg-dashboard-light-1280.webp?v=2026101801 1280w, assets/img/app/einstieg-dashboard-light-1536.webp?v=2026101801 1536w" sizes="(min-width: 1224px) 490px, calc(42.5vw - 29px)" width="1536" height="3200">
-          <source media="(max-width: 559px)" srcset="assets/img/app/phone-dashboard-light-332.webp?v=2026101801 332w, assets/img/app/phone-dashboard-light-442.webp?v=2026101801 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026101801 520w, assets/img/app/phone-dashboard-light-663.webp?v=2026101801 663w, assets/img/app/phone-dashboard-light-780.webp?v=2026101801 780w, assets/img/app/phone-dashboard-light-1170.webp?v=2026101801 1170w" sizes="calc(100vw - 32px)" width="1170" height="2280">
-          <img src="assets/img/app/dashboard-light-960.webp?v=2026101801" srcset="assets/img/app/dashboard-light-720.webp?v=2026101801 720w, assets/img/app/dashboard-light-960.webp?v=2026101801 960w, assets/img/app/dashboard-light-1440.webp?v=2026101801 1440w, assets/img/app/dashboard-light-1920.webp?v=2026101801 1920w, assets/img/app/dashboard-light-2328.webp?v=2026101801 2328w" sizes="(min-width: 800px) calc(100vw - 64px), 92vw" width="2328" height="1862" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und Kennzahlen, etwa zu den Mitgliedern mit Vergleich zum Vormonat">
-        </picture>
-      </div>
-    </div>
-  </section>
+        <h1 class="einstieg-titel riesig" id="einstieg-titel"><span class="zeile z1"><span class="w vorn"><span class="steig">Bringt Vereinsarbeit</span></span></span> <span class="zeile z2 himmel"><span class="w vorn"><span class="steig">in&nbsp;</span></span><span class="w hinten"><span class="steig">Fluss</span></span><span class="w-pin vorn" aria-hidden="true"><span class="pinpunkt"></span></span></span></h1>
 
-  <!-- ===== Abläufe (Nacht): Ausgangslage und „Im Detail“ in einem. Überschrift und ein Satz, darunter die vier
-       Abläufe als Reiter: breit links untereinander (Symbol und Wort, ein Strich in Himmel am gewählten), darunter der
-       Satz zum Thema, rechts das Live-Fenster (Maße wie bisher, LIVE_SCENES in site.js). Schmal: Reiterleiste über dem
-       Thema, statt des Fensters ein Telefon. Ohne JavaScript alle vier untereinander. ===== -->
-  <section class="section nacht" id="details" aria-labelledby="details-title">
-    <div class="container">
-      <div class="section-head wide reveal">
-        <h2 id="details-title"><span class="h-line">Vereinsarbeit ist Ehrenamt.</span> <span class="h-line">Die Verwaltung sollte es nicht schwerer machen.</span></h2>
-        <p class="lead">Aus Listen, Chats und Rundmails wird ein gemeinsamer Ablauf: für Vorstand, Abteilungen und Helfer.</p>
-      </div>
-
-      <!-- Ohne JavaScript stehen die vier Themen untereinander; mit JavaScript als Reiter (site.js, Stil unter „Reiter“ und
-           „Kürzen und Ordnen“: breit links als Liste, darunter der Satz zum Thema, rechts das Live-Fenster) -->
-      <div class="spots" data-tabs>
-        <div class="tabs reveal" role="tablist" aria-label="Abläufe" hidden>
-          <button class="tab" type="button" role="tab" id="tab-suche" aria-controls="suche"><svg class="icon tab-ico" aria-hidden="true"><use href="#i-search"/></svg><span>Suche</span></button>
-          <button class="tab" type="button" role="tab" id="tab-mitglieder" aria-controls="mitglieder"><svg class="icon tab-ico" aria-hidden="true"><use href="#i-users"/></svg><span>Mitglieder</span></button>
-          <button class="tab" type="button" role="tab" id="tab-veranstaltungen" aria-controls="veranstaltungen"><svg class="icon tab-ico" aria-hidden="true"><use href="#i-calendar-days"/></svg><span>Termine</span></button>
-          <button class="tab" type="button" role="tab" id="tab-auswertungen" aria-controls="auswertungen"><svg class="icon tab-ico" aria-hidden="true"><use href="#i-chart-column"/></svg><span>Zahlen</span></button>
+        <div class="einstieg-text">
+          <p class="lead">Vereinsverwaltung mit Helferplanung: VereinsFlow bündelt Mitglieder, Termine, Helferschichten und Nachrichten an einem Ort.</p>
+          <div class="knoepfe">
+            <a class="knopf knopf-signal knopf-gross magnet" href="#kontakt">Demo anfragen<span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+            <a class="knopf knopf-glas knopf-gross" href="#benachrichtigen">Beim Start benachrichtigen</a>
+          </div>
+          <ul class="haken" role="list">
+            <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Helfer tragen sich selbst ein</li>
+            <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Im Browser, ohne Installation</li>
+            <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Daten jedes Vereins strikt getrennt</li>
+          </ul>
+          <p class="hinweis beispiel">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
         </div>
 
-      <div class="spot" id="suche">
-        <div class="spot-text reveal">
-          <h3 class="subhead">Alles mit einer Suche erreichen</h3>
-          <p class="lead">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente und häufige Aktionen, am Rechner auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd>.</span></p>
-        </div>
-        <div class="spot-media reveal">
-          <div class="plx plx-slow">
-            <div class="browser live" data-live="suche">
-              <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Suche</span></div>
-              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
-              <div class="live-screen">
-                <picture>
-                  <img src="assets/img/app/suche-light-960.webp?v=2026101802" srcset="assets/img/app/suche-light-680.webp?v=2026101802 680w, assets/img/app/suche-light-960.webp?v=2026101802 960w, assets/img/app/suche-light-1360.webp?v=2026101802 1360w, assets/img/app/suche-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Geöffnete zentrale Suche mit dem Begriff „Hel“: Treffer als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten (Helferplan drucken, Helferstunden) und Mitglieder">
-                </picture>
-                <!-- Live-Fenster (Zentrale Suche: Strg K, „Hel“ tippen, Treffer zeigen) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
-                <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/suche-live-1-light-960.webp?v=2026101802" srcset="assets/img/app/suche-live-1-light-680.webp?v=2026101802 680w, assets/img/app/suche-live-1-light-960.webp?v=2026101802 960w, assets/img/app/suche-live-1-light-1360.webp?v=2026101802 1360w, assets/img/app/suche-live-1-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-2-light-960.webp?v=2026101802" srcset="assets/img/app/suche-live-2-light-680.webp?v=2026101802 680w, assets/img/app/suche-live-2-light-960.webp?v=2026101802 960w, assets/img/app/suche-live-2-light-1360.webp?v=2026101802 1360w, assets/img/app/suche-live-2-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-3-light-960.webp?v=2026101802" srcset="assets/img/app/suche-live-3-light-680.webp?v=2026101802 680w, assets/img/app/suche-live-3-light-960.webp?v=2026101802 960w, assets/img/app/suche-live-3-light-1360.webp?v=2026101802 1360w, assets/img/app/suche-live-3-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-4-light-960.webp?v=2026101802" srcset="assets/img/app/suche-live-4-light-680.webp?v=2026101802 680w, assets/img/app/suche-live-4-light-960.webp?v=2026101802 960w, assets/img/app/suche-live-4-light-1360.webp?v=2026101802 1360w, assets/img/app/suche-live-4-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/suche-live-5-light-960.webp?v=2026101802" srcset="assets/img/app/suche-live-5-light-680.webp?v=2026101802 680w, assets/img/app/suche-live-5-light-960.webp?v=2026101802 960w, assets/img/app/suche-live-5-light-1360.webp?v=2026101802 1360w, assets/img/app/suche-live-5-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <span class="live-keys"><kbd>Strg</kbd><kbd>K</kbd></span>
-                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Smartphone (unter 720 px statt des Browserfensters): eigene Aufnahme mit dem Telefon, in Originalgröße lesbar -->
-          <div class="phone spot-phone phone-dim">
-            <span class="phone-hw" aria-hidden="true"></span>
-            <div class="phone-screen">
-              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-              <picture>
-                <img src="assets/img/app/phone-suche-light-260.webp?v=2026101801" srcset="assets/img/app/phone-suche-light-260.webp?v=2026101801 260w, assets/img/app/phone-suche-light-390.webp?v=2026101801 390w, assets/img/app/phone-suche-light-520.webp?v=2026101801 520w, assets/img/app/phone-suche-light-780.webp?v=2026101801 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Zentrale Suche auf dem Smartphone, geöffnet über die Lupe: Treffer für „Hel“ als Aktionen (Helferplan öffnen, Schicht bearbeiten), Seiten und Mitglieder">
-              </picture>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="spot flip" id="mitglieder">
-        <div class="spot-text reveal">
-          <h3 class="subhead">Mitglieder im Griff, ohne Datenchaos</h3>
-          <p class="lead">Eine Liste, ein Stand für alle. Vorhandene Excel-Listen lassen sich mit Vorschau übernehmen.</p>
-        </div>
-        <div class="spot-media reveal">
-          <div class="plx plx-slow">
-            <div class="browser live" data-live="mitglieder">
-              <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Mitglieder</span></div>
-              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
-              <div class="live-screen">
-                <picture>
-                  <img src="assets/img/app/mitglieder-light-960.webp?v=2026101801" srcset="assets/img/app/mitglieder-light-680.webp?v=2026101801 680w, assets/img/app/mitglieder-light-960.webp?v=2026101801 960w, assets/img/app/mitglieder-light-1360.webp?v=2026101801 1360w, assets/img/app/mitglieder-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Mitgliederliste mit Suche, Filtern nach Status und Abteilung sowie Import, Export und Statistik">
-                </picture>
-                <!-- Live-Fenster (Mitglieder: „Koch“ suchen und filtern) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
-                <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-1-light-960.webp?v=2026101801" srcset="assets/img/app/mitglieder-live-1-light-680.webp?v=2026101801 680w, assets/img/app/mitglieder-live-1-light-960.webp?v=2026101801 960w, assets/img/app/mitglieder-live-1-light-1360.webp?v=2026101801 1360w, assets/img/app/mitglieder-live-1-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-2-light-960.webp?v=2026101801" srcset="assets/img/app/mitglieder-live-2-light-680.webp?v=2026101801 680w, assets/img/app/mitglieder-live-2-light-960.webp?v=2026101801 960w, assets/img/app/mitglieder-live-2-light-1360.webp?v=2026101801 1360w, assets/img/app/mitglieder-live-2-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-3-light-960.webp?v=2026101801" srcset="assets/img/app/mitglieder-live-3-light-680.webp?v=2026101801 680w, assets/img/app/mitglieder-live-3-light-960.webp?v=2026101801 960w, assets/img/app/mitglieder-live-3-light-1360.webp?v=2026101801 1360w, assets/img/app/mitglieder-live-3-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/mitglieder-live-4-light-960.webp?v=2026101801" srcset="assets/img/app/mitglieder-live-4-light-680.webp?v=2026101801 680w, assets/img/app/mitglieder-live-4-light-960.webp?v=2026101801 960w, assets/img/app/mitglieder-live-4-light-1360.webp?v=2026101801 1360w, assets/img/app/mitglieder-live-4-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="phone spot-phone">
-            <span class="phone-hw" aria-hidden="true"></span>
-            <div class="phone-screen">
-              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-              <picture>
-                <img src="assets/img/app/phone-mitglieder-light-260.webp?v=2026101801" srcset="assets/img/app/phone-mitglieder-light-260.webp?v=2026101801 260w, assets/img/app/phone-mitglieder-light-390.webp?v=2026101801 390w, assets/img/app/phone-mitglieder-light-520.webp?v=2026101801 520w, assets/img/app/phone-mitglieder-light-780.webp?v=2026101801 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Mitgliederliste auf dem Smartphone mit Suchfeld, Filter und dem Status jedes Mitglieds">
-              </picture>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="spot" id="veranstaltungen">
-        <div class="spot-text reveal">
-          <h3 class="subhead">Von der Anmeldung bis zum Kalender-Abo</h3>
-          <p class="lead">Teilnehmer melden sich an, und per Abo stehen die Termine im eigenen Kalender.</p>
-        </div>
-        <div class="spot-media reveal">
-          <div class="plx plx-slow">
-            <div class="browser live" data-live="veranstaltungen">
-              <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Kalender</span></div>
-              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
-              <div class="live-screen">
-                <picture>
-                  <img src="assets/img/app/kalender-light-960.webp?v=2026101801" srcset="assets/img/app/kalender-light-680.webp?v=2026101801 680w, assets/img/app/kalender-light-960.webp?v=2026101801 960w, assets/img/app/kalender-light-1360.webp?v=2026101801 1360w, assets/img/app/kalender-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Kalender in der Monatsansicht mit Terminen, Filtern und Kalender-Abo">
-                </picture>
-                <!-- Live-Fenster (Kalender: Monat als Liste und zurück) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
-                <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/kalender-live-1-light-960.webp?v=2026101801" srcset="assets/img/app/kalender-live-1-light-680.webp?v=2026101801 680w, assets/img/app/kalender-live-1-light-960.webp?v=2026101801 960w, assets/img/app/kalender-live-1-light-1360.webp?v=2026101801 1360w, assets/img/app/kalender-live-1-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/kalender-live-2-light-960.webp?v=2026101801" srcset="assets/img/app/kalender-live-2-light-680.webp?v=2026101801 680w, assets/img/app/kalender-live-2-light-960.webp?v=2026101801 960w, assets/img/app/kalender-live-2-light-1360.webp?v=2026101801 1360w, assets/img/app/kalender-live-2-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/kalender-live-3-light-960.webp?v=2026101801" srcset="assets/img/app/kalender-live-3-light-680.webp?v=2026101801 680w, assets/img/app/kalender-live-3-light-960.webp?v=2026101801 960w, assets/img/app/kalender-live-3-light-1360.webp?v=2026101801 1360w, assets/img/app/kalender-live-3-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="phone spot-phone">
-            <span class="phone-hw" aria-hidden="true"></span>
-            <div class="phone-screen">
-              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-              <picture>
-                <img src="assets/img/app/phone-kalender-light-260.webp?v=2026101801" srcset="assets/img/app/phone-kalender-light-260.webp?v=2026101801 260w, assets/img/app/phone-kalender-light-390.webp?v=2026101801 390w, assets/img/app/phone-kalender-light-520.webp?v=2026101801 520w, assets/img/app/phone-kalender-light-780.webp?v=2026101801 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Kalender auf dem Smartphone als Liste: die Termine im Juni nach Tagen, mit Uhrzeit, Art, Abteilung und Ort">
-              </picture>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="spot flip" id="auswertungen">
-        <div class="spot-text reveal">
-          <h3 class="subhead">Zahlen, die dem Vorstand helfen</h3>
-          <p class="lead">Die Übersicht passt sich der Rolle an: Helfer sehen ihre Einsätze, der Vorstand Mitglieder, Termine und Helferstunden.</p>
-        </div>
-        <div class="spot-media reveal">
-          <div class="plx plx-slow">
-            <div class="browser live" data-live="auswertungen">
-              <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Auswertungen</span></div>
-              <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
-              <div class="live-screen">
-                <picture>
-                  <img src="assets/img/app/auswertung-light-960.webp?v=2026101802" srcset="assets/img/app/auswertung-light-680.webp?v=2026101802 680w, assets/img/app/auswertung-light-960.webp?v=2026101802 960w, assets/img/app/auswertung-light-1360.webp?v=2026101802 1360w, assets/img/app/auswertung-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="Dashboard-Reiter „Mitglieder“ mit Auswertungen: Liniendiagramm der Mitgliederentwicklung über zwölf Monate">
-                </picture>
-                <!-- Live-Fenster (Auswertungen: Diagramm als Fläche und als Balken) – Bildfolge aus der Demo-App, Ablauf in site.js (LIVE_SCENES) -->
-                <div class="live-layers" aria-hidden="true">
-                  <img class="live-frame" src="assets/img/app/auswertung-live-1-light-960.webp?v=2026101802" srcset="assets/img/app/auswertung-live-1-light-680.webp?v=2026101802 680w, assets/img/app/auswertung-live-1-light-960.webp?v=2026101802 960w, assets/img/app/auswertung-live-1-light-1360.webp?v=2026101802 1360w, assets/img/app/auswertung-live-1-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <img class="live-frame" src="assets/img/app/auswertung-live-2-light-960.webp?v=2026101802" srcset="assets/img/app/auswertung-live-2-light-680.webp?v=2026101802 680w, assets/img/app/auswertung-live-2-light-960.webp?v=2026101802 960w, assets/img/app/auswertung-live-2-light-1360.webp?v=2026101802 1360w, assets/img/app/auswertung-live-2-light-1920.webp?v=2026101802 1920w" sizes="(min-width: 1100px) 680px, (min-width: 900px) 58vw, 92vw" width="1920" height="1440" loading="lazy" decoding="async" alt="">
-                  <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="phone spot-phone">
-            <span class="phone-hw" aria-hidden="true"></span>
-            <div class="phone-screen">
-              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-              <picture>
-                <img src="assets/img/app/phone-auswertung-light-260.webp?v=2026101802" srcset="assets/img/app/phone-auswertung-light-260.webp?v=2026101802 260w, assets/img/app/phone-auswertung-light-390.webp?v=2026101802 390w, assets/img/app/phone-auswertung-light-520.webp?v=2026101802 520w, assets/img/app/phone-auswertung-light-780.webp?v=2026101802 780w" sizes="min(260px, 67vw)" width="780" height="1520" loading="lazy" decoding="async" alt="Auswertungen auf dem Smartphone: Mitgliederentwicklung der letzten zwölf Monate als Liniendiagramm">
-              </picture>
-            </div>
-          </div>
-        </div>
-      </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== Vorführung am Rechner: Ein Laptop erscheint, dreht sich zum Betrachter und klappt auf – von selbst, sobald er
-       ins Bild kommt (site.js, site.css); auf dem Bildschirm die Finanzen (Übersicht mit Kontostand, offenen Rechnungen,
-       Überschuss und Spenden; das Dashboard steht schon im Einstieg). Die Einleitung steht nur in breiten Fenstern neben
-       der Überschrift (site.css, „Vorführungen: Text um die Bühne“) – der Kopf über dem Laptop darf nicht höher werden.
-       Bewusst ein ruhiges Einzelbild statt einer Bildfolge: Der Bildschirm liegt im gedrehten, rückseitig ausgeblendeten
-       Deckel, eigene Grafikebenen darin wären ein Risiko für Drehung und Schärfe (siehe .laptop-screen in site.css).
-       Rechnungen, Kassenbuch und Beiträge im selben Format nimmt tools/capture-screenshots.mjs nur auf Wunsch auf
-       (--only laptop-finanzen-…). ===== -->
-  <section class="showcase showcase-laptop" id="am-rechner" aria-labelledby="rechner-title">
-    <div class="showcase-stage">
-      <div class="showcase-copy">
-        <h2 id="rechner-title">Finanzen auf einen Blick</h2>
-        <p class="lead">Kassenbuch, Rechnungen, Beiträge und Spenden. Mit Belegen und Monatsabschluss.</p>
-      </div>
-      <div class="showcase-scene">
+        <!-- Laptop: Gerät wörtlich wie bisher; .pose (um das Gerät) dreht es in Ruhe in die 3D-Pose, .kamera (um die Bühne)
+             trägt Größe und Lage der Kamerafahrt. Davor die flache Aufnahme für das Ende der Fahrt (gleiches Bild). -->
+        <div class="kamera" data-kamera>
+          <div class="geraet geraet-laptop">
+            <div class="showcase showcase-laptop" data-geraet="laptop">
+              <div class="showcase-scene">
+                <div class="pose pose-laptop">
         <div class="laptop">
           <div class="laptop-lid">
             <div class="laptop-screen">
               <span class="laptop-camera" aria-hidden="true"></span>
               <picture>
-                <img src="assets/img/app/laptop-finanzen-uebersicht-light-880.webp?v=2026101801" srcset="assets/img/app/laptop-finanzen-uebersicht-light-720.webp?v=2026101801 720w, assets/img/app/laptop-finanzen-uebersicht-light-880.webp?v=2026101801 880w, assets/img/app/laptop-finanzen-uebersicht-light-960.webp?v=2026101801 960w, assets/img/app/laptop-finanzen-uebersicht-light-1340.webp?v=2026101802 1340w, assets/img/app/laptop-finanzen-uebersicht-light-1760.webp?v=2026101801 1760w" sizes="(max-width: 719px) min(880px, calc((100vw - 32px) / 1.15), calc((100vh - 218px) * 0.98)), min(880px, 80vw, calc((100vh - 218px) * 0.98))" width="1760" height="1100" loading="lazy" decoding="async" alt="Finanzen von VereinsFlow auf dem Laptop: Die Übersicht zeigt den Kontostand von Girokonto und Barkasse, offene Rechnungen mit dem Hinweis auf überfällige, den Überschuss des Jahres und die Spenden; darunter Einnahmen und Ausgaben je Monat und was als Nächstes ansteht. Darüber die Reiter Beiträge, Kassenbuch, Rechnungen, Spenden und Abschluss">
+                <img src="assets/img/app/dashboard-light-1440.webp?v=2026102001" srcset="assets/img/app/dashboard-light-720.webp?v=2026102001 720w, assets/img/app/dashboard-light-960.webp?v=2026102001 960w, assets/img/app/dashboard-light-1440.webp?v=2026102001 1440w, assets/img/app/dashboard-light-1920.webp?v=2026102001 1920w, assets/img/app/dashboard-light-2328.webp?v=2026102001 2328w, assets/img/app/dashboard-light-2880.webp?v=2026102001 2880w" sizes="(min-width: 1024px) and (min-height: 720px) min(44.5vw, 71svh), 60vw" width="2328" height="1862" fetchpriority="high" decoding="async" alt="Dashboard von VereinsFlow: Begrüßung, Schaltflächen für neue Veranstaltungen und Mitglieder und Kennzahlen, etwa zu den Mitgliedern mit Vergleich zum Vormonat" data-bild="dashboard">
               </picture>
             </div>
             <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark-mirror"/></svg></div>
@@ -458,373 +291,22 @@
             <span class="laptop-side laptop-side-r"></span>
           </div>
         </div>
-        <span class="showcase-floor" aria-hidden="true"></span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== Funktionen ===== -->
-  <!-- Nacht (fast Schwarz): Überschrift und ein Satz, darunter die dreizehn Bereiche als Bento aus runden Karten
-       (site.css „Nacht und Tag“, Funktionen): Helferschichten groß in Vereinsblau mit der Ampel und dem Telefon,
-       Finanzen groß (ab 1000 px zwei mal zwei Felder, gegenüber den Helferschichten) mit dem Bild des Laptops,
-       Mitglieder und Auswertungen breit mit einem Ausschnitt aus der Anwendung, die übrigen kompakt mit Symbol,
-       Titel und einem kurzen Satz. Reihenfolge im HTML = Reihenfolge im Raster (Tabulator und Pfeiltasten folgen dem
-       Bild). Jede Karte klappt zu ihrer ganzen Beschreibung auf (Popover – geht ohne Skript), auf dem Smartphone als
-       Blatt von unten. Die Bilder in den Karten sind Schmuck (alt=""): Die Beschreibung steht in der Karte. -->
-  <section class="section nacht nacht-tief" id="funktionen" aria-labelledby="funktionen-title">
-    <div class="container">
-      <div class="fkt">
-        <div class="section-head fkt-kopf reveal">
-          <h2 id="funktionen-title">Alles, was Vereinsarbeit braucht</h2>
-          <p class="fkt-lead">Dreizehn Bereiche, die zusammenarbeiten, statt dreizehn einzelner Werkzeuge.</p>
-        </div>
-        <ul class="fkt-liste bento" role="list">
-          <li class="feat feat-a feat-gross reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-hand-heart"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-helfer">Helfer&shy;schich&shy;ten</button></h3>
-            <p class="feat-kurz">Selbst eintragen, mit Ampel</p>
-            <span class="feat-ampel" aria-hidden="true">
-              <span class="amp amp-voll"><b>Aufbau</b><i>5/5</i><span class="amp-plaetze"><span></span><span></span><span></span><span></span><span></span></span></span>
-              <span class="amp amp-teil"><b>Theke</b><i>2/4</i><span class="amp-plaetze"><span></span><span></span><span class="frei"></span><span class="frei"></span></span></span>
-              <span class="amp amp-offen"><b>Abbau</b><i>0/3</i><span class="amp-plaetze"><span class="frei"></span><span class="frei"></span><span class="frei"></span></span></span>
-            </span>
-            <span class="feat-bild feat-bild-phone" aria-hidden="true"><img src="assets/img/app/phone-schichten-light-260.webp?v=2026101801" srcset="assets/img/app/phone-schichten-light-260.webp?v=2026101801 260w, assets/img/app/phone-schichten-light-390.webp?v=2026101801 390w, assets/img/app/phone-schichten-light-520.webp?v=2026101801 520w" sizes="260px" width="780" height="1520" loading="lazy" decoding="async" alt=""></span>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-helfer" popover role="dialog" aria-labelledby="f-helfer-t" aria-describedby="f-helfer-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-hand-heart"/></svg></span>
-                <p class="feat-pop-title" id="f-helfer-t">Helfer&shy;schich&shy;ten</p>
-                <button class="feat-close" type="button" popovertarget="f-helfer" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-helfer-d">Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Erinnerungen und ein druckfertiger Helferplan&nbsp;– für eine oder mehrere Veranstaltungen.</p>
-              <a class="feat-link" href="#helferschichten">So sieht es aus<span class="sr-only">: Helferschichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat feat-breit feat-mit-bild reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-users"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-mitglieder">Mit&shy;glieder</button></h3>
-            <p class="feat-kurz">Stammdaten, Import, Historie</p>
-            <span class="feat-bild" aria-hidden="true"><img src="assets/img/app/mitglieder-light-960.webp?v=2026101801" srcset="assets/img/app/mitglieder-light-680.webp?v=2026101801 680w, assets/img/app/mitglieder-light-960.webp?v=2026101801 960w, assets/img/app/mitglieder-light-1360.webp?v=2026101801 1360w, assets/img/app/mitglieder-light-1920.webp?v=2026101801 1920w" sizes="620px" width="1920" height="1440" loading="lazy" decoding="async" alt=""></span>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-mitglieder" popover role="dialog" aria-labelledby="f-mitglieder-t" aria-describedby="f-mitglieder-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-users"/></svg></span>
-                <p class="feat-pop-title" id="f-mitglieder-t">Mit&shy;glieder</p>
-                <button class="feat-close" type="button" popovertarget="f-mitglieder" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. Vorhandene Listen übernehmen (aus Excel als CSV gespeichert) mit Vorschau, dazu Export, Statistik, Archiv und Papierkorb.</p>
-              <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Mitglieder</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-calendar-days"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-veranstaltungen">Veran&shy;stal&shy;tungen</button></h3>
-            <p class="feat-kurz">Anmeldung mit Warteliste</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-veranstaltungen" popover role="dialog" aria-labelledby="f-veranstaltungen-t" aria-describedby="f-veranstaltungen-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-days"/></svg></span>
-                <p class="feat-pop-title" id="f-veranstaltungen-t">Veran&shy;stal&shy;tungen</p>
-                <button class="feat-close" type="button" popovertarget="f-veranstaltungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-veranstaltungen-d">Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
-              <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Veranstaltungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-calendar-sync"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-kalender">Kalender</button></h3>
-            <p class="feat-kurz">Im eigenen Kalender</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-kalender" popover role="dialog" aria-labelledby="f-kalender-t" aria-describedby="f-kalender-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-sync"/></svg></span>
-                <p class="feat-pop-title" id="f-kalender-t">Kalender</p>
-                <button class="feat-close" type="button" popovertarget="f-kalender" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Einzelne Termine lassen sich exportieren, und ein persönlicher Abo-Link bringt die Termine automatisch in die eigene Kalender-App.</p>
-              <a class="feat-link" href="#veranstaltungen">So sieht es aus<span class="sr-only">: Kalender</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-message-square"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-nachrichten">Nach&shy;richten</button></h3>
-            <p class="feat-kurz">Gezielt, mit Lesestatistik</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-nachrichten" popover role="dialog" aria-labelledby="f-nachrichten-t" aria-describedby="f-nachrichten-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-message-square"/></svg></span>
-                <p class="feat-pop-title" id="f-nachrichten-t">Nach&shy;richten</p>
-                <button class="feat-close" type="button" popovertarget="f-nachrichten" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-nachrichten-d">An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-bell"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-hinweise">Benach&shy;rich&shy;tigungen</button></h3>
-            <p class="feat-kurz">Erinnerung 24&nbsp;Std. vorher</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-hinweise" popover role="dialog" aria-labelledby="f-hinweise-t" aria-describedby="f-hinweise-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></span>
-                <p class="feat-pop-title" id="f-hinweise-t">Benach&shy;rich&shy;tigungen</p>
-                <button class="feat-close" type="button" popovertarget="f-hinweise" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-hinweise-d">Alle Hinweise an einem Ort, auf Wunsch auch per E&#8209;Mail. Erinnerung 24&nbsp;Stunden vor jedem Einsatz und jeder zugesagten Veranstaltung.</p>
-            </div>
-          </li>
-          <li class="feat feat-breit feat-mit-bild feat-fin reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-wallet"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-finanzen">Finan&shy;zen</button></h3>
-            <p class="feat-kurz">Kasse, Rechnungen, Beiträge</p>
-            <span class="feat-bild" aria-hidden="true"><img src="assets/img/app/laptop-finanzen-uebersicht-light-720.webp?v=2026101801" srcset="assets/img/app/laptop-finanzen-uebersicht-light-720.webp?v=2026101801 720w, assets/img/app/laptop-finanzen-uebersicht-light-880.webp?v=2026101801 880w, assets/img/app/laptop-finanzen-uebersicht-light-960.webp?v=2026101801 960w, assets/img/app/laptop-finanzen-uebersicht-light-1340.webp?v=2026101802 1340w, assets/img/app/laptop-finanzen-uebersicht-light-1760.webp?v=2026101801 1760w" sizes="670px" width="1760" height="1100" loading="lazy" decoding="async" alt=""></span>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-finanzen" popover role="dialog" aria-labelledby="f-finanzen-t" aria-describedby="f-finanzen-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-wallet"/></svg></span>
-                <p class="feat-pop-title" id="f-finanzen-t">Finan&shy;zen</p>
-                <button class="feat-close" type="button" popovertarget="f-finanzen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-finanzen-d">Kassenbuch für Bankkonten und Barkasse mit Belegen, Rechnungen hochladen und als bezahlt markieren, Mitgliedsbeiträge mit Beitragslauf, Spenden und Monatsabschluss. Die Übersicht zeigt Kontostand, offene Rechnungen und Überschuss.</p>
-              <a class="feat-link" href="#am-rechner">So sieht es aus<span class="sr-only">: Finanzen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat feat-breit feat-mit-bild reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-chart-column"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-auswertungen">Auswer&shy;tungen</button></h3>
-            <p class="feat-kurz">Zahlen passend zur Rolle</p>
-            <span class="feat-bild feat-bild-zahl" aria-hidden="true"><img src="assets/img/app/auswertung-light-960.webp?v=2026101802" srcset="assets/img/app/auswertung-light-680.webp?v=2026101802 680w, assets/img/app/auswertung-light-960.webp?v=2026101802 960w, assets/img/app/auswertung-light-1360.webp?v=2026101802 1360w, assets/img/app/auswertung-light-1920.webp?v=2026101802 1920w" sizes="620px" width="1920" height="1440" loading="lazy" decoding="async" alt=""></span>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-auswertungen" popover role="dialog" aria-labelledby="f-auswertungen-t" aria-describedby="f-auswertungen-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-chart-column"/></svg></span>
-                <p class="feat-pop-title" id="f-auswertungen-t">Auswer&shy;tungen</p>
-                <button class="feat-close" type="button" popovertarget="f-auswertungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-auswertungen-d">Eine Übersicht (Dashboard) mit den Zahlen, die die jeweilige Rolle braucht: Kennzahlen mit kleinem Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
-              <a class="feat-link" href="#auswertungen">So sieht es aus<span class="sr-only">: Auswertungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-network"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-abteilungen">Abtei&shy;lungen und Gruppen</button></h3>
-            <p class="feat-kurz">Mit eigenen Leitungen</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-abteilungen" popover role="dialog" aria-labelledby="f-abteilungen-t" aria-describedby="f-abteilungen-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-network"/></svg></span>
-                <p class="feat-pop-title" id="f-abteilungen-t">Abtei&shy;lungen und Gruppen</p>
-                <button class="feat-close" type="button" popovertarget="f-abteilungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-abteilungen-d">Abteilungen und Gruppen mit eigenen Leitungen. Rechte und Nachrichten lassen sich auf eine Abteilung beschränken.</p>
-              <a class="feat-link" href="#mitglieder">So sieht es aus<span class="sr-only">: Abteilungen und Gruppen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-list-checks"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-aufgaben">Aufgaben und Check&shy;listen</button></h3>
-            <p class="feat-kurz">Wer macht was, bis wann</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-aufgaben" popover role="dialog" aria-labelledby="f-aufgaben-t" aria-describedby="f-aufgaben-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-list-checks"/></svg></span>
-                <p class="feat-pop-title" id="f-aufgaben-t">Aufgaben und Check&shy;listen</p>
-                <button class="feat-close" type="button" popovertarget="f-aufgaben" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-aufgaben-d">Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status&nbsp;– auch als Checkliste je Veranstaltung.</p>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-folder-open"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-dokumente">Doku&shy;mente</button></h3>
-            <p class="feat-kurz">Ablage mit Zugriffsstufen</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-dokumente" popover role="dialog" aria-labelledby="f-dokumente-t" aria-describedby="f-dokumente-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-folder-open"/></svg></span>
-                <p class="feat-pop-title" id="f-dokumente-t">Doku&shy;mente</p>
-                <button class="feat-close" type="button" popovertarget="f-dokumente" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– freigegeben für alle Mitglieder, nur für den Vorstand oder nur für die Vereinsadministratoren.</p>
-            </div>
-          </li>
-          <li class="feat reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-search"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-suche">Zentrale Suche</button></h3>
-            <p class="feat-kurz">Ein Suchfeld für alles</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-suche" popover role="dialog" aria-labelledby="f-suche-t" aria-describedby="f-suche-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-search"/></svg></span>
-                <p class="feat-pop-title" id="f-suche-t">Zentrale Suche</p>
-                <button class="feat-close" type="button" popovertarget="f-suche" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-suche-d">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente und häufige Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf. Am Rechner öffnet es sich auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd>.</span></p>
-              <a class="feat-link" href="#suche">So sieht es aus<span class="sr-only">: Zentrale Suche</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-            </div>
-          </li>
-          <li class="feat feat-z reveal">
-            <svg class="icon feat-ico" aria-hidden="true"><use href="#i-life-buoy"/></svg>
-            <h3><button class="feat-btn" type="button" popovertarget="f-hilfe">Hilfe &amp; Support</button></h3>
-            <p class="feat-kurz">Anleitung, Meldeformular</p>
-            <span class="feat-plus" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span>
-            <div class="feat-pop" id="f-hilfe" popover role="dialog" aria-labelledby="f-hilfe-t" aria-describedby="f-hilfe-d">
-              <div class="feat-pop-head">
-                <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-life-buoy"/></svg></span>
-                <p class="feat-pop-title" id="f-hilfe-t">Hilfe &amp; Support</p>
-                <button class="feat-close" type="button" popovertarget="f-hilfe" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-              </div>
-              <p id="f-hilfe-d">Anleitung passend zur Rolle, Ansprechpartner des Vereins und ein Meldeformular für Fehler, Fragen und Vorschläge&nbsp;– mit Antwort und Status.</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== Herzstück: Helferschichten ===== -->
-  <section class="section" id="helferschichten" aria-labelledby="helfer-title">
-    <div class="container">
-      <div class="section-head reveal">
-        <h2 id="helfer-title">Helferschichten, die sich fast von selbst organisieren</h2>
-        <p class="lead">Kein Zettelchaos, keine leere Theke: Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</p>
-      </div>
-
-      <!-- Geführter Ablauf: oben eine Bühne – in der Mitte der Helferplan als Live-Fenster, links davor das Telefon, rechts
-           davor der gedruckte Plan; darunter die drei Schritte, die das Live-Fenster nacheinander zeigt (site.js hebt den
-           gerade gezeigten hervor und hält das Telefon auf demselben Stand, LIVE_SCENES.schichten). Ohne JavaScript und bei
-           reduzierter Bewegung: ruhige Bilder, alle Schritte gleich. Unter 720 px steht das Telefon über den Schritten und
-           der Plan unter dem dritten, am quer gehaltenen Handy stehen beide neben den Schritten – jeweils ohne das
-           Live-Fenster, dafür zeigt das Telefon einmal den Moment des Eintragens (site.css „Kapitel Helferschichten“). -->
-      <div class="story" data-story>
-        <div class="story-window reveal">
-          <div class="browser live" data-live="schichten">
-            <div class="browser-bar" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="browser-url">Helferplan: Sommerfest 2027</span></div>
-            <!-- Anhalten/Abspielen (site.js, „Live-Fenster“): nicht in der Leiste, die ist für Screenreader verborgen; erscheint
-                 nur, wenn das Fenster abspielen kann. Gilt für alle Fenster der Seite. -->
-            <button class="live-toggle" type="button" aria-label="Vorführung anhalten" hidden><svg class="icon icon-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon icon-play" aria-hidden="true"><use href="#i-play"/></svg><span class="live-toggle-label">Anhalten</span></button>
-            <div class="live-screen">
-              <picture>
-                <img src="assets/img/app/schichten-light-960.webp?v=2026101801" srcset="assets/img/app/schichten-light-700.webp?v=2026101801 700w, assets/img/app/schichten-light-960.webp?v=2026101801 960w, assets/img/app/schichten-light-1400.webp?v=2026101801 1400w, assets/img/app/schichten-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1292" loading="lazy" decoding="async" alt="Helferplan zum Sommerfest: oben der Tagesablauf als Zeitleiste mit einem Balken je Schicht, darunter die Schichten mit Uhrzeit, Aufgabe und Besetzung; beim Getränkestand sind 3 von 4 Plätzen besetzt, der eigene Name steht mit „(du)“ dabei">
-              </picture>
-              <!-- Live-Fenster: Ein Mauszeiger zeigt auf „Neue Schicht“, trägt sich beim Getränkestand ein und klickt auf
-                   „Drucken“ – Bildfolge aus der Demo-App (tools/capture-screenshots.mjs, liveFrames), abgespielt von site.js -->
-              <div class="live-layers" aria-hidden="true">
-                <img class="live-frame" src="assets/img/app/schichten-live-1-light-960.webp?v=2026101801" srcset="assets/img/app/schichten-live-1-light-700.webp?v=2026101801 700w, assets/img/app/schichten-live-1-light-960.webp?v=2026101801 960w, assets/img/app/schichten-live-1-light-1400.webp?v=2026101801 1400w, assets/img/app/schichten-live-1-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1292" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-2-light-960.webp?v=2026101801" srcset="assets/img/app/schichten-live-2-light-700.webp?v=2026101801 700w, assets/img/app/schichten-live-2-light-960.webp?v=2026101801 960w, assets/img/app/schichten-live-2-light-1400.webp?v=2026101801 1400w, assets/img/app/schichten-live-2-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1292" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-3-light-960.webp?v=2026101801" srcset="assets/img/app/schichten-live-3-light-700.webp?v=2026101801 700w, assets/img/app/schichten-live-3-light-960.webp?v=2026101801 960w, assets/img/app/schichten-live-3-light-1400.webp?v=2026101801 1400w, assets/img/app/schichten-live-3-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1292" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-4-light-960.webp?v=2026101801" srcset="assets/img/app/schichten-live-4-light-700.webp?v=2026101801 700w, assets/img/app/schichten-live-4-light-960.webp?v=2026101801 960w, assets/img/app/schichten-live-4-light-1400.webp?v=2026101801 1400w, assets/img/app/schichten-live-4-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1292" loading="lazy" decoding="async" alt="">
-                <img class="live-frame" src="assets/img/app/schichten-live-5-light-960.webp?v=2026101801" srcset="assets/img/app/schichten-live-5-light-700.webp?v=2026101801 700w, assets/img/app/schichten-live-5-light-960.webp?v=2026101801 960w, assets/img/app/schichten-live-5-light-1400.webp?v=2026101801 1400w, assets/img/app/schichten-live-5-light-1920.webp?v=2026101801 1920w" sizes="(min-width: 1000px) 700px, 92vw" width="1920" height="1292" loading="lazy" decoding="async" alt="">
-                <span class="live-track live-pointer"><svg class="live-cursor" viewBox="0 0 20 28"><path d="M1.5 1.5v21.2l5.1-5 3.3 7.6 3.6-1.5-3.3-7.6h7.2z"/></svg><span class="live-ring"></span></span>
+                </div>
+                <span class="showcase-floor" aria-hidden="true"></span>
               </div>
             </div>
           </div>
         </div>
-        <div class="story-phone reveal">
-          <div class="phone plx plx-slow">
-            <span class="phone-hw" aria-hidden="true"></span>
-            <div class="phone-screen">
-              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-              <picture>
-                <img src="assets/img/app/phone-schichten-light-208.webp?v=2026101801" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026101801 182w, assets/img/app/phone-schichten-light-208.webp?v=2026101801 208w, assets/img/app/phone-schichten-light-260.webp?v=2026101801 260w, assets/img/app/phone-schichten-light-273.webp?v=2026101801 273w, assets/img/app/phone-schichten-light-312.webp?v=2026101801 312w, assets/img/app/phone-schichten-light-364.webp?v=2026101801 364w, assets/img/app/phone-schichten-light-390.webp?v=2026101801 390w, assets/img/app/phone-schichten-light-416.webp?v=2026101801 416w, assets/img/app/phone-schichten-light-520.webp?v=2026101801 520w, assets/img/app/phone-schichten-light-546.webp?v=2026101801 546w, assets/img/app/phone-schichten-light-624.webp?v=2026101801 624w, assets/img/app/phone-schichten-light-780.webp?v=2026101801 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand sind 3 von 4 Plätzen besetzt, der eigene Name steht mit „(du)“ in der Liste; darunter der noch unbesetzte Grillstand mit dem Hinweis, dass er sich mit der eigenen Schicht überschneidet">
-              </picture>
-              <!-- Derselbe Ausschnitt vor dem Eintragen (2 von 4, „Eintragen“): site.js blendet ihn ein, solange das
-                   Live-Fenster den Stand vor dem Klick zeigt – Telefon und Fenster zeigen immer dasselbe. Ohne Fenster
-                   (Smartphone, Handy quer) zeigt es ihn zuerst, dann tippt ein Finger (story-tap) auf „Eintragen“ -->
-              <div class="live-layers" aria-hidden="true">
-                <img class="live-frame" src="assets/img/app/phone-schichten-live-1-light-208.webp?v=2026101801" srcset="assets/img/app/phone-schichten-live-1-light-182.webp?v=2026101801 182w, assets/img/app/phone-schichten-live-1-light-208.webp?v=2026101801 208w, assets/img/app/phone-schichten-live-1-light-260.webp?v=2026101801 260w, assets/img/app/phone-schichten-live-1-light-273.webp?v=2026101801 273w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026101801 312w, assets/img/app/phone-schichten-live-1-light-364.webp?v=2026101801 364w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026101801 390w, assets/img/app/phone-schichten-live-1-light-416.webp?v=2026101801 416w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026101801 520w, assets/img/app/phone-schichten-live-1-light-546.webp?v=2026101801 546w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026101801 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026101801 780w" sizes="(max-width: 719px) min(260px, 67vw), (min-width: 1000px) and (max-width: 1199px) 182px, 208px" width="780" height="1520" loading="lazy" decoding="async" alt="">
-                <span class="story-tap"></span>
-              </div>
-            </div>
-          </div>
+        <div class="fahrt-flach" aria-hidden="true" data-fahrt-flach>
+          <span class="flach-rand"><i></i></span>
+          <picture><img src="assets/img/app/dashboard-light-1440.webp?v=2026102001" srcset="assets/img/app/dashboard-light-720.webp?v=2026102001 720w, assets/img/app/dashboard-light-960.webp?v=2026102001 960w, assets/img/app/dashboard-light-1440.webp?v=2026102001 1440w, assets/img/app/dashboard-light-1920.webp?v=2026102001 1920w, assets/img/app/dashboard-light-2328.webp?v=2026102001 2328w, assets/img/app/dashboard-light-2880.webp?v=2026102001 2880w" sizes="(min-width: 1024px) and (min-height: 720px) min(44.5vw, 71svh), 60vw" data-gross="assets/img/app/dashboard-light-1440.webp?v=2026102001 1440w, assets/img/app/dashboard-light-1920.webp?v=2026102001 1920w, assets/img/app/dashboard-light-2880.webp?v=2026102001 2880w" width="2328" height="1862" loading="lazy" decoding="async" alt=""></picture>
         </div>
-        <div class="story-paper reveal">
-          <figure class="paper plx plx-slow">
-            <img src="assets/img/app/helferplan-druck-light-480.webp?v=2026101802" srcset="assets/img/app/helferplan-druck-light-240.webp?v=2026101802 240w, assets/img/app/helferplan-druck-light-480.webp?v=2026101802 480w, assets/img/app/helferplan-druck-light-640.webp?v=2026101802 640w, assets/img/app/helferplan-druck-light-800.webp?v=2026101802 800w, assets/img/app/helferplan-druck-light-1280.webp?v=2026101802 1280w" sizes="(min-width: 1200px) 236px, (min-width: 1000px) 176px, (min-width: 720px) 210px, 220px" width="1280" height="1810" loading="lazy" decoding="async" alt="Helferplan zum Aushängen: Kopf mit Vereinsnamen, darunter für das Sommerfest je Schicht Uhrzeit, Aufgabe, Treffpunkt und Verantwortliche, dazu eine Schreiblinie je Platz – eingetragene Helfer stehen schon darauf, freie Linien bleiben leer">
-          </figure>
-        </div>
+        <span class="streiflicht streif-laptop" aria-hidden="true"></span>
 
-        <!-- role="list": Safari liest Listen ohne Aufzählungszeichen sonst nicht als Liste vor. Je Schritt ein kurzer Satz;
-             die Einzelheiten stehen in der Karte „Helferschichten“ unter „Funktionen“. -->
-        <ol class="story-steps" role="list">
-          <li class="story-step reveal">
-            <span class="story-bar" aria-hidden="true"></span>
-            <h3><span class="step-num" aria-hidden="true">1</span>Schichten anlegen</h3>
-            <p>Mit Zeit, Treffpunkt, Plätzen und Verantwortlichen.</p>
-          </li>
-          <li class="story-step reveal">
-            <span class="story-bar" aria-hidden="true"></span>
-            <h3><span class="step-num" aria-hidden="true">2</span>Helfer tragen sich ein</h3>
-            <p>Ein Klick auf „Eintragen“ genügt, und jeder Platz wird nur einmal vergeben.</p>
-          </li>
-          <li class="story-step reveal" id="aushang">
-            <span class="story-bar" aria-hidden="true"></span>
-            <h3><span class="step-num" aria-hidden="true">3</span>Helferplan drucken</h3>
-            <p>Fürs Schwarze Brett, mit einer Zeile je Platz.</p>
-          </li>
-        </ol>
-      </div>
-      <p class="section-more reveal">Die Helferplanung live sehen: <a href="#kontakt"><span>Demo anfragen<svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></span></a></p>
-    </div>
-  </section>
-
-  <!-- ===== Sicherheit (Nacht) mit den Rollen: Überschrift und ein Satz; darunter die fünf Rollen nach Reichweite bei den
-       Mitgliederdaten (drei Karten, die Leiste aus drei Stufen ist nur Schmuck), dann das Vertrauens-Band mit vier
-       Punkten und die Einzelheiten in „Mehr dazu“ (im Druck offen). ===== -->
-  <section class="section nacht" id="sicherheit" aria-labelledby="sicherheit-title">
-    <div class="container">
-      <div class="section-head reveal">
-        <h2 class="schutz-titel" id="sicherheit-title"><span class="h-line">Mitgliederdaten verdienen</span> <span class="h-line">mehr als einen Passwortschutz</span></h2>
-        <p class="lead">Jeder sieht nur, was seine Rolle erlaubt. Auch wir als Betreiber sehen in der Anwendung keine Mitgliederdaten.</p>
-      </div>
-      <div class="rollen-band" id="rollen">
-        <h3 class="rollen-titel reveal">Fünf Rollen, sofort einsatzbereit</h3>
-        <ul class="rollen-stufen" role="list">
-          <li class="stufe stufe-3 reveal">
-            <p class="stufe-kopf"><span class="stufe-leiste" aria-hidden="true"><i></i><i></i><i></i></span><span><span class="sr-only">Mitgliederdaten: </span>Gesamter Verein</span></p>
-            <p class="stufe-rollen"><span>Vereins&shy;administrator</span> <span>Vorstands&shy;mitglied</span></p>
-          </li>
-          <li class="stufe stufe-2 reveal">
-            <p class="stufe-kopf"><span class="stufe-leiste" aria-hidden="true"><i></i><i></i><i></i></span><span><span class="sr-only">Mitgliederdaten: </span>Eigene Abteilung</span></p>
-            <p class="stufe-rollen"><span>Abteilungs&shy;leiter</span></p>
-          </li>
-          <li class="stufe stufe-1 reveal">
-            <p class="stufe-kopf"><span class="stufe-leiste" aria-hidden="true"><i></i><i></i><i></i></span><span><span class="sr-only">Mitgliederdaten: </span>Nur eigene Daten</span></p>
-            <p class="stufe-rollen"><span>Helfer</span> <span>Mitglied</span></p>
-          </li>
-        </ul>
-      </div>
-      <ul class="band-liste schutz-band" role="list">
-        <li class="reveal"><svg class="icon band-ico" aria-hidden="true"><use href="#i-key-round"/></svg><strong>Geschlossene Plattform</strong><span>Konten entstehen nur durch die Einladung des Vereins.</span></li>
-        <li class="reveal"><svg class="icon band-ico" aria-hidden="true"><use href="#i-lock-keyhole"/></svg><strong>Sichere Anmeldung</strong><span>Passwörter kann niemand lesen, auch wir nicht.</span></li>
-        <li class="reveal"><svg class="icon band-ico" aria-hidden="true"><use href="#i-layers"/></svg><strong>Strikt getrennte Vereine</strong><span>Jeder Verein hat einen eigenen Datenbereich.</span></li>
-        <li class="reveal"><svg class="icon band-ico" aria-hidden="true"><use href="#i-file-check"/></svg><strong>DSGVO-Werkzeuge</strong><span>Datenexport, Löschantrag, Einwilligungen und Anonymisierung.</span></li>
-      </ul>
-      <details class="mehr schutz-mehr reveal">
-        <summary><span>Mehr dazu</span><span class="toggle" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span></summary>
-        <ul class="checks">
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Rollen:</strong> Vereinsadministrator und Vorstand sehen den ganzen Verein, Abteilungsleiter ihre Abteilungen, Helfer und Mitglieder die eigenen Daten. Geprüft wird bei jedem Zugriff auf dem Server.</span></li>
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Passwörter:</strong> Gespeichert wird nur ein nicht umkehrbarer „Fingerabdruck“ (Argon2id). Nach mehreren falschen Eingaben heißt es eine Weile warten. Auf Wunsch sichert eine Zwei-Faktor-Anmeldung mit Authenticator-App das Konto zusätzlich.</span></li>
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Abmelden:</strong> Ohne Nutzung meldet VereinsFlow nach einiger Zeit automatisch ab. Jede Person sieht ihre angemeldeten Geräte und kann einzelne abmelden.</span></li>
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Trennung der Vereine:</strong> dreifach abgesichert und bei jeder Änderung an VereinsFlow automatisch geprüft.</span></li>
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Protokoll:</strong> unveränderlich, zeigt, wer wann was geändert hat; sensible Werte erscheinen darin nur als „geändert“.</span></li>
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Löschantrag:</strong> 14&nbsp;Tage Bedenkzeit, dazu Aufbewahrungsfristen je Verein.</span></li>
-          <li><span class="tick"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><span><strong>Cookies:</strong> In der Anwendung nur technisch notwendige Cookies (Anmeldung, bei Zwei-Faktor kurzzeitig ein zweites), kein Tracking.</span></li>
-        </ul>
-      </details>
-    </div>
-  </section>
-
-  <!-- ===== Vorführung unterwegs: Ein Telefon zeigt erst schräg seine Rückseite und dreht sich von selbst um 150° zum
-       Betrachter, sobald es ins Bild kommt; auf dem Bildschirm die Helferplanung (im Einstieg steht das Dashboard). ===== -->
-  <section class="showcase showcase-phone" aria-labelledby="unterwegs-title">
-    <div class="showcase-stage">
-      <div class="showcase-copy">
-        <h2 id="unterwegs-title">Die Helferplanung in der Hosentasche</h2>
-        <p class="lead">Eigene Einsätze sehen und sich mit einem Fingertipp eintragen. Im Browser, ganz ohne App.</p>
-      </div>
-      <div class="showcase-scene">
+        <div class="geraet geraet-handy" data-handy>
+          <div class="showcase showcase-phone" data-geraet="handy">
+            <div class="showcase-scene">
+              <div class="pose pose-handy">
         <div class="iphone">
           <!-- Gehäuse (nur mit Bewegung): das Kameraplateau mit Sockel, Wänden und Objektivringen, die aus der Rückseite
                herausstehen, an den vier runden Ecken je neun Streifen zwischen Vorder- und Rückseite und die Standby-Taste.
@@ -857,27 +339,640 @@
             <div class="phone-screen">
               <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
               <picture>
-                <img src="assets/img/app/phone-helferplanung-light-312.webp?v=2026101801" srcset="assets/img/app/phone-helferplanung-light-260.webp?v=2026101801 260w, assets/img/app/phone-helferplanung-light-312.webp?v=2026101801 312w, assets/img/app/phone-helferplanung-light-468.webp?v=2026101801 468w, assets/img/app/phone-helferplanung-light-520.webp?v=2026101801 520w, assets/img/app/phone-helferplanung-light-624.webp?v=2026101801 624w, assets/img/app/phone-helferplanung-light-780.webp?v=2026101801 780w" sizes="(max-width: 899px) and (orientation: landscape) min(312px, 37vw, calc((100vh - 124px) / 2.161 * 26 / 28)), (max-width: 719px) min(260px, 67vw, calc((100vh - 300px) / 2.16 * 26 / 28)), min(312px, calc((100vh - 174px) / 2.081 * 26 / 28))" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten mit der Schaltfläche „Eintragen“">
+                <img src="assets/img/app/phone-schichten-light-208.webp?v=2026102001" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026102001 182w, assets/img/app/phone-schichten-light-208.webp?v=2026102001 208w, assets/img/app/phone-schichten-light-260.webp?v=2026102001 260w, assets/img/app/phone-schichten-light-312.webp?v=2026102001 312w, assets/img/app/phone-schichten-light-416.webp?v=2026102001 416w, assets/img/app/phone-schichten-light-520.webp?v=2026102001 520w, assets/img/app/phone-schichten-light-624.webp?v=2026102001 624w" sizes="(min-width: 1024px) and (min-height: 720px) min(14.5vw, 23svh), (min-width: 768px) 182px, 104px" width="780" height="1520" fetchpriority="high" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand sind 3 von 4 Plätzen besetzt, der eigene Name steht mit „(du)“ in der Liste; darunter der noch unbesetzte Grillstand mit dem Hinweis, dass er sich mit der eigenen Schicht überschneidet">
               </picture>
             </div>
             <span class="iphone-glass" aria-hidden="true"></span>
           </div>
         </div>
-        <span class="showcase-floor" aria-hidden="true"></span>
+              </div>
+              <span class="showcase-floor" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+        <span class="randlicht rl-signal" aria-hidden="true" data-randlicht="rechts"></span>
+        <span class="randlicht rl-blau" aria-hidden="true" data-randlicht="links"></span>
+        <span class="bodenlicht" aria-hidden="true"></span>
+
+
+        <!-- Ende der Fahrt (nur mit Kamerafahrt): Marken auf der App und die Tafel, die sich darüberschiebt -->
+        <div class="fahrt-ende" data-fahrt-ende>
+          <ul class="marken" role="list">
+            <li class="marke m-suche"><span class="marke-punkt" aria-hidden="true"></span><span class="marke-text"><b>Ein Suchfeld für alles</b> am Rechner auch mit Strg&nbsp;K</span></li>
+            <li class="marke m-zahlen"><span class="marke-punkt" aria-hidden="true"></span><span class="marke-text"><b>Kennzahlen</b> mit Verlauf und Vergleich</span></li>
+            <li class="marke m-termine"><span class="marke-punkt" aria-hidden="true"></span><span class="marke-text"><b>Termine</b> der nächsten 30&nbsp;Tage</span></li>
+          </ul>
+          <div class="tafel">
+            <h2 class="tafel-titel">Zahlen, die dem Vorstand helfen</h2>
+            <div class="tafel-text">
+              <p>Die Übersicht passt sich der Rolle an: Helfer sehen ihre Einsätze, der Vorstand Mitglieder, Termine und Helferstunden.</p>
+              <p class="hinweis">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
+            </div>
+          </div>
+        </div>
+
+        <button class="ruhe-knopf" type="button" aria-pressed="false" data-ruhe-knopf><svg class="i i-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="i i-play" aria-hidden="true"><use href="#i-play"/></svg><span data-ruhe-label>Bewegung anhalten</span></button>
+      </div>
+    </div>
+
+    <!-- „Im Detail“ ohne Kamerafahrt (schmal, ohne Bewegung, ohne JavaScript): die App als ruhiges Bild mit den drei Marken,
+         am Smartphone im Telefon. Mit Kamerafahrt steht derselbe Inhalt am Ende der Fahrt (oben) und dies entfällt. -->
+    <div class="im-detail breite" data-im-detail>
+      <div class="detail-bild detail-rechner">
+        <picture><img src="assets/img/app/dashboard-light-1440.webp?v=2026102001" srcset="assets/img/app/dashboard-light-720.webp?v=2026102001 720w, assets/img/app/dashboard-light-960.webp?v=2026102001 960w, assets/img/app/dashboard-light-1440.webp?v=2026102001 1440w, assets/img/app/dashboard-light-1920.webp?v=2026102001 1920w, assets/img/app/dashboard-light-2328.webp?v=2026102001 2328w" sizes="(min-width: 1440px) 1312px, calc(100vw - 2 * var(--rand, 24px))" width="2328" height="1862" loading="lazy" decoding="async" alt=""></picture>
+        <ul class="marken" role="list" aria-hidden="true">
+          <li class="marke m-suche"><span class="marke-punkt"></span><span class="marke-text"><b>Ein Suchfeld für alles</b> am Rechner auch mit Strg&nbsp;K</span></li>
+          <li class="marke m-zahlen"><span class="marke-punkt"></span><span class="marke-text"><b>Kennzahlen</b> mit Verlauf und Vergleich</span></li>
+          <li class="marke m-termine"><span class="marke-punkt"></span><span class="marke-text"><b>Termine</b> der nächsten 30&nbsp;Tage</span></li>
+        </ul>
+      </div>
+      <div class="detail-bild detail-handy">
+        <div class="phone">
+          <span class="phone-hw" aria-hidden="true"></span>
+          <div class="phone-screen">
+            <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+            <picture><img src="assets/img/app/phone-dashboard-light-780.webp?v=2026102001" srcset="assets/img/app/phone-dashboard-light-312.webp?v=2026102001 312w, assets/img/app/phone-dashboard-light-442.webp?v=2026102001 442w, assets/img/app/phone-dashboard-light-520.webp?v=2026102001 520w, assets/img/app/phone-dashboard-light-624.webp?v=2026102001 624w, assets/img/app/phone-dashboard-light-780.webp?v=2026102001 780w, assets/img/app/phone-dashboard-light-936.webp?v=2026102001 936w, assets/img/app/phone-dashboard-light-1170.webp?v=2026102001 1170w" sizes="min(312px, calc(100vw - 78px))" width="1170" height="2280" loading="lazy" decoding="async" alt=""></picture>
+          </div>
+        </div>
+      </div>
+      <div class="tafel">
+        <h2 class="tafel-titel">Zahlen, die dem Vorstand helfen</h2>
+        <div class="tafel-text">
+          <p>Die Übersicht passt sich der Rolle an: Helfer sehen ihre Einsätze, der Vorstand Mitglieder, Termine und Helferstunden.</p>
+          <ul class="marken-liste" role="list">
+            <li><b>Ein Suchfeld für alles</b>, am Rechner auch mit Strg&nbsp;K</li>
+            <li><b>Kennzahlen</b> mit Verlauf und Vergleich</li>
+            <li><b>Termine</b> der nächsten 30&nbsp;Tage</li>
+          </ul>
+          <p class="hinweis">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== Häufige Fragen (Papier): ab 1000 px links der Kopf (mitlaufend), rechts die Fragen mit feinen Linien und Plus.
-       Die Fragen sind keine Überschriften (in einem summary ginge bei manchen Screenreadern sonst der Zustand verloren).
-       „So starten Sie“ (Fußzeile, #ablauf) öffnet die letzte Frage (site.js). ===== -->
-  <section class="section papier" id="faq" aria-labelledby="faq-title">
-    <div class="container faq-raster">
-      <div class="section-head faq-kopf reveal">
-        <h2 id="faq-title">Häufige Fragen</h2>
+  <!-- ===== Kapitel 2 · Ausgangslage (Nacht): Überschrift, dann die Wortwalze – „VereinsFlow bündelt …“, das große Wort
+       wechselt in vier Zonen beim Scrollen (buehne.js, ohne Zeitgeber), die abgetretenen Wörter rollen kleiner nach oben.
+       Schmal und ohne Bewegung: die vier Wörter untereinander. Unten der Strom, über den sich der Papierbogen von
+       Kapitel 3 schiebt (zweiter Canvas im Bogen: derselbe Strom als Tinte). ===== -->
+  <section class="kapitel k02 nacht" id="ausgangslage" data-kapitel="2" aria-labelledby="ausgangslage-titel">
+    <div class="k02-kopf breite">
+      <h2 class="h2-gross erscheint" id="ausgangslage-titel"><span class="block">Vereinsarbeit ist Ehrenamt.</span> <span class="block leise">Die Verwaltung sollte es nicht schwerer machen.</span></h2>
+    </div>
+    <div class="walze-spur" data-walze>
+      <span class="walze-zone" data-zone="0" aria-hidden="true"></span>
+      <span class="walze-zone" data-zone="1" aria-hidden="true"></span>
+      <span class="walze-zone" data-zone="2" aria-hidden="true"></span>
+      <span class="walze-zone" data-zone="3" aria-hidden="true"></span>
+      <div class="walze-buehne">
+        <span class="licht licht-blau wa" aria-hidden="true"></span>
+        <span class="licht licht-signal wb" aria-hidden="true"></span>
+        <canvas class="fluss fluss-walze" aria-hidden="true" data-fluss data-linien="4" data-pulse="2" data-ziel="#walze-punkt" data-seed="23" data-orange="0.05" data-staerke="1.25" data-dicke="1.35" data-breite="0.05"
+          data-pfad="1.04,0.672 0.88,0.69 0.74,0.692 0.62,0.68 0.52,0.666 0.44,0.656 0.393,0.6525"></canvas>
+        <p class="walze-satz breite">
+          <span class="walze-oben">VereinsFlow bündelt</span>
+          <span class="sr-only">Mitglieder, Termine, Helferschichten und Nachrichten</span>
+          <span class="walze" aria-hidden="true" data-walze-woerter>
+            <span class="wort" data-wort="0">Mitglieder,</span>
+            <span class="wort" data-wort="1">Termine,</span>
+            <span class="wort" data-wort="2">Helferschichten</span>
+            <span class="wort" data-wort="3"><span class="und">und </span>Nachrichten</span>
+          </span>
+          <span class="walze-unten">an einem Ort<span class="pinpunkt" id="walze-punkt" aria-hidden="true"></span></span>
+        </p>
+        <div class="walze-fuss breite">
+          <p class="lead">Aus Listen, Chats und Rundmails wird ein gemeinsamer Ablauf: für Vorstand, Abteilungen und Helfer.</p>
+          <ol class="wortliste" aria-hidden="true">
+            <li data-wort="0">Mitglieder</li>
+            <li data-wort="1">Termine</li>
+            <li data-wort="2">Helferschichten</li>
+            <li data-wort="3">Nachrichten</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="wechsel" aria-hidden="true">
+      <canvas class="fluss fluss-wechsel" id="fluss-wechsel" data-fluss data-seed="29" data-anzahl="640" data-straenge="6" data-orange="0.06" data-strich="1.3" data-staerke="1.1" data-breite="0.04"
+        data-pfad="-0.03,0.31 0.14,0.325 0.3,0.36 0.43,0.415 0.53,0.48 0.61,0.55 0.69,0.62 0.79,0.68 0.9,0.72 1.03,0.74" data-anzahl-kompakt="260"></canvas>
+    </div>
+  </section>
+
+  <!-- ===== Kapitel 3 · Helferplanung (Papier): Der Papierbogen schiebt sich über die Nacht. Ab 1200 × 760 mit Bewegung
+       eine Spur in drei Schritten (die Bühne klebt, die Zustände rasten an drei Zonen ein – buehne.js): 1 Schichten
+       anlegen (die Ampel baut sich auf, 9 von 21), 2 Anna trägt sich ein (ein Lichtpunkt fliegt den Strom entlang in
+       ihren Platz, die Zahl rollt auf 10, das Telefon zeigt ihren Eintrag), 3 der Helferplan zum Aushängen. Schmal, ohne
+       Bewegung und ohne Skript: drei Kacheln im Endstand. ===== -->
+  <section class="kapitel k03 papier bogen" id="helferschichten" data-kapitel="3" aria-labelledby="helfer-titel">
+    <canvas class="fluss fluss-bogen" aria-hidden="true" data-fluss data-zwilling="fluss-wechsel" data-hell="1"></canvas>
+    <div class="spur" data-spur>
+      <span class="spur-zone" data-schritt="1" aria-hidden="true"></span>
+      <span class="spur-zone" data-schritt="2" aria-hidden="true"></span>
+      <span class="spur-zone" data-schritt="3" aria-hidden="true"></span>
+      <div class="spur-buehne">
+        <span class="licht licht-blau sa" aria-hidden="true"></span>
+        <span class="licht licht-signal sb" aria-hidden="true"></span>
+        <canvas class="fluss fluss-spur" id="fluss-spur" aria-hidden="true" data-fluss data-hell="1" data-leise=".k03 .gz-text, .k03 .gz-von, .k03 .schritte li, .k03 .k03-kopf .lead" data-leise-anteil="0.3" data-ziel="#platz-anna" data-seed="31" data-anzahl="420" data-anzahl-kompakt="200" data-straenge="5" data-orange="0.04" data-strich="1.3" data-staerke="1.2" data-breite="0.042" data-breite-kompakt="0.012"
+          data-pfad="-0.03,0.80 0.1,0.8 0.2,0.795 0.29,0.785 0.36,0.765 0.4,0.735 0.43,0.695 0.47,0.64 0.52,0.6 0.56,0.582 0.596,0.573"
+          data-pfad-kompakt="-0.05,0.36 0.2,0.355 0.4,0.345 0.55,0.335 0.7,0.33"></canvas>
+        <canvas class="fluss fluss-flug" aria-hidden="true" data-fluss data-zwilling="fluss-spur" data-hell="1" data-nur-fluege="1"></canvas>
+        <div class="breite spur-raster">
+          <div class="kapitel-kopf k03-kopf">
+            <p class="kapitelmarke"><span class="km-linie" aria-hidden="true"></span><svg class="km-pin" aria-hidden="true"><use href="#pin"/></svg>Helferplanung</p>
+            <h2 class="h2-gross" id="helfer-titel"><span class="block">Helferschichten,</span> <span class="block leise">die sich fast von selbst organisieren.</span></h2>
+            <p class="lead">Kein Zettelchaos, keine leere Theke: Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</p>
+          </div>
+
+          <p class="grosszahl"><span class="sr-only">10 von 21 Plätzen besetzt, Sommerfest 2027</span><span class="gz-zahl" aria-hidden="true" data-zahl>10</span><span class="gz-von" aria-hidden="true">von 21</span><span class="gz-text" aria-hidden="true">Plätzen besetzt · Sommerfest 2027</span></p>
+
+          <div class="kachel kachel-ampel">
+            <div class="ampel-glas">
+              <p class="ampel-kopf"><span>Ampel</span><span class="ampel-anlass">Sommerfest 2027 · 12. Juni</span></p>
+              <ul class="ampel-liste" role="list">
+                <li class="ampel-zeile"><span class="ampel-name">Aufbau</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>5/5</span></li>
+                <li class="ampel-zeile ist-du"><span class="ampel-name">Getränkestand <span class="du"><span class="sr-only">(</span>Du<span class="sr-only">)</span></span></span><span class="ampel-plaetze" aria-hidden="true"><i></i><i></i><i class="platz-anna" id="platz-anna"></i><i class="frei"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: 3/4</span><span class="az-nachher" aria-hidden="true">3/4</span><span class="az-vorher" aria-hidden="true">2/4</span></span></li>
+                <li class="ampel-zeile ist-offen"><span class="ampel-name">Grillstand</span><span class="ampel-plaetze" aria-hidden="true"><i class="fehlt"></i><i class="fehlt"></i><i class="fehlt"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>0/3</span></li>
+                <li class="ampel-zeile"><span class="ampel-name">Kuchenbuffet</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i class="frei"></i><i class="frei"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>1/3</span></li>
+                <li class="ampel-zeile"><span class="ampel-name">Abbau</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i class="frei"></i><i class="frei"></i><i class="frei"></i><i class="frei"></i><i class="frei"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>1/6</span></li>
+              </ul>
+              <p class="ampel-legende" aria-hidden="true"><span><i></i>besetzt</span><span><i class="frei"></i>frei</span><span><i class="fehlt"></i>noch niemand</span></p>
+            </div>
+          </div>
+
+          <div class="kachel kachel-handy">
+            <span class="hof hof-blau ha" aria-hidden="true"></span>
+            <span class="hof hof-signal hb" aria-hidden="true"></span>
+            <div class="handy-flach">
+              <span class="randlicht rl-blau" aria-hidden="true"></span>
+              <span class="randlicht rl-signal" aria-hidden="true"></span>
+              <div class="phone">
+                <span class="phone-hw" aria-hidden="true"></span>
+                <div class="phone-screen">
+                  <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+                  <picture><img src="assets/img/app/phone-schichten-light-312.webp?v=2026102001" srcset="assets/img/app/phone-schichten-light-260.webp?v=2026102001 260w, assets/img/app/phone-schichten-light-312.webp?v=2026102001 312w, assets/img/app/phone-schichten-light-390.webp?v=2026102001 390w, assets/img/app/phone-schichten-light-520.webp?v=2026102001 520w, assets/img/app/phone-schichten-light-624.webp?v=2026102001 624w, assets/img/app/phone-schichten-light-780.webp?v=2026102001 780w" sizes="(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) min(306px, 21.4vw, calc((100svh - 250px) * 0.446)), 260px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand sind 3 von 4 Plätzen besetzt, der eigene Name steht mit „(du)“ in der Liste"></picture>
+                  <picture class="bild-vorher" aria-hidden="true"><img src="assets/img/app/phone-schichten-live-1-light-312.webp?v=2026102001" srcset="assets/img/app/phone-schichten-live-1-light-260.webp?v=2026102001 260w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026102001 312w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026102001 390w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026102001 520w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026102001 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026102001 780w" sizes="(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) min(306px, 21.4vw, calc((100svh - 250px) * 0.446)), 260px" width="780" height="1520" loading="lazy" decoding="async" alt=""></picture>
+                </div>
+              </div>
+            </div>
+            <p class="chip chip-du"><svg class="i" aria-hidden="true"><use href="#i-user-check"/></svg><span><b>Anna Adler (du)</b> eingetragen</span></p>
+            <p class="chip chip-erinnerung"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span>Erinnerung <b>24&nbsp;Std.</b> vorher</span></p>
+          </div>
+
+          <div class="kachel kachel-aushang">
+            <div class="aushang">
+              <svg class="aushang-pin" aria-hidden="true"><use href="#pin"/></svg>
+              <img src="assets/img/app/helferplan-druck-light-480.webp?v=2026102001" srcset="assets/img/app/helferplan-druck-light-240.webp?v=2026102001 240w, assets/img/app/helferplan-druck-light-480.webp?v=2026102001 480w, assets/img/app/helferplan-druck-light-640.webp?v=2026102001 640w, assets/img/app/helferplan-druck-light-800.webp?v=2026102001 800w" sizes="240px" width="1280" height="1810" loading="lazy" decoding="async" alt="Helferplan zum Aushängen: Kopf mit Vereinsnamen, darunter für das Sommerfest je Schicht Uhrzeit, Aufgabe, Treffpunkt und Verantwortliche, dazu eine Schreiblinie je Platz – eingetragene Helfer stehen schon darauf, freie Linien bleiben leer">
+            </div>
+          </div>
+
+          <div class="schritte-block">
+            <span class="schritt-faden" aria-hidden="true"><span class="sf-linie"><span class="sf-fuellung"></span></span><span class="sf-nadel"><svg class="sf-pin"><use href="#pin"/></svg></span></span>
+            <ol class="schritte" role="list">
+              <li data-schritt="1"><span class="nr" aria-hidden="true">1</span><span><b>Schichten anlegen</b> Mit Zeit, Treffpunkt, Plätzen und Verantwortlichen.</span></li>
+              <li data-schritt="2"><span class="nr" aria-hidden="true">2</span><span><b>Helfer tragen sich ein</b> Ein Klick auf „Eintragen“ genügt, und jeder Platz wird nur einmal vergeben.</span></li>
+              <li data-schritt="3"><span class="nr" aria-hidden="true">3</span><span><b>Helferplan drucken</b> Fürs Schwarze Brett, mit einer Zeile je Platz.</span></li>
+            </ol>
+          </div>
+          <p class="hinweis k03-beispiel">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Kapitel 4 · Unterwegs (Nacht, Nachtbogen über dem Papier): das Telefon dreht sich ins Bild (wörtlich wie bisher)
+       und steht in Ruhe frontal. Ab 1200 × 720 legt sich der Strom als geneigte Umlaufbahn darum (hinterer Bogen hinter
+       dem Gerät, vorderer davor, zwei Canvas mit derselben Bewegung), die fünf Hinweise kreisen als Glas-Chips mit –
+       vorn scharf und groß, hinten klein und weich (buehne.js). Lage der Bahn: Mitte des Telefons, von buehne.js gemessen
+       (--ux, --uy, --uw, --uh am Abschnitt). Schmal und ohne Skript: die Chips als Reihe. ===== -->
+  <section class="kapitel k04 nacht bogen bogen-nacht" id="unterwegs" data-kapitel="4" aria-labelledby="unterwegs-titel" data-kreisbahn>
+    <span class="licht licht-blau ua" aria-hidden="true"></span>
+    <span class="hof hof-blau u-hof-a" aria-hidden="true"></span>
+    <span class="hof hof-signal u-hof-b" aria-hidden="true"></span>
+    <canvas class="fluss umlauf-bahn umlauf-hinten" id="umlauf-hinten" aria-hidden="true" data-fluss data-umlauf="0.377,0.24,-10" data-seite="hinten" data-seed="41" data-anzahl="300" data-straenge="4" data-orange="0.08" data-strich="1.2" data-staerke="0.95" data-breite="0.045"></canvas>
+    <div class="showcase showcase-phone" data-geraet="unterwegs">
+      <div class="showcase-stage">
+        <div class="showcase-copy">
+          <h2 class="h2-gross" id="unterwegs-titel"><span class="block">Nicht nur am Schwarzen Brett:</span> <span class="block leise">die Helferplanung in der Hosentasche.</span></h2>
+          <p class="lead">Eigene Einsätze sehen und sich mit einem Fingertipp eintragen. Im Browser, ganz ohne App.</p>
+          <p class="hinweis">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
+        </div>
+        <div class="showcase-scene">
+        <div class="iphone">
+          <!-- Gehäuse (nur mit Bewegung): das Kameraplateau mit Sockel, Wänden und Objektivringen, die aus der Rückseite
+               herausstehen, an den vier runden Ecken je neun Streifen zwischen Vorder- und Rückseite und die Standby-Taste.
+               Reihenfolge mit Absicht: Chromium sortiert die Flächen, indem es sie an den Ebenen der zuerst genommenen
+               zerteilt, und nimmt die im Dokument späteren zuerst. Alles, was an einer Schnittlinie eine feine Fuge zeigen
+               würde (Vorderseite, Rückseite, Gläser, Sockel und Plateau), steht deshalb hinter den quer stehenden Wänden. -->
+          <div class="iphone-rim" aria-hidden="true">
+            <span class="iphone-bump">
+              <span class="bump-wall"></span><span class="bump-wall bump-mid"></span>
+              <span class="iphone-barrels"><b class="barrel"></b><b class="barrel"></b><b class="barrel"></b></span>
+              <span class="bump-base"></span>
+              <span class="iphone-camera"><i class="lens-foot"></i><i class="lens-foot"></i><i class="lens-foot"></i><b class="flash"></b><b class="lidar"></b><b class="mic"></b></span>
+              <span class="iphone-lenses"><i class="lens"></i><i class="lens"></i><i class="lens"></i></span>
+            </span>
+            <span class="rim-c rim-tl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-tr"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-bl"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rim-c rim-br"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="iphone-key"></span><span class="iphone-key iphone-key-mid"></span>
+          </div>
+          <div class="iphone-back" aria-hidden="true">
+            <span class="bump-foot"></span>
+            <span class="back-rings"></span>
+            <svg class="device-mark"><use href="#i-mark-gloss"/></svg>
+          </div>
+          <span class="iphone-side iphone-side-l" aria-hidden="true"><b class="btn-action"></b><b class="btn-up"></b><b class="btn-down"></b></span>
+          <span class="iphone-side iphone-side-r" aria-hidden="true"><b class="btn-power"></b><b class="btn-cam"></b></span>
+          <span class="iphone-cap iphone-cap-t" aria-hidden="true"></span>
+          <span class="iphone-cap iphone-cap-b" aria-hidden="true"><i class="port"></i></span>
+          <div class="phone iphone-front">
+            <span class="phone-hw" aria-hidden="true"></span>
+            <span class="iphone-ring" aria-hidden="true"></span>
+            <div class="phone-screen">
+              <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
+              <picture>
+                <img src="assets/img/app/phone-helferplanung-light-312.webp?v=2026102001" srcset="assets/img/app/phone-helferplanung-light-260.webp?v=2026102001 260w, assets/img/app/phone-helferplanung-light-312.webp?v=2026102001 312w, assets/img/app/phone-helferplanung-light-468.webp?v=2026102001 468w, assets/img/app/phone-helferplanung-light-520.webp?v=2026102001 520w, assets/img/app/phone-helferplanung-light-624.webp?v=2026102001 624w, assets/img/app/phone-helferplanung-light-780.webp?v=2026102001 780w" sizes="(max-width: 899px) and (orientation: landscape) min(312px, 37vw, calc((100vh - 144px) / 2.161 * 26 / 28)), (max-width: 719px) min(260px, 67vw, calc((100vh - 300px) / 2.16 * 26 / 28)), min(312px, calc((100vh - 194px) / 2.081 * 26 / 28))" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplanung auf dem Smartphone: eigene Einsätze und offene Schichten mit der Schaltfläche „Eintragen“">
+              </picture>
+            </div>
+            <span class="iphone-glass" aria-hidden="true"></span>
+          </div>
+        </div>
+          <span class="showcase-floor" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+    <canvas class="fluss umlauf-bahn umlauf-vorn" aria-hidden="true" data-fluss data-zwilling="umlauf-hinten" data-seite="vorn"></canvas>
+    <span class="randlicht rl-blau u-rand-l" aria-hidden="true"></span>
+    <span class="randlicht rl-signal u-rand-r" aria-hidden="true"></span>
+    <ul class="chips-reihe breite umlauf-chips" role="list" data-umlauf-chips>
+      <li class="u-chip"><span class="chip"><svg class="i" aria-hidden="true"><use href="#i-calendar-sync"/></svg>Termine im eigenen Kalender</span></li>
+      <li class="u-chip"><span class="chip"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg>Getränkestand · 3 von 4</span></li>
+      <li class="u-chip"><span class="chip"><svg class="i" aria-hidden="true"><use href="#i-user-check"/></svg><span><b>Anna Adler (du)</b> eingetragen</span></span></li>
+      <li class="u-chip"><span class="chip"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span>Erinnerung <b>24&nbsp;Std.</b> vorher</span></span></li>
+      <li class="u-chip"><span class="chip"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Im Browser, ganz ohne App</span></li>
+    </ul>
+  </section>
+
+  <!-- ===== Kapitel 5 · Funktionen (Nacht): dreizehn Bereiche in zehn Glaskarten (die vier kleinen Bereiche als Chips unter
+       „Dazu“). Jede Karte und jeder Chip öffnet die ganze Beschreibung als Popover (ohne Skript, wortgleich wie bisher).
+       Mit Maus und Bewegung (buehne.js): Die Karte unter dem Zeiger neigt sich und hebt sich an, ihr Glanz folgt dem
+       Zeiger, die Lichtkante jeder Karte zeigt zu ihm, der Knopf „So sieht es aus“ ist magnetisch, und der Strom dahinter
+       weicht dem Zeiger aus. Die 13 rollt beim Erscheinen hoch. ===== -->
+  <section class="kapitel k05 nacht" id="funktionen" data-kapitel="5" aria-labelledby="funktionen-titel">
+    <span class="licht licht-blau fa" aria-hidden="true"></span>
+    <span class="licht licht-himmel fb" aria-hidden="true"></span>
+    <canvas class="fluss fluss-funktionen" aria-hidden="true" data-fluss data-zeiger="1" data-seed="61" data-anzahl="760" data-anzahl-kompakt="300" data-straenge="7" data-orange="0.05" data-strich="1.3" data-staerke="0.95" data-breite="0.07" data-breite-kompakt="0.03"
+      data-pfad="-0.03,0.56 0.06,0.6 0.14,0.66 0.22,0.7 0.32,0.72 0.46,0.71 0.62,0.69 0.8,0.665 1.03,0.64"
+      data-pfad-kompakt="-0.05,0.3 0.3,0.33 0.6,0.36 1.05,0.4"></canvas>
+    <div class="breite">
+      <div class="k05-kopf">
+        <p class="dreizehn" aria-hidden="true"><span data-zahl>13</span></p>
+        <div>
+          <h2 class="h2-gross" id="funktionen-titel">Alles, was Vereinsarbeit braucht</h2>
+          <p class="lead">Dreizehn Bereiche, die zusammenarbeiten, statt dreizehn einzelner Werkzeuge.</p>
+        </div>
+      </div>
+      <ul class="bento" role="list">
+        <li class="fkarte fkarte-gross">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-hand-heart"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-helfer">Helfer&shy;schich&shy;ten</button></h3>
+          <p>Selbst eintragen, mit Ampel</p>
+          <ul class="mini-ampel" aria-hidden="true">
+            <li><span>Aufbau</span><i></i><i></i><i></i><i></i><i></i><b>5/5</b></li>
+            <li><span>Theke</span><i></i><i></i><i class="frei"></i><i class="frei"></i><b>2/4</b></li>
+            <li class="offen"><span>Abbau</span><i class="fehlt"></i><i class="fehlt"></i><i class="fehlt"></i><b>0/3</b></li>
+          </ul>
+          <a class="knopf knopf-signal knopf-klein magnet fk-los" href="#helferschichten">So sieht es aus<span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-helfer" popover role="dialog" aria-labelledby="f-helfer-t" aria-describedby="f-helfer-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-hand-heart"/></svg></span>
+    <p class="feat-pop-title" id="f-helfer-t">Helfer&shy;schich&shy;ten</p>
+    <button class="feat-close" type="button" popovertarget="f-helfer" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-helfer-d">Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Erinnerungen und ein druckfertiger Helferplan&nbsp;– für eine oder mehrere Veranstaltungen.</p>
+  <a class="feat-link" href="#helferschichten">So sieht es aus<span class="sr-only">: Helferschichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-users"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-mitglieder">Mit&shy;glieder</button></h3>
+          <p>Stammdaten, Import, Historie</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-mitglieder" popover role="dialog" aria-labelledby="f-mitglieder-t" aria-describedby="f-mitglieder-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-users"/></svg></span>
+    <p class="feat-pop-title" id="f-mitglieder-t">Mit&shy;glieder</p>
+    <button class="feat-close" type="button" popovertarget="f-mitglieder" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. Vorhandene Listen übernehmen (aus Excel als CSV gespeichert) mit Vorschau, dazu Export, Statistik, Archiv und Papierkorb.</p>
+  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Mitglieder</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-calendar-days"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-veranstaltungen">Veran&shy;stal&shy;tungen</button></h3>
+          <p>Anmeldung mit Warteliste</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-veranstaltungen" popover role="dialog" aria-labelledby="f-veranstaltungen-t" aria-describedby="f-veranstaltungen-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-days"/></svg></span>
+    <p class="feat-pop-title" id="f-veranstaltungen-t">Veran&shy;stal&shy;tungen</p>
+    <button class="feat-close" type="button" popovertarget="f-veranstaltungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-veranstaltungen-d">Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
+  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Veranstaltungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-calendar-sync"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-kalender">Kalender</button></h3>
+          <p>Im eigenen Kalender</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-kalender" popover role="dialog" aria-labelledby="f-kalender-t" aria-describedby="f-kalender-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-sync"/></svg></span>
+    <p class="feat-pop-title" id="f-kalender-t">Kalender</p>
+    <button class="feat-close" type="button" popovertarget="f-kalender" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Einzelne Termine lassen sich exportieren, und ein persönlicher Abo-Link bringt die Termine automatisch in die eigene Kalender-App.</p>
+  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Kalender</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-wallet"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-finanzen">Finan&shy;zen</button></h3>
+          <p>Kasse, Rechnungen, Beiträge</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-finanzen" popover role="dialog" aria-labelledby="f-finanzen-t" aria-describedby="f-finanzen-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-wallet"/></svg></span>
+    <p class="feat-pop-title" id="f-finanzen-t">Finan&shy;zen</p>
+    <button class="feat-close" type="button" popovertarget="f-finanzen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-finanzen-d">Kassenbuch für Bankkonten und Barkasse mit Belegen, Rechnungen hochladen und als bezahlt markieren, Mitgliedsbeiträge mit Beitragslauf, Spenden und Monatsabschluss. Die Übersicht zeigt Kontostand, offene Rechnungen und Überschuss.</p>
+  <a class="feat-link" href="#finanzen">So sieht es aus<span class="sr-only">: Finanzen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-message-square"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-nachrichten">Nach&shy;richten</button></h3>
+          <p>Gezielt, mit Lesestatistik</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-nachrichten" popover role="dialog" aria-labelledby="f-nachrichten-t" aria-describedby="f-nachrichten-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-message-square"/></svg></span>
+    <p class="feat-pop-title" id="f-nachrichten-t">Nach&shy;richten</p>
+    <button class="feat-close" type="button" popovertarget="f-nachrichten" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-nachrichten-d">An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-chart-column"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-auswertungen">Auswer&shy;tungen</button></h3>
+          <p>Zahlen passend zur Rolle</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-auswertungen" popover role="dialog" aria-labelledby="f-auswertungen-t" aria-describedby="f-auswertungen-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-chart-column"/></svg></span>
+    <p class="feat-pop-title" id="f-auswertungen-t">Auswer&shy;tungen</p>
+    <button class="feat-close" type="button" popovertarget="f-auswertungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-auswertungen-d">Eine Übersicht (Dashboard) mit den Zahlen, die die jeweilige Rolle braucht: Kennzahlen mit kleinem Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
+  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Auswertungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-bell"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-hinweise">Benach&shy;rich&shy;tigungen</button></h3>
+          <p>Erinnerung 24&nbsp;Std. vorher</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-hinweise" popover role="dialog" aria-labelledby="f-hinweise-t" aria-describedby="f-hinweise-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></span>
+    <p class="feat-pop-title" id="f-hinweise-t">Benach&shy;rich&shy;tigungen</p>
+    <button class="feat-close" type="button" popovertarget="f-hinweise" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-hinweise-d">Alle Hinweise an einem Ort, auf Wunsch auch per E&#8209;Mail. Erinnerung 24&nbsp;Stunden vor jedem Einsatz und jeder zugesagten Veranstaltung.</p>
+</div>
+        </li>
+        <li class="fkarte">
+          <svg class="i fk-ico" aria-hidden="true"><use href="#i-list-checks"/></svg>
+          <h3><button class="fk-knopf" type="button" popovertarget="f-aufgaben">Aufgaben und Check&shy;listen</button></h3>
+          <p>Wer macht was, bis wann</p>
+          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
+<div class="feat-pop" id="f-aufgaben" popover role="dialog" aria-labelledby="f-aufgaben-t" aria-describedby="f-aufgaben-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-list-checks"/></svg></span>
+    <p class="feat-pop-title" id="f-aufgaben-t">Aufgaben und Check&shy;listen</p>
+    <button class="feat-close" type="button" popovertarget="f-aufgaben" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-aufgaben-d">Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status&nbsp;– auch als Checkliste je Veranstaltung.</p>
+</div>
+        </li>
+        <li class="fkarte fkarte-dazu">
+          <h3 class="dazu-titel">Dazu</h3>
+          <ul class="dazu" role="list">
+            <li><button class="fk-chip" type="button" popovertarget="f-abteilungen"><svg class="i" aria-hidden="true"><use href="#i-network"/></svg>Abteilungen und Gruppen</button>
+<div class="feat-pop" id="f-abteilungen" popover role="dialog" aria-labelledby="f-abteilungen-t" aria-describedby="f-abteilungen-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-network"/></svg></span>
+    <p class="feat-pop-title" id="f-abteilungen-t">Abtei&shy;lungen und Gruppen</p>
+    <button class="feat-close" type="button" popovertarget="f-abteilungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-abteilungen-d">Abteilungen und Gruppen mit eigenen Leitungen. Rechte und Nachrichten lassen sich auf eine Abteilung beschränken.</p>
+</div>
+            </li>
+            <li><button class="fk-chip" type="button" popovertarget="f-dokumente"><svg class="i" aria-hidden="true"><use href="#i-folder-open"/></svg>Dokumente</button>
+<div class="feat-pop" id="f-dokumente" popover role="dialog" aria-labelledby="f-dokumente-t" aria-describedby="f-dokumente-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-folder-open"/></svg></span>
+    <p class="feat-pop-title" id="f-dokumente-t">Doku&shy;mente</p>
+    <button class="feat-close" type="button" popovertarget="f-dokumente" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– freigegeben für alle Mitglieder, nur für den Vorstand oder nur für die Vereinsadministratoren.</p>
+</div>
+            </li>
+            <li><button class="fk-chip" type="button" popovertarget="f-suche"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Zentrale Suche</button>
+<div class="feat-pop" id="f-suche" popover role="dialog" aria-labelledby="f-suche-t" aria-describedby="f-suche-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-search"/></svg></span>
+    <p class="feat-pop-title" id="f-suche-t">Zentrale Suche</p>
+    <button class="feat-close" type="button" popovertarget="f-suche" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-suche-d">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente und häufige Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf. Am Rechner öffnet es sich auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd>.</span></p>
+  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Zentrale Suche</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+</div>
+            </li>
+            <li><button class="fk-chip" type="button" popovertarget="f-hilfe"><svg class="i" aria-hidden="true"><use href="#i-life-buoy"/></svg>Hilfe &amp; Support</button>
+<div class="feat-pop" id="f-hilfe" popover role="dialog" aria-labelledby="f-hilfe-t" aria-describedby="f-hilfe-d">
+  <div class="feat-pop-head">
+    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-life-buoy"/></svg></span>
+    <p class="feat-pop-title" id="f-hilfe-t">Hilfe &amp; Support</p>
+    <button class="feat-close" type="button" popovertarget="f-hilfe" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
+  </div>
+  <p id="f-hilfe-d">Anleitung passend zur Rolle, Ansprechpartner des Vereins und ein Meldeformular für Fehler, Fragen und Vorschläge&nbsp;– mit Antwort und Status.</p>
+</div>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Kapitel 6 · Finanzen (Papier, Papierbogen): der Laptop dreht sich ins Bild (wörtlich wie bisher) und steht in
+       Ruhe frontal. Ab 1024 px ein Raster: Text, Zählwerk und vier Punkte links, der Laptop rechts (die Bühne bleibt
+       fensterbreit, sie schneidet das Gerät beim Drehen nicht ab). Darunter alles untereinander, der Laptop nach dem Kopf.
+       In der Ruhelage zieht einmal ein Lichtstreif über die Kennzahlkarten (Ebene über dem gemessenen Bildschirm,
+       buehne.js); die Zahl rollt beim Erscheinen hoch. ===== -->
+  <section class="kapitel k06 papier bogen" id="finanzen" data-kapitel="6" aria-labelledby="finanzen-titel">
+    <span class="licht licht-blau fa" aria-hidden="true"></span>
+    <span class="licht licht-signal fb" aria-hidden="true"></span>
+    <canvas class="fluss fluss-finanzen" aria-hidden="true" data-fluss data-hell="1" data-seed="53" data-anzahl="380" data-anzahl-kompakt="200" data-straenge="5" data-orange="0.04" data-strich="1.4" data-staerke="1" data-breite="0.022"
+      data-breite-kompakt="0.008"
+      data-pfad="-0.03,0.93 0.12,0.925 0.26,0.915 0.4,0.9 0.52,0.885 0.66,0.87 0.8,0.85 0.92,0.8 1.03,0.72"
+      data-pfad-kompakt="-0.05,0.988 0.4,0.982 0.75,0.97 1.05,0.95"></canvas>
+    <div class="k06-raster">
+      <p class="kapitelmarke k06-marke"><span class="km-linie" aria-hidden="true"></span><svg class="km-pin" aria-hidden="true"><use href="#pin"/></svg>Finanzen</p>
+      <h2 class="h2-gross k06-titel" id="finanzen-titel"><span class="block">Finanzen</span> <span class="block">auf einen Blick.</span></h2>
+      <p class="lead k06-lead">Kassenbuch, Rechnungen, Beiträge und Spenden. Mit Belegen und Monatsabschluss.</p>
+      <div class="showcase showcase-laptop" data-geraet="finanzen">
+        <div class="showcase-stage">
+          <div class="showcase-scene">
+        <div class="laptop">
+          <div class="laptop-lid">
+            <div class="laptop-screen">
+              <span class="laptop-camera" aria-hidden="true"></span>
+              <picture>
+                <img src="assets/img/app/laptop-finanzen-uebersicht-light-880.webp?v=2026102001" srcset="assets/img/app/laptop-finanzen-uebersicht-light-720.webp?v=2026102001 720w, assets/img/app/laptop-finanzen-uebersicht-light-880.webp?v=2026102001 880w, assets/img/app/laptop-finanzen-uebersicht-light-960.webp?v=2026102001 960w, assets/img/app/laptop-finanzen-uebersicht-light-1340.webp?v=2026102001 1340w, assets/img/app/laptop-finanzen-uebersicht-light-1760.webp?v=2026102001 1760w" sizes="(min-width: 1024px) min(640px, 43vw, calc((100svh - 200px) * 0.95)), (max-width: 719px) min(880px, calc((100vw - 32px) / 1.15), calc((100vh - 218px) * 0.98)), min(880px, 80vw, calc((100vh - 218px) * 0.98))" width="1760" height="1100" loading="lazy" decoding="async" alt="Finanzen von VereinsFlow auf dem Laptop: Die Übersicht zeigt den Kontostand von Girokonto und Barkasse, offene Rechnungen mit dem Hinweis auf überfällige, den Überschuss des Jahres und die Spenden; darunter Einnahmen und Ausgaben je Monat und was als Nächstes ansteht. Darüber die Reiter Beiträge, Kassenbuch, Rechnungen, Spenden und Abschluss">
+              </picture>
+            </div>
+            <div class="laptop-cover" aria-hidden="true"><svg class="device-mark"><use href="#i-mark-mirror"/></svg></div>
+            <span class="lid-c lid-tl" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="lid-c lid-tr" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="lid-c lid-bl" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="lid-c lid-br" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="laptop-edge laptop-edge-top" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-l" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-r" aria-hidden="true"></span>
+            <span class="laptop-edge laptop-edge-bottom" aria-hidden="true"></span>
+          </div>
+          <!-- Unterteil (um das Scharnier gekippt, siehe .laptop-body): Lautsprecher, Tastatur mit deutscher Belegung (QWERTZ,
+               ISO-Eingabetaste), Touchpad; darunter Kanten und runde Ecken, links die Anschlüsse -->
+          <div class="laptop-body" aria-hidden="true">
+            <div class="laptop-deck">
+              <span class="laptop-speaker laptop-speaker-l"></span>
+              <span class="laptop-speaker laptop-speaker-r"></span>
+              <span class="laptop-keys"><span class="k kf km u6">esc</span><span class="k kf">F1</span><span class="k kf">F2</span><span class="k kf">F3</span><span class="k kf">F4</span><span class="k kf">F5</span><span class="k kf">F6</span><span class="k kf">F7</span><span class="k kf">F8</span><span class="k kf">F9</span><span class="k kf">F10</span><span class="k kf">F11</span><span class="k kf">F12</span><span class="k kf k-touch"></span><span class="k"><i>°</i>^</span><span class="k"><i>!</i>1</span><span class="k"><i>"</i>2</span><span class="k"><i>§</i>3</span><span class="k"><i>$</i>4</span><span class="k"><i>%</i>5</span><span class="k"><i>&amp;</i>6</span><span class="k"><i>/</i>7</span><span class="k"><i>(</i>8</span><span class="k"><i>)</i>9</span><span class="k"><i>=</i>0</span><span class="k"><i>?</i>ß</span><span class="k"><i>`</i>´</span><span class="k km u6 kr">⌫</span><span class="k km u6">⇥</span><span class="k">Q</span><span class="k">W</span><span class="k">E</span><span class="k">R</span><span class="k">T</span><span class="k">Z</span><span class="k">U</span><span class="k">I</span><span class="k">O</span><span class="k">P</span><span class="k">Ü</span><span class="k"><i>*</i>+</span><span class="k k-enter"></span><span class="k km kr k-enter-low">↩</span><span class="k km u7">⇪</span><span class="k">A</span><span class="k">S</span><span class="k">D</span><span class="k">F</span><span class="k">G</span><span class="k">H</span><span class="k">J</span><span class="k">K</span><span class="k">L</span><span class="k">Ö</span><span class="k">Ä</span><span class="k"><i>'</i>#</span><span class="k km u5">⇧</span><span class="k"><i>&gt;</i>&lt;</span><span class="k">Y</span><span class="k">X</span><span class="k">C</span><span class="k">V</span><span class="k">B</span><span class="k">N</span><span class="k">M</span><span class="k"><i>;</i>,</span><span class="k"><i>:</i>.</span><span class="k"><i>_</i>-</span><span class="k km u9 kr">⇧</span><span class="k km">fn</span><span class="k km">⌃</span><span class="k km">⌥</span><span class="k km u5">⌘</span><span class="k u20"></span><span class="k km u5 kr">⌘</span><span class="k km kr">⌥</span><span class="k ka">◀</span><span class="k-updown"><span class="k ka">▲</span><span class="k ka">▼</span></span><span class="k ka">▶</span></span>
+              <span class="laptop-pad"></span>
+            </div>
+            <span class="laptop-base"><span class="base-c base-fl"><i></i><i></i><i></i><i></i></span><span class="base-c base-fr"><i></i><i></i><i></i><i></i></span><span class="base-c base-rl"><i></i><i></i><i></i><i></i></span><span class="base-c base-rr"><i></i><i></i><i></i><i></i></span></span>
+            <span class="laptop-front"></span>
+            <span class="laptop-rear"></span>
+            <span class="laptop-side laptop-side-l"><span class="laptop-ports"><i></i><i></i><i></i><i></i></span></span>
+            <span class="laptop-side laptop-side-r"></span>
+          </div>
+        </div>
+            <span class="showcase-floor" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
+      <p class="geldzahl"><span class="sr-only">Überschuss 2026: plus 5.286,30 Euro, Einnahmen minus Ausgaben seit 01.07.2026</span><span class="gz-zahl" aria-hidden="true"><span data-zahl>+5.286,30</span><span class="euro">€</span></span><span class="gz-text" aria-hidden="true"><b>Überschuss 2026</b> <span>Einnahmen minus Ausgaben seit 01.07.2026</span></span></p>
+      <ul class="finanz-punkte" role="list">
+        <li><b>Kassenbuch</b> für Bankkonten und Barkasse, mit Belegen</li>
+        <li><b>Rechnungen</b> hochladen und als bezahlt markieren</li>
+        <li><b>Beiträge</b> mit Beitragslauf, dazu Spenden</li>
+        <li><b>Monatsabschluss</b> und eine Übersicht mit Kontostand</li>
+      </ul>
+      <p class="hinweis k06-beispiel">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
+      <span class="streif-finanzen" aria-hidden="true" data-streif><i></i></span>
+    </div>
+  </section>
+
+  <!-- ===== Kapitel 7 · Vertrauen (Papier, ruhig): links Überschrift, Einleitung und das Datenblatt (vier Punkte), rechts
+       die fünf Rollen als drei ineinanderliegende Milchglas-Rahmen, leicht in den Raum gekippt (nach Reichweite bei den
+       Mitgliederdaten; der innere leuchtet leise). Die Rahmen legen sich beim Erscheinen von außen nach innen, Annas
+       Plakette folgt (buehne.js, .ist-gelegt). Fluss nur als Lichtlinie unter der Kopfzeile und drei langsame
+       Tintenlinien am Fuß. „Mehr dazu“ mit den Einzelheiten (im Druck offen). ===== -->
+  <section class="kapitel k07 papier" id="sicherheit" data-kapitel="7" aria-labelledby="sicherheit-titel">
+    <span class="licht licht-himmel va" aria-hidden="true"></span>
+    <span class="morgenlinie" aria-hidden="true"></span>
+    <canvas class="fluss fluss-vertrauen" aria-hidden="true" data-fluss data-hell="1" data-linien="3" data-pulse="1" data-tempo="0.5" data-orange="0" data-staerke="0.7" data-dicke="0.9" data-seed="71" data-breite="0.11"
+      data-pfad="-0.03,0.72 0.2,0.67 0.42,0.62 0.62,0.57 0.82,0.52 1.03,0.45"></canvas>
+    <div class="breite k07-raster">
+      <div class="k07-text">
+        <h2 class="h2-gross" id="sicherheit-titel"><span class="block">Mitgliederdaten verdienen</span> <span class="block leise">mehr als einen Passwortschutz.</span></h2>
+        <p class="lead">Jeder sieht nur, was seine Rolle erlaubt. Auch wir als Betreiber sehen in der Anwendung keine Mitgliederdaten.</p>
+        <ul class="datenblatt" role="list">
+          <li><svg class="i" aria-hidden="true"><use href="#i-mail"/></svg><b>Geschlossene Plattform</b> Konten entstehen nur durch die Einladung des Vereins.</li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-key-round"/></svg><b>Sichere Anmeldung</b> Passwörter kann niemand lesen, auch wir nicht.</li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-layers"/></svg><b>Strikt getrennte Vereine</b> Jeder Verein hat einen eigenen Datenbereich.</li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg><b>DSGVO-Werkzeuge</b> Datenexport, Löschantrag, Einwilligungen und Anonymisierung.</li>
+        </ul>
+      </div>
+      <div class="rollen-raum" id="rollen" data-rollen>
+        <h3 class="rollen-titel">Fünf Rollen, sofort einsatzbereit</h3>
+        <div class="rollen-buehne">
+          <div class="rahmen r-verein">
+            <p class="rahmen-kopf"><span class="sr-only">Mitgliederdaten: </span><span aria-hidden="true">Mitgliederdaten</span>Gesamter Verein</p>
+            <p class="rollen-chips"><span class="rolle-chip rolle-anna"><i aria-hidden="true">AA</i><span class="sr-only">im Beispiel Anna Adler, </span>Vereins&shy;administrator</span><span class="rolle-chip">Vorstands&shy;mitglied</span></p>
+            <div class="rahmen r-abteilung">
+              <p class="rahmen-kopf"><span class="sr-only">Mitgliederdaten: </span><span aria-hidden="true">Mitgliederdaten</span>Eigene Abteilung</p>
+              <p class="rollen-chips"><span class="rolle-chip">Abteilungs&shy;leiter</span></p>
+              <div class="rahmen r-person">
+                <p class="rahmen-kopf"><span class="sr-only">Mitgliederdaten: </span><span aria-hidden="true">Mitgliederdaten</span>Nur eigene Daten</p>
+                <p class="rollen-chips"><span class="rolle-chip">Helfer</span><span class="rolle-chip">Mitglied</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="rollen-fuss"><svg class="i" aria-hidden="true"><use href="#i-lock-keyhole"/></svg>Geprüft wird bei jedem Zugriff auf dem Server.</p>
+      </div>
+    </div>
+    <div class="breite">
+      <details class="mehr">
+        <summary><span>Mehr dazu</span><span class="mehr-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary>
+        <ul class="checks" role="list">
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Rollen:</strong> Vereinsadministrator und Vorstand sehen den ganzen Verein, Abteilungsleiter ihre Abteilungen, Helfer und Mitglieder die eigenen Daten. Geprüft wird bei jedem Zugriff auf dem Server.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Passwörter:</strong> Gespeichert wird nur ein nicht umkehrbarer „Fingerabdruck“ (Argon2id). Nach mehreren falschen Eingaben heißt es eine Weile warten. Auf Wunsch sichert eine Zwei-Faktor-Anmeldung mit Authenticator-App das Konto zusätzlich.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Abmelden:</strong> Ohne Nutzung meldet VereinsFlow nach einiger Zeit automatisch ab. Jede Person sieht ihre angemeldeten Geräte und kann einzelne abmelden.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Trennung der Vereine:</strong> dreifach abgesichert und bei jeder Änderung an VereinsFlow automatisch geprüft.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Protokoll:</strong> unveränderlich, zeigt, wer wann was geändert hat; sensible Werte erscheinen darin nur als „geändert“.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Löschantrag:</strong> 14&nbsp;Tage Bedenkzeit, dazu Aufbewahrungsfristen je Verein.</span></li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Cookies:</strong> In der Anwendung nur technisch notwendige Cookies (Anmeldung, bei Zwei-Faktor kurzzeitig ein zweites), kein Tracking.</span></li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===== Kapitel 8 · So starten Sie (Papier, ruhige Pause): die drei Schritte auf einer Startlinie. Beim Erscheinen
+       zeichnet sich die Linie, die Pinnnadel fährt einmal von 1 über 2 nach 3 und füllt die Punkte (buehne.js); ohne
+       Bewegung und ohne Skript steht sie auf 3. ===== -->
+  <section class="kapitel k08 papier" id="ablauf" data-kapitel="8" aria-labelledby="ablauf-titel">
+    <div class="breite">
+      <div class="kapitel-kopf">
+        <p class="kapitelmarke"><span class="km-linie" aria-hidden="true"></span><svg class="km-pin" aria-hidden="true"><use href="#pin"/></svg>So starten Sie</p>
+        <h2 class="h2-gross" id="ablauf-titel"><span class="block">Bis zur ersten Einladung</span> <span class="block leise">sind es drei Schritte.</span></h2>
+      </div>
+      <div class="startweg" data-startweg>
+        <span class="sw-spur" aria-hidden="true"><span class="sw-fuellung"></span></span>
+        <span class="sw-pin" aria-hidden="true"><svg><use href="#pin"/></svg></span>
+        <ol class="startlinie" role="list">
+          <li><span class="nr" aria-hidden="true">1</span><h3>Einrichten</h3><p>Wir richten Ihren Verein ein, danach übernimmt der Vereinsadministrator.</p></li>
+          <li><span class="nr" aria-hidden="true">2</span><h3>Listen übernehmen</h3><p>Vorhandene Mitgliederlisten, etwa aus Excel, mit Vorschau übernehmen.</p></li>
+          <li><span class="nr" aria-hidden="true">3</span><h3>Einladen</h3><p>Alle erhalten einen persönlichen Einladungslink per E&#8209;Mail und legen ihr Passwort selbst fest.</p></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Kapitel 9 · Fragen (Papier, ruhige Pause): fünf Fragen, wörtlich wie bisher. Aufklappen mit View Transition
+       (die Fragen darunter gleiten, die Antwort blendet ein – buehne.js; ohne View Transitions sofort). Eine Sprungmarke
+       auf eine Frage (#ausprobieren) öffnet sie (site.js). ===== -->
+  <section class="kapitel k09 papier" id="faq" data-kapitel="9" aria-labelledby="faq-titel">
+    <div class="breite k09-raster">
+      <div class="k09-kopf">
+        <h2 class="h2-gross" id="faq-titel"><span class="block">Häufige Fragen</span> <span class="block leise">vor dem ersten Schritt.</span></h2>
         <p class="lead">Alles Weitere gern per E&#8209;Mail an <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a>.</p>
       </div>
-      <div class="faq rows reveal">
+      <div class="faq">
         <details>
           <summary><span class="faq-q">Für welche Vereine ist VereinsFlow gedacht?</span><span class="toggle" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span></summary>
           <div class="answer"><p>Für Vereine mit mehreren Abteilungen, regelmäßigen Veranstaltungen und vielen ehrenamtlichen Helfern, etwa Sport-, Kultur- und Fördervereine.</p></div>
@@ -901,7 +996,7 @@
             </ul>
           </div>
         </details>
-        <details id="ablauf">
+        <details id="ausprobieren">
           <summary><span class="faq-q">Wie lässt sich VereinsFlow ausprobieren?</span><span class="toggle" aria-hidden="true"><svg class="icon"><use href="#i-plus"/></svg></span></summary>
           <div class="answer">
             <p>Am besten in einer persönlichen Demo: Eine kurze E&#8209;Mail genügt. Danach ist Ihr Verein in drei Schritten startklar:</p>
@@ -916,32 +1011,53 @@
     </div>
   </section>
 
-  <!-- ===== Kontakt (Nacht, fast Schwarz): der Abschluss. Links die Anfrage mit weißem Hauptknopf (daneben das Telefon)
-       und die Adresse zum Kopieren, rechts die Benachrichtigung zum Start auf einer hellen Karte (.insel: Papier, Farben
-       wie auf Tag). Schmal untereinander. ===== -->
-  <section class="section nacht nacht-tief kontakt" id="kontakt" aria-labelledby="kontakt-title">
-    <div class="container cta">
-      <div class="cta-main">
-        <div class="section-head reveal">
-          <h2 id="kontakt-title">Eine persönliche Demo für Ihren Verein</h2>
-          <p class="lead">Unverbindlich und passend zu den Fragen Ihres Vereins.</p>
-        </div>
-        <div class="cta-body reveal">
-          <div class="cta-actions">
-            <a class="btn btn-primary btn-lg" href="mailto:kontakt@vereins-flow.com?subject=Demo-Anfrage%20VereinsFlow&amp;body=Guten%20Tag%2C%0D%0A%0D%0Awir%20interessieren%20uns%20f%C3%BCr%20VereinsFlow.%0D%0A%0D%0AVerein%3A%20%0D%0AAnsprechperson%3A%20%0D%0ACa.%20Mitglieder%3A%20%0D%0AWunschtermin%3A%20%0D%0A"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>Demo anfragen</a>
-            <a class="btn btn-secondary btn-lg" href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span class="sr-only">Anrufen: </span>+49&nbsp;176&nbsp;56792302</a>
+  <!-- ===== Kapitel 10 · Finale (Nacht, Nachtbogen): riesige Überschrift, der leuchtende Demo-Knopf (E-Mail, vorausgefüllt wie
+       bisher), Anruf und Adresse zum Kopieren; als Schlussbild Laptop und Telefon (Standbild aus der echten Bewegung:
+       zugeklappt, Bildschirm aus – tools/geraete-standbild.mjs). Beim Erscheinen zieht sich der Strom im Pfeil des
+       Knopfs zusammen (1,5 s), der Lichthof atmet einmal, dann wachsen drei Lichtlinien vom Knopf zum Zeichen auf dem
+       Deckel (0,9 s), das einmal aufleuchtet (buehne.js, fluss.js). Darunter die Anmeldung „Beim Start benachrichtigen“
+       auf einer Papier-Insel (Formular und Einwilligung wörtlich wie bisher). ===== -->
+  <section class="kapitel k10 nacht bogen bogen-nacht" id="kontakt" data-kapitel="10" aria-labelledby="kontakt-titel">
+    <div class="finale" data-finale>
+      <span class="licht licht-blau fa" aria-hidden="true"></span>
+      <span class="licht licht-signal fb" aria-hidden="true"></span>
+      <span class="licht licht-himmel fc" aria-hidden="true"></span>
+      <canvas class="fluss fluss-finale" aria-hidden="true" data-fluss data-ziel="#demo-kreis" data-sammeln="1" data-seed="81" data-anzahl="520" data-anzahl-kompakt="240" data-straenge="6" data-orange="0.07" data-strich="1.2" data-staerke="1.1" data-breite="0.07" data-breite-kompakt="0.05"
+        data-pfad="-0.03,0.97 0.05,0.91 0.1,0.84 0.15,0.75 0.18,0.67 0.1965,0.598"
+        data-pfad-kompakt="-0.05,0.62 0.05,0.58 0.12,0.52 0.18,0.47 0.22,0.43"></canvas>
+      <div class="breite finale-raster">
+        <h2 class="riesig finale-titel" id="kontakt-titel"><span class="block">Eine Demo</span> <span class="block himmel">für Ihren Verein<span class="pinpunkt" aria-hidden="true"></span></span></h2>
+        <div class="k10-text">
+          <p class="lead">Unverbindlich und passend zu den Fragen Ihres Vereins. Eine kurze E&#8209;Mail an <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a> genügt.</p>
+          <div class="knoepfe">
+            <a class="knopf knopf-signal knopf-riesig magnet leuchtet" href="mailto:kontakt@vereins-flow.com?subject=Demo-Anfrage%20VereinsFlow&amp;body=Guten%20Tag%2C%0D%0A%0D%0Awir%20interessieren%20uns%20f%C3%BCr%20VereinsFlow.%0D%0A%0D%0AVerein%3A%20%0D%0AAnsprechperson%3A%20%0D%0ACa.%20Mitglieder%3A%20%0D%0AWunschtermin%3A%20%0D%0A">Demo anfragen<span class="kreis" id="demo-kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+            <a class="knopf knopf-glas knopf-gross" href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg>Anrufen: +49&nbsp;176&nbsp;56792302</a>
           </div>
-          <p class="cta-mail">
+          <p class="kopier-zeile">
             <span>Oder direkt an <a href="mailto:kontakt@vereins-flow.com">kontakt@vereins-flow.com</a></span>
-            <button class="copy-btn" type="button" data-copy="kontakt@vereins-flow.com" hidden><svg class="icon icon-copy" aria-hidden="true"><use href="#i-copy"/></svg><svg class="icon icon-done" aria-hidden="true"><use href="#i-check"/></svg><span class="copy-label">Adresse kopieren</span></button>
+            <button class="kopier-knopf" type="button" data-copy="kontakt@vereins-flow.com"><svg class="i i-kopie" aria-hidden="true"><use href="#i-copy"/></svg><svg class="i i-fertig" aria-hidden="true"><use href="#i-check"/></svg><span class="copy-label">Adresse kopieren</span></button>
             <span class="copy-status sr-only" aria-live="polite"></span>
           </p>
         </div>
+        <div class="finale-bild" aria-hidden="true">
+          <span class="hof hof-blau fb-hof-a"></span>
+          <span class="hof hof-signal fb-hof-b"></span>
+          <span class="horizont fb-horizont"></span>
+          <span class="bodenlicht fb-boden"></span>
+          <img src="assets/img/finale-geraete-1080.webp?v=2026102001" srcset="assets/img/finale-geraete-720.webp?v=2026102001 720w, assets/img/finale-geraete-1080.webp?v=2026102001 1080w, assets/img/finale-geraete-1440.webp?v=2026102001 1440w" sizes="(min-width: 1024px) and (min-height: 720px) min(780px, 54vw), min(560px, 100vw - 40px)" width="1440" height="804" loading="lazy" decoding="async" alt="">
+          <span class="zeichen-ziel" id="zeichen-ziel"></span>
+          <span class="zeichen-licht"></span>
+        </div>
       </div>
-      <!-- Benachrichtigung zum Start: Anmeldung mit Bestätigung per E-Mail (Double-Opt-in, newsletter.php) -->
-      <div class="notify tint insel reveal" id="benachrichtigen">
+      <canvas class="fluss fluss-weiter" aria-hidden="true" data-fluss data-start="#demo-kreis" data-ziel="#zeichen-ziel" data-wachsen="1" data-linien="3" data-pulse="2" data-seed="85" data-orange="0.05" data-staerke="1.15" data-dicke="1.15" data-breite="0.022" data-breite-kompakt="0.012"
+        data-pfad="0.215,0.6 0.27,0.645 0.34,0.68 0.43,0.695 0.53,0.69 0.62,0.68 0.6875,0.677"
+        data-pfad-kompakt="0.22,0.43 0.3,0.5 0.42,0.6 0.5,0.7 0.52,0.8"></canvas>
+    </div>
+    <!-- Benachrichtigung zum Start: Anmeldung mit Bestätigung per E-Mail (Double-Opt-in, newsletter.php) -->
+    <div class="breite k10-insel">
+      <div class="insel papier" id="benachrichtigen">
         <div class="notify-copy">
-          <h3 class="subhead notify-title">Beim Start benachrichtigt werden</h3>
+          <h3 class="insel-titel">Beim Start benachrichtigt werden</h3>
           <p class="notify-intro">Noch nicht bereit für eine Demo? Dann melden wir uns zum Start von VereinsFlow.</p>
         </div>
         <form class="notify-form" action="/newsletter.php" method="post">
@@ -967,37 +1083,33 @@
     </div>
   </section>
 
-
 </main>
 
-<footer class="site-footer">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <picture>
-          <img src="assets/img/logo.svg?v=2026100401" alt="VereinsFlow" width="200" height="45">
-        </picture>
+<footer class="fuss nacht" data-fuss>
+  <div class="breite">
+    <div class="fuss-raster">
+      <div class="fuss-marke">
+        <img src="assets/img/logo-dark.svg?v=2026100401" alt="VereinsFlow" width="160" height="36">
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
         <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
-        <address class="footer-contact">
-          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
-          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
-          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        <address class="fuss-kontakt">
+          <span>VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="i" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
         </address>
       </div>
       <div>
         <h2>Produkt</h2>
-        <ul>
+        <ul role="list">
+          <li><a href="#helferschichten">Helferplanung</a></li>
           <li><a href="#funktionen">Funktionen</a></li>
-          <li><a href="#helferschichten">Helfer&shy;schichten</a></li>
-          <li><a href="#suche">Zentrale Suche</a></li>
-          <li><a href="#rollen">Rollen und Rechte</a></li>
-          <li><a href="#sicherheit">Sicherheit</a></li>
+          <li><a href="#finanzen">Finanzen</a></li>
+          <li><a href="#sicherheit">Rollen und Sicherheit</a></li>
         </ul>
       </div>
       <div>
         <h2>Kontakt</h2>
-        <ul>
+        <ul role="list">
           <li><a href="#kontakt">Demo anfragen</a></li>
           <li><a href="#benachrichtigen">Beim Start benachrichtigen</a></li>
           <li><a href="#ablauf">So starten Sie</a></li>
@@ -1005,10 +1117,10 @@
         </ul>
       </div>
     </div>
-    <!-- Unterste Zeile: © mit Impressum und Datenschutz (die Rechtstexte), daneben der Hinweis zur Website -->
-    <div class="footer-bottom">
-      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="impressum.html">Impressum</a> <a href="datenschutz.html">Datenschutz</a></p>
+    <div class="fuss-unten">
+      <p class="fuss-recht"><span>© 2026 VereinsFlow GbR</span> <a href="impressum.html">Impressum</a> <a href="datenschutz.html">Datenschutz</a></p>
       <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
+      <button class="ruhe-knopf ruhe-fuss" type="button" aria-pressed="false" data-ruhe-knopf><svg class="i i-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="i i-play" aria-hidden="true"><use href="#i-play"/></svg><span data-ruhe-label>Bewegung anhalten</span></button>
     </div>
   </div>
 </footer>
