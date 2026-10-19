@@ -38,8 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026101802';
-const VF_SKRIPT = '/assets/js/site.js?v=2026101801'; // Menü der Kopfzeile auf dem Smartphone
+const VF_STYLESHEET = '/assets/css/site.css?v=2026102001';
+const VF_SKRIPT = '/assets/js/site.js?v=2026102001'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
@@ -79,7 +79,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>' . vf_h($titel) . ' – VereinsFlow</title>
   <meta name="robots" content="noindex">
   <meta name="color-scheme" content="light">
@@ -92,40 +92,53 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
 
 <!-- Symbole: lucide (ISC-Lizenz), wie auf der Startseite -->
 <svg class="sprite" aria-hidden="true" focusable="false">
-  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 8h16"/><path d="M4 16h16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
   <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 </svg>
 
-<header class="site-header">
-  <div class="container header-inner">
-    <a class="brand" href="/" aria-label="VereinsFlow – zur Startseite">
-      <picture>
-        <img src="/assets/img/logo.svg?v=2026100401" alt="" width="178" height="40">
-      </picture>
+<header class="kopf" data-kopf>
+  <div class="kopf-insel">
+    <span class="kopf-glas" aria-hidden="true"></span>
+    <a class="kopf-marke" href="/" aria-label="VereinsFlow – zur Startseite">
+      <img class="marke-nacht" src="/assets/img/logo-dark.svg?v=2026100401" alt="" width="125" height="28">
+      <img class="marke-papier" src="/assets/img/logo.svg?v=2026100401" alt="" width="125" height="28">
     </a>
-    <a class="btn btn-primary btn-sm header-cta" href="/#kontakt">Demo<span class="header-cta-more"> anfragen</span></a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menü öffnen">
-      <svg class="icon icon-open" aria-hidden="true"><use href="#i-menu"/></svg>
-      <svg class="icon icon-close" aria-hidden="true"><use href="#i-x"/></svg>
-    </button>
-    <nav class="nav" id="site-nav" aria-label="Hauptnavigation">
-      <div class="nav-links">
-        <ul>
-          <li><a href="/#funktionen">Funktionen</a></li>
-          <li><a href="/#helferschichten">Helferschichten</a></li>
-          <li><a href="/#rollen">Rollen</a></li>
-          <li><a href="/#sicherheit">Sicherheit</a></li>
-          <li><a href="/#faq">Fragen</a></li>
-        </ul>
-      </div>
-      <a class="header-link" href="/#benachrichtigen">Beim Start benachrichtigen</a>
-      <a class="btn btn-primary btn-sm btn-header" href="/#kontakt">Demo anfragen</a>
+    <nav class="kopf-navi" aria-label="Hauptnavigation">
+      <a href="/#helferschichten">Helferplanung</a>
+      <a href="/#funktionen">Funktionen</a>
+      <a href="/#finanzen">Finanzen</a>
+      <a href="/#sicherheit">Sicherheit</a>
+      <a href="/#faq">Fragen</a>
     </nav>
+    <a class="knopf knopf-signal knopf-klein kopf-demo" href="/#kontakt"><span>Demo<span class="nur-breit"> anfragen</span></span><span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+    <button class="menue-knopf" type="button" aria-expanded="false" aria-controls="menue" data-menue-knopf>
+      <svg class="i i-auf" aria-hidden="true"><use href="#i-menu"/></svg>
+      <svg class="i i-zu" aria-hidden="true"><use href="#i-x"/></svg>
+      <span class="sr-only" data-menue-label>Menü öffnen</span>
+    </button>
+  </div>
+  <div class="menue" id="menue" hidden data-menue>
+    <nav class="menue-liste" aria-label="Menü">
+      <a href="/#helferschichten">Helferplanung<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="/#funktionen">Funktionen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="/#finanzen">Finanzen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="/#sicherheit">Sicherheit<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="/#ablauf">So starten Sie<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+      <a href="/#faq">Häufige Fragen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+    </nav>
+    <div class="menue-fuss">
+      <a class="knopf knopf-signal" href="/#kontakt">Demo anfragen<span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+      <a class="knopf knopf-glas" href="/#benachrichtigen">Beim Start benachrichtigen</a>
+      <a class="menue-tel" href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Anrufen: </span>+49&nbsp;176&nbsp;56792302</span></a>
+    </div>
   </div>
 </header>
+<span class="kopf-waechter" aria-hidden="true" data-kopf-waechter></span>
 
 <main id="inhalt" class="not-found notify-page">
   <div class="container">
@@ -135,34 +148,31 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   </div>
 </main>
 
-<footer class="site-footer">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <picture>
-          <img src="/assets/img/logo.svg?v=2026100401" alt="VereinsFlow" width="200" height="45">
-        </picture>
+<footer class="fuss nacht" data-fuss>
+  <div class="breite">
+    <div class="fuss-raster">
+      <div class="fuss-marke">
+        <img src="/assets/img/logo-dark.svg?v=2026100401" alt="VereinsFlow" width="160" height="36">
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
         <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
-        <address class="footer-contact">
-          <span class="footer-sender">VereinsFlow GbR · Datteln (NRW)</span>
-          <a href="mailto:kontakt@vereins-flow.com"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
-          <a href="tel:+4917656792302"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
+        <address class="fuss-kontakt">
+          <span>VereinsFlow GbR · Datteln (NRW)</span>
+          <a href="mailto:kontakt@vereins-flow.com"><svg class="i" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
+          <a href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
         </address>
       </div>
       <div>
         <h2>Produkt</h2>
-        <ul>
+        <ul role="list">
+          <li><a href="/#helferschichten">Helferplanung</a></li>
           <li><a href="/#funktionen">Funktionen</a></li>
-          <li><a href="/#helferschichten">Helfer&shy;schichten</a></li>
-          <li><a href="/#suche">Zentrale Suche</a></li>
-          <li><a href="/#rollen">Rollen und Rechte</a></li>
-          <li><a href="/#sicherheit">Sicherheit</a></li>
+          <li><a href="/#finanzen">Finanzen</a></li>
+          <li><a href="/#sicherheit">Rollen und Sicherheit</a></li>
         </ul>
       </div>
       <div>
         <h2>Kontakt</h2>
-        <ul>
+        <ul role="list">
           <li><a href="/#kontakt">Demo anfragen</a></li>
           <li><a href="/#benachrichtigen">Beim Start benachrichtigen</a></li>
           <li><a href="/#ablauf">So starten Sie</a></li>
@@ -170,9 +180,8 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
         </ul>
       </div>
     </div>
-    <!-- Unterste Zeile: © mit Impressum und Datenschutz (die Rechtstexte), daneben der Hinweis zur Website -->
-    <div class="footer-bottom">
-      <p class="footer-legal"><span>© 2026 VereinsFlow GbR</span> <a href="/impressum.html">Impressum</a> <a href="/datenschutz.html">Datenschutz</a></p>
+    <div class="fuss-unten">
+      <p class="fuss-recht"><span>© 2026 VereinsFlow GbR</span> <a href="/impressum.html">Impressum</a> <a href="/datenschutz.html">Datenschutz</a></p>
       <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
     </div>
   </div>

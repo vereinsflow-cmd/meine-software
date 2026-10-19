@@ -1,83 +1,249 @@
-// VereinsFlow – Website: Menü, Kopfzeile, Einblenden beim Scrollen, aktiver Abschnitt mit gleitender Markierung,
-// Karten der Funktionen, Reiter, Ladezustand der Bilder, Live-Fenster und Start der Vorführungen.
-// Ohne JavaScript bleibt die Seite vollständig les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe.
-// Die Content-Security-Policy verbietet Inline-Stile im HTML; Werte wie Verzögerung oder Lage der Markierung setzt das
-// Skript über element.style.setProperty (CSSOM) – das ist davon nicht betroffen.
+// VereinsFlow – Website (alle Seiten): Menü, Kopfzeile (Glas hell/dunkel), Kapitel-Faden mit Pinnnadel, Einblenden,
+// Fragen per Sprungmarke, Kopieren der E-Mail-Adresse, Start der Vorführungen (Laptop, Telefon – wörtlich wie bisher)
+// und der Schalter „Bewegung anhalten“. Die Bühne der Startseite (Kamerafahrt, Wortwalze, Lichtfluss) steckt in
+// buehne.js. Ohne JavaScript bleibt alles les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe, kein Speichern
+// im Gerät. Die Content-Security-Policy verbietet Inline-Stile; Werte setzt das Skript per CSSOM (style.setProperty).
 (() => {
   const root = document.documentElement;
   root.classList.add("js");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const bewegungAus = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const darfBewegen = () => !bewegungAus.matches;
   const canObserve = "IntersectionObserver" in window;
-  const header = document.querySelector(".site-header");
+  const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+  const kopf = document.querySelector("[data-kopf]");
 
-  // Mobiles Menü. Der Knopf steht im HTML vor der Navigation, die Tabulatortaste führt von ihm also direkt zu den
-  // Menüpunkten. Offen ist alles außer der Kopfzeile gesperrt (inert: kein Fokus, kein Vorlesen, kein Tippen), und der
-  // Fokus springt auf den ersten Menüpunkt. Esc oder ein Tipp daneben schließt es, der Fokus kehrt dann zum Knopf zurück
-  // (ein Menüpunkt springt dagegen zu seinem Abschnitt).
-  const toggle = document.querySelector(".nav-toggle");
-  const nav = document.getElementById("site-nav");
-  if (toggle && nav) {
-    const setOpen = (open) => {
-      toggle.setAttribute("aria-expanded", String(open));
-      toggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
-      nav.classList.toggle("is-open", open);
-      header?.classList.toggle("is-open", open); // Kopfzeile deckend, sonst entsteht über dem Einstieg eine Kante
-      for (const element of document.body.children) {
-        if (element !== header && !element.matches("script, .sprite")) element.toggleAttribute("inert", open);
+  // ---- Menü (unter 900 px): Der Knopf steht vor den Menüpunkten. Offen ist alles außer der Kopfzeile gesperrt (inert:
+  // kein Fokus, kein Vorlesen, kein Tippen), der Fokus springt auf den ersten Punkt. Esc schließt, der Fokus kehrt zum
+  // Knopf zurück; ein Menüpunkt springt dagegen zu seinem Abschnitt. ----
+  const menueKnopf = document.querySelector("[data-menue-knopf]");
+  const menue = document.querySelector("[data-menue]");
+  const menueLabel = document.querySelector("[data-menue-label]");
+  if (kopf && menueKnopf && menue) {
+    const setMenue = (offen, fokusZurueck = true) => {
+      menue.hidden = !offen;
+      menueKnopf.setAttribute("aria-expanded", String(offen));
+      if (menueLabel) menueLabel.textContent = offen ? "Menü schließen" : "Menü öffnen";
+      kopf.classList.toggle("menue-auf", offen);
+      for (const el of document.body.children) {
+        if (el !== kopf && !el.matches("script, .sprite")) el.toggleAttribute("inert", offen);
       }
-      if (open) nav.querySelector("a")?.focus();
+      if (offen) menue.querySelector("a")?.focus();
+      else if (fokusZurueck) menueKnopf.focus();
     };
-    const isOpen = () => toggle.getAttribute("aria-expanded") === "true";
-    const close = () => {
-      const inside = nav.contains(document.activeElement);
-      setOpen(false);
-      if (inside) toggle.focus(); // der Menüpunkt ist gleich ausgeblendet – sonst stünde der Fokus nirgends
-    };
-    toggle.addEventListener("click", () => setOpen(!isOpen()));
-    nav.addEventListener("click", (event) => {
-      if (event.target instanceof Element && event.target.closest("a")) setOpen(false);
+    menueKnopf.addEventListener("click", () => setMenue(menue.hidden));
+    menue.addEventListener("click", (e) => {
+      if (e.target instanceof Element && e.target.closest("a")) setMenue(false, false);
     });
-    // Tipp neben das Menü (auf die Abdunkelung darunter) schließt es
-    document.addEventListener("click", (event) => {
-      if (isOpen() && event.target instanceof Node && !nav.contains(event.target) && !toggle.contains(event.target)) {
-        close();
-      }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !menue.hidden) setMenue(false);
     });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && isOpen()) {
-        setOpen(false);
-        toggle.focus();
-      }
-    });
-    window.matchMedia("(min-width: 900px)").addEventListener("change", (event) => {
-      if (event.matches) setOpen(false);
+    window.matchMedia("(min-width: 900px)").addEventListener("change", (m) => {
+      if (m.matches && !menue.hidden) setMenue(false, false);
     });
   }
 
-  // Kopfzeile: durchscheinender Grund erst nach dem Scrollen (höchstens einmal je Bild berechnet)
-  if (header) {
-    let queued = false;
-    const update = () => {
-      header.classList.toggle("is-scrolled", window.scrollY > 8);
-      queued = false;
+  // ---- Kopfzeile: verdichtet nach den ersten 8 px (Wächter), helles Glas über Papier. Gemessen wird an der Mittellinie
+  // der Kopfzeile (1 px hohes Band); die Farbe wechselt nur über Deckkraft (site.css). ----
+  if (kopf) {
+    const waechter = document.querySelector("[data-kopf-waechter]");
+    if (canObserve && waechter) {
+      new IntersectionObserver(([e]) => kopf.classList.toggle("ist-gescrollt", !e.isIntersecting)).observe(waechter);
+    } else {
+      kopf.classList.add("ist-gescrollt");
+    }
+    // Alle Flächen beobachten; liegen zwei unter der Mittellinie (ein Bogen überlappt den Abschnitt davor), zählt die
+    // spätere im Dokument – sie liegt oben
+    const flaechen = [...document.querySelectorAll("main > .kapitel, .subpage main, [data-fuss]")];
+    if (canObserve && flaechen.length) {
+      let band;
+      const unter = new Set();
+      const anwenden = () => {
+        let oben = null;
+        for (const f of flaechen) if (unter.has(f)) oben = f;
+        kopf.classList.toggle("ist-hell", Boolean(oben && (oben.classList.contains("papier") || oben.matches(".subpage main"))));
+      };
+      const beobachten = () => {
+        band?.disconnect();
+        unter.clear();
+        const insel = kopf.querySelector(".kopf-insel");
+        const r = insel ? insel.getBoundingClientRect() : { top: 20, height: 64 };
+        const mitte = Math.max(1, Math.round(r.top + r.height / 2));
+        band = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) e.isIntersecting ? unter.add(e.target) : unter.delete(e.target);
+            anwenden();
+          },
+          { rootMargin: `-${mitte}px 0px -${Math.max(0, window.innerHeight - mitte - 1)}px 0px` },
+        );
+        flaechen.forEach((f) => band.observe(f));
+      };
+      beobachten();
+      let t = 0;
+      window.addEventListener("resize", () => {
+        clearTimeout(t);
+        t = setTimeout(beobachten, 150);
+      });
+    }
+  }
+
+  // ---- Kapitel-Faden: Jedes Kapitel (main [data-kapitel]) wird an einem 1 % hohen Band bei 45 % der Fensterhöhe
+  // gemessen. Dann markiert es seinen Eintrag der Kopfzeile (data-navi: Marke 1, Helferplanung 2–4, Funktionen 5,
+  // Finanzen 6, Sicherheit 7, Fragen 8–9, Demo 10) und seinen Rastpunkt (aria-current="location"). Die Pinnnadel rastet
+  // als Feder ein (CSS), die Tempo-Striche dehnen sich in Fahrtrichtung. Der Name steht bei Hover und Fokus daneben und,
+  // nach einem Klick auf einen Rastpunkt, beim Einrasten 1,5 s lang – beim bloßen Durchscrollen nicht (er läge sonst
+  // über den Überschriften). ----
+  const faden = document.querySelector("[data-faden]");
+  const striche = document.querySelector("[data-faden-striche]");
+  const naviLinks = [...document.querySelectorAll("[data-navi]")];
+  const ziele = [...document.querySelectorAll("[data-ziel]")];
+  if (kopf && ziele.length) {
+    let kapitel = Number(kopf.dataset.kapitel) || 1;
+    let strichAnimation;
+    const markieren = (n) => {
+      for (const a of naviLinks) {
+        if (a.dataset.navi.split(" ").includes(String(n))) a.setAttribute("aria-current", "true");
+        else a.removeAttribute("aria-current");
+      }
+      for (const a of ziele) {
+        if (a.dataset.ziel === String(n)) a.setAttribute("aria-current", "location");
+        else a.removeAttribute("aria-current");
+      }
     };
-    update();
-    window.addEventListener(
-      "scroll",
-      () => {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(update);
-      },
-      { passive: true },
+    let gewaehlt = 0;
+    let gewaehltBis = 0;
+    ziele.forEach((a) =>
+      a.addEventListener("click", () => {
+        gewaehlt = Number(a.dataset.ziel);
+        gewaehltBis = performance.now() + 2500;
+      }),
     );
+    const ansagen = (n) => {
+      ziele.forEach((a) => a.classList.remove("ist-angesagt"));
+      const geklickt = n === gewaehlt && performance.now() < gewaehltBis;
+      gewaehlt = 0;
+      if (!geklickt || n === 1 || !kopf.classList.contains("ist-gescrollt") || faden?.matches(":hover, :focus-within")) return;
+      const ziel = ziele[n - 1];
+      if (!ziel) return;
+      void ziel.offsetWidth; // Animation neu starten, falls dasselbe Kapitel kurz nacheinander angesagt wird
+      ziel.classList.add("ist-angesagt");
+    };
+    ziele.forEach((a) =>
+      a.addEventListener("animationend", (e) => {
+        if (e.animationName === "ansage") a.classList.remove("ist-angesagt");
+      }),
+    );
+    markieren(kapitel);
+    const setKapitel = (n) => {
+      if (n === kapitel) return;
+      const vor = n > kapitel;
+      kapitel = n;
+      kopf.dataset.kapitel = String(n);
+      markieren(n);
+      ansagen(n);
+      if (!darfBewegen() || !striche?.animate) return;
+      strichAnimation?.cancel();
+      // vorwärts dehnen sich die Tempo-Striche in Fahrtrichtung (.6 → 1,4 → 1); rückwärts blenden sie während der Fahrt aus
+      strichAnimation = vor
+        ? striche.animate(
+            [
+              { transform: "scaleX(.6)", opacity: 0 },
+              { transform: "scaleX(1.4)", opacity: 1, offset: 0.45 },
+              { transform: "scaleX(1)", opacity: 1 },
+            ],
+            { duration: 520, easing: EASE_OUT },
+          )
+        : striche.animate([{ opacity: 1 }, { opacity: 0, offset: 0.15 }, { opacity: 0, offset: 0.75 }, { opacity: 1 }], {
+            duration: 600,
+            easing: "linear",
+          });
+    };
+    // Namen bei Hover: der erste nach 120 ms (CSS), danach für die Nachbarn sofort, bis der Zeiger 400 ms weg ist
+    if (faden) {
+      let sofort = 0;
+      faden.addEventListener("pointerover", (e) => {
+        if (!(e.target instanceof Element) || !e.target.closest(".faden-ziel")) return;
+        clearTimeout(sofort);
+        ziele.forEach((a) => a.classList.remove("ist-angesagt"));
+        sofort = setTimeout(() => faden.classList.add("sofort"), 150);
+      });
+      faden.addEventListener("pointerout", (e) => {
+        if (!(e.target instanceof Element) || !e.target.closest(".faden-ziel")) return;
+        clearTimeout(sofort);
+        sofort = setTimeout(() => faden.classList.remove("sofort"), 400);
+      });
+    }
+    const teile = document.querySelectorAll("main [data-kapitel]");
+    if (canObserve && teile.length) {
+      const band = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) if (e.isIntersecting) setKapitel(Number(e.target.dataset.kapitel));
+        },
+        { rootMargin: "-45% 0px -54% 0px" },
+      );
+      teile.forEach((el) => band.observe(el));
+      // Wer die Fußzeile sieht, ist im letzten Kapitel
+      const fuss = document.querySelector("[data-fuss]");
+      if (fuss) {
+        new IntersectionObserver(
+          ([e]) => {
+            if (e.isIntersecting) setKapitel(10);
+          },
+          { threshold: 0.3 },
+        ).observe(fuss);
+      }
+    }
   }
 
-  // Kopieren der E-Mail-Adresse im Kontaktbereich (für Webmail, wenn sich beim Klick kein E-Mail-Programm öffnet). Der
-  // Knopf ist im HTML versteckt und erscheint nur, wenn der Browser die Zwischenablage anbietet (sichere Verbindung).
+  // ---- Einblenden (.erscheint): einmal, dann bleibt es. Geschwister folgen mit 60 ms Versatz (höchstens vier). Was
+  // nach 4,5 s noch verborgen im Bild steht (etwa nach einem Sprung), erscheint sofort. ----
+  const erscheint = [...document.querySelectorAll(".erscheint")];
+  if (erscheint.length) {
+    if (!canObserve || !darfBewegen()) {
+      erscheint.forEach((el) => el.classList.add("ist-da"));
+    } else {
+      for (const el of erscheint) {
+        const geschwister = [...(el.parentElement?.children ?? [])].filter((g) => g.classList.contains("erscheint"));
+        const i = geschwister.indexOf(el);
+        if (i > 0) el.style.setProperty("--d", `${Math.min(i, 3) * 60}ms`);
+      }
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            e.target.classList.add("ist-da");
+            io.unobserve(e.target);
+          }
+        },
+        { rootMargin: "0px 0px -12% 0px" },
+      );
+      erscheint.forEach((el) => io.observe(el));
+      setTimeout(() => {
+        for (const el of erscheint) {
+          const r = el.getBoundingClientRect();
+          if (r.bottom > 0 && r.top < window.innerHeight) el.classList.add("ist-da");
+        }
+      }, 4500);
+    }
+  }
+
+  // ---- Aufklappbare Frage als Sprungziel (#ausprobieren): Führt die Adresse auf ein geschlossenes <details> (oder
+  // hinein), öffnet es sich – sonst stünde dort nur die Frage. ----
+  const frageOeffnen = () => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+    const details = document.getElementById(id)?.closest("details");
+    if (details && !details.open) details.open = true;
+  };
+  frageOeffnen();
+  window.addEventListener("hashchange", frageOeffnen);
+
+  // ---- Kopieren der E-Mail-Adresse (für Webmail, wenn sich beim Klick kein E-Mail-Programm öffnet). Der Knopf steht mit
+  // JavaScript von Anfang an da (kein Springen) und verschwindet nur ohne Zwischenablage (ohne sichere Verbindung). ----
   for (const button of document.querySelectorAll("[data-copy]")) {
-    if (!navigator.clipboard?.writeText) continue;
-    button.hidden = false;
+    if (!navigator.clipboard?.writeText) {
+      button.hidden = true;
+      continue;
+    }
     const label = button.querySelector(".copy-label");
     const status = button.parentElement?.querySelector(".copy-status");
     const idle = label?.textContent ?? "";
@@ -104,6 +270,45 @@
     });
   }
 
+  // ---- Popover der Funktionen: Nach Esc oder × steht der Fokus wieder auf dem Knopf, der es geöffnet hat. Das erledigt
+  // sonst der Browser – Safari fokussiert Knöpfe beim Klick aber nicht und gäbe den Fokus an body zurück. ----
+  for (const pop of document.querySelectorAll("[popover][id]")) {
+    const ausloeser = document.querySelector(`[popovertarget="${pop.id}"]:not([popovertargetaction="hide"])`);
+    pop.addEventListener("toggle", (e) => {
+      if (e.newState !== "closed" || !ausloeser) return;
+      requestAnimationFrame(() => {
+        const fokus = document.activeElement;
+        if (!fokus || fokus === document.body || pop.contains(fokus)) ausloeser.focus({ preventScroll: true });
+      });
+    });
+  }
+
+  // ---- Schalter „Bewegung anhalten“ (WCAG 2.2.2): hält Lichtfluss und Dauerbewegungen an (Ereignis vf:ruhe für
+  // buehne.js). Gilt nur für diesen Besuch – die Seite speichert nichts im Gerät. ----
+  const ruheKnoepfe = [...document.querySelectorAll("[data-ruhe-knopf]")];
+  if (ruheKnoepfe.length && document.querySelector("canvas[data-fluss]")) {
+    let ruhig = false;
+    const zeigen = () => {
+      for (const k of ruheKnoepfe) {
+        k.hidden = !darfBewegen();
+        k.setAttribute("aria-pressed", String(ruhig));
+        const l = k.querySelector("[data-ruhe-label]");
+        if (l) l.textContent = ruhig ? "Bewegung fortsetzen" : "Bewegung anhalten";
+      }
+    };
+    for (const k of ruheKnoepfe) {
+      k.addEventListener("click", () => {
+        ruhig = !ruhig;
+        root.classList.toggle("ist-ruhig", ruhig);
+        zeigen();
+        document.dispatchEvent(new CustomEvent("vf:ruhe", { detail: { ruhig } }));
+      });
+    }
+    zeigen();
+    bewegungAus.addEventListener("change", zeigen);
+  }
+
+  // ---- Wörtlich aus site.js c112a20, Zeilen 107–140 (Bild-Laden und Start der Vorführungen) – nicht ändern ----
   // Bildschirmfotos: ruhiger Platzhalter, bis das Bild da ist; danach blendet es weich ein. Bereits geladene Bilder
   // (Zwischenspeicher) bleiben unberührt – so blitzt nichts auf.
   for (const img of document.querySelectorAll(".browser img:not(.live-frame), .phone img, .laptop-screen img")) {
@@ -137,787 +342,5 @@
       { threshold: 0.5, rootMargin: "0px 0px -8% 0px" },
     );
     observer.observe(scene);
-  }
-
-  // Live-Fenster: In Browserbildern bedient ein Mauszeiger die Anwendung (site.css „Live-Fenster“). Je Fenster ein kurzer
-  // Ablaufplan: frame n = Bild n der Folge einblenden (0 = das ruhige Bild), move = Zeiger zu einer Stelle (Prozent des
-  // Bildes, Werte aus tools/capture-screenshots.mjs), click = Einfedern und Ring, show/hide = Zeiger ein-/ausblenden,
-  // keys = Tastenkürzel einblenden, wait = Pause (ms). Im Kapitel Helferschichten außerdem: step n = Schritt n der Liste
-  // darunter hervorheben (0 = keiner; data-shown am [data-story], dazu --story-ms = Dauer bis zum nächsten step für den
-  // Balken), print = das gedruckte Blatt herausschieben bzw. zurück (.is-printed), phone n = im Telefon daneben Bild n
-  // zeigen (0 = sein ruhiges Bild; so zeigen Telefon und Fenster immer denselben Stand). Der Plan wiederholt sich,
-  // solange das Fenster im Bild ist (und sein Reiter gewählt), und beginnt jedes Mal von vorn – erst wenn alle Bilder
-  // geladen sind. Bei reduzierter Bewegung bleibt es beim ruhigen Bild (die Folge wird gar nicht geladen).
-  // Jedes Fenster hat einen Knopf „Anhalten“ (außerhalb der für Screenreader verborgenen Leiste, erscheint erst, wenn das
-  // Fenster abspielen kann). Er gilt für alle Fenster der Seite zugleich – wer eines anhält, will auch in den anderen
-  // Themen Ruhe: Angehalten zeigt jedes das ruhige Bild, die Schritte stehen gleichrangig; „Abspielen“ beginnt von vorn.
-  const LIVE_SCENES = {
-    // Helferschichten, in drei Schritten wie die Liste darunter: auf „Neue Schicht“ zeigen, beim Getränkestand
-    // eintragen (das Telefon wechselt mit dem Klick von „vorher“ zu „nachher“), „Drucken“ – danach hebt sich der
-    // gedruckte Plan vom Stapel
-    schichten: {
-      rest: "50% 96%",
-      steps: [
-        ["step", 1], ["frame", 1], ["phone", 1], ["show"], ["wait", 700],
-        ["move", "63.57% 4.77%", 1150], ["frame", 5, 150], ["wait", 1700],
-        ["step", 2], ["frame", 1, 150], ["move", "87.36% 85.54%", 1200], ["frame", 2, 150], ["wait", 450], ["click"], ["frame", 3], ["phone", 0, 150], ["wait", 2300],
-        ["step", 3], ["frame", 0, 150], ["move", "77.18% 4.77%", 1150], ["frame", 4, 150], ["wait", 400], ["click"], ["print", true], ["wait", 2800],
-        ["print", false], ["frame", 0, 150], ["move", "50% 96%", 1000], ["hide"], ["step", 0], ["wait", 1100],
-      ],
-    },
-    // Suche: Strg K, „Hel“ tippen, auf einen Treffer zeigen
-    suche: {
-      rest: "72% 90%",
-      steps: [
-        ["frame", 1], ["wait", 900], ["keys", true], ["wait", 650], ["frame", 2], ["wait", 400], ["keys", false], ["wait", 600],
-        ["frame", 3, 90], ["wait", 280], ["frame", 4, 90], ["wait", 280], ["frame", 0, 90], ["wait", 900],
-        ["show"], ["move", "32.09% 33.76%", 1000], ["frame", 5, 150], ["wait", 1900],
-        ["frame", 0, 150], ["move", "72% 90%", 900], ["hide"], ["wait", 900],
-      ],
-    },
-    // Mitglieder: ins Suchfeld klicken, „Koch“ tippen, filtern
-    mitglieder: {
-      rest: "45% 82%",
-      steps: [
-        ["frame", 0], ["show"], ["wait", 900],
-        ["move", "19.61% 36.6%", 1100], ["click"], ["frame", 1, 150], ["wait", 650], ["frame", 2, 120], ["wait", 800],
-        ["move", "62.42% 43.09%", 1100], ["frame", 3, 150], ["wait", 400], ["click"], ["frame", 4], ["wait", 2400],
-        ["move", "45% 82%", 1000], ["hide"], ["wait", 900],
-      ],
-    },
-    // Kalender: Monat als Liste und zurück zum Monat
-    veranstaltungen: {
-      rest: "58% 86%",
-      steps: [
-        ["frame", 0], ["show"], ["wait", 900],
-        ["move", "93.72% 29.81%", 1100], ["frame", 1, 150], ["wait", 400], ["click"], ["frame", 2], ["wait", 2300],
-        ["move", "72.08% 29.81%", 900], ["frame", 3, 150], ["wait", 400], ["click"], ["frame", 0], ["wait", 900],
-        ["move", "58% 86%", 900], ["hide"], ["wait", 900],
-      ],
-    },
-    // Auswertungen: Diagramm als Fläche, als Balken, wieder als Linie
-    auswertungen: {
-      rest: "62% 88%",
-      steps: [
-        ["frame", 0], ["show"], ["wait", 900],
-        ["move", "46.16% 34.4%", 1000], ["click"], ["frame", 1], ["wait", 1900],
-        ["move", "56.8% 34.4%", 650], ["click"], ["frame", 2], ["wait", 1900],
-        ["move", "36.29% 34.4%", 850], ["click"], ["frame", 0], ["wait", 1300],
-        ["move", "62% 88%", 900], ["hide"], ["wait", 900],
-      ],
-    },
-  };
-  const liveWindows = [...document.querySelectorAll(".live[data-live]")];
-  // Ohne Live-Fenster stehen Telefon und Schritte im Kapitel Helferschichten allein (gleiche Abfrage wie in site.css)
-  const STORY_COMPACT = "(max-width: 719px), (max-width: 999px) and (max-height: 500px)";
-  if (liveWindows.length && canObserve && !reduceMotion) {
-    const ease = "cubic-bezier(0.45, 0, 0.25, 1)"; // sanftes Ease-in-out
-    let paused = false;
-    const deciders = [];
-    const toggles = [];
-    const setPaused = (value) => {
-      paused = value;
-      for (const button of toggles) {
-        button.setAttribute("aria-label", paused ? "Vorführung abspielen" : "Vorführung anhalten");
-        button.classList.toggle("is-paused", paused);
-        const label = button.querySelector(".live-toggle-label");
-        if (label) label.textContent = paused ? "Abspielen" : "Anhalten";
-      }
-      for (const decide of deciders) decide();
-    };
-    for (const live of liveWindows) {
-      const scene = LIVE_SCENES[live.dataset.live];
-      const frames = [...live.querySelectorAll(".live-frame")];
-      const pointer = live.querySelector(".live-pointer");
-      const cursor = live.querySelector(".live-cursor");
-      const ring = live.querySelector(".live-ring");
-      const keys = live.querySelector(".live-keys");
-      const story = live.closest("[data-story]"); // Schrittliste, Telefon und gedrucktes Blatt (nur Helferschichten)
-      const twins = story ? [...story.querySelectorAll(".story-phone .live-frame")] : []; // Telefon: Bild „vorher“
-      if (!scene || !frames.length || !pointer || !cursor || !ring) continue;
-      // Dauer jedes step-Eintrags bis zum nächsten (Bewegungen, Pausen, Klicks) – so lange füllt sich sein Balken
-      const spans = scene.steps.map(([step], i) => {
-        if (step !== "step") return 0;
-        let ms = 0;
-        for (const [next, a, b] of scene.steps.slice(i + 1)) {
-          if (next === "step") break;
-          if (next === "move") ms += b;
-          else if (next === "wait") ms += a;
-          else if (next === "click") ms += 140;
-        }
-        return ms;
-      });
-      const mark = (n, ms) => {
-        if (!story) return;
-        if (n) {
-          story.style.setProperty("--story-ms", `${ms}ms`);
-          story.dataset.shown = String(n);
-        } else story.removeAttribute("data-shown");
-      };
-      let run = 0; // Nummer des laufenden Durchgangs – ändert sie sich, bricht der alte ab
-      let at = scene.rest;
-      let layer = 1;
-      let ready = null;
-      const load = () => {
-        live.classList.add("is-live"); // Ebenen einhängen: erst jetzt lädt der Browser die Bilder der Folge
-        story?.classList.add("is-live");
-        return (ready ??= Promise.all(
-          [...frames, ...twins].map((img) => {
-            img.loading = "eager";
-            return img.decode().catch(() => {});
-          }),
-        ));
-      };
-      const place = (spot) => {
-        at = spot;
-        pointer.style.setProperty("translate", spot);
-      };
-      const reset = () => {
-        // Zeigerweg, Einfedern und Ring sofort beenden – sonst setzte ein noch laufender Weg den Zeiger danach woandershin
-        for (const animation of [pointer, cursor, ring].flatMap((element) => element.getAnimations?.() ?? [])) {
-          if (!("transitionProperty" in animation)) animation.cancel(); // nur die eigenen, nicht das Ausblenden per CSS
-        }
-        for (const img of frames) {
-          img.style.setProperty("transition-duration", "0ms");
-          img.classList.remove("is-on");
-          img.style.removeProperty("z-index");
-        }
-        twin(0, 0);
-        layer = 1;
-        pointer.classList.remove("is-on");
-        keys?.classList.remove("is-on");
-        mark(0);
-        story?.classList.remove("is-printed");
-        place(scene.rest);
-      };
-      // Überblenden: das neue Bild legt sich darüber und blendet ein; darunterliegende gehen danach aus. Beim ruhigen
-      // Bild (0) blendet das oberste aus. So scheint nie ein falsches Bild durch.
-      const frame = (n, fade = 280) => {
-        const next = frames[n - 1];
-        const shown = frames.filter((img) => img.classList.contains("is-on"));
-        if (next) {
-          next.style.setProperty("z-index", String(++layer));
-          next.style.setProperty("transition-duration", `${fade}ms`);
-          next.classList.add("is-on");
-          const id = run;
-          setTimeout(() => {
-            if (id !== run) return; // inzwischen angehalten oder neu begonnen
-            for (const img of shown) {
-              if (img === next) continue;
-              img.style.setProperty("transition-duration", "0ms");
-              img.classList.remove("is-on");
-            }
-          }, fade + 30);
-        } else {
-          for (const img of shown) {
-            img.style.setProperty("transition-duration", `${fade}ms`);
-            img.classList.remove("is-on");
-          }
-        }
-      };
-      // Telefon: Bild n über seinem ruhigen Bild ein-, alle anderen ausblenden (0 = nur das ruhige)
-      const twin = (n, fade = 280) => {
-        twins.forEach((img, i) => {
-          img.style.setProperty("transition-duration", `${fade}ms`);
-          img.classList.toggle("is-on", i === n - 1);
-        });
-      };
-      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      const move = async (spot, ms) => {
-        const id = run;
-        const motion = pointer.animate([{ translate: at }, { translate: spot }], { duration: ms, easing: ease, fill: "forwards" });
-        await motion.finished.catch(() => {});
-        if (id !== run) return; // inzwischen angehalten: reset() hat den Zeiger schon an seinen Ruheplatz gesetzt
-        place(spot);
-        motion.cancel();
-      };
-      const click = async () => {
-        cursor.animate([{ scale: 1 }, { scale: 0.86 }, { scale: 1 }], { duration: 260, easing: "ease-out" });
-        ring.animate(
-          [
-            { opacity: 0, scale: 0.2 },
-            { opacity: 1, scale: 0.4, offset: 0.15 },
-            { opacity: 0, scale: 1 },
-          ],
-          { duration: 620, easing: "ease-out" },
-        );
-        await wait(140);
-      };
-      const play = async (id) => {
-        await load();
-        for (let round = 0; id === run; round++) {
-          for (const [i, [step, a, b]] of scene.steps.entries()) {
-            if (id !== run) return;
-            if (step === "frame") frame(a, round === 0 && a && !frames.some((img) => img.classList.contains("is-on")) ? 0 : b);
-            else if (step === "phone") twin(a, round === 0 && a ? 0 : b);
-            else if (step === "step") mark(a, spans[i]);
-            else if (step === "print") story?.classList.toggle("is-printed", a);
-            else if (step === "move") await move(a, b);
-            else if (step === "click") await click();
-            else if (step === "show") pointer.classList.add("is-on");
-            else if (step === "hide") pointer.classList.remove("is-on");
-            else if (step === "keys") keys?.classList.toggle("is-on", a);
-            else if (step === "wait") await wait(a);
-          }
-        }
-      };
-      let visible = false;
-      const decide = () => {
-        const should = visible && !paused && !live.closest("[inert]") && document.visibilityState === "visible";
-        const running = run % 2 === 1; // ungerade = läuft
-        if (should === running) return;
-        run++;
-        if (should) play(run);
-        else reset();
-      };
-      reset();
-      deciders.push(decide);
-      const button = live.querySelector(".live-toggle");
-      if (button) {
-        toggles.push(button);
-        button.hidden = false;
-        button.addEventListener("click", () => setPaused(!paused));
-      }
-      new IntersectionObserver(
-        (entries) => {
-          visible = entries.some((entry) => entry.isIntersecting);
-          decide();
-        },
-        { threshold: 0.4 },
-      ).observe(live);
-      document.addEventListener("visibilitychange", decide);
-      document.addEventListener("vf:tabs", decide); // Reiter „Im Detail“ gewechselt
-
-      // Smartphone und quer gehaltenes Handy: Dort fehlt das Fenster (site.css), dem Telefon gehört dann allein der
-      // Moment, der überzeugt – einmal je Aufruf. Kurz bevor es ins Bild kommt, legt sich sein Bild „vorher“ darüber
-      // (2 von 4, „Eintragen“). Steht es zur Hälfte im Bild, ist Schritt 1 hervorgehoben; nach einer kurzen Weile tippt
-      // ein Finger auf „Eintragen“, das Bild blendet auf den Stand danach über (3 von 4, eigener Name), Schritt 2 ist
-      // hervorgehoben. Verlässt es vorher das Bild, beginnt die Weile beim nächsten Mal neu. Ohne JavaScript und bei
-      // reduzierter Bewegung zeigt das Telefon gleich den Stand danach.
-      const storyPhone = story?.querySelector(".story-phone");
-      if (storyPhone && twins.length) {
-        const compact = window.matchMedia(STORY_COMPACT);
-        const tap = storyPhone.querySelector(".story-tap");
-        let state = "idle"; // idle → ready (Bild „vorher“ steht) → done
-        let seen = false;
-        let timer = 0;
-        let primed = null;
-        const tapNow = () => {
-          state = "done";
-          tap?.animate(
-            [
-              { opacity: 0, scale: 0.3 },
-              { opacity: 1, scale: 0.7, offset: 0.25 },
-              { opacity: 0, scale: 1.2 },
-            ],
-            { duration: 800, easing: "ease-out" },
-          );
-          setTimeout(() => {
-            twin(0, 450);
-            mark(2, 2400);
-          }, 220);
-        };
-        const schedule = () => {
-          clearTimeout(timer);
-          if (state !== "ready" || !seen || !compact.matches) return;
-          mark(1, 1600);
-          timer = setTimeout(tapNow, 1600);
-        };
-        const prime = () => {
-          if (state !== "idle" || !compact.matches) return;
-          story.classList.add("is-live"); // Ebene im Telefon einhängen: erst jetzt lädt das Bild „vorher“
-          primed ??= Promise.all(
-            twins.map((img) => {
-              img.loading = "eager";
-              return img.decode().catch(() => {});
-            }),
-          );
-          primed.then(() => {
-            if (state !== "idle" || !compact.matches) return;
-            twin(1, seen ? 280 : 0); // schon im Bild (schnell gescrollt): sanft statt mit einem Sprung
-            state = "ready";
-            schedule();
-          });
-        };
-        new IntersectionObserver((entries) => entries.some((entry) => entry.isIntersecting) && prime(), {
-          rootMargin: "400px 0px",
-        }).observe(storyPhone);
-        new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) seen = entry.isIntersecting && entry.intersectionRatio >= 0.5;
-            if (state === "ready" && !seen) {
-              clearTimeout(timer);
-              mark(0);
-            }
-            schedule();
-          },
-          { threshold: [0, 0.5] },
-        ).observe(storyPhone);
-        compact.addEventListener("change", () => {
-          clearTimeout(timer);
-          if (state === "ready") state = "idle"; // das Fenster übernimmt (und setzt das Telefon zurück)
-        });
-      }
-    }
-  }
-
-  // Überschriften der Abschnitte erscheinen Wort für Wort aus der Unschärfe, wie „Bringt Vereinsarbeit in Fluss“ im
-  // Einstieg (site.css „Bewegung: Feinschliff“). Dafür bekommt jedes Wort einen Span (.sw) mit seiner Nummer (--wi). Die
-  // Spans sind inline und ohne eigene Maße – am Umbruch der Zeilen ändert sich nichts. Geschützte Leerzeichen bleiben im
-  // Wort. Nur mit Einblenden (also nicht bei „Bewegung reduzieren“ und ohne IntersectionObserver).
-  if (canObserve && !reduceMotion) {
-    for (const heading of document.querySelectorAll(".section-head.reveal > h2")) {
-      const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
-      const texts = [];
-      while (walker.nextNode()) texts.push(walker.currentNode);
-      let index = 0;
-      for (const text of texts) {
-        if (!text.data.trim()) continue;
-        const fragment = document.createDocumentFragment();
-        for (const part of text.data.split(/([ \t\r\n]+)/)) {
-          if (!part) continue;
-          if (!part.trim()) {
-            fragment.append(part);
-            continue;
-          }
-          const word = document.createElement("span");
-          word.className = "sw";
-          word.textContent = part;
-          word.style.setProperty("--wi", String(index++));
-          fragment.append(word);
-        }
-        text.replaceWith(fragment);
-      }
-      heading.classList.add("is-split");
-    }
-  }
-
-  // Sanftes Ein- und Ausblenden beim Scrollen. Versteckt wird nur, was gerade nicht zu sehen ist: beim Laden alles
-  // außerhalb des Fensters, später alles, was das Fenster ganz verlassen hat. Kommt es zurück, gleitet es aus der
-  // Richtung herein, aus der es kommt. Was gleichzeitig erscheint, folgt kurz nacheinander (Zeile für Zeile).
-  const items = document.querySelectorAll(".reveal");
-  if (items.length && canObserve && !reduceMotion) {
-    const hide = (element, above) => {
-      element.classList.toggle("from-above", above);
-      element.style.setProperty("--reveal-delay", "0ms");
-      element.classList.add("is-pending");
-    };
-    const show = (element, index) => {
-      element.style.setProperty("--reveal-delay", `${Math.min(index, 6) * 70}ms`);
-      element.classList.remove("is-pending");
-    };
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entering = [];
-        for (const entry of entries) {
-          const element = entry.target;
-          const box = entry.boundingClientRect;
-          if (entry.isIntersecting) {
-            if (element.classList.contains("is-pending")) entering.push({ element, box });
-          } else if (box.bottom <= 0 || box.top >= window.innerHeight) {
-            hide(element, box.bottom <= 0);
-          }
-        }
-        entering.sort((a, b) => a.box.top - b.box.top || a.box.left - b.box.left);
-        entering.forEach(({ element }, index) => show(element, index));
-      },
-      { rootMargin: "0px 0px -7% 0px", threshold: 0 },
-    );
-    const limit = window.innerHeight * 0.93;
-    for (const element of items) {
-      const box = element.getBoundingClientRect();
-      if (box.top > limit || box.bottom < 0) hide(element, box.bottom < 0);
-      observer.observe(element);
-    }
-  }
-
-  // Licht unter dem Zeiger (Karten der Funktionen, nur Zeigergeräte): Die Karte merkt sich die Lage des Zeigers als
-  // --mx/--my (höchstens einmal je Bild); Lichtschein und heller Rand folgen ihm (site.css „Bewegung: Feinschliff“).
-  // Gesetzt wird nur an der Karte unter dem Zeiger. Bei „Bewegung reduzieren“ bleibt es beim ruhigen Überfahren.
-  if (!reduceMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-    for (const card of document.querySelectorAll(".bento > .feat")) {
-      let frame = 0;
-      let x = 0;
-      let y = 0;
-      card.addEventListener(
-        "pointermove",
-        (event) => {
-          x = event.clientX;
-          y = event.clientY;
-          if (frame) return;
-          frame = requestAnimationFrame(() => {
-            frame = 0;
-            const box = card.getBoundingClientRect();
-            card.style.setProperty("--mx", `${Math.round(x - box.left)}px`);
-            card.style.setProperty("--my", `${Math.round(y - box.top)}px`);
-          });
-        },
-        { passive: true },
-      );
-    }
-  }
-
-  // Bewegung reduzieren – für die Reiter jedes Mal neu abgefragt (die Einstellung kann sich während des Besuchs ändern)
-  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-  // Funktionen: Jeder Eintrag der Liste (.fkt-liste, hier „Kachel“) klappt zu seiner Karte mit der ganzen Beschreibung
-  // auf (Popover – Öffnen, Schließen mit × und Esc, Klick daneben und der Fokus laufen ohne Skript). Das Skript ergänzt:
-  // - Die Karte über der Kachel wächst immer nach unten, so hoch wie ihr Inhalt (site.css). Kacheln, die sie dabei
-  //   teilweise verdeckt, blendet sie ganz aus (is-verdeckt) – sonst läse man unter ihrem Rand halbe Zeilen; die übrigen
-  //   treten per CSS zurück. Passt die Karte nicht ganz ins Bild, rollt die Seite gerade so weit, dass Kachel und Karte
-  //   zu sehen sind – weich, bei reduzierter Bewegung sofort (scroll-behavior).
-  // - Verlässt der Fokus die Karte mit der Tabulatortaste, schließt sie (sie läge sonst über den nächsten Kacheln, deren
-  //   Fokusrahmen verdeckt wäre). Ein Link darin schließt sie ebenfalls, bevor die Seite zum Abschnitt springt; steht
-  //   sein Ziel schon in der Adresse, meldet der Browser keinen Wechsel – dann wählt ein eigenes Signal den Reiter.
-  // - Das Blatt von unten (Smartphone, niedrige Bildschirme) sperrt die Seite dahinter per CSS; rollt sie doch (ältere
-  //   Browser), schließt es, statt über bewegtem Inhalt zu stehen.
-  // - Nach Esc oder × steht der Fokus wieder auf der Kachel. Das erledigt sonst der Browser – Safari aber fokussiert
-  //   Knöpfe beim Klick nicht und gäbe den Fokus an body zurück; die nächste Tabulatortaste spränge dann hinter den
-  //   Abschnitt. Ein Klick daneben, Tab und Links lassen den Fokus, wo er ist (wie ohne Skript).
-  // - Pfeiltasten wechseln zwischen den Kacheln, wie sie stehen: links/rechts zur vorigen bzw. nächsten, hoch/runter zur
-  //   Kachel darüber bzw. darunter, Pos1/Ende zur ersten bzw. letzten. Die Tabulatortaste geht wie gewohnt alle durch.
-  const sheet = window.matchMedia("(max-width: 719px), (max-height: 499px)");
-  const anchored = window.CSS?.supports?.("anchor-name: --a") ?? false; // sonst steht die Karte mittig im Fenster
-  const tiles = [...document.querySelectorAll(".fkt-liste > .feat")];
-  for (const card of document.querySelectorAll(".feat-pop")) {
-    if (typeof card.hidePopover !== "function") continue;
-    const tile = card.closest(".feat");
-    const button = tile?.querySelector(".feat-btn");
-    const close = () => {
-      if (card.matches(":popover-open")) card.hidePopover();
-    };
-    let openedAt = 0;
-    let covered = [];
-    let restore = false; // mit Esc oder × geschlossen
-    const closeOnScroll = () => {
-      if (Math.abs(window.scrollY - openedAt) > 40) close();
-    };
-    document.addEventListener(
-      "keydown",
-      (event) => {
-        if (event.key === "Escape" && card.matches(":popover-open")) restore = true;
-      },
-      true,
-    );
-    card.addEventListener("toggle", (event) => {
-      window.removeEventListener("scroll", closeOnScroll);
-      for (const other of covered) other.classList.remove("is-verdeckt");
-      covered = [];
-      if (event.newState !== "open") {
-        const active = document.activeElement;
-        if (restore && button && (!active || active === document.body || card.contains(active))) {
-          button.focus({ preventScroll: true });
-        }
-        restore = false;
-        return;
-      }
-      restore = false;
-      if (!tile) return;
-      openedAt = window.scrollY;
-      if (sheet.matches) {
-        window.addEventListener("scroll", closeOnScroll, { passive: true });
-        return;
-      }
-      if (!anchored) return;
-      // Kacheln, die gerade noch einblenden (.reveal gleitet von unten herein), sofort an ihren Platz – die Karte folgt
-      // ihrer Kachel, gemessen wird erst danach
-      for (const other of tiles) {
-        for (const animation of other.getAnimations?.() ?? []) {
-          try {
-            animation.finish();
-          } catch {
-            // endlose Animation – bleibt, wie sie ist
-          }
-        }
-      }
-      // Lage der Karte: genau über ihrer Kachel, so breit wie sie; die Höhe ohne die Transformation des Aufblendens
-      // (offsetHeight). Darunter teilweise verdeckte Kacheln ausblenden (gemessen, bevor die Seite rollt – Karte und
-      // Kacheln rollen gemeinsam).
-      const box = card.getBoundingClientRect();
-      const own = tile.getBoundingClientRect();
-      const top = Math.min(box.top, own.top);
-      const bottom = Math.max(box.top + card.offsetHeight, own.bottom);
-      for (const other of tiles) {
-        if (other === tile) continue;
-        const r = other.getBoundingClientRect();
-        const across = Math.min(r.right, box.right) - Math.max(r.left, box.left) > 10;
-        if (across && r.top < bottom - 1 && r.bottom > top + 1) covered.push(other);
-      }
-      for (const other of covered) other.classList.add("is-verdeckt");
-      const minTop = (header?.getBoundingClientRect().bottom ?? 0) + 12;
-      const maxBottom = window.innerHeight - 12;
-      let delta = Math.max(0, bottom - maxBottom);
-      if (top - delta < minTop) delta = top - minTop; // oben nie unter die Kopfzeile schieben
-      if (Math.abs(delta) > 2) window.scrollBy({ top: delta });
-    });
-    card.addEventListener("focusout", (event) => {
-      const next = event.relatedTarget; // null bei einem Klick auf Text in der Karte – dann bleibt sie offen
-      if (next instanceof Node && !card.contains(next)) close();
-    });
-    card.addEventListener("click", (event) => {
-      if (event.target instanceof Element && event.target.closest(".feat-close")) restore = true;
-      const link = event.target instanceof Element ? event.target.closest("a") : null;
-      if (!link) return;
-      close();
-      if (link.hash && link.hash === location.hash) window.dispatchEvent(new HashChangeEvent("hashchange"));
-    });
-  }
-  const featGrid = document.querySelector(".fkt-liste");
-  featGrid?.addEventListener("keydown", (event) => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    const from = event.target;
-    if (!(from instanceof HTMLElement) || !from.matches(".feat-btn")) return;
-    const buttons = [...featGrid.querySelectorAll(".feat-btn")];
-    const index = buttons.indexOf(from);
-    const box = (button) => (button.closest(".feat") ?? button).getBoundingClientRect();
-    // Nächste Reihe in der Richtung; darin die Kachel unter bzw. über der Mitte der jetzigen (sonst die nächstgelegene)
-    const vertical = (direction) => {
-      const here = box(from);
-      const middle = here.left + here.width / 2;
-      let best = -1;
-      let bestGap = Infinity;
-      let bestSide = Infinity;
-      buttons.forEach((button, i) => {
-        const other = box(button);
-        const gap = direction > 0 ? other.top - here.bottom : here.top - other.bottom;
-        if (gap < -2) return;
-        const side = Math.max(0, other.left - middle, middle - other.right);
-        if (gap < bestGap - 4 || (Math.abs(gap - bestGap) <= 4 && side < bestSide)) {
-          best = i;
-          bestGap = gap;
-          bestSide = side;
-        }
-      });
-      return best;
-    };
-    const moves = {
-      ArrowLeft: () => index - 1,
-      ArrowRight: () => index + 1,
-      ArrowUp: () => vertical(-1),
-      ArrowDown: () => vertical(1),
-      Home: () => 0,
-      End: () => buttons.length - 1,
-    };
-    const target = moves[event.key]?.() ?? -1;
-    if (target < 0 || target >= buttons.length) return;
-    event.preventDefault();
-    buttons[target].focus();
-  });
-
-  // Reiter (Abläufe, #details): Ohne JavaScript stehen die Themen untereinander. Mit JavaScript erscheint die Reiterleiste,
-  // immer ein Thema ist sichtbar. Bedienung wie bei Reitern üblich: Klick, Pfeiltasten (wählen sofort), Pos1/Ende.
-  // Führt ein Link auf ein Thema (#suche aus der Fußzeile), wird dessen Reiter gewählt.
-  // Unter dem gewählten Reiter liegt ein blauer Strich (.tabs::before), der beim Wechsel zum neuen Reiter gleitet und
-  // seine Breite anpasst – Lage und Maße setzt das Skript als Variablen. Beim Wechsel per Klick blendet das bisherige
-  // Thema kurz aus, das gewählte ruhig ein (Deckkraft und 12 px aus der Laufrichtung, erst der Text, dann das Bild) – so
-  // still wie die übrigen Abschnitte. Dafür Web Animations statt CSS-Übergängen – so lässt sich jeder Wechsel sauber
-  // abbrechen, wenn schnell hintereinander geklickt wird. Per Pfeiltaste und bei reduzierter Bewegung wechselt alles
-  // sofort.
-  // Auf dem Smartphone klebt die Reiterleiste unter der Kopfzeile (site.css); ist ein Thema dort schon ein Stück gelesen,
-  // rollt ein Tipp auf einen anderen Reiter an den Anfang des neuen Themas zurück, wo direkt unter der Leiste sein Bild
-  // steht.
-  // Die Bilder der verborgenen Themen lädt der Browser erst, wenn jemand die Reiter anfasst (Zeiger darüber, Fokus,
-  // Berührung) oder ein Thema gewählt wird: Übereinander gestapelt liegen alle im Bild, loading="lazy" allein hielte sie
-  // nicht zurück. Bis dahin stehen Adresse und Varianten des Bildes nur im Skript (die Maße hält das HTML). Ohne
-  // JavaScript bleibt es bei den normalen Bildern – alle Themen stehen dann untereinander.
-  for (const group of document.querySelectorAll("[data-tabs]")) {
-    const list = group.querySelector('[role="tablist"]');
-    const tabs = [...(list?.querySelectorAll('[role="tab"]') ?? [])];
-    const panels = tabs.map((tab) => document.getElementById(tab.getAttribute("aria-controls") ?? ""));
-    if (!list || !tabs.length || panels.some((panel) => !panel)) continue;
-    let current = -1;
-    let running = [];
-    const placePill = () => {
-      const tab = tabs[current];
-      if (!tab) return;
-      list.style.setProperty("--pill-x", `${tab.offsetLeft}px`);
-      list.style.setProperty("--pill-y", `${tab.offsetTop}px`);
-      list.style.setProperty("--pill-w", `${tab.offsetWidth}px`);
-      list.style.setProperty("--pill-h", `${tab.offsetHeight}px`);
-    };
-    // Ohne Gleiten an die neue Stelle (erste Anzeige, geänderte Fenstergröße)
-    const settlePill = () => {
-      list.classList.add("is-instant");
-      placePill();
-      list.classList.add("has-pill");
-      requestAnimationFrame(() => requestAnimationFrame(() => list.classList.remove("is-instant")));
-    };
-    const swap = (from, to, dir, instant) => {
-      for (const animation of running) animation.cancel();
-      running = [];
-      for (const panel of panels) panel.classList.remove("is-leaving");
-      if (instant || motion.matches) return;
-      from.classList.add("is-leaving"); // bleibt sichtbar, bis es ausgeblendet ist
-      const out = from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
-      out.addEventListener("finish", () => from.classList.remove("is-leaving"));
-      running.push(out);
-      // Der Text kommt dazu aus einer leichten Unschärfe (wie die Überschriften) – so verschwimmt der Wechsel der Sätze
-      // zu einer Bewegung statt zweier Texte übereinander. Das Fenster bleibt scharf (große Fläche).
-      const enter = (element, delay, blur) => {
-        if (!element) return;
-        running.push(
-          element.animate(
-            [
-              { opacity: 0, transform: `translateX(${dir * 12}px)`, filter: blur ? "blur(4px)" : "none" },
-              { opacity: 1, transform: "none", filter: "none" },
-            ],
-            { duration: 280, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
-          ),
-        );
-      };
-      enter(to.querySelector(".spot-text"), 60, true); // kurz nach dem Ausblenden des bisherigen
-      enter(to.querySelector(".spot-media"), 100, false);
-    };
-    const parked = []; // [Bild, src, srcset] der Bilder, die noch nicht laden sollen
-    const park = (panel) => {
-      for (const img of panel.querySelectorAll(".spot-media picture img")) {
-        if (img.complete && img.naturalWidth > 0) continue; // schon geladen (Zwischenspeicher)
-        parked.push([img, img.getAttribute("src"), img.getAttribute("srcset")]);
-        img.removeAttribute("srcset");
-        img.removeAttribute("src");
-      }
-    };
-    // Ohne Angabe alle Themen, sonst nur das genannte; der Platzhalter („Ladezustand der Bilder“) gilt auch hier
-    const unpark = (panel) => {
-      for (const entry of [...parked]) {
-        const [img, src, srcset] = entry;
-        if (panel && !panel.contains(img)) continue;
-        parked.splice(parked.indexOf(entry), 1);
-        const frame = img.closest(".browser, .phone");
-        if (frame) {
-          frame.classList.add("is-loading");
-          const done = () => frame.classList.remove("is-loading");
-          img.addEventListener("load", done, { once: true });
-          img.addEventListener("error", done, { once: true });
-        }
-        if (srcset) img.setAttribute("srcset", srcset);
-        if (src) img.setAttribute("src", src);
-      }
-    };
-    const select = (index, focus = false) => {
-      const previous = current;
-      current = index;
-      unpark(panels[index]);
-      tabs.forEach((tab, i) => {
-        const on = i === index;
-        tab.setAttribute("aria-selected", String(on));
-        tab.tabIndex = on ? 0 : -1;
-        panels[i].classList.toggle("is-active", on);
-        panels[i].toggleAttribute("inert", !on); // unsichtbare Themen: weder Fokus noch Vorlesen
-      });
-      // Per Pfeiltaste (focus) ohne Bewegung: Der Strich springt, das Thema wechselt sofort
-      if (focus) settlePill();
-      else placePill();
-      if (previous >= 0 && previous !== index) swap(panels[previous], panels[index], index > previous ? 1 : -1, focus);
-      if (focus) tabs[index].focus();
-      document.dispatchEvent(new CustomEvent("vf:tabs")); // Live-Fenster: nur das sichtbare Thema läuft
-    };
-    // Gewählt per Tipp oder Pfeiltaste: Klebt die Leiste (Smartphone) und liegt der Anfang des Themas schon über ihr,
-    // zurück an den Anfang – so weit, dass die Leiste wieder an ihrem Platz steht
-    const toStart = () => {
-      if (getComputedStyle(list).position !== "sticky") return;
-      const bar = list.getBoundingClientRect();
-      const gap = parseFloat(getComputedStyle(list).marginBottom) || 0;
-      const delta = panels[current].getBoundingClientRect().top - (bar.bottom + gap);
-      if (delta < -1) window.scrollBy({ top: delta, behavior: motion.matches ? "auto" : "smooth" });
-    };
-    const choose = (index, focus = false) => {
-      const changed = index !== current;
-      select(index, focus);
-      if (changed) toStart();
-    };
-    for (const [i, panel] of panels.entries()) {
-      panel.setAttribute("role", "tabpanel");
-      panel.setAttribute("aria-labelledby", tabs[i].id);
-    }
-    list.hidden = false;
-    group.classList.add("is-tabs");
-    tabs.forEach((tab, i) => tab.addEventListener("click", () => choose(i)));
-    list.addEventListener("keydown", (event) => {
-      const current = tabs.indexOf(document.activeElement);
-      if (current < 0) return;
-      const moves = { ArrowLeft: current - 1, ArrowRight: current + 1, Home: 0, End: tabs.length - 1 };
-      // Breit stehen die Reiter untereinander (site.css „Kürzen und Ordnen“): dann auch hoch/runter
-      if (getComputedStyle(list).flexDirection === "column") Object.assign(moves, { ArrowUp: current - 1, ArrowDown: current + 1 });
-      if (!(event.key in moves)) return;
-      event.preventDefault();
-      choose((moves[event.key] + tabs.length) % tabs.length, true);
-    });
-    const fromHash = () => {
-      const index = panels.findIndex((panel) => `#${panel.id}` === location.hash);
-      if (index >= 0) select(index);
-      return index >= 0;
-    };
-    const first = Math.max(0, panels.findIndex((panel) => `#${panel.id}` === location.hash));
-    panels.forEach((panel, i) => i !== first && park(panel));
-    for (const type of ["pointerenter", "focusin", "touchstart"]) {
-      list.addEventListener(type, () => unpark(), { once: true, passive: true });
-    }
-    window.addEventListener("beforeprint", () => unpark()); // im Druck stehen alle Themen untereinander
-    if (!fromHash()) select(0);
-    settlePill();
-    if ("ResizeObserver" in window) new ResizeObserver(settlePill).observe(list);
-    else window.addEventListener("resize", settlePill, { passive: true });
-    window.addEventListener("hashchange", fromHash);
-  }
-
-  // Aufklappbare Frage als Sprungziel (#ablauf aus der Fußzeile): Führt die Adresse auf ein geschlossenes <details>,
-  // öffnet es sich – sonst stünde dort nur die Frage.
-  const openTarget = () => {
-    const id = decodeURIComponent(location.hash.slice(1));
-    const target = id ? document.getElementById(id) : null;
-    if (target instanceof HTMLDetailsElement) target.open = true;
-  };
-  openTarget();
-  window.addEventListener("hashchange", openTarget);
-
-  // Navigation: Abschnitt, der gerade in der Mitte des Fensters steht, wird hervorgehoben; eine Markierung gleitet
-  // dorthin – und beim Überfahren zum Menüpunkt unter dem Mauszeiger.
-  const links = [...document.querySelectorAll('.nav ul a[href^="#"]')];
-  const sections = links.map((link) => document.getElementById(link.hash.slice(1))).filter(Boolean);
-  const list = document.querySelector(".nav-links");
-  const indicator = list?.querySelector(".nav-indicator");
-  let activeLink = null;
-  const moveIndicator = (link) => {
-    if (!indicator || !list) return;
-    if (!link || link.offsetParent === null) {
-      indicator.classList.remove("is-visible");
-      return;
-    }
-    const wasVisible = indicator.classList.contains("is-visible");
-    indicator.classList.toggle("no-slide", !wasVisible || reduceMotion); // erstes Erscheinen: an Ort und Stelle einblenden
-    const box = link.getBoundingClientRect();
-    const origin = list.getBoundingClientRect();
-    indicator.style.setProperty("--x", `${box.left - origin.left}px`);
-    indicator.style.setProperty("--w", `${box.width}px`);
-    indicator.classList.add("is-visible");
-  };
-  if (indicator && list) {
-    for (const link of links) {
-      link.addEventListener("pointerenter", () => moveIndicator(link));
-      link.addEventListener("focus", () => moveIndicator(link));
-    }
-    list.addEventListener("pointerleave", () => moveIndicator(activeLink));
-    list.addEventListener("focusout", (event) => {
-      if (!list.contains(event.relatedTarget)) moveIndicator(activeLink);
-    });
-    window.addEventListener("resize", () => moveIndicator(activeLink), { passive: true });
-  }
-  if (sections.length && canObserve) {
-    const inView = new Set();
-    const spy = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) inView.add(entry.target);
-          else inView.delete(entry.target);
-        }
-        const current = sections.find((section) => inView.has(section));
-        activeLink = current ? links.find((link) => link.hash === `#${current.id}`) ?? null : null;
-        for (const link of links) link.classList.toggle("is-active", link === activeLink);
-        if (!list?.matches(":hover")) moveIndicator(activeLink);
-      },
-      { rootMargin: "-45% 0px -50% 0px" },
-    );
-    for (const section of sections) spy.observe(section);
   }
 })();

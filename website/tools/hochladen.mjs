@@ -5,7 +5,7 @@
 //
 // Server und Benutzer stehen bei IONOS unter Hosting → SFTP; ein anderer Port geht als server:port. Das Passwort fragt
 // sftp selbst im Terminal ab, es wird nirgends gespeichert. Hochgeladen wird genau das, was auch ins Upload-Paket kommt
-// (tools/paket.mjs) – auch die Stildatei wie dort ohne Entwicklerkommentare (eine bereinigte Kopie in einem temporären
+// (tools/paket.mjs) – auch Stildatei und Skripte wie dort ohne Entwicklerkommentare (eine bereinigte Kopie in einem temporären
 // Ordner, die danach wieder gelöscht wird). Vorhandene Dateien werden überschrieben, auf dem Server wird nichts gelöscht.
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -29,7 +29,7 @@ if (!server || !benutzer || !erlaubt.test(server) || !erlaubt.test(benutzer) || 
 // Wie beim Upload-Paket: Werkzeuge, Paket, README, Vorschau-Starter und Netlify-Header bleiben lokal.
 const { ordner, dateien } = sammlePaket(root);
 
-// Bereinigte Stildatei(en) in einen temporären Ordner schreiben; hochgeladen wird diese Kopie statt des Quelltexts.
+// Bereinigte Stildatei und Skripte in einen temporären Ordner schreiben; hochgeladen wird diese Kopie statt des Quelltexts.
 const bereinigtOrdner = fs.mkdtempSync(path.join(os.tmpdir(), "vereinsflow-upload-"));
 const aufraeumen = () => fs.rmSync(bereinigtOrdner, { recursive: true, force: true });
 const quelle = new Map();
@@ -55,7 +55,7 @@ const befehle = [
 if (nurAnzeigen) {
   console.log(befehle.join("\n"));
   // Die bereinigte Kopie bleibt hier liegen, damit die gezeigten Befehle funktionieren (temporärer Ordner des Systems).
-  if (quelle.size) console.log(`\n# Bereinigte Stildatei: ${[...quelle.values()].join(", ")}`);
+  if (quelle.size) console.log(`\n# Bereinigte Dateien: ${[...quelle.values()].join(", ")}`);
   process.exit(0);
 }
 

@@ -4,8 +4,12 @@
 // Die Stildatei besteht zu fast einem Drittel aus Entwicklerkommentaren. Hochgeladen wird deshalb eine Kopie ohne
 // Kommentare, ohne Einrückung und ohne Leerzeilen; der kommentierte Quelltext in assets/css/site.css bleibt unverändert.
 // Regeln, Werte, Zeichenketten und url(...) bleiben erhalten, nur Leerraum dazwischen wird gekürzt; bereinigeCss bricht ab,
-// wenn sich dabei Klammern, Semikolons oder url(...)-Angaben ändern würden.
+// wenn sich dabei Klammern, Semikolons oder url(...)-Angaben ändern würden. Die Skripte in assets/js/ ebenso (ohne
+// Umbenennen, ohne Umstellen): Kommentare und Einrückung fallen weg, Zeilenumbrüche bleiben (automatische Semikolons
+// wirken also wie im Quelltext); bereinigeJs prüft das Ergebnis mit „node --check“ und bricht bei einem Fehler ab.
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 // Wie bisher beim Upload-Paket: Werkzeuge, Paket, README, Vorschau-Starter und Netlify-Header bleiben lokal
@@ -33,13 +37,138 @@ export function sammlePaket(root) {
   return { ordner, dateien };
 }
 
-/** Wird diese Datei für den Webspace bereinigt? (derzeit nur Stildateien) */
-export const wirdBereinigt = (pfad) => pfad.endsWith(".css");
+/** Wird diese Datei für den Webspace bereinigt? (Stildateien und die Skripte in assets/js/) */
+export const wirdBereinigt = (pfad) => pfad.endsWith(".css") || (pfad.startsWith("assets/js/") && pfad.endsWith(".js"));
 
-/** Inhalt einer Datei, wie er auf den Webspace kommt: Stildateien bereinigt, alles andere unverändert. */
+/** Inhalt einer Datei, wie er auf den Webspace kommt: Stildateien und Skripte bereinigt, alles andere unverändert. */
 export function paketInhalt(root, pfad) {
   const roh = fs.readFileSync(path.join(root, pfad));
-  return wirdBereinigt(pfad) ? Buffer.from(bereinigeCss(roh.toString("utf8"), pfad), "utf8") : roh;
+  if (!wirdBereinigt(pfad)) return roh;
+  const text = roh.toString("utf8");
+  return Buffer.from(pfad.endsWith(".css") ? bereinigeCss(text, pfad) : bereinigeJs(text, pfad), "utf8");
+}
+
+/**
+ * Entfernt Kommentare und Einrückung aus JavaScript, ohne etwas umzubenennen oder umzustellen. Liest wie ein einfacher
+ * Tokenizer: Zeichenketten ('…', "…"), Vorlagen (`…${…}…`, auch verschachtelt) und reguläre Ausdrücke (/…/ nach einem
+ * Operator, einer öffnenden Klammer oder einem Schlüsselwort) werden unverändert übernommen. Leerraum mit Umbruch wird zu
+ * einem Umbruch, ohne Umbruch zu einem Leerzeichen. Zum Schluss prüft „node --check“ die Syntax (Module als .mjs).
+ */
+export function bereinigeJs(js, name = "JS") {
+  const n = js.length;
+  let aus = "";
+  let leer = "";
+  let letztes = ""; // letztes ausgegebenes Zeichen außerhalb von Leerraum
+  let wort = ""; // letztes Wort (für „return /…/“)
+  const vorlagen = []; // je offener ${ die Klammertiefe
+  let tiefe = 0;
+  const wortzeichen = /[A-Za-z0-9_$\u0080-\uffff]/;
+  const vorRegex = /[(,=:[!&|?{};+\-*%<>~^]/;
+  const schluessel = new Set(["return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "throw", "case", "do", "else", "yield", "await"]);
+  const zeile = (i) => js.slice(0, i).split("\n").length;
+  const ausgeben = (text) => {
+    if (leer && aus) aus += leer.includes("\n") ? "\n" : " ";
+    leer = "";
+    aus += text;
+    letztes = text.at(-1);
+  };
+  // Inhalt einer Vorlage bis zum schließenden ` oder bis ${ (dann zurück in den Code)
+  const vorlage = (i) => {
+    let j = i;
+    while (j < n) {
+      if (js[j] === "\\") j += 2;
+      else if (js[j] === "`") return [j + 1, false];
+      else if (js[j] === "$" && js[j + 1] === "{") return [j + 2, true];
+      else j++;
+    }
+    throw new Error(`${name}: Vorlage ab Zeile ${zeile(i)} wird nicht geschlossen`);
+  };
+  let i = 0;
+  while (i < n) {
+    const c = js[i];
+    if (c === "/" && js[i + 1] === "/") {
+      const ende = js.indexOf("\n", i);
+      i = ende < 0 ? n : ende;
+      continue;
+    }
+    if (c === "/" && js[i + 1] === "*") {
+      const ende = js.indexOf("*/", i + 2);
+      if (ende < 0) throw new Error(`${name}: Kommentar ab Zeile ${zeile(i)} wird nicht geschlossen`);
+      const inhalt = js.slice(i, ende + 2);
+      if (inhalt.includes("\n")) leer += "\n";
+      else if (!leer) leer = " ";
+      i = ende + 2;
+      continue;
+    }
+    if (/\s/.test(c)) {
+      leer += c === "\n" || c === "\r" ? "\n" : " ";
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < n && js[j] !== c) {
+        if (js[j] === "\n") throw new Error(`${name}: Zeichenkette in Zeile ${zeile(i)} endet nicht in derselben Zeile`);
+        j += js[j] === "\\" ? 2 : 1;
+      }
+      ausgeben(js.slice(i, j + 1));
+      wort = "";
+      i = j + 1;
+      continue;
+    }
+    if (c === "`" || (c === "}" && vorlagen.length && vorlagen.at(-1) === tiefe)) {
+      if (c === "}") vorlagen.pop();
+      const [j, offen] = vorlage(i + 1);
+      ausgeben(js.slice(i, j));
+      if (offen) vorlagen.push(tiefe);
+      wort = "";
+      i = j;
+      continue;
+    }
+    if (c === "/" && (letztes === "" || vorRegex.test(letztes) || schluessel.has(wort))) {
+      let j = i + 1;
+      let klasse = false;
+      while (j < n && (klasse || js[j] !== "/")) {
+        if (js[j] === "\n") throw new Error(`${name}: Regulärer Ausdruck in Zeile ${zeile(i)} endet nicht`);
+        if (js[j] === "\\") j++;
+        else if (js[j] === "[") klasse = true;
+        else if (js[j] === "]") klasse = false;
+        j++;
+      }
+      j++;
+      while (j < n && /[a-z]/.test(js[j])) j++;
+      ausgeben(js.slice(i, j));
+      wort = "";
+      i = j;
+      continue;
+    }
+    if (wortzeichen.test(c)) {
+      let j = i;
+      while (j < n && wortzeichen.test(js[j])) j++;
+      wort = js.slice(i, j);
+      ausgeben(wort);
+      i = j;
+      continue;
+    }
+    if (c === "{") tiefe++;
+    else if (c === "}") tiefe--;
+    wort = "";
+    ausgeben(c);
+    i++;
+  }
+  if (aus) aus += "\n";
+  // Gegenprobe: Syntax mit Node prüfen (Module mit import/export als .mjs)
+  const modul = /^\s*(import|export)\s/m.test(aus);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vf-js-"));
+  const datei = path.join(tmp, `pruefen.${modul ? "mjs" : "cjs"}`);
+  try {
+    fs.writeFileSync(datei, aus);
+    const r = spawnSync(process.execPath, ["--check", datei], { encoding: "utf8" });
+    if (r.status !== 0) throw new Error(`${name}: Nach dem Bereinigen ungültig:\n${r.stderr}`);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+  return aus;
 }
 
 /**

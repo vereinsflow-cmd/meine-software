@@ -1,9 +1,11 @@
 # VereinsFlow – Website
 
-Werbeseite für VereinsFlow: eine Startseite (`index.html`) mit Impressum, Datenschutzerklärung und Fehlerseite. Reines HTML und
-CSS, ein kleines Skript (Menü, Einblenden beim Scrollen, aktiver Abschnitt), **keine Cookies, keine Bibliotheken, keine Webfonts,
-nichts von fremden Servern**. Einzige Ausnahme vom rein Statischen: die Anmeldung „Beim Start benachrichtigen“ (`newsletter.php`,
-braucht PHP – siehe „Benachrichtigung zum Start“). Die Seite ist bewusst immer weiß (auch bei dunkel eingestelltem Gerät); die Bilder sind echte Aufnahmen der Anwendung
+Werbeseite für VereinsFlow: eine Startseite (`index.html`) mit Impressum, Datenschutzerklärung und Fehlerseite. Reines HTML
+und CSS mit eigenen Skripten (Kopfzeile und Menü auf allen Seiten, dazu auf der Startseite die Bühnen und der
+Lichtfluss), **keine Cookies, keine Bibliotheken, keine Webfonts, nichts von fremden Servern**. Einzige Ausnahme vom rein
+Statischen: die Anmeldung „Beim Start benachrichtigen“ (`newsletter.php`, braucht PHP – siehe „Benachrichtigung zum Start“).
+Gestaltung „B4 Spektakel“: Nacht und Papier im Wechsel, Studiolicht, ein Lichtfluss als roter Faden (siehe „Gestaltung und
+Bewegung“); die Farben hängen nicht von der Einstellung des Geräts ab. Die Bilder sind echte Aufnahmen der Anwendung
 (Demo-Daten).
 
 Die Website liegt als Ordner `website/` im VereinsFlow-Repository, neben der Anwendung im Hauptordner. Beide haben getrennte
@@ -16,12 +18,16 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `index.html`                          | Startseite (Abschnitte: Einstieg, Abläufe mit Suche/Mitglieder/Termine/Zahlen als Reiter neben dem Live-Fenster, Laptop-Vorführung, Funktionen, Helferschichten als geführter Ablauf in drei Schritten samt Helferplan-Aushang, Sicherheit mit den fünf Rollen, Telefon-Vorführung, FAQ mit Ausblick und den drei Schritten zum Start, Kontakt mit Benachrichtigung zum Start) |
+| `index.html`                          | Startseite in zehn Kapiteln: Einstieg mit Kamerafahrt, Ausgangslage, Helferplanung, Unterwegs, Funktionen, Finanzen, Vertrauen, So starten Sie, Fragen, Demo (mit der Anmeldung „Beim Start benachrichtigen“) – siehe „Gestaltung und Bewegung“ |
 | `impressum.html`, `datenschutz.html`  | Rechtstexte (ausgefüllt, Stand 26.09.2026)                                                 |
 | `404.html`                            | Fehlerseite                                                                                 |
-| `assets/css/site.css`                 | Gestaltung; Farben und Größen stehen als Variablen oben in `:root`                          |
-| `assets/js/site.js`                   | Handy-Menü, Kopfzeile, Ein- und Ausblenden beim Scrollen, aktiver Abschnitt, Karten der Funktionen (klappen genau über ihrer Zeile auf, rollen bei Bedarf ganz ins Bild, blenden ganz verdeckte Zeilen aus (is-verdeckt), schließen, wenn der Fokus sie verlässt; Pfeiltasten wechseln zwischen den Zeilen der Liste – Öffnen und Schließen selbst laufen als Popover ohne Skript), Reiter der Abläufe (breit als Liste, auch mit Pfeil hoch/runter), Öffnen einer Frage per Sprungmarke (#ablauf), Ladezustand der Bilder, Kopieren der E-Mail-Adresse im Kontaktbereich, Abdunkelung hinter dem offenen Menü (ohne JavaScript bleibt alles nutzbar; die Themen stehen dann untereinander) |
-| `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je Bild mehrere Größen (siehe „Hinweise zu den Aufnahmen“) |
+| `assets/css/site.css`                 | Die ganze Gestaltung, eine Datei für alle Seiten; Farben, Schrift, Abstände und Kurven als Variablen oben in `:root`, das Inhaltsverzeichnis im Kopfkommentar. Laptop und Telefon stehen darin **wörtlich** wie im Stand `c112a20` (zwischen den Markern `@@geraete-…`, Keyframes am Dateiende) |
+| `assets/js/frueh.js`                  | Nur Startseite: setzt `html.js` vor dem ersten Zeichnen – die Höhe der Bühnen stimmt dann schon, wenn der Browser die Scrollposition wiederherstellt |
+| `assets/js/site.js`                   | Alle Seiten: Menü (unter 900 px, mit `inert`, Esc, Fokus zurück), Kopfzeile (Glas hell über Papier, dunkel über der Nacht), Kapitel-Faden mit Pinnnadel und `aria-current`, Einblenden (`.erscheint`), Frage per Sprungmarke öffnen, E-Mail-Adresse kopieren, Fokus-Rückgabe der Popovers, Schalter „Bewegung anhalten“; dazu wörtlich der Start der Geräte-Bewegung (Zeilen 107–140 aus `c112a20`). Ohne Skript bleibt alles nutzbar |
+| `assets/js/buehne.js`                 | Nur Startseite, als Modul: Posen der Geräte in Ruhe, Kamerafahrt, Wortwalze, magnetische Knöpfe, Lichtkanten, Zählwerke, Spur der Helferplanung, Umlaufbahn, Karten unter dem Zeiger, Lichtstreif, Rollen, Startlinie, Aufklappen der Fragen, Finale, Sprungmarken in die Bögen. Liest die Geräte nur (`.is-rest`), bewegt sie nie; nur den Start des Finanz-Laptops zieht es vor (ein Fünftel im Bild statt der Hälfte) |
+| `assets/js/fluss.js`                  | Der Lichtfluss (Canvas 2D, eigener Code), von `buehne.js` geladen; Optionen als `data-…` am `<canvas>` (Liste im Kopfkommentar) |
+| `assets/img/finale-geraete-*.webp`    | Schlussbild des Finales: Laptop und Telefon als Standbild mit durchsichtigem Hintergrund (`tools/geraete-standbild.mjs`) |
+| `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je Bild genau die Breiten, die die Seite zeigt (siehe „Hinweise zu den Aufnahmen“) |
 | `assets/img/`, `assets/brand/`        | Logo (Seite, `logo.svg`), Logo für die Bestätigungs-E-Mail (`logo-mail.png`, `@2x`), Logo-Vorlagen (Presse, Präsentationen) und Vorschaubild `og-image.png` – alles aus dem Logo-Paket (siehe „Logo“) |
 | `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `android-chrome-*.png`, `site.webmanifest` | Symbole für Browser-Tab, Lesezeichen und Startbildschirm (aus dem Logo-Paket); das Web-Manifest nennt Name und Symbole |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (Domain `https://vereins-flow.com`)                                         |
@@ -74,13 +80,14 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 4. **Aussagen abgleichen.** Alle Aussagen stammen aus dem Stand der Anwendung vom 22.09.2026 (`README.md`, `docs/SECURITY.md`,
    `docs/PRIVACY.md`, `docs/DESIGN.md`, `src/server/permissions/defaults.ts`, `src/lib/search/registry.ts`,
    `src/app/(app)/helferplanung/drucken/page.tsx`, `src/server/jobs/reminders.ts`, `src/modules/dashboard/compare.ts`), die
-   Finanzen (Laptop „Am Rechner“, Karte „Finanzen“ unter „Funktionen“, FAQ „Gibt es eine Finanzverwaltung …“) und die
+   Finanzen (Kapitel „Finanzen“ mit dem Laptop, Karte „Finanzen“ unter „Funktionen“, FAQ „Gibt es eine Finanzverwaltung …“) und die
    Zwei-Faktor-Anmeldung (Sicherheit, „Mehr dazu“, auch der Satz zu den Cookies: bei Zwei-Faktor kurzzeitig ein zweites,
    notwendiges Cookie, `docs/PRIVACY.md` „Cookie-Konzept“) aus dem Stand vom 18.10.2026 (`src/app/(app)/finanzen/`, `src/modules/finance`, `src/modules/fees`,
    `src/modules/donations`, `docs/SECURITY.md`). Noch geplant und deshalb in der FAQ als „geplant“: Zuwendungsbestätigungen
    (die Anwendung hat bisher nur den „Beleg bis 300 €“), öffentliche Veranstaltungsseite, Push und mobile Apps; Lastschrift
    (SEPA) nennt die Seite bewusst nicht. Kommen Funktionen hinzu, die FAQ (auch die Frage zur Planung) und die Zahl der
-   Bereiche („Dreizehn Bereiche“ unter „Funktionen“, eine Karte je Bereich) anpassen. Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite. Die Fußzeile nennt Absender, E-Mail und
+   Bereiche anpassen („13“ und „Dreizehn Bereiche“ unter „Funktionen“: neun Karten und vier Chips unter „Dazu“, je Bereich
+   ein Popover). Preise und Vertragsbedingungen stehen bewusst **nicht** auf der Seite. Die Fußzeile nennt Absender, E-Mail und
    Telefon wie das Impressum – ändern sie sich, alle Kopien der Fußzeile nachziehen (siehe „Seiten des Skripts“).
 5. `node tools/check-site.mjs --strict` muss ohne Meldung durchlaufen.
 
@@ -102,13 +109,15 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   Nach Änderungen an der Seite das Paket neu packen (im Ordner `website/`, ohne zip-Programm, auch unter Windows):
   `node tools/paket-bauen.mjs` – schreibt `upload/vereinsflow-website.zip` mit denselben Dateien wie früher der Befehl
   `zip -r -X … -x "tools/*" "upload/*" "README.md" "Vorschau-starten.*" "_headers" "*.DS_Store"` (also mit `.htaccess`).
-  Paket und SFTP-Upload (`tools/hochladen.mjs`) nehmen `assets/css/site.css` **ohne Entwicklerkommentare, Einrückung und
-  Leerzeilen** mit (gut ein Drittel kleiner, gepackt etwa halb so groß) – der kommentierte Quelltext im Ordner bleibt
-  unverändert; Regeln, Werte, Zeichenketten und `url(…)` bleiben gleich, nur Leerraum dazwischen fällt weg (`tools/paket.mjs`).
-  Darum nie die Stildatei vom Webspace zurück in den Ordner kopieren.
+  Paket und SFTP-Upload (`tools/hochladen.mjs`) nehmen `assets/css/site.css` und die Skripte in `assets/js/` **ohne
+  Entwicklerkommentare, Einrückung und Leerzeilen** mit (gut ein Drittel kleiner) – der kommentierte Quelltext im Ordner
+  bleibt unverändert; Regeln, Werte, Zeichenketten, reguläre Ausdrücke und `url(…)` bleiben gleich, nichts wird umbenannt,
+  Zeilenumbrüche im Skript bleiben stehen (`tools/paket.mjs`; jedes Skript wird danach mit `node --check` geprüft).
+  Darum nie Stildatei oder Skripte vom Webspace zurück in den Ordner kopieren.
   Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
-  HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum, z. B.
-  `site.css?v=20260926`) – sonst liefern Browser und der Zwischenspeicher von
+  HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum und einer laufenden
+  Nummer, derzeit `?v=2026102001`) – `buehne.js` lädt `fluss.js` selbst (Zeile `import … from "./fluss.js?v=…"`), dort
+  ebenfalls. Sonst liefern Browser und der Zwischenspeicher von
   IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
   HTML-Seiten fragt der Browser dagegen bei jedem Aufruf nach (`Cache-Control: no-cache`, unverändert kommt nur „304“) –
   so kommen auch die neuen `?v=`-Adressen sofort an.
@@ -139,21 +148,26 @@ fehlt Edge, nimmt `capture-screenshots.mjs` das Chromium von Playwright).
 | `node tools/serve.mjs`                     | Vorschau-Server mit Produktions-Headern                                                                   |
 | `node tools/check-site.mjs [--strict]`     | Prüft Verweise, Bilder, Symbole, fremde Server, Inline-Skripte/-Stile und listet offene Platzhalter       |
 | `node tools/set-domain.mjs <https://…>`    | Ersetzt die Musterdomain `https://vereinsflow.example` (bereits erledigt)                                   |
-| `node tools/paket-bauen.mjs`               | Baut `upload/vereinsflow-website.zip` für den Webspace Explorer (Stildatei ohne Kommentare; ohne Abhängigkeiten) |
+| `node tools/paket-bauen.mjs`               | Baut `upload/vereinsflow-website.zip` für den Webspace Explorer (Stildatei und Skripte ohne Kommentare; ohne Abhängigkeiten) |
 | `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` – dieselben Dateien wie das Paket, die Stildatei ebenso bereinigt (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/demo-vorbereiten.mjs`          | Füllt den Demo-Verein der Aufnahme-Datenbank `vf_website` für die Bilder auf (siehe unten); `--entfernen` nimmt alles wieder heraus. Arbeitet mit keiner anderen Datenbank |
 | `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`, Demo vorbereitet; `--only dashboard`; Bilder, die die Seite nicht zeigt, nur mit `--only <Name>`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
 | `node tools/make-logo-assets.mjs <Logo-Paket>` | Übernimmt Logo-Dateien, Favicons, Vorschaubild und Mail-Logo aus dem Logo-Paket (Ordner `02-website`) und prüft Bildgrößen und die `width`/`height` der Logo-`<img>` (siehe „Logo“); `--pruefen` nur prüfen; ohne Abhängigkeiten |
 | `node tools/make-og-image.mjs <ziel.png>`  | Erzeugt eine zweite Fassung des Vorschaubilds mit den beiden Telefonen (`tools/og-template.html`, mit `site.css`, dem Logo und den Telefonbildern); `--ersetzen` statt eines Ziels ersetzt `assets/img/og-image.png` aus dem Logo-Paket |
 | `node tools/make-showcase-keyframes.mjs`   | Erzeugt die Keyframes der Vorführungen (Laptop und Telefon drehen sich beim Scrollen) aus den Bewegungsformeln und ersetzt sie am Ende von `assets/css/site.css`; ohne Abhängigkeiten |
+| `node tools/geraete-css.mjs [--pruefen]`   | Setzt Laptop und Telefon **wörtlich** aus dem Stand `c112a20` in `assets/css/site.css` ein (sieben Bereiche zwischen den Markern `@@geraete-…`, Keyframes am Dateiende); `--pruefen` prüft nur. Die Bewegung der Geräte bleibt so unverändert, die neue Gestaltung (B4) bewegt nur die Hüllen `.pose`, `.kamera`, `.geraet` |
+| `node tools/geraete-pruefen.mjs`           | Prüft, dass Laptop und Telefon sich wie in `c112a20` bewegen: Bereiche und 51 Keyframes wörtlich, 162 Transformwerte gleich, keine eigene Regel bewegt die Geräte, `site.js` 107–140 wörtlich, Markup der Geräte gleich, dazu die Matrizen zur Laufzeit in Chromium und WebKit (Playwright aus dem Hauptordner) |
+| `node tools/geraete-standbild.mjs`         | Rendert das Schlussbild des Finales aus dem Markup der Startseite und der wörtlichen Gerätebewegung: Laptop zugeklappt bei 1,08 s, Telefon in der Endlage mit ausgeschaltetem Bildschirm, durchsichtiger Hintergrund, WebP mit Alpha in 720, 1080 und 1440 px (jede Breite eigens gezeichnet); meldet die Lage des Zeichens auf dem Deckel in Prozent (für `.zeichen-ziel`/`.zeichen-licht` in `site.css`). `--vorschau <Ordner>` schreibt nur PNG-Bilder |
+| `node tools/kopf-fuss-pruefen.mjs`         | Prüft, dass Kopf- und Fußzeile auf allen fünf Seiten gleich sind (bis auf Pfade, Kapitel-Faden und Schalter der Startseite), die Symbole dafür in jeder Seite stehen und im Markup von `newsletter.php` kein Hochkomma steht |
+| `node tools/b4-pruefen.mjs [schnell]`      | Browserprüfung der Startseite in Chromium, WebKit und „ohne scroll-driven Animationen“, mit und ohne „Bewegung reduzieren“, 320 bis 1920 px: Konsole und CSP, seitliches Scrollen, Text im Fenster bzw. Kasten (je Zeile, auch auf den Unterseiten), Kapitel-Faden (`aria-current`), Einblenden, Geräte in Ruhe, CLS; dazu die Größe von Skripten und Stildatei im Paket (über dem Ziel ein Fehler) |
 
 Hinweise zu den Aufnahmen:
 
 - **Reihenfolge:** Demo-App mit eigener Datenbank starten (siehe unten), `node tools/demo-vorbereiten.mjs`, für die
   Laptop-Bilder der Finanzen danach `finanzen-demo.mjs` (Kassenbuch mit Belegen, Rechnungen, Beitragslauf – liegt im
   Reel-Projekt `VereinsFlow-Medien`, nicht im Repository; arbeitet ebenfalls nur mit `vf_website`, vor einem erneuten
-  `demo-vorbereiten.mjs` erst mit `--entfernen`), dann `node tools/capture-screenshots.mjs` und die beiden Nacharbeiten
-  weiter unten (Positionen, `?v=`). Das Vorschaubild
+  `demo-vorbereiten.mjs` erst mit `--entfernen`), dann `node tools/capture-screenshots.mjs` und die Nacharbeiten
+  weiter unten (Marken, Zahlen, `?v=`). Das Vorschaubild
   `og-image.png` kommt aus dem Logo-Paket und zeigt keine Aufnahmen; nur wer die Fassung mit den Telefonen nutzt
   (`node tools/make-og-image.mjs --ersetzen`), erzeugt es danach neu. Für Bilder in genau dem Stand der Website am selben Tag vorbereiten und aufnehmen
   (Eintritte, Helferstunden und Hinweise wie „dringend“ rechnet die Anwendung vom heutigen Tag aus).
@@ -161,9 +175,9 @@ Hinweise zu den Aufnahmen:
   `vf_website` (bricht bei jedem anderen Namen ab; Verbindung über `VF_DATABASE_URL`, Standard
   `postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website`). Es blendet im Dashboard des Demo-Administrators die
   Karten „Erste Schritte“ (Einrichtungs-Checkliste) und „Offene Zahlungen“ aus – wie über „Anpassen“ in der Anwendung.
-  „Offene Zahlungen“ bleibt bewusst aus: Der Einstieg zeigt den Vereinsüberblick (Mitglieder, Termine, Helfer), seine
-  Zuschnitte (`.hero-visual`) sind auf die Kennzahl-Karten abgestimmt, und mit den Finanz-Demodaten stünden dort rote
-  Hinweise auf überfällige Rechnungen; die Finanzen zeigt der Laptop. Außerdem legt es rund 210 erfundene Mitglieder mit leichtem Wachstum über zwölf Monate an
+  „Offene Zahlungen“ bleibt bewusst aus: Der Einstieg zeigt den Vereinsüberblick (Mitglieder, Termine, Helfer), die Marken
+  am Ende der Kamerafahrt sind auf die Kennzahl-Karten abgestimmt, und mit den Finanz-Demodaten stünden dort rote
+  Hinweise auf überfällige Rechnungen; die Finanzen zeigt der Laptop im eigenen Kapitel. Außerdem legt es rund 210 erfundene Mitglieder mit leichtem Wachstum über zwölf Monate an
   (Bestand etwa 213 → 232), wöchentliche Trainings seit gut drei Monaten bis nach dem Sommerfest (sonst zeigte der Verlauf der Kennzahl „Termine in 30 Tagen“ einen Sprung von 1 auf 16), einzelne Termine rund um das Sommerfest,
   abgeschlossene Einsätze mit Helferstunden und einige Nachrichten der Seed-Konten (kein eigenes Bild mehr; bis Oktober 2026
   zeigte der Laptop die Nachrichten). **Termine:** Der Seed
@@ -171,8 +185,8 @@ Hinweise zu den Aufnahmen:
   Tagen vorbei. Das Skript verschiebt deshalb alle kommenden Termine des Seeds (mit Schichten, Anmeldeschluss und
   Aufgaben) so, dass das Sommerfest auf `FEST_DAY` fällt (derzeit Samstag, 12. Juni 2027, „Sommerfest 2027“;
   Arbeitseinsatz Vereinsheim eine Woche davor). Rückt der Tag näher als zwei Monate, bricht es ab: dann `FEST_DAY` und
-  `FEST_TITLE` im Skript, `FEST_WEEK` in `capture-screenshots.mjs` und die Jahreszahl in `index.html` („Helferplan:
-  Sommerfest …“) anpassen. Jeder Lauf ersetzt, was frühere Läufe angelegt haben (feste IDs); `--entfernen` stellt den
+  `FEST_TITLE` im Skript, `FEST_WEEK` in `capture-screenshots.mjs` und die Angaben in `index.html` („Sommerfest 2027 ·
+  12. Juni“, „Plätzen besetzt · Sommerfest 2027“) anpassen. Jeder Lauf ersetzt, was frühere Läufe angelegt haben (feste IDs); `--entfernen` stellt den
   Seed-Stand wieder her (auch die Termine des Seeds). Die Namen sind zufällig kombinierte, übliche Vor- und Nachnamen (keine mit „hel“ oder „Koch“ – die Bildfolgen
   suchen „Hel“ und filtern „Koch“), Anschriften in „Musterstadt“, E-Mail-Adressen unter `example.org`.
   `capture-screenshots.mjs` bricht ab, solange das Dashboard noch „Erste Schritte“ zeigt.
@@ -188,48 +202,29 @@ Hinweise zu den Aufnahmen:
   bleiben immer verlustfrei, damit unveränderte Flächen beim Überblenden nicht flimmern. Weiche Muster kosten verlustfrei
   viel: Hinter dem Suchdialog ist die Abdunkelung im Bild deshalb eine ruhige, deckende Fläche in ihrer Farbe (statt der
   weichgezeichneten Seite; `flatBackdrop` im Skript) – die Bildfolge der Suche wiegt so bei doppelter Dichte gut 150 statt
-  über 700 KB. Ergebnis am 18.10.2026: alle Bilder zusammen 6,5 MB in 168 Dateien (vorher 7,3 MB; mit dem neuen
-  Laptop-Bild und den zusätzlichen Breiten 680/1360, 700/1400, 1340 und 240/480).
-- **Seitenleiste:** Die Anwendung zeigt seit 17.10.2026 standardmäßig die schmale, dunkle Symbolleiste. Ganze Fenster
-  (Laptop) zeigen sie so; die Ausschnitte rechts neben der Leiste entstehen mit der breiten Leiste (`sidebar: "breit"` im
-  Skript), damit der Inhalt wie früher genau 960 CSS-Pixel breit ist und die über den Rand ragende Markierung des aktiven
-  Eintrags nicht ins Bild fällt.
-- Die Detailbilder (Mitglieder, Kalender, Auswertungen) sind Ausschnitte rechts neben der Seitenleiste, die Suche ein Ausschnitt
-  um den geöffneten Dialog (das Fenster ist dafür so breit, dass der Ausschnitt genau an der Seitenleiste beginnt; geöffnet
-  über der Mitgliederliste, die das erste Bild der Folge ohne Dialog zeigt, dahinter die deckende Abdunkelung, siehe
-  „Bildqualität“). Bei den Auswertungen (Rechner und Telefon) sind Kopfzeile und Reiterleiste im Bild deckend
-  (`solidBars`), am Rechner ist außerdem ausgeblendet, was über der Karte liegt (`hideAboveCard`) – sonst schienen Kopf und
-  Knopf der Karte bzw. der Rand der vorigen Karte durch die leicht durchsichtigen Leisten. Das
-  Kapitelbild Helferschichten ist ebenfalls ein Ausschnitt rechts neben der Seitenleiste (Fenster 1440 px breit, vom Titel des
-  Helferplans über die Zeitleiste „Tagesablauf“ bis zum Ende der Schicht „Getränkestand“; alle Schichten zugeklappt, der
-  eigene Name steht dort als „Name (du)“, an seinem Balken in der Zeitleiste ein „Du“), der Helferplan-Aushang das erste Blatt „Helferplan Sommerfest …“ aus der Vorschau der Druckseite
-  (`/helferplanung/drucken?inhalt=aushang`, weißes A4-Blatt mit Rand und Kopfzeile, Ausschnitt im Seitenverhältnis A4; nur
-  hell – Papier ist weiß). Der Kalender zeigt den Monat des Sommerfests (`FEST_WEEK` in `capture-screenshots.mjs`). Der
-  Laptop der Vorführung „Am Rechner“ zeigt `laptop-finanzen-uebersicht` (Finanzen › Übersicht: Kontostand, offene
-  Rechnungen, Überschuss, Spenden; ganzes Fenster 1280 × 800, 16 : 10) als ruhiges Einzelbild – eine Bildfolge im
-  gedrehten Deckel brächte eigene Grafikebenen in die rückseitig ausgeblendete Fläche (Risiko für Drehung und Schärfe,
-  siehe `.laptop-screen` in `site.css`). Die Überschrift darüber („Finanzen auf einen Blick“) braucht am Smartphone eine
-  Zeile statt zwei wie früher „Nachrichten mit Lesestatistik“: Unter 600 px Breite steht der Laptop deshalb gut 30 px
-  höher (Abschnitt 588 statt 620 px hoch bei 390 px Breite), Aufbau und Bewegung sind unverändert (gemessen am
-  18.10.2026). Im selben Format gibt es `laptop-finanzen-rechnungen`, `-kassenbuch` (mit
-  Belegen) und `-beitraege` (die Zeile „… per Lastschrift“ ist dort ausgeblendet), gleich gerahmt; sie sind `optional`
-  und entstehen nur mit `--only laptop-finanzen-rechnungen,…` – sonst lüden Paket und SFTP-Upload unbenutzte Dateien
-  hoch (`check-site.mjs` meldet sie dann als unbenutzt). Das Bild im Einstieg ist das Dashboard, wie ein Foto zugeschnitten: im
-  hohen Rahmen neben dem Text (ab 900 px) `einstieg-dashboard` (Tablet-Breite 768, oben „Mitglieder“ und „Aufgaben im
-  Verein“, unten weich ausgeblendet), am Smartphone hochkant `phone-dashboard`, dazwischen (560 bis 899 px, breit unter
-  dem Text) `dashboard`: schon im Skript als 5 : 4 zugeschnitten (Inhalt rechts der schmalen Seitenleiste, Fenster
-  1280 × 1000). Im Dashboard blendet das Skript das Schild „Start · …“ der Mitglieder-Karte aus (es überdeckt dort die
-  Achsenbeschriftung). Die Bildpunkte der Ausschnitte stehen bei `.hero-visual` in `site.css` – nach einer Neuaufnahme
-  prüfen. Montags blendet `einstieg-dashboard` den leeren Wochenvergleich „−100 % gegenüber letzter Woche“ aus.
-- Breiten: Einstieg neben dem Text 490, 660, 980, 1280 und 1536 px; Browserfenster der Reiter „Im Detail“ 680, 960, 1360
-  und 1920 px (680 und 1360 = einfache und doppelte Dichte der 680 CSS-Pixel breiten Fenster), Helferschichten 700, 960,
-  1400 und 1920; Laptop 720 und 880 (einfache Dichte), 960 (Smartphone, dreifache Dichte), 1340 und 1760 (MacBook &
-  Co.; 1340 passt genau zum Fenster 1440 × 900 mit doppelter Dichte); Einstieg breit 720, 960, 1440, 1920 und 2328;
-  Helferplan-Aushang 240 und 480 (einfache und doppelte Dichte), 640, 800 und 1280. Das große Bild am Rechner lädt
-  nur auf Tablet und Handy quer. Die Karten unter „Funktionen“ teilen sich die Dateien mit den großen Bildern: Mitglieder
-  und Auswertungen (620 CSS-Pixel, `sizes="620px"`) nehmen dieselbe 680er bzw. 1360er Datei wie die Browserfenster, die
-  Karte „Finanzen“ (670 CSS-Pixel, Ausschnitt ab der Reiterleiste) dieselbe 720er bzw. 1340er wie der Laptop – so wird
-  jedes Motiv nur einmal geladen. Am Smartphone zeigen die Karten keine Bilder (sie werden dann auch nicht geladen).
+  über 700 KB.
+- **Seitenleiste:** Ganze Fenster (Laptop, Dashboard) zeigen die Seitenleiste der Anwendung, wie sie eingestellt ist; die
+  optionalen Ausschnitte rechts daneben entstehen mit der breiten Leiste (`sidebar: "breit"` im Skript).
+- **Was die Seite zeigt** (Stand 19.10.2026, neu aufgenommen nach dem Dashboard im Stil „Vertix“: 43 Dateien, 2,0 MB):
+  - `dashboard` (720 bis 2880 px): Laptop im Einstieg und in der Kamerafahrt, die flache Aufnahme am Ende der Fahrt und
+    „Im Detail“ ohne Fahrt. Die flache Aufnahme wählt zuerst dieselbe Datei wie der Bildschirm (eine Anfrage); sobald die
+    Fahrt beginnt, lädt und dekodiert `buehne.js` genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px, `data-gross`)
+    und setzt sie dann an beiden Bildern ein.
+  - `phone-dashboard` (312 bis 1170): „Im Detail“ am Smartphone, im Telefon.
+  - `phone-schichten` (182 bis 780): Telefon im Einstieg (Bildschirm 182/208 CSS-Pixel) und flaches Telefon in Kapitel 3
+    (260/312), dazu `phone-schichten-live-1` (260 bis 780) als Stand vor Annas Eintrag (Kapitel 3, Schritt 1) – gefunden
+    über den Listeneintrag „Schicht Getränkestand“ und die Knöpfe „In Getränkestand eintragen“ bzw. „… austragen“.
+  - `helferplan-druck` (240 bis 800): der Aushang in Kapitel 3.
+  - `phone-helferplanung` (260 bis 780): Telefon in „Unterwegs“ (ab „Meine Einsätze“, damit „Eintragen“ ganz zu sehen ist).
+  - `laptop-finanzen-uebersicht` (720 bis 1760): Laptop in „Finanzen“.
+  - Nicht mehr auf der Seite und deshalb `optional` (entstehen nur mit `--only <Name>`): `einstieg-dashboard`, die
+    Browserfenster und Bildfolgen von `schichten`, `suche`, `mitglieder`, `kalender`, `auswertung`, die Telefonbilder
+    `phone-suche`, `phone-mitglieder`, `phone-kalender`, `phone-auswertung` und die übrigen Finanz-Laptops.
+- Die Bilder gibt es genau in den Breiten, in denen sie auf der Seite stehen (je Pixeldichte eine Datei), damit der Browser
+  sie Pixel für Pixel zeichnet und die kleine Schrift scharf bleibt. Wer die Größe eines Geräts in `site.css` ändert
+  (`--sw`, `--pw`, `--hw`), gleicht die Breiten im Skript (`widths`, bei Bildfolgen `frameWidths`) und `srcset`/`sizes` im
+  HTML an. Neue Telefonbilder sind 390 × 760 Punkte groß – genau der sichtbare Teil des Bildschirms zwischen Statusleiste
+  und Home-Balken –, damit der Rahmen nichts abschneidet.
 - **Datum in den Bildern:** Die Aufnahmen zeigen, was die Anwendung am Aufnahmetag ausrechnet – beim Laptop „Stand
   18.10.2026“ und die Fälligkeiten der beiden offenen Rechnungen des Seeds („davon 2 überfällig“, „seit 21 Tagen
   überfällig“ in Rot; ihre Fälligkeit rechnet der Seed vom Tag seines Laufs aus, `finanzen-demo.mjs` lässt sie unverändert),
@@ -237,26 +232,13 @@ Hinweise zu den Aufnahmen:
   deshalb alle am selben Tag neu auf. Ruhiger wirkte der Laptop mit Rechnungen, die noch nicht fällig sind (das hieße,
   die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das Reel-Projekt, daher bisher
   nicht geändert).
-- Telefonbilder: Einstieg `phone-dashboard`, Vorführung „Unterwegs“ `phone-helferplanung` (ab „Meine Einsätze“, damit
-  „Eintragen“ ganz zu sehen ist), Kapitel Helferschichten `phone-schichten` (die Schicht „Getränkestand“ nach dem Eintragen, wie das ruhige Bild des
-  Live-Fensters, dazu `phone-schichten-live-1` vor dem Eintragen – das Telefon wechselt mit dem Klick im Live-Fenster;
-  gefunden über den Listeneintrag „Schicht Getränkestand“ und die Knöpfe „In Getränkestand eintragen“ bzw. „Aus
-  Getränkestand austragen“);
-  unter 720 px Breite zeigen die vier Reiter
-  „Im Detail“ statt der Browserfenster eigene Telefonbilder (`phone-suche` über die Lupe, `phone-mitglieder`,
-  `phone-kalender` als Liste, `phone-auswertung`). Neue Telefonbilder sind 390 × 760 Punkte groß – genau der sichtbare
-  Teil des Bildschirms zwischen Statusleiste und Home-Balken –, damit der Rahmen nichts abschneidet.
-- Die Telefonbilder gibt es genau in den Breiten, in denen sie auf der Seite stehen (je Pixeldichte eine Datei), damit der
-  Browser sie Pixel für Pixel zeichnet und die kleine Schrift scharf bleibt. Wer die Größe eines Handys in `site.css` ändert,
-  gleicht die Breiten im Skript (`PHONE.widths` bzw. `widths` am Bild) und `srcset`/`sizes` im HTML an.
-- Nach neuen Aufnahmen zwei Dinge nachziehen: (1) Die Bildfolgen melden `Positionen:` (wo Knöpfe und Felder liegen) – diese
-  Werte in `LIVE_SCENES` in `assets/js/site.js` übernehmen, sonst klickt der Mauszeiger daneben, wenn sich die Oberfläche
-  verschoben hat (danach `site.js?v=` erhöhen). Beim Helferplan meldet sie außerdem den leeren Rand neben der Karte; ist er
-  deutlich schmaler als gut 3 %, `--story-lap` und `--story-tuck` in `site.css` verkleinern (so weit liegen Telefon und
-  Blatt über dem Fenster). Beim Telefon der Helferschichten meldet sie, wo „Eintragen“ liegt – dort tippt am Smartphone
-  der Finger (`.story-tap` in `site.css`, `top`/`left`). Hat sich die Höhe des Ausschnitts geändert, auch `width`/`height`
-  der Bilder in `index.html` angleichen. (2) An allen Bild-Links in `index.html` `?v=` auf das Datum setzen: Browser dürfen
-  Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst noch die alten.
+- Nach neuen Aufnahmen nachziehen: (1) die Lage der drei Marken auf dem Dashboard (`.m-suche`, `.m-zahlen`, `.m-termine`
+  in `site.css`, in Prozent des Bildes), die Anteile der Kennzahlkarten für den Lichtstreif der Finanzen (`streifMessen()`
+  in `buehne.js`) und – ändert sich die Ampel – die Bahn des Stroms zu Annas Platz (`data-pfad` an `#fluss-spur`); (2) die
+  Zahlen im Text mit den Bildern abgleichen (233 Mitglieder, „10 von 21“ und Getränkestand 3/4, „+5.286,30 €“) und die
+  Alt-Texte; (3) `width`/`height`, wenn sich ein Ausschnitt geändert hat; (4) an allen Bild-Links in `index.html` `?v=`
+  erhöhen: Browser dürfen Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst
+  noch die alten.
 - Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
   `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`.
   Läuft im App-Ordner schon ein Entwicklungsserver, eine zweite Instanz mit eigenem Build-Ordner danebenstellen (wie die
@@ -278,17 +260,14 @@ kleine Größen bis 32 px eine ruhigere Form (zwei Etappen je Seite, ohne Tempo-
   `og-image.png`, `logo-mail.png` (+ `@2x`) und `assets/brand/*`. Nicht selbst nachzeichnen oder umfärben; ein neues Paket
   übernimmt `node tools/make-logo-assets.mjs <Ordner des Pakets>` (prüft auch Bildgrößen und die `<img>`-Angaben). Danach
   `?v=` an den Links erhöhen.
-- **Kopf- und Fußzeile:** `assets/img/logo.svg` mit `width="178" height="40"` (Kopf) bzw. `200 × 45` (Fuß); die Datei bringt
-  rundum etwas Schutzraum mit. Auf sehr schmalen Handys (320 px) wird das Logo in der Kopfzeile kleiner, bevor „Demo“ oder
-  der Menüknopf unter 44 px schrumpfen. Kopien: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`.
-- **Einstieg:** Links die linksbündige Überschrift (immer drei Zeilen) mit Einleitung, drei Punkten, schwarzem Knopf und
-  grauer Zeile, rechts das Dashboard als großes Bild mit runden Ecken, oben und unten bündig mit dem Text; schmal
-  untereinander. Kopfzeile und Einstieg haben dieselbe Breite wie die übrigen Abschnitte. Das Zeichen steht groß und
-  blass hinter dem linken Teil der Überschrift, die Einleitung hält Abstand zu seinem Punkt (`svg.hero-mark` in `index.html`, Formen aus
-  `01-logo/svg/vereinsflow-symbol.svg` des Pakets; Farben, Größe und Bewegung in `site.css` unter `.hero-mark`). Beim Aufruf
-  gleiten die schwarzen Etappen von links, die blauen von rechts herein, zuletzt der Punkt; mit „Bewegung reduzieren“ steht
-  sofort das fertige Zeichen. Gemessener Kontrast der Schrift über dem Zeichen (Endzustand, 320 bis 1920 px): Überschrift
-  mindestens 13,5 : 1, „in Fluss“ 3,9 : 1, Einleitung und Punkte 13 : 1 – wer Deckkraft oder Größe ändert, misst neu.
+- **Kopf- und Fußzeile:** In der Kopfzeile stehen `logo-dark.svg` (über der Nacht) und `logo.svg` (über Papier) mit
+  `width="125" height="28"` übereinander und wechseln nur über die Deckkraft; in der Fußzeile (Nacht) `logo-dark.svg` mit
+  `160 × 36`. Kopien von Kopf und Fuß: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`
+  (gleich gehalten, `tools/kopf-fuss-pruefen.mjs`).
+- **Pinnnadel:** Der orange Punkt mit den Tempo-Strichen aus dem Logo ist der Schlusspunkt der großen Überschriften
+  („in Fluss●“, „an einem Ort●“, „für Ihren Verein●“), die Spitze des Kapitel-Fadens in der Kopfzeile und die Marke der
+  Kapitel und Schritte (Symbole `pin`, `pin-striche`, `pin-punkt` im Sprite von `index.html`, Formen und Maße wie im
+  Logo-Paket).
 - **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen das V in der ruhigeren Form, spiegelpoliert bzw. als
   glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
   Regeln von `.device-mark` in `site.css`).
@@ -337,14 +316,124 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   „Mit dem Absenden willigen Sie ein, dass die VereinsFlow GbR Ihnen E-Mails zum Start und zu wichtigen Neuigkeiten von
   VereinsFlow schickt – selten, höchstens etwa einmal im Monat. Sie bekommen zuerst eine E-Mail mit einem Bestätigungslink.
   Abmelden können Sie sich jederzeit über den Link in jeder E-Mail. Mehr in der Datenschutzerklärung.“
-- **Seiten des Skripts** (`vf_seite`): dieselbe Kopf- und Fußzeile wie Impressum und Datenschutz (bei Änderungen an der
-  Fußzeile der Startseite alle Kopien nachziehen: `datenschutz.html`, `impressum.html`, `404.html`, `newsletter.php`).
+- **Seiten des Skripts** (`vf_seite`): dieselbe Kopf- und Fußzeile wie Impressum und Datenschutz (Papier mit Fuß auf der
+  Nacht; bei Änderungen an Kopf oder Fuß der Startseite alle Kopien nachziehen: `datenschutz.html`, `impressum.html`,
+  `404.html`, `newsletter.php` – `tools/kopf-fuss-pruefen.mjs` vergleicht sie). Das Markup steht dort in einem PHP-String in
+  einfachen Hochkommas: kein `'` hineinschreiben (die Prüfung meldet es).
   Der optionale letzte Wert `$symbol` („mail“ oder „circle-check“) setzt ein großes Zeichen über die Überschrift. Nach
   „Fast geschafft“ und „Danke, Sie sind angemeldet“ steht neben „Zur Startseite“ ein zweiter Knopf „Demo anfragen“
   (`vf_start_demo_links`). „Fast geschafft“ nennt zum Wiederfinden der E-Mail Absender, Betreff und Frist
   (`vf_mail_hinweise`; der Betreff steht dort ein zweites Mal – bei einer Änderung in `vf_mail_bestaetigen` mitziehen).
 - **Lokale Vorschau:** `tools/serve.mjs` führt kein PHP aus; ein Absenden zeigt dort nur einen Hinweis. Getestet wurde das
   Skript mit PHP als WebAssembly (`@php-wasm/node`, PHP 7.4 und 8.3).
+
+## Gestaltung und Bewegung (B4 „Spektakel“)
+
+Umgesetzt ist der abgestimmte Entwurf B4 „Spektakel“ (Jury 19.10.2026) mit den Kapiteln und dem roten Faden aus B3:
+Kino-Einstieg mit 3D-Geräten und einer Kamerafahrt in den Laptop, Studiolicht und Lichthöfe statt farbiger Flächen, große
+bewegte Schrift, Karten und Knöpfe, die auf den Zeiger reagieren, und ein Lichtfluss, der durch alle Kapitel zieht
+(„Bringt Vereinsarbeit in Fluss“). Die Geschichte ist das Sommerfest 2027 des Beispiel-Vereins TSV Musterstadt 1898 e.V.
+mit Anna Adler (sie trägt sich am Getränkestand ein, sie ist Vereinsadministratorin). Nacht (`#060B16`) für Einstieg,
+Ausgangslage, Unterwegs, Funktionen und Demo, Papier (`#F6F3EC`) für Helferplanung, Finanzen, Vertrauen, „So starten Sie“ und Fragen;
+jeder Wechsel ist ein Bogen, der sich beim Scrollen über das Kapitel davor schiebt.
+
+### Die zehn Kapitel
+
+| Kap. | Anker | Fläche | Was geschieht (mit Bewegung) | Ohne Bewegung, ohne Skript, schmal |
+| --- | --- | --- | --- | --- |
+| 1 Einstieg | `#top` | Nacht | Laptop (−17°, leicht von oben, schwache Spiegelung im Boden) und Telefon (−24°) in 3D-Posen über die Hülle `.pose`, Studiolicht, Lichtkanten am Titanrahmen (gemessen), „Fluss“ hinter der Deckelkante, die Pinnnadel auf der Deckelecke. Raster wie Kopfzeile und Kapitel: Text am Inhaltsrand (`--x0`), Geräte bis an den Seitenrand (`--gx`), Maßstab `--u` so, dass alles passt und die Überschrift 16 px unter der Kopfzeile steht. Bis der Laptop posiert, steht seine Hülle um den Weg weiter rechts, den die Drehung ausmacht (Deckelkante bleibt stehen, läuft nie über den Text). Ab 1024 × 720 klebt die Bühne über `--fahrt-strecke` (220svh) und die Kamera fährt in den Laptop: Überschrift fliegt vorbei, Telefon dreht weg, ab 58 % frontal, ab 88 % Maßstab 1, dann die flache Aufnahme mit drei Marken und der Tafel „Zahlen, die dem Vorstand helfen“ (`#im-detail`); die Kopfzeile fährt dabei aus | Bühne in Ruhe, „Im Detail“ als eigener Abschnitt (am Smartphone im Telefon); ohne scroll-driven Animationen drei feste Stufen |
+| 2 Ausgangslage | `#ausgangslage` | Nacht | Wortwalze „VereinsFlow bündelt …“: das Wort wechselt an vier Scroll-Zonen (kein Zeitgeber), vier Lichtlinien laufen in den Punkt hinter „Ort“; dann schiebt sich der Papierbogen hoch, der Strom färbt sich an der Kante zu Tinte | die vier Wörter untereinander, harter Schnitt |
+| 3 Helferplanung | `#helferschichten` | Papier | ab 1200 × 760 eine Spur in drei Schritten: Ampel baut sich auf (9 von 21), ein Lichtkomet (Kopf mit Schein in Signalorange, Schweif aus Tinte, 1,2 s, nur zeitgesteuert) fliegt den Strom entlang in Annas Platz – Ring, Lichthof und Zeile glimmen einmal auf (10 von 21, Telefon und Chips zeigen ihren Eintrag), der Aushang schiebt sich herein | drei Kacheln im Endstand |
+| 4 Unterwegs | `#unterwegs` | Nacht | das Telefon dreht sich ins Bild (wie bisher), ab 1200 × 720 kreisen fünf Glas-Chips auf einer geneigten Umlaufbahn aus Licht | Chips als Reihe |
+| 5 Funktionen | `#funktionen` | Nacht | „13“ rollt hoch; neun Karten und „Dazu“ mit vier Chips, je Bereich ein Popover (Text wie bisher); mit Maus neigt sich die Karte (≤ 8°), Glanz und Lichtkante folgen dem Zeiger, der Strom weicht ihm aus | Karten ruhig, Popovers ohne Skript |
+| 6 Finanzen | `#finanzen` | Papier | ab 1024 px Text links, Laptop rechts (dreht sich wie bisher, steht frontal); einmal ein Lichtstreif über die Kennzahlkarten, „+5.286,30 €“ zählt hoch | untereinander, Zahl steht |
+| 7 Vertrauen | `#sicherheit`, `#rollen` | Papier | Datenblatt mit vier Punkten; die fünf Rollen als drei ineinanderliegende, leicht gekippte Milchglas-Rahmen legen sich von außen nach innen, Annas Plakette folgt; „Mehr dazu“ mit sieben Punkten; drei langsame Tintenlinien am Fuß | stehend |
+| 8 So starten Sie | `#ablauf` | Papier | die Startlinie zeichnet sich, die Pinnnadel fährt einmal von 1 über 2 nach 3 und füllt die Punkte | Nadel auf 3 (schmal senkrecht, ohne Nadel) |
+| 9 Fragen | `#faq` (`#ausprobieren`) | Papier | fünf Fragen; beim Aufklappen gleiten die Fragen darunter, die Antwort blendet ein (Chromium: View Transition, sonst Web Animations); eine Sprungmarke öffnet die Frage | sofort auf |
+| 10 Demo | `#kontakt`, `#benachrichtigen` | Nacht | „Eine Demo / für Ihren Verein●“, der leuchtende Demo-Knopf (E-Mail, vorausgefüllt), Anruf, Adresse kopieren; Schlussbild Laptop zugeklappt und Telefon (Standbild); der Strom zieht sich im Pfeil des Knopfs zusammen (1,5 s), der Lichthof atmet einmal, drei Lichtlinien wachsen zum Zeichen auf dem Deckel (0,9 s), das einmal aufleuchtet; darunter die Papier-Insel mit der Anmeldung | Endstand |
+
+Kopfzeile: eine schwebende Glasinsel, über der Nacht dunkel, über Papier hell (gemessen an ihrer Mittellinie, gewechselt nur
+über Deckkraft). Darunter der **Kapitel-Faden**: zehn echte Anker mit Namen (bei Hover und Fokus, nach einem Klick auf einen
+Rastpunkt 1,5 s beim Einrasten – beim bloßen Scrollen nicht; die Rastpunkte stehen nicht in der Tab-Reihenfolge, dieselben
+Ziele haben Navigation und Menü), die Pinnnadel rastet am aktuellen Kapitel ein, je Kapitel genau ein `aria-current` in der Navigation
+(Kapitel 2–4 „Helferplanung“, 8–9 „Fragen“, 10 der Demo-Knopf mit Ring). Unter 900 px Logo, „Demo“ und Menüknopf, der
+Faden nur als Fortschrittsstrich. Fußzeile auf der Nacht mit dem Schalter „Bewegung anhalten“ (im Einstieg rechts unten im
+Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
+
+### Regeln der Bewegung
+
+- Was gelesen wird, erscheint einmal und bleibt; was nur verbindet (Lichtfluss, Licht), darf dauernd laufen. Szenen rasten
+  in festen Zuständen ein (IntersectionObserver-Bänder), gescrubbt wird nur die Kamerafahrt. Keine Scroll-Listener.
+- Bewegt werden nur `transform` (auch `translate`, `rotate`, `scale`), `opacity` und `filter`, dazu Canvas – nie das
+  Layout. Kurven `--ease-out`, `--ease-in-out`, `--ease-drawer` und die Federn `--feder-ruhig`/`--feder-rast` (`linear()`,
+  sonst `--ease-out`); Dauern: Druck 120 ms, Hover 150 ms, Zustand 200–250 ms, Auftritt 450–600 ms.
+- Bühnen (klebende Szenen) nur mit `(min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion:
+  no-preference)` (Spur und Umlaufbahn ab 1200 px), darunter der „Kompakt-Modus“.
+- Vorzustände (unsichtbar, versetzt) gelten nur mit Skript und Bewegung (`html.js`, in Kapitel 7–10 erst mit `.ist-bereit`,
+  das `buehne.js` setzt); `:focus-within` hebt sie auf. Ohne Skript steht alles im Endstand.
+- **„Bewegung reduzieren“:** alles im Endstand, keine klebenden Bühnen, Kapitel 3 als Kacheln, der Lichtfluss als ein
+  einziges Standbild ohne Schleife, keine Neigung, kein Magnet. Dazu `prefers-reduced-transparency` (Glas fast deckend),
+  `prefers-contrast: more`, `forced-colors` (Licht und Canvas aus) und Druck (Nacht wird Papier, alles im Endstand).
+- **Schalter „Bewegung anhalten“** (WCAG 2.2.2, im Einstieg und in der Fußzeile): hält Lichtfluss, Umlaufbahn und
+  Übergänge an; das Finale steht dann gleich im Endstand. Gilt nur für den Besuch – die Seite speichert nichts im Gerät.
+
+### Laptop und Telefon
+
+- Markup, CSS und Bewegung **wörtlich wie `c112a20`**: `tools/geraete-css.mjs` setzt die sieben Gerätebereiche zwischen die
+  Marker `@@geraete-…` in `site.css` (Keyframes am Dateiende, `tools/make-showcase-keyframes.mjs` funktioniert unverändert),
+  `site.js` startet sie mit denselben Zeilen wie bisher. Neue Posen, die Kamerafahrt und Licht nur über die Hüllen
+  `.geraet`, `.kamera` und `.pose` sowie über eigene Ebenen; an `.showcase*`, `.laptop*`, `.iphone*` und `.phone` setzt
+  `site.css` außerhalb der wörtlichen Bereiche nur Größen (`--sw`, `--pw`, `--rim`; im Einstieg `--sw` über `--k01-sw`),
+  `object-position` und – bewusste Ausnahme in der Ruhelage – die Eckstreifen des gedrehten Telefons im Einstieg
+  (`.iphone-rim` sichtbar, sonst klafften an den runden Ecken Lücken; keine Bewegung, die Matrizen bleiben gleich).
+  Ausgleich der Pose (`translate` an `.geraet-laptop`, 0,1618 der Bildschirmbreite) und Spiegelung (`-webkit-box-reflect`)
+  sitzen an der Hülle. `tools/geraete-pruefen.mjs` prüft das, auch zur Laufzeit in Chromium und WebKit.
+- **WebKit in Playwright zeigt kein 3D:** Bildschirmfotos aus Playwright-WebKit werden ohne Compositing gezeichnet –
+  jede 3D-Transformation erscheint flach (Gegenprobe: ein einfacher Würfel aus zwei Flächen mit `preserve-3d` ist dort ebenfalls
+  flach, in Chromium räumlich). Dem Laptop fehlt dort deshalb scheinbar das Unterteil (die Tastatur steht senkrecht zur
+  Bildebene und wird zur Linie) – auch auf der alten Seite. Das ist eine Grenze des Werkzeugs, kein Fehler der Seite; die
+  Matrizen prüft `tools/geraete-pruefen.mjs` trotzdem in WebKit. Gegenprobe auf echtem Safari (Mac, iPhone, iPad) steht aus.
+- Je Abschnitt lebt höchstens ein Gerätepaar; das Schlussbild des Finales ist ein Standbild aus der echten Bewegung
+  (`tools/geraete-standbild.mjs`, nach einer Änderung an den Geräten neu erzeugen und die gemeldete Lage des Zeichens in
+  `site.css` bei `.zeichen-ziel`/`.zeichen-licht` eintragen).
+
+### Lichtfluss, Zählwerke und Leistung
+
+- **Lichtfluss** (`fluss.js`): ein Strom aus Fasern entlang einer Bahn (`data-pfad`, Anteile der Fläche; schmal
+  `data-pfad-kompakt`), auf der Nacht leuchtend, auf Papier als Tinte; dazu Lichtlinien mit Pulsen, Ziel und Start an
+  Elementen (`data-ziel`, `data-start`), Zwillinge (gleicher Strom in zwei Ebenen: Wechsel Nacht → Papier, Umlaufbahn),
+  Zeiger (weicht aus), Flug (Kapitel 3), Sammeln und Wachsen (Finale). Alle Optionen im Kopfkommentar der Datei.
+- **Leistung:** eine gemeinsame Schleife nur für sichtbare Flächen, angehalten bei verborgenem Tab und mit dem Schalter;
+  Pixeldichte höchstens 1,5 und höchstens 2 Millionen Bildpunkte je Fläche; einen Bildpuffer haben nur Flächen in der Nähe
+  des Fensters (eine Fensterhöhe davor und danach), weiter weg wird er freigegeben (`width = 0`); die ruhigen Grundlinien
+  der Lichtlinien werden in Leerlaufzeit vorgezeichnet, bevor sie ins Bild kommen, und ohne Schatten-Unschärfe (ein breiter,
+  schwacher Strich darunter ist der Schein) – vorher stand die Seite beim ersten Zeichnen bis zu 1,9 s (mit GPU) bzw. 4 s
+  (ohne); je Faser ein vorgezeichneter Strich; auf schwachen Geräten (höchstens 4 Kerne oder 4 GB) halbe Faserzahl und 30
+  Bilder je Sekunde; bei „Daten sparen“ ein Standbild. Über Text leuchtet der Strom gedämpft (`data-leise`: Überschrift im
+  Einstieg, Zahl und Schritte der Helferplanung). Der Strom im Finale läuft an der Kante weich aus (Maske).
+  `backdrop-filter` nur an Kopfzeile, Ampel, Tafel und Popovers (das Bento hat eine Tönung ohne Unschärfe). Bilder mit
+  `width`/`height` und `srcset` in den gezeichneten Breiten, `loading="lazy"` außer im ersten Bildschirm.
+- **Zählwerke** (`data-zahl`: „10“, „13“, „+5.286,30“): `buehne.js` baut nur mit Bewegung je Ziffer ein Fenster mit einer
+  Rolle; gerollt wird in ganzen Zeilen, in Ruhe steht immer die ganze Endziffer. Während des Rollens laufen die Fenster
+  oben und unten weich aus (Maske `--zw-f`, immer mindestens so breit wie der Versatz der Ziffer) und die Rolle ist
+  verwischt – beides folgt dem verbleibenden Weg und ist bei der Ankunft null; die vorderen Stellen rasten früh ein, nur
+  die hinteren rollen lange. Bis zum Start ist die Zahl unsichtbar (keine „+0.000,00 €“). Ohne Skript und ohne Bewegung
+  steht die Zahl als Text; für Screenreader steht sie daneben als Satz (`.sr-only`). Kein Layout-Springen (CLS 0 gemessen,
+  auch beim Neuladen mitten auf der Seite: Kapitel 4 behält mit Umlaufbahn seine Höhe, `--chips-h`; Schalter und
+  Kopierknopf stehen mit JavaScript von Anfang an im Layout).
+- **Größen** (19.10.2026): Skripte zusammen 98 KB Quelltext, im Paket 68 KB (ohne Kommentare und Einrückung), übertragen
+  (gzip) 21 KB; Stildatei 301 KB Quelltext, 204 KB im Paket, 39 KB übertragen. `tools/b4-pruefen.mjs` meldet einen Fehler,
+  wenn das Paket die Ziele überschreitet (Skripte 72 / 26 KB, Stildatei 215 / 45 KB).
+
+### Prüfen
+
+`node tools/check-site.mjs --strict` (Verweise, Bilder, CSP-Regeln), `node tools/geraete-pruefen.mjs` (Geräte wie bisher),
+`node tools/b4-pruefen.mjs` (Browser-Matrix: Chromium, WebKit, ohne scroll-driven Animationen, mit und ohne „Bewegung
+reduzieren“, 320 bis 1920 px; dazu je Textzeile, ob sie aus dem Fenster oder aus einem abschneidenden Kasten läuft – auch
+auf Impressum, Datenschutz und Fehlerseite, denn `overflow-x: clip` an html/body verdeckte das sonst – und die Größe des
+Pakets) und `node tools/kopf-fuss-pruefen.mjs` (Kopf und Fuß auf allen Seiten gleich). Hinweis zu
+WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, das die CSP der Seite ablehnt – die Meldung
+„Refused to apply a stylesheet …“ kommt dann vom Werkzeug, nicht von der Seite.
 
 ## Entscheidungen, die sich leicht ändern lassen
 
@@ -354,12 +443,10 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   „Beim Start benachrichtigen“ (siehe unten).
 - **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Manrope
   ExtraBold, geneigt) liegt als Vektorgrafik vor.
-- **Farben:** ruhige, kühle Flächen wie in der Anwendung; Schaltflächen und Links in deren Hauptfarbe (`--accent`) – außer
-  in Kopfzeile und Einstieg: dort neutrales Schwarz und Grau und schwarze Knöpfe (`--brand-ink`). Die Farben
-  des Logos (`--brand` Vereinsblau, `--brand-2` Himmel, `--brand-ink` Schwarz, `--brand-orange` Signalorange) nur für das
-  Zeichen im Einstieg, „in Fluss“, die Knöpfe oben und den Fortschrittsbalken unter der Kopfzeile. Alle Werte oben in `site.css` (`:root`). Eine dunkle Darstellung gibt es bewusst nicht (weißes Design).
-- **Bewegung:** kurze Ladeanimation des Einstiegs (reines CSS; hinter der Überschrift gleiten die Etappen des Logo-Zeichens
-  von links und rechts herein und fügen sich zum V, zuletzt der orange Punkt), sanftes Ein- und Ausblenden beim Scrollen (`.reveal`, gesteuert
-  von `site.js`; Überschriften Wort für Wort aus der Unschärfe), Live-Fenster im Kapitel „Helferschichten“ und in den vier Reitern der Abläufe (ein Mauszeiger bedient die Anwendung – Bildfolgen aus der Demo-App, aufgenommen mit `tools/capture-screenshots.mjs --only schichten,suche,mitglieder,kalender,auswertung`; die Abläufe stehen in `site.js`, `LIVE_SCENES`; bei den Helferschichten hebt der Ablauf zugleich den gerade gezeigten der drei Schritte darunter hervor, hält das Telefon daneben auf demselben Stand und hebt nach „Drucken“ den gedruckten Plan vom Stapel) und Scroll-Effekte über CSS-Scroll-Timelines (`site.css`, „Bewegung: Feinschliff“): Fortschrittsbalken, dunkle Abschnitte wachsen beim Hereinscrollen aus einer runden Karte zur vollen Breite, Live-Fenster öffnen sich aus einer abgerundeten Maske, das Dashboard im Einstieg tritt beim Wegscrollen leicht zurück. Dazu ein Lichtschein unter dem Zeiger auf den Karten der Funktionen. Browser ohne
-  Unterstützung zeigen alles fest und sofort. Bewegt werden nur Transparenz, Beschnitt (clip-path) und Transformationen, nie das Layout; das Scrollen selbst bleibt unverändert. Mit „Bewegung
-  reduzieren“ im Betriebssystem ist alles sofort und ohne Animation sichtbar.
+- **Farben:** die Farben des Logos – Tinte `#0F1C2E`, Vereinsblau `#3A6BEA`, Himmel `#8FB0FF`, Signalorange `#FF8A5E`,
+  Papier `#F6F3EC` – dazu die Nacht `#060B16`. Signalorange trägt die Hauptaktion („Demo anfragen“, Text in Tinte 7,4 : 1)
+  und die Pinnnadel; Himmel und Vereinsblau sind Licht und Akzent. Textfarben je Fläche mit gemessenem Kontrast (Werte und
+  Verhältnisse oben in `site.css`, `:root`). Die Seite folgt bewusst nicht der hellen oder dunklen Einstellung des Geräts.
+- **Bewegung:** siehe „Gestaltung und Bewegung“. Leicht zu ändern: die Länge der Kamerafahrt (`--fahrt-strecke`, derzeit
+  220svh), die Dauern im Finale (`buehne.js`, „Kapitel 10 · Finale“), ob Kapitel 5 Nacht bleibt (Klasse `nacht` statt
+  `papier` am Abschnitt, Farben folgen den Variablen).

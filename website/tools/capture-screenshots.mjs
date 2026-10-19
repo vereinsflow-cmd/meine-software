@@ -426,6 +426,30 @@ const assertPreparedDashboard = async (page) => {
  */
 const hideStartChip = hideText(/^Start · [\d.]+$/);
 
+/**
+ * Gruß des Dashboards: Seit Oktober 2026 grüßt die Anwendung nach der Tageszeit („Guten Morgen/Tag/Abend“, Uhrzeit in
+ * Deutschland). Im Bild steht immer „Guten Tag“ – sonst hinge der Gruß auf der Website an der Uhrzeit der Aufnahme.
+ */
+const neutralGreeting = async (page) => {
+  await page.evaluate(() => {
+    for (const h of document.querySelectorAll("h1")) {
+      const walker = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) n.nodeValue = n.nodeValue.replace(/^Guten (Morgen|Abend)\b/, "Guten Tag");
+    }
+  });
+};
+
+/** Montags stehen in der laufenden Woche noch keine Helferstunden – „−100 % gegenüber letzter Woche“ sagt dann nichts. */
+const hideWeekComparison = async (page) => {
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll("p, span, div")) {
+      if (el.children.length === 0 && /^[−-]100\s*%\s*gegenüber letzter Woche$/.test(el.textContent?.trim() ?? "")) {
+        el.style.setProperty("visibility", "hidden");
+      }
+    }
+  });
+};
+
 /** Erstes Blatt des Aushangs „Helferplan Sommerfest …“ in der Vorschau der Druckseite (siehe helferplan-druck). */
 const printSheet = (page) =>
   page
@@ -842,6 +866,8 @@ const shots = [
       await assertPreparedDashboard(page);
       await hideText("Noch keine Stunden erfasst")(page);
       await hideStartChip(page);
+      await neutralGreeting(page);
+      await hideWeekComparison(page);
     },
     viewport: { width: 1280, height: 1000 },
     crop: async (page) => {
@@ -851,7 +877,8 @@ const shots = [
       const width = page.viewportSize().width - x;
       return { x, y: 0, width, height: Math.round(width * 0.8) };
     },
-    widths: [720, 960, 1440, 1920, 2328],
+    // 2880: fensterbreit am Ende der Kamerafahrt (Website, 1440 CSS-Pixel bei doppelter Dichte)
+    widths: [720, 960, 1440, 1920, 2328, 2880],
   },
   // Einstieg ab 900 px: das Dashboard in Tablet-Breite (768) als hohes Bild neben dem Text. In dieser Breite stehen die
   // vier Kennzahl-Karten zwei mal zwei und nichts wird gekürzt (schmaler kürzt die Anwendung den Vereinsnamen, breiter
@@ -859,6 +886,7 @@ const shots = [
   // auf der Website 330 bis 490 CSS-Pixel breit, daher 490 bis 1536 (einfache bis dreifache Pixeldichte).
   {
     name: "einstieg-dashboard",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website
     path: "/dashboard",
     steps: async (page) => {
       await assertPreparedDashboard(page);
@@ -909,6 +937,7 @@ const shots = [
   // Auf der Website 700 CSS-Pixel breit: 700 und 1400 für einfache und doppelte Dichte.
   {
     name: "schichten",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website (Live-Fenster entfallen)
     path: "/helferplanung",
     sidebar: "breit",
     steps: followLink(FEST_LINK),
@@ -916,14 +945,15 @@ const shots = [
     widths: [700, 960, 1400, 1920],
     frames: liveFrames,
   },
-  { name: "mitglieder", path: "/mitglieder", sidebar: "breit", viewport: DETAIL, crop: "content", frames: memberFrames },
+  { name: "mitglieder", optional: true, path: "/mitglieder", sidebar: "breit", viewport: DETAIL, crop: "content", frames: memberFrames },
   // Monat des Sommerfests (dort legt tools/demo-vorbereiten.mjs Trainings und weitere Termine an); das Datum steht in
   // der Adresse – bei einem anderen FEST_DAY in tools/demo-vorbereiten.mjs hier mitändern (FEST_WEEK).
-  { name: "kalender", path: `/kalender?ansicht=monat&datum=${FEST_WEEK}`, sidebar: "breit", viewport: DETAIL, crop: "content", frames: calendarFrames },
+  { name: "kalender", optional: true, path: `/kalender?ansicht=monat&datum=${FEST_WEEK}`, sidebar: "breit", viewport: DETAIL, crop: "content", frames: calendarFrames },
   // Diagramme („Auswertungen“) liegen weiter unten auf dem Reiter „Mitglieder“: Verlauf statt Donut, und ein
   // niedrigeres Fenster (720 px), damit die Seite weit genug scrollt, um mit der Karte zu beginnen.
   {
     name: "auswertung",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website
     path: "/dashboard?tab=mitglieder",
     sidebar: "breit",
     steps: async (page) => {
@@ -940,7 +970,7 @@ const shots = [
   // über der Mitgliederliste statt über dem Dashboard: Dessen farbige Kacheln lägen weichgezeichnet hinter dem Dialog,
   // und weiche Farbverläufe machen die verlustfreie Bildfolge gut doppelt so groß (18.10.2026: 736 statt gut 300 KB
   // bei doppelter Dichte). Die ruhige, helle Liste zeigt dasselbe – die Suche geht von jeder Seite aus.
-  { name: "suche", path: "/mitglieder", sidebar: "breit", viewport: SEARCH, crop: "dialog", frames: searchFrames },
+  { name: "suche", optional: true, path: "/mitglieder", sidebar: "breit", viewport: SEARCH, crop: "dialog", frames: searchFrames },
   // Der Helferplan zum Aushängen: das erste Blatt des Aushangs „Helferplan Sommerfest …“, wie es die Vorschau der
   // Druckseite zeigt – ein weißes A4-Blatt (210 mm = 794 CSS-Pixel breit) mit Rand und angedeuteter Kopfzeile. (Mit
   // `media: "print"` fehlten seit dem neuen Druckbild vom Oktober 2026 die Ränder – die setzt beim Drucken erst `@page`.)
@@ -957,10 +987,9 @@ const shots = [
       const width = Math.floor(box.x + box.width) - x;
       return { x, y: Math.ceil(box.y), width, height: Math.round((width * 297) / 210) };
     },
-    // Auf der Website 176 bis 236 CSS-Pixel breit: 240 und 480 für einfache und doppelte Dichte (vorher zeichnete der
-    // Browser bei einfacher Dichte die 640er Datei auf 236 Pixel), 640 und 800 für Smartphones mit dreifacher Dichte
-    // (das Blatt ist dort gut 210 bis 230 CSS-Pixel breit), 1280 für Vergrößerung
-    widths: [240, 480, 640, 800, 1280],
+    // Auf der Website (Kapitel 3, Aushang) 236 bis 240 CSS-Pixel breit: 240 und 480 für einfache und doppelte Dichte, 640
+    // und 800 für Smartphones mit dreifacher Dichte
+    widths: [240, 480, 640, 800],
     schemes: ["light"],
   },
   // Einstieg am Smartphone (unter 560 px): das Dashboard in der Ansicht fürs Smartphone, ohne Telefonrahmen als großes
@@ -972,9 +1001,12 @@ const shots = [
     steps: async (page) => {
       await assertPreparedDashboard(page);
       await hideStartChip(page);
+      await neutralGreeting(page);
+      await hideWeekComparison(page);
     },
     viewport: PHONE_SCREEN,
-    widths: [332, 442, 520, 663, 780, 1170],
+    // „Im Detail“ am Smartphone (Telefon, Bildschirm bis 312 CSS-Pixel): je Pixeldichte eine Datei
+    widths: [312, 442, 520, 624, 780, 936, 1170],
   },
   // Vorführung „Unterwegs“: ab „Meine Einsätze“, damit die Schaltfläche „Eintragen“ der ersten offenen Schicht ganz zu
   // sehen ist (über ihr stehen je nach Datum noch Hinweise auf unbesetzte Schichten)
@@ -987,8 +1019,7 @@ const shots = [
     widths: [260, 312, 468, 520, 624, 780],
   },
   // Kapitel Helferschichten: die Schicht „Getränkestand“ aus Sicht des Helfers vor und nach dem Eintragen (siehe
-  // phoneFrames), darunter „Grillstand“ (unbesetzt). Neben dem Live-Fenster 208 CSS-Pixel breit (1000–1199 px: 182),
-  // auf dem Smartphone 260.
+  // phoneFrames), darunter „Grillstand“ (unbesetzt).
   {
     name: "phone-schichten",
     device: "phone",
@@ -996,12 +1027,16 @@ const shots = [
     steps: followLink(FEST_LINK),
     frames: phoneFrames,
     viewport: PHONE_SCREEN,
-    widths: [182, 208, 260, 273, 312, 364, 390, 416, 520, 546, 624, 780],
+    // Einstieg (Telefon neben dem Laptop, Bildschirm 182/208 CSS-Pixel) und Kapitel 3 (flaches Telefon, 260/312); das Bild
+    // „vorher“ nur für Kapitel 3
+    widths: [182, 208, 260, 312, 390, 416, 520, 624, 780],
+    frameWidths: { "phone-schichten-live-1": [260, 312, 390, 520, 624, 780] },
   },
   // „Im Detail“ auf dem Smartphone (unter 720 px statt der Browserfenster): Suche über die Lupe, Mitgliederliste,
   // Kalender als Liste, Auswertung – je 260 CSS-Pixel breit wie die übrigen Telefone dort
   {
     name: "phone-suche",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website
     device: "phone",
     path: "/dashboard",
     steps: openSearch("Hel", { viaButton: true }),
@@ -1009,6 +1044,7 @@ const shots = [
   },
   {
     name: "phone-mitglieder",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website
     device: "phone",
     path: "/mitglieder",
     steps: scrollBelowHeader((page) => page.getByPlaceholder(/suchen/).or(page.getByRole("searchbox"))),
@@ -1016,6 +1052,7 @@ const shots = [
   },
   {
     name: "phone-kalender",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website
     device: "phone",
     path: `/kalender?ansicht=liste&datum=${FEST_WEEK}`, // Monat wie bei „kalender“
     steps: scrollBelowHeader((page) => page.getByRole("button", { name: "Heute" }).or(page.getByRole("link", { name: "Heute" }))),
@@ -1023,6 +1060,7 @@ const shots = [
   },
   {
     name: "phone-auswertung",
+    optional: true, // seit der Gestaltung B4 nicht mehr auf der Website
     device: "phone",
     path: "/dashboard?tab=mitglieder",
     steps: async (page) => {
@@ -1208,7 +1246,8 @@ async function main() {
                 await page.waitForTimeout(500);
                 await checkDemoNames(page, clip, name);
                 await checkProblems(page, clip, name);
-                const { width, height } = await save(await capture(page, clip, shot.widths ?? spec.widths, spec), name, scheme);
+                const breiten = shot.frameWidths?.[name] ?? shot.widths ?? spec.widths;
+                const { width, height } = await save(await capture(page, clip, breiten, spec), name, scheme);
                 console.log(`${scheme.padEnd(5)} ${name}  ${width}×${height}`);
               };
               await shot.frames(page, snap);

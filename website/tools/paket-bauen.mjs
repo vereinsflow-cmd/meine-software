@@ -4,8 +4,8 @@
 //   node tools/paket-bauen.mjs <Zieldatei>     schreibt das Paket woandershin (z. B. zum Ausprobieren)
 //
 // Enthalten ist genau das, was auch tools/hochladen.mjs hochlädt (siehe tools/paket.mjs): alles außer tools/, upload/,
-// README.md, den Vorschau-Startern und _headers, aber mit .htaccess. Die Stildatei kommt ohne Entwicklerkommentare ins
-// Paket; der Quelltext im Ordner bleibt, wie er ist. Das ZIP entspricht dem früheren „zip -r -X“: Ordner als eigene
+// README.md, den Vorschau-Startern und _headers, aber mit .htaccess. Stildatei und Skripte kommen ohne
+// Entwicklerkommentare ins Paket; der Quelltext im Ordner bleibt, wie er ist. Das ZIP entspricht dem früheren „zip -r -X“: Ordner als eigene
 // Einträge, Dateirechte wie im Ordner, keine Zusatzfelder.
 import fs from "node:fs";
 import path from "node:path";
@@ -125,4 +125,4 @@ fs.renameSync(zwischendatei, ziel);
 const kb = (bytes) => `${(bytes / 1024).toLocaleString("de-DE", { maximumFractionDigits: 1 })} KB`;
 const anzeige = path.relative(process.cwd(), ziel);
 console.log(`${anzeige.startsWith("..") ? ziel : anzeige}: ${dateien.length} Dateien in ${ordner.length} Ordnern, ${kb(fs.statSync(ziel).size)}`);
-if (cssVorher) console.log(`Stildatei ohne Kommentare: ${kb(cssVorher)} → ${kb(cssNachher)}`);
+if (cssVorher) console.log(`Stildatei und Skripte ohne Kommentare: ${kb(cssVorher)} → ${kb(cssNachher)}`);
