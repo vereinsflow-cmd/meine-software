@@ -10,6 +10,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/85",
+        // Grün (z. B. „Neues Mitglied“ auf dem Dashboard). Beim Darüberfahren dunkler bzw. im Dunkeln heller statt
+        // durchscheinend – so bleibt die Schrift auch dann über 4,5:1.
+        success:
+          "bg-success font-semibold text-success-foreground shadow-sm hover:bg-[color-mix(in_oklch,var(--success),var(--foreground)_12%)]",
         outline:
           "border-border bg-card shadow-xs hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
