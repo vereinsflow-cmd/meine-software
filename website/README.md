@@ -206,7 +206,8 @@ Hinweise zu den Aufnahmen:
   über 700 KB.
 - **Seitenleiste:** Ganze Fenster (Laptop, Dashboard) zeigen die Seitenleiste der Anwendung, wie sie eingestellt ist; die
   optionalen Ausschnitte rechts daneben entstehen mit der breiten Leiste (`sidebar: "breit"` im Skript).
-- **Was die Seite zeigt** (Stand 19.10.2026, neu aufgenommen nach dem Dashboard im Stil „Vertix“: 43 Dateien, 2,0 MB):
+- **Was die Seite zeigt** (Stand 20.10.2026, neu aufgenommen nach den neuen Farben der Anwendung – „Neues Mitglied“ grün,
+  Glocke in der Kopfzeile gelb; Demo-Daten wie am 18.10.2026 vorbereitet: 43 Dateien, 2,0 MB):
   - `dashboard` (720 bis 2880 px): Laptop im Einstieg und in der Kamerafahrt, die flache Aufnahme am Ende der Fahrt und
     „Im Detail“ ohne Fahrt. Die flache Aufnahme wählt zuerst dieselbe Datei wie der Bildschirm (eine Anfrage); sobald die
     Fahrt beginnt, lädt und dekodiert `buehne.js` genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px, `data-gross`)
@@ -227,12 +228,15 @@ Hinweise zu den Aufnahmen:
   HTML an. Neue Telefonbilder sind 390 × 760 Punkte groß – genau der sichtbare Teil des Bildschirms zwischen Statusleiste
   und Home-Balken –, damit der Rahmen nichts abschneidet.
 - **Datum in den Bildern:** Die Aufnahmen zeigen, was die Anwendung am Aufnahmetag ausrechnet – beim Laptop „Stand
-  18.10.2026“ und die Fälligkeiten der beiden offenen Rechnungen des Seeds („davon 2 überfällig“, „seit 21 Tagen
+  20.10.2026“ und die Fälligkeiten der beiden offenen Rechnungen des Seeds („davon 2 überfällig“, „seit 23 Tagen
   überfällig“ in Rot; ihre Fälligkeit rechnet der Seed vom Tag seines Laufs aus, `finanzen-demo.mjs` lässt sie unverändert),
-  im Einstieg das Datum der Begrüßung, am Telefon Angaben wie „in 230 Tagen“. Wer die Bilder später erneuert, nimmt sie
-  deshalb alle am selben Tag neu auf. Ruhiger wirkte der Laptop mit Rechnungen, die noch nicht fällig sind (das hieße,
-  die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das Reel-Projekt, daher bisher
-  nicht geändert).
+  im Einstieg das Datum unter der Begrüßung („Dienstag, 20. Oktober 2026“) und „Termine in 30 Tagen“ samt „Nächster
+  Termin heute“, auf dem Aushang „Erstellt am …“, am Telefon Angaben wie „in 235 Tagen“. Wer die Bilder später erneuert,
+  nimmt sie deshalb alle am selben Tag neu auf. Am Smartphone (`phone-dashboard`) bricht die Zeile mit dem Datum um,
+  wenn Wochentag und Monat lang sind – alles darunter rückt dann eine Zeile (24 Punkte) tiefer (so am Dienstag,
+  20.10.2026; „Montag, 19. Oktober 2026“ passte noch in eine Zeile). Ruhiger wirkte der Laptop mit Rechnungen, die noch
+  nicht fällig sind (das hieße, die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das
+  Reel-Projekt, daher bisher nicht geändert).
 - Nach neuen Aufnahmen nachziehen: (1) die Lage der drei Marken auf dem Dashboard (`.m-suche`, `.m-zahlen`, `.m-termine`
   in `site.css`, in Prozent des Bildes), die Anteile der Kennzahlkarten für den Lichtstreif der Finanzen (`streifMessen()`
   in `buehne.js`) und – ändert sich die Ampel – die Bahn des Stroms zu Annas Platz (`data-pfad` an `#fluss-spur`); (2) die
