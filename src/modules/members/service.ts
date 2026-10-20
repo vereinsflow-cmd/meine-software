@@ -334,16 +334,18 @@ export interface DepartmentOption {
   /** Darf der Benutzer Mitglieder dieser Abteilung zuordnen bzw. entfernen? */
   assignable: boolean;
   isActive: boolean;
+  /** Farbe der Abteilung (#rrggbb, frei eingegeben – vor dem Einsatz mit `safeColor` prüfen) für Kreise und Punkte der Liste. */
+  color: string | null;
 }
 
-/** Abteilungen für das Formular; nicht zuweisbare bleiben sichtbar, sind aber gesperrt. */
+/** Abteilungen für das Formular und die Filter der Liste; nicht zuweisbare bleiben sichtbar, sind aber gesperrt. */
 export async function listDepartmentOptions(
   ctx: TenantContext,
   permission: "members:create" | "members:update",
 ): Promise<DepartmentOption[]> {
   const departments = await ctx.db.department.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, isActive: true },
+    select: { id: true, name: true, isActive: true, color: true },
   });
   const scope = scopeOf(ctx, permission);
   return departments.map((department) => ({

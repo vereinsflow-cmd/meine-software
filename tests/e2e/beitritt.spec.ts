@@ -123,7 +123,7 @@ test.describe("Beitritt per QR-Code", () => {
 
     // Das Mitglied steht in der Liste …
     await open(page, `/mitglieder?q=${person.last}`);
-    await expect(page.getByRole("link", { name: `${person.last}, ${person.first}` })).toBeVisible();
+    await expect(page.getByRole("link", { name: `${person.first} ${person.last}` })).toBeVisible();
 
     // … und die Einladung liegt im Postausgang – mit einem Link, der zur Kontoanlage führt.
     await expect.poll(() => outboxMailsTo(person.email).length, { timeout: 15_000 }).toBe(1);

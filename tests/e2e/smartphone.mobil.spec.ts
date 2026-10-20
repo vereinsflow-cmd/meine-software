@@ -198,6 +198,36 @@ test.describe("Smartphone", () => {
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + 1);
   });
+  test("Mitgliederliste: nur die Liste – ein Tipp auf die Zeile öffnet die Seite des Mitglieds", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/mitglieder");
+    const list = page.getByRole("region", { name: "Mitgliederliste" });
+    // Kein Detailbereich daneben: Das Mitglied hat seine eigene Seite.
+    await expect(page.getByRole("link", { name: "Profil öffnen" })).toBeHidden();
+    // Mit der Liste als Rückweg („Alle Mitglieder“ auf der Seite des Mitglieds)
+    await expect(list.getByRole("link", { name: /Hans Helfer/ })).toHaveAttribute(
+      "href",
+      /^\/mitglieder\/[0-9a-f-]{36}\?von=%2Fmitglieder%3Fid%3D/,
+    );
+    // Lange Namen brechen um statt abgeschnitten zu werden (hier gibt es keinen Detailbereich, der sie ganz zeigte).
+    const longName = list.getByRole("link", { name: /Claudia Abteilungsleiterin/ });
+    expect(await longName.evaluate((link) => link.scrollHeight <= link.clientHeight)).toBe(true);
+    const row = list.getByRole("listitem").filter({ hasText: "Hans Helfer" });
+    expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44); // gut treffbar
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+
+    // Import, Export & Co. stecken im Menü „Weitere Aktionen“
+    await page.getByRole("button", { name: "Weitere Aktionen" }).click();
+    await expect(page.getByRole("menuitem", { name: "Import" })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await row.click({ position: { x: 300, y: 20 } }); // neben den Namen: die ganze Zeile ist antippbar
+    await expect(page).toHaveURL(/\/mitglieder\/[0-9a-f-]{36}\?von=/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Hans Helfer");
+  });
+
   test("Filter: am Handy nur Suche und Knopf „Filter“ – ein Tipp klappt die Felder auf; aktive Filter zählen mit", async ({
     page,
   }) => {

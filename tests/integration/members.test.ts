@@ -10,6 +10,7 @@ import {
   getMemberForEdit,
   getMemberHistory,
   getMemberStats,
+  listDepartmentOptions,
   listMembers,
   recordConsent,
   restoreFromTrash,
@@ -727,6 +728,24 @@ describe("Suchen, Filtern, Sortieren", () => {
     expect(page1.pageCount).toBe(Math.ceil(page1.total / 5));
     expect(page2.items.length).toBe(page1.total - 5);
     expect(new Set([...page1.items, ...page2.items].map((m) => m.id)).size).toBe(page1.total);
+  });
+
+  it("Abteilungen für Filter und Liste: nur die eigenen, mit Farbe und Zuweisbarkeit nach Rolle", async () => {
+    const { ctx, fussball, handball } = await setup();
+    await prisma.department.update({ where: { id: fussball.id }, data: { color: "#1baf7a" } });
+    const other = await createClub("Fremder Verein");
+    await createDepartment(other.id, "Fremde Abteilung");
+
+    const options = await listDepartmentOptions(ctx.lead, "members:update");
+    expect(options.map((o) => o.name)).toEqual(["Fußball", "Handball"]); // nichts aus dem anderen Verein
+    expect(options.find((o) => o.id === fussball.id)).toMatchObject({
+      color: "#1baf7a",
+      assignable: true,
+    });
+    expect(options.find((o) => o.id === handball.id)).toMatchObject({
+      color: null,
+      assignable: false,
+    });
   });
 
   it("ignoriert gefährliche Sucheingaben (Wildcards und SQL-Zeichen sind nur Text)", async () => {
