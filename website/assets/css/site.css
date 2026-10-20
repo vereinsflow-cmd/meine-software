@@ -1395,11 +1395,13 @@ html:not(.js) .ruhe-knopf {
   pointer-events: none;
 }
 
+/* Lichtkegel ohne filter: blur – clip-path schneidet erst nach dem Filter, die Unschärfe wirkte also nur an der Oberkante
+   (gemessen: höchstens 4/255 Unterschied, nur dort). Diese weiche Kante steht jetzt im Verlauf (Gauß, σ = 28 px); der
+   Live-Filter kostete in WebKit beim Abblenden des Lichts (fahrt-licht, ab 60 % der Fahrt) eine Lücke von über 100 ms. */
 .lichtkegel {
   position: absolute;
-  background: linear-gradient(180deg, rgb(170 195 255 / 16%), rgb(143 176 255 / 5%) 60%, rgb(143 176 255 / 0%));
+  background: linear-gradient(180deg, rgb(170 195 255 / 8%), rgb(170 195 255 / 13%) 28px, rgb(167 193 255 / 14.5%) 56px, rgb(143 176 255 / 5%) 60%, rgb(143 176 255 / 0%));
   clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
-  filter: blur(28px);
 }
 
 .horizont {
@@ -8251,14 +8253,12 @@ html:not(.js) .k01 .iphone-rim,
 }
 
 /* Ab 1024 × 720 spiegelt sich auch der Laptop schwach im Boden (an der Hülle; die Kante der Spiegelung liegt an der
-   Vorderkante des Unterteils: 0,048 der Bildschirmbreite über dem Rand der Hülle). In der Kamerafahrt aus. */
+   Vorderkante des Unterteils: 0,048 der Bildschirmbreite über dem Rand der Hülle). Sie bleibt in der Kamerafahrt und
+   fährt mit dem Laptop aus dem Bild: Umschalten (früher „none“ beim Losfahren – Chromium kennt den Wert gar nicht und
+   behielt sie ohnehin) baute in WebKit die Spiegel-Ebenen neu auf, eine Lücke von 45–130 ms genau beim Losfahren. */
 @media (min-width: 1024px) and (min-height: 720px) {
   .k01 .geraet-laptop {
     -webkit-box-reflect: below calc(var(--k01-sw) * -0.048) linear-gradient(transparent 87%, rgb(255 255 255 / 13%));
-  }
-
-  .k01 .ist-faehrt .geraet-laptop {
-    -webkit-box-reflect: none;
   }
 }
 
@@ -8649,13 +8649,12 @@ html:not(.js) .k01 .iphone-rim,
     }
   }
 
-  /* Laptop frontal, sobald die Fahrt beginnt; das Telefon dreht sich weg (Pose) und zieht rechts hinaus (Hülle) */
+  /* Laptop frontal, sobald die Fahrt beginnt; das Telefon bleibt in seiner Pose und zieht rechts hinaus (Hülle,
+     fahrt-handy). Früher drehte es sich dabei in 0,9 s weiter weg (−24° → −62°): Jede Drehung weg von der Kamera macht
+     Eckstreifen des Rahmens erst sichtbar, die Chromium dann erst rastert – jedes Mal ein verpasstes Bild (3 von 4 in der
+     Fahrt, gemessen mit tools/fahrt-messen.mjs, Gegenproben handyalt, eckenrechts, handyzu0). */
   .js .k01 .ist-faehrt .ist-posiert .pose-laptop {
     transform: none;
-  }
-
-  .js .k01 .ist-faehrt .ist-posiert .pose-handy {
-    --pose: perspective(calc(var(--pw) * 9)) rotateY(-62deg);
   }
 
   @supports (animation-timeline: view()) {
@@ -8758,12 +8757,14 @@ html:not(.js) .k01 .iphone-rim,
     }
   }
 
+  /* Ohne filter: blur (früher bis 2 px, wo die Überschrift nur noch zu einem Fünftel deckt): Mit blur lief die Animation
+     in Chromium nicht auf dem Compositor („Filter verschiebt Pixel“), die Überschrift wurde bis 42 % in jedem Bild auf
+     dem Hauptthread neu gezeichnet und gerastert (drei Viertel aller Rasteraufträge der Fahrt). */
   @keyframes fahrt-titel {
     0% {
       translate: 0 0;
       scale: 1;
       opacity: 1;
-      filter: blur(0);
     }
 
     70% {
@@ -8774,7 +8775,6 @@ html:not(.js) .k01 .iphone-rim,
       translate: 0 -40svh;
       scale: 1.6;
       opacity: 0;
-      filter: blur(2px);
     }
   }
 
