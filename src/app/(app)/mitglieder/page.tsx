@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AwardIcon, DownloadIcon, InboxIcon, PlusIcon, UploadIcon } from "lucide-react";
+import { BUTTON_ACCENT } from "@/components/shared/accent";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { MemberStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
@@ -108,22 +109,24 @@ export default async function MembersPage({
                 </Link>
               </Button>
             )}
+            {/* Nebenknöpfe getönt nach ihrer Bedeutung (20.10.2026): Anträge orange (warten auf Bearbeitung), Import blau
+                (Daten kommen herein), Export türkis (Daten gehen hinaus), Statistik violett (Auswertung), Ehrungen gold. */}
             {pendingApplications !== null && (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className={BUTTON_ACCENT.orange}>
                 <Link href="/mitglieder/antraege">
                   <InboxIcon /> Anträge{pendingApplications > 0 ? ` (${pendingApplications})` : ""}
                 </Link>
               </Button>
             )}
             {can(ctx, "members:import") && (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className={BUTTON_ACCENT.blue}>
                 <Link href="/mitglieder/import">
                   <UploadIcon /> Import
                 </Link>
               </Button>
             )}
             {can(ctx, "members:export") && (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className={BUTTON_ACCENT.teal}>
                 <a
                   href={`/api/members/export${buildQuery(params, { q: undefined, sort: undefined, dir: undefined, page: undefined, pageSize: undefined })}`}
                 >
@@ -131,14 +134,14 @@ export default async function MembersPage({
                 </a>
               </Button>
             )}
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className={BUTTON_ACCENT.violet}>
               <Link href="/mitglieder/statistik">
                 <AREA_ICON.auswertungen /> Statistik
               </Link>
             </Button>
             {/* Runde Mitgliedsjubiläen – für alle, die Mitglieder vereinsweit oder ihrer Abteilungen sehen */}
             {canSeeAnniversaries(ctx) && (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className={BUTTON_ACCENT.amber}>
                 <Link href="/mitglieder/ehrungen">
                   <AwardIcon /> Ehrungen
                 </Link>

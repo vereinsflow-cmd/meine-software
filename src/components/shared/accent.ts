@@ -89,3 +89,21 @@ export const KPI_ACCENT = {
 } as const;
 
 export type KpiAccent = keyof typeof KPI_ACCENT;
+
+/**
+ * Getönte Nebenknöpfe (seit 20.10.2026, Kopf der Mitgliederliste): auf einen `variant="outline"`-Knopf gelegt – heller Grund
+ * der Stufe 50, Rand 200, Schrift und Symbol 800 (im Dunkeln Grund 400/10 %, Schrift 300). So bekommt jede Aktion ihre
+ * Farbe, und der kräftig gefüllte Hauptknopf daneben bleibt als Hauptaktion erkennbar. Schrift hell mindestens 6,8 : 1,
+ * dunkel mindestens 9,5 : 1 (gemessen auf der Mitgliederliste).
+ * Ausgeschriebene Klassen, weil Tailwind nur vollständige Namen im Quelltext findet.
+ */
+export const BUTTON_ACCENT = {
+  orange:
+    "border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100 hover:text-orange-900 dark:border-orange-400/25 dark:bg-orange-400/10 dark:text-orange-300 dark:hover:bg-orange-400/20 dark:hover:text-orange-200",
+  blue: "border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:text-blue-900 dark:border-blue-400/25 dark:bg-blue-400/10 dark:text-blue-300 dark:hover:bg-blue-400/20 dark:hover:text-blue-200",
+  teal: "border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 hover:text-teal-900 dark:border-teal-400/25 dark:bg-teal-400/10 dark:text-teal-300 dark:hover:bg-teal-400/20 dark:hover:text-teal-200",
+  violet:
+    "border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900 dark:border-violet-400/25 dark:bg-violet-400/10 dark:text-violet-300 dark:hover:bg-violet-400/20 dark:hover:text-violet-200",
+  amber:
+    "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20 dark:hover:text-amber-200",
+} as const;
