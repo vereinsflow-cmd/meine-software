@@ -393,7 +393,7 @@ export const FAQ: readonly FaqSection[] = [
         question: "Wie importiere ich viele Mitglieder auf einmal (z. B. aus Excel)?",
         steps: [
           "Speichere deine Tabelle als CSV-Datei.",
-          "Öffne „Mitglieder“ und klicke auf „Import“. Über „Vorlage herunterladen“ bekommst du eine Beispieldatei mit den richtigen Spalten.",
+          "Öffne „Mitglieder“ und klicke auf „Import“ (am Handy unter „Weitere Aktionen“). Über „Vorlage herunterladen“ bekommst du eine Beispieldatei mit den richtigen Spalten.",
           "Lade die Datei hoch. Du siehst zuerst eine Vorschau – erst danach wird etwas gespeichert.",
         ],
         link: { href: "/mitglieder/import", label: "Zum Import" },
@@ -412,7 +412,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "ehrungen",
         question: "Wer hat in diesem Jahr ein rundes Mitgliedsjubiläum (Ehrungen)?",
         steps: [
-          "Öffne „Mitglieder“ und klicke oben auf „Ehrungen“.",
+          "Öffne „Mitglieder“ und klicke oben auf „Ehrungen“ (am Handy unter „Weitere Aktionen“).",
           "Wähle bei „Jahr“ das gewünschte Jahr und klicke auf „Anzeigen“. Du siehst je Stufe (10, 25, 40, 50, 60, 70 und 75 Jahre) eine eigene Liste.",
           "Mit „Liste drucken“ bekommst du eine saubere Druckansicht. Mit „Export“ lädst du die Liste als CSV-Datei herunter – das geht mit dem Recht, Mitglieder zu exportieren.",
         ],
@@ -436,7 +436,7 @@ export const FAQ: readonly FaqSection[] = [
           "Mit einem QR-Code – zum Beispiel auf einem Aushang im Vereinsheim – stellen Interessierte am Handy einen Antrag. Du entscheidest, wer Mitglied wird.",
         ],
         steps: [
-          "Öffne „Mitglieder“ und klicke auf „Anträge“.",
+          "Öffne „Mitglieder“ und klicke auf „Anträge“ (am Handy unter „Weitere Aktionen“).",
           "Klicke in der Karte „QR-Code zum Beitritt“ auf „QR-Code einrichten“ und gib ein, wie viele neue Mitglieder sich darüber anmelden können (z. B. 50). Klicke danach auf „Aushang drucken“. Häng das Blatt im Verein auf oder teile den Link („Kopieren“).",
           "Wer den Code scannt, füllt am Handy einen kurzen Antrag aus. Du bekommst dazu eine Benachrichtigung.",
           "Prüfe den Antrag unter „Offene Anträge“ und klicke auf „Annehmen“ oder „Ablehnen“.",

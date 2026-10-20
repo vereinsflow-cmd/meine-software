@@ -104,7 +104,7 @@ test.describe("Formularfelder", () => {
       page,
     }) => {
       await openIn(page, scheme, "/mitglieder");
-      const link = page.locator("tbody a[href^='/mitglieder/']").first();
+      const link = page.locator("#mitglieder-liste [data-member] a:visible").first();
       await link.focus();
       await page.keyboard.press("Shift+Tab");
       await page.keyboard.press("Tab"); // Fokus per Tastatur auf den Mitgliedsnamen (focus-visible)
@@ -138,10 +138,15 @@ test.describe("Formulare vor dem Laden der Skripte", () => {
   }) => {
     await login(page, USERS.admin);
     await open(page, "/mitglieder?q=Becker");
-    const href = await page.getByRole("link", { name: /Becker, Elias/ }).getAttribute("href");
+    // Das erste Treffer-Mitglied steht im Detailbereich; „Profil öffnen“ führt zu seiner Seite.
+    const href = await page
+      .getByRole("region", { name: "Elias Becker" })
+      .getByRole("link", { name: "Profil öffnen" })
+      .getAttribute("href");
     // Das rohe HTML (ohne dass React Hook Form im Browser läuft): Die Felder enthalten schon die gespeicherten Werte –
     // vorher waren sie im ersten Bild leer, und am langsamen Handy wirkte es, als seien die Daten weg.
-    const html = await (await page.request.get(`${href}/bearbeiten`)).text();
+    const profile = href!.split("?")[0]; // ohne den Rückweg `?von=`
+    const html = await (await page.request.get(`${profile}/bearbeiten`)).text();
     const input = (name: string) =>
       html.match(new RegExp(`<input[^>]*name="${name}"[^>]*>`))?.[0] ?? "";
     expect(input("firstName")).toContain('value="Elias"');

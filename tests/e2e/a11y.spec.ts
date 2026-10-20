@@ -97,8 +97,26 @@ test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", 
     expect(await violations(page)).toEqual([]);
 
     await open(page, "/mitglieder");
-    await page.locator("tbody a[href^='/mitglieder/']").first().click();
+    await page.getByRole("link", { name: "Profil öffnen" }).click();
+    await expect(page).toHaveURL(/\/mitglieder\/[0-9a-f-]{36}\?von=/);
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test("Mitgliederliste: Filter aufgeklappt, anderes Mitglied gewählt, nach Nummer sortiert", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/mitglieder?sort=memberNumber&dir=desc");
+    await page.locator("label", { hasText: /^Filter/ }).click();
+    await expect(page.getByRole("combobox", { name: "Nach Status filtern" })).toBeVisible();
+    await page
+      .getByRole("region", { name: "Mitgliederliste" })
+      .locator("[data-member] a:visible")
+      .nth(1)
+      .click();
+    await expect(page).toHaveURL(/id=[0-9a-f-]{36}/);
     await page.waitForLoadState("networkidle");
     expect(await violations(page)).toEqual([]);
   });

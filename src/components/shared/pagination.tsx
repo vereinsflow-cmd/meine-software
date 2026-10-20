@@ -15,9 +15,33 @@ function pageNumbers(current: number, count: number): (number | "…")[] {
   return result;
 }
 
+const LINK_CLASS =
+  "hover:bg-accent inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm";
+
+/** „Vorherige“ bzw. „Nächste Seite“ – am Anfang bzw. Ende nur angedeutet (kein Link). */
+function StepLink({ href, next }: { href: string | null; next: boolean }) {
+  const Icon = next ? ChevronRightIcon : ChevronLeftIcon;
+  return href ? (
+    <Link
+      href={href}
+      className={LINK_CLASS}
+      aria-label={next ? "Nächste Seite" : "Vorherige Seite"}
+      rel={next ? "next" : "prev"}
+    >
+      <Icon className="size-4" />
+    </Link>
+  ) : (
+    <span className={cn(LINK_CLASS, "text-muted-foreground opacity-50")} aria-hidden="true">
+      <Icon className="size-4" />
+    </span>
+  );
+}
+
 /**
  * Seitenwechsel über URL-Parameter (`?page=2`). Funktioniert ohne JavaScript, ist tastaturbedienbar
  * und behält alle übrigen Filter bei.
+ * `compact`: nur „‹ 51–100 von 230 ›“ – für schmale Listen (Mitgliederliste mit Detailbereich), wo die Seitenzahlen nicht
+ * nebeneinander passen; bei nur einer Seite fehlt die Leiste ganz (die Zahl steht schon im Seitenkopf).
  */
 export function Pagination({
   basePath,
@@ -26,6 +50,8 @@ export function Pagination({
   pageCount,
   total,
   pageSize,
+  compact = false,
+  className,
 }: {
   basePath: string;
   searchParams: RawSearchParams;
@@ -33,43 +59,44 @@ export function Pagination({
   pageCount: number;
   total: number;
   pageSize: number;
+  compact?: boolean;
+  className?: string;
 }) {
-  if (total === 0) return null;
+  if (total === 0 || (compact && pageCount <= 1)) return null;
   const from = (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   const href = (target: number) =>
     `${basePath}${buildQuery(searchParams, { page: target === 1 ? undefined : target })}`;
-  const linkClass =
-    "hover:bg-accent inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm";
+  const previous = page > 1 ? href(page - 1) : null;
+  const next = page < pageCount ? href(page + 1) : null;
+  const range = (
+    <p className="text-sm text-muted-foreground" aria-live="polite">
+      {from}–{to} von {total}
+    </p>
+  );
+
+  if (compact)
+    return (
+      <nav
+        aria-label="Seitennavigation"
+        className={cn("flex items-center justify-between gap-2", className)}
+      >
+        <StepLink href={previous} next={false} />
+        {range}
+        <StepLink href={next} next />
+      </nav>
+    );
 
   return (
     <nav
       aria-label="Seitennavigation"
-      className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row"
+      className={cn("mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row", className)}
     >
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {from}–{to} von {total}
-      </p>
+      {range}
       {pageCount > 1 && (
         <ul className="flex items-center gap-1">
           <li>
-            {page > 1 ? (
-              <Link
-                href={href(page - 1)}
-                className={linkClass}
-                aria-label="Vorherige Seite"
-                rel="prev"
-              >
-                <ChevronLeftIcon className="size-4" />
-              </Link>
-            ) : (
-              <span
-                className={cn(linkClass, "text-muted-foreground opacity-50")}
-                aria-hidden="true"
-              >
-                <ChevronLeftIcon className="size-4" />
-              </span>
-            )}
+            <StepLink href={previous} next={false} />
           </li>
           {pageNumbers(page, pageCount).map((entry, index) =>
             entry === "…" ? (
@@ -83,7 +110,7 @@ export function Pagination({
                   aria-current={entry === page ? "page" : undefined}
                   aria-label={`Seite ${entry}`}
                   className={cn(
-                    linkClass,
+                    LINK_CLASS,
                     entry === page &&
                       "border-primary bg-primary text-primary-foreground hover:bg-primary",
                   )}
@@ -94,23 +121,7 @@ export function Pagination({
             ),
           )}
           <li>
-            {page < pageCount ? (
-              <Link
-                href={href(page + 1)}
-                className={linkClass}
-                aria-label="Nächste Seite"
-                rel="next"
-              >
-                <ChevronRightIcon className="size-4" />
-              </Link>
-            ) : (
-              <span
-                className={cn(linkClass, "text-muted-foreground opacity-50")}
-                aria-hidden="true"
-              >
-                <ChevronRightIcon className="size-4" />
-              </span>
-            )}
+            <StepLink href={next} next />
           </li>
         </ul>
       )}

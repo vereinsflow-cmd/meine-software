@@ -89,7 +89,11 @@ test.describe("Datenschutz – Seite und Einwilligungen", () => {
     const adminPage = await admin.newPage();
     await login(adminPage, USERS.admin);
     await adminPage.goto("/mitglieder?q=Maria");
-    await adminPage.getByRole("link", { name: /Mitglied, Maria/ }).click();
+    await adminPage.getByRole("link", { name: /Maria Mitglied/ }).click();
+    await adminPage
+      .getByRole("region", { name: "Maria Mitglied" })
+      .getByRole("link", { name: "Profil öffnen" })
+      .click();
     await expect(adminPage.getByText(/Veröffentlichung von Fotos/).first()).toBeVisible();
     await expect(adminPage.getByText(/Erteilt am \d{2}\.\d{2}\.\d{4} \(online\)/)).toBeVisible();
     await admin.close();

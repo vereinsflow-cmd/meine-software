@@ -9,18 +9,30 @@ import { cn } from "@/lib/utils";
  * Reines CSS – ein unsichtbares Kästchen ohne Namen (es wird nicht mitgeschickt) und seine Beschriftung als Knopf. Das
  * klappt auch, bevor die Skripte geladen sind. `FilterToggle` steht im Formular direkt vor `FilterFields` (Geschwister).
  */
-export function FilterToggle({ id, active }: { id: string; active: number }) {
+export function FilterToggle({
+  id,
+  active,
+  always = false,
+}: {
+  id: string;
+  active: number;
+  /** Auf jeder Breite zu- und aufklappbar (schmale Spalte, z. B. die Mitgliederliste neben dem Detailbereich). */
+  always?: boolean;
+}) {
   return (
     <>
       <input
         id={id}
         type="checkbox"
         aria-controls={`${id}-felder`}
-        className="peer/filter sr-only sm:hidden"
+        className={cn("peer/filter sr-only", !always && "sm:hidden")}
       />
       <label
         htmlFor={id}
-        className="inline-flex h-9 cursor-pointer items-center gap-1.5 self-end rounded-lg border bg-background px-3 text-sm font-medium whitespace-nowrap shadow-xs select-none peer-checked/filter:bg-muted peer-focus-visible/filter:ring-3 peer-focus-visible/filter:ring-ring/50 hover:bg-muted sm:hidden dark:bg-input/30"
+        className={cn(
+          "inline-flex h-9 cursor-pointer items-center gap-1.5 self-end rounded-lg border bg-background px-3 text-sm font-medium whitespace-nowrap shadow-xs select-none peer-checked/filter:bg-muted peer-focus-visible/filter:ring-3 peer-focus-visible/filter:ring-ring/50 hover:bg-muted dark:bg-input/30",
+          !always && "sm:hidden",
+        )}
       >
         <SlidersHorizontalIcon className="size-4" aria-hidden="true" />
         Filter
@@ -48,13 +60,18 @@ export const FILTER_SEARCH =
 export const FILTER_SEARCH_ROW = "sm:basis-full";
 export const FILTER_SELECT = "sm:w-40 sm:flex-none";
 
-/** Die Felder hinter dem Knopf `FilterToggle` (gleiche `id`): am Handy zu- und aufklappbar, ab 640 px Teil der Zeile. */
+/**
+ * Die Felder hinter dem Knopf `FilterToggle` (gleiche `id`): am Handy zu- und aufklappbar, ab 640 px Teil der Zeile.
+ * `always` (wie beim Knopf): auf jeder Breite aufklappbar, aufgeklappt untereinander.
+ */
 export function FilterFields({
   id,
+  always = false,
   className,
   children,
 }: {
   id: string;
+  always?: boolean;
   /** Anordnung am Handy im aufgeklappten Zustand (Vorgabe: untereinander). */
   className?: string;
   children: React.ReactNode;
@@ -63,7 +80,10 @@ export function FilterFields({
     <div
       id={`${id}-felder`}
       className={cn(
-        "col-span-full gap-2 max-sm:hidden max-sm:peer-checked/filter:grid sm:contents",
+        "col-span-full gap-2",
+        always
+          ? "hidden peer-checked/filter:grid"
+          : "max-sm:hidden max-sm:peer-checked/filter:grid sm:contents",
         className,
       )}
     >

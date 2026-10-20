@@ -1,8 +1,21 @@
 import path from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { E2E_BASE_URL } from "./environment";
 import { USERS, login, open, openNavGroup } from "./helpers";
+
+/**
+ * Adresse der Seite eines Mitglieds: in der Liste wählen, dann „Profil öffnen“ im Detailbereich – ohne den Rückweg `?von=`
+ * (`/mitglieder/<id>`).
+ */
+async function memberHref(page: Page, name: string): Promise<string | null> {
+  await page.getByRole("region", { name: "Mitgliederliste" }).getByRole("link", { name }).click();
+  const href = await page
+    .getByRole("region", { name })
+    .getByRole("link", { name: "Profil öffnen" })
+    .getAttribute("href");
+  return href?.split("?")[0] ?? null;
+}
 
 test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
   test.beforeEach(async ({ page }) => {
@@ -10,22 +23,157 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
   });
 
   test("Liste zeigt Mitglieder, Suche und Filter funktionieren", async ({ page }) => {
-    await page.goto("/mitglieder");
+    await open(page, "/mitglieder");
     await expect(page.getByRole("heading", { level: 1, name: "Mitglieder" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toBeVisible();
+    const list = page.getByRole("region", { name: "Mitgliederliste" });
+    await expect(list.getByRole("link", { name: /Hans Helfer/ })).toBeVisible();
 
-    await page.getByRole("searchbox", { name: "Mitglieder durchsuchen" }).fill("Helfer");
-    await page.getByRole("button", { name: "Filtern" }).click();
+    // Suchen: Eingabe und Enter (die Auswahlfelder samt „Filtern“ stecken hinter dem Knopf „Filter“)
+    const search = page.getByRole("searchbox", { name: "Mitglieder durchsuchen" });
+    await search.fill("Helfer");
+    await search.press("Enter");
     await expect(page).toHaveURL(/q=Helfer/);
-    await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Mitglied, Maria/ })).toHaveCount(0);
+    await page.waitForLoadState("networkidle"); // Formular schickt ab wie der Browser: neue Seite, erst fertig laden
+    await expect(list.getByRole("link", { name: /Hans Helfer/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Maria Mitglied/ })).toHaveCount(0);
 
+    // „Zurücksetzen“ steht auch bei zugeklappten Feldern da – daneben, was gerade gilt
+    await expect(page.getByRole("button", { name: "Filtern" })).toBeHidden();
+    await expect(list.getByText("„Helfer“")).toBeVisible();
     await page.getByRole("link", { name: "Zurücksetzen", exact: true }).click();
     await expect(page).toHaveURL(/\/mitglieder$/);
+    await page.waitForLoadState("networkidle");
+    await page.locator("label", { hasText: /^Filter/ }).click();
     await page.getByLabel("Nach Status filtern").selectOption("HONORARY");
     await page.getByRole("button", { name: "Filtern" }).click();
-    await expect(page.getByRole("table").getByText("Ehrenmitglied")).toBeVisible();
-    await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toHaveCount(0);
+    await expect(page).toHaveURL(/status=HONORARY/);
+    await expect(page.getByRole("button", { name: "Filtern" })).toBeHidden(); // Felder wieder zugeklappt …
+    await expect(page.getByRole("link", { name: "Zurücksetzen", exact: true })).toBeVisible(); // … Zurücksetzen bleibt
+    // Jede Zeile der Liste ist ein Ehrenmitglied
+    const rows = list.getByRole("listitem");
+    await expect(rows.first()).toContainText("Ehrenmitglied");
+    await expect(rows.filter({ hasNotText: "Ehrenmitglied" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Hans Helfer/ })).toHaveCount(0);
+  });
+
+  test("Detailbereich: erstes Mitglied gewählt, Klick wählt ein anderes – „Profil öffnen“ führt zur Seite", async ({
+    page,
+  }) => {
+    await open(page, "/mitglieder?q=Becker");
+    const list = page.getByRole("region", { name: "Mitgliederliste" });
+    const elias = list.getByRole("link", { name: /Elias Becker/ });
+    const felix = list.getByRole("link", { name: /Felix Becker/ });
+    // Ohne Auswahl ist das erste Mitglied der Seite gewählt
+    await expect(elias).toHaveAttribute("aria-current", "true");
+    await expect(felix).not.toHaveAttribute("aria-current");
+    const detail = page.getByRole("region", { name: "Elias Becker" });
+    await expect(detail.getByRole("heading", { level: 2, name: "Elias Becker" })).toBeVisible();
+    await expect(detail.getByText("Kontakt", { exact: true })).toBeVisible();
+    await expect(detail.getByText("Mitgliedschaft", { exact: true })).toBeVisible();
+    await expect(detail.getByText("Benutzerkonto", { exact: true })).toBeVisible();
+
+    // Klick auf eine andere Zeile: nur das Detail wechselt, Suche und Liste bleiben
+    await felix.click();
+    await expect(page).toHaveURL(/q=Becker&id=[0-9a-f-]{36}$/);
+    await expect(felix).toHaveAttribute("aria-current", "true");
+    await expect(elias).not.toHaveAttribute("aria-current");
+    const felixDetail = page.getByRole("region", { name: "Felix Becker" });
+    await expect(felixDetail).toBeVisible();
+    await expect(page.getByRole("region", { name: "Elias Becker" })).toHaveCount(0);
+    await expect(page.getByRole("searchbox", { name: "Mitglieder durchsuchen" })).toHaveValue(
+      "Becker",
+    );
+
+    // Mit Tastatur: Tab führt von der Sortierung in die Zeilen, Enter wählt
+    await list.getByRole("link", { name: /^Eintritt/ }).focus();
+    await page.keyboard.press("Tab");
+    await expect(elias).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("region", { name: "Elias Becker" })).toBeVisible();
+
+    await page
+      .getByRole("region", { name: "Elias Becker" })
+      .getByRole("link", { name: "Profil öffnen" })
+      .click();
+    await expect(page).toHaveURL(/\/mitglieder\/[0-9a-f-]{36}\?von=/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Elias Becker");
+
+    // „Alle Mitglieder“ führt zurück in dieselbe Liste: Suche und Auswahl bleiben
+    await page.getByRole("link", { name: "Alle Mitglieder" }).click();
+    await expect(page).toHaveURL(/\/mitglieder\?q=Becker&id=[0-9a-f-]{36}$/);
+    await expect(elias).toHaveAttribute("aria-current", "true");
+    await expect(page.getByRole("searchbox", { name: "Mitglieder durchsuchen" })).toHaveValue(
+      "Becker",
+    );
+
+    // Ein fremdes Ziel im Rückweg zählt nicht – dann geht es zur ganzen Liste.
+    const profile = (await memberHref(page, "Felix Becker"))!;
+    await page.goto(`${profile}?von=${encodeURIComponent("https://example.org/mitglieder?q=x")}`);
+    await expect(page.getByRole("link", { name: "Alle Mitglieder" })).toHaveAttribute(
+      "href",
+      "/mitglieder",
+    );
+  });
+
+  test("Sortieren nach Nummer, Status und Eintritt; Buchstaben-Trenner nur nach Name; Blättern behält Filter", async ({
+    page,
+  }) => {
+    await open(page, "/mitglieder?pageSize=100"); // alle auf einer Seite – so lässt sich die Reihenfolge vergleichen
+    const list = page.getByRole("region", { name: "Mitgliederliste" });
+    const sorting = list.getByRole("group", { name: "Sortieren:" });
+    await expect(sorting.getByRole("link", { name: "Name, sortiert aufsteigend" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await expect(list.getByRole("heading", { level: 3, name: "A", exact: true })).toBeVisible();
+
+    await sorting.getByRole("link", { name: /^Nr\./ }).click();
+    await expect(page).toHaveURL(/sort=memberNumber&dir=asc/);
+    await expect(list.getByRole("heading", { level: 3 })).toHaveCount(0); // keine Buchstaben
+    const numbers = async () =>
+      (await list.getByRole("listitem").allInnerTexts()).map(
+        (text) => /Nr\. (\S+)/.exec(text)?.[1],
+      );
+    const ascending = await numbers();
+    expect(ascending[0]).toMatch(/\w/);
+    const missing = ascending.filter((n) => n === "–").length;
+    expect(ascending.slice(ascending.length - missing).every((n) => n === "–")).toBe(true); // ohne Nummer zuletzt
+
+    // Nochmal: umgekehrt
+    await sorting.getByRole("link", { name: /^Nr\./ }).click();
+    await expect(page).toHaveURL(/sort=memberNumber&dir=desc/);
+    await expect(sorting.getByRole("link", { name: "Nr., sortiert absteigend" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    const withNumber = (values: (string | undefined)[]) => values.filter((n) => n !== "–");
+    expect(withNumber(await numbers())).toEqual(withNumber(ascending).reverse());
+
+    await sorting.getByRole("link", { name: /^Status/ }).click();
+    await expect(page).toHaveURL(/sort=status&dir=asc/);
+    await expect(sorting.getByRole("link", { name: "Status, sortiert aufsteigend" })).toBeVisible();
+    await expect(list.getByRole("heading", { level: 3 })).toHaveCount(0);
+
+    await sorting.getByRole("link", { name: /^Eintritt/ }).click();
+    await expect(page).toHaveURL(/sort=joinedAt&dir=asc/);
+    await expect(list.getByRole("listitem").first()).toContainText("Eintritt");
+
+    // Blättern (kleine Seiten): „1–5 von N“, die nächste Seite behält Sortierung und Filter, gewählt ist ihr erstes Mitglied
+    await open(page, "/mitglieder?status=ACTIVE&sort=name&dir=asc&pageSize=5");
+    const pager = list.getByRole("navigation", { name: "Seitennavigation" });
+    await expect(pager).toContainText(/1–5 von \d+/);
+    await expect(list.getByRole("listitem")).toHaveCount(5);
+    const firstPage = await list.getByRole("listitem").allInnerTexts();
+    await pager.getByRole("link", { name: "Nächste Seite" }).click();
+    await expect(page).toHaveURL(/status=ACTIVE.*page=2/);
+    await expect(pager).toContainText(/6–\d+ von \d+/);
+    const secondPage = await list.getByRole("listitem").allInnerTexts();
+    expect(secondPage.some((row) => firstPage.includes(row))).toBe(false);
+    await expect(list.locator("[data-member] a[aria-current='true']")).toHaveCount(1);
+    await expect(list.getByRole("listitem").first().locator("a[aria-current='true']")).toHaveCount(
+      1,
+    );
+    await expect(pager.getByRole("link", { name: "Vorherige Seite" })).toBeVisible();
   });
 
   test("Leere Suche nennt den Begriff und führt ins Archiv; ein unbekanntes Mitglied führt zur Liste", async ({
@@ -141,9 +289,7 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
     await expect(page.getByText("Import abgeschlossen")).toBeVisible();
 
     await page.goto(`/mitglieder?q=Import${suffix}`);
-    await expect(
-      page.getByRole("link", { name: new RegExp(`Import${suffix}, Ina`) }),
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: new RegExp(`Ina Import${suffix}`) })).toBeVisible();
     await expect(page.getByRole("link", { name: new RegExp(`Fehler${suffix}`) })).toHaveCount(0);
   });
 });
@@ -154,8 +300,8 @@ test.describe("Sichtbarkeit nach Rolle", () => {
   }) => {
     await login(page, USERS.mitglied);
     await open(page, "/mitglieder");
-    await expect(page.getByRole("link", { name: /Mitglied, Maria/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Maria Mitglied/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Hans Helfer/ })).toHaveCount(0);
     // Kein Menüpunkt "Mitglieder" (die Rolle sieht nur den eigenen Datensatz). In der Symbolleiste stehen die Seiten erst im
     // Menü ihrer Gruppe – „Verein“ hat das Mitglied (Kalender, Veranstaltungen …), also öffnen und dort nachsehen.
     const nav = page.getByRole("navigation", { name: "Hauptnavigation" }).first();
@@ -173,8 +319,8 @@ test.describe("Sichtbarkeit nach Rolle", () => {
   test("Abteilungsleiterin sieht nur Mitglieder ihrer Abteilung", async ({ page }) => {
     await login(page, USERS.abteilung);
     await page.goto("/mitglieder");
-    await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toBeVisible(); // Fußball
-    await expect(page.getByRole("link", { name: /Mitglied, Maria/ })).toHaveCount(0); // Tischtennis
+    await expect(page.getByRole("link", { name: /Hans Helfer/ })).toBeVisible(); // Fußball
+    await expect(page.getByRole("link", { name: /Maria Mitglied/ })).toHaveCount(0); // Tischtennis
     await expect(page.getByLabel("Ansicht wählen")).toHaveCount(0); // kein Archiv/Papierkorb
   });
 
@@ -202,10 +348,10 @@ test.describe("Mandantentrennung im Browser", () => {
   }) => {
     await login(page, USERS.otherAdmin);
     await page.goto("/mitglieder");
-    await expect(page.getByRole("link", { name: /Anders, Otto/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Privat, Petra/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Helfer, Hans/ })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: /Admin, Anna/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Otto Anders/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Petra Privat/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Hans Helfer/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Anna Admin/ })).toHaveCount(0);
 
     // Auch der direkte Aufruf einer fremden ID liefert "nicht gefunden".
     const id = await page.request
@@ -222,7 +368,7 @@ test.describe("Mandantentrennung im Browser", () => {
     const tsvPage = await tsv.newPage();
     await login(tsvPage, USERS.admin);
     await tsvPage.goto("/mitglieder?q=Helfer");
-    const href = await tsvPage.getByRole("link", { name: /Helfer, Hans/ }).getAttribute("href");
+    const href = await memberHref(tsvPage, "Hans Helfer");
     expect(href).toMatch(/^\/mitglieder\/[0-9a-f-]{36}$/);
     await tsv.close();
 
@@ -240,6 +386,39 @@ test.describe("Mandantentrennung im Browser", () => {
     await expect(otherPage.getByText("Nicht gefunden")).toBeVisible();
     await expect(otherPage.getByLabel("Vorname")).toHaveCount(0); // kein Bearbeiten-Formular
     await other.close();
+  });
+
+  test("Ein ?id= eines fremden oder nicht sichtbaren Mitglieds verrät nichts – gewählt ist das erste eigene", async ({
+    browser,
+  }) => {
+    const tsv = await browser.newContext();
+    const tsvPage = await tsv.newPage();
+    await login(tsvPage, USERS.admin);
+    await tsvPage.goto("/mitglieder?q=Helfer");
+    const hans = (await memberHref(tsvPage, "Hans Helfer"))!.split("/").at(-1)!;
+    await tsvPage.goto("/mitglieder?q=Maria");
+    const maria = (await memberHref(tsvPage, "Maria Mitglied"))!.split("/").at(-1)!;
+    await tsv.close();
+
+    // Anderer Verein: Hans gibt es dort nicht.
+    const other = await browser.newContext();
+    const otherPage = await other.newPage();
+    await login(otherPage, USERS.otherAdmin);
+    await otherPage.goto(`/mitglieder?id=${hans}`);
+    const otherList = otherPage.getByRole("region", { name: "Mitgliederliste" });
+    await expect(otherList.getByRole("link", { name: /Otto Anders/ })).toBeVisible();
+    await expect(otherList.locator("[data-member] a[aria-current='true']")).toHaveCount(1);
+    expect(await otherPage.content()).not.toContain("Hans"); // auch nicht in den Daten der Seite
+    await other.close();
+
+    // Abteilungsleiterin (nur Fußball): Maria (Tischtennis) ist für sie nicht sichtbar.
+    const lead = await browser.newContext();
+    const leadPage = await lead.newPage();
+    await login(leadPage, USERS.abteilung);
+    await leadPage.goto(`/mitglieder?id=${maria}`);
+    await expect(leadPage.getByRole("link", { name: /Hans Helfer/ })).toBeVisible();
+    expect(await leadPage.content()).not.toContain("Maria");
+    await lead.close();
   });
 
   test("Michael Mehrfach wechselt zwischen zwei Vereinen und sieht jeweils nur deren Daten", async ({

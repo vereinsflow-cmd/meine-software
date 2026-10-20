@@ -13,6 +13,7 @@ import { formatPercent } from "@/lib/charts/geometry";
 import { formatCalendarDate, formatDate, formatDateTime } from "@/lib/dates";
 import { CONSENT_TYPE_LABEL, MEMBER_FIELD_LABEL } from "@/lib/labels";
 import { phoneHref } from "@/lib/phone";
+import { param, type RawSearchParams } from "@/lib/search-params";
 import { memberAttendanceSummary } from "@/modules/events/attendance";
 import { ATTENDANCE_RESULT_LABEL } from "@/modules/events/attendance-schemas";
 import { ConsentPanel } from "@/modules/members/components/consent-panel";
@@ -28,9 +29,19 @@ export const metadata: Metadata = { title: "Mitglied" };
 
 const CONSENT_ORDER = Object.keys(CONSENT_TYPE_LABEL) as ConsentType[];
 
-export default async function MemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MemberDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<RawSearchParams>;
+}) {
   const { id } = await params;
   const ctx = await requirePageContext();
+  // Rückweg in die Liste mit Suche, Filtern und Auswahl, wenn sie ihn mitgibt (`?von=`, siehe mitglieder/page.tsx) – nur eine
+  // Adresse der Mitgliederliste selbst, nie ein anderes Ziel.
+  const von = param(await searchParams, "von");
+  const backHref = von && /^\/mitglieder\?[^#\s\\]*$/.test(von) ? von : "/mitglieder";
 
   const member = await getMember(ctx, id).catch((error: unknown) => {
     if (isAppError(error) && (error.code === "NOT_FOUND" || error.code === "FORBIDDEN"))
@@ -60,7 +71,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
 
   return (
     <PageStack>
-      <BackLink href="/mitglieder">Alle Mitglieder</BackLink>
+      <BackLink href={backHref}>Alle Mitglieder</BackLink>
       <PageHeader
         title={name}
         description={

@@ -764,12 +764,16 @@ async function searchFrames(page, snap) {
   console.log(`      Positionen: Option „Schicht bearbeiten“ ${option.at}`);
 }
 
-/** Mitglieder: Klick ins Suchfeld, „Koch“ tippen, „Filtern“ – die Liste zeigt nur noch die Kochs. */
+/**
+ * Mitglieder: Klick ins Suchfeld, „Koch“ tippen, „Filter“ aufklappen, „Filtern“ – die Liste zeigt nur noch die Kochs.
+ * („Filtern“ steckt seit der Liste mit Detailbereich, 20.10.2026, hinter dem Knopf „Filter“ und ist erst danach sichtbar.)
+ */
 async function memberFrames(page, snap) {
   const clip = await cropArea(page, "content");
   const field = page.getByPlaceholder("Mitglieder durchsuchen").or(page.getByLabel("Mitglieder durchsuchen")).first();
+  const toggle = page.locator("label", { hasText: /^Filter/ }).first();
   const filter = page.getByRole("button", { name: "Filtern", exact: true }).first();
-  const at = { field: await spot(page, field, clip, { dx: 0.18 }), filter: await spot(page, filter, clip) };
+  const at = { field: await spot(page, field, clip, { dx: 0.18 }), toggle: await spot(page, toggle, clip) };
   await page.mouse.move(0, 0);
   await snap("mitglieder", { clip });
   await page.mouse.move(at.field.x, at.field.y);
@@ -780,6 +784,10 @@ async function memberFrames(page, snap) {
   await page.waitForTimeout(900);
   const live = new URL(page.url()).searchParams.size > 0;
   await snap("mitglieder-live-2", { clip });
+  await page.mouse.move(at.toggle.x, at.toggle.y);
+  await toggle.click();
+  await filter.waitFor();
+  at.filter = await spot(page, filter, clip);
   await page.mouse.move(at.filter.x, at.filter.y);
   await page.waitForTimeout(300);
   await snap("mitglieder-live-3", { clip });
@@ -789,7 +797,7 @@ async function memberFrames(page, snap) {
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(500);
   await snap("mitglieder-live-4", { clip });
-  console.log(`      Positionen: Suchfeld ${at.field.at}, Filtern ${at.filter.at}${live ? " (Liste filterte schon beim Tippen)" : ""}`);
+  console.log(`      Positionen: Suchfeld ${at.field.at}, Filter ${at.toggle.at}, Filtern ${at.filter.at}${live ? " (Liste filterte schon beim Tippen)" : ""}`);
 }
 
 /**
