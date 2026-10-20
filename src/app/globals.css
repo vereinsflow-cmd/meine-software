@@ -75,6 +75,10 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
+  --color-bell: var(--bell);
+  --color-bell-outline: var(--bell-outline);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -134,6 +138,13 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.47 0.17 258);
   --primary-foreground: oklch(0.985 0 0);
+  /* Grün für „Neues Mitglied“ auf dem Dashboard (Knopf `variant="success"`, seit 20.10.2026): weiße Schrift 5,2:1 auf dem Grün. */
+  --success: oklch(0.52 0.14 150);
+  --success-foreground: oklch(0.985 0 0);
+  /* Gelbe Glocke in der Kopfzeile: Füllung Gelb, Umriss Gold – reines Gelb hätte auf Weiß nur 1,5:1, der Umriss 5,0:1
+     (WCAG 1.4.11 verlangt für Symbole 3:1). */
+  --bell: oklch(0.86 0.17 92);
+  --bell-outline: oklch(0.55 0.12 75);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -216,6 +227,11 @@
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.72 0.14 258);
   --primary-foreground: oklch(0.17 0.03 258);
+  /* Wie --primary im Dunkeln: helles Grün mit dunkler Schrift; Glocke gelb, Umriss hellgold (9,5:1 auf der Karte). */
+  --success: oklch(0.74 0.15 150);
+  --success-foreground: oklch(0.17 0.03 150);
+  --bell: oklch(0.86 0.17 92);
+  --bell-outline: oklch(0.8 0.15 85);
   --secondary: oklch(0.27 0.005 286);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.255 0.005 286);

@@ -519,8 +519,13 @@ export default async function DashboardPage({
                 </Link>
               </Button>
             )}
+            {/* Grün mit demselben leichten Schein wie die Hauptaktion (Wunsch Luis, 20.10.2026). */}
             {can(ctx, "members:create") && (
-              <Button asChild variant="outline">
+              <Button
+                asChild
+                variant="success"
+                className="shadow-[0_10px_22px_-12px_var(--color-success)] hover:shadow-[0_12px_26px_-12px_var(--color-success)]"
+              >
                 <Link href="/mitglieder/neu">
                   <PlusIcon /> Neues Mitglied
                 </Link>

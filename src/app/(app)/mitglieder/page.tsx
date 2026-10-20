@@ -100,8 +100,9 @@ export default async function MembersPage({
         description={`${result.total} ${result.total === 1 ? "Eintrag" : "Einträge"}${filtered ? " (gefiltert)" : ""}`}
         actions={
           <>
+            {/* Grün wie auf dem Dashboard (Wunsch Luis, 20.10.2026) */}
             {can(ctx, "members:create") && (
-              <Button asChild>
+              <Button asChild variant="success">
                 <Link href="/mitglieder/neu">
                   <PlusIcon /> Neues Mitglied
                 </Link>

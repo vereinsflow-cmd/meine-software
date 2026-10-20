@@ -12,7 +12,8 @@ export function NotificationBell({ unread }: { unread: number }) {
   return (
     <Button asChild variant="ghost" size="icon" className="relative size-10 rounded-full">
       <Link href="/benachrichtigungen" aria-label={label}>
-        <AREA_ICON.benachrichtigungen className="size-5" />
+        {/* Gelb gefüllt mit goldenem Umriss (Farben --bell / --bell-outline in globals.css) */}
+        <AREA_ICON.benachrichtigungen className="size-5 fill-bell text-bell-outline" />
         {unread > 0 && (
           <span
             aria-hidden="true"
