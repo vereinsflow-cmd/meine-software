@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { violations } from "./axe";
 import { USERS, login, open, openNavGroup } from "./helpers";
 
@@ -17,6 +17,24 @@ async function horizontalOverflow(page: Page): Promise<number> {
   );
 }
 
+/**
+ * Das „X“ eines Dialogs bzw. der Seitenleiste steht oben rechts – auch mit Touch: Kleine Knöpfe sind dort `relative` (für
+ * die größere Tippfläche), ohne `pointer-coarse:absolute` rutschte es unter den Inhalt.
+ */
+async function expectCloseTopRight(dialog: Locator): Promise<void> {
+  // Beides in einem Zug gemessen – auch, falls der Dialog noch hereinfährt.
+  const gap = await dialog.evaluate((element) => {
+    const close = [...element.querySelectorAll("button")]
+      .filter((button) => button.textContent?.trim() === "Schließen")
+      .at(-1)!;
+    const frame = element.getBoundingClientRect();
+    const box = close.getBoundingClientRect();
+    return { right: frame.right - box.right, top: box.top - frame.top };
+  });
+  expect(gap.right).toBeLessThan(20);
+  expect(gap.top).toBeLessThan(20);
+}
+
 test.describe("Smartphone", () => {
   test("Menü öffnet sich, Navigation führt zur Helferplanung, kein seitliches Scrollen", async ({
     page,
@@ -25,6 +43,7 @@ test.describe("Smartphone", () => {
     await expect(page.getByRole("navigation", { name: "Hauptnavigation" }).first()).toBeHidden(); // Sidebar ist auf dem Smartphone ausgeblendet
     await page.getByRole("button", { name: "Menü öffnen" }).click();
     const menu = page.getByRole("dialog");
+    await expectCloseTopRight(menu);
     await openNavGroup(menu, "Verein");
     await expect(menu.getByRole("link", { name: "Helferplanung", exact: true })).toBeVisible();
     await menu.getByRole("link", { name: "Helferplanung", exact: true }).click();
@@ -86,6 +105,47 @@ test.describe("Smartphone", () => {
     expect(box!.width).toBeGreaterThanOrEqual(64);
     // Die Zeitleiste fehlt am Handy – die Liste reicht.
     await expect(page.getByRole("group", { name: "Tagesablauf" })).toBeHidden();
+  });
+
+  test("Helferplanung: Kopf in einer Knopfzeile – mit „Neue Schicht“ stecken die Nebenknöpfe im Menü", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/helferplanung");
+    const header = page.locator('[data-slot="page-header"]');
+    const create = header.getByRole("button", { name: "Neue Schicht" });
+    const more = header.getByRole("button", { name: "Weitere Aktionen" });
+    await expect(create).toBeVisible();
+    await expect(more).toBeVisible();
+    await expect(header.getByRole("link", { name: "Helferstunden" })).toBeHidden();
+    expect((await create.boundingBox())!.y).toBe((await more.boundingBox())!.y); // eine Zeile
+    await more.click();
+    await expect(page.getByRole("menuitem")).toHaveText(["Helferstunden", "Helferplan drucken"]);
+    await page.keyboard.press("Escape");
+
+    // Die Auswahl der Veranstaltung passt auf den Bildschirm; die Zeilen sind gut treffbar.
+    await create.click();
+    const picker = page.getByRole("dialog", { name: "Für welche Veranstaltung?" });
+    const first = picker.getByRole("list", { name: "Veranstaltungen" }).getByRole("link").first();
+    await expect(first).toBeVisible();
+    expect((await first.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    const box = (await picker.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+    await expectCloseTopRight(picker);
+    await page.keyboard.press("Escape");
+
+    // Ohne Recht zum Anlegen (Helfer) bleiben beide Nebenknöpfe sichtbar – ebenfalls in einer Zeile.
+    await page.context().clearCookies();
+    await login(page, USERS.helfer);
+    await open(page, "/helferplanung");
+    const hours = header.getByRole("link", { name: "Helferstunden" });
+    const print = header.getByRole("link", { name: "Helferplan drucken" });
+    await expect(hours).toBeVisible();
+    await expect(print).toBeVisible();
+    await expect(header.getByRole("button", { name: "Weitere Aktionen" })).toHaveCount(0);
+    expect((await hours.boundingBox())!.y).toBe((await print.boundingBox())!.y);
   });
 
   test("Hauptseiten laufen nicht seitlich über den Bildschirm", async ({ page }) => {

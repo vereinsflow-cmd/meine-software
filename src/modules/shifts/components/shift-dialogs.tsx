@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ClockIcon, PencilIcon, PlusIcon, UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,21 +38,39 @@ import type { AssignableMember } from "../service";
 /**
  * „Neue Schicht“ bzw. „Schicht bearbeiten“. Ohne `open` bringt der Dialog seinen eigenen Knopf mit; mit `open` (aus
  * `useMoreActions`) öffnet ihn ein Punkt im Menü „⋯“ der Schicht. Das Formular entsteht bei jedem Öffnen neu: „Neue
- * Schicht“ beginnt leer, und abgebrochene Änderungen sind beim nächsten Mal weg.
+ * Schicht“ beginnt leer, und abgebrochene Änderungen sind beim nächsten Mal weg. `openOnStart` öffnet den Dialog gleich
+ * beim ersten Anzeigen (Auswahl der Veranstaltung auf der Übersicht, `?neu=schicht`); nach dem Schließen steht der Fokus
+ * wie sonst auf dem Knopf.
  */
 export function ShiftFormDialog({
   eventId,
   shiftId,
   defaults,
   members,
+  openOnStart = false,
   ...controlled
 }: {
   eventId: string;
   shiftId?: string;
   defaults: ShiftFormInput;
   members: { id: string; name: string }[];
+  openOnStart?: boolean;
 } & Partial<MenuDialogProps>) {
-  const [ownOpen, setOwnOpen] = useState(false);
+  const searchParams = useSearchParams();
+  // Nur, solange die Adresse den Parameter noch trägt: Geht man im Verlauf zurück und wieder vor, kommt die Seite aus dem
+  // Zwischenspeicher des Routers – mit dem alten `openOnStart`, aber schon ohne `?neu` in der Adresse (siehe unten).
+  const [ownOpen, setOwnOpen] = useState(
+    () => openOnStart && searchParams.get("neu") === "schicht",
+  );
+  // Den Parameter gleich wieder aus der Adresse nehmen – sonst öffnete Neuladen den Dialog erneut. Next.js gleicht
+  // `useSearchParams` damit ab.
+  useEffect(() => {
+    if (!openOnStart) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("neu")) return;
+    url.searchParams.delete("neu");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, [openOnStart]);
   const isControlled = controlled.open !== undefined;
   const open = controlled.open ?? ownOpen;
   const setOpen = (next: boolean) =>

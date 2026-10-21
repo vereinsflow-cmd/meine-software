@@ -545,13 +545,14 @@ export const FAQ: readonly FaqSection[] = [
         id: "schichten-planen",
         question: "Wie plane ich Helferschichten?",
         steps: [
-          "Öffne die Veranstaltung und klicke im Kasten „Helfer“ auf „Helferplanung öffnen“ (hat sie schon Schichten, geht es auch über „Helferplanung“ und „Helferplan“). Klicke dann auf „Neue Schicht“.",
+          "Klicke in der Helferplanung oben auf „Neue Schicht“ und wähle die Veranstaltung – der Helferplan öffnet sich gleich mit dem Fenster „Neue Schicht“. Zur Auswahl stehen kommende Veranstaltungen (auch Entwürfe), für die du Schichten anlegen darfst – als Abteilungsleitung die deiner Abteilung. Gibt es noch keine, lege zuerst die Veranstaltung an.",
+          "Oder von der Veranstaltung aus: Klicke im Kasten „Helfer“ auf „Helferplanung öffnen“ (hat sie schon Schichten, geht es auch über „Helferplanung“ und „Helferplan“) und dann auf „Neue Schicht“.",
           "Gib Bezeichnung, Datum, Beginn, Ende und die Zahl der benötigten Helfer an (optional Mindestalter, Treffpunkt, Verantwortliche).",
           "Klicke auf „Schicht anlegen“.",
         ],
         tip: "Endet die Schicht nach Mitternacht, wähle eine Endzeit vor dem Beginn (z. B. 22:00 – 02:00 Uhr). Überbuchung und Doppelbelegung schließt das System aus – auch wenn sich mehrere gleichzeitig eintragen. Auf größeren Bildschirmen zeigt der „Tagesablauf“ oben im Helferplan die Schichten auf einer Zeitachse – vorbeie Schichten blass, am Tag der Veranstaltung mit einer Linie für „jetzt“; rot heißt dringend (Beginn in weniger als 48 Stunden), orange beginnt bald oder noch niemand eingetragen. Am Handy und wenn die Schichten an verschiedenen Tagen beginnen (z. B. Aufbau am Vortag), gibt es nur die Liste – dann mit dem Tag bei jeder Schicht.",
         link: { href: "/helferplanung", label: "Zur Helferplanung" },
-        keywords: "schicht einteilen dienstplan helferplan erstellen",
+        keywords: "schicht einteilen dienstplan helferplan erstellen neue schicht anlegen",
       },
       {
         id: "helfer-zuweisen",

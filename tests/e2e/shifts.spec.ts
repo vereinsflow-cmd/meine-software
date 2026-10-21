@@ -1,5 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
-import { USERS, login, open, openNavGroup } from "./helpers";
+import { randomBytes } from "node:crypto";
+import { expect, test, type Browser, type Page } from "@playwright/test";
+import { appUrlPattern } from "./environment";
+import { USERS, login, open, openNavGroup, outboxMailsTo } from "./helpers";
 
 /**
  * Helferplanung im Browser. Tests, die Daten verändern, legen eigene Schichten mit eindeutigem Namen an und räumen
@@ -285,3 +287,200 @@ test.describe("Helferplanung – Helfer und Mitglieder", () => {
     await expect(kuchen.getByText("Du", { exact: true })).toBeVisible();
   });
 });
+
+test.describe("Helferplanung – „Neue Schicht“ auf der Übersicht", () => {
+  test("Vorstand: Knopf vorn im Kopf, Auswahl der Veranstaltung mit Suche, danach ist „Neue Schicht“ gleich offen", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/helferplanung");
+    const header = page.locator('[data-slot="page-header"]');
+    const button = header.getByRole("button", { name: "Neue Schicht" });
+    await expect(button).toBeVisible();
+    // Hauptaktion zuerst, wie auf den anderen Seiten (danach „Helferstunden“ und „Helferplan drucken“).
+    await expect(header.getByRole("link").or(header.getByRole("button")).first()).toHaveText(
+      "Neue Schicht",
+    );
+
+    // Abbrechen mit Escape: der Fokus kehrt zum Knopf zurück.
+    await button.click();
+    const picker = page.getByRole("dialog", { name: "Für welche Veranstaltung?" });
+    await expect(picker).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(picker).toBeHidden();
+    await expect(button).toBeFocused();
+
+    await button.click();
+    // Seed: zehn kommende Veranstaltungen (sechs Trainings …) – also mit Suchfeld; der Entwurf steht mit drin.
+    const events = picker.getByRole("list", { name: "Veranstaltungen" }).getByRole("link");
+    await expect(events.filter({ hasText: "Handball-Turnier der Jugend" })).toContainText(
+      "Entwurf",
+    );
+    await expect(events.filter({ hasText: "Sommerfest 2026" })).toContainText("5 Schichten");
+    const search = picker.getByLabel("Veranstaltung suchen");
+    await expect(search).toBeFocused();
+    await search.fill("sommerfest");
+    await expect(events).toHaveCount(1);
+    await search.fill("gibt es nicht");
+    await expect(picker.getByText("Keine Veranstaltung gefunden.")).toBeVisible();
+    await search.fill("Sommerfest");
+    await events.first().click();
+
+    // Der Helferplan des Sommerfests – mit offenem Dialog (die Seite dahinter ist für Screenreader ausgeblendet).
+    const dialog = page.getByRole("dialog", { name: "Neue Schicht" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel("Bezeichnung")).toBeFocused();
+    // Der Parameter ist gleich wieder aus der Adresse – Neuladen öffnet den Dialog nicht erneut.
+    await expect(page).toHaveURL(/\/helferplanung\/[0-9a-f-]{36}$/);
+
+    const title = `E2E Übersicht ${Date.now() % 100000}`;
+    await dialog.getByLabel("Bezeichnung").fill(title);
+    await dialog.getByLabel("Beginn").fill("23:00");
+    await dialog.getByLabel("Ende").fill("23:30");
+    await dialog.getByLabel("Benötigte Helfer").fill("2");
+    await dialog.getByRole("button", { name: "Schicht anlegen" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("listitem", { name: `Schicht ${title}` })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("listitem", { name: `Schicht ${title}` })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await deleteShift(page, title);
+  });
+
+  test("Zurück und wieder vor: „Neue Schicht“ öffnet sich nicht noch einmal", async ({ page }) => {
+    await login(page, USERS.admin);
+    await open(page, "/helferplanung");
+    await page.getByRole("button", { name: "Neue Schicht" }).first().click();
+    const picker = page.getByRole("dialog", { name: "Für welche Veranstaltung?" });
+    await picker.getByLabel("Veranstaltung suchen").fill("Sommerfest");
+    await picker.getByRole("list", { name: "Veranstaltungen" }).getByRole("link").first().click();
+    const dialog = page.getByRole("dialog", { name: "Neue Schicht" });
+    await expect(dialog).toBeVisible();
+    await expect(page).toHaveURL(/\/helferplanung\/[0-9a-f-]{36}$/);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+
+    await page.goBack();
+    await expect(page.getByRole("heading", { level: 1, name: "Helferplanung" })).toBeVisible();
+    await page.goForward();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/helferplanung\/[0-9a-f-]{36}$/);
+    // Der Dialog öffnete sich (vor der Behebung) erst nach dem Anzeigen der Seite – kurz warten, dann prüfen.
+    await page.waitForTimeout(500);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    // Der Knopf öffnet ihn weiter wie gewohnt.
+    await page
+      .locator('[data-slot="page-header"]')
+      .getByRole("button", { name: "Neue Schicht" })
+      .click();
+    await expect(dialog).toBeVisible();
+  });
+
+  test("Abteilungsleiterin: nur Veranstaltungen ihrer Abteilung zur Auswahl", async ({ page }) => {
+    await login(page, USERS.abteilung);
+    await open(page, "/helferplanung");
+    await page.getByRole("button", { name: "Neue Schicht" }).first().click();
+    const picker = page.getByRole("dialog", { name: "Für welche Veranstaltung?" });
+    const events = picker.getByRole("list", { name: "Veranstaltungen" }).getByRole("link");
+    // Seed: sechs Trainings der Fußballabteilung – weniger als sieben, also ohne Suchfeld; der Fokus steht dann auf der
+    // ersten Veranstaltung (nicht auf „Schließen“).
+    await expect(events.first()).toBeVisible();
+    await expect(events.first()).toBeFocused();
+    for (const text of await events.allInnerTexts()) expect(text).toContain("Fußball");
+    await expect(events.filter({ hasText: "Sommerfest 2026" })).toHaveCount(0);
+    await expect(events.filter({ hasText: "Handball-Turnier der Jugend" })).toHaveCount(0);
+    await expect(picker.getByLabel("Veranstaltung suchen")).toHaveCount(0);
+  });
+
+  test("Helfer und Mitglieder: kein Knopf – und ?neu=schicht öffnet im Helferplan nichts", async ({
+    page,
+  }) => {
+    await login(page, USERS.helfer);
+    await open(page, "/helferplanung");
+    await expect(page.getByRole("heading", { level: 1, name: "Helferplanung" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Neue Schicht" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Weitere Aktionen" })).toHaveCount(0);
+    await openSommerfestPlan(page);
+    await open(page, `${new URL(page.url()).pathname}?neu=schicht`);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sommerfest 2026", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await page.context().clearCookies();
+    await login(page, USERS.mitglied);
+    await open(page, "/helferplanung");
+    await expect(page.getByRole("button", { name: "Neue Schicht" })).toHaveCount(0);
+  });
+
+  test("Neuer Verein ohne Veranstaltung: der Dialog erklärt es und bietet „Veranstaltung anlegen“ an", async ({
+    page,
+    browser,
+  }) => {
+    test.setTimeout(90_000);
+    const admin = await newClubAdmin(page, browser);
+    await open(admin, "/helferplanung");
+    await expect(admin.getByRole("heading", { name: "Keine kommenden Schichten" })).toBeVisible();
+    // Im Kopf und in der leeren Liste – beide öffnen dieselbe Erklärung.
+    await expect(admin.getByRole("button", { name: "Neue Schicht" })).toHaveCount(2);
+    await admin.getByRole("button", { name: "Neue Schicht" }).last().click();
+    const dialog = admin.getByRole("dialog", { name: "Noch keine passende Veranstaltung" });
+    await expect(dialog).toContainText("Gerade steht keine an");
+    const create = dialog.getByRole("link", { name: "Veranstaltung anlegen" });
+    await expect(create).toHaveAttribute("href", "/veranstaltungen/neu");
+    await create.click();
+    await expect(admin).toHaveURL(/\/veranstaltungen\/neu$/);
+    await admin.context().close();
+  });
+});
+
+/**
+ * Legt als Plattformverwaltung einen frischen Verein an (ohne Veranstaltungen), nimmt die Einladung als dessen erster
+ * Administrator an und schließt die Einrichtung mit den Pflichtangaben ab (wie einrichtung.spec.ts, nur kürzer). Liefert
+ * die angemeldete Seite des neuen Administrators in einem eigenen Browser-Kontext.
+ */
+async function newClubAdmin(page: Page, browser: Browser): Promise<Page> {
+  const id = randomBytes(3).toString("hex");
+  const name = `Schichtverein ${id}`;
+  const email = `schicht-${id}@e2e.test`;
+  await login(page, USERS.superadmin);
+  await open(page, "/system");
+  await page.getByRole("button", { name: "Verein anlegen" }).click();
+  const create = page.getByRole("dialog", { name: "Neuen Verein anlegen" });
+  await create.getByLabel("Vereinsname").fill(name);
+  await create.getByLabel("Kürzel").fill(`schichtverein-${id}`);
+  await create.getByLabel("E-Mail-Adresse des ersten Administrators").fill(email);
+  await create.getByRole("button", { name: "Verein anlegen" }).click();
+  await expect(create).toBeHidden();
+  await expect.poll(() => outboxMailsTo(email).length, { timeout: 15_000 }).toBe(1);
+  const url = appUrlPattern("/einladung/[A-Za-z0-9_-]{43}").exec(outboxMailsTo(email)[0]!.text);
+  expect(url).toBeTruthy();
+
+  const admin = await (await browser.newContext()).newPage();
+  await admin.goto(url![0]);
+  await admin.getByLabel("Vorname").fill("Sina");
+  await admin.getByLabel("Nachname").fill("Schicht");
+  // Nur für dieses Testkonto in der E2E-Datenbank (wird mit ihr gelöscht).
+  const secret = `Helferplan ohne Termine ${id}`;
+  await admin.locator('input[name="password"]').fill(secret);
+  await admin.locator('input[name="passwordRepeat"]').fill(secret);
+  await admin.getByRole("checkbox", { name: /Datenschutzerklärung/ }).check();
+  await admin.getByRole("button", { name: "Konto anlegen und beitreten" }).click();
+  await expect(admin).toHaveURL(/\/einrichtung\?schritt=verein$/);
+  await admin.locator('input[name="contactEmail"]').fill(`kontakt-${id}@e2e.test`);
+  await admin.locator('input[name="street"]').fill("Am Sportplatz 1");
+  await admin.locator('input[name="postalCode"]').fill("12345");
+  await admin.locator('input[name="city"]').fill("Musterstadt");
+  await admin.getByRole("button", { name: "Speichern und weiter" }).click();
+  await expect(admin).toHaveURL(/schritt=logo$/);
+  await open(admin, "/einrichtung?schritt=abschluss");
+  await admin.getByRole("button", { name: "Einrichtung abschließen" }).click();
+  await expect(admin).toHaveURL(/\/dashboard/);
+  return admin;
+}

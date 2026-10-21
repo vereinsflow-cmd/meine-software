@@ -64,7 +64,12 @@ function SheetContent({
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
-            <Button variant="ghost" className="absolute top-3 right-3" size="icon-sm">
+            {/* `pointer-coarse:absolute` wie beim Dialog: sonst stünde das „X“ am Handy unter dem Inhalt. */}
+            <Button
+              variant="ghost"
+              className="absolute top-3 right-3 pointer-coarse:absolute"
+              size="icon-sm"
+            >
               <XIcon />
               <span className="sr-only">Schließen</span>
             </Button>

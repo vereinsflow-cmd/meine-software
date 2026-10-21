@@ -1,11 +1,13 @@
+import type { EventStatus } from "@/generated/prisma/enums";
 import { formatDateShort, formatTimeRange, toDateInputValue, toTimeInputValue } from "@/lib/dates";
-import { loadVisibleEvent } from "@/modules/events/service";
+import { eventVisibilityWhere, loadVisibleEvent } from "@/modules/events/service";
 import { notifyUsers } from "@/modules/notifications/service";
 import { diffChanges, recordAudit } from "@/server/audit/audit";
 import type { TenantTx } from "@/server/db/tenant";
 import { badRequest, conflict, forbidden, validationFailed } from "@/server/errors";
-import { can } from "@/server/permissions/policy";
+import { can, scopeOf } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
+import { canCreateShiftFor, mayCreateShifts, NO_NEW_SHIFTS } from "./new-shift-rule";
 import { normalizeShiftTimes, type ShiftInput } from "./schemas";
 import { fullName, guard, loadShift, resourceOf, shiftLink, userIdsOf } from "./service-shared";
 
@@ -32,7 +34,8 @@ export async function createShift(
 ): Promise<{ id: string }> {
   const event = await loadVisibleEvent(ctx, eventId);
   if (!can(ctx, "shifts:manage", resourceOf(event))) throw forbidden();
-  if (event.status === "CANCELLED" || event.status === "ARCHIVED")
+  // Übrig bleibt der Status (dieselbe Regel wie der Knopf „Neue Schicht“ und die Auswahl auf der Übersicht).
+  if (!canCreateShiftFor(ctx, event))
     throw badRequest(
       "Für abgesagte oder archivierte Veranstaltungen lassen sich keine Schichten anlegen.",
     );
@@ -67,6 +70,74 @@ export async function createShift(
     });
     return { id: shift.id };
   });
+}
+
+/** Eine Veranstaltung in der Auswahl „Für welche Veranstaltung?“ (Knopf „Neue Schicht“ auf der Übersicht). */
+export interface NewShiftEvent {
+  id: string;
+  title: string;
+  status: EventStatus;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  departmentName: string | null;
+  /** Schichten, die sie schon hat (ohne abgesagte). */
+  shifts: number;
+}
+
+/** So viele Veranstaltungen bietet die Auswahl höchstens an (wöchentliche Trainings über Monate …). */
+export const NEW_SHIFT_EVENTS_MAX = 200;
+
+/**
+ * Kommende (oder noch laufende) Veranstaltungen, für die der Benutzer Schichten anlegen darf – dieselbe Regel wie
+ * `createShift`: sichtbar (Entwürfe nur, wer sie bearbeiten darf), „Schichten verwalten“ im eigenen Geltungsbereich und
+ * weder abgesagt noch archiviert. Der Filter in der Abfrage grenzt vor; `canCreateShiftFor` entscheidet je Veranstaltung.
+ * Sortiert nach Beginn; `more`: Es gäbe noch weitere.
+ */
+export async function listEventsForNewShift(
+  ctx: TenantContext,
+): Promise<{ events: NewShiftEvent[]; more: boolean }> {
+  if (!mayCreateShifts(ctx)) return { events: [], more: false };
+  const rows = await ctx.db.event.findMany({
+    where: {
+      AND: [
+        eventVisibilityWhere(ctx),
+        { status: { notIn: [...NO_NEW_SHIFTS] }, endsAt: { gte: new Date() } },
+        scopeOf(ctx, "shifts:manage") === "DEPARTMENT"
+          ? { departmentId: { in: [...ctx.ledDepartmentIds] } }
+          : {},
+      ],
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      startsAt: true,
+      endsAt: true,
+      allDay: true,
+      departmentId: true,
+      department: { select: { name: true } },
+      _count: { select: { shifts: { where: { deletedAt: null, status: { not: "CANCELLED" } } } } },
+    },
+    orderBy: [{ startsAt: "asc" }, { title: "asc" }],
+    take: NEW_SHIFT_EVENTS_MAX + 1,
+  });
+  const events = rows
+    .filter((row) => canCreateShiftFor(ctx, row))
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      status: row.status,
+      startsAt: row.startsAt,
+      endsAt: row.endsAt,
+      allDay: row.allDay,
+      departmentName: row.department?.name ?? null,
+      shifts: row._count.shifts,
+    }));
+  return {
+    events: events.slice(0, NEW_SHIFT_EVENTS_MAX),
+    more: rows.length > NEW_SHIFT_EVENTS_MAX,
+  };
 }
 
 export async function getShiftForEdit(ctx: TenantContext, shiftId: string) {

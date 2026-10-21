@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { USERS, login } from "./helpers";
+import { USERS, login, open } from "./helpers";
 
 /**
  * Helferplan-Druckansicht auf Smartphone (Pixel 7, 412 px) und Tablet-Breite (820 px): Der Button ist gut
@@ -14,8 +14,10 @@ test.describe("Helferplan drucken – mobil", () => {
     page,
   }) => {
     await login(page, USERS.admin);
-    await page.goto("/helferplanung");
-    const button = page.getByRole("link", { name: "Helferplan drucken" });
+    await open(page, "/helferplanung");
+    // Neben „Neue Schicht“ steckt „Helferplan drucken“ am Handy im Menü „Weitere Aktionen“.
+    await page.getByRole("button", { name: "Weitere Aktionen" }).click();
+    const button = page.getByRole("menuitem", { name: "Helferplan drucken" });
     await expect(button).toBeVisible();
     const box = (await button.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(36); // gut treffbar (Button-Standardgröße)

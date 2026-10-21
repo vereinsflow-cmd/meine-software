@@ -4,6 +4,7 @@ import { loadVisibleEvent } from "@/modules/events/service";
 import { assertCan, can } from "@/server/permissions/policy";
 import type { TenantContext } from "@/server/tenancy/context-core";
 import { checkEligibility, type Eligibility } from "./eligibility";
+import { canCreateShiftFor } from "./new-shift-rule";
 import { fullName, noSignup, ownContext, resourceOf, shiftDetailInclude } from "./service-shared";
 
 // ---------------------------------------------------------------------------------------------
@@ -72,6 +73,8 @@ export interface EventShiftPlan {
     departmentId: string | null;
   };
   canManage: boolean;
+  /** „Neue Schicht“: wie `canManage`, aber nicht für abgesagte oder archivierte Veranstaltungen (wie `createShift`). */
+  canCreate: boolean;
   canAssign: boolean;
   canRecordHours: boolean;
   shifts: ShiftDto[];
@@ -191,6 +194,7 @@ export async function listShiftsForEvent(
       departmentId: event.departmentId,
     },
     canManage,
+    canCreate: canCreateShiftFor(ctx, event),
     canAssign,
     canRecordHours: canHours,
     shifts,

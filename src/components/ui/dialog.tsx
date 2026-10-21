@@ -76,7 +76,13 @@ function DialogContent({
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
+            {/* `pointer-coarse:absolute`: Kleine Knöpfe sind am Handy `relative` (größere Tippfläche, siehe button.tsx) –
+                das „X“ rutschte sonst unter den Inhalt. */}
+            <Button
+              variant="ghost"
+              className="absolute top-2 right-2 pointer-coarse:absolute"
+              size="icon-sm"
+            >
               <XIcon />
               <span className="sr-only">Schließen</span>
             </Button>

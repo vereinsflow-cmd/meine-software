@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRightIcon, PrinterIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { CARD_SURFACE } from "@/components/ui/surface";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty } from "@/components/shared/compact-empty";
 import { EmptyState } from "@/components/shared/empty-state";
+import { MoreActions } from "@/components/shared/more-actions";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageStack, SECTION_TITLE } from "@/components/shared/page-section";
 import {
+  berlinParts,
   daysUntil,
   formatDayMonth,
   formatTime,
@@ -19,16 +22,20 @@ import {
 } from "@/lib/dates";
 import { URGENCY_LABEL } from "@/lib/shift-health";
 import { cn } from "@/lib/utils";
+import { NewShiftPicker, type NewShiftChoice } from "@/modules/shifts/components/new-shift-picker";
 import { QuickSignOutButton, QuickSignUpButton } from "@/modules/shifts/components/quick-actions";
 import { AssignDialog } from "@/modules/shifts/components/shift-dialogs";
 import {
+  listEventsForNewShift,
   listMyAssignments,
   listUpcomingShiftPlans,
+  mayCreateShifts,
+  type NewShiftEvent,
   type PlanningEvent,
   type PlanningShift,
 } from "@/modules/shifts/service";
 import { STAFFING_TONE_CLASS, joinTitles, staffingText } from "@/modules/shifts/staffing-text";
-import { can } from "@/server/permissions/policy";
+import { can, scopeOf } from "@/server/permissions/policy";
 import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Helferplanung" };
@@ -46,10 +53,23 @@ export default async function HelperPlanningPage() {
   const ctx = await requirePageContext();
   if (!can(ctx, "shifts:read")) return <NoAccess what="die Helferplanung" />;
 
-  const [mineAll, events] = await Promise.all([
+  // „Neue Schicht“ nur für alle, die irgendwo Schichten anlegen dürfen (Abteilungsleitung: Veranstaltungen ihrer Abteilung).
+  const planner = mayCreateShifts(ctx);
+  const [mineAll, events, targets] = await Promise.all([
     listMyAssignments(ctx, { limit: MINE_SHOWN + 1 }),
     listUpcomingShiftPlans(ctx),
+    planner ? listEventsForNewShift(ctx) : null,
   ]);
+  const newShift = targets && (
+    <NewShiftPicker
+      choices={targets.events.map(choiceOf)}
+      more={targets.more}
+      ownDepartments={
+        scopeOf(ctx, "shifts:manage") === "DEPARTMENT" ? ctx.ledDepartmentIds.length : 0
+      }
+      canCreateEvent={can(ctx, "events:create")}
+    />
+  );
   const mine = mineAll.slice(0, MINE_SHOWN);
   const mineCount = mineAll.length > MINE_SHOWN ? `mehr als ${MINE_SHOWN}` : String(mine.length);
   const signupFree = events.reduce((sum, event) => sum + event.signupFreeSpots, 0);
@@ -73,16 +93,35 @@ export default async function HelperPlanningPage() {
         title="Helferplanung"
         actions={
           <>
-            <Button asChild variant="outline">
+            {newShift}
+            {/* Mit „Neue Schicht“ stecken die Nebenknöpfe am Handy im Menü „Weitere Aktionen“ – so bleibt es bei einer
+                Knopfzeile. Ohne (Helfer, Mitglieder) stehen beide nebeneinander wie bisher. */}
+            <Button asChild variant="outline" className={cn(newShift && "max-sm:hidden")}>
               <Link href="/helferplanung/stunden">
                 <AREA_ICON.helferstunden /> Helferstunden
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className={cn(newShift && "max-sm:hidden")}>
               <Link href="/helferplanung/drucken">
                 <PrinterIcon /> Helferplan drucken
               </Link>
             </Button>
+            {newShift && (
+              <div className="sm:hidden">
+                <MoreActions>
+                  <DropdownMenuItem asChild>
+                    <Link href="/helferplanung/stunden">
+                      <AREA_ICON.helferstunden /> Helferstunden
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/helferplanung/drucken">
+                      <PrinterIcon /> Helferplan drucken
+                    </Link>
+                  </DropdownMenuItem>
+                </MoreActions>
+              </div>
+            )}
           </>
         }
       />
@@ -170,6 +209,7 @@ export default async function HelperPlanningPage() {
             icon={<AREA_ICON.helferplanung />}
             title="Keine kommenden Schichten"
             description="Sobald für eine veröffentlichte Veranstaltung Schichten geplant sind, erscheinen sie hier."
+            action={newShift}
           />
         ) : (
           <div className={CARD_SURFACE}>
@@ -181,6 +221,35 @@ export default async function HelperPlanningPage() {
       </section>
     </PageStack>
   );
+}
+
+/**
+ * Eine Veranstaltung für die Auswahl „Für welche Veranstaltung?“: Datum (mit Jahr, wenn nicht dieses), Zeit und darunter
+ * Entwurf, Ende (bei mehreren Tagen), Abteilung und wie viele Schichten sie schon hat.
+ */
+function choiceOf(event: NewShiftEvent): NewShiftChoice {
+  const sameDay = toDateInputValue(event.startsAt) === toDateInputValue(event.endsAt);
+  const year = berlinParts(event.startsAt).year;
+  return {
+    id: event.id,
+    title: event.title,
+    date: `${formatDayMonth(event.startsAt)}${year !== berlinParts(new Date()).year ? ` ${year}` : ""}`,
+    time: event.allDay
+      ? "ganztägig"
+      : sameDay
+        ? formatTimeRange(event.startsAt, event.endsAt)
+        : `ab ${formatTime(event.startsAt)} Uhr`,
+    details: [
+      event.status === "DRAFT" && "Entwurf",
+      !sameDay && `bis ${formatDayMonth(event.endsAt)}`,
+      event.departmentName,
+      event.shifts === 0
+        ? "noch keine Schichten"
+        : `${event.shifts} ${event.shifts === 1 ? "Schicht" : "Schichten"}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  };
 }
 
 /**

@@ -53,12 +53,15 @@ export function PageLoading({
 /** Wie `PageHeader` (Titel `text-3xl`, Beschreibung, Knöpfe rechts bzw. am Handy darunter), optional mit `BackLink` darüber. */
 export function PageHeaderSkeleton({
   actions = 1,
+  mobileActions = actions,
   description = true,
   backLink = false,
   className,
 }: {
   /** Anzahl Knöpfe im Kopf (0 = keine). */
   actions?: number;
+  /** Davon am Handy (die übrigen stecken dort im Menü „Weitere Aktionen“). */
+  mobileActions?: number;
   description?: boolean;
   backLink?: boolean;
   className?: string;
@@ -78,7 +81,14 @@ export function PageHeaderSkeleton({
       {actions > 0 && (
         <div className="flex flex-wrap gap-2">
           {Array.from({ length: actions }, (_, index) => (
-            <Skeleton key={index} className={cn("h-9 rounded-lg", index === 0 ? "w-36" : "w-28")} />
+            <Skeleton
+              key={index}
+              className={cn(
+                "h-9 rounded-lg",
+                index === 0 ? "w-36" : "w-28",
+                index >= mobileActions && "max-sm:hidden",
+              )}
+            />
           ))}
         </div>
       )}
