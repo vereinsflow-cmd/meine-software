@@ -126,6 +126,8 @@ const browserEntries = files.filter((file) => {
     /modules\/donations\/(receipt-status|tax-validity|summary|format|simplified-proof)\.ts$/.test(
       rel(file),
     ) ||
+    // Reine Hilfen der Finanz-Übersicht (Kontoverlauf, Kontokarten, Farben des Kopfs) – auch im Browser genutzt.
+    /modules\/finance\/(balance-curve|account-cards|hero-look)\.ts$/.test(rel(file)) ||
     rel(file).startsWith("lib/")
   );
 });

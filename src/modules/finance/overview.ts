@@ -8,15 +8,18 @@ import type { TenantContext } from "@/server/tenancy/context-core";
 import { assertFinance, canFinance } from "./access";
 import { dueText } from "./invoice-format";
 import {
-  balanceHistory,
+  dailyBookingSums,
   getLedgerSetup,
   listAccounts,
+  listEntries,
   missingReceiptCount,
   yearSummary,
   type FinanceAccountDto,
+  type LedgerPage,
   type LedgerSetup,
   type YearSummary,
 } from "./ledger";
+import { curveStart, dailyBalances, type BalanceCurve } from "./balance-curve";
 import { overdueClose } from "./closing";
 import { monthLabel } from "./ledger-format";
 import { getDonationsPage } from "@/modules/donations/service";
@@ -24,8 +27,12 @@ import { feeRunDue } from "@/modules/fees/run";
 import { whoPays } from "@/modules/fees/service";
 import { getOpenPayments, unbookedPaidInvoiceCount, type OpenPayments } from "./service";
 
+/** So viele Buchungen zeigt „Zuletzt gebucht“ auf der Übersicht. */
+export const RECENT_ENTRIES = 6;
+
 /**
- * Daten der Finanz-Übersicht („Cockpit“): Kennzahlen, Monatszahlen, „Das steht an“, Konten und Ausgaben je Abteilung.
+ * Daten der Finanz-Übersicht (seit 21.10.2026 „Wie eine Banking-App“): Kontostand mit Verlauf je Tag, Konten, offene
+ * Rechnungen, Monats- und Jahreszahlen, Spenden, „Zuletzt gebucht“, „Das steht an“ und Ausgaben je Abteilung.
  * Jeder Bereich der Finanzen trägt seine Aufgaben zu „Das steht an“ bei (Rechnungen jetzt; Beiträge, Bank, Lastschrift,
  * Abschluss folgen mit ihren Ausbaustufen).
  */
@@ -61,10 +68,12 @@ export interface FinanceOverview {
   canManage: boolean;
   accounts: FinanceAccountDto[];
   totalBalanceCents: number;
-  balancePoints: { month: string; balanceCents: number }[];
+  /**
+   * Gesamtstand am Ende jedes Tages seit Jahresbeginn (mindestens 90 Tage, nie vor Beginn des Kassenbuchs) bis heute –
+   * `null` ohne Kassenbuch.
+   */
+  balanceCurve: BalanceCurve | null;
   year: YearSummary | null;
-  /** Kumulierter Überschuss je Monat (für den Kurs der Kennzahl). */
-  surplusPoints: number[];
   /**
    * Spenden des Jahres – dieselben Zahlen wie die Seite „Spenden“ (`getDonationsPage`): alle nicht stornierten Spenden
    * (Geld, Sach, Aufwand) und Spenden-Buchungen ohne Spender. `donors`: verschiedene Spender; `withoutEntryCents`: davon
@@ -74,10 +83,11 @@ export interface FinanceOverview {
     totalCents: number;
     count: number;
     donors: number;
-    cumulative: number[];
     withoutEntryCents: number;
   };
   departments: DepartmentSpending[];
+  /** Die neuesten Buchungen („Zuletzt gebucht“, `RECENT_ENTRIES` Stück) – `null` ohne Kassenbuch. */
+  recent: LedgerPage | null;
   payments: OpenPayments;
   due: DueItem[];
 }
@@ -118,7 +128,7 @@ async function departmentSpending(ctx: TenantContext, year: number): Promise<Dep
     .sort((a, b) => b.expenseCents - a.expenseCents || a.name.localeCompare(b.name, "de"));
 }
 
-/** Violette Karte und Punkte zum Bescheid: aus `getDonationsPage` (eine Quelle mit der Seite „Spenden“). */
+/** Spenden der Jahreszeile und Punkte zum Bescheid: aus `getDonationsPage` (eine Quelle mit der Seite „Spenden“). */
 async function donationOverview(
   ctx: TenantContext,
   year: number,
@@ -139,7 +149,6 @@ async function donationOverview(
       totalCents: kpi.totalCents,
       count: kpi.count,
       donors: kpi.donorCount,
-      cumulative: kpi.cumulative,
       withoutEntryCents: kpi.byKind.IN_KIND + kpi.byKind.EXPENSE_WAIVER,
     },
     due,
@@ -188,7 +197,8 @@ function invoiceItems(payments: OpenPayments, canManage: boolean): DueItem[] {
 export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOverview> {
   assertFinance(ctx, "finance:read");
   const canManage = canFinance(ctx, "finance:manage");
-  const thisYear = todayCalendarDate().getUTCFullYear();
+  const today = todayCalendarDate();
+  const thisYear = today.getUTCFullYear();
   const [setup, payments, fees, runDue] = await Promise.all([
     getLedgerSetup(ctx),
     getOpenPayments(ctx, { limit: 20 }),
@@ -256,11 +266,11 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
       canManage,
       accounts: [],
       totalBalanceCents: 0,
-      balancePoints: [],
+      balanceCurve: null,
       year: null,
-      surplusPoints: [],
-      donations: { totalCents: 0, count: 0, donors: 0, cumulative: [], withoutEntryCents: 0 },
+      donations: { totalCents: 0, count: 0, donors: 0, withoutEntryCents: 0 },
       departments: [],
+      recent: null,
       payments,
       due: due.sort((a, b) => a.urgency - b.urgency),
     };
@@ -268,21 +278,23 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
 
   const [
     accounts,
-    balancePoints,
+    daySums,
     year,
     departments,
     donationInfo,
     missingReceipts,
     unbookedInvoices,
+    recent,
   ] = await Promise.all([
     listAccounts(ctx),
-    balanceHistory(ctx, 12),
+    dailyBookingSums(ctx, today),
     yearSummary(ctx, thisYear),
     departmentSpending(ctx, thisYear),
     donationOverview(ctx, thisYear),
     missingReceiptCount(ctx),
     // Seit Beginn des Kassenbuchs – auch Zahlungen aus abgeschlossenen Monaten (die bucht „Ins Kassenbuch“ im offenen Zeitraum).
     unbookedPaidInvoiceCount(ctx, setup.ledgerStartDate),
+    listEntries(ctx, { pageSize: RECENT_ENTRIES }),
   ]);
   due.push(...donationInfo.due);
   if (unbookedInvoices > 0)
@@ -321,23 +333,16 @@ export async function getFinanceOverview(ctx: TenantContext): Promise<FinanceOve
       href: "/finanzen/kassenbuch?beleg=fehlt",
       actionLabel: canManage ? "Belege nachreichen" : "Ansehen",
     });
-  const surplusPoints: number[] = [];
-  year.months.reduce((sum, month) => {
-    const next = sum + month.incomeCents - month.expenseCents;
-    surplusPoints.push(next);
-    return next;
-  }, 0);
-
   return {
     setup,
     canManage,
     accounts,
     totalBalanceCents: accounts.reduce((sum, a) => sum + a.balanceCents, 0),
-    balancePoints,
+    balanceCurve: dailyBalances(daySums, curveStart(today, setup.ledgerStartDate), today),
     year,
-    surplusPoints,
     donations: donationInfo.donations,
     departments,
+    recent,
     payments,
     due: due.sort((a, b) => a.urgency - b.urgency),
   };

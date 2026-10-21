@@ -464,7 +464,7 @@ Eingeführt am 27.09.2026 als erster Baustein der Finanzen: „Nur berechtigte M
 - **Protokoll:** „Rechnung erfasst“, „Rechnung geändert“ (Betrag, Fälligkeit, Zahlungsstand als Änderungsdetails), „Rechnung als bezahlt markiert“, „Rechnung wieder offen“ – eigener Bereich „Finanzen“ im Änderungsprotokoll.
 - Geprüft in `tests/unit/invoices.test.ts` (Beträge, Namen, Texte, Eingaben), `tests/integration/invoices.test.ts` (Rechte, Mandantentrennung, Summen, Namensfolge, Protokoll) und `tests/e2e/rechnungen.spec.ts` (Karte je Rolle, Hochladen bis „Bezahlt“ und „Rückgängig“, Filter, Bearbeiten). Die Demo-Daten enthalten drei Rechnungen (zwei offen, eine davon überfällig; eine bezahlt).
 
-## Finanzen („Cockpit“)
+## Finanzen
 
 Seit 04.10.2026 ein eigener Bereich (ORGANISATION › Finanzen), Gestaltung nach Entwurf 3 „Cockpit mit Kennzahlen“ aus fünf
 Bildern (Ben: „nimm nummer 3“). Zugang nur mit `finance:read` **vereinsweit** (`modules/finance/access.ts`; eine Reichweite
@@ -474,11 +474,75 @@ Bildern (Ben: „nimm nummer 3“). Zugang nur mit `finance:read` **vereinsweit*
   darunter die Leiste der Bereiche (`FinanceTabs`, helle Umschaltleiste wie überall, am Handy waagerecht scrollbar):
   Übersicht · Beiträge · Kassenbuch · Rechnungen · Spenden · Abschluss (Lastschrift, Bank, Berichte folgen mit ihren Stufen). Eine kleine
   bernsteinfarbene Zahl zeigt Dringendes (überfällige Rechnungen).
-- **Übersicht** (`app/(app)/finanzen/page.tsx`, Daten `modules/finance/overview.ts`): vier Kennzahlen mit Farbverlauf wie auf
-  dem Dashboard (`FinanceKpiCard` auf `KpiShell`): Kontostand gesamt (blau, Kurs der letzten 12 Monate), Offene Rechnungen
-  (bernstein), Überschuss des Jahres (grün, mit Vorzeichen, Kurs kumuliert), Spenden des Jahres (violett). Verläufe **nur**
-  dort; alles andere weiße Karten: „Einnahmen und Ausgaben“ je Monat (Balken, umschaltbar „Als Tabelle“), „Das steht an“
-  (je Punkt ein Satz, nur der erste mit blauem Knopf, darunter „Demnächst“), „Ausgaben der Abteilungen“, „Konten“.
+- **Übersicht – „Wie eine Banking-App“** (seit 21.10.2026 nach Entwurf 1 von fünf, Luis: „setze das um“; vorher „Cockpit“
+  mit vier Kennzahlkarten, Entwurf 3 vom 04.10.2026). Seite `app/(app)/finanzen/page.tsx`, Teile unter
+  `modules/finance/components/` (`finance-hero`, `quick-actions`, `balance-chart`, `account-card-stack`, `recent-entries`,
+  `finance-year-card`, `department-pots`), Daten aus `getFinanceOverview` (`modules/finance/overview.ts`, alles parallel,
+  keine Abfrage je Zeile), reine Rechnungen in `balance-curve.ts`, `account-cards.ts` und `hero-look.ts` (einzeln getestet).
+  - **Kopf auf der Nacht** (`FinanceHero`): dieselbe Nacht wie die Vereins-Bühne des Dashboards (`HERO_NIGHT`, hell wie dunkel
+    gleich) mit drei weichen Lichtern. Groß „Kontostand · alle Konten“ (Cent kleiner, für Screenreader der ganze Betrag),
+    daneben die **runden Schnellaktionen** – nur mit „Finanzen bearbeiten“ und nur, wo ihr Ziel geht: „Buchung“ öffnet das
+    bestehende Fenster „Neue Buchung“, „Rechnung“ führt zum Hochladen auf „Rechnungen“ (dazu „Dokumente hochladen“),
+    „Beitragslauf“ und „Spende“ zu ihren Seiten (beide nur mit Kassenbuch). Wer nur ansehen darf, bekommt „Kassenbuch“.
+    Am Handy teilen sich ab drei Aktionen alle die Breite des Kopfs (jede mindestens so breit wie ihr Wort, Lücke 0,25 rem);
+    ist der Kopf schmaler als 20 rem (320 px), sind die Kreise 3 rem und die Wörter 12 px – so passt die Reihe ohne Überstand,
+    und erst wenn es dann noch nicht reicht, trennt der Browser („Beitrags-lauf“, `hyphens-auto`).
+    Darunter Glas-Chips: **Veränderung seit Monatsbeginn** (Stand heute minus Ende des Vormonats, grün/rosé; fehlt, wenn das
+    Kassenbuch erst in diesem Monat begann), **Monat rein/raus** (Vorzeichen und Farbe nur mit Betrag: „0,00 € rein
+    0,00 € raus“, nie „−0,00 €“) und die **offenen Rechnungen** („2 Rechnungen offen · 1.549,50 € · davon 1 überfällig“,
+    führt zu „Rechnungen“). Chips brechen am Handy zwischen ganzen Teilen um.
+  - **Kontoverlauf** (`BalanceChart`): Gesamtstand am Ende jedes Tages seit 1. Januar (mindestens 90 Tage, im Januar also ins
+    Vorjahr; nie vor Beginn des Kassenbuchs) – eine Abfrage (`dailyBookingSums`: Summe je Buchungstag), gerechnet in
+    `dailyBalances`. Der letzte Punkt („Heute“) ist immer der große Kontostand: Buchungen nach heute weist die Datenbank ab
+    (`FUTURE_DATE`, geprüft in `finance-overview.test.ts`). Leuchtende weiße Linie mit blauem Schein, Fläche nach unten ausgeblendet, Monatsanfänge fein gestrichelt,
+    „Hoch“ und „Tief“ beschriftet, „Heute“ als Punkt; am Zeiger ein Infofeld mit Tag und Stand. Für Screenreader ein Bild mit
+    einem Satz als Namen („Kontostand vom 01.07.2026 bis heute: von … auf …, höchster Stand … am …“); „Als Tabelle“
+    (`aria-pressed`) zeigt den Stand am Ende jedes Monats – gleich hoch wie die Grafik, mit der Tastatur scrollbar.
+  - **Konten als Bankkarten** (`AccountCardStack`): im Stapel wie eine Wallet, vorn das Standardkonto mit Kartenchip, Schild
+    „Standardkonto“ und Vereinsname, von den hinteren bleibt ein Streifen mit Name und Stand (4,75 rem). Farbe je Konto
+    (Bank blau → violett → petrol, Barkasse grün), darunter als Motiv ein **Abteilungsfoto – reine Zierde, fest nach
+    Konto-Reihenfolge** (`accountCards`: je Sportart ein Foto, sortiert nach Abteilungsname; das n-te Konto bekommt das n-te
+    Foto), ohne Abteilungsfotos nur der Verlauf auf der Nacht. Keine erfundenen Kartennummern. Jede Karte öffnet das
+    Kassenbuch des Kontos. Darunter „Zusammen · 2 Konten“ und (mit Recht) „Konten und Kategorien verwalten“. Unter 1280 px
+    (eine Spalte) ist die Spalte „Konten“ höchstens 28 rem breit und mittig (`ACCOUNTS_COLUMN`) – am Tablet behalten die
+    Karten so Kartengröße, statt mit ihrem Seitenverhältnis die ganze Breite einzunehmen.
+  - **Zuletzt gebucht** (`RecentEntries`, die 6 neuesten): nach Tagen („Heute“, „Gestern“, „Mo., 5. Oktober“), Symbol je
+    Kategorie bzw. rundes Abteilungsfoto, rein grün „+“, raus rot „−“ (für Screenreader „Einnahme“/„Ausgabe“), „Beleg fehlt“
+    und „storniert“ als Schild; jede Zeile sucht die Buchungsnummer im Kassenbuch. Jeder Tag ist eine Gruppe (`role="group"`,
+    benannt über seine Überschrift), keine Landmarke – die Landmarken-Liste des Screenreaders bleibt kurz. Daneben **„Das steht
+    an“** wie bisher.
+  - **Einnahmen und Ausgaben des Jahres** (`FinanceYearCard`): Einnahmen, Ausgaben, **Überschuss** (mit Vorzeichen, „seit …“)
+    und **Spenden** (dieselben Zahlen wie die Seite „Spenden“, auch Sach- und Aufwandsspenden) als Jahreszeile, darunter die
+    Monate als Balken mit „Als Tabelle“. Überschuss und Spenden standen bis 21.10.2026 als eigene Kennzahlkarten oben. Die
+    Jahreszeile fließt und bricht um (`YEAR_FIGURES`): Beträge brechen nie um (`whitespace-nowrap`, am Handy `text-xl`), am
+    Handy stehen je zwei Zahlen nebeneinander, eine zu breite (ab etwa sieben Stellen) rutscht in eine eigene Zeile statt
+    über den Rand. Der Strich vor den Spenden steht mitten in der Lücke und wird am Zeilenanfang abgeschnitten – zwischen 640
+    und 1280 px, wo die Spenden meist in die zweite Zeile rutschen, steht also kein verrutschter Strich am Zeilenanfang.
+  - **Ausgaben der Abteilungen** als Foto-„Töpfe“ (`DepartmentPots`, Optik der Abteilungskarten): Ausgegeben groß, Anteil an
+    der größten Ausgabe als Balken, „rein“ und Saldo (Grün-100/Rosé-100); am Handy seitlich zu wischen. Die Reihe ist nur ein
+    Tabstopp, solange sie wirklich überläuft (`SwipeList`, prüft `scrollWidth` bei jeder Größenänderung) – am Desktop
+    (Raster) kein Tabstopp ohne Funktion.
+  - **Ohne Kassenbuch** ein ehrlicher Leerzustand statt 0,00 € und leerem Diagramm: Im Kopf „Kassenbuch noch nicht
+    eingerichtet“, was danach dort steht, die drei Schritte (Beginn, Konten, Anfangsbestände) und – mit Recht – der weiße
+    Knopf „Kassenbuch einrichten“ (sonst ein Satz, wer es einrichten kann); daneben „Noch keine Konten“ und „Das steht an“.
+    Jahreszahlen, Buchungen und Abteilungen fehlen dann ganz. Die offenen Rechnungen stehen trotzdem im Kopf.
+  - **Kontraste** (hell wie dunkel dieselben Flächen): Weiß zu 80–90 % und Grün-300/Rosé-300/Bernstein-300 auf Glas an der
+    hellsten Stelle des Kopfs, Schrift der Karten über einer weißen Bildstelle (Abdeckung `CARD_SCRIM_STOPS`, oben und unten
+    mindestens 60 % Schwarz) – alle mindestens 4,5 : 1, nachgerechnet in `tests/unit/finance-hero-look.test.ts`; Symbole der
+    Schnellaktionen mindestens 3 : 1. Dazu axe hell und dunkel (`finanzen.spec.ts`, `a11y.spec.ts`).
+  - **Ladegerüst** (`app/(app)/finanzen/loading.tsx`): der Kopf schon auf der Nacht (Platzhalter in Weiß zu 10 %), Kartenstapel,
+    Buchungen, „Das steht an“, Jahr und Töpfe in den gemessenen Höhen; Jahreszeile (`YEAR_FIGURES`), Spalte „Konten“
+    (`ACCOUNTS_COLUMN`) und Schnellaktionen am Handy ordnen sich wie auf der Seite, die Monatsbalken sind wie `TimeChart` 220
+    bzw. 280 px hoch. Gemessen am 21.10.2026 (Demo-Daten, Navigation mit gedrosseltem Netz): bei 1280 und 1440 px höchstens
+    1 px Versatz, bei 768 px 2 px, bei 1024 px 7 px, bei 390 px rund 10 px (Chips und „Das steht an“ hängen vom Text ab).
+    **„Kein Springen“ gilt nur für Vereine mit Kassenbuch und allen vier Schnellaktionen:** Ohne Kassenbuch ist die fertige
+    Seite viel kürzer (bei 1440 px 919 statt rund 2545 px), wer nur ansehen darf, hat eine statt vier Aktionen. Das Gerüst
+    kommt ohne Abfrage und kann das nicht wissen; die Seite ohne Kassenbuch lädt dafür so schnell, dass es kaum zu sehen ist.
+  - Geprüft in `tests/e2e/finanzen.spec.ts` (Leerzustand beim zweiten Verein, Verlauf mit Tabelle, Karten, Buchen über die
+    Schnellaktion, Rolle „Kassenprüfung“ nur mit `finance:read`, schmales Handy: vier Aktionen bei 320 px im Kopf,
+    siebenstellige Jahreszahlen bei 360 px in der Karte), `tests/integration/finance-overview.test.ts` und
+    `tests/unit/finance-{balance-curve,account-cards,hero-look}.test.ts`. Die fünf Probeseiten liegen im Archiv
+    (`~/VereinsFlow-Medien/app-entwuerfe/finanzen/`).
 - **Kassenbuch** (`/finanzen/kassenbuch`): beim ersten Besuch „Kassenbuch einrichten“ (Beginn, Girokonto, Barkasse,
   Anfangsbestände). Dann Kontokarten (Klick filtert), Filterleiste (Konto, Monat, Kategorie, Suche auch nach „2026-0042“),
   Tabelle Nr./Datum · Beschreibung/Gegenüber · Kategorie mit Bereich klein darunter · Konto · Betrag mit echtem Minuszeichen
@@ -535,7 +599,7 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
 
 - **Seite** `/finanzen/spenden` (Jahr über `?jahr=`, Untertitel „Geschäftsjahr 2026 · Stand 07.10.2026“, blauer Kopfknopf
   **„Spende erfassen“**). Ohne eingerichtetes Kassenbuch nur der Hinweis „Richte zuerst das Kassenbuch ein“.
-- **Reihe 1:** violette Kennzahl „Spenden 2026“ (`FinanceKpiCard` mit Kasten „Nach Art“ rechts – Geld-, Sach-,
+- **Reihe 1:** violette Kennzahl „Spenden 2026“ (`DonationsKpiCard` mit Kasten „Nach Art“ rechts – Geld-, Sach-,
   Aufwandsspenden –, am Handy darunter; Zeilen „23 Spenden von 14 Spendern“ und „2.450,00 € mit festem Zweck“; Kurs der
   Monate kumuliert), daneben zwei weiße Karten **„Spender 2026“** (Zahl, „10 Mitglieder“, „4 Firmen und Stiftungen“, Link
   „Alle Spender ansehen“) und **„Bestätigungen“** (Zahl „fehlen noch“ in Bernstein, Legende grün „erstellt“ und grau „nicht
