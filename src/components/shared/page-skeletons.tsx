@@ -361,23 +361,40 @@ export function TablePageSkeleton({
   );
 }
 
-/** Raster aus Karten (Abteilungen …): eine Spalte am Handy, zwei ab `md`, drei ab `xl`. */
+/**
+ * Raster aus Karten: eine Spalte am Handy, zwei ab `md`, drei ab `xl`. `cover` für Bildkarten wie die der Abteilungen
+ * (`DepartmentCard`: so hoch und so rund wie dort, unten Name und zwei Zeilen) – sonst springt die Höhe beim Erscheinen.
+ */
 export function CardGridSkeleton({
   cards = 6,
   actions = 1,
+  cover = false,
   label,
 }: {
   cards?: number;
   actions?: number;
+  cover?: boolean;
   label?: string;
 }) {
   return (
     <PageLoading label={label}>
       <PageHeaderSkeleton actions={actions} />
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: cards }, (_, index) => (
-          <CardSkeleton key={index} lines={index % 2 === 0 ? 3 : 2} />
-        ))}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: cards }, (_, index) =>
+          cover ? (
+            <Skeleton
+              key={index}
+              className="flex min-h-80 flex-col justify-end gap-2.5 rounded-3xl p-5 sm:min-h-88"
+            >
+              {/* Name, Beschreibung, Mitglieder – eine Spur kräftiger auf der Fläche (pulsieren mit ihr). */}
+              <div className="h-7 w-1/2 rounded-md bg-foreground/8" />
+              <div className="h-4 w-3/4 rounded-md bg-foreground/8" />
+              <div className="h-4 w-1/3 rounded-md bg-foreground/8" />
+            </Skeleton>
+          ) : (
+            <CardSkeleton key={index} lines={index % 2 === 0 ? 3 : 2} />
+          ),
+        )}
       </div>
     </PageLoading>
   );

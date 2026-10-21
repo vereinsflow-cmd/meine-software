@@ -191,6 +191,42 @@ test.describe("Smartphone", () => {
     }
   });
 
+  test("Abteilungen: Bildkarten über die ganze Breite, Schrift ganz im Bild, Foto in passender Größe", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    await open(page, "/abteilungen");
+    const football = page
+      .locator("article")
+      .filter({ has: page.getByRole("link", { name: "Fußball", exact: true }) });
+    const photo = football.locator('img[data-department-image="fussball"]');
+    await expect
+      .poll(() => photo.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0))
+      .toBe(true);
+    const viewport = page.viewportSize()!;
+    const box = (await football.boundingBox())!;
+    // Eine Spalte mit dem üblichen Seitenrand (je 16 px).
+    expect(box.x).toBeGreaterThanOrEqual(12);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 12);
+    expect(box.width).toBeGreaterThan(viewport.width - 48);
+    // Name und „Leitung“ stehen innerhalb der Karte (nichts wird vom runden Rand abgeschnitten).
+    for (const text of [
+      football.getByRole("heading", { level: 2, name: "Fußball" }),
+      football.getByText(/^Leitung:/),
+    ]) {
+      const inner = (await text.boundingBox())!;
+      expect(inner.x).toBeGreaterThanOrEqual(box.x + 12);
+      expect(inner.y + inner.height).toBeLessThanOrEqual(box.y + box.height - 12);
+    }
+    // Der Browser wählt aus dem srcset eine Datei, die für die Kartenbreite in Geräteauflösung reicht.
+    const chosen = await photo.evaluate((el: HTMLImageElement) => el.currentSrc);
+    const width = Number(chosen.match(/-(\d+)\.webp$/)?.[1]);
+    expect(width).toBeGreaterThanOrEqual(
+      box.width * Math.min(2, await page.evaluate(() => devicePixelRatio)),
+    );
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+  });
+
   test("Dokumente: kompakte Zeilen – Name, darunter Kategorie und Datum; der Upload-Dialog passt auf den Bildschirm", async ({
     page,
   }) => {

@@ -287,6 +287,10 @@ Diese Punkte sind bekannt und bewusst offen – sie stehen nicht „still“ in 
   werden nur gültige, nicht technische Bankleitzahlen. Die Bundesbank gibt die Datei viermal im Jahr neu heraus (gültig ab
   Anfang März, Juni, September und Dezember) – ab diesem Tag das Skript erneut ausführen; es passt die Gültigkeit hier, im
   Impressum und in `src/server/banks/bank-codes.ts` selbst an. Die Quellenangabe steht auch im Impressum.
+- **Fotos der Abteilungskarten** (Fußball, Handball, Badminton, Tennis, Tischtennis, Dart, Volleyball, Basketball):
+  [Unsplash](https://unsplash.com), [Unsplash-Lizenz](https://unsplash.com/de/lizenz) – Fotografen und Bearbeitung in
+  [`docs/THIRD-PARTY-NOTICES.md`](docs/THIRD-PARTY-NOTICES.md). Liegen der Anwendung bei (`public/bilder/abteilungen/`),
+  kein Abruf bei Unsplash.
 
 ## Lizenz
 

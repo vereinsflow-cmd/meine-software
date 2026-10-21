@@ -17,6 +17,7 @@ import {
   LeaderToggle,
   RemoveGroupMemberButton,
 } from "@/modules/departments/components/department-controls";
+import { DepartmentCover } from "@/modules/departments/components/department-card";
 import { DepartmentDialog, GroupDialog } from "@/modules/departments/components/department-dialog";
 import { getDepartment, listAddableMembers } from "@/modules/departments/service";
 import { isAppError } from "@/server/errors";
@@ -44,6 +45,19 @@ export default async function DepartmentPage({ params }: { params: Promise<{ id:
   return (
     <PageStack>
       <BackLink href="/abteilungen">Alle Abteilungen</BackLink>
+      {/* Schmales Band mit dem Bild der Abteilung wie auf ihrer Karte in der Übersicht (Foto oder Farbverlauf) – rein schmückend. */}
+      <div
+        aria-hidden="true"
+        className="relative isolate h-28 overflow-hidden rounded-3xl bg-slate-950 ring-1 ring-black/5 sm:h-36 dark:ring-white/10"
+      >
+        <DepartmentCover
+          name={department.name}
+          color={department.color}
+          sizes="(min-width: 1024px) 75vw, 100vw"
+          eager
+          inactive={!department.isActive}
+        />
+      </div>
       <PageHeader
         title={department.name}
         description={

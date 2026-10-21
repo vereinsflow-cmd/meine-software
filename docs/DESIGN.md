@@ -243,7 +243,7 @@ Seit 14.10.2026 zeigt jede Seite beim Laden sofort ihren Aufbau statt einer leer
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ListPageSkeleton`                            | alle Seiten ohne eigenes Gerüst (`app/(app)/loading.tsx`)                                                                                       |
 | `TablePageSkeleton`                           | Listen mit Tabelle (Mitglieder und Dokumente haben seit 20.10.2026 eigene Gerüste: `MemberListPageSkeleton`, `DocumentListPageSkeleton`)        |
-| `CardGridSkeleton`                            | Raster aus Karten: Abteilungen                                                                                                                  |
+| `CardGridSkeleton`                            | Raster aus Karten; `cover`: Bildkarten der Abteilungen                                                                                          |
 | `DetailPageSkeleton`                          | Mitglied, Veranstaltung (Zurück-Link, zwei Drittel + Seitenspalte)                                                                              |
 | `CalendarPageSkeleton`                        | Kalender (Filterzeile ohne Suche, Monatsraster ab `md`, am Handy Terminliste)                                                                   |
 | `ChatPageSkeleton`                            | Nachrichten (Chatliste und Verlauf über die volle Höhe)                                                                                         |
@@ -538,6 +538,41 @@ Schreibende mit `finance:manage` (sonst heißen die Aktionen „Ansehen“).
   Filter und Suche, „Spender“, Finanzamt-Angaben, Beleg, „Als Spende kennzeichnen“, Nachweise und Storno einer
   Sachspende, Rechte), `spenden.mobil.spec.ts` (gestapelte Karten, 412 und 390 px), `tests/e2e/a11y.spec.ts`, Daten und
   Regeln in `tests/integration/donations*.test.ts`.
+
+## Abteilungen mit Bild
+
+Seit 21.10.2026 nach Luis' Vorlage (Kacheln „Gym“, „RunClubs“, „Bouldern“, „Hyrox“): Jede Abteilung in der Übersicht ist eine
+Bildkarte (`modules/departments/components/department-card.tsx`) – das Foto füllt die ganze Karte (`rounded-3xl`), unten liegt
+ein dunkler Verlauf mit weißer Schrift: Name groß mit dem Farbpunkt der Abteilung (heller Ring), Beschreibung (höchstens zwei
+Zeilen), Mitglieder/Gruppen und Leitung. Deaktivierte Abteilungen zeigen das Foto in Graustufen und oben rechts das Schild
+„Deaktiviert“. Oben auf der Seite einer Abteilung steht dasselbe Bild als schmales Band (rein schmückend).
+
+- **Woher das Bild kommt:** automatisch aus dem Namen, zur Laufzeit (`modules/departments/department-image.ts`, keine Spalte
+  in der Datenbank, folgt jeder Umbenennung, kein Upload). Vorbereitet sind Fußball, Handball, Badminton, Tennis,
+  Tischtennis, Dart, Volleyball und Basketball; erkannt auch in längeren Namen und Schreibweisen („Fußball Jugend“,
+  „Fussball“, „Beach-Volleyball“, „Darts“, „Basketball-Damen“, Tippfehler wie „Badmintion“). Tischtennis wird vor Tennis
+  geprüft, Tischfußball bekommt kein Fußballfoto, Dart zählt nur am Wortanfang („Standart“ nicht). Alles andere (etwa
+  „Jugendarbeit“) bekommt einen **Verlauf in der Abteilungsfarbe**: in OKLCH abgedunkelt (gleicher Farbton, möglichst
+  gleiche Buntheit – mit Schwarz gemischt würde Orange schlammig), so hell, dass Weiß darauf mindestens 5 : 1 hat, dazu ein
+  hellerer Schein oben rechts.
+- **Lesbarkeit:** Hinter der Schrift liegen überall mindestens 60 % Schwarz (`CARD_SCRIM`), darüber ein weicher Übergang ins
+  Bild und ein leichter Textschatten. Damit hat weiße Schrift (auch zu 90 % deckend) selbst über einer rein weißen Bildstelle
+  mindestens 4,5 : 1 – für jedes Foto und jede Farbe. axe kann Text auf Bildern nicht messen; nachgerechnet in
+  `tests/unit/department-image.test.ts` (auch mit Gelb, Weiß, Hellcyan).
+- **Bilder:** WebP in 480, 800 und 1200 px Breite (`srcset`/`sizes` nach den gemessenen Kartenbreiten), je Foto ein
+  Fokuspunkt (`object-position`), zusammen knapp 0,8 MB; die erste Reihe lädt sofort, der Rest erst beim Scrollen.
+  Fotografen und Lizenz: `docs/THIRD-PARTY-NOTICES.md`.
+- **Bewegung:** Beim Überfahren wächst der Schatten und das Foto zoomt leicht heran (105 %, 500 ms), beim Drücken gibt die
+  Karte minimal nach – beides nur ohne „Bewegung reduzieren“. Die ganze Karte ist der Link (Klickfläche des Namens über die
+  Karte gedehnt), der Fokusrahmen sitzt an der Karte.
+- **Lange Namen:** Namen dürfen 80 Zeichen lang sein, auch als ein einziges Wort („Behindertensportgemeinschaft“). Damit
+  das die Karten nicht sprengt, hat die Liste feste Spalten (`grid-cols-1` am Handy statt der impliziten Spalte `auto`, die
+  mit dem längsten Wort wüchse), die Textspalte der Karte `grid-cols-[minmax(0,1fr)]`, und die Schrift bricht notfalls
+  mitten im Wort um (`overflow-wrap: anywhere`).
+- **Ladezustand:** `CardGridSkeleton cover` – gleich hohe, gleich runde Flächen im selben Raster; auf der Seite einer
+  Abteilung steht im Gerüst auch das Band (`h-28`, ab `sm` `h-36`). So springt beim Erscheinen nichts.
+- Geprüft in `tests/e2e/abteilungen.spec.ts` (Foto, Verlauf, neue Abteilung „Basketball“, langer Name bei 360 und 1280 px,
+  Zoom, axe) und `smartphone.mobil.spec.ts`.
 
 ## Ansichten prüfen
 

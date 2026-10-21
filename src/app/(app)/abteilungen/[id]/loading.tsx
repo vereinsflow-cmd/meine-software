@@ -7,13 +7,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /**
- * Ladezustand einer Abteilung: Zurück-Link, Kopf mit „Bearbeiten“, „Veranstaltungen“ und „Weitere Aktionen“, darunter ab
- * `lg` nebeneinander die Karten „Mitglieder“ (Liste) und „Gruppen und Teams“ (umrandete Gruppen mit Namen).
+ * Ladezustand einer Abteilung: Zurück-Link, das Band mit dem Bild der Abteilung, Kopf mit „Bearbeiten“, „Veranstaltungen“
+ * und „Weitere Aktionen“, darunter ab `lg` nebeneinander die Karten „Mitglieder“ (Liste) und „Gruppen und Teams“
+ * (umrandete Gruppen mit Namen).
  */
 export default function DepartmentLoading() {
   return (
     <PageLoading label="Abteilung wird geladen …">
-      <PageHeaderSkeleton actions={3} backLink />
+      {/* Zurück-Link wie `BackLink` in der Seitenspalte (0,75 rem bis zum Band), dann das Band – gleich hoch wie auf der Seite. */}
+      <Skeleton className="-mb-3 h-5 w-36" />
+      <Skeleton className="h-28 rounded-3xl sm:h-36" />
+      <PageHeaderSkeleton actions={3} />
       <div className="grid gap-6 lg:grid-cols-2">
         <FormCardSkeleton titleWidth="w-40" description>
           <div className="divide-y">
