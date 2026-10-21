@@ -53,6 +53,14 @@ describe("Ladegerüste ganzer Seiten", () => {
     },
   );
 
+  it("CardGridSkeleton `cover`: Flächen so hoch und rund wie die Bildkarten der Abteilungen (nichts springt)", () => {
+    const markup = html(createElement(CardGridSkeleton, { cover: true }));
+    expect(markup).toContain("grid-cols-1");
+    expect(markup.match(/rounded-3xl/g)).toHaveLength(6);
+    expect(markup).toContain("min-h-80");
+    expect(markup).toContain("sm:min-h-88");
+  });
+
   it("nennt auf Wunsch, was geladen wird", () => {
     expect(
       html(createElement(TablePageSkeleton, { label: "Mitglieder werden geladen …" })),
