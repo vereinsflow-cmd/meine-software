@@ -225,6 +225,7 @@ test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung",
     ["helfer", "/helferplanung"],
     ["mitglied", "/dashboard"],
     ["otherAdmin", "/dashboard"], // Kopf ohne Abteilungen: Nacht und Licht, keine Fotos
+    ["otherAdmin", "/finanzen"], // Übersicht ohne Kassenbuch: Leerzustand auf der Nacht
     ["mitglied", "/dokumente"],
     ["abteilung", "/aufgaben"],
   ] as const) {
@@ -248,6 +249,7 @@ test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung",
     "/nachrichten?chat=alle", // Sprechblasen in den dunklen WhatsApp-Farben
     "/einstellungen", // Vereinslogo-Karte mit Anfangsbuchstaben auf dunklem Grund
     "/dokumente", // Dateityp-Kacheln, Schilder und „Bezahlt“ zartgrün auf dunklem Grund
+    "/finanzen", // Kopf auf der Nacht, Kontokarten und Töpfe auf Fotos, Beträge grün/rot auf dunklem Grund
   ]) {
     test(`dunkel: ${path}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: "dark" });

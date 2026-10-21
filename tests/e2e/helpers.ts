@@ -7,7 +7,9 @@ import {
   type Locator,
   type Page,
 } from "@playwright/test";
-import { appUrlPattern } from "./environment";
+import pg from "pg";
+import { databaseUrlFor } from "../setup/env";
+import { E2E_DATABASE, appUrlPattern } from "./environment";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
 export const DEMO_PASSWORD = process.env.SEED_PASSWORD ?? "Vereinsflow-Demo-2026!";
@@ -356,4 +358,66 @@ export async function chooseNewDonor(dialog: Locator): Promise<void> {
   await expect(known.or(name)).toBeVisible();
   if (await known.isVisible()) await known.selectOption({ label: "Neu eintragen …" });
   await expect(name).toBeVisible();
+}
+
+/** Anmeldung der Kassenprüferin (eigene Rolle „Kassenprüfung“, siehe `ensureFinanceReader`). */
+export const FINANCE_READER = "kassenpruefung@demo-verein.local";
+
+/**
+ * Legt in der Test-Datenbank eine eigene Rolle „Kassenprüfung“ an – was ein Mitglied darf, dazu nur „Finanzen ansehen“
+ * (vereinsweit), nicht „bearbeiten“ – und eine Benutzerin mit dieser Rolle (Passwort wie die Demo-Benutzer: der Hash wird
+ * vom Mitglied übernommen). Eine solche Rolle gibt es unter den Systemrollen nicht; der Seed kennt sie deshalb nicht, und in
+ * der Oberfläche lassen sich Rollen (noch) nicht bearbeiten. Mehrfach aufrufbar.
+ */
+export async function ensureFinanceReader(): Promise<string> {
+  const db = new pg.Client({ connectionString: databaseUrlFor(E2E_DATABASE) });
+  await db.connect();
+  try {
+    await db.query("BEGIN");
+    const { rows } = await db.query<{ clubId: string; roleId: string }>(
+      `SELECT m."clubId", m."roleId" FROM "ClubMembership" m JOIN "User" u ON u.id = m."userId" WHERE u.email = $1`,
+      [USERS.mitglied],
+    );
+    const { clubId, roleId: memberRole } = rows[0]!;
+    await db.query(
+      `INSERT INTO "Role" (id, "clubId", key, name, description, "isSystem", "updatedAt")
+       VALUES (gen_random_uuid()::text, $1, 'custom:Kassenprüfung', 'Kassenprüfung', 'Sieht die Finanzen, ändert nichts', false, now())
+       ON CONFLICT ("clubId", key) DO NOTHING`,
+      [clubId],
+    );
+    const role = await db.query<{ id: string }>(
+      `SELECT id FROM "Role" WHERE "clubId" = $1 AND key = 'custom:Kassenprüfung'`,
+      [clubId],
+    );
+    const roleId = role.rows[0]!.id;
+    await db.query(
+      `INSERT INTO "RolePermission" ("clubId", "roleId", "permissionKey", scope)
+       SELECT "clubId", $2, "permissionKey", scope FROM "RolePermission" WHERE "roleId" = $1
+       UNION ALL SELECT $3, $2, 'finance:read', 'CLUB'
+       ON CONFLICT ("roleId", "permissionKey") DO NOTHING`,
+      [memberRole, roleId, clubId],
+    );
+    await db.query(
+      `INSERT INTO "User" (id, email, "emailVerifiedAt", "passwordHash", "firstName", "lastName", "termsAcceptedAt",
+         "termsVersion", "updatedAt")
+       SELECT gen_random_uuid()::text, $1, "emailVerifiedAt", "passwordHash", 'Karla', 'Kassenprüferin', "termsAcceptedAt",
+         "termsVersion", now()
+       FROM "User" WHERE email = $2
+       ON CONFLICT (email) DO NOTHING`,
+      [FINANCE_READER, USERS.mitglied],
+    );
+    await db.query(
+      `INSERT INTO "ClubMembership" (id, "clubId", "userId", "roleId", status, "updatedAt")
+       SELECT gen_random_uuid()::text, $1, u.id, $2, 'ACTIVE', now() FROM "User" u
+       WHERE u.email = $3 AND NOT EXISTS (SELECT 1 FROM "ClubMembership" m WHERE m."userId" = u.id AND m."clubId" = $1)`,
+      [clubId, roleId, FINANCE_READER],
+    );
+    await db.query("COMMIT");
+  } catch (error) {
+    await db.query("ROLLBACK");
+    throw error;
+  } finally {
+    await db.end();
+  }
+  return FINANCE_READER;
 }

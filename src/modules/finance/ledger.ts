@@ -21,6 +21,7 @@ import { badRequest, conflict, notFound, validationFailed } from "@/server/error
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { carryOverDonation } from "@/modules/donations/ledger-hooks";
 import { assertFinance, canFinance } from "./access";
+import type { DaySum } from "./balance-curve";
 import {
   DEFAULT_CATEGORIES,
   HIDDEN_SYSTEM_KEYS,
@@ -1090,36 +1091,20 @@ export async function yearSummary(ctx: TenantContext, year: number): Promise<Yea
 }
 
 /**
- * Verlauf des Gesamtkontostands (alle Konten) am Ende jedes der letzten `months` Monate – für die Kennzahl „Kontostand“.
- * Monate vor Beginn des Kassenbuchs fehlen.
+ * Summe aller Buchungen je Buchungstag bis einschließlich `to` – alle Konten, auch archivierte (deren Geld lag damals ja auf
+ * einem Konto des Vereins). Eine Abfrage für den ganzen Kontoverlauf der Übersicht; den Stand je Tag rechnet
+ * `dailyBalances` (balance-curve.ts) daraus. Mit `to` = heute endet der Verlauf genau beim Kontostand der Konten: Buchungen
+ * nach heute gibt es nicht (die Datenbank weist sie ab, `FUTURE_DATE`).
  */
-export async function balanceHistory(
-  ctx: TenantContext,
-  months = 12,
-): Promise<{ month: string; balanceCents: number }[]> {
+export async function dailyBookingSums(ctx: TenantContext, to: Date): Promise<DaySum[]> {
   assertFinance(ctx, "finance:read");
-  const settings = await getLedgerSetup(ctx);
-  if (!settings) return [];
-  const today = todayCalendarDate();
   const groups = await ctx.db.ledgerEntry.groupBy({
     by: ["bookingDate"],
+    where: { bookingDate: { lte: to } },
     _sum: { amountCents: true },
     orderBy: { bookingDate: "asc" },
   });
-  const points: { month: string; balanceCents: number }[] = [];
-  for (let i = months - 1; i >= 0; i--) {
-    const monthEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - i + 1, 0));
-    const cutoff = monthEnd.getTime() > today.getTime() ? today : monthEnd;
-    if (cutoff.getTime() < settings.ledgerStartDate.getTime()) continue;
-    const balance = groups
-      .filter((g) => g.bookingDate.getTime() <= cutoff.getTime())
-      .reduce((sum, g) => sum + Number(g._sum.amountCents ?? 0), 0);
-    points.push({
-      month: `${cutoff.getUTCFullYear()}-${String(cutoff.getUTCMonth() + 1).padStart(2, "0")}`,
-      balanceCents: balance,
-    });
-  }
-  return points;
+  return groups.map((g) => ({ date: g.bookingDate, cents: Number(g._sum.amountCents ?? 0) }));
 }
 
 // ---------------------------------------------------------------------------------------------

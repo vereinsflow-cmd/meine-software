@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
 import {
   USERS,
+  ensureFinanceReader,
   ensureLedger,
   isoDaysAgo,
   login,
@@ -58,11 +59,13 @@ test.describe("Finanzen – Kassenwart", () => {
     await expect(organisation).toHaveAccessibleDescription(/enthält die aktuelle Seite/);
     await expect(page.getByRole("heading", { level: 1, name: "Finanzen" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Bereiche der Finanzen" })).toBeVisible();
-    // Seed: zwei offene Rechnungen (349,50 € und 1.200,00 €, eine davon überfällig).
-    const kennzahlen = page.getByRole("region", { name: "Kennzahlen" });
-    await expect(kennzahlen).toContainText("Offene Rechnungen");
-    await expect(kennzahlen).toContainText("1.549,50 €");
-    await expect(kennzahlen).toContainText("davon 1 überfällig");
+    // Seed: zwei offene Rechnungen (349,50 € und 1.200,00 €, eine davon überfällig) – als Chip im Kopf, der zu ihnen führt.
+    // Ob das Kassenbuch schon eingerichtet ist, hängt davon ab, welche Tests vorher liefen; die Rechnungen stehen immer da.
+    const hero = page.getByRole("region", { name: "Kontostand · alle Konten" });
+    const invoices = hero.getByRole("link", { name: /^2 Rechnungen offen/ });
+    await expect(invoices).toContainText("1.549,50 €");
+    await expect(invoices).toContainText("davon 1 überfällig");
+    await expect(invoices).toHaveAttribute("href", "/finanzen/rechnungen?stand=offen");
     await expect(page.getByRole("heading", { name: "Das steht an" })).toBeVisible();
     await expect(
       page.getByText(/seit \d+ Tagen überfällig|seit gestern überfällig/).first(),
@@ -262,6 +265,229 @@ test.describe("Finanzen – Belege", () => {
     await expect(page).toHaveURL(/\/finanzen\/kassenbuch\?q=/);
     await expect(page.getByRole("row").nth(1)).toContainText("Rechnung vom");
     await expect(page.getByRole("row").nth(1)).toContainText("−89,90 €");
+  });
+});
+
+test.describe("Finanzen – Übersicht", () => {
+  test("Ohne Kassenbuch: ehrlicher Leerzustand mit dem Weg zum Einrichten – keine 0,00 €, kein leeres Diagramm", async ({
+    page,
+  }) => {
+    // Der andere Verein des Seeds hat kein Kassenbuch (und kein Test richtet es ihm ein).
+    await login(page, USERS.otherAdmin);
+    await open(page, "/finanzen");
+    const hero = page.getByRole("region", { name: "Kontostand · alle Konten" });
+    await expect(hero).toContainText("Kassenbuch noch nicht eingerichtet");
+    await expect(hero).not.toContainText("0,00 €");
+    await expect(hero.getByRole("img")).toHaveCount(0);
+    await expect(hero.getByRole("button", { name: "Als Tabelle" })).toHaveCount(0);
+    await expect(
+      hero.getByRole("list", { name: "So wird das Kassenbuch eingerichtet" }).getByRole("listitem"),
+    ).toHaveText([/Beginn festlegen/, /Konten anlegen/, /Anfangsbestände eintragen/]);
+    // Schnellaktionen nur, wo ihr Ziel ohne Kassenbuch geht: Buchung, Beitragslauf und Spende fehlen.
+    const actions = hero.getByRole("navigation", { name: "Schnellaktionen" });
+    await expect(actions.getByRole("link", { name: "Rechnung hochladen" })).toBeVisible();
+    await expect(actions.getByRole("button")).toHaveCount(0);
+    await expect(actions.getByRole("link", { name: /Beitragslauf|Spende/ })).toHaveCount(0);
+    // Konten noch keine, keine Jahreszahlen, keine Buchungen, keine Abteilungen – aber „Das steht an“
+    await expect(page.getByText("Noch keine Konten")).toBeVisible();
+    for (const heading of [
+      /^Zuletzt gebucht/,
+      /^Einnahmen und Ausgaben/,
+      /^Ausgaben der Abteilungen/,
+    ]) {
+      await expect(page.getByRole("heading", { name: heading })).toHaveCount(0);
+    }
+    await expect(page.getByRole("heading", { name: "Das steht an" })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    expect(await violations(page)).toEqual([]);
+
+    await hero.getByRole("link", { name: "Kassenbuch einrichten" }).click();
+    await expect(page).toHaveURL(/\/finanzen\/kassenbuch$/);
+    await expect(page.getByRole("button", { name: "Kassenbuch einrichten" })).toBeVisible();
+  });
+
+  test("Mit Kassenbuch: Kontostand mit Verlauf und Tabelle, Konten als Karten, Buchen über die Schnellaktion, Zuletzt gebucht, Jahr und Abteilungen", async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+    await open(page, "/finanzen");
+    const hero = page.getByRole("region", { name: "Kontostand · alle Konten" });
+    await expect(hero).not.toContainText("Kassenbuch noch nicht eingerichtet");
+    await expect(hero).toContainText(/\d,\d\d\s€/);
+    // Der Verlauf ist ein Bild mit einem Satz als Namen; „Als Tabelle“ zeigt den Stand am Monatsende.
+    await expect(
+      hero.getByRole("img", { name: /^Kontostand vom \d\d\.\d\d\.\d{4} bis heute: von / }),
+    ).toBeVisible();
+    const toggle = hero.getByRole("button", { name: "Als Tabelle" });
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await toggle.click();
+    const table = hero.getByRole("table", {
+      name: /^Kontostand aller Konten am Ende jedes Monats/,
+    });
+    await expect(table.getByRole("row").last()).toContainText("(heute)");
+    await hero.getByRole("button", { name: "Als Diagramm" }).click();
+    await expect(hero.getByRole("img")).toBeVisible();
+
+    // Konten als Karten: jede führt ins Kassenbuch dieses Kontos; darunter die Summe.
+    const cards = page.getByRole("list", { name: "Konten" });
+    for (const name of ["Girokonto", "Barkasse"]) {
+      await expect(cards.getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute(
+        "href",
+        /^\/finanzen\/kassenbuch\?konto=[0-9a-f-]{36}$/,
+      );
+    }
+    await expect(page.getByText(/^Zusammen · 2 Konten$/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toBeVisible();
+
+    // Schnellaktionen: die Ziele sind die bestehenden Seiten bzw. das Fenster „Neue Buchung“.
+    const actions = hero.getByRole("navigation", { name: "Schnellaktionen" });
+    await expect(actions.getByRole("link", { name: "Rechnung hochladen" })).toHaveAttribute(
+      "href",
+      "/finanzen/rechnungen",
+    );
+    await expect(actions.getByRole("link", { name: "Beitragslauf" })).toHaveAttribute(
+      "href",
+      "/finanzen/beitraege/lauf",
+    );
+    await expect(actions.getByRole("link", { name: "Spende erfassen" })).toHaveAttribute(
+      "href",
+      "/finanzen/spenden",
+    );
+    const dialog = page.getByRole("dialog", { name: "Neue Buchung" });
+    await expect(async () => {
+      if (!(await dialog.isVisible()))
+        await actions.getByRole("button", { name: "Buchung erfassen" }).click();
+      await expect(dialog).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    await dialog.getByText("Ausgabe", { exact: true }).click();
+    await dialog.getByLabel("Betrag in €").fill("3,50");
+    await dialog.getByLabel("Konto").selectOption({ label: "Girokonto" });
+    await dialog.getByLabel("Beschreibung").fill("E2E Übersicht Porto");
+    await dialog.getByLabel("Kategorie").selectOption({ label: "Büro und Porto" });
+    await dialog.getByRole("button", { name: "Ausgabe buchen" }).click();
+    await expect(dialog).toHaveCount(0);
+
+    // „Zuletzt gebucht“: die neue Buchung ganz oben unter „Heute“, als Ausgabe mit „−“.
+    const today = page.getByRole("group", { name: "Heute" });
+    const entry = today.getByRole("link", { name: /E2E Übersicht Porto/ });
+    await expect(entry).toContainText("−3,50 €");
+    await expect(entry).toContainText("Ausgabe");
+    await expect(entry).toHaveAttribute("href", /^\/finanzen\/kassenbuch\?q=\d{4}-\d{4}$/);
+
+    // Jahr: Einnahmen, Ausgaben, Überschuss und Spenden; die Monate mit „Als Tabelle“.
+    const year = new Date().getFullYear();
+    await expect(
+      page.getByRole("heading", { name: `Einnahmen und Ausgaben ${year}` }),
+    ).toBeVisible();
+    await expect(page.getByText(`Überschuss ${year}`)).toBeVisible();
+    await expect(page.getByRole("link", { name: `Spenden ${year}` })).toHaveAttribute(
+      "href",
+      "/finanzen/spenden",
+    );
+    await expect(page.getByRole("button", { name: "Als Tabelle" }).last()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: `Ausgaben der Abteilungen ${year}` }),
+    ).toBeVisible();
+
+    expect(await violations(page)).toEqual([]);
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    expect(await violations(page)).toEqual([]);
+  });
+});
+
+test.describe("Finanzen – Übersicht am schmalen Handy", () => {
+  test("Schnellaktionen passen bei 320 px in den Kopf; siebenstellige Jahreszahlen bleiben bei 360 px in der Karte", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+
+    await page.setViewportSize({ width: 320, height: 740 });
+    await open(page, "/finanzen");
+    const hero = page.getByRole("region", { name: "Kontostand · alle Konten" });
+    const actions = hero.getByRole("navigation", { name: "Schnellaktionen" });
+    await expect(actions.locator(":scope > *")).toHaveCount(4);
+    // Jede Aktion ganz im Kopf, mit dessen Innenabstand (1,25 rem) zum Rand.
+    const room = await hero.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const nav = node.querySelector('nav[aria-label="Schnellaktionen"]')!;
+      return [...nav.children].map((item) => {
+        const r = item.getBoundingClientRect();
+        return { left: r.left - box.left, right: box.right - r.right };
+      });
+    });
+    for (const { left, right } of room) {
+      expect(left).toBeGreaterThanOrEqual(19);
+      expect(right).toBeGreaterThanOrEqual(19);
+    }
+
+    // Jahreszeile: Beträge mit sieben Stellen (eingesetzt, die Daten haben so viel nicht) laufen nicht über Spalte oder Karte
+    // und brechen nicht um – zu breite Zahlen rutschen in eine eigene Zeile.
+    await page.setViewportSize({ width: 360, height: 740 });
+    await open(page, "/finanzen");
+    const year = page.locator('[data-slot="card"]', {
+      has: page.getByRole("heading", { name: /^Einnahmen und Ausgaben/ }),
+    });
+    const figures = await year.evaluate((card) => {
+      const content = card.querySelector('[data-slot="card-content"]') ?? card;
+      const box = content.getBoundingClientRect();
+      const inner = box.right - parseFloat(getComputedStyle(content).paddingRight);
+      const amounts = [...card.querySelectorAll("dl > div > dd:first-of-type")];
+      amounts.forEach((dd, index) => {
+        dd.textContent = index === 2 ? "+1.234.567,89 €" : "1.234.567,89 €";
+      });
+      return amounts.map((dd) => {
+        const r = dd.getBoundingClientRect();
+        const lineHeight = parseFloat(getComputedStyle(dd).lineHeight);
+        return {
+          overflow: dd.scrollWidth - dd.clientWidth,
+          beyondCard: r.right - inner,
+          lines: Math.round(r.height / lineHeight),
+        };
+      });
+    });
+    expect(figures).toHaveLength(4);
+    for (const figure of figures) {
+      expect(figure.overflow).toBeLessThanOrEqual(0);
+      expect(figure.beyondCard).toBeLessThanOrEqual(0.5);
+      expect(figure.lines).toBe(1);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      360,
+    );
+  });
+});
+
+test.describe("Finanzen – nur ansehen (eigene Rolle „Kassenprüfung“)", () => {
+  test("Sieht Kontostand, Konten und Buchungen – aber keine Schnellaktionen zum Buchen und kein „Verwalten“", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    await ensureLedger(page);
+    await page.context().clearCookies();
+    await login(page, await ensureFinanceReader());
+    await open(page, "/finanzen");
+    const hero = page.getByRole("region", { name: "Kontostand · alle Konten" });
+    await expect(hero.getByRole("img", { name: /^Kontostand vom / })).toBeVisible();
+    const actions = hero.getByRole("navigation", { name: "Schnellaktionen" });
+    await expect(actions.getByRole("link")).toHaveText(["Kassenbuch"]);
+    await expect(actions.getByRole("button")).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("list", { name: "Konten" }).getByRole("link")).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole("heading", { name: "Zuletzt gebucht" })).toBeVisible();
+    // „Das steht an“ ohne Recht zum Bearbeiten: „offene Punkte“ statt „für dich“
+    await expect(
+      page.getByText(/^(1 offener Punkt|\d+ offene Punkte|Gerade ist nichts dringend\.)$/),
+    ).toBeVisible();
+    expect(await violations(page)).toEqual([]);
   });
 });
 
