@@ -9,7 +9,8 @@
  *
  * Diese Datei ist der Einstieg für alle Aufrufer; die Logik steht nach Aufgaben getrennt daneben:
  *  - `service-event-plan.ts`   Lesen: Schichten einer Veranstaltung
- *  - `service-manage.ts`       Anlegen, Ändern, Löschen
+ *  - `service-manage.ts`       Anlegen, Ändern, Löschen (und die Auswahl der Veranstaltung für eine neue Schicht)
+ *  - `new-shift-rule.ts`       wer wo Schichten anlegen darf (reine Regel, auch für Knöpfe)
  *  - `service-assignments.ts`  Eintragen, Austragen, Zuweisen
  *  - `service-hours.ts`        Helferstunden
  *  - `service-overviews.ts`    Übersichten: Besetzung, offene Schichten, eigene Einsätze
@@ -22,7 +23,16 @@ export {
   type ShiftAssignmentDto,
   type ShiftDto,
 } from "./service-event-plan";
-export { createShift, deleteShift, getShiftForEdit, updateShift } from "./service-manage";
+export {
+  createShift,
+  deleteShift,
+  getShiftForEdit,
+  listEventsForNewShift,
+  NEW_SHIFT_EVENTS_MAX,
+  updateShift,
+  type NewShiftEvent,
+} from "./service-manage";
+export { canCreateShiftFor, mayCreateShifts } from "./new-shift-rule";
 export {
   assignMember,
   listAssignableMembers,

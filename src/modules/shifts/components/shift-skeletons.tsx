@@ -18,13 +18,14 @@ import { cn } from "@/lib/utils";
  */
 
 /**
- * Übersicht: Kopf mit „Helferstunden“ und „Helferplan drucken“, darunter „Meine Einsätze“ (Zeilen mit „Austragen“) und die
- * kommenden Veranstaltungen (Datum links, rechts Name, Eckdaten und Schichten mit freien Plätzen).
+ * Übersicht: Kopf mit „Neue Schicht“, „Helferstunden“ und „Helferplan drucken“ (am Handy zwei Knöpfe: „Neue Schicht“ und
+ * „Weitere Aktionen“ bzw. ohne Recht zum Anlegen die beiden anderen), darunter „Meine Einsätze“ (Zeilen mit „Austragen“)
+ * und die kommenden Veranstaltungen (Datum links, rechts Name, Eckdaten und Schichten mit freien Plätzen).
  */
 export function HelperPlanningSkeleton() {
   return (
     <PageLoading label="Helferplanung wird geladen …">
-      <PageHeaderSkeleton actions={2} description={false} />
+      <PageHeaderSkeleton actions={3} mobileActions={2} description={false} />
       <PageSectionSkeleton titleWidth="w-40" note>
         <div className={CARD_SURFACE}>
           {Array.from({ length: 2 }, (_, index) => (

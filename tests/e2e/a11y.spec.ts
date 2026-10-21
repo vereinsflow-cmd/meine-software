@@ -138,6 +138,24 @@ test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", 
     expect(await violations(page)).toEqual([]);
   });
 
+  test("geöffneter Dialog: „Neue Schicht“ auf der Übersicht (Auswahl der Veranstaltung), hell und dunkel", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await open(page, "/helferplanung");
+      await page.getByRole("button", { name: "Neue Schicht" }).first().click();
+      const dialog = page.getByRole("dialog", { name: "Für welche Veranstaltung?" });
+      await expect(dialog).toBeVisible();
+      expect(await violations(page), colorScheme).toEqual([]);
+      // Mit Suchbegriff ohne Treffer („Keine Veranstaltung gefunden.“)
+      await dialog.getByLabel("Veranstaltung suchen").fill("gibt es nicht");
+      await expect(dialog.getByText("Keine Veranstaltung gefunden.")).toBeVisible();
+      expect(await violations(page), colorScheme).toEqual([]);
+    }
+  });
+
   test("geöffneter Dialog: Dokument hochladen", async ({ page }) => {
     await login(page, USERS.admin);
     await open(page, "/dokumente");

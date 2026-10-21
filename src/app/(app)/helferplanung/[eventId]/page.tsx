@@ -44,7 +44,7 @@ export default async function EventShiftsPage({
   searchParams,
 }: {
   params: Promise<{ eventId: string }>;
-  searchParams: Promise<{ schicht?: string | string[] }>;
+  searchParams: Promise<{ schicht?: string | string[]; neu?: string | string[] }>;
 }) {
   const [{ eventId }, query] = await Promise.all([params, searchParams]);
   const ctx = await requirePageContext();
@@ -63,7 +63,10 @@ export default async function EventShiftsPage({
   const totals = staffingTotals(plan.shifts);
   const canPlan = plan.canManage || plan.canAssign;
   // Neue Schichten nur, solange die Veranstaltung nicht abgesagt oder archiviert ist (wie `createShift`).
-  const canCreate = plan.canManage && !cancelled && status !== "ARCHIVED";
+  const canCreate = plan.canCreate;
+  // Von „Neue Schicht“ auf der Übersicht (Auswahl der Veranstaltung): `?neu=schicht` öffnet den Dialog gleich – nur, wer
+  // hier Schichten anlegen darf.
+  const openNewShift = canCreate && query.neu === "schicht";
   const when = plan.event.allDay
     ? "ganztägig"
     : formatTimeRange(plan.event.startsAt, plan.event.endsAt);
@@ -154,7 +157,12 @@ export default async function EventShiftsPage({
         actions={
           <>
             {canCreate && (
-              <ShiftFormDialog eventId={eventId} defaults={newDefaults} members={members} />
+              <ShiftFormDialog
+                eventId={eventId}
+                defaults={newDefaults}
+                members={members}
+                openOnStart={openNewShift}
+              />
             )}
             {/* Die Druckansicht zeigt nur veröffentlichte Veranstaltungen. */}
             {status === "PUBLISHED" && (

@@ -11,11 +11,14 @@ import {
   getShiftForEdit,
   getStaffingOverview,
   listAssignableMembers,
+  listEventsForNewShift,
   listMyAssignments,
   listOpenShifts,
   listShiftPlanForPrint,
   listShiftsForEvent,
   listUpcomingShiftPlans,
+  mayCreateShifts,
+  NEW_SHIFT_EVENTS_MAX,
   recordHours,
   signOut,
   signUp,
@@ -1166,5 +1169,171 @@ describe("Mandantentrennung in der Helferplanung", () => {
       b.event.id,
     );
     expect((await listOpenShifts(a.ctx.helper)).map((s) => s.shiftId)).not.toContain(shift.id);
+  });
+});
+
+describe("Neue Schicht: Auswahl der Veranstaltung (Übersicht)", () => {
+  /** Kommende Veranstaltungen in allen Lagen – der Fixtures-Sommerfest (in 10 Tagen, vereinsweit) kommt dazu. */
+  async function events(club: { id: string }, fussball: { id: string }, handball: { id: string }) {
+    const at = (days: number, time: string) => parseBerlinDateTime(inDays(days), time)!;
+    const make = (title: string, days: number, extra: Parameters<typeof createEventRow>[1] = {}) =>
+      createEventRow(club.id, {
+        title,
+        startsAt: at(days, "18:00"),
+        endsAt: at(days, "20:00"),
+        ...extra,
+      });
+    const training = await make("Training", 3, { departmentId: fussball.id });
+    const trainingDraft = await make("Turnier (Entwurf)", 20, {
+      departmentId: fussball.id,
+      status: "DRAFT",
+    });
+    const handballGame = await make("Handballspiel", 5, { departmentId: handball.id });
+    const handballDraft = await make("Handball-Entwurf", 6, {
+      departmentId: handball.id,
+      status: "DRAFT",
+    });
+    const cancelled = await make("Abgesagtes Fest", 4, { status: "CANCELLED" });
+    const archived = await make("Archiviertes Fest", 7, { status: "ARCHIVED" });
+    const past = await make("Vorbei", -2, { departmentId: fussball.id });
+    const deleted = await make("Gelöscht", 8);
+    await prisma.event.update({ where: { id: deleted.id }, data: { deletedAt: new Date() } });
+    // Läuft gerade (begann gestern, endet morgen) – zählt noch als kommend.
+    const running = await createEventRow(club.id, {
+      title: "Zeltlager",
+      startsAt: at(-1, "10:00"),
+      endsAt: at(1, "16:00"),
+      departmentId: fussball.id,
+    });
+    // Abgeschlossen, aber noch nicht vorbei (früh abgeschlossen): `createShift` erlaubt sie – die Auswahl also auch.
+    const completed = await make("Früh abgeschlossen", 2);
+    await prisma.event.update({ where: { id: completed.id }, data: { status: "COMPLETED" } });
+    return {
+      training,
+      trainingDraft,
+      handballGame,
+      handballDraft,
+      cancelled,
+      archived,
+      past,
+      deleted,
+      running,
+      completed,
+    };
+  }
+
+  it("Vorstand: alle kommenden außer abgesagten und archivierten (auch Entwürfe), nach Beginn sortiert, mit Schichtzahl", async () => {
+    const { ctx, club, event, fussball, handball } = await setup();
+    const e = await events(club, fussball, handball);
+    await createShiftRow(club.id, event.id, { title: "Aufbau" });
+    const cancelledShift = await createShiftRow(club.id, event.id, { title: "Abgesagt" });
+    await prisma.eventShift.update({
+      where: { id: cancelledShift.id },
+      data: { status: "CANCELLED" },
+    });
+
+    expect(mayCreateShifts(ctx.board)).toBe(true);
+    const { events: list, more } = await listEventsForNewShift(ctx.board);
+    expect(more).toBe(false);
+    expect(list.map((item) => item.title)).toEqual([
+      "Zeltlager",
+      "Früh abgeschlossen",
+      "Training",
+      "Handballspiel",
+      "Handball-Entwurf",
+      "Sommerfest",
+      "Turnier (Entwurf)",
+    ]);
+    const fest = list.find((item) => item.id === event.id)!;
+    expect(fest).toMatchObject({ status: "PUBLISHED", shifts: 1, departmentName: null });
+    expect(list.find((item) => item.id === e.training.id)).toMatchObject({
+      departmentName: "Fußball",
+      shifts: 0,
+    });
+
+    // Dieselbe Regel wie `createShift`: Was angeboten wird, lässt sich anlegen – was fehlt (abgesagt, archiviert), nicht.
+    for (const item of list) {
+      await expect(createShift(ctx.board, item.id, shiftInput())).resolves.toHaveProperty("id");
+    }
+    for (const missing of [e.cancelled, e.archived]) {
+      await expect(createShift(ctx.board, missing.id, shiftInput())).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect((await listShiftsForEvent(ctx.board, missing.id)).canCreate).toBe(false);
+    }
+    expect((await listShiftsForEvent(ctx.board, event.id)).canCreate).toBe(true);
+  });
+
+  it("Abteilungsleitung: nur Veranstaltungen ihrer Abteilung (auch deren Entwürfe); ohne geleitete Abteilung gar nichts", async () => {
+    const { ctx, club, fussball, handball } = await setup();
+    const e = await events(club, fussball, handball);
+
+    expect(mayCreateShifts(ctx.lead)).toBe(true);
+    const { events: list } = await listEventsForNewShift(ctx.lead);
+    expect(list.map((item) => item.id)).toEqual([e.running.id, e.training.id, e.trainingDraft.id]);
+    for (const item of list) {
+      await expect(createShift(ctx.lead, item.id, shiftInput())).resolves.toHaveProperty("id");
+    }
+    await expect(createShift(ctx.lead, e.handballGame.id, shiftInput())).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect((await listShiftsForEvent(ctx.lead, e.handballGame.id)).canCreate).toBe(false);
+
+    // Abteilungsleiter-Rolle, aber (noch) keine Abteilung: kein Knopf, keine Auswahl.
+    const noDepartment = await addUserToClub(club, "DEPARTMENT_LEAD");
+    const noDepartmentCtx = await contextFor(noDepartment.user.id, club.id);
+    expect(mayCreateShifts(noDepartmentCtx)).toBe(false);
+    expect(await listEventsForNewShift(noDepartmentCtx)).toEqual({ events: [], more: false });
+  });
+
+  it("Helfer und Mitglieder bekommen keine Auswahl", async () => {
+    const { ctx, club, fussball, handball } = await setup();
+    await events(club, fussball, handball);
+    for (const who of [ctx.helper, ctx.member]) {
+      expect(mayCreateShifts(who)).toBe(false);
+      expect(await listEventsForNewShift(who)).toEqual({ events: [], more: false });
+    }
+  });
+
+  it("höchstens NEW_SHIFT_EVENTS_MAX Veranstaltungen – die frühesten; `more` sagt, dass es weitere gibt", async () => {
+    const { ctx, club, event } = await setup();
+    expect(NEW_SHIFT_EVENTS_MAX).toBe(200);
+    // Mit dem Sommerfest (in 10 Tagen) genau die Obergrenze: stündlich ab morgen, alle vor dem Sommerfest.
+    const start = parseBerlinDateTime(inDays(1), "00:00")!.getTime();
+    await prisma.event.createMany({
+      data: Array.from({ length: NEW_SHIFT_EVENTS_MAX - 1 }, (_, index) => ({
+        clubId: club.id,
+        title: `Training ${index + 1}`,
+        status: "PUBLISHED" as const,
+        startsAt: new Date(start + index * H),
+        endsAt: new Date(start + index * H + H / 2),
+      })),
+    });
+    const full = await listEventsForNewShift(ctx.board);
+    expect(full.events).toHaveLength(NEW_SHIFT_EVENTS_MAX);
+    expect(full.more).toBe(false);
+    expect(full.events.at(-1)!.id).toBe(event.id);
+
+    // Eine mehr (die späteste): Sie fehlt, die übrigen bleiben – und `more` ist gesetzt.
+    const later = await createEventRow(club.id, {
+      title: "Weihnachtsfeier",
+      startsAt: parseBerlinDateTime(inDays(60), "18:00")!,
+      endsAt: parseBerlinDateTime(inDays(60), "23:00")!,
+    });
+    const capped = await listEventsForNewShift(ctx.board);
+    expect(capped.events).toHaveLength(NEW_SHIFT_EVENTS_MAX);
+    expect(capped.more).toBe(true);
+    expect(capped.events.map((item) => item.id)).toEqual(full.events.map((item) => item.id));
+    expect(capped.events.map((item) => item.id)).not.toContain(later.id);
+  });
+
+  it("Mandantentrennung: Veranstaltungen anderer Vereine stehen nie in der Auswahl", async () => {
+    const a = await setup();
+    const b = await setup();
+    const own = (await listEventsForNewShift(a.ctx.admin)).events.map((item) => item.id);
+    expect(own).toContain(a.event.id);
+    expect(own).not.toContain(b.event.id);
+    const lead = (await listEventsForNewShift(a.ctx.lead)).events.map((item) => item.id);
+    expect(lead).toEqual([]); // eigene Abteilung ohne Veranstaltung – die von B zählt nicht
   });
 });
