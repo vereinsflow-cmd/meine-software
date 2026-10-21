@@ -58,7 +58,20 @@ const sameAs = (a: CustomizeTab[], b: CustomizeTab[]) =>
  * natives Auswahlfeld: am Handy und mit der Tastatur zuverlässig, der Screenreader nennt Karte und gewählte Größe. Verschieben mit „nach oben“/„nach unten“ statt nur Ziehen: so geht es
  * auch mit Tastatur und Screenreader. Entspricht die Auswahl der Standard-Ansicht, wird nichts Eigenes gespeichert.
  */
-export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
+export function CustomizeDashboard({
+  tabs,
+  trigger = "button",
+  triggerClassName,
+}: {
+  tabs: CustomizeTab[];
+  /**
+   * Auslöser: `button` = Knopf „Anpassen“ mit Text. `icon` = runder Knopf nur mit Symbol; „Dashboard anpassen“ ist sein Name
+   * für Screenreader und zugleich der Hinweis beim Überfahren und Fokussieren (`IconButton`). Das Aussehen bringt der
+   * Aufrufer mit (`triggerClassName` – im Kopf des Dashboards Glas auf Nacht), daher ohne eigene Variante.
+   */
+  trigger?: "button" | "icon";
+  triggerClassName?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState(tabs);
@@ -132,9 +145,20 @@ export function CustomizeDashboard({ tabs }: { tabs: CustomizeTab[] }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <SlidersHorizontalIcon /> Anpassen
-        </Button>
+        {trigger === "icon" ? (
+          <IconButton
+            label="Dashboard anpassen"
+            variant={null}
+            size={null}
+            className={cn("size-11 rounded-full", triggerClassName)}
+          >
+            <SlidersHorizontalIcon />
+          </IconButton>
+        ) : (
+          <Button variant="outline" className={triggerClassName}>
+            <SlidersHorizontalIcon /> Anpassen
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

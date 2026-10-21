@@ -2,11 +2,14 @@ import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
 import { USERS, loginSettled as login } from "./helpers";
 
-/** Öffnet „Dashboard anpassen“ – vor der Hydration geht ein Klick verloren, daher wiederholen. */
+/**
+ * Öffnet „Dashboard anpassen“ über den runden Glasknopf im Kopf (Name und Hinweis „Dashboard anpassen“) – vor der Hydration
+ * geht ein Klick verloren, daher wiederholen.
+ */
 async function openCustomize(page: Page) {
   const dialog = page.getByRole("dialog", { name: "Dashboard anpassen" });
   await expect(async () => {
-    await page.getByRole("button", { name: "Anpassen" }).click();
+    await page.getByRole("button", { name: "Dashboard anpassen", exact: true }).click();
     await expect(dialog).toBeVisible({ timeout: 1500 });
   }).toPass({ timeout: 15_000 });
   return dialog;
@@ -45,6 +48,43 @@ async function expectTasksWide(page: Page) {
 }
 
 test.describe("Dashboard selbst einstellen", () => {
+  test("„Anpassen“ ist ein runder Glasknopf im Kopf: Hinweis beim Fokus, öffnet das Fenster mit der Tastatur, Escape bringt den Fokus zurück", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page, USERS.vorstand);
+    const hero = page.getByRole("main").locator('[data-slot="dashboard-hero"]');
+    const trigger = hero.getByRole("button", { name: "Dashboard anpassen", exact: true });
+    // Nur das Symbol, kein Text; rund und 44 px groß; im Banner (unten rechts neben den Knöpfen)
+    await expect(trigger).toHaveText("");
+    const box = (await trigger.boundingBox())!;
+    expect(Math.round(box.width)).toBe(Math.round(box.height));
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    const banner = (await hero.locator('[data-slot="hero-banner"]').boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(banner.y + banner.height);
+    expect(box.x + box.width).toBeLessThanOrEqual(banner.x + banner.width);
+    expect(await trigger.evaluate((element) => getComputedStyle(element).borderRadius)).not.toBe(
+      "0px",
+    );
+
+    // Mit der Tastatur: vom Knopf „Neues Mitglied“ aus ein Tab weiter – der Hinweis erscheint, Enter öffnet das Fenster
+    const member = hero.getByRole("link", { name: "Neues Mitglied", exact: true });
+    await expect(member).toBeVisible();
+    await member.focus();
+    await page.keyboard.press("Tab");
+    await expect(trigger).toBeFocused();
+    await expect(page.getByRole("tooltip", { name: "Dashboard anpassen" })).toBeVisible();
+    const dialog = page.getByRole("dialog", { name: "Dashboard anpassen" });
+    await expect(async () => {
+      if (!(await dialog.isVisible())) await page.keyboard.press("Enter");
+      await expect(dialog).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    await expect(dialog.getByRole("checkbox", { name: "Meine Aufgaben" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
   test("Karte ausblenden und verschieben, bleibt nach dem Neuladen – „Standard wiederherstellen“ macht es rückgängig", async ({
     page,
   }) => {

@@ -1,6 +1,14 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, chooseTab, loginSettled as login } from "./helpers";
+import {
+  USERS,
+  chooseTab,
+  greeting,
+  heroLayout,
+  loginSettled as login,
+  renameSelf,
+  open,
+} from "./helpers";
 
 /**
  * Dashboard-Reiter auf Smartphone (Pixel 7, 412 px) und Tablet-Breite: gut treffbar, seitlich wischbar, der gewählte Reiter
@@ -18,6 +26,114 @@ async function select(page: Page, name: string) {
     await expect(page.getByRole("button", { name: /Einklappen Auswertungen/ })).toBeVisible(); // Diagramme geladen
   }
 }
+
+/**
+ * Kopf am Smartphone („Vereins-Bühne“): ein kürzeres Banner mit EINEM Foto oben (das der größten Abteilung), darunter die
+ * Begrüßung auf Nacht, keine Chips (die Zahlen stehen direkt darunter in den Kennzahlkarten). Die Knöpfe stehen unter dem
+ * Banner nebeneinander, „Anpassen“ oben rechts im Bild.
+ */
+test.describe("Dashboard-Kopf – Smartphone", () => {
+  test("Ein Foto, Begrüßung darunter, Knöpfe unter dem Banner, „Anpassen“ oben rechts – nur das sichtbare Foto wird geladen", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, USERS.admin);
+    const hero = page.getByRole("main").locator('[data-slot="dashboard-hero"]');
+    const banner = hero.locator('[data-slot="hero-banner"]');
+    const frame = (await banner.boundingBox())!;
+    expect(frame.height).toBeGreaterThan(230);
+    expect(frame.height).toBeLessThan(300); // kürzer als am Rechner
+
+    // Genau ein Streifen sichtbar: das Hauptfoto über die ganze Breite des Banners, oben
+    const main = banner.locator('[data-hero-strip="main"]');
+    await expect(main).toBeVisible();
+    const photo = (await main.boundingBox())!;
+    expect(Math.abs(photo.width - frame.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(photo.y - frame.y)).toBeLessThanOrEqual(1);
+    const others = banner.locator('[data-hero-strip=""]');
+    for (const strip of await others.all()) await expect(strip).toBeHidden();
+    // Die ausgeblendeten Streifen laden ihr Foto gar nicht erst (`loading="lazy"` und nicht sichtbar)
+    const loaded = await others
+      .locator("img")
+      .evaluateAll((images) => images.map((image) => (image as HTMLImageElement).naturalWidth));
+    expect(loaded.every((width) => width === 0)).toBe(true);
+    await expect(main.locator("img")).toHaveJSProperty("complete", true);
+
+    // Begrüßung unter dem Foto (nicht darauf); keine Chips
+    const title = page.getByRole("heading", { level: 1, name: greeting("Anna") });
+    expect((await title.boundingBox())!.y).toBeGreaterThanOrEqual(photo.y + photo.height);
+    await expect(hero.getByRole("list", { name: "Auf einen Blick" })).toBeHidden();
+
+    // Knöpfe unter dem Banner, nebeneinander, gut treffbar; der Name bleibt vollständig („Neue Veranstaltung“)
+    const event = hero.getByRole("link", { name: "Neue Veranstaltung", exact: true });
+    const member = hero.getByRole("link", { name: "Neues Mitglied", exact: true });
+    const [a, b] = [(await event.boundingBox())!, (await member.boundingBox())!];
+    expect(a.y).toBeGreaterThan(frame.y + frame.height);
+    expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+    expect(Math.min(a.height, b.height)).toBeGreaterThanOrEqual(44);
+    expect(b.x).toBeGreaterThan(a.x + a.width);
+    // „Anpassen“ oben rechts im Banner
+    const knob = (await hero.getByRole("button", { name: "Dashboard anpassen" }).boundingBox())!;
+    expect(knob.y).toBeLessThan(frame.y + 40);
+    expect(frame.x + frame.width - (knob.x + knob.width)).toBeLessThan(24);
+    expect(knob.height).toBeGreaterThanOrEqual(44);
+    expect(await overflow(page)).toBeLessThanOrEqual(1);
+    // Rolle, darunter das Datum – sichtbar in derselben Reihenfolge, wie es vorgelesen wird
+    expect(await heroLayout(page)).toMatchObject({
+      rem: expect.closeTo(17.125, 2),
+      roleBeforeDate: true,
+    });
+  });
+
+  test("Banner springt nicht: so hoch wie sein Ladegerüst (17,125 rem) – mit langem Vornamen, auch bei 320 px", async ({
+    page,
+  }) => {
+    // Vorher wurde die Begrüßung bei „Guten Morgen, Sebastian“ (390 px) bzw. schon „Guten Abend, Anna“ (320 px) zweizeilig und
+    // das Banner um 34 px höher.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, USERS.abteilung);
+    const original = await renameSelf(page, "Maximiliane");
+    try {
+      await open(page, "/dashboard");
+      await expect(
+        page.getByRole("heading", { level: 1, name: greeting("Maximiliane") }),
+      ).toBeVisible();
+      for (const width of [412, 390, 320]) {
+        await page.setViewportSize({ width, height: 800 });
+        const layout = await heroLayout(page);
+        expect(layout, `${width} px`).toMatchObject({
+          rem: expect.closeTo(17.125, 2),
+          titleLines: 1,
+          titleCut: false,
+          outside: 0,
+          roleBeforeDate: true,
+        });
+        expect(await overflow(page)).toBeLessThanOrEqual(1);
+      }
+    } finally {
+      await renameSelf(page, original);
+    }
+  });
+
+  test("Verein ohne Abteilungen: Banner gleich hoch wie mit Foto, die Begrüßung unten auf Nacht und Licht", async ({
+    page,
+  }) => {
+    // Vorher war es ohne Foto nur 189 px hoch (Ladegerüst 274 px) – der Inhalt sprang beim Erscheinen um 85 px nach oben.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, USERS.otherAdmin);
+    const banner = page.getByRole("main").locator('[data-slot="hero-banner"]');
+    await expect(banner.locator("[data-hero-strip]")).toHaveCount(0);
+    const layout = await heroLayout(page);
+    expect(layout).toMatchObject({
+      rem: expect.closeTo(17.125, 2),
+      titleLines: 1,
+      outside: 0,
+      roleBeforeDate: true,
+    });
+    // Wie mit Foto: Begrüßung, Rolle und Datum stehen unten (Rand 1,5 rem), der Verein oben
+    expect(Math.abs(layout.bottomGap - 24)).toBeLessThanOrEqual(2);
+  });
+});
 
 test.describe("Dashboard-Reiter – mobil", () => {
   test("Smartphone: Reiter sind groß genug, die Leiste ist wischbar, der gewählte Reiter kommt ins Bild", async ({

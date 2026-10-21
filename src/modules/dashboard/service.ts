@@ -101,6 +101,12 @@ export interface DashboardData {
   activity: AuditEntryDto[] | null;
   /** Offene Zahlungen (Rechnungen) – nur für Rollen mit `finance:read` (Vereinsadministrator, Vorstand). */
   payments: OpenPayments | null;
+  /**
+   * Aktive Abteilungen für die Fotos im Kopf des Dashboards (nach Namen, wie /abteilungen) – nur mit `departments:read`.
+   * `memberCount` (Mitglieder ohne Archiv und Papierkorb) wählt das Foto am Handy: das der größten Abteilung; angezeigt wird
+   * die Zahl nicht (auf /abteilungen steht sie für dieselben Rollen ohnehin).
+   */
+  departments: { id: string; name: string; color: string | null; memberCount: number }[] | null;
 }
 
 const FIRST_PAGE = { page: 1, pageSize: 5, skip: 0 } as const;
@@ -218,6 +224,32 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
   };
 }
 
+/**
+ * Abteilungen für den Kopf: EINE schlanke Abfrage (Name, Farbe, Zahl der Mitglieder als gefilterte Zählung) statt
+ * `listDepartments` mit Leitungen und Gruppen – mehr braucht die Bühne nicht.
+ */
+async function loadDepartments(ctx: TenantContext): Promise<DashboardData["departments"]> {
+  if (!can(ctx, "departments:read")) return null;
+  const rows = await ctx.db.department.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+      _count: {
+        select: { members: { where: { member: { archivedAt: null, deletedAt: null } } } },
+      },
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    memberCount: row._count.members,
+  }));
+}
+
 async function loadTasks(ctx: TenantContext): Promise<DashboardData["tasks"]> {
   if (!can(ctx, "tasks:read")) return null;
   const [mine, stats] = await Promise.all([listMyOpenTasks(ctx, 5), getTaskStats(ctx)]);
@@ -239,6 +271,7 @@ export async function getDashboard(
     anniversaries,
     activity,
     payments,
+    departments,
   ] = await Promise.all([
     loadMembers(ctx, now),
     loadEvents(ctx, now),
@@ -254,6 +287,7 @@ export async function getDashboard(
       : Promise.resolve(null),
     can(ctx, "audit:read") ? listRecentActivity(ctx, 6) : Promise.resolve(null),
     canFinance(ctx, "finance:read") ? getOpenPayments(ctx, { limit: 6 }) : Promise.resolve(null),
+    loadDepartments(ctx),
   ]);
   return {
     members,
@@ -265,5 +299,6 @@ export async function getDashboard(
     anniversaries,
     activity,
     payments,
+    departments,
   };
 }

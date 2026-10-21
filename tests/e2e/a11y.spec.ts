@@ -170,11 +170,61 @@ test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", 
   });
 });
 
+test.describe("Dashboard-Kopf mit Tastatur und Screenreader", () => {
+  test("Fotos schmückend; Chips, Knöpfe und „Anpassen“ in Lesereihenfolge mit sichtbarem Fokus", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page, USERS.admin);
+    const hero = page.getByRole("main").locator('[data-slot="dashboard-hero"]');
+    // Bilder ohne Namen und für Screenreader verborgen; die Überschrift der Seite ist die Begrüßung
+    await expect(hero.getByRole("img")).toHaveCount(0);
+    for (const img of await hero.locator("img").all()) {
+      await expect(img).toHaveAttribute("alt", "");
+      await expect(img).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(hero.getByRole("heading", { level: 1 })).toHaveCount(1);
+    const chips = hero.getByRole("list", { name: "Auf einen Blick" }).getByRole("link");
+    await expect(chips).toHaveCount(3);
+
+    // Reihenfolge mit Tab: die drei Chips, die beiden Knöpfe, „Anpassen“
+    const first = chips.first();
+    const ringBefore = await first.evaluate((element) => getComputedStyle(element).boxShadow);
+    await first.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(first).toBeFocused();
+    // sichtbarer Fokus: der Ring ändert sich
+    expect(await first.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe(
+      ringBefore,
+    );
+    const order: string[] = [];
+    for (let step = 0; step < 5; step++) {
+      await page.keyboard.press("Tab");
+      order.push(
+        await page.evaluate(
+          () =>
+            document.activeElement?.getAttribute("aria-label") ??
+            document.activeElement?.textContent?.replace(/\s+/g, " ").trim() ??
+            "",
+        ),
+      );
+    }
+    expect(order.slice(0, 2)).toEqual([
+      expect.stringMatching(/Termine? in 30 Tagen$/),
+      expect.stringMatching(/offener? Helferpl/),
+    ]);
+    expect(order.slice(2)).toEqual(["Neue Veranstaltung", "Neues Mitglied", "Dashboard anpassen"]);
+    expect(await violations(page)).toEqual([]);
+  });
+});
+
 test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung", () => {
   for (const [role, path] of [
     ["helfer", "/dashboard"],
     ["helfer", "/helferplanung"],
     ["mitglied", "/dashboard"],
+    ["otherAdmin", "/dashboard"], // Kopf ohne Abteilungen: Nacht und Licht, keine Fotos
     ["mitglied", "/dokumente"],
     ["abteilung", "/aufgaben"],
   ] as const) {

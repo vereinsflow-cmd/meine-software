@@ -12,11 +12,73 @@ Kurzfassung der Gestaltungsentscheidungen, damit neue Seiten zum Rest passen. Di
 - **Bedienelemente:** Buttons und Eingabefelder sind 36 px hoch (`h-9`), kleine Varianten 32 px – gut treffbar und einheitlich, wenn sie nebeneinander stehen.
 - **Überschriften:** Seitentitel `text-3xl font-bold` (`PageHeader`), Kartentitel etwa 19 px fett (`CardTitle`).
 - **Inhaltsbreite:** bis 96 rem, damit große Bildschirme nicht leer bleiben.
-- **Seitenkopf:** `PageHeader` mit `inline` stellt die Beschreibung neben den Titel (Dashboard-Begrüßung: „Willkommen, Anna! Vereinsadministrator“); ist nicht genug Platz, bricht sie unter den Titel um. Die Aktionen (Buttons) bleiben immer in einer Zeile.
+- **Seitenkopf:** `PageHeader` mit `inline` stellt die Beschreibung neben den Titel; ist nicht genug Platz, bricht sie unter den Titel um. Die Aktionen (Buttons) bleiben immer in einer Zeile. Einzige Seite mit eigenem Kopf: das Dashboard („Vereins-Bühne“, siehe „Aufbau des Dashboards“).
 
 ## Aufbau des Dashboards
 
 Ruhe vor Vollständigkeit: Zuerst kommt, was man braucht, der Rest ist einen Klick entfernt.
+
+- **Kopf als „Vereins-Bühne“ (21.10.2026, Entwurf D aus der zweiten Runde der Kopf-Entwürfe; Luis: „setze das um“):** Statt
+  Überschrift mit Knöpfen ein dunkles Banner über die ganze Inhaltsbreite, gebaut aus den **echten Abteilungsfotos** des Vereins
+  – dieselbe Sprache wie die Abteilungskarten und die Website (Nacht, Licht, Schein). Code: `DashboardHero`
+  (`modules/dashboard/components/dashboard-hero.tsx`), reine Hilfen samt Farben in `modules/dashboard/hero.ts` (Unit-Test
+  `tests/unit/dashboard-hero.test.ts`).
+  - **Aufbau:** rechts bis zu vier Fotos als schräge Streifen (`heroStage`: die mit Foto zuerst, nach Namen; ohne passendes Foto
+    der Farbverlauf wie auf /abteilungen – Bild über `departmentImage`), durch die 6 px breiten Fugen scheint blaues Licht, oben
+    rechts je ein Glas-Namensschild mit Farbpunkt. Links ein Nachtverlauf (`HERO_SCRIM`), darauf in Weiß Vereinslogo
+    (`ClubLogo`) und Vereinsname klein in Versalien, groß „Guten Morgen/Tag/Abend, Anna“ (die `h1` der Seite, immer einzeilig;
+    die Schrift wächst mit der Bannerbreite, `clamp(2.25rem, 4.6cqi, 3.5rem)`, und wird bei langen Namen kleiner, s. u.),
+    darunter Rolle · Datum. Unten links Glas-Chips mit echten Zahlen
+    als Links (Mitglieder → /mitglieder, Termine in 30 Tagen → /veranstaltungen, offene Helferplätze → /helferplanung), unten
+    rechts „Neue Veranstaltung“ (Blau) und „Neues Mitglied“ (**kräftig Grün**, Wunsch Luis), beide mit Schein, und „Anpassen“
+    als runder Glasknopf nur mit Symbol (Hinweis und Name „Dashboard anpassen“; `CustomizeDashboard trigger="icon"`).
+  - **Hell wie dunkel gleich:** Die Bühne ist immer Nacht (`#060a16`). Die beiden Knöpfe tragen in beiden Darstellungen die
+    hellen Werte von `--primary`/`--success` (kräftig mit weißer Schrift statt der hellen Töne der dunklen Darstellung;
+    `HERO_BUTTON_TOKENS`, der Unit-Test prüft den Gleichlauf mit `globals.css`). Beim Darüberfahren werden sie dunkler, Glas
+    ebenso – nie heller, damit die Schrift reicht.
+  - **Breiten** (Containerabfrage `buehne`, gemessen am Kopf): ab 62 rem alles im Banner (rund 300 px hoch, fest 17 rem);
+    40–62 rem stehen die Knöpfe rechts darunter, „Anpassen“ oben rechts im Bild, die Namensschilder entfallen, Rolle und darunter
+    das Datum in zwei Zeilen (Reihenfolge wie vorgelesen); Handy: fest 17,125 rem, oben EIN Foto (das der größten Abteilung)
+    schräg abgeschnitten mit blauer Lichtkante, darunter die Schrift auf reiner Nacht, ohne Chips (die Zahlen stehen direkt
+    darunter in den Kennzahlkarten), die Knöpfe unter dem Banner nebeneinander („Neue“/„Neues“ nur für Screenreader); ohne
+    Abteilungen gleich hoch, Verein oben, Begrüßung unten. Die Chips zeigen breit „7 Termine in 30 Tagen“, schmaler „7 Termine“
+    – der Name des Links bleibt immer vollständig.
+  - **Feste Höhe, nichts springt (21.10.2026, nach der Prüfung):** Zuerst war die Höhe nur ein Mindestmaß (`min-h`). Wurde die
+    Begrüßung zweizeilig – schon bei „Guten Morgen, Sebastian“ oder „Guten Abend, Anna“ an einem 320-px-Handy –, oder brachen
+    die Chips um („6 Mitglieder in deiner Abteilung“ bei 1440 px), wuchs das Banner um 33–85 px über sein Ladegerüst hinaus; am
+    Handy ohne Foto war es dagegen 85 px kürzer. Jetzt ist die Höhe fest (`HERO_BANNER_HEIGHT`, dieselbe Klasse im Ladegerüst),
+    und jede Zeile bleibt einzeilig: Die Begrüßung nimmt höchstens die Größe, bei der sie in die Schriftspalte passt
+    (Spaltenbreite ÷ Zeichen × 0,55 em – gemessen mit SF Pro, Arial und Tahoma; `heroTitleEms`), mindestens 1,125 rem, ein noch
+    längerer Name endet mit „…“ und bleibt in der Spalte (Kontrast). Rolle und Vereinsname kürzen sich notfalls mit „…“, das
+    Datum nie. Die Chips stehen in einer Reihe; neben den Knöpfen (ab 62 rem) zeigen sie Symbol und lange Form erst ab der
+    Breite, ab der die Reihe nach der Schätzung passt (`heroFigureSteps`: feste Stufen 62–90 rem; z. B. Abteilungsleitung lang
+    erst ab 78 rem, ein vierstelliger Verein ohne Symbol bis 66 rem), notfalls kürzt sich ein Wort mit „…“. Geprüft im
+    E2E-Test mit „Maximiliane“ und „Maximiliansfeldsteiner“ (700–1920 px, Handy 320–412 px) und mit dem Verein ohne
+    Abteilungen.
+  - **Kontrast** (nachgerechnet für eine rein weiße Bildstelle): Die Schriftspalte ist höchstens 46 % breit; bis 48 % der
+    Bannerbreite ist die Nacht mindestens zu 72 % deckend (Weiß 8,3 : 1, Rolle · Datum mit 82 % Weiß 6,2 : 1). Glas mit Schrift
+    (Chips, Namensschilder, Vereinsschild am Handy, „Kalender“) ist Nacht zu 62 % – Weiß zu 90 % 4,9 : 1 auch direkt auf
+    dem Foto; das Symbol „Anpassen“ auf Glas zu 55 % 4,4 : 1 (verlangt 3 : 1). Fokus auf der Bühne: weißer Ring.
+  - **Rechte:** wie bisher – Knöpfe nur mit `events:create` bzw. `members:create`, ohne Anlegen aber mit `events:read`
+    „Kalender“ (dunkles Glas, allein am Handy über die ganze Breite). Chips aus denselben Blöcken wie die Kennzahlkarten: ohne
+    Mitgliederzahlen (Helfer, Mitglied) kein Mitglieder-Chip, Abteilungsleitung „… in deiner Abteilung“, ohne `events:read`
+    bzw. `shifts:read` entfällt der Chip. Fotos nur mit `departments:read` und nur aktive Abteilungen (wie /abteilungen);
+    ohne Abteilungen Nacht und Licht ohne Fotos.
+  - **Daten:** `getDashboard` liefert dafür den Block `departments` (eine schlanke Abfrage mit gefilterter Zählung, parallel zu
+    den übrigen); die Zahlen der Chips kommen aus `members`, `events`, `shifts`. Keine zusätzlichen Abfragen je Abteilung.
+  - **Bilder:** rein schmückend (`alt=""`, `aria-hidden`). Das Foto, das am Handy allein stehen bleibt, ist einer der Streifen
+    und lädt sofort und vorrangig (`fetchpriority="high"`), die übrigen `lazy` – am Handy ausgeblendet und damit gar nicht
+    geladen, am Rechner im ersten Bild und sofort da. `sizes` nach Zahl der Streifen (`heroStripSizes`), Streifen ab 688 px Fenster
+    (Kopf 40 rem + 2 × 24 px Rand) – darunter, auch quer am Handy, das eine Foto über die ganze Breite.
+  - **Bewegung:** Beim Öffnen gleiten die Streifen einmal kurz nacheinander herein, die Fotos zoomen ganz leicht – nur ohne
+    „Bewegung reduzieren“.
+  - **Ladegerüst:** dieselbe Fläche in Nacht und Höhe (`HERO_BANNER_HEIGHT`: Handy 17,125 rem, ab 40 rem 17 rem), bis 62 rem
+    mit Platzhaltern der Knöpfe darunter – das Banner ist immer genau so hoch.
+  - **Begrüßung repariert:** Die Stunde kam aus `Number(format(…))`; neuere ICU-Fassungen (Node 24) liefern „11 Uhr“ – das war
+    `NaN`, es hieß rund um die Uhr „Guten Abend“. Jetzt `formatToParts` (`greetingFor`, mit Test).
+  - **Website:** Die Aufnahmen „dashboard“ und „phone-dashboard“ (`website/tools/capture-screenshots.mjs`) zeigen nach einer
+    Neuaufnahme den neuen Kopf; danach die Marken `.m-zahlen` und `.m-termine` in `site.css` neu vermessen (die Kennzahlen
+    stehen tiefer).
 
 - **Stil „Vertix“ in VereinsFlow-Blau (18.10.2026; löst „Analytics“ ab):** Ben schickte ein Instagram-Reel („Dashboard V14“ von
   code.xr) mit „mache dashboard genau so und der übergang von black mode auch so“, sah eine klickbare Vorschau und wählte „unser
@@ -103,8 +165,8 @@ Ruhe vor Vollständigkeit: Zuerst kommt, was man braucht, der Rest ist einen Kli
 - **Feste Leiste:** Die Reiterleiste bleibt beim Scrollen unter der Kopfzeile stehen (`sticky`, leicht durchscheinend mit Weichzeichner, dezenter Schatten für die Tiefe), sodass man auch tief im Bereich wechseln kann. Auf kleinen Bildschirmen reicht sie bis an den Rand.
 - **Smartphone und Tablet:** Die Reiter sind am Handy und auf Touchgeräten mindestens 44 px hoch (gut treffbar; mit der Maus 40 px in der 48 px hohen Schiene). Wenn sie nicht nebeneinander passen (Smartphone), lässt sich die Leiste seitlich wischen; wo sie weiterläuft, blendet sie zum Rand hin aus (Verlauf, 3rem breit – breiter als die größte textfreie Stelle zwischen zwei Reitern, damit immer sichtbar Schrift ausblendet), und der gewählte wird ins Bild geholt, ohne im Verlauf zu liegen. Früher sollte ein angeschnittener letzter Reiter den Hinweis geben; ob einer am Rand steht, hängt aber von Schrift und Bildschirmbreite ab (auf einem iPhone 14 mit 390 px oder mit einer breiteren Linux-Schrift stand keiner dort). Ab 1024 px passen alle vier in den Inhalt.
 - **Kennzahlen als Karussell (Smartphone, nur einfaches Raster – Rollen ohne Mitglieder, Termine oder Schichten und „Klein“; die große Fassung steht am Handy untereinander):** Unter 640 px liegen die vier Kennzahlen nebeneinander und rasten beim Wischen ein (`scroll-snap`); die nächste ragt zur Hälfte ins Bild. Darunter zeigen Punkte den Stand und springen zur Karte (Knöpfe mit 24 px Zielgröße, `aria-current`); ein fokussierter Link scrollt seine Karte selbst ins Bild. Ab 640 px bleibt es ein Raster (zwei Spalten) ohne Punkte; ab 49 rem Inhaltsbreite (bei 1280 px Fenster mit Seitenleiste erreicht) mehr Spalten; die große Fassung siehe „Stil Analytics“. Die Karten selbst sind unverändert (`KpiCarousel`, `components/kpi-carousel.tsx`); unten hat die wischbare Reihe Luft, und der Bereich der Reiter reicht am Handy bis an den Bildschirmrand – so wird der farbige Schein unter den Karten nicht abgeschnitten.
-- **Ladezustand:** Beim Öffnen des Dashboards erscheint sofort ein Gerüst aus Begrüßung, Reiterleiste, Kennzahlen und Karten (`app/(app)/dashboard/loading.tsx`, `aria-busy`, für Screenreader „Dashboard wird geladen …“) statt einer leeren Fläche; die Maße folgen dem fertigen Dashboard, nichts springt beim Erscheinen.
-- **Über den Reitern** stehen Begrüßung, Schnellzugriffe und der Hinweis „Helferschichten sind noch nicht besetzt“ (zeigt zwei Zeilen, der Rest hinter „weitere anzeigen“): Wichtiges soll nicht hinter einem Reiter verschwinden. Reiter ohne Inhalt entfallen je Rolle (ein Mitglied hat nur „Übersicht“ und „Termine & Helfer“, ein Helfer zusätzlich „Aufgaben & Aktivität“). Bliebe nur ein einziger Reiter übrig, gibt es keine Leiste – nur den Inhalt.
+- **Ladezustand:** Beim Öffnen des Dashboards erscheint sofort ein Gerüst aus Kopf (die Bühne als Nachtfläche in ihrer Höhe), Reiterleiste, Kennzahlen und Karten (`app/(app)/dashboard/loading.tsx`, `aria-busy`, für Screenreader „Dashboard wird geladen …“) statt einer leeren Fläche; die Maße folgen dem fertigen Dashboard, nichts springt beim Erscheinen.
+- **Über den Reitern** stehen der Kopf (Begrüßung, Zahlen, Schnellzugriffe) und der Hinweis „Helferschichten sind noch nicht besetzt“ (zeigt zwei Zeilen, der Rest hinter „weitere anzeigen“): Wichtiges soll nicht hinter einem Reiter verschwinden. Reiter ohne Inhalt entfallen je Rolle (ein Mitglied hat nur „Übersicht“ und „Termine & Helfer“, ein Helfer zusätzlich „Aufgaben & Aktivität“). Bliebe nur ein einziger Reiter übrig, gibt es keine Leiste – nur den Inhalt.
 - **Gruppen und Karten:** Innerhalb der Reiter tragen Gruppen („Für dich“, „Anstehend“, „Aktivität“) Überschriften der Ebene 2, die Karten darunter Ebene 3. Die Karten laufen ab mittlerer Breite in zwei CSS-Spalten (`CardGrid`, `components/layout.tsx`): Jede behält ihre natürliche Höhe, eine kurze Karte neben einer langen wird nicht aufgeblasen und wirkt nicht leer.
 - **Liste und Auswertung nebeneinander (01.10.2026):** Besteht ein Reiter nur aus einer Gruppe mit einer Karte und den Auswertungen (Mitglieder: Geburtstage; Aufgaben & Aktivität: Letzte Aktivitäten), stehen beide ab 1280 px nebeneinander – Liste ein Drittel, Auswertung zwei Drittel (`pair` in `app/(app)/dashboard/page.tsx`). Seit 15.10.2026 steht unter „Mitglieder“ neben „Geburtstage“ auch „Jubiläen“ (gleiche Gruppe): Wer beide Karten sieht (z. B. Administrator, Vorstand), bekommt sie nebeneinander und die Auswertungen darunter über die volle Breite – `pair` greift nur bei genau einer Karte (z. B. wenn „Jubiläen“ unter „Anpassen“ ausgeblendet ist). Vorher stand eine breite Karte mit einer einzigen Zeile über einem Diagramm, die Legende 700 px von ihrem Wert entfernt. Reihenfolge und Ausblenden aus „Anpassen“ gelten weiter; gibt es keine Auswertung, bleibt kein leerer Platz.
 - **Listenzeilen:** Geburtstage tragen wie Termine eine Datumsfläche (Monat über Tag, Rosa). In „Hier werden Helfer gesucht“ steht „Eintragen“ ab 640 px rechts neben dem Besetzungsbalken statt darunter. „Offene Zahlungen“ zeigt ab 1024 px links die Summe groß (wie eine Kennzahl), rechts die Rechnungen. Trennlinien zwischen Zeilen sind gerade (die Zeilen haben keine Rundung mehr, die sich an der Kartenkante hochbog).

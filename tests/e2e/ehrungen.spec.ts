@@ -63,11 +63,14 @@ async function importJubilare(page: Page) {
   await expect(page.getByText("Import abgeschlossen")).toBeVisible();
 }
 
-/** Öffnet „Dashboard anpassen“ – vor der Hydration geht ein Klick verloren, daher wiederholen (wie dashboard-anpassen.spec.ts). */
+/**
+ * Öffnet „Dashboard anpassen“ über den runden Glasknopf im Kopf – vor der Hydration geht ein Klick verloren, daher wiederholen
+ * (wie dashboard-anpassen.spec.ts).
+ */
 async function openCustomize(page: Page) {
   const dialog = page.getByRole("dialog", { name: "Dashboard anpassen" });
   await expect(async () => {
-    await page.getByRole("button", { name: "Anpassen" }).click();
+    await page.getByRole("button", { name: "Dashboard anpassen", exact: true }).click();
     await expect(dialog).toBeVisible({ timeout: 1500 });
   }).toPass({ timeout: 15_000 });
   return dialog;
