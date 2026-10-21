@@ -1,5 +1,14 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { USERS, chooseTab, greeting, loginSettled as login, open, openNavGroup } from "./helpers";
+import {
+  USERS,
+  chooseTab,
+  greeting,
+  heroLayout,
+  loginSettled as login,
+  open,
+  openNavGroup,
+  renameSelf,
+} from "./helpers";
 
 /**
  * Listen auf dem Dashboard zeigen zunächst nur die ersten Einträge; „N weitere … anzeigen“ klappt den Rest auf. Ein Klick vor
@@ -18,6 +27,35 @@ async function expandAll(region: Locator): Promise<void> {
 /** Wechselt im Dashboard den Reiter (im Browser, ohne Neuladen). */
 async function selectTab(page: Page, name: string) {
   await chooseTab(page, name);
+}
+
+/**
+ * Kopf des Dashboards („Vereins-Bühne“), sein dunkles Banner und die Glas-Chips darin. Im Hauptbereich gesucht: Beim Laden
+ * steht der gestreamte Inhalt kurz ein zweites Mal (verborgen) am Ende der Seite, bis React ihn an seinen Platz setzt.
+ */
+const hero = (page: Page) => page.getByRole("main").locator('[data-slot="dashboard-hero"]');
+const banner = (page: Page) => hero(page).locator('[data-slot="hero-banner"]');
+const glance = (page: Page) => hero(page).getByRole("list", { name: "Auf einen Blick" });
+
+/** Datum unter der Begrüßung („Mittwoch, 21. Oktober 2026“, Berliner Kalender). */
+const today = () =>
+  new Intl.DateTimeFormat("de-DE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Berlin",
+  }).format(new Date());
+
+/** Liegt `inner` ganz in `outer` (Rahmen, auf 1 px genau)? */
+async function inside(inner: Locator, outer: Locator): Promise<boolean> {
+  const [a, b] = [(await inner.boundingBox())!, (await outer.boundingBox())!];
+  return (
+    a.x >= b.x - 1 &&
+    a.y >= b.y - 1 &&
+    a.x + a.width <= b.x + b.width + 1 &&
+    a.y + a.height <= b.y + b.height + 1
+  );
 }
 test.describe("Dashboard", () => {
   test("Vereinsadministrator: vier Reiter mit Kennzahlen, Aufgaben, Terminen, Geburtstagen, Aktivitäten und Auswertungen", async ({
@@ -181,6 +219,8 @@ test.describe("Dashboard", () => {
     const total = digits(await heroCard.locator('[data-slot="kpi-value"]').textContent());
     expect(total).toBeGreaterThan(0);
     expect(parts.reduce((sum, part) => sum + part, 0)).toBe(total);
+    // Der Chip „Mitglieder“ im Kopf nennt dieselbe Zahl wie die Karte
+    expect(digits(await glance(page).getByRole("link").first().textContent())).toBe(total);
     // Die Aufgaben-Kachel führt zu den Aufgaben und nennt Überfälliges (oder „Im Zeitplan“)
     await expect(tasks).toHaveAttribute("href", "/aufgaben");
     await expect(tasks).toHaveText(
@@ -277,6 +317,15 @@ test.describe("Dashboard", () => {
     await expect(page.getByRole("link", { name: "Neue Veranstaltung", exact: true })).toHaveCount(
       0,
     );
+    // Im Kopf: Termine und offene Plätze, aber keine Mitgliederzahl; statt „Neue Veranstaltung“ der Weg zum Kalender
+    await expect(glance(page).getByRole("link")).toHaveText([
+      /^\d+ Termine? in 30 Tagen$/,
+      /^\d+ offener? Helferpl(ätze|atz)$/,
+    ]);
+    await expect(hero(page).getByRole("link", { name: "Kalender" })).toHaveAttribute(
+      "href",
+      "/kalender",
+    );
     await selectTab(page, "Aufgaben & Aktivität");
     await expect(page.getByRole("region", { name: "Letzte Aktivitäten" })).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Auswertungen" })).toBeVisible(); // Aufgabenauswertung
@@ -288,6 +337,15 @@ test.describe("Dashboard", () => {
     await login(page, USERS.mitglied);
     await expect(page.getByRole("heading", { level: 1, name: greeting("Maria") })).toBeVisible();
     await expect(page.getByRole("tab")).toHaveText(["Übersicht", "Termine & Helfer"]);
+    // Kopf: Rolle, keine Mitgliederzahl, kein Anlegen – aber „Kalender“ und „Anpassen“
+    await expect(banner(page).getByText("Mitglied", { exact: true })).toBeVisible();
+    await expect(glance(page).getByRole("link")).toHaveText([
+      /^\d+ Termine? in 30 Tagen$/,
+      /^\d+ offener? Helferpl(ätze|atz)$/,
+    ]);
+    await expect(hero(page).getByRole("link", { name: "Neue Veranstaltung" })).toHaveCount(0);
+    await expect(hero(page).getByRole("link", { name: "Kalender" })).toBeVisible();
+    await expect(hero(page).getByRole("button", { name: "Dashboard anpassen" })).toBeVisible();
     await expect(
       page
         .getByRole("region", { name: "Meine Einsätze" })
@@ -326,6 +384,10 @@ test.describe("Dashboard", () => {
     await expect(
       page.getByRole("link", { name: /^Mitglieder \(deine Abteilung\) \d+/ }),
     ).toBeVisible();
+    // Auch der Chip im Kopf sagt, dass nur die eigene Abteilung gezählt ist
+    await expect(glance(page).getByRole("link").first()).toHaveAccessibleName(
+      /^\d+ Mitglieder? in deiner Abteilung$/,
+    );
     await selectTab(page, "Mitglieder");
     await expect(page.getByRole("region", { name: "Auswertungen" })).toContainText(
       "Nur deine Abteilung",
@@ -337,8 +399,152 @@ test.describe("Dashboard", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: /^Guten (Morgen|Tag|Abend), / }),
     ).toBeVisible();
+    // Der zweite Verein hat keine Abteilungen: Die Bühne steht trotzdem – Nacht und Licht, ohne Fotos und Namensschilder –,
+    // mit seinem Namen und seinen Zahlen (keine des TSV).
+    await expect(banner(page)).toBeVisible();
+    await expect(banner(page)).toContainText("Anderer Verein e.V.");
+    await expect(banner(page).locator("[data-department-image]")).toHaveCount(0);
+    await expect(banner(page).locator("[data-hero-strip]")).toHaveCount(0);
+    // … und genau so hoch wie mit Fotos (und wie sein Ladegerüst): 17 rem
+    expect(await heroLayout(page)).toMatchObject({
+      rem: expect.closeTo(17, 2),
+      titleLines: 1,
+      outside: 0,
+    });
+    await expect(glance(page).getByRole("link")).toHaveCount(3);
     await open(page, "/dashboard?tab=termine");
     await expect(page.getByText("Sommerfest 2026")).toHaveCount(0);
     await expect(page.getByText("Vorstandssitzung")).toHaveCount(0);
+  });
+  test("Kopf als Vereins-Bühne: Begrüßung, Verein, Abteilungsfotos, Chips mit echten Zahlen, Knöpfe und „Anpassen“ im Banner – hell wie dunkel gleich", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page, USERS.admin);
+    const title = page.getByRole("heading", { level: 1, name: greeting("Anna") });
+    await expect(title).toBeVisible();
+    expect(await inside(title, banner(page))).toBe(true);
+    // Verein (Logo bzw. Anfangsbuchstaben über `ClubLogo`, Name), Rolle · Datum
+    await expect(
+      banner(page).getByText("TSV Musterstadt 1898 e.V.", { exact: true }),
+    ).toBeVisible();
+    await expect(banner(page).locator('[data-slot="club-logo"]')).toHaveCount(1);
+    await expect(banner(page).getByText("Vereinsadministrator", { exact: true })).toBeVisible();
+    await expect(banner(page).getByText(today(), { exact: true })).toBeVisible();
+
+    // Fotos der Abteilungen als Streifen (höchstens vier, die mit Foto zuerst), oben rechts je ein Namensschild. Rein schmückend:
+    // kein Bild mit Namen für Screenreader. Das erste Foto (am Handy das einzige) lädt sofort und vorrangig.
+    const strips = banner(page).locator("[data-hero-strip]");
+    const count = await strips.count();
+    expect(count).toBeGreaterThanOrEqual(3);
+    expect(count).toBeLessThanOrEqual(4);
+    const covers = await banner(page)
+      .locator("[data-department-image]")
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-department-image")));
+    expect(covers).toEqual(expect.arrayContaining(["fussball", "handball", "tischtennis"]));
+    // Verläufe (ohne Foto) nur hinter den Fotos
+    expect(covers.indexOf("verlauf") === -1 || covers.indexOf("verlauf") >= 3).toBe(true);
+    await expect(banner(page).getByRole("img")).toHaveCount(0);
+    for (const img of await banner(page).locator("img").all()) {
+      await expect(img).toHaveAttribute("alt", "");
+      await expect(img).toHaveAttribute("srcset", /480w.*800w.*1200w/);
+    }
+    const main = banner(page).locator('[data-hero-strip="main"] img');
+    await expect(main).toHaveAttribute("loading", "eager");
+    await expect(main).toHaveAttribute("fetchpriority", "high");
+    await expect(main).toHaveAttribute("data-department-image", "fussball"); // die größte Abteilung
+    await expect(banner(page).getByText("Fußball", { exact: true })).toBeVisible();
+
+    // Glas-Chips: drei echte Zahlen als Links in ihre Bereiche
+    const chips = glance(page).getByRole("link");
+    await expect(chips).toHaveText([
+      /^\d+ Mitglieder$/,
+      /^\d+ Termine? in 30 Tagen$/,
+      /^\d+ offener? Helferpl(ätze|atz)$/,
+    ]);
+    expect(
+      await chips.evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+    ).toEqual(["/mitglieder", "/veranstaltungen", "/helferplanung"]);
+
+    // Knöpfe und „Anpassen“ (rund, 44 px) unten rechts im Banner, die Reiter darunter
+    const event = hero(page).getByRole("link", { name: "Neue Veranstaltung", exact: true });
+    const member = hero(page).getByRole("link", { name: "Neues Mitglied", exact: true });
+    const customize = hero(page).getByRole("button", { name: "Dashboard anpassen" });
+    for (const control of [event, member, customize]) {
+      await expect(control).toBeVisible();
+      expect(await inside(control, banner(page))).toBe(true);
+    }
+    const knob = (await customize.boundingBox())!;
+    expect(Math.round(knob.width)).toBe(Math.round(knob.height));
+    expect(knob.height).toBeGreaterThanOrEqual(44);
+    const tabs = (await page
+      .getByRole("tablist", { name: "Bereiche des Dashboards" })
+      .boundingBox())!;
+    const box = (await banner(page).boundingBox())!;
+    expect(tabs.y).toBeGreaterThan(box.y + box.height);
+    expect(box.height).toBeGreaterThan(280); // rund 300 px (17 rem)
+    expect(box.height).toBeLessThan(340);
+    // Hinweis beim Überfahren
+    await customize.hover();
+    await expect(page.getByRole("tooltip", { name: "Dashboard anpassen" })).toBeVisible();
+    await page.mouse.move(0, 0);
+
+    // Hell wie dunkel dieselbe Bühne: Nacht als Grund, kräftiges Blau und Grün mit weißer Schrift
+    const look = () =>
+      Promise.all([
+        banner(page).evaluate((element) => getComputedStyle(element).backgroundColor),
+        event.evaluate((element) => getComputedStyle(element).backgroundColor),
+        member.evaluate((element) => getComputedStyle(element).backgroundColor),
+        member.evaluate((element) => getComputedStyle(element).color),
+      ]);
+    const light = await look();
+    expect(light[0]).toBe("rgb(6, 10, 22)");
+    await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    await page.reload();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(title).toBeVisible();
+    expect(await look()).toEqual(light);
+
+    // Ein Chip führt in seinen Bereich
+    await chips.first().click();
+    await expect(page).toHaveURL(/\/mitglieder$/);
+  });
+
+  test("Kopf springt nicht: immer so hoch wie sein Ladegerüst – auch mit langem Vornamen und den langen Chips der Abteilungsleitung", async ({
+    page,
+  }) => {
+    // Vorher wuchs das Banner, sobald die Begrüßung zweizeilig wurde („Guten Morgen, Sebastian“ schon bei 1440 px) oder die
+    // Chips umbrachen („6 Mitglieder in deiner Abteilung“ bei 1440 px) – der Inhalt darunter sprang beim Erscheinen.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, USERS.abteilung);
+    const original = await renameSelf(page, "Maximiliane");
+    try {
+      for (const name of ["Maximiliane", "Maximiliansfeldsteiner"]) {
+        if (name !== "Maximiliane") await renameSelf(page, name);
+        await open(page, "/dashboard");
+        await expect(page.getByRole("heading", { level: 1, name: greeting(name) })).toBeVisible();
+        for (const width of [700, 820, 1024, 1280, 1440, 1536, 1920]) {
+          await page.setViewportSize({ width, height: 900 });
+          const layout = await heroLayout(page);
+          expect(layout, `${name}, ${width} px`).toMatchObject({
+            rem: expect.closeTo(17, 2),
+            titleLines: 1,
+            titleInColumn: true,
+            chipRows: 1,
+            outside: 0,
+            roleBeforeDate: true,
+          });
+          // Ein üblicher langer Name steht ganz da (die Schrift wird kleiner); ein extrem langer darf mit „…“ enden.
+          if (name === "Maximiliane") expect(layout.titleCut, `${width} px`).toBe(false);
+        }
+      }
+      // Der Name bleibt für Screenreader vollständig
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        /^Guten (Morgen|Tag|Abend), Maximiliansfeldsteiner$/,
+      );
+    } finally {
+      await renameSelf(page, original);
+    }
   });
 });

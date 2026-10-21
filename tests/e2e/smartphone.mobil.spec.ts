@@ -191,6 +191,31 @@ test.describe("Smartphone", () => {
     }
   });
 
+  test("Dashboard-Kopf: ohne Recht zum Anlegen steht „Kalender“ über die ganze Breite unter dem Banner; schmal (320 px) läuft nichts über", async ({
+    page,
+  }) => {
+    await login(page, USERS.mitglied);
+    await open(page, "/dashboard");
+    const hero = page.getByRole("main").locator('[data-slot="dashboard-hero"]');
+    const banner = (await hero.locator('[data-slot="hero-banner"]').boundingBox())!;
+    const calendar = hero.getByRole("link", { name: "Kalender" });
+    await expect(calendar).toBeVisible();
+    const box = (await calendar.boundingBox())!;
+    expect(box.y).toBeGreaterThan(banner.y + banner.height);
+    expect(Math.abs(box.width - banner.width)).toBeLessThanOrEqual(1); // allein: volle Breite
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    await expect(hero.getByRole("link", { name: "Neue Veranstaltung" })).toHaveCount(0);
+
+    // Sehr schmal: Vereinsname gekürzt statt übergelaufen, „Anpassen“ bleibt im Banner
+    await page.setViewportSize({ width: 320, height: 700 });
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+    const narrow = (await hero.locator('[data-slot="hero-banner"]').boundingBox())!;
+    const knob = (await hero.getByRole("button", { name: "Dashboard anpassen" }).boundingBox())!;
+    expect(knob.x + knob.width).toBeLessThanOrEqual(narrow.x + narrow.width);
+    expect(knob.x).toBeGreaterThanOrEqual(narrow.x);
+  });
+
   test("Abteilungen: Bildkarten über die ganze Breite, Schrift ganz im Bild, Foto in passender Größe", async ({
     page,
   }) => {

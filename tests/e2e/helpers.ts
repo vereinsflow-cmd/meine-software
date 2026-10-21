@@ -76,6 +76,61 @@ export async function open(page: Page, path: string): Promise<void> {
   await page.waitForLoadState("networkidle");
 }
 
+/** Setzt den eigenen Vornamen über „Mein Profil“ und meldet den bisherigen zurück (zum Zurücksetzen am Ende eines Tests). */
+export async function renameSelf(page: Page, firstName: string): Promise<string> {
+  await open(page, "/profil");
+  const field = page.getByLabel("Vorname");
+  const before = await field.inputValue();
+  await field.fill(firstName);
+  await page.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.getByText("Dein Name wurde gespeichert.")).toBeVisible();
+  return before;
+}
+
+/**
+ * Wie der Kopf des Dashboards („Vereins-Bühne“) bei der aktuellen Fensterbreite sitzt: Höhe des Banners in rem (das Ladegerüst
+ * hat fest 17 rem, am Handy 17,125 rem – dieselbe Klasse `HERO_BANNER_HEIGHT`), Zeilen der Begrüßung, ob sie mit „…“ endet und
+ * in ihrer Schriftspalte bleibt, Reihen der sichtbaren Chips und wie viel unten oder rechts aus dem Banner ragt. Dazu, ob die
+ * Rolle vor dem Datum steht, und der Abstand der untersten Zeile vom unteren Rand.
+ */
+export async function heroLayout(page: Page) {
+  return page
+    .getByRole("main")
+    .locator('[data-slot="dashboard-hero"] [data-slot="hero-banner"]')
+    .evaluate((banner) => {
+      const root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const box = banner.getBoundingClientRect();
+      const title = banner.querySelector("h1")!;
+      const text = document.createRange();
+      text.selectNodeContents(title);
+      const visible = (element: Element) => element.getBoundingClientRect().width > 0;
+      const chips = [...banner.querySelectorAll("[data-hero-figure]")].filter(visible);
+      // Zeile unter der Begrüßung: Rolle, Punkt, „, “ (nur für Screenreader), Datum
+      const [role, , , date] = [...title.nextElementSibling!.children].map((part) =>
+        part.getBoundingClientRect(),
+      );
+      return {
+        // ungerundet: Der Browser legt auf 1/64 px genau an (17 rem bei 17,6 px = 299,1875 px) – im Test `expect.closeTo`
+        rem: box.height / root,
+        titleLines: new Set([...text.getClientRects()].map((line) => Math.round(line.bottom))).size,
+        titleCut: title.scrollWidth > title.clientWidth + 1,
+        titleInColumn:
+          title.getBoundingClientRect().right <=
+          title.parentElement!.getBoundingClientRect().right + 0.5,
+        chipRows: new Set(chips.map((chip) => Math.round(chip.getBoundingClientRect().top))).size,
+        outside: [...banner.querySelectorAll("h1, p, li, a, button")].filter((element) => {
+          const r = element.getBoundingClientRect();
+          return visible(element) && (r.bottom > box.bottom + 0.5 || r.right > box.right + 0.5);
+        }).length,
+        roleBeforeDate: role!.bottom <= date!.top + 0.5 || role!.right <= date!.left + 0.5,
+        bottomGap: Math.round(
+          box.bottom -
+            Math.max(date!.bottom, ...chips.map((chip) => chip.getBoundingClientRect().bottom)),
+        ),
+      };
+    });
+}
+
 /**
  * Klappt in der übergebenen Navigation (Seitenleiste oder mobiles Menü) das einklappbare Untermenü mit dem
  * angegebenen Namen auf, falls es noch geschlossen ist – die Menüpunkte „Verein“, „Organisation“, „Kommunikation“ und

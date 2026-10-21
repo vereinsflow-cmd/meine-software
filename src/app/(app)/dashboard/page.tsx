@@ -1,12 +1,10 @@
 import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ChartColumnIcon, EyeOffIcon, PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChartColumnIcon, EyeOffIcon } from "lucide-react";
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { CompactEmpty } from "@/components/shared/compact-empty";
-import { PageHeader } from "@/components/shared/page-header";
 import { PageStack } from "@/components/shared/page-section";
+import { clubLogoUrl } from "@/lib/club-logo";
 import { param, type RawSearchParams } from "@/lib/search-params";
 import { getAnalytics } from "@/modules/dashboard/analytics";
 import { Analytics, AnalyticsSkeleton } from "@/modules/dashboard/components/analytics";
@@ -23,10 +21,8 @@ import {
   StatCard,
   TasksTile,
 } from "@/modules/dashboard/components/kpi-stats";
-import {
-  CustomizeDashboard,
-  type CustomizeTab,
-} from "@/modules/dashboard/components/customize-dashboard";
+import type { CustomizeTab } from "@/modules/dashboard/components/customize-dashboard";
+import { DashboardHero } from "@/modules/dashboard/components/dashboard-hero";
 import { DashboardTabs, type DashboardTab } from "@/modules/dashboard/components/dashboard-tabs";
 import { KpiCarousel } from "@/modules/dashboard/components/kpi-carousel";
 import { OnboardingCard } from "@/modules/dashboard/components/onboarding-card";
@@ -53,6 +49,7 @@ import {
   orderedBlocks,
   segmentBlocks,
 } from "@/modules/dashboard/layout-prefs";
+import { greetingFor, heroFigures, heroStage } from "@/modules/dashboard/hero";
 import { getDashboardLayout } from "@/modules/dashboard/layout-service";
 import { getOnboarding } from "@/modules/dashboard/onboarding";
 import { getDashboard } from "@/modules/dashboard/service";
@@ -70,20 +67,6 @@ import { requirePageContext } from "@/server/tenancy/context";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-/** Gruß nach der Tageszeit in Deutschland (wie „Good morning“ der Vorlage „Vertix“). */
-function greeting(now: Date): string {
-  const hour = Number(
-    new Intl.DateTimeFormat("de-DE", {
-      hour: "numeric",
-      hourCycle: "h23",
-      timeZone: "Europe/Berlin",
-    }).format(now),
-  );
-  if (hour >= 5 && hour < 11) return "Guten Morgen";
-  if (hour >= 11 && hour < 18) return "Guten Tag";
-  return "Guten Abend";
-}
-
 /**
  * Das Dashboard in vier Reitern (Aufteilung und Begründung: `modules/dashboard/tabs.ts`). Die Seite bleibt EINE Seite – der
  * Reiterwechsel geschieht im Browser (`DashboardTabs`), die Seitenleiste zeigt weiter nur „Dashboard“. Der Server berechnet
@@ -92,6 +75,9 @@ function greeting(now: Date): string {
  * Jede Person kann ihr Dashboard selbst einstellen („Anpassen“): Karten je Reiter ein- und ausblenden, umsortieren und in
  * der Größe ändern – klein, mittel, groß (`modules/dashboard/layout-prefs.ts`, gespeichert je Person und Verein). Ohne eigene
  * Einstellung gilt die Standard-Ansicht (alle „Mittel“).
+ *
+ * Kopf (seit 21.10.2026): die „Vereins-Bühne“ (`DashboardHero`) – ein dunkles Banner mit den Abteilungsfotos, der Begrüßung,
+ * Glas-Chips mit Zahlen und den Knöpfen. Ihre Daten kommen aus `getDashboard` (Abteilungen als eigener, schlanker Block).
  */
 export default async function DashboardPage({
   searchParams,
@@ -99,6 +85,7 @@ export default async function DashboardPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
+  const now = new Date();
   // Lässt sich die eigene Einstellung nicht lesen (etwa weil ein laufender Server die neue Spalte noch nicht kennt), gilt die
   // Standard-Ansicht – das Dashboard als Startseite soll daran nie scheitern.
   const [data, layout, onboarding] = await Promise.all([
@@ -489,58 +476,22 @@ export default async function DashboardPage({
     <PageStack>
       {/* Wer hier ankommt, ist nicht (mehr) in der Einrichtung – steht noch deren Rahmen, wird er ersetzt. */}
       <SetupFrameSync locked={false} />
-      <PageHeader
-        inline
-        align="center"
-        title={`${greeting(new Date())}, ${ctx.user.firstName}`}
-        // Wie die Überschrift der Vorlage „Vertix“: groß, aber nicht fett; Rolle und Datum als ruhige Zeile darunter.
-        titleClassName="text-3xl font-semibold tracking-[-0.025em] sm:text-[2.5rem]"
-        description={
-          <>
-            <span>{ctx.roleName}</span>
-            <span aria-hidden="true"> · </span>
-            <span className="sr-only">, </span>
-            {formatDateLong(new Date())}
-          </>
-        }
-        // Am Handy: die Hauptaktion über die volle Breite, die übrigen gleich breit daneben – statt eines Umbruchs irgendwo.
-        // Runde Knöpfe wie in der Vorlage (nur auf dem Dashboard).
-        actionsClassName="*:rounded-full max-sm:grid max-sm:grid-cols-2 max-sm:[&>*]:w-full max-sm:[&>*:first-child:nth-last-child(odd)]:col-span-2"
-        actions={
-          <>
-            {/* Hauptaktion zuerst (links, am Handy oben) – wie auf den übrigen Seiten; mit leichtem Schein in der Markenfarbe. */}
-            {can(ctx, "events:create") && (
-              <Button
-                asChild
-                className="shadow-[0_10px_22px_-12px_var(--color-primary)] hover:shadow-[0_12px_26px_-12px_var(--color-primary)]"
-              >
-                <Link href="/veranstaltungen/neu">
-                  <PlusIcon /> Neue Veranstaltung
-                </Link>
-              </Button>
-            )}
-            {/* Grün mit demselben leichten Schein wie die Hauptaktion (Wunsch Luis, 20.10.2026). */}
-            {can(ctx, "members:create") && (
-              <Button
-                asChild
-                variant="success"
-                className="shadow-[0_10px_22px_-12px_var(--color-success)] hover:shadow-[0_12px_26px_-12px_var(--color-success)]"
-              >
-                <Link href="/mitglieder/neu">
-                  <PlusIcon /> Neues Mitglied
-                </Link>
-              </Button>
-            )}
-            {!can(ctx, "events:create") && can(ctx, "events:read") && (
-              <Button asChild variant="outline">
-                <Link href="/kalender">
-                  <AREA_ICON.kalender /> Kalender
-                </Link>
-              </Button>
-            )}
-            <CustomizeDashboard tabs={customize} />
-          </>
-        }
+      {/* Kopf: die „Vereins-Bühne“ – Begrüßung, Rolle · Datum, Zahlen, Knöpfe nach Rechten und „Anpassen“
+          (modules/dashboard/components/dashboard-hero.tsx). Fotos nur von Abteilungen, die die Rolle sehen darf. */}
+      <DashboardHero
+        greeting={greetingFor(now)}
+        firstName={ctx.user.firstName}
+        roleName={ctx.roleName}
+        dateLabel={formatDateLong(now)}
+        club={{ name: ctx.club.name, logoUrl: clubLogoUrl(ctx.clubId, ctx.club.logoSha256) }}
+        {...heroStage(data.departments ?? [])}
+        figures={heroFigures(data)}
+        can={{
+          createEvent: can(ctx, "events:create"),
+          createMember: can(ctx, "members:create"),
+          readEvents: can(ctx, "events:read"),
+        }}
+        customize={customize}
       />
 
       {/* Der Hinweis auf unbesetzte Schichten steht über den Reitern: Wichtiges soll nicht hinter einem Reiter verschwinden. */}

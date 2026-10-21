@@ -27,6 +27,7 @@ export function DepartmentCover({
   color,
   sizes,
   eager = false,
+  priority = false,
   inactive = false,
   className,
 }: {
@@ -35,6 +36,8 @@ export function DepartmentCover({
   sizes: string;
   /** Sofort laden (Karten im ersten Bild); alle anderen erst, wenn sie ins Bild scrollen. */
   eager?: boolean;
+  /** Sofort und vor anderen Bildern laden (`fetchpriority="high"`) – das größte Bild ganz oben, z. B. im Kopf des Dashboards. */
+  priority?: boolean;
   /** Deaktivierte Abteilung: Foto in Graustufen. */
   inactive?: boolean;
   className?: string;
@@ -49,7 +52,8 @@ export function DepartmentCover({
         sizes={sizes}
         alt=""
         aria-hidden="true"
-        loading={eager ? "eager" : "lazy"}
+        loading={eager || priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : undefined}
         decoding="async"
         draggable={false}
         data-department-image={image.sport}

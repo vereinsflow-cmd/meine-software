@@ -1,10 +1,17 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { HERO_BANNER_HEIGHT, HERO_NIGHT } from "@/modules/dashboard/hero";
 
 /**
  * Ladezustand des Dashboards: Beim Öffnen der Seite erscheint sofort das Gerüst (Begrüßung, Reiterleiste, Kennzahlen, Karten)
  * statt einer leeren Fläche – die Seite wirkt schneller und springt beim Erscheinen der Inhalte nicht. Maße und Abstände folgen
  * dem fertigen Dashboard (seit 17.10.2026 Stil der Vorlage „Analytics“: links Mitglieder-Kachel und Aufgaben-Ring, darunter die
  * Karten, rechts die Spalte der Kennzahlen – dieselben Breiten wie `StudioFrame`).
+ *
+ * Kopf (seit 21.10.2026 die „Vereins-Bühne“, `DashboardHero`): eine Fläche in derselben Nachtfarbe und Höhe wie das Banner –
+ * dieselbe Klasse `HERO_BANNER_HEIGHT`, gemessen wird wie dort die Breite des Kopfes (`@container/buehne`): am Handy 17,125 rem,
+ * ab 40 rem 17 rem. Das Banner ist fest so hoch, egal wie lang Name oder Rolle sind und ob es Fotos gibt. Bis 62 rem stehen die
+ * Knöpfe darunter, also auch ihre Platzhalter.
  */
 export default function DashboardLoading() {
   return (
@@ -12,12 +19,18 @@ export default function DashboardLoading() {
       <p className="sr-only" role="status">
         Dashboard wird geladen …
       </p>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="grid gap-2">
-          <Skeleton className="h-11 w-80 max-w-full" />
-          <Skeleton className="h-5 w-64 max-w-full" />
+      <div className="@container/buehne mb-6">
+        <div
+          className={cn(
+            HERO_BANNER_HEIGHT,
+            "rounded-3xl motion-safe:animate-pulse @[40rem]/buehne:rounded-4xl",
+          )}
+          style={{ backgroundColor: HERO_NIGHT }}
+        />
+        <div className="mt-3 grid grid-cols-2 gap-2 @[40rem]/buehne:flex @[40rem]/buehne:justify-end @[40rem]/buehne:gap-2.5 @[62rem]/buehne:hidden">
+          <Skeleton className="h-11 rounded-full @[40rem]/buehne:w-56" />
+          <Skeleton className="h-11 rounded-full @[40rem]/buehne:w-48" />
         </div>
-        <Skeleton className="h-11 w-96 max-w-full rounded-full" />
       </div>
       <Skeleton className="mb-6 h-12 w-[30rem] max-w-full rounded-full" />
       <div className="@container/studio">

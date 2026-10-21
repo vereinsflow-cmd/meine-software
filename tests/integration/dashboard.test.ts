@@ -253,6 +253,36 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect((await getDashboard(ctx.member)).members).toBeNull();
   });
 
+  it("Abteilungen für den Kopf (Fotos): nur aktive, nach Namen, Mitglieder ohne Archiv gezählt – ohne `departments:read` keine", async () => {
+    const { ctx, club, fussball, handball } = await setup();
+    const old = await createDepartment(club.id, "Alte Herren");
+    await prisma.department.update({ where: { id: old.id }, data: { isActive: false } });
+    await prisma.department.update({ where: { id: handball.id }, data: { color: "#dc2626" } });
+    // Fußball: die Abteilungsleiterin (aus setup) und ein aktives Mitglied; das archivierte zählt nicht.
+    for (const archivedAt of [null, new Date()]) {
+      const member = await prisma.member.create({
+        data: { clubId: club.id, firstName: "F", lastName: "Fuß", archivedAt },
+      });
+      await prisma.memberDepartment.create({
+        data: { clubId: club.id, memberId: member.id, departmentId: fussball.id },
+      });
+    }
+
+    const expected = [
+      { id: fussball.id, name: "Fußball", color: null, memberCount: 2 },
+      { id: handball.id, name: "Handball", color: "#dc2626", memberCount: 0 },
+    ];
+    // Wie auf /abteilungen: Alle Rollen mit Leserecht sehen dieselben aktiven Abteilungen.
+    expect((await getDashboard(ctx.admin)).departments).toEqual(expected);
+    expect((await getDashboard(ctx.member)).departments).toEqual(expected);
+
+    await prisma.rolePermission.deleteMany({
+      where: { clubId: club.id, permissionKey: "departments:read", role: { key: "MEMBER" } },
+    });
+    const restricted = await contextFor(ctx.member.user.id, club.id);
+    expect((await getDashboard(restricted)).departments).toBeNull();
+  });
+
   it("Trendlinien für Mitglieder (6 Monate) und Helferstunden (12 Wochen), älteste zuerst", async () => {
     const { ctx, club, people } = await setup();
     // Die Testkonten aus setup() haben (wie viele echte Altbestände) kein Eintrittsdatum – sie zählen ab dem Anlegen (also erst
