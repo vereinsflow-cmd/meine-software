@@ -1,6 +1,6 @@
-import { TablePageSkeleton } from "@/components/shared/page-skeletons";
+import { DocumentListPageSkeleton } from "@/modules/documents/components/document-list-skeleton";
 
-/** Ladezustand der Dokumente: Kopf, Suche mit Filtern und die Tabelle (Name, Kategorie, Zugriff, Größe, Datum). */
+/** Ladezustand der Dokumente: Kopf, darunter die Karte mit Suche, Filterknöpfen, Zeilen und Speicherplatz – wie die fertige Seite. */
 export default function Loading() {
-  return <TablePageSkeleton columns={6} label="Dokumente werden geladen …" />;
+  return <DocumentListPageSkeleton label="Dokumente werden geladen …" />;
 }

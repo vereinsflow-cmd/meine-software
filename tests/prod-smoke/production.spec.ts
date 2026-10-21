@@ -115,8 +115,9 @@ test.describe("Produktions-Build", () => {
     const toaster = page.locator("[data-sonner-toaster]");
     expect(await toaster.evaluate((el) => getComputedStyle(el).position)).toBe("fixed");
 
-    // Aufräumen: Dokument wieder löschen.
-    await page.getByRole("button", { name: `${name} löschen` }).click();
+    // Aufräumen: Dokument wieder löschen (Menü „…“ der Zeile › „Löschen“).
+    await page.getByRole("button", { name: `Aktionen für ${name}`, exact: true }).click();
+    await page.getByRole("menuitem", { name: "Löschen", exact: true }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click();
     await expect(page.getByText("Dokument gelöscht.")).toBeVisible();
 

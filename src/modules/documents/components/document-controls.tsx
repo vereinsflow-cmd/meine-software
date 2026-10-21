@@ -2,16 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CheckIcon,
-  FileIcon,
-  InfoIcon,
-  Loader2Icon,
-  PencilIcon,
-  TrashIcon,
-  UploadIcon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, FileIcon, InfoIcon, Loader2Icon, UploadIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -29,6 +20,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { FileDropOverlay, FileDropZone, useWindowFileDrop } from "@/components/shared/file-drop";
 import { IconButton } from "@/components/shared/icon-button";
+import type { MenuDialogProps } from "@/components/shared/more-actions";
 import { FormError, SelectField, SubmitButton, TextField } from "@/components/shared/form-fields";
 import { useActionForm } from "@/hooks/use-action-form";
 import {
@@ -749,44 +741,29 @@ export function UploadDialog({
   );
 }
 
+/**
+ * „Dokument bearbeiten“: Name, Kategorie, Zugriff und – nur für Berechtigte (`finance:manage`) – die Rechnungsangaben. Seit
+ * 20.10.2026 („Ruhige Liste“) ohne eigenen Knopf: Der Punkt „Bearbeiten“ im Menü „…“ des Dokuments öffnet das Fenster
+ * (`open`/`onOpenChange` aus `useMoreActions`, siehe `DocumentRowActions`); danach kehrt der Fokus zum Menüknopf zurück.
+ * Das Formular entsteht bei jedem Öffnen neu mit dem aktuellen Stand: „Bezahlt“ in derselben Zeile ändert die Rechnung, ohne
+ * dass ein schon gefülltes Formular es mitbekäme – sonst würde Speichern sie wieder öffnen. Abgebrochene Änderungen sind beim
+ * nächsten Öffnen weg.
+ */
 export function EditDocumentDialog({
   id,
   defaults,
   accessLevels,
+  open,
+  onOpenChange,
+  onCloseAutoFocus,
 }: {
   id: string;
   defaults: DocumentFormInput;
   accessLevels: AccessLevel[];
-}) {
-  const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const { form, onSubmit, isPending, formError } = useActionForm({
-    schema: documentFormSchema,
-    defaultValues: defaults,
-    action: (values) => updateDocumentAction(id, values),
-    successMessage: "Dokument gespeichert.",
-    onSuccess: () => {
-      setOpen(false);
-      router.refresh();
-    },
-  });
-  const invoiceStatus = form.watch("invoice.status");
+} & MenuDialogProps) {
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        // Beim Öffnen den aktuellen Stand übernehmen: „Bezahlt“ in derselben Zeile ändert die Rechnung, ohne dass das
-        // Formular es mitbekommt – sonst würde Speichern sie wieder öffnen.
-        if (next) form.reset(defaults);
-        setOpen(next);
-      }}
-    >
-      <DialogTrigger asChild>
-        <IconButton className="size-8" label={`${defaults.name} bearbeiten`}>
-          <PencilIcon />
-        </IconButton>
-      </DialogTrigger>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Dokument bearbeiten</DialogTitle>
           <DialogDescription>
@@ -794,64 +771,110 @@ export function EditDocumentDialog({
             eine neue Fassung hoch.
           </DialogDescription>
         </DialogHeader>
-        <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
-          <FormError message={formError} />
-          <TextField form={form} name="name" label="Name" required />
-          <TextField form={form} name="category" label="Kategorie" />
-          <SelectField
-            form={form}
-            name="access"
-            label="Wer darf es sehen?"
-            options={accessLevels.map((level) => ({ value: level, label: ACCESS_LABEL[level] }))}
-          />
-          {/* Rechnung: nur für Berechtigte (`finance:manage`) – sonst fehlt der Teil in den Startwerten. */}
-          {defaults.invoice && (
-            <fieldset className="grid gap-4 rounded-lg border p-3 sm:grid-cols-2">
-              <legend className="px-1 text-sm font-medium">Rechnung</legend>
-              <SelectField
-                form={form}
-                name="invoice.status"
-                label="Zahlungsstand"
-                options={INVOICE_STATUSES.map((status) => ({
-                  value: status,
-                  label: INVOICE_STATUS_LABEL[status],
-                }))}
-                className="sm:col-span-2"
-              />
-              <TextField
-                form={form}
-                name="invoice.amount"
-                label="Betrag in €"
-                inputMode="decimal"
-                placeholder={AMOUNT_HINT}
-                required={invoiceStatus === "OPEN"}
-              />
-              <TextField form={form} name="invoice.dueDate" label="Fällig am" type="date" />
-            </fieldset>
-          )}
-          <SubmitButton pending={isPending}>Speichern</SubmitButton>
-        </form>
+        <EditDocumentForm
+          id={id}
+          defaults={defaults}
+          accessLevels={accessLevels}
+          onDone={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-export function DeleteDocumentButton({ id, name }: { id: string; name: string }) {
+function EditDocumentForm({
+  id,
+  defaults,
+  accessLevels,
+  onDone,
+}: {
+  id: string;
+  defaults: DocumentFormInput;
+  accessLevels: AccessLevel[];
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const { form, onSubmit, isPending, formError } = useActionForm({
+    schema: documentFormSchema,
+    defaultValues: defaults,
+    action: (values) => updateDocumentAction(id, values),
+    successMessage: "Dokument gespeichert.",
+    onSuccess: () => {
+      onDone();
+      router.refresh();
+    },
+  });
+  const invoiceStatus = form.watch("invoice.status");
+  return (
+    <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
+      <FormError message={formError} />
+      <TextField form={form} name="name" label="Name" required />
+      <TextField form={form} name="category" label="Kategorie" />
+      <SelectField
+        form={form}
+        name="access"
+        label="Wer darf es sehen?"
+        options={accessLevels.map((level) => ({ value: level, label: ACCESS_LABEL[level] }))}
+      />
+      {/* Rechnung: nur für Berechtigte (`finance:manage`) – sonst fehlt der Teil in den Startwerten. */}
+      {defaults.invoice && (
+        <fieldset className="grid gap-4 rounded-lg border p-3 sm:grid-cols-2">
+          <legend className="px-1 text-sm font-medium">Rechnung</legend>
+          <SelectField
+            form={form}
+            name="invoice.status"
+            label="Zahlungsstand"
+            options={INVOICE_STATUSES.map((status) => ({
+              value: status,
+              label: INVOICE_STATUS_LABEL[status],
+            }))}
+            className="sm:col-span-2"
+          />
+          <TextField
+            form={form}
+            name="invoice.amount"
+            label="Betrag in €"
+            inputMode="decimal"
+            placeholder={AMOUNT_HINT}
+            required={invoiceStatus === "OPEN"}
+          />
+          <TextField form={form} name="invoice.dueDate" label="Fällig am" type="date" />
+        </fieldset>
+      )}
+      <SubmitButton pending={isPending}>Speichern</SubmitButton>
+    </form>
+  );
+}
+
+/**
+ * Rückfrage „Dokument löschen?“ – geöffnet vom Punkt „Löschen“ im Menü „…“ des Dokuments (`open`/`onOpenChange` aus
+ * `useMoreActions`, seit 20.10.2026 statt eines eigenen Papierkorb-Knopfs in jeder Zeile).
+ */
+export function DeleteDocumentDialog({
+  id,
+  name,
+  onDeleted,
+  ...dialog
+}: {
+  id: string;
+  name: string;
+  /** Gleich nach dem Löschen, noch bevor die Liste neu lädt (die Zeile also noch dasteht) – z. B. für das Fokusziel. */
+  onDeleted?: () => void;
+} & MenuDialogProps) {
   const router = useRouter();
   return (
     <ConfirmAction
       destructive
-      trigger={
-        <IconButton className="size-8 text-destructive" label={`${name} löschen`}>
-          <TrashIcon />
-        </IconButton>
-      }
+      {...dialog}
       title="Dokument löschen?"
       description={`„${name}“ wird gelöscht und ist danach für niemanden mehr sichtbar. Nach 30 Tagen wird die Datei endgültig entfernt.`}
       confirmLabel="Löschen"
       action={() => deleteDocumentAction({ id })}
       successMessage="Dokument gelöscht."
-      onSuccess={() => router.refresh()}
+      onSuccess={() => {
+        onDeleted?.();
+        router.refresh();
+      }}
     />
   );
 }

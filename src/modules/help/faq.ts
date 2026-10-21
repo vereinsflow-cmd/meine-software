@@ -308,7 +308,7 @@ export const FAQ: readonly FaqSection[] = [
         id: "dokument-herunterladen",
         question: "Wie lade ich ein Dokument herunter?",
         answer: [
-          "Öffne „Dokumente“ und klicke auf den Namen des Dokuments. Mit der Suche und dem Kategorie-Filter findest du es schneller. Du siehst nur Dokumente, für die du freigegeben bist.",
+          "Öffne „Dokumente“ und klicke auf den Namen des Dokuments (oder im Menü „…“ der Zeile auf „Herunterladen“). Mit der Suche und den Knöpfen über der Liste („Alle“, „Protokolle“ …) findest du es schneller. Du siehst nur Dokumente, für die du freigegeben bist – ein Schloss neben dem Namen zeigt, dass nicht alle Mitglieder es sehen.",
         ],
         link: { href: "/dokumente", label: "Zu den Dokumenten" },
         keywords: "pdf satzung formular datei download",
@@ -589,10 +589,12 @@ export const FAQ: readonly FaqSection[] = [
           "Öffne „Dokumente“ und ziehe die Dateien einfach auf die Seite – oder klicke auf „Dokument hochladen“ und wähle sie aus. Mehrere auf einmal gehen auch.",
           "Wähle ggf. eine Kategorie und lege fest, wer die Dokumente sehen darf.",
           "Klicke auf „Hochladen“. Klappt eine Datei nicht, bleibt sie mit dem Grund in der Liste stehen.",
+          "Umbenennen, Kategorie oder Zugriff ändern und löschen kannst du später im Menü „…“ rechts in der Zeile des Dokuments.",
         ],
         tip: "Erlaubt sind PDF, Bilder, Word-, Excel- und PowerPoint-Dateien, OpenDocument, TXT und CSV bis zur eingestellten Größe (Standard 10 MB). Ausführbare Dateien werden abgelehnt. Abteilungsleiter laden Dokumente zu einer Veranstaltung ihrer Abteilung hoch.",
         link: { href: "/dokumente", label: "Zu den Dokumenten" },
-        keywords: "upload datei pdf satzung freigeben zugriff ziehen ablegen drag drop mehrere",
+        keywords:
+          "upload datei pdf satzung freigeben zugriff ziehen ablegen drag drop mehrere bearbeiten umbenennen löschen menü",
       },
     ],
   },
@@ -739,7 +741,7 @@ export const FAQ: readonly FaqSection[] = [
         question: "Wo sehe ich, wie viel Geld noch offen ist?",
         answer: [
           "Auf dem Dashboard unter „Finanzen“: Die Karte „Offene Zahlungen“ zeigt die Summe aller offenen Rechnungen und die dringendsten einzeln – überfällige rot, bald fällige gelb. Ist eine Rechnung bezahlt, klicke daneben auf „Bezahlt“; ein Klick auf „Rückgängig“ in der Meldung macht das rückgängig.",
-          "In „Finanzen“ siehst du Kontostand, offene Rechnungen, Überschuss und Spenden des Jahres auf einen Blick, dazu „Das steht an“. Alle Rechnungen stehen unter „Finanzen“ › „Rechnungen“ (offen, bezahlt, alle). Betrag, Fälligkeit und Zahlungsstand änderst du bei „Dokumente“ mit dem Stift („Dokument bearbeiten“).",
+          "In „Finanzen“ siehst du Kontostand, offene Rechnungen, Überschuss und Spenden des Jahres auf einen Blick, dazu „Das steht an“. Alle Rechnungen stehen unter „Finanzen“ › „Rechnungen“ (offen, bezahlt, alle). Betrag, Fälligkeit und Zahlungsstand änderst du bei „Dokumente“ im Menü „…“ der Rechnung › „Bearbeiten“.",
         ],
         link: { href: "/finanzen", label: "Zu den Finanzen" },
         keywords: "offene posten schulden ausgaben kasse finanzen überfällig bezahlt",

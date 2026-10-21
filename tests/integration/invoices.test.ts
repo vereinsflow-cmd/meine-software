@@ -5,6 +5,7 @@ import { addBerlinDays, formatDate, toDateInputValue } from "@/lib/dates";
 import { getDashboard } from "@/modules/dashboard/service";
 import { documentFormSchema } from "@/modules/documents/schemas";
 import {
+  countDocuments,
   deleteDocument,
   listDocuments,
   updateDocument,
@@ -224,8 +225,10 @@ describe("Offene Zahlungen", () => {
       // Das Dokument („Alle Mitglieder“) sehen sie – Betrag und Zahlungsstand nicht.
       const doc = (await listDocuments(who, { request: first })).items.find((d) => d.id === id);
       expect(doc?.invoice).toBeNull();
-      // Der Filter „nur Rechnungen“ wirkt für sie nicht (keine Rückschlüsse, welche Dokumente Rechnungen sind).
+      // Der Filter „nur Rechnungen“ wirkt für sie nicht (keine Rückschlüsse, welche Dokumente Rechnungen sind) – und die
+      // Filterknöpfe nennen keine Rechnungszahlen.
       expect((await listDocuments(who, { invoices: "open", request: first })).total).toBe(2);
+      expect(await countDocuments(who, {})).toMatchObject({ total: 2, invoices: null });
     }
 
     expect((await getDashboard(ctx.board)).payments).toMatchObject({ totalCents: 4_200, count: 1 });
@@ -234,6 +237,25 @@ describe("Offene Zahlungen", () => {
     expect(mine[0]?.invoice).toMatchObject({ status: "OPEN", amountCents: 4_200 });
     await uploadDocument(ctx.board, { fileName: "Satzung.pdf", bytes: PDF(), access: "BOARD" });
     expect((await listDocuments(ctx.board, { invoices: "all", request: first })).total).toBe(1);
+
+    // Filterknöpfe „Alle Rechnungen“ / „Offene Rechnungen“: Zahlen wie die Listen dahinter (auch mit Suche).
+    const paidDoc = await uploadInvoice(ctx.board, "bezahlt.pdf", {
+      status: "PAID",
+      amountCents: null,
+    });
+    expect((await countDocuments(ctx.board, {})).invoices).toEqual({ all: 2, open: 1 });
+    expect((await countDocuments(ctx.board, { q: todayName })).invoices).toEqual({
+      all: 2,
+      open: 1,
+    });
+    expect((await countDocuments(ctx.board, { q: "Protokoll" })).invoices).toEqual({
+      all: 0,
+      open: 0,
+    });
+    expect((await listDocuments(ctx.board, { invoices: "all", request: first })).total).toBe(2);
+    // Gelöschte Rechnungen zählen nicht mehr.
+    await deleteDocument(ctx.board, paidDoc.id);
+    expect((await countDocuments(ctx.board, {})).invoices).toEqual({ all: 1, open: 1 });
   });
 
   it("Mandantentrennung: fremde Vereine sehen und ändern keine Rechnungen", async () => {

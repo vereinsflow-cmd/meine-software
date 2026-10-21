@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  countDocuments,
   deleteDocument,
   getStorageUsage,
   listCategories,
@@ -307,6 +308,7 @@ describe("Wer was sieht", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(deleteDocument(a.ctx.admin, id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect((await prisma.document.findUniqueOrThrow({ where: { id } })).deletedAt).toBeNull();
+    expect(await countDocuments(a.ctx.admin, {})).toMatchObject({ total: 0, categories: [] });
   });
 
   it("Suche, Kategorie-Filter, Veranstaltung und Seitenwechsel; Kategorien nur der sichtbaren Dokumente", async () => {
@@ -336,6 +338,54 @@ describe("Wer was sieht", () => {
     const page = await listDocuments(ctx.member, { request: { page: 2, pageSize: 2, skip: 2 } });
     expect(page).toMatchObject({ total: 3, pageCount: 2 });
     expect(page.items).toHaveLength(1);
+  });
+
+  it("Anzahlen der Filterknöpfe: nur Sichtbares, mit Suche und Veranstaltung – jede Zahl passt zur Liste dahinter", async () => {
+    const { ctx, eventF } = await setup();
+    await upload(ctx.admin, "Satzung 2026.pdf", PDF(), { category: "Satzung" });
+    await upload(ctx.admin, "Protokoll Januar.pdf", PDF(), { category: "Protokolle" });
+    await upload(ctx.admin, "Protokoll Februar.pdf", PDF(), {
+      category: "Protokolle",
+      eventId: eventF.id,
+    });
+    await upload(ctx.admin, "Ohne Kategorie.pdf");
+    await upload(ctx.admin, "Intern.pdf", PDF(), { category: "Nur intern", access: "BOARD" });
+    await upload(ctx.admin, "Verwaltung.pdf", PDF(), { category: "Protokolle", access: "ADMIN" });
+
+    // Mitglied: weder „Nur Vorstand“ noch „Nur Verwaltung“ – auch nicht in den Zahlen; ohne Finanzrecht keine Rechnungszahlen.
+    expect(await countDocuments(ctx.member, {})).toEqual({
+      total: 4,
+      categories: [
+        { name: "Protokolle", count: 2 },
+        { name: "Satzung", count: 1 },
+      ],
+      invoices: null,
+    });
+    expect((await countDocuments(ctx.board, {})).categories).toEqual([
+      { name: "Nur intern", count: 1 },
+      { name: "Protokolle", count: 2 },
+      { name: "Satzung", count: 1 },
+    ]);
+    expect((await countDocuments(ctx.admin, {})).total).toBe(6);
+    // Suche und Veranstaltung wirken mit (der Knopf behält beide); Kategorien ohne Treffer fehlen.
+    expect(await countDocuments(ctx.member, { q: "protokoll" })).toMatchObject({
+      total: 2,
+      categories: [{ name: "Protokolle", count: 2 }],
+    });
+    expect(await countDocuments(ctx.member, { eventId: eventF.id })).toMatchObject({
+      total: 1,
+      categories: [{ name: "Protokolle", count: 1 }],
+    });
+
+    // Jede Zahl ist genau die Länge der Liste, die ein Klick zeigt.
+    for (const who of [ctx.member, ctx.board, ctx.admin]) {
+      const counts = await countDocuments(who, { q: "pdf" });
+      expect(counts.total).toBe((await listDocuments(who, { q: "pdf", request: first })).total);
+      for (const entry of counts.categories)
+        expect(entry.count).toBe(
+          (await listDocuments(who, { q: "pdf", category: entry.name, request: first })).total,
+        );
+    }
   });
 });
 

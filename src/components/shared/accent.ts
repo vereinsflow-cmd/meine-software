@@ -15,6 +15,8 @@ export const ACCENT = {
   rose: { tile: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-300" },
   slate: { tile: "bg-slate-100 text-slate-700 dark:bg-slate-400/15 dark:text-slate-300" },
   teal: { tile: "bg-teal-100 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300" },
+  // Seit 21.10.2026 für die Kategorien der Dokumentenliste (dort statt Türkis, das neben Grün kaum auffiel).
+  cyan: { tile: "bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300" },
 } as const;
 
 export type Accent = keyof typeof ACCENT;
@@ -59,6 +61,11 @@ export const TILE_ACCENT: Record<Accent, { surface: string; chip: string }> = {
     surface:
       "tile-tint ring-teal-200/80 [--tile-tint:var(--color-teal-100)] dark:ring-teal-400/20 dark:[--tile-tint:color-mix(in_oklab,var(--color-teal-500)_18%,transparent)]",
     chip: "bg-linear-135 from-teal-100 to-teal-200/80 text-teal-700 inset-ring inset-ring-teal-300/50 dark:from-teal-400/30 dark:to-teal-600/15 dark:text-teal-200 dark:inset-ring-teal-300/25",
+  },
+  cyan: {
+    surface:
+      "tile-tint ring-cyan-200/80 [--tile-tint:var(--color-cyan-100)] dark:ring-cyan-400/20 dark:[--tile-tint:color-mix(in_oklab,var(--color-cyan-500)_18%,transparent)]",
+    chip: "bg-linear-135 from-cyan-100 to-cyan-200/80 text-cyan-700 inset-ring inset-ring-cyan-300/50 dark:from-cyan-400/30 dark:to-cyan-600/15 dark:text-cyan-200 dark:inset-ring-cyan-300/25",
   },
 };
 

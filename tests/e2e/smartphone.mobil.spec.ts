@@ -131,7 +131,7 @@ test.describe("Smartphone", () => {
     }
   });
 
-  test("Dokumente: Angaben stehen unter dem Namen, der Upload-Dialog passt auf den Bildschirm", async ({
+  test("Dokumente: kompakte Zeilen – Name, darunter Kategorie und Datum; der Upload-Dialog passt auf den Bildschirm", async ({
     page,
   }) => {
     await login(page, USERS.admin);
@@ -146,10 +146,14 @@ test.describe("Smartphone", () => {
     expect(created.status()).toBe(201);
 
     await page.goto("/dokumente");
-    const entry = page.getByRole("row").filter({ hasText: name });
-    await expect(entry.getByRole("link", { name })).toBeVisible();
-    await expect(entry.locator("span").filter({ hasText: /^Handbuch$/ })).toBeVisible(); // Kategorie steht unter dem Namen …
-    await expect(page.getByRole("columnheader", { name: "Kategorie" })).toHaveCount(0); // … nicht in einer eigenen Spalte
+    const entry = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("link", { name, exact: true }) });
+    await expect(entry.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(entry.getByText(/^Handbuch · \d{2}\.\d{2}\.\d{4}$/)).toBeVisible(); // Kategorie und Datum darunter …
+    await expect(entry.getByText(/Byte/)).toBeHidden(); // … Größe und Person erst am Computer
+    // Die Zeile passt in die Breite: Menü „…“ rechts im Bild.
+    await expect(entry.getByRole("button", { name: `Aktionen für ${name}` })).toBeInViewport();
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 
     await page.getByRole("button", { name: "Dokument hochladen" }).click();
@@ -162,6 +166,98 @@ test.describe("Smartphone", () => {
     expect(box.y).toBeGreaterThanOrEqual(0);
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
     await expect(dialog.getByRole("button", { name: "Hochladen", exact: true })).toBeInViewport();
+  });
+
+  test("Dokumente: eine lange Kategorie schiebt Suchfeld und Filterknöpfe nicht über den Kartenrand (320 und 360 px)", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    // 45 Zeichen (erlaubt sind 60): Ihr Knopf passt allein nicht in die Zeile und muss mit „…“ enden.
+    const stamp = String(Date.now() % 1_000_000).padStart(6, "0");
+    const category = `Protokolle der Mitgliederversammlungen ${stamp}`;
+    expect(category).toHaveLength(45);
+    const name = `Lange-Kategorie-${stamp}.txt`;
+    const created = await page.request.post("/api/dokumente", {
+      multipart: {
+        file: { name, mimeType: "text/plain", buffer: Buffer.from("Lange Kategorie") },
+        access: "ALL_MEMBERS",
+        category,
+      },
+    });
+    expect(created.status(), await created.text()).toBe(201);
+
+    for (const width of [320, 360]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto(`/dokumente?q=${encodeURIComponent(name)}`);
+      const card = page.getByRole("region", { name: "Dokumente, neueste zuerst" });
+      await expect(card.getByRole("link", { name: `${category} 1`, exact: true })).toBeVisible();
+      // Die Karte schneidet Überstehendes ab (`overflow-hidden`) – die Seite selbst läuft dabei nicht über, deshalb hier
+      // die rechten Kanten statt `horizontalOverflow`.
+      const right = await card.evaluate((section) => {
+        const edge = (element: Element | null) => element?.getBoundingClientRect().right ?? 0;
+        return {
+          card: edge(section),
+          search: edge(section.querySelector("form[role=search]")),
+          chips: Math.max(...[...section.querySelectorAll("nav a")].map(edge)),
+        };
+      });
+      expect(right.search, `Suchfeld bei ${width} px`).toBeLessThanOrEqual(right.card + 0.5);
+      expect(right.chips, `Filterknöpfe bei ${width} px`).toBeLessThanOrEqual(right.card + 0.5);
+    }
+  });
+
+  test("Dokumente: offene Rechnung – Betrag und Schild unter dem Namen, „Als bezahlt markieren“ im Menü „…“", async ({
+    page,
+  }) => {
+    await login(page, USERS.vorstand);
+    // Eigene Rechnung (die Demo-Rechnungen ändern andere Tests): offen, 12,50 €, in 5 Tagen fällig.
+    const title = `Mobil-Rechnung-${Date.now() % 100000}`;
+    const name = `${title}.pdf`;
+    const created = await page.request.post("/api/dokumente", {
+      multipart: {
+        file: {
+          name: "scan.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("%PDF-1.4\n%%EOF\n"),
+        },
+        access: "BOARD",
+        isInvoice: "on",
+        paymentDue: "true",
+        amount: "12,50",
+        dueDate: berlinDate(5),
+        title,
+      },
+    });
+    expect(created.status(), await created.text()).toBe(201);
+
+    await page.goto(`/dokumente?q=${title}`);
+    await page.waitForLoadState("networkidle");
+    const entry = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("link", { name, exact: true }) });
+    await expect(entry.getByText(/^12,50\s€$/).filter({ visible: true })).toBeVisible();
+    await expect(entry.getByText("fällig in 5 Tagen").filter({ visible: true })).toBeVisible();
+    // Am Handy kein grüner Knopf in der Zeile – „Bezahlt“ steckt im Menü.
+    await expect(entry.getByRole("button", { name: /als bezahlt markieren/ })).toBeHidden();
+    const menu = page.getByRole("menu");
+    await expect(async () => {
+      if (!(await menu.isVisible()))
+        await entry.getByRole("button", { name: `Aktionen für ${name}` }).click();
+      await expect(menu).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    const box = (await menu.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(15); // 16 px Abstand zum Rand wie der Seiteninhalt
+    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width - 15);
+    // Nur das Menü selbst (zu `aria-hidden` außerhalb siehe `violations` in axe.ts).
+    expect(await violations(page, { only: "[role=menu]" })).toEqual([]);
+    await menu.getByRole("menuitem", { name: "Als bezahlt markieren" }).click();
+    await expect(page.getByText(`„${name}“ ist als bezahlt markiert.`)).toBeVisible();
+    await expect(entry.getByText(/^bezahlt am /).filter({ visible: true })).toBeVisible();
+    // Verklickt? „Rückgängig“ – die Rechnung ist wieder offen.
+    await page.getByRole("button", { name: "Rückgängig" }).click();
+    await expect(page.getByText(`„${name}“ ist wieder offen.`)).toBeVisible();
+    await page.reload();
+    await expect(entry.getByText("fällig in 5 Tagen").filter({ visible: true })).toBeVisible();
   });
 
   test("„Neuer Termin“ im Kalender: Knopf erreichbar, das Fenster passt auf den Bildschirm", async ({
