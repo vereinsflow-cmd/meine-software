@@ -26,6 +26,7 @@ const adminPages = [
   "/nachrichten?chat=alle", // geöffneter Chat: Sprechblasen, Eingabezeile
   "/nachrichten/neu",
   "/dokumente",
+  "/dokumente?rechnungen=offen", // gewählter Filterknopf, Rechnungsspalte mit „Bezahlt“
   "/abteilungen",
   "/benutzer",
   "/einstellungen",
@@ -121,6 +122,22 @@ test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", 
     expect(await violations(page)).toEqual([]);
   });
 
+  test("Dokumente: Menü „…“ geöffnet und daraus „Dokument bearbeiten“", async ({ page }) => {
+    await login(page, USERS.admin);
+    await open(page, "/dokumente");
+    const trigger = page.getByRole("button", { name: /^Aktionen für / }).first();
+    const menu = page.getByRole("menu");
+    await expect(async () => {
+      if (!(await menu.isVisible())) await trigger.click();
+      await expect(menu).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15_000 });
+    // Nur das Menü selbst (zu `aria-hidden` außerhalb siehe `violations` in axe.ts); die Seite ist oben geprüft.
+    expect(await violations(page, { only: "[role=menu]" })).toEqual([]);
+    await menu.getByRole("menuitem", { name: "Bearbeiten" }).click();
+    await expect(page.getByRole("dialog", { name: "Dokument bearbeiten" })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+
   test("geöffneter Dialog: Dokument hochladen", async ({ page }) => {
     await login(page, USERS.admin);
     await open(page, "/dokumente");
@@ -162,6 +179,7 @@ test.describe("Barrierefreiheit (axe) – andere Rollen und dunkle Darstellung",
     "/datenschutz",
     "/nachrichten?chat=alle", // Sprechblasen in den dunklen WhatsApp-Farben
     "/einstellungen", // Vereinslogo-Karte mit Anfangsbuchstaben auf dunklem Grund
+    "/dokumente", // Dateityp-Kacheln, Schilder und „Bezahlt“ zartgrün auf dunklem Grund
   ]) {
     test(`dunkel: ${path}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: "dark" });

@@ -217,6 +217,61 @@ export async function listDocuments(
   return paged(await toDtos(ctx, rows), total, query.request);
 }
 
+export interface DocumentCounts {
+  /** Alle sichtbaren Dokumente zur Suche (und Veranstaltung) – ohne Kategorie und Rechnungsfilter. */
+  total: number;
+  /** Treffer je Kategorie, nach Namen sortiert; Kategorien ohne Treffer fehlen. */
+  categories: { name: string; count: number }[];
+  /** Rechnungen darunter (alle bzw. offene) – nur für Berechtigte (`finance:read`), sonst `null`. */
+  invoices: { all: number; open: number } | null;
+}
+
+/**
+ * Anzahlen für die Filterknöpfe der Dokumentenliste: Jede Zahl ist genau die Länge der Liste, die ein Klick auf den Knopf
+ * zeigt – also mit Suche und Veranstaltung, aber ohne die (sich gegenseitig ersetzenden) Filter nach Kategorie und Rechnung.
+ * Eine gruppierte Abfrage für alle Kategorien statt einer je Kategorie; die Rechnungen ebenso (nach Zahlungsstand).
+ */
+export async function countDocuments(
+  ctx: TenantContext,
+  query: Pick<DocumentQuery, "q" | "eventId">,
+): Promise<DocumentCounts> {
+  assertCan(ctx, "documents:read");
+  const where: Prisma.DocumentWhereInput = {
+    AND: [
+      visibleWhere(ctx),
+      query.eventId ? { eventId: query.eventId } : {},
+      searchWhere(query.q ?? ""),
+    ],
+  };
+  const finance = canFinance(ctx, "finance:read");
+  const [byCategory, byStatus] = await Promise.all([
+    ctx.db.document.groupBy({
+      by: ["category"],
+      where,
+      _count: { _all: true },
+      orderBy: { category: "asc" },
+    }),
+    finance
+      ? ctx.db.invoice.groupBy({
+          by: ["status"],
+          where: { document: { is: where } },
+          _count: { _all: true },
+        })
+      : Promise.resolve(null),
+  ]);
+  const sum = (rows: { _count: { _all: number } }[]) =>
+    rows.reduce((total, row) => total + row._count._all, 0);
+  return {
+    total: sum(byCategory),
+    categories: byCategory.flatMap((row) =>
+      row.category ? [{ name: row.category, count: row._count._all }] : [],
+    ),
+    invoices: byStatus
+      ? { all: sum(byStatus), open: sum(byStatus.filter((row) => row.status === "OPEN")) }
+      : null,
+  };
+}
+
 /** Kategorien der sichtbaren Dokumente (für Filter und Vorschläge). */
 export async function listCategories(ctx: TenantContext): Promise<string[]> {
   assertCan(ctx, "documents:read");

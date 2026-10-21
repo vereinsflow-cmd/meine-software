@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DocumentListPageSkeleton } from "@/modules/documents/components/document-list-skeleton";
 import { MemberListPageSkeleton } from "@/modules/members/components/member-list-skeleton";
 import { contrastRgb, mix, tokens, type Rgb } from "./contrast-helpers";
 
@@ -40,6 +41,7 @@ describe("Ladegerüste ganzer Seiten", () => {
     ["CalendarPageSkeleton", CalendarPageSkeleton],
     ["ChatPageSkeleton", ChatPageSkeleton],
     ["MemberListPageSkeleton", MemberListPageSkeleton],
+    ["DocumentListPageSkeleton", DocumentListPageSkeleton],
   ] as const)(
     "%s ist eine Live-Region mit „Wird geladen …“ und pulsiert nur ohne reduzierte Bewegung",
     (_, Skeleton) => {

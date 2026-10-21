@@ -21,6 +21,25 @@ const pdf = (text: string) =>
 /** Euro-Beträge enthalten ein geschütztes Leerzeichen vor „€“. */
 const euro = (text: string) => new RegExp(text.replace(/\./g, "\\.").replace(" €", "\\s€"));
 const payments = (page: Page) => page.getByRole("region", { name: "Offene Zahlungen" });
+/** Zeilen der Dokumentenliste (jede hat ihr Menü „…“) – sichtbar steht der Name ohne „.pdf“. */
+const documentRows = (page: Page) =>
+  page.getByRole("listitem").filter({ has: page.getByRole("button", { name: /^Aktionen für / }) });
+/** Die Zeile eines Dokuments, gefunden über den Link mit dem vollen Namen. */
+const documentRow = (page: Page, name: string) =>
+  page.getByRole("listitem").filter({ has: page.getByRole("link", { name, exact: true }) });
+/** Voller Name einer Rechnung aus dem sichtbaren Text ihrer Zeile („Rechnung vom 15.09.2026“ + „.pdf“). */
+const invoiceNameIn = async (row: Locator) =>
+  `${(await row.innerText()).match(/Rechnung vom \d{2}\.\d{2}\.\d{4}/)![0]}.pdf`;
+/** Wählt im Menü „…“ eines Dokuments einen Punkt (ein Klick vor der Hydration geht verloren – dann erneut). */
+async function chooseFromMenu(page: Page, name: string, item: string): Promise<void> {
+  const menu = page.getByRole("menu");
+  await expect(async () => {
+    if (!(await menu.isVisible()))
+      await page.getByRole("button", { name: `Aktionen für ${name}`, exact: true }).click();
+    await expect(menu).toBeVisible({ timeout: 1500 });
+  }).toPass({ timeout: 15_000 });
+  await menu.getByRole("menuitem", { name: item, exact: true }).click();
+}
 
 /** Klappt verborgene Rechnungen auf, falls es welche gibt (die Kachel im Kennzahlen-Raster zeigt zuerst nur eine). */
 async function showAllInvoices(card: Locator) {
@@ -125,11 +144,13 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
   await expect(dialog).toHaveCount(0);
 
   const name = `Rechnung vom ${berlinDay(0)}.pdf`;
-  const row = page.getByRole("row").filter({ hasText: name });
+  const row = documentRow(page, name);
   await expect(row).toHaveCount(1);
-  await expect(row).toContainText(euro("Rechnung · offen · 89,90 €"));
+  // Rechte Spalte: Betrag und Schild; „Bezahlt“ zartgrün daneben.
+  await expect(row).toContainText(euro("89,90 €"));
   await expect(row).toContainText("fällig in 10 Tagen");
   await expect(row).toContainText("Nur Vorstand");
+  await expect(row.getByRole("button", { name: `„${name}“ als bezahlt markieren` })).toBeVisible();
 
   // Auf dem Dashboard: neue Summe, die Rechnung steht unter den dringendsten.
   await open(page, "/dashboard");
@@ -184,26 +205,38 @@ test("Mehrere Rechnungen auf einmal gehen nicht; ohne Finanzrecht gibt es die Re
       name: /Rechnung/,
     }),
   ).toHaveCount(0);
-  // Auch die Rechnungen des Vorstands zeigen ihr keinen Betrag (sie sieht die Belege „Nur Vorstand“ ohnehin nicht).
-  await expect(lead.getByText(/Rechnung · offen/)).toHaveCount(0);
+  // Auch die Rechnungen des Vorstands zeigen ihr keinen Betrag (sie sieht die Belege „Nur Vorstand“ ohnehin nicht), und
+  // Filterknöpfe für Rechnungen gibt es für sie nicht.
+  await expect(lead.getByText(/überfällig seit|fällig in \d+ Tagen|bezahlt am/)).toHaveCount(0);
+  await expect(
+    lead
+      .getByRole("navigation", { name: "Dokumente filtern" })
+      .getByRole("link", { name: /Rechnungen/ }),
+  ).toHaveCount(0);
   await context.close();
 });
 
-test("Dokumente: Filter „Nur offene Rechnungen“ und Zahlungsstand im Bearbeiten-Fenster", async ({
+test("Dokumente: Filterknopf „Offene Rechnungen“ und Zahlungsstand im Bearbeiten-Fenster", async ({
   page,
 }) => {
   await login(page, USERS.vorstand);
-  await open(page, "/dokumente?rechnungen=offen");
-  const rows = page.getByRole("row").filter({ hasText: /Rechnung vom/ });
+  await open(page, "/dokumente");
+  // Die Knöpfe nennen die echten Zahlen (2 offene aus den Demo-Daten, die vorige Rechnung ist bezahlt).
+  const nav = page.getByRole("navigation", { name: "Dokumente filtern" });
+  await nav.getByRole("link", { name: "Offene Rechnungen 2", exact: true }).click();
+  await expect(page).toHaveURL(/rechnungen=offen/);
+  await expect(nav.getByRole("link", { name: "Offene Rechnungen 2", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  const rows = documentRows(page);
   await expect(rows).toHaveCount(2); // die beiden offenen aus den Demo-Daten
   // Die Hallenmiete (1.200,00 €) – über den Betrag gefunden, ihr Name hängt am Tag der Demo-Daten.
-  const hallenmiete = (await rows.filter({ hasText: euro("1.200,00 €") }).innerText()).match(
-    /Rechnung vom [\d.]+\.pdf/,
-  )![0];
-  const row = rows.filter({ hasText: hallenmiete });
-  await expect(row).toContainText("seit 3 Tagen überfällig");
+  const hallenmiete = await invoiceNameIn(rows.filter({ hasText: euro("1.200,00 €") }));
+  const row = documentRow(page, hallenmiete);
+  await expect(row).toContainText("überfällig seit 3 Tagen");
 
-  await row.getByRole("button", { name: `${hallenmiete} bearbeiten` }).click();
+  await chooseFromMenu(page, hallenmiete, "Bearbeiten");
   const edit = page.getByRole("dialog", { name: "Dokument bearbeiten" });
   await expect(edit.getByLabel(/^Betrag/)).toHaveValue("1200,00");
   await edit.getByLabel("Fällig am").fill(isoDay(20));
@@ -211,28 +244,24 @@ test("Dokumente: Filter „Nur offene Rechnungen“ und Zahlungsstand im Bearbei
   await expect(page.getByText("Dokument gespeichert.")).toBeVisible();
   await expect(row).toContainText("fällig in 20 Tagen");
 
-  await row.getByRole("button", { name: `${hallenmiete} bearbeiten` }).click();
+  await chooseFromMenu(page, hallenmiete, "Bearbeiten");
   await edit.getByLabel("Zahlungsstand").selectOption("PAID");
   await edit.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByText("Dokument gespeichert.").first()).toBeVisible();
   await expect(rows).toHaveCount(1); // bezahlt – nicht mehr unter „offen“
 
-  await open(page, "/dokumente?rechnungen=alle");
-  await expect(page.getByRole("row").filter({ hasText: hallenmiete })).toContainText(
-    /Rechnung · bezahlt am/,
-  );
+  // „Alle Rechnungen“ zeigt auch die bezahlten – mit „bezahlt am …“.
+  await nav.getByRole("link", { name: /^Alle Rechnungen \d+$/ }).click();
+  await expect(page).toHaveURL(/rechnungen=alle/);
+  await expect(documentRow(page, hallenmiete)).toContainText(/bezahlt am \d{2}\.\d{2}\.\d{4}/);
 
   // „Bezahlt“ in der Liste – das Bearbeiten-Fenster derselben Zeile zeigt danach „Bezahlt“, nicht den alten Stand.
-  const otherName = (
-    await page
-      .getByRole("row")
-      .filter({ hasText: euro("349,50 €") })
-      .innerText()
-  ).match(/Rechnung vom [\d.]+\.pdf/)![0]; // nach „Bezahlt“ steht der Betrag nicht mehr im Abzeichen
-  const other = page.getByRole("row").filter({ hasText: otherName });
+  const otherName = await invoiceNameIn(documentRows(page).filter({ hasText: euro("349,50 €") }));
+  const other = documentRow(page, otherName);
   await other.getByRole("button", { name: /als bezahlt markieren/ }).click();
-  await expect(other).toContainText(/Rechnung · bezahlt am/);
-  await other.getByRole("button", { name: /bearbeiten$/ }).click();
+  await expect(other).toContainText(/bezahlt am \d{2}\.\d{2}\.\d{4}/);
+  await expect(other.getByRole("button", { name: /als bezahlt markieren/ })).toHaveCount(0);
+  await chooseFromMenu(page, otherName, "Bearbeiten");
   await expect(edit.getByLabel("Zahlungsstand")).toHaveValue("PAID");
   await page.keyboard.press("Escape");
 });
