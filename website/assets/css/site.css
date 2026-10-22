@@ -2454,36 +2454,13 @@ main {
   display: block;
 }
 
-/* --- Große Zahl („10 von 21“) --- */
-.grosszahl {
-  --gz: clamp(5rem, 2rem + 12vw, 14.75rem);
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: end;
-  justify-content: start;
-  column-gap: 0.07em;
-  font-family: var(--f-display);
-  font-size: var(--gz);
-  color: var(--hell);
-  font-variant-numeric: tabular-nums;
-}
-
+/* --- Zahl mit Rolle: Grundform (Kontostand in Kapitel 6 baut darauf auf) --- */
 .gz-zahl {
   margin: -0.05em 0 -0.05em -0.04em;
   font-size: 1em;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.05em;
-  white-space: nowrap;
-}
-
-.gz-von {
-  padding-bottom: 0.11em;
-  font-size: 0.27em;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  color: var(--leise);
   white-space: nowrap;
 }
 
@@ -2496,7 +2473,8 @@ main {
 }
 
 /* ==========================================================================
-   Kapitel 3 · Helferplanung. Grundfassung: Kopf, große Zahl, drei Kacheln (Ampel, Telefon mit Chips, Aushang), Schritte.
+   Kapitel 3 · Helferplanung (Entwurf C „Radikal einfach“). Grundfassung – schmal, ohne Bewegung, ohne Skript: die drei
+   Sätze, darunter die eine Ampel, das kleine Telefon und der Aushang, alles im Endstand.
    ========================================================================== */
 .spur {
   position: relative;
@@ -2504,8 +2482,7 @@ main {
 
 .spur-zone,
 .k03 .licht,
-.bild-vorher,
-.az-vorher {
+.bild-vorher {
   display: none;
 }
 
@@ -2528,18 +2505,17 @@ main {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "kopf" "zahl" "ampel" "handy" "aushang" "schritte" "beispiel";
-  gap: clamp(36px, 6vw, 56px) clamp(28px, 3vw, 40px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas: "kopf kopf" "ampel ampel" "handy aushang" "beispiel beispiel";
+  gap: clamp(40px, 7vw, 64px) clamp(16px, 3vw, 40px);
   align-items: center;
 }
 
 .k03-kopf {
   grid-area: kopf;
-}
-
-.k03 .grosszahl {
-  grid-area: zahl;
+  display: grid;
+  justify-items: start;
+  gap: clamp(18px, 2.6vw, 30px);
 }
 
 .kachel-ampel {
@@ -2554,25 +2530,16 @@ main {
   grid-area: aushang;
 }
 
-.schritte-block {
-  grid-area: schritte;
-}
-
 .k03-beispiel {
   grid-area: beispiel;
+  justify-self: start;
 }
 
 @media (min-width: 720px) {
   .spur-raster {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas: "kopf kopf" "zahl zahl" "ampel handy" "aushang handy" "schritte schritte" "beispiel beispiel";
-  }
-}
-
-@media (min-width: 1024px) {
-  .spur-raster {
-    grid-template-columns: minmax(360px, 1.3fr) minmax(0, 1fr) minmax(0, 0.85fr);
-    grid-template-areas: "kopf kopf kopf" "zahl zahl zahl" "ampel handy aushang" "schritte schritte schritte" "beispiel beispiel beispiel";
+    grid-template-columns: minmax(0, 440px) minmax(0, 224px) minmax(0, 240px);
+    grid-template-areas: "kopf kopf kopf" "ampel handy aushang" "beispiel beispiel beispiel";
+    justify-content: space-between;
   }
 }
 
@@ -2580,14 +2547,146 @@ main {
   position: relative;
 }
 
-/* Kacheln: Die Ampel ist dichter (der Strom läuft dahinter), in schmalen Spalten etwas enger */
+/* --- Die drei Sätze: eine Überschrift in drei Zeilen; der Punkt am Ende ist die Pinnnadel-Farbe --- */
+.saetze {
+  display: grid;
+  gap: 0.14em;
+  font: 700 clamp(2.625rem, 1.1rem + 6.4vw, 6.5rem) / 0.98 var(--f-display);
+  letter-spacing: -0.045em;
+  color: var(--hell);
+}
+
+.satz {
+  display: block;
+  text-wrap: balance;
+}
+
+.satz-p {
+  color: var(--signal);
+}
+
+/* --- Die Ampel: Kopf mit der Zahl, je Schicht eine Zeile mit ihren Plätzen (keine Legende, keine Zahlen je Zeile) --- */
+.kachel-ampel {
+  justify-self: stretch;
+  width: 100%;
+  max-width: 440px;
+}
+
 .spur-raster .ampel-glas {
+  padding: 22px 26px 10px;
   background: linear-gradient(165deg, rgb(255 255 255 / 94%), rgb(255 255 255 / 86%));
 }
 
-@media (max-width: 1199px) {
-  .ampel-glas {
-    padding-inline: 20px;
+.ampel-kopf {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--linie);
+}
+
+.ampel-stand {
+  font: 700 clamp(2.5rem, 2rem + 1.6vw, 3.25rem) / 1 var(--f-display);
+  letter-spacing: -0.045em;
+  color: var(--hell);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.az-von {
+  margin-left: 0.04em;
+  font-size: 0.5em;
+  letter-spacing: -0.02em;
+  color: var(--leise);
+}
+
+.ampel-anlass {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--hell);
+}
+
+.ampel-anlass .block {
+  font-weight: 400;
+  color: var(--leise);
+}
+
+.ampel-zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.ampel-zeile:last-child {
+  border-bottom: 0;
+}
+
+.ampel-name {
+  grid-column: 1;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--hell);
+}
+
+.ampel-fehlt {
+  grid-column: 2;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--p-signal);
+}
+
+.ampel-plaetze {
+  grid-column: 3;
+  display: flex;
+  gap: 7px;
+}
+
+/* Ein Platz: Ring (immer), darüber die Füllung (::before) – gefüllt und geleert wird nur über scale und opacity */
+.ampel-plaetze i {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px rgb(15 28 46 / 26%);
+}
+
+.ampel-plaetze i::before,
+.ampel-plaetze i.fehlt::after,
+.platz-anna::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ampel-plaetze i::before {
+  background: var(--blau);
+  box-shadow: 0 0 7px 0 rgb(58 107 234 / 45%);
+}
+
+.ampel-plaetze i:is(.frei, .fehlt)::before {
+  content: none;
+}
+
+/* Noch niemand: oranger Ring mit Schein */
+.ampel-plaetze i.fehlt::after {
+  box-shadow: inset 0 0 0 2px var(--signal), 0 0 7px 0 rgb(255 138 94 / 45%);
+}
+
+/* Annas Platz: Ring für die Landung, in Ruhe unsichtbar */
+.platz-anna::after {
+  box-shadow: 0 0 0 2px rgb(255 138 94 / 85%), 0 0 12px 2px rgb(255 138 94 / 45%);
+  opacity: 0;
+}
+
+@media (max-width: 379px) {
+  .spur-raster .ampel-glas {
+    padding-inline: 18px;
   }
 
   .ampel-plaetze {
@@ -2595,124 +2694,9 @@ main {
   }
 
   .ampel-plaetze i {
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
   }
-
-  .ampel-kopf {
-    flex-wrap: wrap;
-    row-gap: 2px;
-  }
-}
-
-.kachel-ampel {
-  justify-self: center;
-  width: min(100%, 420px);
-}
-
-.ampel-glas {
-  padding: 22px 26px 20px;
-}
-
-.ampel-kopf {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 13px;
-  border-bottom: 1px solid var(--linie);
-  font-size: 1rem;
-  font-weight: 650;
-  color: var(--hell);
-}
-
-.ampel-anlass {
-  font-weight: 400;
-  color: var(--leise);
-}
-
-.ampel-zeile {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 40px;
-  align-items: center;
-  column-gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--linie);
-}
-
-.ampel-name {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--hell);
-}
-
-.ampel-name .du {
-  display: inline-block;
-  margin-left: 4px;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: rgb(58 107 234 / 12%);
-  color: var(--p-blau);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.ampel-zahl {
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: right;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.ist-offen .ampel-zahl {
-  color: var(--p-signal);
-}
-
-.ampel-plaetze {
-  display: flex;
-  gap: 7px;
-}
-
-.ampel-plaetze i,
-.ampel-legende i {
-  position: relative;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--blau);
-  box-shadow: 0 0 6px 0 rgb(58 107 234 / 45%);
-}
-
-.ampel-plaetze i.frei,
-.ampel-legende i.frei {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px rgb(15 28 46 / 28%);
-}
-
-.ampel-plaetze i.fehlt,
-.ampel-legende i.fehlt {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--signal), 0 0 6px 0 rgb(255 138 94 / 40%);
-}
-
-/* Annas Platz: Lichthof (::before) und Ring (::after) für die Landung, in Ruhe unsichtbar */
-.platz-anna::before,
-.platz-anna::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.platz-anna::before {
-  inset: -16px;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 90%), rgb(255 138 94 / 55%) 30%, rgb(58 107 234 / 22%) 62%, rgb(58 107 234 / 0%));
-}
-
-.platz-anna::after {
-  box-shadow: 0 0 0 2px rgb(255 138 94 / 85%), 0 0 12px 2px rgb(255 138 94 / 45%);
 }
 
 /* Zeile des Getränkestands: glimmt bei der Landung einmal auf (nur Deckkraft) */
@@ -2731,37 +2715,15 @@ main {
   pointer-events: none;
 }
 
-.ampel-legende {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  padding-top: 13px;
-  font-size: 0.875rem;
-  color: var(--leise);
-}
-
-.ampel-legende span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.ampel-legende i {
-  width: 10px;
-  height: 10px;
-}
-
-/* Telefon (flacher Rahmen wie bisher, frontal): Lichthöfe dahinter, eine blaue und eine orange Lichtkante am Rahmen */
+/* --- Telefon (flacher Rahmen wie bisher, frontal, klein) mit einer blauen und einer orangen Lichtkante --- */
 .kachel-handy {
   display: grid;
   justify-items: center;
-  gap: 12px;
-  isolation: isolate;
 }
 
 .handy-flach {
   position: relative;
-  width: min(280px, 100%);
+  width: min(224px, 100%);
 }
 
 .handy-flach .randlicht {
@@ -2781,10 +2743,6 @@ main {
   height: 38%;
 }
 
-.kachel-handy .hof {
-  z-index: -1;
-}
-
 .hof-blau {
   background:
     radial-gradient(ellipse 46% 40% at 46% 44%, rgb(58 107 234 / 42%), rgb(58 107 234 / 13%) 55%, rgb(58 107 234 / 0%) 100%),
@@ -2795,36 +2753,14 @@ main {
   opacity: 0.5;
 }
 
-.kachel-handy .ha {
-  left: -30%;
-  top: -12%;
-  width: 150%;
-  height: 70%;
-}
-
-.kachel-handy .hb {
-  left: 10%;
-  top: 46%;
-  width: 130%;
-  height: 60%;
-}
-
-.kachel-handy .chip {
-  position: relative;
-  z-index: 2;
-}
-
-.kachel-handy .chip-du {
-  margin-top: 8px;
-}
-
+/* --- Aushang --- */
 .kachel-aushang {
   justify-self: center;
 }
 
 .aushang {
   position: relative;
-  width: 240px;
+  width: min(240px, 100%);
   rotate: -2deg;
 }
 
@@ -2847,94 +2783,7 @@ main {
   filter: drop-shadow(0 2px 2px rgb(15 28 46 / 30%));
 }
 
-/* Schritte mit Faden: Linie, Füllung bis zum Schritt und Pinnnadel auf seiner Nummer (Grundfassung: alle drei erledigt,
-   --sf-n 3; in der Spur der aktuelle Schritt). Lage aus der Breite: Spalte n beginnt bei (100 % + Abstand) / 3 · (n − 1). */
-.schritte-block {
-  --sf-n: 3;
-  --sf-x: calc((100% + 32px) / 3 * (var(--sf-n) - 1) + 15px);
-  position: relative;
-  padding-top: 28px;
-}
-
-.schritt-faden {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 1px;
-}
-
-.sf-linie {
-  position: absolute;
-  inset: 0;
-  overflow: clip;
-  background: var(--linie);
-}
-
-.sf-fuellung {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgb(58 107 234 / 25%), var(--blau));
-  translate: calc(var(--sf-x) - 100%) 0;
-}
-
-.sf-nadel {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  translate: var(--sf-x) 0;
-}
-
-.sf-pin {
-  position: absolute;
-  left: -23px;
-  top: -7px;
-  width: 30px;
-  height: 14px;
-  fill: var(--signal);
-  filter: drop-shadow(0 0 4px rgb(255 138 94 / 55%));
-}
-
-.schritte {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px 32px;
-}
-
-@media (max-width: 719px) {
-  .schritt-faden {
-    display: none;
-  }
-
-  .schritte-block {
-    border-top: 1px solid var(--linie);
-  }
-}
-
-@media (min-width: 720px) {
-  .schritte {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.schritte li {
-  display: flex;
-  gap: 14px;
-  color: var(--leise);
-  font-size: 0.9375rem;
-  line-height: 1.45;
-}
-
-.schritte li > span:last-child {
-  display: grid;
-  gap: 2px;
-}
-
-.schritte b {
-  color: var(--hell);
-  font-size: 1.0625rem;
-  font-weight: 600;
-}
-
+/* Nummer im Kreis (Kapitel 8, Startlinie) */
 .nr {
   display: grid;
   flex: none;
@@ -2946,10 +2795,6 @@ main {
   color: var(--hell);
   font: 600 0.875rem/1 var(--f-text);
   font-variant-numeric: tabular-nums;
-}
-
-.k03-beispiel {
-  justify-self: start;
 }
 
 /* ==========================================================================
@@ -2991,7 +2836,9 @@ main {
 }
 
 /* ==========================================================================
-   Kapitel 5 · Funktionen: Kopf mit der 13, Glas-Bento (Tönung ohne Weichzeichner – der Strom läuft dahinter), Popover.
+   Kapitel 5 · Funktionen (Entwurf C „Radikal einfach“): Kopf mit der 13, darunter die dreizehn Bereiche wie ein
+   Startbildschirm – Helferschichten als großes Feld (2 × 2), zwölf Symbole mit je einem Wort; ein kurzer Satz steht in
+   der gemeinsamen Zeile darunter (Überfahren, Fokus, Tippen).
    ========================================================================== */
 .k05 {
   background: radial-gradient(70% 60% at 20% 20%, #0d1a35 0%, var(--nacht) 65%);
@@ -3022,13 +2869,11 @@ main {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px clamp(24px, 3vw, 44px);
+  gap: 4px clamp(24px, 3vw, 44px);
 }
 
-.k05-kopf > div {
-  display: grid;
-  gap: 14px;
-  max-width: 52rem;
+.k05-kopf .h2-gross {
+  max-width: 14em;
   padding-bottom: clamp(6px, 1.4vw, 24px);
 }
 
@@ -3040,457 +2885,278 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
-.bento {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-  margin-top: clamp(36px, 4.4vw, 56px);
-}
-
-@media (min-width: 560px) and (max-width: 719px) {
-  .bento {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .fkarte-gross,
-  .fkarte-dazu {
-    grid-column: span 2;
-  }
-}
-
-@media (min-width: 720px) and (max-width: 1099px) {
-  .bento {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .fkarte-gross {
-    grid-column: span 2;
-    grid-row: span 2;
-  }
-
-  .fkarte-dazu {
-    grid-column: span 3;
-  }
-}
-
-@media (min-width: 1100px) {
-  .bento {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .fkarte-gross {
-    grid-column: 1 / span 2;
-    grid-row: 1 / span 2;
-  }
-
-  .fkarte-dazu {
-    grid-column: span 3;
-  }
-}
-
-/* Ab 1280 px rückt das Bento nach rechts (wie im Entwurf): links bleibt Platz, wo der Strom dem Zeiger ausweicht */
-@media (min-width: 1280px) {
-  .bento {
-    margin-left: clamp(0px, (100vw - 1180px) * 0.95, 248px);
-  }
-}
-
-.fkarte {
+/* --- Startbildschirm: Symbolgröße --ic, Abstände --gx/--gy; schmal 4 Spalten, ab 1024 px 8 Spalten (2 × 2 + 6 je Zeile) --- */
+.apps {
+  --ic: clamp(62px, 17.4vw, 88px);
+  --gx: clamp(14px, 4.4vw, 40px);
+  --gy: clamp(22px, 5vw, 34px);
+  --satz-h: 2.9em;
   position: relative;
   display: grid;
+  justify-items: center;
+  margin-top: clamp(44px, 5vw, 72px);
+  font-size: var(--t-lead);
+}
+
+@media (min-width: 1024px) {
+  .apps {
+    --ic: clamp(84px, 2.6vw + 52px, 104px);
+    --gx: clamp(36px, 3.6vw, 56px);
+    --gy: 36px;
+  }
+}
+
+.apps-raster {
+  display: grid;
+  grid-template-columns: repeat(4, var(--ic));
+  gap: var(--gy) var(--gx);
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .apps-raster {
+    grid-template-columns: repeat(8, var(--ic));
+  }
+}
+
+.app {
+  display: grid;
+  justify-items: center;
   align-content: start;
-  gap: 6px;
-  min-height: 160px;
-  padding: 22px 18px 20px;
-  border-radius: 22px;
-  background: linear-gradient(160deg, rgb(28 42 70 / 90%), rgb(13 21 38 / 90%) 70%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 0 0 1px rgb(220 230 255 / 9%), 0 24px 50px -30px rgb(0 0 0 / 80%);
+  min-width: 0;
 }
 
-/* Lichtkante: ein heller Bogen am Rand (maskierter Ring); ohne Zeiger steht das Licht oben links */
-.fkarte::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(var(--kante-winkel, 135deg), rgb(255 255 255 / 0%) 30%, rgb(190 210 255 / 42%) 50%, rgb(255 255 255 / 0%) 70%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  pointer-events: none;
+.app-gross {
+  grid-column: span 2;
+  grid-row: span 2;
+  align-content: stretch;
 }
 
-/* Glanz (fest oben links; mit Maus folgt er dem Zeiger, buehne.js) */
-.fkarte::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(240px 180px at 14% 0%, rgb(220 232 255 / 9%), rgb(255 255 255 / 0%) 72%);
-  pointer-events: none;
-}
-
-.fkarte h3 {
-  font: 600 1.125rem/1.25 var(--f-display);
-  letter-spacing: -0.02em;
-  color: var(--hell);
-}
-
-.fkarte > p {
-  color: var(--n-text);
-  font-size: 1rem;
-  line-height: 1.35;
-}
-
-.fk-ico {
-  width: 22px;
-  height: 22px;
-  margin-bottom: auto;
-  padding-bottom: 0;
-  color: var(--himmel);
-}
-
-.fkarte .fk-ico {
-  margin-bottom: 22px;
-}
-
-/* Der Knopf deckt die ganze Karte (über ::after) – Trefferfläche wie die Karte, Fokusring um die Karte */
-.fk-knopf {
+.app-knopf {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 10px;
+  justify-self: start;
+  width: calc(var(--ic) + var(--gx));
+  min-width: 0;
+  margin-inline: calc(var(--gx) / -2);
   padding: 0;
   border: 0;
+  border-radius: 24%;
   background: none;
-  text-align: left;
+  color: inherit;
   font: inherit;
-  letter-spacing: inherit;
+  text-align: center;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
-.fk-knopf::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: 22px;
-}
-
-.fk-knopf:focus-visible {
+.app-knopf:focus-visible {
   outline: none;
 }
 
-.fk-knopf:focus-visible::after {
+.app-knopf:focus-visible .app-ico {
   outline: 2px solid var(--himmel);
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
-.fk-plus {
-  position: absolute;
-  top: 18px;
-  right: 18px;
+/* Das Symbol: kräftige Fläche in den Farben der Marke, Glanz oben links (::after), farbiger Schein darunter */
+.app-ico {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgb(160 185 230 / 10%);
-  color: var(--n-text);
+  width: var(--ic);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 23.5%;
+  background: linear-gradient(155deg, #7aa0ff 0%, #3a6bea 46%, #2348bf 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 38%),
+    inset 0 -12px 22px -14px rgb(8 16 52 / 55%),
+    0 22px 38px -22px rgb(58 107 234 / 85%),
+    0 2px 6px -2px rgb(0 0 0 / 50%);
+  color: #fff;
 }
 
-.fk-plus svg.i {
-  width: 16px;
-  height: 16px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .fkarte:has(.fk-knopf:hover) {
-    background: linear-gradient(160deg, rgb(34 50 82 / 92%), rgb(15 24 44 / 92%) 70%);
-  }
-
-  .fkarte:has(.fk-knopf:hover) .fk-plus {
-    background: rgb(160 185 230 / 18%);
-    color: var(--n-hell);
-  }
-}
-
-.fkarte-gross {
-  min-height: 336px;
-  padding: 26px 26px 24px;
-  background: linear-gradient(160deg, rgb(36 56 98 / 92%), rgb(15 26 50 / 92%) 64%);
-}
-
-.fkarte-gross .fk-ico {
-  width: 26px;
-  height: 26px;
-  margin-bottom: 16px;
-}
-
-.fkarte-gross h3 {
-  font-size: clamp(1.5rem, 1rem + 0.9vw, 1.875rem);
-  letter-spacing: -0.025em;
-}
-
-.fkarte-gross > p {
-  font-size: 1.0625rem;
-}
-
-.mini-ampel {
-  display: grid;
-  gap: 10px;
-  justify-self: center;
-  width: min(100%, 260px);
-  margin-top: 22px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  background: rgb(6 11 22 / 38%);
-  box-shadow: inset 0 0 0 1px rgb(220 230 255 / 8%);
-}
-
-.mini-ampel li {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--n-text);
-  font-size: 0.9375rem;
-}
-
-.mini-ampel span {
-  width: 4.6em;
-}
-
-.mini-ampel i {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--himmel);
-  box-shadow: 0 0 8px rgb(143 176 255 / 70%);
-}
-
-.mini-ampel i.frei {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px rgb(201 211 227 / 50%);
-}
-
-.mini-ampel i.fehlt {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--signal), 0 0 8px rgb(255 138 94 / 50%);
-}
-
-.mini-ampel b {
-  margin-left: auto;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.mini-ampel .offen b {
-  color: var(--signal);
-}
-
-/* „So sieht es aus“: eigener Link über der Trefferfläche der Karte */
-.fk-los {
-  position: relative;
-  z-index: 2;
-  justify-self: start;
-  margin-top: 22px;
-}
-
-.fkarte-dazu {
-  min-height: 0;
-  align-content: center;
-}
-
-.fkarte .dazu-titel {
-  margin-bottom: 4px;
-  font-size: 1.125rem;
-  color: var(--n-hell);
-}
-
-.dazu {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-}
-
-.fk-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 16px 8px 12px;
-  border: 0;
-  border-radius: 999px;
-  background: rgb(160 185 230 / 8%);
-  box-shadow: inset 0 0 0 1px rgb(220 230 255 / 11%);
-  color: var(--n-text);
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.fk-chip svg.i {
-  width: 18px;
-  height: 18px;
-  color: var(--himmel);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .fk-chip:hover {
-    background: rgb(160 185 230 / 16%);
-    color: var(--n-hell);
-  }
-}
-
-/* Lichtkante, Glanz und Schatten unter dem Zeiger (buehne.js fügt .fk-licht ein, nur mit Maus und Bewegung): Der
-   Lichtfleck auf dem Ring und der Glanz bewegen sich nur über transform; die gehobene Karte wirft einen Schatten. */
-.fk-licht {
+.app-ico::after {
+  content: "";
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
+  background: radial-gradient(120% 80% at 18% 0%, rgb(255 255 255 / 30%), rgb(255 255 255 / 0%) 58%);
   pointer-events: none;
 }
 
-.fk-ring {
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+.app-ico svg.i {
+  width: 44%;
+  height: 44%;
+  stroke-width: 1.7;
 }
 
-.fk-fleck,
-.fk-glanz {
-  position: absolute;
-  left: 0;
-  top: 0;
-  border-radius: 50%;
+.app-himmel .app-ico {
+  background: linear-gradient(155deg, #e1e9ff 0%, #9fbcff 48%, #6f93f2 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 70%),
+    inset 0 -12px 22px -14px rgb(30 60 160 / 45%),
+    0 22px 38px -22px rgb(143 176 255 / 75%),
+    0 2px 6px -2px rgb(0 0 0 / 50%);
+  color: var(--tinte);
 }
 
-.fk-fleck {
-  width: 220px;
-  height: 220px;
-  margin: -110px 0 0 -110px;
-  background: radial-gradient(closest-side, rgb(214 228 255 / 95%), rgb(160 190 255 / 40%) 45%, rgb(143 176 255 / 0%));
-  opacity: 0;
+.app-glas .app-ico {
+  background: linear-gradient(155deg, #2d4371 0%, #18284a 55%, #0d172c 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 22%),
+    inset 0 0 0 1px rgb(190 210 255 / 18%),
+    0 22px 38px -22px rgb(58 107 234 / 60%),
+    0 2px 6px -2px rgb(0 0 0 / 50%);
+  color: var(--himmel);
 }
 
-.fk-glanz {
-  width: 420px;
-  height: 420px;
-  margin: -210px 0 0 -210px;
-  background: radial-gradient(closest-side, rgb(220 232 255 / 20%), rgb(190 210 255 / 6%) 50%, rgb(255 255 255 / 0%));
-  opacity: 0;
+.app-name {
+  max-width: 100%;
+  color: var(--n-hell);
+  font: 500 clamp(0.75rem, 0.66rem + 0.36vw, 0.9375rem) / 1.2 var(--f-text);
+  letter-spacing: -0.008em;
+  hyphens: manual;
 }
 
-.fkarte.ist-gehoben {
-  z-index: 3;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), inset 0 0 0 1px rgb(220 230 255 / 14%), 0 46px 70px -24px rgb(0 2 8 / 90%), 0 0 60px -12px rgb(58 107 234 / 50%);
+/* Helferschichten: das große Feld in Signalorange (wie ein Widget, quadratisch, das Wort darunter); darin drei Reihen
+   Plätze wie in der Ampel von Kapitel 3 */
+.app-gross .app-knopf {
+  width: 100%;
+  margin-inline: 0;
 }
 
-.fkarte.ist-gehoben .fk-glanz {
-  opacity: 1;
+.app-gross .app-ico {
+  width: 100%;
+  align-content: space-between;
+  justify-items: start;
+  padding: clamp(14px, 1.7vw, 24px);
+  border-radius: clamp(18px, 2vw, 26px);
+  background: linear-gradient(150deg, #ffc9b0 0%, #ff8a5e 46%, #ef6533 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 60%),
+    inset 0 -16px 30px -18px rgb(120 40 10 / 45%),
+    0 30px 50px -26px rgb(255 138 94 / 75%),
+    0 2px 6px -2px rgb(0 0 0 / 50%);
+  color: var(--tinte);
 }
 
-/* Spiegelung auf der gehobenen Karte: ein klarer, diagonaler Lichtstreif */
-.fk-licht::after {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  background: linear-gradient(118deg, rgb(255 255 255 / 0%) 38%, rgb(235 242 255 / 5%) 44%, rgb(235 242 255 / 17%) 48.5%, rgb(235 242 255 / 5%) 53%, rgb(255 255 255 / 0%) 59%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.app-gross .app-ico svg.i {
+  width: clamp(30px, 3vw, 42px);
+  height: clamp(30px, 3vw, 42px);
 }
 
-.fkarte.ist-gehoben .fk-licht::after {
-  opacity: 1;
+.app-gross .app-name {
+  font-weight: 650;
 }
 
-/* Popover mit der ganzen Beschreibung: mittiges Glasblatt (am Smartphone Blatt von unten). Öffnen, Schließen mit × und
-   Esc, Klick daneben und der Fokus laufen ohne Skript (Popover); site.js gibt den Fokus in Safari zurück. */
-.feat-pop {
-  position: fixed;
-  inset: 0;
-  width: min(560px, 100% - 32px);
-  height: fit-content;
-  max-height: min(80vh, 640px);
-  margin: auto;
-  padding: 28px 28px 26px;
-  overflow: auto;
-  border: 0;
-  border-radius: 28px;
-  background: rgb(14 24 42 / 95%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  backdrop-filter: blur(24px) saturate(140%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 14%), inset 0 0 0 1px rgb(220 230 255 / 12%), 0 40px 90px -30px rgb(0 0 0 / 80%);
-  color: var(--n-text);
-  font-size: 1.0625rem;
-  line-height: 1.6;
-  color-scheme: dark;
+.app-ampel {
+  display: grid;
+  gap: clamp(5px, 0.6vw, 8px);
 }
 
-.feat-pop::backdrop {
-  background: rgb(3 6 14 / 55%);
-}
-
-.feat-pop-head {
+.app-ampel > span {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: clamp(4px, 0.5vw, 6px);
 }
 
-.feat-pop-ico {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgb(58 107 234 / 22%);
-  color: var(--himmel);
-}
-
-.feat-pop-title {
-  flex: 1;
-  font: 700 1.5rem/1.2 var(--f-display);
-  letter-spacing: -0.02em;
-  color: var(--n-hell);
-}
-
-.feat-close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
+.app-ampel i {
+  width: clamp(9px, 0.9vw, 13px);
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: rgb(160 185 230 / 10%);
+  background: var(--tinte);
+}
+
+.app-ampel i.frei {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px rgb(15 28 46 / 45%);
+}
+
+/* --- Die Zeile darunter: im Ruhezustand „Dreizehn Bereiche …“, sonst der Satz des gewählten Bereichs (alle Sätze
+   liegen übereinander in derselben Zeile; .app ist nicht positioniert, die Sätze richten sich an .apps aus) --- */
+.apps-start,
+.app-satz {
+  width: min(100%, 36rem);
+  height: var(--satz-h);
+  margin-top: clamp(28px, 4vw, 44px);
+  color: var(--n-text);
+  font-size: 1em;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.apps-start {
+  color: var(--n-leise);
+}
+
+.app-satz {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  margin: 0 0 0 calc(min(100%, 36rem) / -2);
   color: var(--n-hell);
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.feat-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  margin-top: 14px;
-  color: var(--himmel);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.feat-link .icon {
-  width: 18px;
-  height: 18px;
-}
-
-@media (max-width: 719px) {
-  .feat-pop {
-    inset: auto 0 0;
-    width: 100%;
-    max-height: 86dvh;
-    margin: 0;
-    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
-    border-radius: 28px 28px 0 0;
+@media (max-width: 399px) {
+  .apps {
+    --satz-h: 4.3em;
   }
+}
+
+/* Gewählt (Tippen, Fokus) bzw. überfahren: der Satz steht da, die Zeile „Dreizehn Bereiche …“ tritt zurück; die
+   anderen Symbole treten leicht zurück. Überfahren hat Vorrang vor dem gewählten. Gedämpft wird der Knopf, nie .app:
+   Ein Filter an .app machte es zum Bezugsrahmen der Sätze (sie sprängen während des Übergangs unter das Symbol). */
+.app.ist-aktiv .app-satz,
+.app:has(.app-knopf:focus-visible) .app-satz {
+  opacity: 1;
+}
+
+.apps:has(.app.ist-aktiv, .app-knopf:focus-visible) .apps-start {
+  opacity: 0;
+}
+
+.apps-raster:has(.ist-aktiv, .app-knopf:focus-visible) .app:not(.ist-aktiv, :has(.app-knopf:focus-visible)) .app-knopf {
+  filter: saturate(0.45) brightness(0.6);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app:has(.app-knopf:hover) .app-satz {
+    opacity: 1;
+  }
+
+  .apps:has(.app-knopf:hover) .app:not(:has(.app-knopf:hover)) .app-satz {
+    opacity: 0;
+  }
+
+  .apps:has(.app-knopf:hover) .apps-start {
+    opacity: 0;
+  }
+
+  .apps-raster:has(.app-knopf:hover) .app:not(:has(.app-knopf:hover)) .app-knopf {
+    filter: saturate(0.45) brightness(0.6);
+  }
+
+  .apps-raster:has(.app-knopf:hover) .app-knopf:hover {
+    filter: none;
+  }
+
+  .app-knopf:hover .app-ico {
+    translate: 0 -4px;
+  }
+}
+
+.app.ist-aktiv .app-ico {
+  translate: 0 -4px;
+  outline: 2px solid rgb(143 176 255 / 75%);
+  outline-offset: 4px;
 }
 
 /* ==========================================================================
@@ -9135,14 +8801,98 @@ html:not(.js) .k01 .iphone-rim,
 }
 
 /* ==========================================================================
-   12d. Spur in Kapitel 3 (ab 1200 × 760, mit Bewegung, mit Skript – darunter die Kacheln): Die Bühne klebt 240vh lang, drei Zonen (Band bei
-   45 % der Fensterhöhe) setzen den Schritt – buehne.js schreibt data-schritt an .spur (0 = davor) und nach der Landung
-   des Lichtpunkts .ist-eingetragen. Alles rastet in festen Zuständen ein; übergeblendet wird nur über transform, opacity
-   und filter. Höhen in vh (die Bühne ist so hoch wie das Fenster, min. 720 px).
+   12d. Kapitel 3 (Entwurf C): Die Ampel füllt sich. Gilt in beiden Fassungen mit Bewegung und Skript – in der Spur
+   (data-schritt an .spur, ab 1200 × 760) und schmal (.fuellt, dann .ist-gefuellt, sobald die Ampel im Bild ist; buehne.js).
+   Gefüllt und geleert wird nur über scale und opacity, Zeile für Zeile und Platz für Platz (--fd).
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .js .spur .ampel-zeile:nth-child(2) {
+    --r: 90ms;
+  }
+
+  .js .spur .ampel-zeile:nth-child(3) {
+    --r: 180ms;
+  }
+
+  .js .spur .ampel-zeile:nth-child(4) {
+    --r: 270ms;
+  }
+
+  .js .spur .ampel-zeile:nth-child(5) {
+    --r: 360ms;
+  }
+
+  .js .spur .ampel-plaetze i:nth-child(2) {
+    --fd: calc(var(--r, 0ms) + 45ms);
+  }
+
+  .js .spur .ampel-plaetze i:nth-child(3) {
+    --fd: calc(var(--r, 0ms) + 90ms);
+  }
+
+  .js .spur .ampel-plaetze i:nth-child(4) {
+    --fd: calc(var(--r, 0ms) + 135ms);
+  }
+
+  .js .spur .ampel-plaetze i:nth-child(5) {
+    --fd: calc(var(--r, 0ms) + 180ms);
+  }
+
+  .js .spur .ampel-plaetze i:nth-child(6) {
+    --fd: calc(var(--r, 0ms) + 225ms);
+  }
+
+  .js .spur .ampel-plaetze i::before {
+    transition:
+      opacity 0.25s var(--ease-out) var(--fd, var(--r, 0ms)),
+      scale 0.5s var(--feder-rast) var(--fd, var(--r, 0ms));
+  }
+
+  /* Erst wenn alle anderen sitzen: Grillstand wird orange, „noch niemand“ erscheint */
+  .js .spur .ampel-plaetze i.fehlt::after,
+  .js .spur .ampel-fehlt {
+    transition: opacity 0.4s var(--ease-out) 0.75s;
+  }
+
+  .js .spur:is([data-schritt="0"], [data-schritt="1"]) .ampel-plaetze i::before,
+  .js .spur.fuellt:not(.ist-gefuellt, [data-schritt]) .ampel-plaetze i::before,
+  .js .spur[data-schritt]:not(.ist-eingetragen) .platz-anna::before {
+    opacity: 0;
+    scale: 0.2;
+  }
+
+  .js .spur:is([data-schritt="0"], [data-schritt="1"]) .ampel-plaetze i.fehlt::after,
+  .js .spur:is([data-schritt="0"], [data-schritt="1"]) .ampel-fehlt,
+  .js .spur.fuellt:not(.ist-gefuellt, [data-schritt]) .ampel-plaetze i.fehlt::after,
+  .js .spur.fuellt:not(.ist-gefuellt, [data-schritt]) .ampel-fehlt {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+
+  /* Annas Platz kommt mit dem Kometen (ohne Versatz) */
+  .js .spur[data-schritt] .platz-anna::before {
+    transition-delay: 0s;
+  }
+
+  .js .spur.ist-gelandet .platz-anna::after {
+    animation: platz-ring 0.75s var(--ease-out);
+  }
+
+  .js .spur.ist-gelandet .ampel-zeile.ist-du::after {
+    animation: platz-licht 1.6s var(--ease-out);
+  }
+}
+
+/* ==========================================================================
+   12d'. Spur in Kapitel 3 (ab 1200 × 760, mit Bewegung, mit Skript – darunter die Grundfassung): Die Bühne klebt
+   340vh lang, drei Zonen (Band bei 45 % der Fensterhöhe) setzen den Schritt (buehne.js, data-schritt an .spur, 0 =
+   davor; nach der Landung des Kometen .ist-eingetragen). Links die drei Sätze, die nacheinander erscheinen und stehen
+   bleiben (der aktuelle in Tinte mit orangem Punkt, die früheren leiser), rechts die Ampel und das kleine Telefon; in
+   Schritt 3 schiebt sich der Aushang über die Ampel. Höhen in vh (die Bühne ist so hoch wie das Fenster, min. 720 px).
    ========================================================================== */
 @media (min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) {
   .js .k03 {
-    --hw: min(330px, 23vw, (100vh - 250px) / 2.08);
+    --hw: min(224px, 15.6vw, (100vh - 300px) / 2.08);
   }
 
   /* Der Strom aus der Nacht verläuft auf dem Papier, bevor die Bühne beginnt (sie hat ihren eigenen Strom) */
@@ -9191,134 +8941,73 @@ html:not(.js) .k01 .iphone-rim,
   }
 
   .js .k03 .sa {
-    left: 34%;
-    top: 2%;
-    width: 72%;
-    height: 92%;
+    left: 44%;
+    top: 4%;
+    width: 64%;
+    height: 90%;
   }
 
   .js .k03 .sb {
-    left: 62%;
+    left: 66%;
     top: 34%;
-    width: 48%;
+    width: 44%;
     height: 66%;
   }
 
   .js .spur-raster {
     height: 100%;
-    grid-template-columns: minmax(0, 1fr) clamp(336px, 27vw, 392px) var(--hw);
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: "kopf kopf handy" "zahl ampel handy" "schritte schritte schritte" "beispiel beispiel beispiel";
-    gap: 0 clamp(28px, 3.2vw, 46px);
-    align-items: start;
-    padding: calc(var(--kopf-oben) + var(--kopf-hoehe) + clamp(14px, 3.4vh, 36px)) 0 clamp(10px, 1.6vh, 18px);
+    grid-template-columns: minmax(0, 1fr) clamp(336px, 26vw, 392px) var(--hw);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "kopf ampel handy" "beispiel beispiel beispiel";
+    gap: 0 clamp(28px, 3.2vw, 48px);
+    justify-content: stretch;
+    align-items: center;
+    padding: calc(var(--kopf-oben) + var(--kopf-hoehe) + clamp(14px, 3vh, 32px)) 0 clamp(12px, 2vh, 20px);
   }
 
   .js .k03-kopf {
-    gap: clamp(10px, 1.8vh, 18px);
+    align-self: center;
   }
 
-  .js .k03-kopf .h2-gross {
-    font-size: min(var(--t-h2), 6.4vh);
-  }
-
-  .js .k03-kopf .lead {
-    max-width: 30rem;
-  }
-
-  /* Die Kapitelmarke nur auf hohen Bühnen (sonst stünde die Ampel zu tief; der Faden der Kopfzeile nennt das Kapitel) */
-  @media (max-height: 999px) {
-    .js .k03-kopf .kapitelmarke {
-      display: none;
-    }
-  }
-
-  .js .k03 .grosszahl {
-    --gz: min(236px, 18.75vw - 42px, 25vh);
-    align-self: end;
-    padding-bottom: clamp(20px, 7vh, 72px);
+  .js .k03 .saetze {
+    gap: 0.2em;
+    font-size: min(5.5vw, 10vh, 92px);
   }
 
   .js .k03 .kachel-ampel {
     justify-self: stretch;
-    width: auto;
-    margin-top: clamp(10px, 1.6vh, 16px);
+    max-width: none;
   }
 
   .js .spur .ampel-zeile {
-    padding-block: clamp(8px, 1.3vh, 12px);
+    padding-block: clamp(10px, 1.5vh, 14px);
   }
 
   /* Milchglas: der Strom läuft weich dahinter bis in Annas Platz */
   .js .spur-raster .ampel-glas {
-    background: linear-gradient(165deg, rgb(255 255 255 / 78%), rgb(255 255 255 / 60%));
+    background: linear-gradient(165deg, rgb(255 255 255 / 80%), rgb(255 255 255 / 62%));
     -webkit-backdrop-filter: blur(14px) saturate(120%);
     backdrop-filter: blur(14px) saturate(120%);
   }
 
   .js .kachel-handy {
     display: block;
-    margin-top: calc(-1 * clamp(6px, 3vh, 30px));
+    margin-top: clamp(40px, 9vh, 96px);
   }
 
   .js .handy-flach {
     width: var(--hw);
   }
 
-  .js .kachel-handy .ha {
-    left: -70%;
-    top: -8%;
-    width: 190%;
-    height: 66%;
-  }
-
-  .js .kachel-handy .hb {
-    left: 6%;
-    top: 48%;
-    width: 150%;
-    height: 62%;
-  }
-
-  .js .kachel-handy .chip {
-    position: absolute;
-    z-index: 4;
-    right: calc(100% - 8px);
-    margin: 0;
-    white-space: nowrap;
-  }
-
-  .js .kachel-handy .chip-du {
-    top: 28%;
-  }
-
-  .js .kachel-handy .chip-erinnerung {
-    top: auto;
-    bottom: -18px;
-  }
-
-  /* Niedrige Bühnen: unten rechts über dem Telefon (links darunter stünde die Legende der Ampel) */
-  @media (max-height: 879px) {
-    .js .kachel-handy .chip-erinnerung {
-      right: -18px;
-      bottom: 9%;
-    }
-  }
-
   .js .kachel-aushang {
     z-index: 3;
     grid-area: ampel;
-    align-self: start;
+    align-self: center;
     justify-self: center;
-    margin-top: clamp(0px, 0.8vh, 10px);
   }
 
   .js .spur .aushang {
-    width: min(250px, 19vw, (100vh - 420px) * 0.62);
-  }
-
-  .js .spur .schritte-block {
-    margin-top: clamp(12px, 2.4vh, 28px);
-    padding-top: clamp(18px, 2.8vh, 28px);
+    width: min(250px, 19vw, (100vh - 400px) * 0.62);
   }
 
   .js .k03-beispiel {
@@ -9326,42 +9015,53 @@ html:not(.js) .k01 .iphone-rim,
     margin-top: 4px;
   }
 
-  /* Schritt 0 (vor der Spur): die Ampel ist noch leer; Schritt 1 baut sie Zeile für Zeile auf (40 ms Versatz) */
-  .js .spur .ampel-zeile,
-  .js .spur .ampel-legende {
+  /* Sätze: in Schritt 0 noch keiner, dann erscheint je Schritt einer und bleibt; der aktuelle trägt den orangen Punkt,
+     die früheren treten zurück (#808999 auf Papier 3,2 : 1 – genug für Schrift dieser Größe) */
+  .js .spur .satz {
     transition:
-      opacity 0.45s var(--ease-out) calc(var(--i, 0) * 40ms),
-      translate 0.5s var(--ease-out) calc(var(--i, 0) * 40ms);
+      opacity 0.5s var(--ease-out),
+      translate 0.6s var(--ease-out),
+      color 0.3s ease;
   }
 
-  .js .spur .ampel-zeile:nth-child(2) {
-    --i: 1;
+  .js .spur .satz-p {
+    color: inherit;
+    transition: color 0.3s ease;
   }
 
-  .js .spur .ampel-zeile:nth-child(3) {
-    --i: 2;
-  }
-
-  .js .spur .ampel-zeile:nth-child(4) {
-    --i: 3;
-  }
-
-  .js .spur .ampel-zeile:nth-child(5) {
-    --i: 4;
-  }
-
-  .js .spur .ampel-legende {
-    --i: 5;
-  }
-
-  .js .spur[data-schritt="0"] .ampel-zeile,
-  .js .spur[data-schritt="0"] .ampel-legende {
-    --i: 0;
+  .js .spur[data-schritt="0"] .satz,
+  .js .spur[data-schritt="1"] .satz:not([data-satz="1"]),
+  .js .spur[data-schritt="2"] .satz[data-satz="3"] {
     opacity: 0;
-    translate: 0 8px;
+    translate: 0 0.16em;
   }
 
-  /* Vor dem Eintragen: Annas Platz frei, Getränkestand 2/4, das Telefon zeigt den Stand davor, die Chips sind im Telefon */
+  .js .spur[data-schritt="2"] .satz[data-satz="1"],
+  .js .spur[data-schritt="3"] .satz:not([data-satz="3"]) {
+    color: #808999;
+  }
+
+  .js .spur[data-schritt="1"] .satz[data-satz="1"] .satz-p,
+  .js .spur[data-schritt="2"] .satz[data-satz="2"] .satz-p,
+  .js .spur[data-schritt="3"] .satz[data-satz="3"] .satz-p {
+    color: var(--signal);
+  }
+
+  /* Schritt 0: Die Ampel ist noch leer; Schritt 1 baut sie Zeile für Zeile auf (alle Plätze frei) */
+  .js .spur .ampel-kopf,
+  .js .spur .ampel-zeile {
+    transition:
+      opacity 0.45s var(--ease-out) var(--r, 0ms),
+      translate 0.5s var(--ease-out) var(--r, 0ms);
+  }
+
+  .js .spur[data-schritt="0"] .ampel-kopf,
+  .js .spur[data-schritt="0"] .ampel-zeile {
+    opacity: 0;
+    translate: 0 10px;
+  }
+
+  /* Vor dem Eintragen zeigt das Telefon den Stand davor */
   .js .spur .phone-screen picture.bild-vorher {
     display: block;
     transition: opacity 0.2s ease;
@@ -9369,45 +9069,6 @@ html:not(.js) .k01 .iphone-rim,
 
   .js .spur.ist-eingetragen .bild-vorher {
     opacity: 0;
-  }
-
-  .js .spur:not(.ist-eingetragen) .platz-anna {
-    background: transparent;
-    box-shadow: inset 0 0 0 1.5px rgb(15 28 46 / 28%);
-  }
-
-  .js .spur:not(.ist-eingetragen) .az-nachher {
-    display: none;
-  }
-
-  .js .spur:not(.ist-eingetragen) .az-vorher {
-    display: inline;
-  }
-
-  .js .spur .kachel-handy .chip {
-    transition: opacity 0.3s var(--ease-out), translate 0.3s var(--ease-out);
-  }
-
-  .js .spur.ist-eingetragen .chip-erinnerung {
-    transition-delay: 0.45s;
-  }
-
-  .js .spur:not(.ist-eingetragen) .kachel-handy .chip {
-    opacity: 0;
-    translate: 36px 0;
-  }
-
-  /* Landung: der Platz leuchtet auf, ein Ring läuft aus, die Zeile glimmt (je einmal) */
-  .js .spur.ist-gelandet .platz-anna::before {
-    animation: platz-licht 1.3s var(--ease-out);
-  }
-
-  .js .spur.ist-gelandet .platz-anna::after {
-    animation: platz-ring 0.75s var(--ease-out);
-  }
-
-  .js .spur.ist-gelandet .ampel-zeile.ist-du::after {
-    animation: platz-licht 1.6s var(--ease-out);
   }
 
   /* Schritt 3: Der Aushang schiebt sich von der Bühnenkante über die Ampel, die Ampel tritt zurück */
@@ -9426,63 +9087,6 @@ html:not(.js) .k01 .iphone-rim,
   .js .spur[data-schritt="3"] .ampel-glas {
     opacity: 0.38;
     scale: 0.96;
-  }
-
-  /* Faden: Nadel und Füllung auf dem aktuellen Schritt (Feder), der Schritt selbst hervorgehoben */
-  .js .spur .schritte-block {
-    --sf-n: 1;
-  }
-
-  .js .spur[data-schritt="2"] .schritte-block {
-    --sf-n: 2;
-  }
-
-  .js .spur[data-schritt="3"] .schritte-block {
-    --sf-n: 3;
-  }
-
-  .js .spur .sf-fuellung,
-  .js .spur .sf-nadel {
-    transition: translate 0.6s var(--feder-rast);
-  }
-
-  .js .spur .schritte li,
-  .js .spur .schritte b {
-    transition: color 0.25s ease;
-  }
-
-  .js .spur .nr {
-    transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-  }
-
-  /* Nicht aktive Schritte: leise, aber lesbar (#5A6577 auf Papier 5,3 : 1); den aktiven Schritt heben Farbe der
-     Überschrift und der blaue Zahlkreis hervor, nicht Durchsichtigkeit */
-  .js .spur:not([data-schritt="0"]) .schritte li {
-    color: var(--p-leise);
-  }
-
-  .js .spur:not([data-schritt="0"]) .schritte b {
-    color: var(--leise);
-  }
-
-  .js .spur[data-schritt="1"] .schritte li:nth-child(1),
-  .js .spur[data-schritt="2"] .schritte li:nth-child(2),
-  .js .spur[data-schritt="3"] .schritte li:nth-child(3) {
-    color: var(--text);
-  }
-
-  .js .spur[data-schritt="1"] .schritte li:nth-child(1) b,
-  .js .spur[data-schritt="2"] .schritte li:nth-child(2) b,
-  .js .spur[data-schritt="3"] .schritte li:nth-child(3) b {
-    color: var(--hell);
-  }
-
-  .js .spur[data-schritt="1"] .schritte li:nth-child(1) .nr,
-  .js .spur[data-schritt="2"] .schritte li:nth-child(2) .nr,
-  .js .spur[data-schritt="3"] .schritte li:nth-child(3) .nr {
-    background: var(--blau);
-    color: #fff;
-    box-shadow: 0 6px 14px -6px rgb(58 107 234 / 70%);
   }
 
   /* Sprung (schnelles Scrollen, Größenwechsel): Endzustand ohne Übergänge */
@@ -9648,25 +9252,92 @@ html:not(.js) .k01 .iphone-rim,
 }
 
 /* ==========================================================================
-   12f. Funktionen und Finanzen: gehobene Karte, Tippen am Touchgerät, Lichtstreif (Lage von buehne.js)
+   12f. Funktionen (Startbildschirm) und Finanzen: Symbole erscheinen nacheinander, heben sich unter dem Zeiger,
+   geben beim Drücken nach; Lichtstreif der Finanzen (Lage von buehne.js)
    ========================================================================== */
 @media (prefers-reduced-motion: no-preference) {
-  .fkarte {
-    transition: box-shadow 0.3s var(--ease-out);
+  .apps-start,
+  .app-satz {
+    transition: opacity 0.2s var(--ease-out);
   }
 
-  .fk-glanz {
-    transition: opacity 0.3s ease;
+  .app-knopf {
+    transition: filter 0.2s var(--ease-out);
   }
 
-  @media (hover: none) {
-    .fkarte {
-      transition: translate 0.12s var(--ease-out), box-shadow 0.3s var(--ease-out);
-    }
+  .app-ico {
+    transition: translate 0.2s var(--ease-out), scale 0.12s var(--ease-out);
+  }
 
-    .fkarte:has(.fk-knopf:active, .fk-chip:active) {
-      translate: 0 -4px;
-    }
+  .app-knopf:active .app-ico {
+    scale: 0.95;
+  }
+
+  /* Erscheinen (site.js setzt .ist-da am Raster): nicht das Raster blendet ein, sondern die Symbole, eins nach dem
+     anderen (35 ms Versatz, Feder) */
+  .js .apps-raster.erscheint:not(.ist-da) {
+    opacity: 1;
+    translate: none;
+  }
+
+  .js .apps-raster:not(.ist-da) .app-knopf {
+    opacity: 0;
+    scale: 0.82;
+  }
+
+  .js .apps-raster .app-knopf {
+    transition:
+      opacity 0.45s var(--ease-out) var(--ad, 0ms),
+      scale 0.6s var(--feder-rast) var(--ad, 0ms),
+      filter 0.2s var(--ease-out);
+  }
+
+  .js .apps-raster .app:nth-child(2) {
+    --ad: 35ms;
+  }
+
+  .js .apps-raster .app:nth-child(3) {
+    --ad: 70ms;
+  }
+
+  .js .apps-raster .app:nth-child(4) {
+    --ad: 105ms;
+  }
+
+  .js .apps-raster .app:nth-child(5) {
+    --ad: 140ms;
+  }
+
+  .js .apps-raster .app:nth-child(6) {
+    --ad: 175ms;
+  }
+
+  .js .apps-raster .app:nth-child(7) {
+    --ad: 210ms;
+  }
+
+  .js .apps-raster .app:nth-child(8) {
+    --ad: 245ms;
+  }
+
+  .js .apps-raster .app:nth-child(9) {
+    --ad: 280ms;
+  }
+
+  .js .apps-raster .app:nth-child(10) {
+    --ad: 315ms;
+  }
+
+  .js .apps-raster .app:nth-child(11) {
+    --ad: 350ms;
+  }
+
+  .js .apps-raster .app:nth-child(12) {
+    --ad: 385ms;
+  }
+
+  .js .apps-raster .app:nth-child(13) {
+    --ad: 420ms;
   }
 
   .js .k06.ist-gemessen .streif-finanzen {
@@ -9856,7 +9527,6 @@ html:not(.js) .k01 .iphone-rim,
 
   .chip,
   .marke-text,
-  .feat-pop,
   .tafel,
   .menue {
     background-color: #0c1628;
@@ -9887,14 +9557,13 @@ html:not(.js) .k01 .iphone-rim,
   .bodenlicht,
   .bodenlache,
   .streiflicht,
-  .fk-licht,
   .streif-finanzen {
     display: none;
   }
 
   .knopf,
   .chip,
-  .fkarte,
+  .app-ico,
   .kopf-glas {
     border: 1px solid CanvasText;
   }
@@ -9939,15 +9608,23 @@ html:not(.js) .k01 .iphone-rim,
   }
 
   .kachel-aushang,
-  .kachel-handy .chip,
+  .satz,
+  .ampel-kopf,
   .ampel-zeile,
-  .ampel-legende {
+  .ampel-fehlt,
+  .ampel-plaetze i::before,
+  .ampel-plaetze i.fehlt::after,
+  .app-knopf {
     translate: none !important;
+    scale: none !important;
     opacity: 1 !important;
   }
 
+  .app-satz {
+    display: none !important;
+  }
+
   .streif-finanzen,
-  .fk-licht,
   .zeichen-licht,
   .leuchtet::after,
   .kopier-zeile::before,

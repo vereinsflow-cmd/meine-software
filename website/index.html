@@ -29,10 +29,10 @@
   <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026102201">
+  <link rel="stylesheet" href="assets/css/site.css?v=2026102202">
   <script src="assets/js/site.js?v=2026102001" defer></script>
   <!-- Nur die Startseite: Kamerafahrt, Wortwalze, Magnet-Knöpfe, Lichtkanten und der Lichtfluss (fluss.js, als Modul) -->
-  <script type="module" src="assets/js/buehne.js?v=2026102201"></script>
+  <script type="module" src="assets/js/buehne.js?v=2026102202"></script>
 
   <script type="application/ld+json">
   {
@@ -456,13 +456,15 @@
     </div>
   </section>
 
-  <!-- ===== Kapitel 3 · Helferplanung (Papier): Der Papierbogen schiebt sich über die Nacht. Ab 1200 × 760 mit Bewegung
-       eine Spur in drei Schritten (die Bühne klebt, die Zustände rasten an drei Zonen ein – buehne.js): 1 Schichten
-       anlegen (die Ampel baut sich auf, 9 von 21), 2 Anna trägt sich ein (ein Lichtpunkt fliegt den Strom entlang in
-       ihren Platz, die Zahl rollt auf 10, das Telefon zeigt ihren Eintrag), 3 der Helferplan zum Aushängen. Schmal, ohne
-       Bewegung und ohne Skript: drei Kacheln im Endstand. ===== -->
+  <!-- ===== Kapitel 3 · Helferplanung (Papier), Entwurf C „Radikal einfach“: drei große Sätze und eine einzige Ampel,
+       das Telefon klein daneben. Ab 1200 × 760 mit Bewegung klebt die Bühne, drei Zonen setzen den Schritt (buehne.js):
+       1 „Schichten anlegen.“ – die Ampel baut sich auf, alle Plätze frei; 2 „Helfer tragen sich ein.“ – die Plätze
+       füllen sich, ein Lichtkomet fliegt den Strom entlang in Annas Platz, die Zahl rollt auf 10, das Telefon zeigt ihren
+       Eintrag, am Grillstand leuchtet „noch niemand“; 3 „Helferplan drucken.“ – der Aushang schiebt sich über die Ampel.
+       Die Sätze erscheinen nacheinander und bleiben stehen. Schmal mit Bewegung füllt sich die Ampel einmal, sobald sie im
+       Bild ist; ohne Bewegung und ohne Skript steht alles im Endstand. ===== -->
   <section class="kapitel k03 papier bogen" id="helferschichten" data-kapitel="3" aria-labelledby="helfer-titel">
-    <canvas class="fluss fluss-bogen" aria-hidden="true" data-fluss data-zwilling="fluss-wechsel" data-hell="1"></canvas>
+    <canvas class="fluss fluss-bogen" aria-hidden="true" data-fluss data-zwilling="fluss-wechsel" data-hell="1" data-leise=".k03 .satz" data-leise-anteil="0.3"></canvas>
     <div class="spur" data-spur>
       <span class="spur-zone" data-schritt="1" aria-hidden="true"></span>
       <span class="spur-zone" data-schritt="2" aria-hidden="true"></span>
@@ -470,36 +472,34 @@
       <div class="spur-buehne">
         <span class="licht licht-blau sa" aria-hidden="true"></span>
         <span class="licht licht-signal sb" aria-hidden="true"></span>
-        <canvas class="fluss fluss-spur" id="fluss-spur" aria-hidden="true" data-fluss data-hell="1" data-leise=".k03 .gz-text, .k03 .gz-von, .k03 .schritte li, .k03 .k03-kopf .lead" data-leise-anteil="0.3" data-ziel="#platz-anna" data-seed="31" data-anzahl="420" data-anzahl-kompakt="200" data-straenge="5" data-orange="0.04" data-strich="1.3" data-staerke="1.2" data-breite="0.042" data-breite-kompakt="0.012"
-          data-pfad="-0.03,0.80 0.1,0.8 0.2,0.795 0.29,0.785 0.36,0.765 0.4,0.735 0.43,0.695 0.47,0.64 0.52,0.6 0.56,0.582 0.596,0.573"
-          data-pfad-kompakt="-0.05,0.36 0.2,0.355 0.4,0.345 0.55,0.335 0.7,0.33"></canvas>
+        <canvas class="fluss fluss-spur" id="fluss-spur" aria-hidden="true" data-fluss data-hell="1" data-leise=".k03 .satz, .k03 .kapitelmarke" data-leise-anteil="0.3" data-ziel="#platz-anna" data-seed="31" data-anzahl="420" data-anzahl-kompakt="200" data-straenge="5" data-orange="0.04" data-strich="1.3" data-staerke="1.2" data-breite="0.042" data-breite-kompakt="0.012"
+          data-pfad="-0.03,0.86 0.12,0.86 0.24,0.85 0.34,0.835 0.42,0.81 0.48,0.77 0.52,0.72 0.56,0.66 0.6,0.6 0.64,0.56 0.68,0.54"
+          data-pfad-kompakt="-0.05,0.5 0.2,0.49 0.4,0.47 0.55,0.45 0.7,0.44"></canvas>
         <canvas class="fluss fluss-flug" aria-hidden="true" data-fluss data-zwilling="fluss-spur" data-hell="1" data-nur-fluege="1"></canvas>
         <div class="breite spur-raster">
-          <div class="kapitel-kopf k03-kopf">
+          <div class="k03-kopf">
             <p class="kapitelmarke"><span class="km-linie" aria-hidden="true"></span><svg class="km-pin" aria-hidden="true"><use href="#pin"/></svg>Helferplanung</p>
-            <h2 class="h2-gross" id="helfer-titel"><span class="block">Helferschichten,</span> <span class="block leise">die sich fast von selbst organisieren.</span></h2>
-            <p class="lead">Kein Zettelchaos, keine leere Theke: Der Vorstand sieht auf einen Blick, wo noch jemand fehlt.</p>
+            <h2 class="saetze" id="helfer-titel">
+              <span class="satz" data-satz="1">Schichten anlegen<span class="satz-p">.</span></span>
+              <span class="satz" data-satz="2">Helfer tragen sich ein<span class="satz-p">.</span></span>
+              <span class="satz" data-satz="3">Helferplan drucken<span class="satz-p">.</span></span>
+            </h2>
           </div>
-
-          <p class="grosszahl"><span class="sr-only">10 von 21 Plätzen besetzt, Sommerfest 2027</span><span class="gz-zahl" aria-hidden="true" data-zahl>10</span><span class="gz-von" aria-hidden="true">von 21</span><span class="gz-text" aria-hidden="true">Plätzen besetzt · Sommerfest 2027</span></p>
 
           <div class="kachel kachel-ampel">
             <div class="ampel-glas">
-              <p class="ampel-kopf"><span>Ampel</span><span class="ampel-anlass">Sommerfest 2027 · 12. Juni</span></p>
+              <p class="ampel-kopf"><span class="sr-only">Sommerfest 2027: 10 von 21 Plätzen besetzt</span><span class="ampel-stand" aria-hidden="true"><span class="az-zahl" data-zahl>10</span><span class="az-von">/21</span></span><span class="ampel-anlass" aria-hidden="true">Plätze besetzt<span class="block">Sommerfest 2027</span></span></p>
               <ul class="ampel-liste" role="list">
-                <li class="ampel-zeile"><span class="ampel-name">Aufbau</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>5/5</span></li>
-                <li class="ampel-zeile ist-du"><span class="ampel-name">Getränkestand <span class="du"><span class="sr-only">(</span>Du<span class="sr-only">)</span></span></span><span class="ampel-plaetze" aria-hidden="true"><i></i><i></i><i class="platz-anna" id="platz-anna"></i><i class="frei"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: 3/4</span><span class="az-nachher" aria-hidden="true">3/4</span><span class="az-vorher" aria-hidden="true">2/4</span></span></li>
-                <li class="ampel-zeile ist-offen"><span class="ampel-name">Grillstand</span><span class="ampel-plaetze" aria-hidden="true"><i class="fehlt"></i><i class="fehlt"></i><i class="fehlt"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>0/3</span></li>
-                <li class="ampel-zeile"><span class="ampel-name">Kuchenbuffet</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i class="frei"></i><i class="frei"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>1/3</span></li>
-                <li class="ampel-zeile"><span class="ampel-name">Abbau</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i class="frei"></i><i class="frei"></i><i class="frei"></i><i class="frei"></i><i class="frei"></i></span><span class="ampel-zahl"><span class="sr-only">besetzt: </span>1/6</span></li>
+                <li class="ampel-zeile"><span class="ampel-name">Aufbau</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="sr-only">: 5 von 5 besetzt</span></li>
+                <li class="ampel-zeile ist-du"><span class="ampel-name">Getränkestand</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i></i><i class="platz-anna" id="platz-anna"></i><i class="frei"></i></span><span class="sr-only">: 3 von 4 besetzt</span></li>
+                <li class="ampel-zeile ist-offen"><span class="ampel-name">Grillstand</span><span class="ampel-fehlt">noch niemand</span><span class="ampel-plaetze" aria-hidden="true"><i class="fehlt"></i><i class="fehlt"></i><i class="fehlt"></i></span><span class="sr-only">: 0 von 3 besetzt</span></li>
+                <li class="ampel-zeile"><span class="ampel-name">Kuchenbuffet</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i class="frei"></i><i class="frei"></i></span><span class="sr-only">: 1 von 3 besetzt</span></li>
+                <li class="ampel-zeile"><span class="ampel-name">Abbau</span><span class="ampel-plaetze" aria-hidden="true"><i></i><i class="frei"></i><i class="frei"></i><i class="frei"></i><i class="frei"></i><i class="frei"></i></span><span class="sr-only">: 1 von 6 besetzt</span></li>
               </ul>
-              <p class="ampel-legende" aria-hidden="true"><span><i></i>besetzt</span><span><i class="frei"></i>frei</span><span><i class="fehlt"></i>noch niemand</span></p>
             </div>
           </div>
 
           <div class="kachel kachel-handy">
-            <span class="hof hof-blau ha" aria-hidden="true"></span>
-            <span class="hof hof-signal hb" aria-hidden="true"></span>
             <div class="handy-flach">
               <span class="randlicht rl-blau" aria-hidden="true"></span>
               <span class="randlicht rl-signal" aria-hidden="true"></span>
@@ -507,30 +507,20 @@
                 <span class="phone-hw" aria-hidden="true"></span>
                 <div class="phone-screen">
                   <div class="phone-status" aria-hidden="true"><span class="phone-time">9:41</span><span class="phone-island"></span><svg class="phone-status-icons"><use href="#i-status"/></svg></div>
-                  <picture><img src="assets/img/app/phone-schichten-light-312.webp?v=2026102201" srcset="assets/img/app/phone-schichten-light-260.webp?v=2026102201 260w, assets/img/app/phone-schichten-light-312.webp?v=2026102201 312w, assets/img/app/phone-schichten-light-390.webp?v=2026102201 390w, assets/img/app/phone-schichten-light-520.webp?v=2026102201 520w, assets/img/app/phone-schichten-light-624.webp?v=2026102201 624w, assets/img/app/phone-schichten-light-780.webp?v=2026102201 780w" sizes="(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) min(306px, 21.4vw, calc((100svh - 250px) * 0.446)), 260px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand sind 3 von 4 Plätzen besetzt, der eigene Name steht mit „(du)“ in der Liste"></picture>
-                  <picture class="bild-vorher" aria-hidden="true"><img src="assets/img/app/phone-schichten-live-1-light-312.webp?v=2026102201" srcset="assets/img/app/phone-schichten-live-1-light-260.webp?v=2026102201 260w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026102201 312w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026102201 390w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026102201 520w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026102201 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026102201 780w" sizes="(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) min(306px, 21.4vw, calc((100svh - 250px) * 0.446)), 260px" width="780" height="1520" loading="lazy" decoding="async" alt=""></picture>
+                  <picture><img src="assets/img/app/phone-schichten-light-208.webp?v=2026102201" srcset="assets/img/app/phone-schichten-light-182.webp?v=2026102201 182w, assets/img/app/phone-schichten-light-208.webp?v=2026102201 208w, assets/img/app/phone-schichten-light-260.webp?v=2026102201 260w, assets/img/app/phone-schichten-light-312.webp?v=2026102201 312w, assets/img/app/phone-schichten-light-390.webp?v=2026102201 390w, assets/img/app/phone-schichten-light-416.webp?v=2026102201 416w, assets/img/app/phone-schichten-light-520.webp?v=2026102201 520w, assets/img/app/phone-schichten-light-624.webp?v=2026102201 624w, assets/img/app/phone-schichten-light-780.webp?v=2026102201 780w" sizes="(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) min(208px, 14.4vw, calc((100svh - 300px) * 0.446)), (max-width: 719px) min(182px, 41vw), 208px" width="780" height="1520" loading="lazy" decoding="async" alt="Helferplan auf dem Smartphone: Beim Getränkestand sind 3 von 4 Plätzen besetzt, der eigene Name steht mit „(du)“ in der Liste"></picture>
+                  <picture class="bild-vorher" aria-hidden="true"><img src="assets/img/app/phone-schichten-live-1-light-260.webp?v=2026102201" srcset="assets/img/app/phone-schichten-live-1-light-260.webp?v=2026102201 260w, assets/img/app/phone-schichten-live-1-light-312.webp?v=2026102201 312w, assets/img/app/phone-schichten-live-1-light-390.webp?v=2026102201 390w, assets/img/app/phone-schichten-live-1-light-520.webp?v=2026102201 520w, assets/img/app/phone-schichten-live-1-light-624.webp?v=2026102201 624w, assets/img/app/phone-schichten-live-1-light-780.webp?v=2026102201 780w" sizes="(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference) min(208px, 14.4vw, calc((100svh - 300px) * 0.446)), (max-width: 719px) min(182px, 41vw), 208px" width="780" height="1520" loading="lazy" decoding="async" alt=""></picture>
                 </div>
               </div>
             </div>
-            <p class="chip chip-du"><svg class="i" aria-hidden="true"><use href="#i-user-check"/></svg><span><b>Anna Adler (du)</b> eingetragen</span></p>
-            <p class="chip chip-erinnerung"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span>Erinnerung <b>24&nbsp;Std.</b> vorher</span></p>
           </div>
 
           <div class="kachel kachel-aushang">
             <div class="aushang">
               <svg class="aushang-pin" aria-hidden="true"><use href="#pin"/></svg>
-              <img src="assets/img/app/helferplan-druck-light-480.webp?v=2026102201" srcset="assets/img/app/helferplan-druck-light-240.webp?v=2026102201 240w, assets/img/app/helferplan-druck-light-480.webp?v=2026102201 480w, assets/img/app/helferplan-druck-light-640.webp?v=2026102201 640w, assets/img/app/helferplan-druck-light-800.webp?v=2026102201 800w" sizes="240px" width="1280" height="1810" loading="lazy" decoding="async" alt="Helferplan zum Aushängen: Kopf mit Vereinsnamen, darunter für das Sommerfest je Schicht Uhrzeit, Aufgabe, Treffpunkt und Verantwortliche, dazu eine Schreiblinie je Platz – eingetragene Helfer stehen schon darauf, freie Linien bleiben leer">
+              <img src="assets/img/app/helferplan-druck-light-480.webp?v=2026102201" srcset="assets/img/app/helferplan-druck-light-240.webp?v=2026102201 240w, assets/img/app/helferplan-druck-light-480.webp?v=2026102201 480w, assets/img/app/helferplan-druck-light-640.webp?v=2026102201 640w, assets/img/app/helferplan-druck-light-800.webp?v=2026102201 800w" sizes="(max-width: 719px) min(170px, 41vw), 240px" width="1280" height="1810" loading="lazy" decoding="async" alt="Helferplan zum Aushängen: Kopf mit Vereinsnamen, darunter für das Sommerfest je Schicht Uhrzeit, Aufgabe, Treffpunkt und Verantwortliche, dazu eine Schreiblinie je Platz – eingetragene Helfer stehen schon darauf, freie Linien bleiben leer">
             </div>
           </div>
 
-          <div class="schritte-block">
-            <span class="schritt-faden" aria-hidden="true"><span class="sf-linie"><span class="sf-fuellung"></span></span><span class="sf-nadel"><svg class="sf-pin"><use href="#pin"/></svg></span></span>
-            <ol class="schritte" role="list">
-              <li data-schritt="1"><span class="nr" aria-hidden="true">1</span><span><b>Schichten anlegen</b> Mit Zeit, Treffpunkt, Plätzen und Verantwortlichen.</span></li>
-              <li data-schritt="2"><span class="nr" aria-hidden="true">2</span><span><b>Helfer tragen sich ein</b> Ein Klick auf „Eintragen“ genügt, und jeder Platz wird nur einmal vergeben.</span></li>
-              <li data-schritt="3"><span class="nr" aria-hidden="true">3</span><span><b>Helferplan drucken</b> Fürs Schwarze Brett, mit einer Zeile je Platz.</span></li>
-            </ol>
-          </div>
           <p class="hinweis k03-beispiel">Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
         </div>
       </div>
@@ -609,211 +599,86 @@
     </ul>
   </section>
 
-  <!-- ===== Kapitel 5 · Funktionen (Nacht): dreizehn Bereiche in zehn Glaskarten (die vier kleinen Bereiche als Chips unter
-       „Dazu“). Jede Karte und jeder Chip öffnet die ganze Beschreibung als Popover (ohne Skript, wortgleich wie bisher).
-       Mit Maus und Bewegung (buehne.js): Die Karte unter dem Zeiger neigt sich und hebt sich an, ihr Glanz folgt dem
-       Zeiger, die Lichtkante jeder Karte zeigt zu ihm, der Knopf „So sieht es aus“ ist magnetisch, und der Strom dahinter
-       weicht dem Zeiger aus. Die 13 rollt beim Erscheinen hoch. ===== -->
+  <!-- ===== Kapitel 5 · Funktionen (Nacht), Entwurf C „Radikal einfach“: die dreizehn Bereiche wie ein Startbildschirm –
+       Helferschichten als großes Feld (2 × 2), daneben zwölf Symbole mit je einem Wort. Beim Überfahren, mit dem
+       Tastaturfokus oder nach einem Tippen steht unter dem Raster ein kurzer Satz zum Bereich (eine gemeinsame Zeile,
+       sonst „Dreizehn Bereiche, die zusammenarbeiten.“). Überfahren und Fokus brauchen kein Skript; das Tippen hält
+       buehne.js fest (.ist-aktiv). Die 13 rollt beim Erscheinen hoch, die Symbole erscheinen nacheinander. ===== -->
   <section class="kapitel k05 nacht" id="funktionen" data-kapitel="5" aria-labelledby="funktionen-titel">
     <span class="licht licht-blau fa" aria-hidden="true"></span>
     <span class="licht licht-himmel fb" aria-hidden="true"></span>
-    <canvas class="fluss fluss-funktionen" aria-hidden="true" data-fluss data-zeiger="1" data-seed="61" data-anzahl="760" data-anzahl-kompakt="300" data-straenge="7" data-orange="0.05" data-strich="1.3" data-staerke="0.95" data-breite="0.07" data-breite-kompakt="0.03"
-      data-pfad="-0.03,0.56 0.06,0.6 0.14,0.66 0.22,0.7 0.32,0.72 0.46,0.71 0.62,0.69 0.8,0.665 1.03,0.64"
-      data-pfad-kompakt="-0.05,0.3 0.3,0.33 0.6,0.36 1.05,0.4"></canvas>
+    <canvas class="fluss fluss-funktionen" aria-hidden="true" data-fluss data-zeiger="1" data-seed="61" data-anzahl="640" data-anzahl-kompakt="260" data-straenge="6" data-orange="0.05" data-strich="1.3" data-staerke="0.95" data-breite="0.045" data-breite-kompakt="0.026"
+      data-leise=".k05 .apps-start, .k05 .app-name, .k05 .dreizehn, .k05 .h2-gross" data-leise-anteil="0.22"
+      data-pfad="-0.03,0.54 0.1,0.5 0.2,0.5 0.32,0.525 0.5,0.54 0.7,0.545 0.85,0.535 1.03,0.51"
+      data-pfad-kompakt="-0.05,0.56 0.3,0.535 0.6,0.52 1.05,0.5"></canvas>
     <div class="breite">
       <div class="k05-kopf">
         <p class="dreizehn" aria-hidden="true"><span data-zahl>13</span></p>
-        <div>
-          <h2 class="h2-gross" id="funktionen-titel">Alles, was Vereinsarbeit braucht</h2>
-          <p class="lead">Dreizehn Bereiche, die zusammenarbeiten, statt dreizehn einzelner Werkzeuge.</p>
-        </div>
+        <h2 class="h2-gross" id="funktionen-titel">Alles, was Vereins&shy;arbeit braucht</h2>
       </div>
-      <ul class="bento" role="list">
-        <li class="fkarte fkarte-gross">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-hand-heart"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-helfer">Helfer&shy;schich&shy;ten</button></h3>
-          <p>Selbst eintragen, mit Ampel</p>
-          <ul class="mini-ampel" aria-hidden="true">
-            <li><span>Aufbau</span><i></i><i></i><i></i><i></i><i></i><b>5/5</b></li>
-            <li><span>Theke</span><i></i><i></i><i class="frei"></i><i class="frei"></i><b>2/4</b></li>
-            <li class="offen"><span>Abbau</span><i class="fehlt"></i><i class="fehlt"></i><i class="fehlt"></i><b>0/3</b></li>
-          </ul>
-          <a class="knopf knopf-signal knopf-klein magnet fk-los" href="#helferschichten">So sieht es aus<span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-helfer" popover role="dialog" aria-labelledby="f-helfer-t" aria-describedby="f-helfer-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-hand-heart"/></svg></span>
-    <p class="feat-pop-title" id="f-helfer-t">Helfer&shy;schich&shy;ten</p>
-    <button class="feat-close" type="button" popovertarget="f-helfer" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-helfer-d">Selbst eintragen, Ampel-Übersicht, Mindestalter, Stundenerfassung, Erinnerungen und ein druckfertiger Helferplan&nbsp;– für eine oder mehrere Veranstaltungen.</p>
-  <a class="feat-link" href="#helferschichten">So sieht es aus<span class="sr-only">: Helferschichten</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-users"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-mitglieder">Mit&shy;glieder</button></h3>
-          <p>Stammdaten, Import, Historie</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-mitglieder" popover role="dialog" aria-labelledby="f-mitglieder-t" aria-describedby="f-mitglieder-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-users"/></svg></span>
-    <p class="feat-pop-title" id="f-mitglieder-t">Mit&shy;glieder</p>
-    <button class="feat-close" type="button" popovertarget="f-mitglieder" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-mitglieder-d">Stammdaten, Notizen, Einwilligungen und Änderungshistorie. Vorhandene Listen übernehmen (aus Excel als CSV gespeichert) mit Vorschau, dazu Export, Statistik, Archiv und Papierkorb.</p>
-  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Mitglieder</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-calendar-days"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-veranstaltungen">Veran&shy;stal&shy;tungen</button></h3>
-          <p>Anmeldung mit Warteliste</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-veranstaltungen" popover role="dialog" aria-labelledby="f-veranstaltungen-t" aria-describedby="f-veranstaltungen-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-days"/></svg></span>
-    <p class="feat-pop-title" id="f-veranstaltungen-t">Veran&shy;stal&shy;tungen</p>
-    <button class="feat-close" type="button" popovertarget="f-veranstaltungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-veranstaltungen-d">Anmeldung mit Teilnehmerlimit und Warteliste, Serientermine, Duplizieren und Absage mit automatischer Benachrichtigung.</p>
-  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Veranstaltungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-calendar-sync"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-kalender">Kalender</button></h3>
-          <p>Im eigenen Kalender</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-kalender" popover role="dialog" aria-labelledby="f-kalender-t" aria-describedby="f-kalender-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-calendar-sync"/></svg></span>
-    <p class="feat-pop-title" id="f-kalender-t">Kalender</p>
-    <button class="feat-close" type="button" popovertarget="f-kalender" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-kalender-d">Monat, Woche, Tag oder Liste. Einzelne Termine lassen sich exportieren, und ein persönlicher Abo-Link bringt die Termine automatisch in die eigene Kalender-App.</p>
-  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Kalender</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-wallet"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-finanzen">Finan&shy;zen</button></h3>
-          <p>Kasse, Rechnungen, Beiträge</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-finanzen" popover role="dialog" aria-labelledby="f-finanzen-t" aria-describedby="f-finanzen-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-wallet"/></svg></span>
-    <p class="feat-pop-title" id="f-finanzen-t">Finan&shy;zen</p>
-    <button class="feat-close" type="button" popovertarget="f-finanzen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-finanzen-d">Kassenbuch für Bankkonten und Barkasse mit Belegen, Rechnungen hochladen und als bezahlt markieren, Mitgliedsbeiträge mit Beitragslauf, Spenden und Monatsabschluss. Die Übersicht zeigt Kontostand, offene Rechnungen und Überschuss.</p>
-  <a class="feat-link" href="#finanzen">So sieht es aus<span class="sr-only">: Finanzen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-message-square"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-nachrichten">Nach&shy;richten</button></h3>
-          <p>Gezielt, mit Lesestatistik</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-nachrichten" popover role="dialog" aria-labelledby="f-nachrichten-t" aria-describedby="f-nachrichten-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-message-square"/></svg></span>
-    <p class="feat-pop-title" id="f-nachrichten-t">Nach&shy;richten</p>
-    <button class="feat-close" type="button" popovertarget="f-nachrichten" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-nachrichten-d">An Verein, Abteilung, Teilnehmer oder Helfer. Mit Entwürfen, Ankündigungen und Lesestatistik; Versendetes lässt sich zurückrufen.</p>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-chart-column"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-auswertungen">Auswer&shy;tungen</button></h3>
-          <p>Zahlen passend zur Rolle</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-auswertungen" popover role="dialog" aria-labelledby="f-auswertungen-t" aria-describedby="f-auswertungen-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-chart-column"/></svg></span>
-    <p class="feat-pop-title" id="f-auswertungen-t">Auswer&shy;tungen</p>
-    <button class="feat-close" type="button" popovertarget="f-auswertungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-auswertungen-d">Eine Übersicht (Dashboard) mit den Zahlen, die die jeweilige Rolle braucht: Kennzahlen mit kleinem Verlauf und Vergleich, dazu Diagramme zu Mitgliedern, Terminen, Helferstunden und Aufgaben.</p>
-  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Auswertungen</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-bell"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-hinweise">Benach&shy;rich&shy;tigungen</button></h3>
-          <p>Erinnerung 24&nbsp;Std. vorher</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-hinweise" popover role="dialog" aria-labelledby="f-hinweise-t" aria-describedby="f-hinweise-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-bell"/></svg></span>
-    <p class="feat-pop-title" id="f-hinweise-t">Benach&shy;rich&shy;tigungen</p>
-    <button class="feat-close" type="button" popovertarget="f-hinweise" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-hinweise-d">Alle Hinweise an einem Ort, auf Wunsch auch per E&#8209;Mail. Erinnerung 24&nbsp;Stunden vor jedem Einsatz und jeder zugesagten Veranstaltung.</p>
-</div>
-        </li>
-        <li class="fkarte">
-          <svg class="i fk-ico" aria-hidden="true"><use href="#i-list-checks"/></svg>
-          <h3><button class="fk-knopf" type="button" popovertarget="f-aufgaben">Aufgaben und Check&shy;listen</button></h3>
-          <p>Wer macht was, bis wann</p>
-          <span class="fk-plus" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span>
-<div class="feat-pop" id="f-aufgaben" popover role="dialog" aria-labelledby="f-aufgaben-t" aria-describedby="f-aufgaben-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-list-checks"/></svg></span>
-    <p class="feat-pop-title" id="f-aufgaben-t">Aufgaben und Check&shy;listen</p>
-    <button class="feat-close" type="button" popovertarget="f-aufgaben" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-aufgaben-d">Aufgaben mit Zuständigen, Fälligkeit, Priorität und Status&nbsp;– auch als Checkliste je Veranstaltung.</p>
-</div>
-        </li>
-        <li class="fkarte fkarte-dazu">
-          <h3 class="dazu-titel">Dazu</h3>
-          <ul class="dazu" role="list">
-            <li><button class="fk-chip" type="button" popovertarget="f-abteilungen"><svg class="i" aria-hidden="true"><use href="#i-network"/></svg>Abteilungen und Gruppen</button>
-<div class="feat-pop" id="f-abteilungen" popover role="dialog" aria-labelledby="f-abteilungen-t" aria-describedby="f-abteilungen-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-network"/></svg></span>
-    <p class="feat-pop-title" id="f-abteilungen-t">Abtei&shy;lungen und Gruppen</p>
-    <button class="feat-close" type="button" popovertarget="f-abteilungen" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-abteilungen-d">Abteilungen und Gruppen mit eigenen Leitungen. Rechte und Nachrichten lassen sich auf eine Abteilung beschränken.</p>
-</div>
-            </li>
-            <li><button class="fk-chip" type="button" popovertarget="f-dokumente"><svg class="i" aria-hidden="true"><use href="#i-folder-open"/></svg>Dokumente</button>
-<div class="feat-pop" id="f-dokumente" popover role="dialog" aria-labelledby="f-dokumente-t" aria-describedby="f-dokumente-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-folder-open"/></svg></span>
-    <p class="feat-pop-title" id="f-dokumente-t">Doku&shy;mente</p>
-    <button class="feat-close" type="button" popovertarget="f-dokumente" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-dokumente-d">Satzung, Protokolle und Formulare an einem Ort&nbsp;– freigegeben für alle Mitglieder, nur für den Vorstand oder nur für die Vereinsadministratoren.</p>
-</div>
-            </li>
-            <li><button class="fk-chip" type="button" popovertarget="f-suche"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Zentrale Suche</button>
-<div class="feat-pop" id="f-suche" popover role="dialog" aria-labelledby="f-suche-t" aria-describedby="f-suche-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-search"/></svg></span>
-    <p class="feat-pop-title" id="f-suche-t">Zentrale Suche</p>
-    <button class="feat-close" type="button" popovertarget="f-suche" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-suche-d">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente und häufige Aktionen&nbsp;– es erscheint nur, was die eigene Rolle sehen darf. Am Rechner öffnet es sich auch <span class="nowrap">mit <kbd>Strg</kbd>&nbsp;<kbd>K</kbd>.</span></p>
-  <a class="feat-link" href="#im-detail">So sieht es aus<span class="sr-only">: Zentrale Suche</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-</div>
-            </li>
-            <li><button class="fk-chip" type="button" popovertarget="f-hilfe"><svg class="i" aria-hidden="true"><use href="#i-life-buoy"/></svg>Hilfe &amp; Support</button>
-<div class="feat-pop" id="f-hilfe" popover role="dialog" aria-labelledby="f-hilfe-t" aria-describedby="f-hilfe-d">
-  <div class="feat-pop-head">
-    <span class="feat-pop-ico" aria-hidden="true"><svg class="icon"><use href="#i-life-buoy"/></svg></span>
-    <p class="feat-pop-title" id="f-hilfe-t">Hilfe &amp; Support</p>
-    <button class="feat-close" type="button" popovertarget="f-hilfe" popovertargetaction="hide" autofocus><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg><span class="sr-only">Schließen</span></button>
-  </div>
-  <p id="f-hilfe-d">Anleitung passend zur Rolle, Ansprechpartner des Vereins und ein Meldeformular für Fehler, Fragen und Vorschläge&nbsp;– mit Antwort und Status.</p>
-</div>
-            </li>
-          </ul>
-        </li>
-      </ul>
+      <div class="apps" data-apps>
+        <ul class="apps-raster erscheint" role="list" aria-label="Die dreizehn Bereiche">
+          <li class="app app-gross">
+            <button class="app-knopf" type="button" aria-describedby="a-helfer">
+              <span class="app-ico" aria-hidden="true">
+                <svg class="i"><use href="#i-hand-heart"/></svg>
+                <span class="app-ampel"><span><i></i><i></i><i></i><i></i><i></i></span><span><i></i><i></i><i></i><i class="frei"></i></span><span><i class="frei"></i><i class="frei"></i><i class="frei"></i></span></span>
+              </span>
+              <span class="app-name">Helfer&shy;schichten</span>
+            </button>
+            <p class="app-satz" id="a-helfer" aria-hidden="true">Selbst eintragen, mit Ampel.</p>
+          </li>
+          <li class="app app-blau">
+            <button class="app-knopf" type="button" aria-describedby="a-mitglieder"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-users"/></svg></span><span class="app-name">Mitglieder</span></button>
+            <p class="app-satz" id="a-mitglieder" aria-hidden="true">Stammdaten, Import, Historie.</p>
+          </li>
+          <li class="app app-himmel">
+            <button class="app-knopf" type="button" aria-describedby="a-veranstaltungen"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-calendar-days"/></svg></span><span class="app-name">Veranstal&shy;tungen</span></button>
+            <p class="app-satz" id="a-veranstaltungen" aria-hidden="true">Anmeldung mit Warteliste.</p>
+          </li>
+          <li class="app app-glas">
+            <button class="app-knopf" type="button" aria-describedby="a-kalender"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-calendar-sync"/></svg></span><span class="app-name">Kalender</span></button>
+            <p class="app-satz" id="a-kalender" aria-hidden="true">Termine im eigenen Kalender.</p>
+          </li>
+          <li class="app app-blau">
+            <button class="app-knopf" type="button" aria-describedby="a-finanzen"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-wallet"/></svg></span><span class="app-name">Finanzen</span></button>
+            <p class="app-satz" id="a-finanzen" aria-hidden="true">Kasse, Rechnungen, Beiträge.</p>
+          </li>
+          <li class="app app-himmel">
+            <button class="app-knopf" type="button" aria-describedby="a-nachrichten"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-message-square"/></svg></span><span class="app-name">Nachrichten</span></button>
+            <p class="app-satz" id="a-nachrichten" aria-hidden="true">Gezielt, mit Lesestatistik.</p>
+          </li>
+          <li class="app app-glas">
+            <button class="app-knopf" type="button" aria-describedby="a-auswertungen"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-chart-column"/></svg></span><span class="app-name">Auswertungen</span></button>
+            <p class="app-satz" id="a-auswertungen" aria-hidden="true">Zahlen passend zur Rolle.</p>
+          </li>
+          <li class="app app-himmel">
+            <button class="app-knopf" type="button" aria-describedby="a-hinweise"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-bell"/></svg></span><span class="app-name">Benach&shy;richtigungen</span></button>
+            <p class="app-satz" id="a-hinweise" aria-hidden="true">Erinnerung 24&nbsp;Stunden vorher.</p>
+          </li>
+          <li class="app app-glas">
+            <button class="app-knopf" type="button" aria-describedby="a-aufgaben"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-list-checks"/></svg></span><span class="app-name">Aufgaben</span></button>
+            <p class="app-satz" id="a-aufgaben" aria-hidden="true">Wer macht was, bis wann – auch als Checkliste.</p>
+          </li>
+          <li class="app app-blau">
+            <button class="app-knopf" type="button" aria-describedby="a-abteilungen"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-network"/></svg></span><span class="app-name">Abteilungen</span></button>
+            <p class="app-satz" id="a-abteilungen" aria-hidden="true">Abteilungen und Gruppen mit eigenen Leitungen.</p>
+          </li>
+          <li class="app app-himmel">
+            <button class="app-knopf" type="button" aria-describedby="a-dokumente"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-folder-open"/></svg></span><span class="app-name">Dokumente</span></button>
+            <p class="app-satz" id="a-dokumente" aria-hidden="true">Satzung, Protokolle und Formulare an einem Ort.</p>
+          </li>
+          <li class="app app-glas">
+            <button class="app-knopf" type="button" aria-describedby="a-suche"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-search"/></svg></span><span class="app-name">Suche</span></button>
+            <p class="app-satz" id="a-suche" aria-hidden="true">Ein Suchfeld für Mitglieder, Veranstaltungen, Dokumente.</p>
+          </li>
+          <li class="app app-blau">
+            <button class="app-knopf" type="button" aria-describedby="a-hilfe"><span class="app-ico" aria-hidden="true"><svg class="i"><use href="#i-life-buoy"/></svg></span><span class="app-name">Hilfe</span></button>
+            <p class="app-satz" id="a-hilfe" aria-hidden="true">Anleitung passend zur Rolle.</p>
+          </li>
+        </ul>
+        <p class="apps-start">Dreizehn Bereiche, die zusammenarbeiten.</p>
+      </div>
     </div>
   </section>
 
