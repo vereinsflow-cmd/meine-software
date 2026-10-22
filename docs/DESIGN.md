@@ -374,7 +374,7 @@ SVG-Pfad aus `src/lib/qr-code.ts`.
 
 - **Kein Zugang ohne Bestätigung:** Der Antrag legt nichts an. Erst „Annehmen“ macht die Person zum Mitglied und verschickt die Einladung –
   Mitglieder sehen Chats, Termine und Dokumente. Deshalb steht das auf jeder der drei Seiten in einem Satz.
-- **Öffentliche Seite** `/beitreten/<Schlüssel>` (ohne Anmeldung, im Aussehen der Anmeldeseiten, `AuthCard`-Rahmen): Vereinslogo und -name,
+- **Öffentliche Seite** `/beitreten/<Schlüssel>` (ohne Anmeldung, im schmalen Rahmen wie Registrierung und Einladung, `AuthCard`): Vereinslogo und -name,
   „Mitglied werden“, ein Satz zum Ablauf, dann das Formular – **Handy zuerst**, weil der Code meist mit der Kamera geöffnet wird: Felder
   untereinander (Vor- und Nachname ab 640 px nebeneinander), 16-px-Schrift in allen Feldern (sonst zoomt iOS), passende Tastaturen
   (`type="email"`, `tel`, `date`), Fehlertexte am Feld, der Knopf „Antrag senden“ über die volle Breite. Pflichtfelder tragen den Stern –
@@ -580,12 +580,100 @@ Wer war beim Training, wer fehlte entschuldigt, wer unentschuldigt (seit 14.10.2
 - **Karten:** auf der Veranstaltung „Anwesend: X von Y · N entschuldigt“ mit „Anwesenheit erfassen“ bzw. „ansehen“ (nur für Berechtigte), auf der Mitgliedsseite Zahlen, Quote und die letzten zehn Termine (auch für die Person selbst), auf der Abteilungsseite je Gruppe „Anwesenheit“ (der Kopf der Gruppe bricht am Handy um, damit „Bearbeiten“ nicht abgeschnitten wird).
 - Geprüft in `tests/e2e/anwesenheit.spec.ts` und `anwesenheit.mobil.spec.ts` (412, 390, 375 und 360 px – jeder Knopf passt in sein Feld, auch mit gewähltem „Entschuldigt“; Abteilungsseite mit „Bearbeiten“ ganz in der Karte), Daten und Rechte in `tests/integration/attendance.test.ts`.
 
+## Anmeldeseiten als Kinobühne
+
+Seit 22.10.2026 (Entwurf neu-3 „3D-Fotokarussell“ aus der zweiten Runde der Anmelde-Entwürfe; Luis: „setze das um“). Statt
+der schmalen Karte eine dunkle Bühne über den ganzen Bildschirm: Ein großer, schräger Ring aus Plakaten mit den
+Abteilungsfotos (`public/bilder/abteilungen/*`) dreht sich in CSS-3D über einem spiegelnden Boden, die hinteren Plakate
+sind dunkel und unscharf, der Raum nimmt die Farbe des vorderen Fotos an (Dart grün, Tennis orange, Badminton blau …).
+Code: Rahmen `LoginStage` und Inhalt der Glasfläche `StageCard` (`modules/auth/components/login-stage.tsx`), Szene
+`StageScene` und Knopf `MotionToggle` (`stage-scene.tsx`), die Schleife (`stage-loop.ts`), Stil
+(`login-stage.module.css` – die einzige CSS-Datei neben `globals.css`: Verläufe, 3D-Kette, Keyframes und das Standbild aus
+Winkelfunktionen wären als Klassen nicht lesbar), reine Hilfen samt Farben in `modules/auth/stage.ts` (Unit-Test
+`tests/unit/login-stage.test.ts`). Die Probeseiten liegen in `~/VereinsFlow-Medien/app-entwuerfe/anmelden/runde-2/`.
+
+- **Welche Seiten:** Anmelden, „Anmeldung bestätigen“ (Code), „Passwort vergessen“ und „Neues Passwort festlegen“ (auch
+  die Hinweisseite „Link ungültig oder abgelaufen“) – alle in der Routen-Gruppe `(anmelden)`, deren Layout die Bühne trägt.
+  Beim Wechsel zwischen ihnen bleibt die Bühne stehen und dreht weiter, nur der Inhalt der Glasfläche wechselt (kein
+  Neuladen, kein zweiter Auftritt). Registrierung, Einladung, Beitritt, Ersteinrichtung und „Kein Verein“ bleiben im
+  schmalen Rahmen von `(auth)` (`AuthCard`): Dort stehen lange Formulare, Vereinslogo oder Erklärungen im Mittelpunkt, und
+  wer dort landet, kommt meist einmal – die Bühne gehört zum täglichen Anmelden.
+- **Logik unverändert in den Seiten:** Angemeldete werden weitergeleitet (`getCurrentSession` → `safeRedirectPath(next)`),
+  bei offener Ersteinrichtung geht es zu `/einrichten`, die Hinweise `?expired`, `?reset`, `?abgelaufen` und `?next` wie
+  bisher; das echte `LoginForm` mit Zwei-Faktor-Schritt, „Passwort vergessen?“, Einladungshinweis, Impressum/Datenschutz.
+  Das Layout prüft nichts (es läuft beim Seitenwechsel nicht neu).
+- **Aufbau wie ein Filmplakat:** oben links das Logo (helle Wortmarke quer – die Bühne ist immer Nacht), oben rechts
+  „Mitgliederbereich“ und „Bewegung anhalten“, groß „Dein Verein. In Bewegung.“ mit Nachbildern, die beim schnellen Drehen
+  hinterherziehen, unten links der Satz zum Produkt, „Im Fokus 04 Dart · Zum Drehen ziehen“ und Impressum/Datenschutz;
+  rechts das Formular als dunkles Glas (milchig weichgezeichnet, Kantenlicht läuft mit dem Ring). Überschrift der Seite
+  (`h1`) ist der Titel auf dem Glas („Anmelden“ …), darüber eine kleine Zeile in Versalien („Willkommen zurück“, „Schritt 2
+  von 2“, „Zugang wiederherstellen“).
+- **Bewegung:** Auftritt in 2,8 s (die Plakate entfalten sich aus einer Blüte in der Mitte, kommen aus der Tiefe, ein
+  Lichtblitz, die Schrift steigt Wort für Wort). Danach eine Runde in gut 50 s. Ziehen mit Maus oder Finger dreht 1 : 1 mit
+  und lässt beim Loslassen mit Schwung auslaufen; Mausbewegung und Mausrad geben einen kleinen Schub, Kamera und Glas
+  neigen sich leicht mit der Maus. Fokus in einem Feld bremst den Ring fast bis zum Stillstand, jeder Tastendruck rückt ihn
+  ein Stück weiter. Ziehen beginnt nie auf dem Glas, auf Links oder Knöpfen – Markieren und Tippen im Formular bleiben
+  ungestört, ein Feld behält beim Ziehen daneben den Fokus.
+- **„Bewegung anhalten“ / „Bewegung fortsetzen“ (WCAG 2.2.2):** oben rechts, breit als Pille mit Text, am Handy als runder
+  Knopf (44 px, Text für Screenreader). Der Ring läuft in gut einer Sekunde aus, die Schleife ruht dann ganz; Lichtkegel und
+  der atmende Punkt halten ebenfalls an. Ziehen dreht weiter, läuft aus und bleibt stehen. Die Wahl bleibt in diesem
+  Browser gemerkt (`localStorage`, `vf-anmelden-bewegung`) – auch auf den anderen Seiten der Bühne; wer angehalten hat,
+  bekommt beim nächsten Mal gleich das Standbild ohne Auftritt.
+- **„Bewegung reduzieren“:** ein fertig gestaltetes Standbild ohne Auftritt und ohne Schleife: Dart vorn, Raum grün,
+  hintere Plakate dunkel und unscharf, Spiegelung und Glanz wie im Lauf. Das zeichnet allein das CSS (`cos()`/`pow()`
+  derselben Formeln wie `panelLook`), sichtbar schon vor dem Laden der Skripte. Kein Knopf zum Anhalten, kein „Zum Drehen
+  ziehen“, Ziehen dreht nichts.
+- **Handy (unter 64 rem):** Der Ring steht oben, 8 statt 16 Plakate (jede Abteilung einmal), ohne Spiegelung und ohne
+  Unschärfe-Stufen, weniger Lichtstaub (in einfacher Pixeldichte). Seitlich wischen dreht nur auf der Fläche über dem Ring
+  (`touch-action: pan-y`), senkrecht scrollt die Seite; auf Schrift und Glas dreht Wischen nie. Breit dreht der Finger
+  überall außer auf dem Glas (Tablet quer).
+- **Formular im ersten Bild (Handy):** Der Ring hängt an der _sichtbaren_ Höhe (`svh` – mit eingeblendeten Leisten des
+  Browsers, ändert sich beim Scrollen nicht): Halbmesser `min(68vw, 68svh − 295px)`, mindestens 140 px; dazu die große Zeile
+  etwas kleiner und das Glas etwas dichter. So steht „Anmelden“ ohne Scrollen ganz im Bild bei 390 × 664 (Safari am iPhone
+  mit Leisten, Knopf bis 632 px), 412 × 780 (Android-Chrome) und 360 × 640; auf hohen Bildschirmen (390 × 844 im Vollbild)
+  bleibt der Ring so groß wie vorher. Nur auf noch kürzeren (iPhone SE in Safari, etwa 375 × 553) scrollt man ein Stück.
+- **Leistung:** eine einzige `requestAnimationFrame`-Schleife, im DOM ändern sich nur `transform` und `opacity` (keine
+  Layoutberechnung während der Drehung); sie hält an, wenn der Tab verborgen ist, und ruht angehalten ganz. Die Fotos laden
+  mit niedriger Priorität und nur in der gezeichneten Größe (`POSTER_SIZES`: breit 38vw, Handy 68vw bis 400 px); eine
+  Datei dient Plakat, Gegenüber und Spiegelbild – 8 Fotos für 16 Plakate: bei 1440 px mit doppelter Pixeldichte die
+  1200er (zusammen 423 KB), bei 1280 px einfach und am Handy die 800er (236 KB). Das Formular steht sofort (vom Server,
+  kein Layoutsprung, CLS 0). Gemessen 22.10.2026 in Chromium mit GPU (Apple M5): 60 Bilder/s bei 1440 × 900 (doppelt) und
+  390 × 844 (dreifach), auch mit vierfach gedrosselter CPU; Hauptthread rund 0,5 ms je Bild.
+- **Schwache Grafik:** Ohne Grafikbeschleunigung (Software-Darstellung) schaffte die volle Szene bei 1440 × 900 (doppelt)
+  nur etwa 25 Bilder/s. Die Schleife misst darum gleich nach dem Auftritt 60 Bildabstände (`isSlowStage`, jeder höchstens
+  50 ms gezählt, damit einzelnes Ruckeln nichts kippt); liegt der Mittelwert über 28 ms, setzt sie `data-quality="low"`:
+  ohne Spiegelung, Lichthöfe, Bodenscheibe, weiche Schlagschatten der Plakate, Unschärfe-Stufen und Weichzeichner hinter
+  Glas und Pillen (das Glas wird dicht), Lichtstaub in einfacher Pixeldichte und weniger davon. Gemessen danach in Software
+  54 Bilder/s; mit GPU (auch gedrosselt) und am Handy bleibt alles in voller Pracht. Auch ein auf 30 Bilder/s gedrosselter
+  Browser (Stromsparmodus) bekommt die leichte Stufe.
+- **Kontrast** über dem bewegten Hintergrund (schlechtester von 29 Augenblicken einer halben Drehung, hellste Stelle unter
+  dem Text): Formular auf dem Glas ≥ 7,9 : 1, Satz unten links ≥ 5,3 : 1, „Im Fokus“ ≥ 6,7 : 1, Impressum ≥ 12,8 : 1,
+  „Dein Verein.“ ≥ 6,3 : 1. „In Bewegung.“ (Verlauf, große Schrift, verlangt 3 : 1) pixelgenau an den inneren
+  Buchstabenpixeln über 24 Drehstände: ≥ 5,6 : 1 (1440 × 900, 1280 × 720, 1920 × 1080, Handy) – der Verlauf ist dafür an
+  beiden Enden heller (`#a3bdff` … `#ff9c76`) und das Abdunkeln hinter der Schrift links oben dichter; vorher lag die hellblaue
+  Kante über den seitlichen Plakaten bei knapp 3 : 1. Auf dem Glas rechnet der Unit-Test den strengsten Fall nach (rein
+  weiße Stelle hinter dem Glas): alle Schriftstufen, Links und Fehlertexte über 4,5 : 1 – Fehlertexte darum heller als im
+  dunklen Design (`STAGE_INK.error`), der Anmelden-Knopf 4,7 : 1, der Rand der Eingabefelder (Weiß zu 50 %) 3,6 : 1.
+- **Tastatur und Screenreader:** Die Szene ist `aria-hidden` und enthält nichts Bedienbares, Fotos ohne Alternativtext;
+  der große Satz wird einmal vorgelesen, „Im Fokus“ gar nicht. Reihenfolge: „Zum Inhalt springen“ (führt direkt ins
+  Formular) → Logo → „Bewegung anhalten“ → Formular → Impressum, Datenschutz. Fokussaum: Links hell (aus `globals.css`),
+  Felder leuchten blau auf, „Bewegung anhalten“ und der Hauptknopf des Glases („Anmelden“, „Bestätigen“, „Link senden“ …)
+  tragen eine weiße Linie mit 3 px Abstand – der Hauptknopf braucht sie eigens, weil sein Leuchtschatten den Ring des
+  Knopfes ersetzt.
+- **Hell und dunkel:** Die Bühne ist in beiden Darstellungen Nacht (wie die Vereins-Bühne), hell mit einem tieferen Blau
+  am Himmel; Glas und Formular tragen immer die dunklen Farbwerte.
+- Geprüft in `tests/e2e/auth.spec.ts` („Anmeldeseite als Kinobühne“: Tab-Reihenfolge und Fokussaum, Anhalten und Merken,
+  Standbild, Ziehen ohne Störung der Eingabe, verborgener Tab, Weiterleitung Angemeldeter, Hinweise, Seitenwechsel ohne
+  Neuladen, Bildgrößen, Sicherheitsrichtlinie und Konsole), `smartphone.mobil.spec.ts` (Handy: „Anmelden“ im ersten Bild
+  bei 390 × 664, 412 × 780 und 360 × 640), `a11y.spec.ts` (axe in allen Zuständen), `logo.spec.ts`, `zwei-faktor*.spec.ts`,
+  `tests/prod-smoke` und `tests/unit/login-stage.test.ts` (auch schwache Grafik und Feldrand).
+
 ## Zwei-Faktor-Anmeldung
 
-Freiwillig je Konto, mit einer Authenticator-App (seit 14.10.2026; Profil `(app)/profil/page.tsx` mit `modules/profile/components/two-factor.tsx`, zweiter Schritt der Anmeldung `(auth)/anmelden/bestaetigen/page.tsx`, Ablauf und Schutz in `src/server/auth/two-factor.ts`).
+Freiwillig je Konto, mit einer Authenticator-App (seit 14.10.2026; Profil `(app)/profil/page.tsx` mit `modules/profile/components/two-factor.tsx`, zweiter Schritt der Anmeldung `(anmelden)/anmelden/bestaetigen/page.tsx`, Ablauf und Schutz in `src/server/auth/two-factor.ts`).
 
 - **Im Profil** ein eigener Abschnitt mit Zustand als Abzeichen („Nicht eingerichtet“, „Eingeschaltet“). Einrichten in zwei Schritten: Schritt 1 QR-Code und darunter bzw. daneben der „Schlüssel zum Abtippen“ (bricht am Handy um, „Kopieren“), Schritt 2 Passwort und erster Code („Einschalten“, „Abbrechen“). Danach ersetzen die 10 Wiederherstellungscodes beide Schritte – mit Warnhinweis, „Kopieren“, „Drucken“ (eigenes schlichtes Blatt) und „Ich habe sie gespeichert“; der Fokus springt auf die Überschrift „Deine Wiederherstellungscodes“. „Neue Wiederherstellungscodes“ und „Ausschalten“ öffnen Fenster mit Passwort und Code; im Fenster mit neuen Codes steht der Fokus auf dem Warnhinweis, und es schließt nur „Ich habe sie gespeichert“. Sind nur noch wenige Codes übrig, steht ein Hinweis in Bernstein; ohne Codes ein Warnhinweis (`Alert variant="warning"`).
-- **Anmelden:** Nach dem Passwort folgt eine eigene Seite „Anmeldung bestätigen“ (gleiche Karte wie die Anmeldung): Feld „Code aus der App“ mit Fokus und Zifferntastatur am Handy, darunter ein gut treffbarer Umschalter „Kein Zugriff auf die App? Wiederherstellungscode verwenden“ (mindestens 44 px) und „Abbrechen“.
+- **Anmelden:** Nach dem Passwort folgt eine eigene Seite „Anmeldung bestätigen“ (auf derselben Bühne wie die Anmeldung, siehe „Anmeldeseiten als Kinobühne“): Feld „Code aus der App“ mit Fokus und Zifferntastatur am Handy, darunter ein gut treffbarer Umschalter „Kein Zugriff auf die App? Wiederherstellungscode verwenden“ (mindestens 44 px) und „Abbrechen“.
 - **Verein:** „Zwei-Faktor-Anmeldung zurücksetzen“ steht im „⋯“-Menü der Benutzerverwaltung nur bei Personen, die sie eingeschaltet haben, mit Rückfrage.
 - Geprüft in `tests/e2e/zwei-faktor.spec.ts` und `zwei-faktor.mobil.spec.ts`, Ablauf und Schutz in `tests/integration/two-factor.test.ts`.
 

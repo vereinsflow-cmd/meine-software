@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { USERS, login, open, openNavGroup, preferWideSidebar } from "./helpers";
 
 test.describe("Logo", () => {
-  test("Anmeldeseite zeigt das gestapelte Logo (Symbol oben, Wortmarke darunter) als Link zur Startseite", async ({
+  test("Seiten im schmalen Rahmen (Registrierung, Einladung …) zeigen das gestapelte Logo (Symbol oben, Wortmarke darunter) als Link zur Startseite", async ({
     page,
   }) => {
-    await open(page, "/anmelden");
+    await open(page, "/registrieren");
     const link = page.getByRole("link", { name: "VereinsFlow – Startseite" });
     await expect(link).toBeVisible();
     const logo = link.locator("img:visible");
@@ -13,6 +13,25 @@ test.describe("Logo", () => {
     const box = (await logo.boundingBox())!;
     expect(box.width).toBeGreaterThan(200);
     expect(box.height).toBeGreaterThan(box.width * 0.5); // gestapelt: deutlich höher als die flache Fassung (0,22)
+  });
+
+  test("Anmeldebühne: helle Wortmarke quer oben links als Link zur Startseite – in heller wie dunkler Darstellung (die Bühne ist immer Nacht)", async ({
+    page,
+  }) => {
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await open(page, "/anmelden");
+      const link = page.getByRole("link", { name: "VereinsFlow – Startseite" });
+      await expect(link).toBeVisible();
+      const logo = link.locator("img:visible");
+      await expect(logo).toHaveCount(1);
+      await expect(logo).toHaveAttribute("src", "/brand/logo-weiss.svg");
+      const box = (await logo.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(40);
+      expect(box.width).toBeGreaterThan(box.height * 4); // quer: Symbol links, Wortmarke rechts
+      expect(box.x).toBeLessThan(80);
+      expect(box.y).toBeLessThan(80);
+    }
   });
 
   test("Seitenleiste zeigt das Logo als Link zum Dashboard", async ({ page }) => {
@@ -54,12 +73,12 @@ test.describe("Logo", () => {
     const logo = page.locator("header img:visible");
 
     await page.emulateMedia({ colorScheme: "light" });
-    await open(page, "/anmelden");
+    await open(page, "/registrieren");
     await expect(logo).toHaveCount(1);
     await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt.svg");
 
     await page.emulateMedia({ colorScheme: "dark" });
-    await open(page, "/anmelden");
+    await open(page, "/registrieren");
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(logo).toHaveCount(1); // die helle Fassung ist ausgeblendet, nicht zusätzlich sichtbar
     await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt-weiss.svg");

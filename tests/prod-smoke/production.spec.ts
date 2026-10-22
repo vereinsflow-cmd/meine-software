@@ -132,6 +132,29 @@ test.describe("Produktions-Build", () => {
     expect(findings.errors, "Konsolenfehler").toEqual([]);
   });
 
+  test("Anmeldebühne (ohne Anmeldung): Karussell, Lichtstaub und Glas ohne Verstöße gegen die Sicherheitsrichtlinie, Skriptfehler und fehlgeschlagene Anfragen", async ({
+    page,
+  }) => {
+    const findings = await watch(page);
+    for (const path of [
+      "/anmelden",
+      "/anmelden?expired=1",
+      "/passwort-vergessen",
+      "/passwort-zuruecksetzen?token=ungueltig-ungueltig",
+    ]) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 }), path).toBeVisible();
+      await expect(page.locator('[data-slot="login-stage"][data-ready="true"]'), path).toHaveCount(
+        1,
+      );
+      await page.waitForLoadState("networkidle");
+      await collectCsp(page, findings);
+    }
+    expect(findings.csp, "Verstöße gegen die Content-Security-Policy").toEqual([]);
+    expect(findings.errors, "Konsolenfehler").toEqual([]);
+    expect(findings.failed, "fehlgeschlagene Anfragen").toEqual([]);
+  });
+
   test("Sicherheitsmerkmale: Header mit frischem Nonce je Anfrage, Cookie mit __Host-Präfix, keine Technologie-Hinweise", async ({
     page,
     request,
