@@ -515,7 +515,8 @@ function zaehlenBeimErscheinen(el, von, zyklen, dauer) {
   io.observe(el);
 }
 zaehlenBeimErscheinen($(".dreizehn [data-zahl]"), " 0", [0, 1], 1300);
-zaehlenBeimErscheinen($(".geldzahl [data-zahl]"), "+0.000,00", [0, 0, 0, 0, 1, 1], 1500);
+// Kontostand „13.944,47“: die erste Stelle erscheint aus der leeren Stelle, die Cent rollen einmal mehr durch
+zaehlenBeimErscheinen($(".geldzahl [data-zahl]"), " 0.000,00", [0, 0, 0, 0, 0, 1, 1], 1500);
 
 // --- Kapitel 3 · Spur (ab 1200 × 760 mit Bewegung): drei Zonen am Band bei 45 % setzen data-schritt an .spur (0 =
 // davor). Schritt 2: Ein Lichtkomet fliegt den Strom entlang in Annas Platz (fluss.js, 1,2 s), dann .ist-eingetragen –
@@ -796,20 +797,25 @@ if (bereich) {
   });
 }
 
-// --- Kapitel 6 · Lichtstreif: Lage der Kennzahlkarten aus dem Bildschirm des Laptops (in Ruhe frontal, Layout = Bild);
-// einmal 1,2 s, sobald der Laptop steht und der Streif im Bild ist. ---
+// --- Kapitel 6 · Lichtstreif: Lage der dunklen Karte „Kontostand · alle Konten“ im Bild des Laptops (in Ruhe frontal,
+// Layout = Bild); einmal 1,2 s, sobald der Laptop steht und der Streif im Bild ist. Gemessen am Bild selbst (`picture`,
+// ohne den schwarzen Rand des Bildschirms – bis 21.10.2026 am ganzen Bildschirm, der Streif saß dadurch etwas zu weit
+// links und zu tief). Anteile des Bildes aus tools/capture-screenshots.mjs (Aufnahme 22.10.2026): Die Karte beginnt bei
+// 11,7 % / 34,4 %, ist 53,1 % breit und reicht unten aus dem Bild; ihre Ecken (1,5 rem bei 1280 px Fenster) sind 2 % der
+// Bildbreite. Nur über der Karte – über hellem Grund und dunkler Schrift (Überschrift „Konten“) wirkte der aufhellende
+// Streif wie ein Fehler; die Kontokarten rechts bleiben deshalb außen vor. ---
 const finanz = $(".k06");
 const streif = $("[data-streif]");
 const finanzShow = finanz && $(".showcase", finanz);
 let streifFertig = false;
 let streifSichtbar = false;
 function streifMessen() {
-  const schirm = finanz && $(".laptop-screen", finanz);
-  if (!schirm || !streif || bewegungAus.matches || !schirm.offsetWidth) return;
-  const [x, y] = offsetIn(schirm, streif.parentElement);
-  const w = schirm.offsetWidth;
-  const h = schirm.offsetHeight;
-  for (const [n, v] of [["--st-x", x + 0.117 * w], ["--st-y", y + 0.347 * h], ["--st-b", 0.855 * w], ["--st-h", 0.306 * h]]) finanz.style.setProperty(n, px(v));
+  const bild = finanz && $(".laptop-screen picture", finanz);
+  if (!bild || !streif || bewegungAus.matches || !bild.offsetWidth) return;
+  const [x, y] = offsetIn(bild, streif.parentElement);
+  const w = bild.offsetWidth;
+  const h = bild.offsetHeight;
+  for (const [n, v] of [["--st-x", x + 0.117 * w], ["--st-y", y + 0.344 * h], ["--st-b", 0.531 * w], ["--st-h", 0.656 * h], ["--st-r", 0.02 * w]]) finanz.style.setProperty(n, px(v));
   finanz.classList.add("ist-gemessen");
 }
 function streifZiehen() {

@@ -1998,10 +1998,14 @@ html:not(.js) .ruhe-knopf {
   top: var(--my);
 }
 
-/* Lage der Marken in Prozent des Bildes (16 : 10, oben bündig) – nach jeder Neuaufnahme neu vermessen */
-.m-suche { --mx: 35.6%; --my: 4.9%; }
-.m-zahlen { --mx: 12.4%; --my: 52.6%; }
-.m-termine { --mx: 52.4%; --my: 43.2%; }
+/* Lage der Marken in Prozent des Bildes (16 : 10, oben bündig) – nach jeder Neuaufnahme neu vermessen (Ausgabe von
+   tools/capture-screenshots.mjs, Stand 22.10.2026): Suchfeld am linken Rand, Kennzahlen und Termine am linken Rand der
+   Glas-Chips „233 Mitglieder“ und „18 Termine“ auf der Vereins-Bühne. Die Kennzahlkarten darunter liegen am Ende der
+   Kamerafahrt unter der Tafel (sichtbar bleiben dort je nach Seitenverhältnis nur die oberen 43 bis 66 % des Bildes,
+   bei 16 : 10 bis 16 : 9 gut 60 %). */
+.m-suche { --mx: 35.6%; --my: 4.8%; }
+.m-zahlen { --mx: 5.9%; --my: 47.8%; }
+.m-termine { --mx: 18.9%; --my: 47.8%; }
 
 .marke-punkt {
   position: absolute;
@@ -2037,14 +2041,37 @@ html:not(.js) .ruhe-knopf {
   font-weight: 600;
 }
 
-.m-zahlen .marke-text {
-  top: -26px;
+/* Kennzahlen und Termine: Schild unter dem Chip – darüber steht die Zeile mit Rolle und Datum. Ein Chip ist halb so hoch
+   wie 3,75 % der Bildbreite (am Ende der Kamerafahrt ist die Bühne der Container, sonst gilt die Fensterbreite): Das
+   Schild beginnt 8 px unter dem Chip, mindestens 34 px unter dem Punkt. Am Ende der Kamerafahrt reicht der Platz bis zur
+   Tafel nur bis zu einem Seitenverhältnis von 1,79 : 1, in flacheren Fenstern stehen die Schilder dort über den Chips
+   (Abschnitt 12a). Nebeneinander passen die beiden Schilder ab gut 915 px Bildbreite (mit Luft ab 1120 px Fenster). */
+.m-zahlen .marke-text,
+.m-termine .marke-text {
+  top: max(34px, 1.875cqw + 8px);
+  left: -12px;
 }
 
-.m-termine .marke-text {
-  top: auto;
-  bottom: 18px;
-  left: -12px;
+/* Schmal (nur „Im Detail“, die Kamerafahrt ist immer fensterbreit): kleinere Schilder, damit sie weniger vom Bild
+   verdecken (bei 1024 px bleiben die Reiter unter den Chips lesbar, bei 768 px die Abteilungs-Chips unter dem Suchfeld).
+   Das Schild „Termine“ hängt rechts vom Punkt wie das des Suchfelds: So steht es neben dem Schild „Kennzahlen“ (gut
+   105 px breit, die Punkte liegen 13 % der Bildbreite auseinander) statt eine Zeile tiefer über der Karte „Mitglieder“.
+   Gemessen von 720 bis 1119 px. */
+@media (max-width: 1119px) {
+  .detail-rechner .marke-text {
+    padding: 6px 10px 7px;
+    border-radius: 11px;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+  }
+
+  .detail-rechner .marke-text b {
+    font-size: 0.875rem;
+  }
+
+  .detail-rechner .m-termine .marke-text {
+    left: 16px;
+  }
 }
 
 .tafel {
@@ -3576,7 +3603,7 @@ main {
   margin-top: 22px;
 }
 
-/* Lichtstreif über den Kennzahlkarten: buehne.js misst den Bildschirm in Ruhe und setzt die Lage (--st-x/-y/-b/-h) */
+/* Lichtstreif über der Kontostand-Karte: buehne.js misst den Bildschirm in Ruhe und setzt die Lage (--st-x/-y/-b/-h) */
 .streif-finanzen {
   display: none;
   position: absolute;
@@ -3586,7 +3613,8 @@ main {
   width: var(--st-b, 0);
   height: var(--st-h, 0);
   overflow: clip;
-  border-radius: 8px;
+  /* oben die Ecken der Karte, unten gerade – die Karte reicht dort aus dem Bild */
+  border-radius: var(--st-r, 8px) var(--st-r, 8px) 0 0;
   pointer-events: none;
 }
 
@@ -8600,6 +8628,28 @@ html:not(.js) .k01 .iphone-rim,
 
   .fahrt-ende .marke {
     opacity: 0;
+  }
+
+  /* Flache Fenster (ab 1,79 : 1, z. B. 1440 × 780, 1536 × 730, 1920 × 950): Unter den Chips reicht der Platz bis zur Tafel
+     nicht mehr, die Schilder „Kennzahlen“ und „Termine“ stehen dann über den Chips. Bis zur Zeile mit Rolle und Datum
+     sind dort 4,5 % der Bildbreite frei; etwas knapper gesetzt (56 px hoch, 6 px über dem Chip) passt das Schild ab gut
+     1400 px Bildbreite, schmaler rückt es bis auf gut 1 px an den Chip heran (kleinste flache Bühne: 1289 × 720). Ab
+     2,13 : 1 (21 : 9) rutschen auch die Punkte unter die Tafel – dann entfallen die beiden Marken, statt ohne Punkt über
+     der Tafel zu schweben. Gemessen mit Playwright am Ende der Fahrt von 1024 × 768 bis 3440 × 1440 (16 : 10 und 16 : 9
+     bleiben unter den Chips). */
+  @media (min-aspect-ratio: 179/100) {
+    .fahrt-ende :is(.m-zahlen, .m-termine) .marke-text {
+      top: auto;
+      bottom: calc(1.875cqw + min(6px, 4.4875cqw - 57px));
+      padding: 8px 14px 9px;
+      line-height: 1.3;
+    }
+  }
+
+  @media (min-aspect-ratio: 213/100) {
+    .fahrt-ende :is(.m-zahlen, .m-termine) {
+      display: none;
+    }
   }
 
   .fahrt-ende .tafel {

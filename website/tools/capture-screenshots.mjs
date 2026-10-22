@@ -280,6 +280,32 @@ async function gotoApp(page, url) {
 }
 
 /**
+ * Wartet, bis alle einmaligen Animationen der Seite fertig sind (wie `animationsDone` in tests/e2e/helpers.ts) – seit
+ * 21.10.2026 gleiten z. B. die Fotostreifen der Vereins-Bühne im Dashboard bis zu 1,6 s herein, und der Kontoverlauf der
+ * Finanzen zeichnet sich. Endlos laufende Animationen bleiben außen vor; höchstens 6 s.
+ */
+async function animationsDone(page) {
+  await page.evaluate(() =>
+    Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+          .map((animation) => animation.finished.catch(() => undefined)),
+      ),
+      new Promise((resolve) => setTimeout(resolve, 6000)),
+    ]),
+  );
+}
+
+/** Rechteck eines Elements in Prozent eines Ausschnitts: x und Breite von dessen Breite, y und Höhe von `height`. */
+const percentBox = (box, clip, height = clip.height) =>
+  box
+    ? `${(((box.x - clip.x) / clip.width) * 100).toFixed(1)}/${(((box.y - clip.y) / height) * 100).toFixed(1)} %` +
+      ` (${((box.width / clip.width) * 100).toFixed(1)} × ${((box.height / height) * 100).toFixed(1)} %)`
+    : "nicht gefunden";
+
+/**
  * Scrollt so, dass die Karte mit dieser Überschrift direkt unter Kopfzeile und fester Reiterleiste beginnt
  * (statt eines festen Werts, der je nach Inhalt mitten durch eine Karte schneidet).
  */
@@ -862,11 +888,13 @@ const FEST_WEEK = "2027-06-09";
  * Veranstaltung bei 1280 px Breite (der Titel wird dort von den Schaltflächen überdeckt).
  */
 const shots = [
-  // Einstieg breit unter dem Text (560 bis 899 px, Rahmen 5 : 4, siehe .hero-visual in site.css): der Inhalt des
-  // Dashboards rechts neben der schmalen Seitenleiste, schon als 5 : 4 zugeschnitten (die Seite zeigt das Bild ganz). Das
-  // Fenster ist so hoch, dass die drei Spalten der Übersicht samt Karten im Bild stehen. Der Rahmen ist dort 92 % der
-  // Breite bzw. die Breite minus 64 px (bis gut 830 CSS-Pixel) – 720 bis 2328 (doppelte Dichte des Ausschnitts) decken
-  // einfache bis dreifache Pixeldichte ab.
+  // Laptop im Einstieg, flache Aufnahme am Ende der Kamerafahrt und „Im Detail“: der Inhalt des Dashboards rechts neben
+  // der schmalen Seitenleiste, als 5 : 4 zugeschnitten – Kopfzeile mit Suchfeld, die Vereins-Bühne (seit 21.10.2026:
+  // dunkles Banner mit Begrüßung, Fotos der Abteilungen, Glas-Chips „233 Mitglieder · 18 Termine · 15 Helferplätze“ und
+  // den Knöpfen), die Reiter und darunter die Kennzahlkarten. Die Website zeigt davon oben bündig 16 : 10 (bis knapp unter
+  // „+3 gegenüber dem Vormonat“); am Ende der Kamerafahrt liegt auf großen Bildschirmen die Tafel über dem unteren Drittel,
+  // dort bleiben Kopfzeile und Bühne frei – die Marken sitzen deshalb auf Suchfeld und Glas-Chips (Lagen: Ausgabe von
+  // `measure`). 720 bis 2328 (doppelte Dichte des Ausschnitts) decken einfache bis dreifache Pixeldichte ab.
   {
     name: "dashboard",
     path: "/dashboard",
@@ -884,6 +912,23 @@ const shots = [
       const x = await contentLeft(page);
       const width = page.viewportSize().width - x;
       return { x, y: 0, width, height: Math.round(width * 0.8) };
+    },
+    // Lagen für die Marken in site.css (.m-suche, .m-zahlen, .m-termine): in Prozent des sichtbaren 16 : 10-Teils (x von
+    // der Breite, y von Breite / 1,6), dazu Kennzahlkarten zum Vergleich
+    measure: async (page, clip) => {
+      const tall = clip.width / 1.6;
+      const box = async (locator) => (await locator.count()) ? locator.first().boundingBox() : null;
+      const chips = page.locator("ul[aria-label='Auf einen Blick'] > li");
+      const lines = [
+        ["Suchfeld", await box(page.getByRole("button", { name: /^Suche öffnen \(/ }))],
+        ["Bühne", await box(page.locator("[data-slot='hero-banner']"))],
+        ["Chip Mitglieder", await box(chips.nth(0))],
+        ["Chip Termine", await box(chips.nth(1))],
+        ["Chip Helferplätze", await box(chips.nth(2))],
+        ["Karte „Termine in 30 Tagen“", await box(page.getByText("Termine in 30 Tagen", { exact: true }))],
+        ["„… gegenüber dem Vormonat“ (Karte Mitglieder)", await box(page.getByText(/gegenüber dem Vormonat$/))],
+      ];
+      return lines.map(([label, b]) => `      ${label}: ${percentBox(b, clip, tall)}`).join("\n");
     },
     // 2880: fensterbreit am Ende der Kamerafahrt (Website, 1440 CSS-Pixel bei doppelter Dichte)
     widths: [720, 960, 1440, 1920, 2328, 2880],
@@ -912,14 +957,16 @@ const shots = [
     viewport: { width: 768, height: 1600 },
     widths: [490, 660, 980, 1280, 1536],
   },
-  // Bildschirm des Laptops in der Vorführung „Am Rechner“ (.laptop-screen, siehe LAPTOP): die Finanzen – Übersicht mit
-  // Kontostand, offenen Rechnungen, Überschuss und Spenden, die Rechnungen, das Kassenbuch mit Belegen und die Beiträge.
+  // Bildschirm des Laptops in der Vorführung „Am Rechner“ (.laptop-screen, siehe LAPTOP): die Finanzen – Übersicht (seit
+  // 21.10.2026 wie eine Banking-App: links die dunkle Karte „Kontostand · alle Konten“ mit Schnellaktionen, offenen
+  // Rechnungen und Verlauf, rechts die Konten als Karten; Überschuss und Spenden stehen weiter unten, nicht mehr im
+  // Fenster), die Rechnungen, das Kassenbuch mit Belegen und die Beiträge.
   // Daten aus finanzen-demo.mjs (Reel-Projekt, siehe README). Alle vier gleich groß und gleich gerahmt (Kopfzeile,
   // Titel „Finanzen“ und Reiterleiste stehen an derselben Stelle) – nacheinander gezeigt wirken sie wie ein Klick durch
   // die Reiter. Die Website zeigt nur die Übersicht (ruhiges Einzelbild, siehe Kommentar am Laptop in index.html); die
   // übrigen drei sind `optional` und entstehen nur mit --only <Name>, damit keine unbenutzten Dateien hochgeladen werden.
   ...[
-    ["uebersicht", "/finanzen", "Kontostand gesamt"],
+    ["uebersicht", "/finanzen", "Kontostand · alle Konten"],
     ["rechnungen", "/finanzen/rechnungen", "Rechnung hochladen"],
     ["kassenbuch", "/finanzen/kassenbuch", /^\d+ Buchungen$/],
     ["beitraege", "/finanzen/beitraege", "Beiträge zusammen"],
@@ -934,6 +981,25 @@ const shots = [
       await hideText(/^\d+ per Lastschrift, \d+ per Überweisung$/)(page);
       await page.waitForTimeout(1200); // Verlaufslinien der Karten
     },
+    // Übersicht: Lage von Kontostand-Karte und Kontokarten in Anteilen des Bildes – für den Lichtstreif der Finanzen
+    // (streifMessen() in buehne.js; die Kontostand-Karte reicht unten aus dem Fenster, gemessen bis zum Bildrand)
+    measure:
+      key === "uebersicht"
+        ? async (page, clip) => {
+            const box = async (locator) => (await locator.count()) ? locator.first().boundingBox() : null;
+            const hero = await box(page.locator("[data-slot='finance-hero']"));
+            const cards = await box(page.locator("ul[aria-label='Konten']"));
+            const share = (b) => {
+              if (!b) return "nicht gefunden";
+              const bottom = Math.min(b.y + b.height, clip.y + clip.height); // höchstens bis zum Bildrand
+              return (
+                `x ${((b.x - clip.x) / clip.width).toFixed(3)}, y ${((b.y - clip.y) / clip.height).toFixed(3)}, ` +
+                `Breite ${(b.width / clip.width).toFixed(3)}, Höhe ${((bottom - b.y) / clip.height).toFixed(3)}`
+              );
+            };
+            return `      Kontostand-Karte: ${share(hero)}\n      Kontokarten: ${share(cards)}`;
+          }
+        : undefined,
     viewport: LAPTOP.viewport,
     widths: LAPTOP.widths,
   })),
@@ -1000,8 +1066,9 @@ const shots = [
     widths: [240, 480, 640, 800],
     schemes: ["light"],
   },
-  // Einstieg am Smartphone (unter 560 px): das Dashboard in der Ansicht fürs Smartphone, ohne Telefonrahmen als großes
-  // Bild unter dem Text (288 bis 527 CSS-Pixel breit, Ausschnitt in site.css bei .hero-visual); 1170 für dreifache Dichte
+  // „Im Detail“ am Smartphone: das Dashboard in der Ansicht fürs Smartphone von oben – seit 21.10.2026 die Vereins-Bühne
+  // mit dem Foto der größten Abteilung, Begrüßung und Datum, darunter die Knöpfe, die Reiter und die Karte „Mitglieder“
+  // mit der Kennzahl; 1170 für dreifache Dichte
   {
     name: "phone-dashboard",
     device: "phone",
@@ -1022,7 +1089,13 @@ const shots = [
     name: "phone-helferplanung",
     device: "phone",
     path: "/helferplanung",
-    steps: scrollBelowHeader((page) => page.getByRole("heading", { name: "Meine Einsätze" })),
+    // Über „Meine Einsätze“ stehen seit 21.10.2026 Titel und die Knöpfe „Neue Schicht“ / „Weitere Aktionen“ – Aufgaben
+    // des Vorstands, hier geht es um die Helfer. Der blaue Knopf schiene unter der durchsichtigen Kopfzeile als Fleck durch
+    // (solidHeader).
+    steps: async (page) => {
+      await scrollBelowHeader((p) => p.getByRole("heading", { name: "Meine Einsätze" }))(page);
+      await solidHeader(page);
+    },
     viewport: PHONE_SCREEN,
     widths: [260, 312, 468, 520, 624, 780],
   },
@@ -1209,6 +1282,13 @@ async function newSession(browser, scheme, device) {
   context.setDefaultTimeout(45_000);
   const page = await context.newPage();
   await page.goto("/anmelden", { waitUntil: "networkidle" });
+  // Seit 22.10.2026 steht die Anmeldung auf einer eigenen Bühne (3D-Fotokarussell). Erst wenn React das Formular
+  // übernommen hat, meldet es per JavaScript an – vorher schickte der Browser es selbst ab, ohne Anmeldung (wie `login`
+  // in tests/e2e/helpers.ts)
+  await page.waitForFunction(() => {
+    const form = document.querySelector("form");
+    return form !== null && Object.keys(form).some((key) => key.startsWith("__react"));
+  });
   await page.getByLabel("E-Mail-Adresse").fill(EMAIL);
   await page.getByLabel("Passwort").fill(PASSWORD);
   await page.getByRole("button", { name: "Anmelden" }).click();
@@ -1251,6 +1331,7 @@ async function main() {
                 await page.addStyleTag({ content: HIDE_DEV_UI });
                 await page.evaluate(() => document.fonts.ready);
                 await normalizeDemoNames(page, { gentle });
+                await animationsDone(page);
                 await page.waitForTimeout(500);
                 await checkDemoNames(page, clip, name);
                 await checkProblems(page, clip, name);
@@ -1265,6 +1346,7 @@ async function main() {
             await page.evaluate(() => document.fonts.ready);
             await normalizeDemoNames(page);
             await page.mouse.move(0, 0); // kein Hover-Zustand im Bild
+            await animationsDone(page); // Auftritte (Vereins-Bühne, Kontoverlauf)
             await page.waitForTimeout(500); // Übergänge und Diagramm-Animationen abwarten
             const clip = await cropArea(page, shot.crop);
             await checkDemoNames(page, clip, shot.name);
@@ -1272,6 +1354,8 @@ async function main() {
             const captured = await capture(page, clip, shot.widths ?? spec.widths, spec);
             const { width, height } = await save(captured, shot.name, scheme, { allowLossy: true });
             console.log(`${scheme.padEnd(5)} ${shot.name}  ${width}×${height}  (${page.url().replace(BASE, "")})`);
+            // Lagen für die Nacharbeiten auf der Website (Marken, Lichtstreif), siehe README „Hinweise zu den Aufnahmen“
+            if (shot.measure) console.log(await shot.measure(page, clip ?? { x: 0, y: 0, ...page.viewportSize() }));
           } catch (error) {
             console.error(`FEHLER ${scheme} ${shot.name}: ${String(error.message).split("\n")[0]}`);
             process.exitCode = 1;

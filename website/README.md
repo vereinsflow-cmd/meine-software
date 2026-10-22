@@ -36,7 +36,7 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 | `tools/`                              | Werkzeuge (siehe unten); müssen nicht hochgeladen werden                                    |
 | `upload/vereinsflow-website.zip`      | Fertiges Paket zum Hochladen auf den IONOS-Webspace (erzeugt von `tools/paket-bauen.mjs`, siehe „Veröffentlichen“) |
 | `upload/entpacken.php`                | Einmal-Helfer, der das Paket auf dem Webspace auspackt und sich danach selbst löscht         |
-| `THIRD-PARTY-NOTICES.md`              | Lizenzhinweise der Symbole (lucide, ISC) – bitte mit veröffentlichen                        |
+| `THIRD-PARTY-NOTICES.md`              | Lizenzhinweise der Symbole (lucide, ISC) und der Abteilungsfotos in den Aufnahmen (Unsplash) – bitte mit veröffentlichen |
 
 ## Ansehen
 
@@ -116,7 +116,8 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   Darum nie Stildatei oder Skripte vom Webspace zurück in den Ordner kopieren.
   Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
   HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum und einer laufenden
-  Nummer, derzeit `?v=2026102101` an der Stildatei und `?v=2026102001` an den Skripten) – `buehne.js` lädt `fluss.js` selbst (Zeile `import … from "./fluss.js?v=…"`), dort
+  Nummer, derzeit `?v=2026102201` an der Stildatei und an `buehne.js`, `?v=2026102001` an `site.js` und `fluss.js`,
+  `?v=20260927-2` an `frueh.js`) – `buehne.js` lädt `fluss.js` selbst (Zeile `import … from "./fluss.js?v=…"`), dort
   ebenfalls. Sonst liefern Browser und der Zwischenspeicher von
   IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
   HTML-Seiten fragt der Browser dagegen bei jedem Aufruf nach (`Cache-Control: no-cache`, unverändert kommt nur „304“) –
@@ -151,7 +152,7 @@ fehlt Edge, nimmt `capture-screenshots.mjs` das Chromium von Playwright).
 | `node tools/paket-bauen.mjs`               | Baut `upload/vereinsflow-website.zip` für den Webspace Explorer (Stildatei und Skripte ohne Kommentare; ohne Abhängigkeiten) |
 | `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` – dieselben Dateien wie das Paket, die Stildatei ebenso bereinigt (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/demo-vorbereiten.mjs`          | Füllt den Demo-Verein der Aufnahme-Datenbank `vf_website` für die Bilder auf (siehe unten); `--entfernen` nimmt alles wieder heraus. Arbeitet mit keiner anderen Datenbank |
-| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all`, Demo vorbereitet; `--only dashboard`; Bilder, die die Seite nicht zeigt, nur mit `--only <Name>`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet) |
+| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all` oder eine zweite Instanz, siehe unten, mit `VF_APP_URL`; Demo vorbereitet; `--only dashboard`; Bilder, die die Seite nicht zeigt, nur mit `--only <Name>`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet). Gibt die Lagen für Marken und Lichtstreif aus |
 | `node tools/make-logo-assets.mjs <Logo-Paket>` | Übernimmt Logo-Dateien, Favicons, Vorschaubild und Mail-Logo aus dem Logo-Paket (Ordner `02-website`) und prüft Bildgrößen und die `width`/`height` der Logo-`<img>` (siehe „Logo“); `--pruefen` nur prüfen; ohne Abhängigkeiten |
 | `node tools/make-og-image.mjs <ziel.png>`  | Erzeugt eine zweite Fassung des Vorschaubilds mit den beiden Telefonen (`tools/og-template.html`, mit `site.css`, dem Logo und den Telefonbildern); `--ersetzen` statt eines Ziels ersetzt `assets/img/og-image.png` aus dem Logo-Paket |
 | `node tools/make-showcase-keyframes.mjs`   | Erzeugt die Keyframes der Vorführungen (Laptop und Telefon drehen sich beim Scrollen) aus den Bewegungsformeln und ersetzt sie am Ende von `assets/css/site.css`; ohne Abhängigkeiten |
@@ -206,19 +207,34 @@ Hinweise zu den Aufnahmen:
   über 700 KB.
 - **Seitenleiste:** Ganze Fenster (Laptop, Dashboard) zeigen die Seitenleiste der Anwendung, wie sie eingestellt ist; die
   optionalen Ausschnitte rechts daneben entstehen mit der breiten Leiste (`sidebar: "breit"` im Skript).
-- **Was die Seite zeigt** (Stand 20.10.2026, neu aufgenommen nach den neuen Farben der Anwendung – „Neues Mitglied“ grün,
-  Glocke in der Kopfzeile gelb; Demo-Daten wie am 18.10.2026 vorbereitet: 43 Dateien, 2,0 MB):
+- **Was die Seite zeigt** (Stand 22.10.2026, alle neu aufgenommen nach dem Umbau der Anwendung vom 21./22.10.2026 –
+  Dashboard-Kopf als „Vereins-Bühne“, Finanz-Übersicht wie eine Banking-App, Abteilungsfotos, neue Anmeldeseite; Demo-Daten
+  wie am 18.10.2026 vorbereitet, am 22.10. geprüft und nicht neu angelegt: 43 Dateien, 2,2 MB):
   - `dashboard` (720 bis 2880 px): Laptop im Einstieg und in der Kamerafahrt, die flache Aufnahme am Ende der Fahrt und
     „Im Detail“ ohne Fahrt. Die flache Aufnahme wählt zuerst dieselbe Datei wie der Bildschirm (eine Anfrage); sobald die
     Fahrt beginnt, lädt und dekodiert `buehne.js` genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px, `data-gross`)
-    und setzt sie dann an beiden Bildern ein.
-  - `phone-dashboard` (312 bis 1170): „Im Detail“ am Smartphone, im Telefon.
+    und setzt sie dann an beiden Bildern ein. Inhalt: Kopfzeile mit Suchfeld, die Vereins-Bühne (Begrüßung, Fotos der
+    Abteilungen Fußball, Handball, Tischtennis, Glas-Chips „233 Mitglieder · 18 Termine · 15 Helferplätze“, Knöpfe), die
+    Reiter und die Kennzahlkarten. Am Ende der Kamerafahrt liegt die Tafel über dem unteren Teil des 16 : 10-Ausschnitts
+    (sichtbar bleiben bei 16 : 10 bis 16 : 9 gut 60 %, in flacheren Fenstern weniger, bei 21 : 9 nur gut 40 %) – die Marken
+    „Kennzahlen“ und „Termine“ sitzen deshalb auf den Glas-Chips der Bühne, nicht mehr auf den Karten darunter. Ihre
+    Schilder hängen unter den Chips; ab einem Seitenverhältnis von 1,79 : 1 reicht der Platz bis zur Tafel dort nicht mehr
+    (z. B. 1440 × 780, 1536 × 730 und 1920 × 950 – Laptops und Full-HD-Bildschirme mit Browserleiste), dann stehen sie über
+    den Chips; ab 2,13 : 1 (21 : 9) rutschen auch die Chips samt Punkten unter die Tafel, dann entfallen die beiden Marken
+    (`site.css`, Abschnitt 12a; geprüft mit Playwright am Ende der Fahrt von 1024 × 768 bis 3440 × 1440). In „Im Detail“
+    unter 1120 px sind die Schilder kleiner und „Termine“ steht neben „Kennzahlen“.
+  - `phone-dashboard` (312 bis 1170): „Im Detail“ am Smartphone, im Telefon – die Bühne mit dem Foto der größten Abteilung,
+    darunter Knöpfe, Reiter und die Karte „Mitglieder“.
   - `phone-schichten` (182 bis 780): Telefon im Einstieg (Bildschirm 182/208 CSS-Pixel) und flaches Telefon in Kapitel 3
     (260/312), dazu `phone-schichten-live-1` (260 bis 780) als Stand vor Annas Eintrag (Kapitel 3, Schritt 1) – gefunden
     über den Listeneintrag „Schicht Getränkestand“ und die Knöpfe „In Getränkestand eintragen“ bzw. „… austragen“.
   - `helferplan-druck` (240 bis 800): der Aushang in Kapitel 3.
-  - `phone-helferplanung` (260 bis 780): Telefon in „Unterwegs“ (ab „Meine Einsätze“, damit „Eintragen“ ganz zu sehen ist).
-  - `laptop-finanzen-uebersicht` (720 bis 1760): Laptop in „Finanzen“.
+  - `phone-helferplanung` (260 bis 780): Telefon in „Unterwegs“ (ab „Meine Einsätze“, damit „Eintragen“ ganz zu sehen ist;
+    Titel und „Neue Schicht“ darüber sind Aufgaben des Vorstands, die Kopfzeile ist im Bild deckend).
+  - `laptop-finanzen-uebersicht` (720 bis 1760): Laptop in „Finanzen“ – die dunkle Karte „Kontostand · alle Konten“
+    (Schnellaktionen, Entwicklung im Monat, offene Rechnungen, Verlauf) und rechts die Kontokarten Barkasse und Girokonto;
+    Überschuss und Spenden stehen in der Anwendung weiter unten, nicht mehr im Bild. Die Zahl neben dem Laptop ist deshalb
+    der Kontostand („13.944,47 €“).
   - Nicht mehr auf der Seite und deshalb `optional` (entstehen nur mit `--only <Name>`): `einstieg-dashboard`, die
     Browserfenster und Bildfolgen von `schichten`, `suche`, `mitglieder`, `kalender`, `auswertung`, die Telefonbilder
     `phone-suche`, `phone-mitglieder`, `phone-kalender`, `phone-auswertung` und die übrigen Finanz-Laptops.
@@ -228,28 +244,34 @@ Hinweise zu den Aufnahmen:
   HTML an. Neue Telefonbilder sind 390 × 760 Punkte groß – genau der sichtbare Teil des Bildschirms zwischen Statusleiste
   und Home-Balken –, damit der Rahmen nichts abschneidet.
 - **Datum in den Bildern:** Die Aufnahmen zeigen, was die Anwendung am Aufnahmetag ausrechnet – beim Laptop „Stand
-  20.10.2026“ und die Fälligkeiten der beiden offenen Rechnungen des Seeds („davon 2 überfällig“, „seit 23 Tagen
-  überfällig“ in Rot; ihre Fälligkeit rechnet der Seed vom Tag seines Laufs aus, `finanzen-demo.mjs` lässt sie unverändert),
-  im Einstieg das Datum unter der Begrüßung („Dienstag, 20. Oktober 2026“) und „Termine in 30 Tagen“ samt „Nächster
-  Termin heute“, auf dem Aushang „Erstellt am …“, am Telefon Angaben wie „in 235 Tagen“. Wer die Bilder später erneuert,
-  nimmt sie deshalb alle am selben Tag neu auf. Am Smartphone (`phone-dashboard`) bricht die Zeile mit dem Datum um,
-  wenn Wochentag und Monat lang sind – alles darunter rückt dann eine Zeile (24 Punkte) tiefer (so am Dienstag,
-  20.10.2026; „Montag, 19. Oktober 2026“ passte noch in eine Zeile). Ruhiger wirkte der Laptop mit Rechnungen, die noch
-  nicht fällig sind (das hieße, die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das
-  Reel-Projekt, daher bisher nicht geändert).
+  22.10.2026“, „+25,80 € seit 1. Oktober“, die Einnahmen und Ausgaben des Monats und die Fälligkeit der beiden offenen
+  Rechnungen des Seeds („davon 2 überfällig“ in Rot; ihre Fälligkeit rechnet der Seed vom Tag seines Laufs aus,
+  `finanzen-demo.mjs` lässt sie unverändert), im Einstieg das Datum auf der Bühne („Donnerstag, 22. Oktober 2026“), die
+  Zahlen der Glas-Chips und „Termine in 30 Tagen“ samt „Nächster Termin heute“, auf dem Aushang „Erstellt am …“, am
+  Telefon Angaben wie „in 233 Tagen“. Wer die Bilder später erneuert, nimmt sie deshalb alle am selben Tag neu auf. Die
+  Bühne hat eine feste Höhe: Rolle und Datum kürzen sich notfalls mit „…“, darunter verrutscht nichts mehr (bis 20.10.2026
+  brach am Smartphone die Zeile mit dem Datum um). Ruhiger wirkte der Laptop mit Rechnungen, die noch nicht fällig sind
+  (das hieße, die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das Reel-Projekt, daher
+  bisher nicht geändert).
 - Nach neuen Aufnahmen nachziehen: (1) die Lage der drei Marken auf dem Dashboard (`.m-suche`, `.m-zahlen`, `.m-termine`
-  in `site.css`, in Prozent des Bildes), die Anteile der Kennzahlkarten für den Lichtstreif der Finanzen (`streifMessen()`
-  in `buehne.js`) und – ändert sich die Ampel – die Bahn des Stroms zu Annas Platz (`data-pfad` an `#fluss-spur`); (2) die
-  Zahlen im Text mit den Bildern abgleichen (233 Mitglieder, „10 von 21“ und Getränkestand 3/4, „+5.286,30 €“) und die
-  Alt-Texte; (3) `width`/`height`, wenn sich ein Ausschnitt geändert hat; (4) an allen Bild-Links in `index.html` `?v=`
+  in `site.css`, in Prozent des 16 : 10-Ausschnitts) und die Anteile der Kontostand-Karte für den Lichtstreif der Finanzen
+  (`streifMessen()` in `buehne.js`, Anteile des Bildes) – beides gibt `capture-screenshots.mjs` beim Aufnehmen aus; rücken
+  Chips oder Datumszeile auf der Bühne, auch die Schwellen der Schilder am Ende der Fahrt (Abschnitt 12a) – und,
+  ändert sich die Ampel, die Bahn des Stroms zu Annas Platz (`data-pfad` an `#fluss-spur`); (2) die Zahlen im Text mit den
+  Bildern abgleichen (233 Mitglieder, „10 von 21“ und Getränkestand 3/4, Kontostand „13.944,47 €“ neben dem Finanz-Laptop
+  samt Startwert des Zählwerks in `buehne.js`) und die Alt-Texte; (2a) zeigen die Bilder Fotos der Abteilungen, deren
+  Fotografen in `THIRD-PARTY-NOTICES.md` nennen; (3) `width`/`height`, wenn sich ein Ausschnitt geändert hat; (4) an allen Bild-Links in `index.html` `?v=`
   erhöhen: Browser dürfen Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst
   noch die alten.
 - Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
   `PGDATABASE=vf_website DATABASE_URL=postgresql://vereinsflow:vereinsflow@localhost:5432/vf_website npm run dev:all -- --seed`.
   Läuft im App-Ordner schon ein Entwicklungsserver, eine zweite Instanz mit eigenem Build-Ordner danebenstellen (wie die
-  E2E-Tests), z. B. `PORT=3100 NEXT_DIST_DIR=.next-leer DATABASE_URL=… MIGRATION_DATABASE_URL=… APP_URL=http://localhost:3100
-  node node_modules/next/dist/bin/next dev -p 3100` (vorher `prisma migrate deploy` mit derselben `MIGRATION_DATABASE_URL`),
-  und beim Aufnehmen `VF_APP_URL=http://localhost:3100` setzen.
+  E2E-Tests), z. B. `PORT=3200 NEXT_DIST_DIR=.next-leer DATABASE_URL=… MIGRATION_DATABASE_URL=… APP_URL=http://localhost:3200
+  node node_modules/next/dist/bin/next dev -p 3200` (vorher `prisma migrate deploy` mit derselben `MIGRATION_DATABASE_URL`),
+  und beim Aufnehmen `VF_APP_URL=http://localhost:3200` setzen. **Der Build-Ordner muss in `.gitignore` stehen**
+  (`.next-leer`, `.next-e2e`, `.next-website` – nur diese drei, nie einen neuen Namen erfinden): Tailwind liest jeden
+  nicht ignorierten Ordner im Projekt mit und baute sonst bei jedem Schreiben der zweiten Instanz die Stile beider
+  Server neu – am 21.10.2026 hat ein nicht ignoriertes `.next-website` so beide Server lahmgelegt.
 - Beim Aufnehmen entstehen Anmelde-Einträge im Änderungsprotokoll der Demo. Parallel laufende E2E-Tests der Anwendung nicht
   stören: Aufnahme und Tests belasten denselben Rechner.
 
@@ -351,7 +373,7 @@ jeder Wechsel ist ein Bogen, der sich beim Scrollen über das Kapitel davor schi
 | 3 Helferplanung | `#helferschichten` | Papier | ab 1200 × 760 eine Spur in drei Schritten: Ampel baut sich auf (9 von 21), ein Lichtkomet (Kopf mit Schein in Signalorange, Schweif aus Tinte, 1,2 s, nur zeitgesteuert) fliegt den Strom entlang in Annas Platz – Ring, Lichthof und Zeile glimmen einmal auf (10 von 21, Telefon und Chips zeigen ihren Eintrag), der Aushang schiebt sich herein | drei Kacheln im Endstand |
 | 4 Unterwegs | `#unterwegs` | Nacht | das Telefon dreht sich ins Bild (wie bisher), ab 1200 × 720 kreisen fünf Glas-Chips auf einer geneigten Umlaufbahn aus Licht | Chips als Reihe |
 | 5 Funktionen | `#funktionen` | Nacht | „13“ rollt hoch; neun Karten und „Dazu“ mit vier Chips, je Bereich ein Popover (Text wie bisher); mit Maus neigt sich die Karte (≤ 8°), Glanz und Lichtkante folgen dem Zeiger, der Strom weicht ihm aus | Karten ruhig, Popovers ohne Skript |
-| 6 Finanzen | `#finanzen` | Papier | ab 1024 px Text links, Laptop rechts (dreht sich wie bisher, steht frontal); einmal ein Lichtstreif über die Kennzahlkarten, „+5.286,30 €“ zählt hoch | untereinander, Zahl steht |
+| 6 Finanzen | `#finanzen` | Papier | ab 1024 px Text links, Laptop rechts (dreht sich wie bisher, steht frontal); einmal ein Lichtstreif über die Kontostand-Karte, „13.944,47 €“ zählt hoch | untereinander, Zahl steht |
 | 7 Vertrauen | `#sicherheit`, `#rollen` | Papier | Datenblatt mit vier Punkten; die fünf Rollen als drei ineinanderliegende, leicht gekippte Milchglas-Rahmen legen sich von außen nach innen, Annas Plakette folgt; „Mehr dazu“ mit sieben Punkten; drei langsame Tintenlinien am Fuß | stehend |
 | 8 So starten Sie | `#ablauf` | Papier | die Startlinie zeichnet sich, die Pinnnadel fährt einmal von 1 über 2 nach 3 und füllt die Punkte | Nadel auf 3 (schmal senkrecht, ohne Nadel) |
 | 9 Fragen | `#faq` (`#ausprobieren`) | Papier | fünf Fragen; beim Aufklappen gleiten die Fragen darunter, die Antwort blendet ein (Chromium: View Transition, sonst Web Animations); eine Sprungmarke öffnet die Frage | sofort auf |
@@ -447,12 +469,13 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
   Inspector → Timelines → Rendering Frames). Beim allerersten Zeichnen eines Effekts kompiliert Chrome einmalig eine
   Pipeline im GPU-Prozess (80–160 ms je Effekt, danach im Shader-Speicher von Metal) – zwei Live-Filter weniger heißt zwei
   solche Stopps weniger.
-- **Zählwerke** (`data-zahl`: „10“, „13“, „+5.286,30“): `buehne.js` baut nur mit Bewegung je Ziffer ein Fenster mit einer
+- **Zählwerke** (`data-zahl`: „10“, „13“, „13.944,47“): `buehne.js` baut nur mit Bewegung je Ziffer ein Fenster mit einer
   Rolle; gerollt wird in ganzen Zeilen, in Ruhe steht immer die ganze Endziffer. Während des Rollens laufen die Fenster
   oben und unten weich aus (Maske `--zw-f`, immer mindestens so breit wie der Versatz der Ziffer) und die Rolle ist
   verwischt – beides folgt dem verbleibenden Weg und ist bei der Ankunft null; die vorderen Stellen rasten früh ein, nur
   die hinteren rollen lange. Bis zum Start ist die Zahl unsichtbar (keine „+0.000,00 €“). Ohne Skript und ohne Bewegung
-  steht die Zahl als Text; für Screenreader steht sie daneben als Satz (`.sr-only`). Kein Layout-Springen (CLS 0 gemessen,
+  steht die Zahl als Text; für Screenreader steht sie daneben als Satz (`.sr-only`). Der Startwert (`zaehlenBeimErscheinen`
+  in `buehne.js`, z. B. „ 0.000,00“) muss gleich lang sein wie die Zahl – Leerzeichen für Stellen, die erst erscheinen. Kein Layout-Springen (CLS 0 gemessen,
   auch beim Neuladen mitten auf der Seite: Kapitel 4 behält mit Umlaufbahn seine Höhe, `--chips-h`; Schalter und
   Kopierknopf stehen mit JavaScript von Anfang an im Layout).
 - **Größen** (20.10.2026): Skripte zusammen 98 KB Quelltext, im Paket 68 KB (ohne Kommentare und Einrückung), übertragen

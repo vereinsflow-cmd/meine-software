@@ -53,6 +53,8 @@ next-env.d.ts
 /storage
 .next-e2e
 .next-leer
+# zweite Instanz für die Website-Bilder (website/README.md): Tailwind liest nicht ignorierte Ordner mit
+.next-website
 
 # persönliche Werkzeug-Einstellungen (nicht teilen)
 .claude/settings.local.json
