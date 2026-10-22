@@ -233,12 +233,17 @@ function ShiftForm({
  * Ohne weitere Angaben bringt der Dialog seinen Knopf „Zuweisen“ mit; `trigger` ersetzt ihn (z. B. ein schlichter
  * Textknopf in Listen), mit `open` (aus `useMoreActions`) öffnet ihn ein Punkt im Menü „⋯“ der Schicht. Nach einer
  * Zuweisung geht der Fokus zu `focusAfter` (Id) – der Knopf, der den Dialog geöffnet hat, ist danach oft weg (Schicht voll).
+ * Aus Server-Komponenten `textTrigger` statt `trigger` übergeben: Ein auf dem Server gebautes Element kommt hier unter
+ * Umständen als noch nicht aufgelöstes („lazy“) Element an, und `DialogTrigger asChild` bricht dann beim Server-Rendern ab
+ * („Primitive.button failed to slot onto its children“, gesehen 22.10.2026 auf /helferplanung) – den Textknopf baut der
+ * Dialog deshalb selbst.
  */
 export function AssignDialog({
   shiftId,
   eventId,
   title,
   trigger,
+  textTrigger,
   focusAfter,
   ...controlled
 }: {
@@ -246,6 +251,8 @@ export function AssignDialog({
   eventId: string;
   title: string;
   trigger?: ReactNode;
+  /** Schlichter Textknopf „Zuweisen“ (wie in Listen), mit Klassen von außen. */
+  textTrigger?: { className?: string };
   focusAfter?: string;
 } & Partial<MenuDialogProps>) {
   const assigned = useRef(false);
@@ -259,7 +266,18 @@ export function AssignDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
-          {trigger ?? (
+          {textTrigger ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={textTrigger.className}
+              aria-label={`Helfer für ${title} zuweisen`}
+            >
+              Zuweisen
+            </Button>
+          ) : trigger ? (
+            trigger
+          ) : (
             <Button variant="outline" size="sm">
               <UserPlusIcon /> Zuweisen
             </Button>
