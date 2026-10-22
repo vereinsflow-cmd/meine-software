@@ -39,6 +39,10 @@ async function passwordStep(page: Page, path = "/anmelden"): Promise<void> {
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/anmelden\/bestaetigen$/);
   await expect(page.getByRole("heading", { name: "Anmeldung bestätigen" })).toBeVisible();
+  // Dieselbe Bühne wie die Anmeldung (Layout der Routen-Gruppe): nur der Inhalt der Glasfläche wechselt.
+  await expect(page.locator('[data-slot="login-stage"] [data-stage="glass"]')).toContainText(
+    "Schritt 2 von 2",
+  );
   await waitForHydratedForm(page);
 }
 

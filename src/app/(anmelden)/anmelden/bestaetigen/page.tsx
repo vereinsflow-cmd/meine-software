@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AuthCard } from "@/components/shared/auth-card";
 import { SECOND_FACTOR_COOKIE_NAME } from "@/lib/session-cookie";
+import { StageCard } from "@/modules/auth/components/login-stage";
 import { SecondFactorForm } from "@/modules/auth/components/auth-forms";
 import { readLoginChallenge } from "@/server/auth/login-challenge";
 import { getCurrentSession } from "@/server/auth/session";
@@ -23,11 +23,12 @@ export default async function SecondFactorPage() {
   }
 
   return (
-    <AuthCard
+    <StageCard
+      eyebrow="Schritt 2 von 2"
       title="Anmeldung bestätigen"
       description="Für dein Konto ist die Zwei-Faktor-Anmeldung eingeschaltet. Öffne deine Authenticator-App und gib den Code für VereinsFlow ein."
     >
       <SecondFactorForm />
-    </AuthCard>
+    </StageCard>
   );
 }

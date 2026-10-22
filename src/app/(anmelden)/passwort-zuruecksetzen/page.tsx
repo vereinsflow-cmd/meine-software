@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AuthCard } from "@/components/shared/auth-card";
 import { ResetPasswordForm } from "@/modules/auth/components/auth-forms";
+import { StageCard } from "@/modules/auth/components/login-stage";
 import { isPasswordResetTokenValid } from "@/server/auth/service";
 
 export const metadata: Metadata = { title: "Neues Passwort festlegen" };
@@ -15,24 +15,22 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
 
   if (!token || !valid) {
     return (
-      <AuthCard
+      <StageCard
+        eyebrow="Zugang wiederherstellen"
         title="Link ungültig oder abgelaufen"
         description="Dieser Link zum Zurücksetzen des Passworts kann nicht mehr verwendet werden. Er ist entweder abgelaufen oder wurde bereits benutzt."
-        footer={
-          <Link href="/passwort-vergessen" className="text-primary underline underline-offset-4">
-            Neuen Link anfordern
-          </Link>
-        }
+        footer={<Link href="/passwort-vergessen">Neuen Link anfordern</Link>}
       />
     );
   }
 
   return (
-    <AuthCard
+    <StageCard
+      eyebrow="Zugang wiederherstellen"
       title="Neues Passwort festlegen"
       description="Wähle ein neues Passwort für dein Konto. Danach wirst du auf allen Geräten abgemeldet."
     >
       <ResetPasswordForm token={token} />
-    </AuthCard>
+    </StageCard>
   );
 }

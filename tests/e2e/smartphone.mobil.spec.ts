@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, login, open, openNavGroup } from "./helpers";
+import { USERS, animationsDone, login, open, openNavGroup, ringTurns } from "./helpers";
 
 /**
  * Smartphone-Ansicht (Pixel 7, 412 px breit). Läuft nur im Projekt "mobil": `npx playwright test --project=mobil`.
@@ -467,5 +467,102 @@ test.describe("Smartphone", () => {
     await expect(page.getByRole("combobox", { name: "Nach Status filtern" })).toBeHidden();
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
     expect(await violations(page)).toEqual([]);
+  });
+
+  test("Anmeldebühne am Handy: acht Plakate ohne Spiegelung, „Anmelden“ ohne Scrollen sichtbar, seitlich wischen dreht, senkrecht scrollt", async ({
+    page,
+    context,
+  }) => {
+    const photos = new Set<string>();
+    page.on("request", (request) => {
+      const match = /\/bilder\/abteilungen\/([a-z]+-\d+)\.webp$/.exec(request.url());
+      if (match) photos.add(match[1]);
+    });
+    // Sichtbare Fläche mit eingeblendeten Leisten (nicht das ganze Gerät): Android-Chrome 412 × 780, kleines Android 360 × 640,
+    // zuletzt Safari am iPhone 390 × 664 – dort laufen die übrigen Prüfungen. Der Ring wird dafür kleiner (`svh`).
+    for (const [width, height] of [
+      [412, 780],
+      [360, 640],
+      [390, 664],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await open(page, "/anmelden");
+      await expect(
+        page.getByRole("button", { name: "Anmelden" }),
+        `${width} × ${height}`,
+      ).toBeInViewport({ ratio: 1 });
+    }
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+    const shown = (selector: string) =>
+      page
+        .locator(selector)
+        .evaluateAll(
+          (elements) => elements.filter((el) => getComputedStyle(el).display !== "none").length,
+        );
+    expect(await shown('[data-stage="panel"]')).toBe(8);
+    expect(await shown('[data-stage="reflection"]')).toBe(0);
+    // Acht Fotos in der 800er Fassung (gezeichnet ≈ 265 px bei 2,6-facher Pixeldichte), nicht 1200
+    expect([...photos].sort()).toEqual(
+      [
+        "badminton",
+        "basketball",
+        "dart",
+        "fussball",
+        "handball",
+        "tennis",
+        "tischtennis",
+        "volleyball",
+      ].map((sport) => `${sport}-800`),
+    );
+
+    // „Bewegung anhalten“ oben rechts, rund und gut treffbar
+    await animationsDone(page);
+    const toggle = page.getByRole("button", { name: "Bewegung anhalten" });
+    const box = (await toggle.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    expect(box.y).toBeLessThan(40);
+    await toggle.tap();
+    await expect(page.getByRole("button", { name: "Bewegung fortsetzen" })).toBeVisible();
+    await expect.poll(() => ringTurns(page), { timeout: 5000 }).toBe(false);
+    expect(await violations(page)).toEqual([]);
+
+    // Wischen über dem Ring (echte Touch-Ereignisse)
+    const cdp = await context.newCDPSession(page);
+    const swipe = async (from: { x: number; y: number }, to: { x: number; y: number }) => {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [from] });
+      for (let i = 1; i <= 10; i++) {
+        const point = {
+          x: from.x + ((to.x - from.x) * i) / 10,
+          y: from.y + ((to.y - from.y) * i) / 10,
+        };
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [point] });
+        await page.waitForTimeout(16);
+      }
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    };
+    const ring = () =>
+      page
+        .locator('[data-stage="ring"]')
+        .evaluate((element) => getComputedStyle(element).transform);
+    const zone = (await page.locator('[data-stage="zone"]').boundingBox())!;
+    const middle = zone.y + zone.height / 2;
+    let before = await ring();
+    await swipe({ x: 100, y: middle }, { x: 300, y: middle });
+    expect(await ring()).not.toBe(before);
+    await expect.poll(() => ringTurns(page), { timeout: 12_000 }).toBe(false);
+
+    // Senkrecht scrollt die Seite, der Ring bleibt stehen.
+    before = await ring();
+    await swipe({ x: 200, y: zone.y + zone.height - 10 }, { x: 200, y: zone.y + 10 });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(50);
+    expect(await ring()).toBe(before);
+
+    // Auf der Glasfläche dreht Wischen nie.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const glass = (await page.locator('[data-stage="glass"]').boundingBox())!;
+    await swipe({ x: 80, y: glass.y + 40 }, { x: 300, y: glass.y + 40 });
+    expect(await ring()).toBe(before);
   });
 });

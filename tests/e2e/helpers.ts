@@ -90,6 +90,41 @@ export async function renameSelf(page: Page, firstName: string): Promise<string>
 }
 
 /**
+ * Zustand der Anmeldebühne („3D-Fotokarussell“, `LoginStage`): `motion` ist „running“, „paused“ oder „reduced“, `ring` die
+ * Drehung des Rings, so wie der Browser sie gerade zeichnet (Matrix). Wartet, bis die Schleife gestartet ist.
+ */
+export async function stageState(page: Page): Promise<{ motion?: string; ring: string }> {
+  const stage = page.locator('[data-slot="login-stage"][data-ready="true"]');
+  await expect(stage).toHaveCount(1);
+  return stage.evaluate((element) => ({
+    motion: (element as HTMLElement).dataset.motion,
+    ring: getComputedStyle(element.querySelector('[data-stage="ring"]')!).transform,
+  }));
+}
+
+/**
+ * Wartet, bis alle einmaligen Animationen der Seite fertig sind (z. B. der Auftritt der Glasfläche auf der Anmeldebühne,
+ * die dabei kurz verkleinert ist). Endlos laufende Animationen bleiben außen vor. Vor dem Messen von Größen und Lagen.
+ */
+export async function animationsDone(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
+}
+
+/** Ob sich der Ring der Anmeldebühne gerade dreht: zweimal im Abstand von 400 ms gemessen. */
+export async function ringTurns(page: Page): Promise<boolean> {
+  const before = (await stageState(page)).ring;
+  await page.waitForTimeout(400);
+  return (await stageState(page)).ring !== before;
+}
+
+/**
  * Wie der Kopf des Dashboards („Vereins-Bühne“) bei der aktuellen Fensterbreite sitzt: Höhe des Banners in rem (das Ladegerüst
  * hat fest 17 rem, am Handy 17,125 rem – dieselbe Klasse `HERO_BANNER_HEIGHT`), Zeilen der Begrüßung, ob sie mit „…“ endet und
  * in ihrer Schriftspalte bleibt, Reihen der sichtbaren Chips und wie viel unten oder rechts aus dem Banner ragt. Dazu, ob die

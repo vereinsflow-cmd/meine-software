@@ -4,7 +4,15 @@ import { USERS, login, open } from "./helpers";
 
 /** Barrierefreiheit (axe, WCAG 2.1 A/AA) aller Seiten – Einzelheiten und Grenzen der Prüfung stehen in `axe.ts`. */
 
-const publicPages = ["/anmelden", "/passwort-vergessen", "/impressum", "/datenschutzerklaerung"];
+const publicPages = [
+  "/anmelden",
+  "/anmelden?expired=1", // Hinweis auf dem Glas der Bühne
+  "/passwort-vergessen",
+  "/passwort-zuruecksetzen?token=ungueltig-ungueltig", // Hinweisseite auf der Bühne
+  "/registrieren", // schmaler Rahmen (auth)
+  "/impressum",
+  "/datenschutzerklaerung",
+];
 
 const adminPages = [
   "/dashboard",
@@ -63,6 +71,32 @@ test.describe("Barrierefreiheit (axe) – öffentliche Seiten", () => {
       expect(await violations(page)).toEqual([]);
     });
   }
+});
+
+test.describe("Barrierefreiheit (axe) – Anmeldebühne in allen Zuständen", () => {
+  test("dunkle Darstellung, Bewegung angehalten, Formularfehler am Feld", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await open(page, "/anmelden");
+    await page.getByRole("button", { name: "Bewegung anhalten" }).click();
+    await expect(page.getByRole("button", { name: "Bewegung fortsetzen" })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await expect(page.getByText("Bitte gib dein Passwort ein.")).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
+
+  test("„Bewegung reduzieren“ (Standbild) und falsche Zugangsdaten", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await open(page, "/anmelden");
+    expect(await violations(page)).toEqual([]);
+    await page.getByLabel("E-Mail-Adresse").fill("gibt-es-nicht@example.test");
+    await page.getByLabel("Passwort").fill("völlig-falsches-passwort");
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await expect(
+      page.getByRole("alert").filter({ hasText: "E-Mail-Adresse oder Passwort ist falsch." }),
+    ).toBeVisible();
+    expect(await violations(page)).toEqual([]);
+  });
 });
 
 test.describe("Barrierefreiheit (axe) – angemeldet als Vereinsadministrator", () => {

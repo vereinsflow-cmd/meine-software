@@ -1,7 +1,14 @@
 import { randomBytes } from "node:crypto";
 import { devices, expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
-import { USERS, inviteNewPerson, login, open, waitForHydratedForm } from "./helpers";
+import {
+  USERS,
+  animationsDone,
+  inviteNewPerson,
+  login,
+  open,
+  waitForHydratedForm,
+} from "./helpers";
 import { TestAuthenticator } from "./totp";
 
 /**
@@ -66,6 +73,11 @@ test("Smartphone: Einrichten und zweiter Schritt der Anmeldung passen ins Bild",
   await expect(phone.getByRole("heading", { name: "Anmeldung bestätigen" })).toBeVisible();
   await waitForHydratedForm(phone);
   expect(await overflow(phone)).toBeLessThanOrEqual(1);
+  // Auf der Bühne der Anmeldung: das Codefeld hat den Fokus und steht ohne Scrollen im Bild.
+  await expect(phone.locator('[data-slot="login-stage"]')).toBeVisible();
+  await expect(phone.getByLabel("Code aus der App")).toBeFocused();
+  await expect(phone.getByLabel("Code aus der App")).toBeInViewport();
+  await animationsDone(phone); // die Glasfläche erscheint mit einem kurzen Auftritt (leicht verkleinert)
   const toggle = phone.getByRole("button", { name: /Wiederherstellungscode verwenden/ });
   const toggleBox = (await toggle.boundingBox())!;
   expect(toggleBox.height).toBeGreaterThanOrEqual(44);

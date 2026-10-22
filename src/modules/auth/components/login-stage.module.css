@@ -1,0 +1,1317 @@
+/*
+ * Bühne der Anmeldeseiten: „3D-Fotokarussell“ (seit 22.10.2026, Entwurf neu-3; Aufbau in login-stage.tsx, Schleife in
+ * stage-scene.tsx, reine Hilfen in ../stage.ts).
+ *
+ * Eigenes Stylesheet statt Tailwind-Klassen: Die Szene braucht verschachtelte Verläufe, 3D-Ketten, Keyframes und das
+ * Standbild für „Bewegung reduzieren“ aus Winkelfunktionen – als Klassen am Element wäre das nicht mehr lesbar. Eigene Regeln
+ * stehen ohne Ebene und schlagen damit gezielt die Tailwind-Klassen des echten Formulars.
+ *
+ * Die Szene ist in Hell und Dunkel Nacht (wie die Vereins-Bühne des Dashboards); im hellen Modus ist der Himmel ein tiefes
+ * Blau statt fast Schwarz. Bewegt werden nur `transform` und `opacity` – die Werte schreibt die Schleife, die Auftritte von
+ * Schrift und Glasfläche laufen als CSS-Animation (ohne Hauptthread). Alle Maße des Rings hängen am Halbmesser `--r`.
+ */
+
+.stage {
+  --night: #02040b;
+  --blue: 58 107 234;
+  --sky-blue: 120 160 255;
+  --orange: 255 138 94;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Fokussaum auf der Nacht: helles Blau (auf dem Glas und auf der Szene über 7 : 1) */
+  --ring: oklch(0.82 0.1 262);
+
+  /* Ring, schmal zuerst (Handy, Tablet hochkant): 8 Plakate, jedes einmal, ohne Spiegelung. `--panels` liest die Schleife. */
+  --panels: 8;
+  --step: calc(360deg / var(--panels));
+  /* Standbild und Ende des Auftritts: Plakat Nr. 3 (Dart) vorn, eine Spur aus der Mitte (STAGE_START_SPORT + STILL_OFFSET) */
+  --start: 3.08;
+  --r: clamp(240px, 68vw, 400px);
+  --cx: 50%;
+  --cy: calc(var(--r) * 0.62);
+  --pw: calc(var(--r) * 0.6);
+  --ph: calc(var(--pw) * 1.25);
+  --persp: calc(var(--r) * 1.7);
+  /* Kippwinkel der Kamera in Grad (liest die Schleife) und sein Sinus: so weit liegt das vordere Plakat unter der Ringmitte */
+  --tilt: -17;
+  --sine: 0.29;
+  /* Höhe der Plakat-Unterkante (Boden) auf dem Bildschirm, ungefähr – für Horizontlinie, Lichtpfütze und Wischfläche */
+  --floor-y: calc(var(--cy) + var(--r) * var(--sine) + var(--ph) * 0.5);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: #fff;
+  color-scheme: dark;
+  background-color: var(--night);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Schmal hängt der Ring an der SICHTBAREN Höhe (`svh`: mit eingeblendeten Leisten des Browsers, ändert sich beim Scrollen
+ * nicht): Was über dem Glas steht, wächst mit dem Halbmesser (gut 1,3 × `--r` bis zur Schrift), und „Anmelden“ soll im ersten
+ * Bild ganz zu sehen sein – auch in Safari am iPhone (390 × 664) und bei 360 × 640. Auf hohen Bildschirmen bleibt es bei
+ * 68vw. Darunter (sehr kurze Bildschirme) wird der Ring nicht kleiner als 150 px, dann scrollt man ein Stück.
+ */
+@supports (height: 1svh) {
+  .stage {
+    --r: clamp(140px, min(68vw, calc(68svh - 295px)), 400px);
+  }
+}
+
+:global(html:not(.dark)) .stage {
+  --night: #040a1d;
+}
+
+@media (min-width: 64rem) {
+  .stage {
+    --panels: 16;
+    --r: clamp(600px, min(64vw, 104vh), 1200px);
+    --cx: 45%;
+    --cy: 31%;
+    --pw: calc(var(--r) * 0.355);
+    --persp: calc(var(--r) * 1.42);
+    --tilt: -16;
+    --sine: 0.27;
+    cursor: grab;
+    /* Waagerecht ziehen dreht den Ring auch mit dem Finger (Tablet quer); senkrecht scrollt die Seite, Zoomen bleibt. */
+    touch-action: pan-y pinch-zoom;
+  }
+  .stage[data-dragging="true"] {
+    cursor: grabbing;
+    user-select: none;
+  }
+}
+
+/* ---------------------------------------------------------------- Szene (rein schmückend) */
+
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 55% at var(--cx) 0%, rgb(36 64 160 / 0.5), transparent 72%),
+    radial-gradient(60% 40% at 100% 100%, rgb(var(--orange) / 0.1), transparent 70%),
+    radial-gradient(50% 45% at 0% 30%, rgb(110 70 220 / 0.14), transparent 70%),
+    linear-gradient(180deg, #070c20 0%, var(--night) 58%, #010207 100%);
+}
+
+:global(html:not(.dark)) .sky {
+  background:
+    radial-gradient(75% 60% at var(--cx) 0%, rgb(52 92 210 / 0.6), transparent 74%),
+    radial-gradient(60% 40% at 100% 100%, rgb(var(--orange) / 0.14), transparent 70%),
+    radial-gradient(50% 45% at 0% 30%, rgb(120 80 230 / 0.2), transparent 70%),
+    linear-gradient(180deg, #0b1838 0%, var(--night) 60%, #02050f 100%);
+}
+
+/* Raumlicht in der Farbe des vorderen Fotos – je Abteilung eine Schicht, die Schleife blendet nur die Deckkraft. */
+.lights {
+  position: absolute;
+  inset: 0;
+}
+.glow {
+  position: absolute;
+  left: var(--cx);
+  top: var(--floor-y);
+  width: calc(var(--r) * 2.5);
+  height: calc(var(--r) * 1.5);
+  transform: translate(-50%, -62%);
+  opacity: 0;
+  background:
+    radial-gradient(34% 22% at 50% 64%, rgb(var(--light) / 0.7), transparent 100%),
+    radial-gradient(
+      closest-side,
+      rgb(var(--light) / 0.34),
+      rgb(var(--light) / 0.1) 55%,
+      transparent 100%
+    );
+}
+
+/* Lichtpfütze unter den vorderen Plakaten (bleibt am Platz, der Ring dreht darüber) */
+.puddle {
+  position: absolute;
+  left: var(--cx);
+  top: var(--floor-y);
+  width: calc(var(--r) * 1.5);
+  height: calc(var(--r) * 0.34);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    closest-side,
+    rgb(190 210 255 / 0.34),
+    rgb(var(--sky-blue) / 0.12) 45%,
+    transparent 100%
+  );
+}
+
+/* Lichtkegel von oben, langsam schwenkend (hält mit „Bewegung anhalten“ an). */
+.beams span {
+  position: absolute;
+  top: -12%;
+  left: var(--cx);
+  width: calc(var(--r) * 0.42);
+  height: 115%;
+  margin-left: calc(var(--r) * -0.21);
+  transform-origin: 50% 0;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--sky-blue) / 0.2),
+    rgb(var(--sky-blue) / 0.05) 55%,
+    transparent 80%
+  );
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+  filter: blur(14px);
+  opacity: 0.8;
+  animation: sway 17s ease-in-out infinite alternate;
+}
+.beams span:nth-child(2) {
+  --from: 14deg;
+  --to: 6deg;
+  opacity: 0.35;
+  animation-duration: 21s;
+}
+.beams span:nth-child(3) {
+  --from: -16deg;
+  --to: -7deg;
+  opacity: 0.3;
+  animation-duration: 19s;
+}
+@keyframes sway {
+  from {
+    transform: rotate(var(--from, -3deg));
+  }
+  to {
+    transform: rotate(var(--to, 3deg));
+  }
+}
+
+/* Die 3D-Bühne. Die Deckkraft des Auftritts sitzt AUSSERHALB der 3D-Kette (sonst würde sie flachgedrückt). */
+.entrance {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.room {
+  position: absolute;
+  inset: 0;
+  perspective: var(--persp);
+  perspective-origin: var(--cx) var(--cy);
+}
+.anchor {
+  position: absolute;
+  left: var(--cx);
+  top: var(--cy);
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  /* Startlage vor dem ersten Bild der Schleife: weit hinten, gekippt */
+  transform: translate3d(0, 0, calc(var(--r) * -2.7)) rotateX(-18deg);
+  will-change: transform;
+}
+.ring {
+  position: absolute;
+  transform-style: preserve-3d;
+  transform: rotateY(-90deg);
+  will-change: transform;
+}
+
+.panel {
+  /* Winkel zur Kamera im Standbild (0 = vorn) und wie sehr das Plakat nach vorn schaut – für „Bewegung reduzieren“ */
+  --az: calc((var(--i) - var(--start)) * var(--step));
+  --facing: cos(var(--az));
+  --front: max(0, var(--facing));
+  position: absolute;
+  left: calc(var(--pw) * -0.5);
+  top: calc(var(--ph) * -0.5);
+  width: var(--pw);
+  height: var(--ph);
+  transform: rotateY(calc(var(--i) * var(--step))) translateZ(var(--r));
+}
+/* Schmal nur die erste Hälfte: jede Abteilung einmal (STAGE_PANELS.narrow) */
+@media (max-width: 63.999rem) {
+  .panel:nth-child(n + 9) {
+    display: none;
+  }
+}
+
+.halo {
+  position: absolute;
+  inset: -26% -42%;
+  opacity: 0;
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--light) / 0.95),
+    rgb(var(--light) / 0.42) 48%,
+    rgb(var(--light) / 0.1) 75%,
+    transparent
+  );
+}
+.poster {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: calc(var(--pw) * 0.06);
+  background: #0b1022;
+  box-shadow:
+    0 calc(var(--ph) * 0.08) calc(var(--ph) * 0.2) calc(var(--ph) * -0.05) rgb(0 0 0 / 0.7),
+    0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.poster img,
+.reflection img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--focus, 50% 50%);
+  pointer-events: none;
+}
+.poster img {
+  inset: 0;
+}
+/* Unterer Verlauf + Name wie ein Kinoplakat */
+.poster::before {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent, rgb(2 4 12 / 0.85));
+}
+/* Kante, an der das Licht hängen bleibt */
+.poster::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.14),
+    inset 0 1px 0 rgb(255 255 255 / 0.32);
+}
+.label {
+  position: absolute;
+  left: 9%;
+  bottom: 7%;
+  z-index: 2;
+  font-size: calc(var(--pw) * 0.075);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.92);
+}
+.label::before {
+  content: "";
+  display: block;
+  width: 1.6em;
+  height: 2px;
+  margin-bottom: 0.6em;
+  border-radius: 2px;
+  background: rgb(var(--orange));
+}
+.sheen {
+  position: absolute;
+  inset: -20%;
+  z-index: 3;
+  opacity: 0;
+  background: linear-gradient(
+    112deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.16) 44%,
+    rgb(255 255 255 / 0.5) 50%,
+    rgb(255 255 255 / 0.16) 56%,
+    transparent 70%
+  );
+}
+.shade {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #01030a;
+  opacity: 0.5;
+}
+
+/* Spiegelung im Boden (nur breit): dasselbe Foto, gekippt, nach unten ausgeblendet */
+.reflection {
+  position: absolute;
+  left: 0;
+  top: calc(100% + var(--ph) * 0.025);
+  width: 100%;
+  height: 62%;
+  overflow: hidden;
+  border-radius: calc(var(--pw) * 0.06);
+  transform: scaleY(-1);
+  opacity: 0;
+  -webkit-mask-image: linear-gradient(to top, rgb(0 0 0 / 0.7), transparent 78%);
+  mask-image: linear-gradient(to top, rgb(0 0 0 / 0.7), transparent 78%);
+}
+.reflection img {
+  left: 0;
+  bottom: 0;
+  height: calc(100% / 0.62);
+}
+@media (max-width: 63.999rem) {
+  .reflection {
+    display: none;
+  }
+}
+
+/* Glänzender Boden: halbdurchsichtige Scheibe unter dem Ring (die Spiegelungen scheinen hindurch) */
+.floor {
+  position: absolute;
+  left: calc(var(--r) * -1.35);
+  top: calc(var(--r) * -1.35);
+  width: calc(var(--r) * 2.7);
+  height: calc(var(--r) * 2.7);
+  border-radius: 50%;
+  transform: translateY(calc(var(--ph) * 0.5 + 2px)) rotateX(90deg);
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--sky-blue) / 0.16),
+    rgb(var(--blue) / 0.08) 50%,
+    rgb(var(--blue) / 0.03) 72%,
+    transparent 100%
+  );
+}
+
+/* Anamorphe Lichtlinie am Horizont (blitzt auf, wenn ein neues Plakat nach vorn kommt) */
+.horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--floor-y);
+  height: 2px;
+  opacity: 0.55;
+  background: linear-gradient(
+    90deg,
+    transparent 2%,
+    rgb(var(--sky-blue) / 0.25) 22%,
+    rgb(200 220 255 / 0.95) var(--cx),
+    rgb(var(--sky-blue) / 0.25) 78%,
+    transparent 98%
+  );
+  box-shadow:
+    0 0 18px 2px rgb(var(--sky-blue) / 0.55),
+    0 0 60px 8px rgb(var(--blue) / 0.3);
+  transform-origin: var(--cx) 50%;
+  animation: horizon-in 2.2s var(--ease-out) 0.5s both;
+}
+@keyframes horizon-in {
+  from {
+    transform: scaleX(0.02);
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+/* Einmaliger Lichtblitz, wenn der Ring sich auffaltet */
+.flash {
+  position: absolute;
+  left: var(--cx);
+  top: calc(var(--cy) + var(--r) * var(--sine) * 0.6);
+  width: calc(var(--r) * 1.6);
+  height: calc(var(--r) * 0.9);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  background: radial-gradient(
+    closest-side,
+    rgb(235 242 255 / 0.85),
+    rgb(var(--sky-blue) / 0.35) 38%,
+    transparent 100%
+  );
+}
+
+.dust {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Abdunkeln für Lesbarkeit: schmal oben und unter dem Ring, breit links hinter der Schrift und unten der Boden ins Schwarze */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(1 2 7 / 0.5) 0,
+    /* mindestens bis unter die Kopfzeile: Auf kurzen Handys reichen die hinteren Plakate bis ans Logo */
+    transparent max(calc(var(--cy) * 0.5), 4.5rem),
+    transparent calc(var(--floor-y) - 30px),
+    rgb(1 2 7 / 0.8) calc(var(--floor-y) + 90px),
+    rgb(1 2 7 / 0.94) 100%
+  );
+}
+@media (min-width: 64rem) {
+  .scrim {
+    background:
+      radial-gradient(55% 38% at 22% 24%, rgb(1 2 7 / 0.88), rgb(1 2 7 / 0.7) 50%, transparent 82%),
+      radial-gradient(44% 30% at 17% 88%, rgb(1 2 7 / 0.86), rgb(1 2 7 / 0.5) 45%, transparent 78%),
+      linear-gradient(270deg, rgb(1 2 7 / 0.5) 0%, transparent 32%),
+      linear-gradient(0deg, rgb(1 2 7 / 0.92) 0%, rgb(1 2 7 / 0.4) 13%, transparent 27%),
+      radial-gradient(130% 100% at 50% 45%, transparent 60%, rgb(1 2 7 / 0.62) 100%);
+  }
+}
+
+/* Filmkorn: einmal gezeichnet, steht still */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Fokus auf ein Feld: der Raum tritt einen Schritt zurück */
+.focusVeil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(90% 90% at 75% 50%, transparent 20%, rgb(1 2 7 / 0.45));
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out);
+}
+.stage[data-focus="true"] .focusVeil {
+  opacity: 1;
+}
+
+/* Unsichtbarer Maßstab, so breit wie der Halbmesser: Die Schleife kennt ihn so in Pixeln. */
+.measure {
+  position: absolute;
+  width: var(--r);
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- Inhalt */
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1.25rem, env(safe-area-inset-bottom));
+}
+
+.top {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.topEnd {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.logo {
+  border-radius: 0.5rem;
+  animation: fade-in 900ms var(--ease-out) 0.2s both;
+}
+
+/* Schmal: Fläche über dem Ring, auf der man seitlich wischen kann (senkrecht scrollt die Seite weiter) */
+.zone {
+  height: max(5rem, calc(var(--floor-y) - 5.25rem));
+  touch-action: pan-y;
+}
+
+.intro {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  user-select: none;
+}
+
+.eyebrow {
+  display: none;
+  width: fit-content;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.86);
+  background: rgb(1 3 10 / 0.45);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fade-in 900ms var(--ease-out) 0.35s both;
+}
+.eyebrow::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: rgb(var(--orange));
+  box-shadow: 0 0 10px 2px rgb(var(--orange) / 0.7);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2.6rem, 12.4vw, 3.6rem);
+  /* auf kurzen Handys etwas kleiner (siehe `--r`): 48 px bei 390 × 844, 41 px bei 390 × 664 */
+  font-size: clamp(2.25rem, min(12.4vw, 6.2svh), 3.6rem);
+  font-weight: 800;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+.line {
+  position: relative;
+  display: block;
+  /* Maske für den Auftritt: schneidet nur oben und unten, damit die Nachbilder seitlich frei laufen */
+  clip-path: inset(-0.05em -100vw -0.14em -100vw);
+  padding-bottom: 0.06em;
+}
+.word {
+  display: inline-block;
+  animation: rise 1.15s var(--ease-out) var(--delay, 0s) both;
+}
+@keyframes rise {
+  from {
+    transform: translateY(108%) rotate(4deg);
+  }
+  to {
+    transform: none;
+  }
+}
+.plain {
+  color: #fff;
+  text-shadow: 0 2px 30px rgb(1 2 7 / 0.6);
+}
+.swingHolder {
+  position: relative;
+  display: inline-block;
+}
+.swing {
+  position: relative;
+  display: inline-block;
+  padding-right: 0.06em;
+  background: linear-gradient(95deg, #a3bdff 0%, #c9d7ff 38%, #ffc8b0 68%, #ff9c76 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transform-origin: 0 100%;
+  will-change: transform;
+}
+.ghost {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-text-stroke: 1.2px rgb(150 180 255 / 0.85);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.ghost:nth-child(2) {
+  -webkit-text-stroke-color: rgb(200 170 255 / 0.75);
+}
+.ghost:nth-child(3) {
+  -webkit-text-stroke-color: rgb(var(--orange) / 0.7);
+}
+
+/* Abspann wie unten auf einem Filmplakat: Satz und „Im Fokus“ – schmal ausgeblendet */
+.credits {
+  display: contents;
+  user-select: none;
+}
+.tagline {
+  display: none;
+  max-width: 30rem;
+  margin: 0;
+  font-size: 0.975rem;
+  line-height: 1.55;
+  color: rgb(255 255 255 / 0.9);
+  text-shadow:
+    0 1px 2px rgb(1 2 7 / 0.8),
+    0 1px 18px rgb(1 2 7 / 0.9);
+  animation: fade-in 900ms var(--ease-out) 0.9s both;
+}
+
+/* „Im Fokus“: welches Plakat gerade vorn steht */
+.ticker {
+  display: none;
+}
+
+/* Knopf „Bewegung anhalten/fortsetzen“ (WCAG 2.2.2) oben rechts: schmal ein runder Glasknopf (Text für Screenreader),
+   breit eine Pille mit Text neben „Mitgliederbereich“. */
+.motionToggle {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: rgb(1 3 10 / 0.55);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: background-color 200ms ease;
+  animation: fade-in 900ms var(--ease-out) 0.35s both;
+}
+.motionToggle svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .motionToggle:hover {
+    background: rgb(1 3 10 / 0.8);
+  }
+}
+.motionToggle:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+/* Beide Beschriftungen liegen übereinander: Die Pille ist so immer gleich breit, nichts springt beim Umschalten. */
+.motionLabel {
+  display: grid;
+}
+.motionLabel > span {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+.motionLabel > span[aria-hidden="true"] {
+  visibility: hidden;
+}
+@media (max-width: 63.999rem) {
+  .motionLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ---------------------------------------------------------------- Glasfläche mit dem Formular */
+
+.glassHolder {
+  position: relative;
+  margin-top: 1.5rem;
+}
+@keyframes materialize {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Leuchten hinter der Glasfläche – wird beim Fokus stärker */
+.glassHolder::before {
+  content: "";
+  position: absolute;
+  inset: -12% -10%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(var(--blue) / 0.45), transparent);
+  opacity: 0.45;
+  transition: opacity 700ms var(--ease-out);
+  animation: fade-in 1.4s var(--ease-out) 0.7s backwards;
+}
+.stage[data-focus="true"] .glassHolder::before {
+  opacity: 1;
+}
+
+.glass {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 6px;
+  border-radius: 30px;
+  background: rgb(255 255 255 / 0.045);
+  box-shadow:
+    0 40px 120px -30px rgb(0 0 0 / 0.85),
+    inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  backdrop-filter: blur(26px) saturate(1.6);
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+  cursor: auto;
+  /* Auftritt auf der Glasfläche SELBST: Eine Deckkraft-Animation an einem Vorfahren würde ihn zur Grenze des
+     Hintergrund-Weichzeichners machen – das Glas zeigte die Szene dann scharf statt milchig. */
+  animation: materialize 1.1s var(--ease-drawer) 0.55s backwards;
+}
+/* Wanderndes Kantenlicht: ein Farbkegel, der hinter einer Maske (nur der Rand bleibt sichtbar) mit dem Ring kreist */
+.rim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1.25px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+.rimLight {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170%;
+  aspect-ratio: 1;
+  margin-left: -85%;
+  margin-top: -85%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 150deg,
+    rgb(var(--blue) / 0.9) 200deg,
+    #fff 228deg,
+    rgb(var(--orange)) 250deg,
+    transparent 300deg,
+    transparent 360deg
+  );
+  transform: rotate(210deg);
+  will-change: transform;
+}
+.pulse {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1.5px rgb(170 195 255 / 0.95),
+    inset 0 0 40px rgb(var(--blue) / 0.5);
+}
+
+.core {
+  /* Farbwerte des echten Formulars auf dunklem Glas (alle über 4,5 : 1, Feldränder über 3 : 1) */
+  --primary: oklch(0.82 0.1 262);
+  --primary-foreground: oklch(0.17 0.03 258);
+  --muted-foreground: var(--text-soft);
+  --card: rgb(255 255 255 / 0.06);
+  --card-foreground: #fff;
+  --foreground: #fff;
+  --border: rgb(255 255 255 / 0.16);
+  --input: rgb(255 255 255 / 0.5);
+  --destructive: var(--ink-error);
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.75rem 1.4rem 1.4rem;
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--glass-tint), transparent 70%),
+    linear-gradient(180deg, var(--glass-top), var(--glass-bottom));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    inset 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
+.cardHead {
+  display: grid;
+  gap: 0.45rem;
+}
+.cardEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cardEyebrow span {
+  display: inline-block;
+  width: 1.4rem;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgb(var(--blue)), rgb(var(--orange)));
+}
+.cardTitle {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.cardText {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+/* --- die echten Formulare (Anmelden, Code, Passwort), von außen gestaltet --- */
+.core :global(form) {
+  gap: 1.1rem;
+}
+.core :global([data-slot="label"]) {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-label);
+}
+.core :global([data-slot="input"]) {
+  height: 3.1rem;
+  padding-inline: 1rem;
+  border-radius: 14px;
+  border-color: var(--input);
+  background-color: rgb(255 255 255 / 0.05);
+  color: #fff;
+  font-size: 1rem;
+  caret-color: rgb(var(--orange));
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 250ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .core :global([data-slot="input"]:hover) {
+    border-color: rgb(255 255 255 / 0.58);
+  }
+}
+.core :global([data-slot="input"]:focus-visible) {
+  border-color: rgb(150 180 255);
+  background-color: rgb(var(--blue) / 0.12);
+  box-shadow:
+    0 0 0 4px rgb(var(--blue) / 0.32),
+    0 0 32px -4px rgb(110 150 255 / 0.7);
+}
+.core :global([data-slot="input"][aria-invalid="true"]) {
+  border-color: var(--destructive);
+}
+.core :global([data-slot="input"]:-webkit-autofill) {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  box-shadow: 0 0 0 100px #121933 inset;
+}
+
+.core :global(button[type="submit"][data-slot="button"]:not([data-variant="outline"])) {
+  position: relative;
+  overflow: hidden;
+  height: 3.3rem;
+  margin-top: 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  /* Weiße Schrift auf Vereinsblau: 4,7 : 1 an der hellsten Stelle (STAGE_BUTTON) */
+  background: linear-gradient(
+    100deg,
+    var(--button-from) 0%,
+    var(--button-via) 45%,
+    var(--button-to) 100%
+  );
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 14px 40px -12px rgb(var(--blue) / 0.95),
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    inset 0 -1px 0 rgb(0 0 0 / 0.2);
+}
+/* Eigener Fokussaum (WCAG 2.4.7): Der Schatten oben ersetzt den Tailwind-Ring des Knopfes, `outline-none` nimmt den Saum
+   aus globals.css – ohne diese Regel sähe man den Tastaturfokus auf „Anmelden“ gar nicht. Weiß wie bei „Bewegung anhalten“. */
+.core
+  :global(button[type="submit"][data-slot="button"]:not([data-variant="outline"]):focus-visible) {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+/* Lichtkante, die über den Knopf wischt (beim Darüberfahren) – schwach genug, dass die Schrift lesbar bleibt */
+.core :global(button[type="submit"][data-slot="button"]:not([data-variant="outline"]))::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.14), transparent);
+  transform: translateX(-120%) skewX(-18deg);
+  transition: transform 700ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .core
+    :global(button[type="submit"][data-slot="button"]:not([data-variant="outline"]):hover)::after {
+    transform: translateX(300%) skewX(-18deg);
+  }
+}
+/* Nebenknöpfe (z. B. „Abbrechen“ beim Code) als dunkles Glas mit weißer Schrift */
+.core :global([data-slot="button"][data-variant="outline"]) {
+  height: 3rem;
+  border-color: rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.04);
+  color: #fff;
+}
+.core :global(a) {
+  color: var(--ink-link);
+}
+.core :global([data-slot="alert"]) {
+  border-color: rgb(255 255 255 / 0.14);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.cardFoot {
+  margin: 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-soft);
+}
+.cardFoot a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.foot {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  animation: fade-in 900ms var(--ease-out) 1.1s both;
+}
+.foot a {
+  border-radius: 0.25rem;
+  color: var(--text-foot);
+  text-underline-offset: 4px;
+}
+.foot a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Schmal etwas dichter (zusammen gut 25 px), damit „Anmelden“ auf kurzen Handys im ersten Bild steht (siehe `--r`).
+   Felder und Knopf bleiben deutlich über 44 px hoch. */
+@media (max-width: 63.999rem) {
+  .glassHolder {
+    margin-top: 1.25rem;
+  }
+  .core {
+    gap: 1.25rem;
+    padding-top: 1.4rem;
+  }
+  .core :global(form) {
+    gap: 1rem;
+  }
+  .core :global([data-slot="input"]) {
+    height: 3rem;
+  }
+  .core :global(button[type="submit"][data-slot="button"]:not([data-variant="outline"])) {
+    height: 3.125rem;
+    margin-top: 0;
+  }
+}
+
+/* Tablet hochkant: eine mittige Spalte statt randvoll */
+@media (min-width: 40rem) and (max-width: 63.999rem) {
+  .content {
+    width: 100%;
+    max-width: 32rem;
+    margin-inline: auto;
+  }
+}
+
+/* ---------------------------------------------------------------- Breiter Bildschirm: Schrift links, Glas rechts */
+
+@media (min-width: 64rem) {
+  /* Wie ein Filmplakat: Titel oben, Abspann unten – das mittlere Band bleibt frei für die vorderen Plakate. */
+  .content {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 26.5rem);
+    grid-template-rows: auto auto 1fr auto auto;
+    column-gap: clamp(2rem, 5vw, 5rem);
+    align-content: stretch;
+    padding: 2.1rem clamp(2rem, 4.6vw, 4.75rem) 1.6rem;
+  }
+  .top {
+    grid-column: 1 / -1;
+  }
+  .eyebrow {
+    display: inline-flex;
+    min-height: 2.25rem;
+  }
+  .zone {
+    display: none;
+  }
+  .intro {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    padding-top: clamp(0.5rem, 2.6vh, 2rem);
+  }
+  .title {
+    font-size: clamp(4.25rem, min(7.3vw, 11.6vh), 8rem);
+    line-height: 0.9;
+    letter-spacing: -0.055em;
+  }
+  .credits {
+    grid-column: 1;
+    grid-row: 4;
+    display: grid;
+    gap: 1rem;
+    align-self: end;
+    margin-bottom: 1.1rem;
+  }
+  .tagline {
+    display: block;
+    font-size: 1.0625rem;
+  }
+  .ticker {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: fit-content;
+    padding: 0.55rem 1rem 0.55rem 0.9rem;
+    border-radius: 999px;
+    background: rgb(1 3 10 / 0.55);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 0.8125rem;
+    animation: fade-in 900ms var(--ease-out) 1.2s both;
+  }
+  .motionToggle {
+    width: auto;
+    height: 2.25rem;
+    padding: 0 1rem 0 0.85rem;
+  }
+  .glassHolder {
+    grid-column: 2;
+    grid-row: 2 / 6;
+    align-self: center;
+    margin-top: 0;
+  }
+  .core {
+    padding: 2.1rem 2rem 1.6rem;
+  }
+  .foot {
+    grid-column: 1;
+    grid-row: 5;
+    justify-content: flex-start;
+    margin-top: 0;
+  }
+}
+
+.tickerLabel {
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.tickerReel {
+  position: relative;
+  display: block;
+  width: 9.5rem;
+  height: 1.25rem;
+  overflow: hidden;
+}
+.tickerReel > span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(80%);
+  transition:
+    transform 650ms var(--ease-out),
+    opacity 400ms var(--ease-out);
+}
+.tickerReel > span[data-state="active"] {
+  opacity: 1;
+  transform: none;
+}
+.tickerReel > span[data-state="gone"] {
+  opacity: 0;
+  transform: translateY(-80%);
+}
+.tickerReel small {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.tickerReel b {
+  font-weight: 650;
+  color: #fff;
+}
+.tickerTrack {
+  position: relative;
+  width: 4.5rem;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.16);
+}
+.tickerTrack > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  transform: scaleX(0.5);
+  background: linear-gradient(90deg, rgb(var(--blue)), rgb(var(--orange)));
+}
+.tickerHint {
+  display: none;
+  white-space: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgb(255 255 255 / 0.14);
+  color: var(--text-muted);
+}
+@media (min-width: 75rem) {
+  .tickerHint {
+    display: inline-flex;
+  }
+}
+
+/* ---------------------------------------------------------------- Bewegung angehalten (Knopf) */
+
+/* Die Schleife steht; was CSS endlos bewegt (Lichtkegel, atmender Punkt), hält an derselben Stelle an. */
+.stage[data-motion="paused"] .beams span,
+.stage[data-motion="paused"] .eyebrow::before {
+  animation-play-state: paused;
+}
+
+/* ---------------------------------------------------------------- Schwache Grafik (`data-quality="low"`) */
+
+/*
+ * Setzt die Schleife, wenn die ersten Bilder nach dem Auftritt im Mittel länger als 28 ms dauern (Rechner ohne
+ * Grafikbeschleunigung, Software-Darstellung; `isSlowStage` in ../stage.ts). Am teuersten ist dann die 3D-Kette selbst:
+ * Spiegelung, Lichthöfe, die große Bodenscheibe und die weichen Schlagschatten der Plakate fallen weg (in Software gemessen
+ * gut 25 → 45 Bilder/s), ebenso die Weichzeichner hinter Glas und Pillen – das Glas wird dafür dicht. Die Unschärfe-Stufen
+ * und den Großteil des Lichtstaubs lässt die Schleife selbst weg. Der Ring dreht weiter wie vorher, das Raumlicht bleibt.
+ */
+.stage[data-quality="low"] .reflection,
+.stage[data-quality="low"] .halo,
+.stage[data-quality="low"] .floor {
+  display: none;
+}
+.stage[data-quality="low"] .poster {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.stage[data-quality="low"] .glass,
+.stage[data-quality="low"] .eyebrow,
+.stage[data-quality="low"] .ticker,
+.stage[data-quality="low"] .motionToggle {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.stage[data-quality="low"] .glass {
+  background: rgb(9 13 30 / 0.94);
+}
+
+/* ---------------------------------------------------------------- Bewegung reduzieren: Standbild ohne Schleife */
+
+/*
+ * Fertig komponiert und ohne JavaScript: Ring in der Endlage des Auftritts (Dart vorn), jedes Plakat so dunkel, scharf und
+ * beleuchtet wie in der Schleife (`panelLook` in ../stage.ts – dieselben Formeln mit cos() und pow()). Kein Auftritt, kein
+ * Lichtstaub in Bewegung, kein Knopf „Bewegung anhalten“ (es bewegt sich nichts) und kein „Zum Drehen ziehen“.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .logo,
+  .eyebrow,
+  .eyebrow::before,
+  .word,
+  .tagline,
+  .ticker,
+  .glass,
+  .glassHolder::before,
+  .foot,
+  .horizon,
+  .beams span {
+    animation: none;
+  }
+  .tickerReel > span,
+  .focusVeil,
+  .glassHolder::before {
+    transition: none;
+  }
+  .entrance {
+    opacity: 1;
+  }
+  .anchor {
+    transform: translate3d(0, 0, calc(var(--r) * -1)) rotateX(calc(var(--tilt) * 1deg));
+  }
+  .ring {
+    transform: rotateY(calc(var(--start) * var(--step) * -1));
+  }
+  .shade {
+    opacity: calc(pow((1 - var(--facing)) / 2, 1.15) * 0.88);
+  }
+  .reflection {
+    opacity: calc(pow(var(--front), 2.4) * 0.46);
+  }
+  .sheen {
+    opacity: calc(pow(max(0, cos(var(--az) + 34deg)), 26) * 0.85);
+  }
+  .label {
+    opacity: clamp(0, (var(--facing) - 0.15) * 2.5, 1);
+  }
+  .halo {
+    opacity: calc(pow(var(--front), 5) * 0.75);
+  }
+  .glow[data-still="true"] {
+    opacity: 0.9;
+  }
+  .motionToggle,
+  .tickerHint {
+    display: none;
+  }
+}
+/* Unschärfe der hinteren Plakate, nur breit: stufenlos statt in den drei Stufen der Schleife (ab halber Tiefe bis 5 px) */
+@media (prefers-reduced-motion: reduce) and (min-width: 64rem) {
+  .poster img {
+    filter: blur(calc(clamp(0, ((1 - var(--facing)) / 2 - 0.45) * 12, 5.1) * 1px));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .core {
+    background: #0a0f22;
+  }
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #0d1328;
+  }
+}
