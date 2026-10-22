@@ -1,6 +1,6 @@
 // VereinsFlow – Website · buehne.js (nur Startseite, als Modul): Posen der Geräte in Ruhe, Kamerafahrt in den Laptop,
 // Wortwalze, magnetische Knöpfe, Lichtkanten am Telefon, Zählwerke, die Spur der Helferplanung, die Umlaufbahn um das
-// Telefon, Karten unter dem Zeiger, der Lichtstreif der Finanzen, Rollen, Startlinie, Fragen (View Transition), das
+// Telefon, der Startbildschirm der Funktionen, der Lichtstreif der Finanzen, Rollen, Startlinie, Fragen (View Transition), das
 // Finale und der Lichtfluss (fluss.js). Die Geräte selbst bewegt nur
 // site.js (wörtlich wie bisher) – hier werden ihre Zustände (.is-rest) nur gelesen. Laufende Werte gehen per CSSOM
 // (style.setProperty) an die Hüllen; keine Scroll-Listener (Wächter über IntersectionObserver, Bewegung über
@@ -519,10 +519,11 @@ zaehlenBeimErscheinen($(".dreizehn [data-zahl]"), " 0", [0, 1], 1300);
 zaehlenBeimErscheinen($(".geldzahl [data-zahl]"), " 0.000,00", [0, 0, 0, 0, 0, 1, 1], 1500);
 
 // --- Kapitel 3 · Spur (ab 1200 × 760 mit Bewegung): drei Zonen am Band bei 45 % setzen data-schritt an .spur (0 =
-// davor). Schritt 2: Ein Lichtkomet fliegt den Strom entlang in Annas Platz (fluss.js, 1,2 s), dann .ist-eingetragen –
-// der Platz leuchtet auf, ein Ring läuft aus, die Zeile glimmt, die Zahl rollt von 9 auf 10, Telefon und Chips zeigen
-// ihren Eintrag. Springt der Schritt
-// (schnelles Scrollen), steht der Endzustand sofort da. ---
+// davor). Schritt 1: die Ampel baut sich auf, alle Plätze frei (die Zahl steht auf 0). Schritt 2: Die Plätze füllen
+// sich (site.css), die Zahl rollt auf 10, ein Lichtkomet fliegt den Strom entlang in Annas Platz (fluss.js, 1,2 s),
+// dann .ist-eingetragen – ihr Platz füllt sich, ein Ring läuft aus, die Zeile glimmt, das Telefon zeigt ihren Eintrag.
+// Springt der Schritt (schnelles Scrollen), steht der Endzustand sofort da. Schmal (ohne Bühne) mit Bewegung füllt
+// sich die Ampel einmal, sobald sie zu 60 % im Bild ist (.fuellt → .ist-gefuellt). ---
 const spur = $("[data-spur]");
 const spurMq = window.matchMedia("(min-width: 1200px) and (min-height: 760px) and (prefers-reduced-motion: no-preference)");
 const spurFlug = $(".fluss-flug");
@@ -534,14 +535,15 @@ let spurIo;
 function eintragen(animiert) {
   eingetragen = true;
   const nr = ++flugNr;
+  if (animiert) zwHoch(spurZahl, 1500);
+  else zwEnde(spurZahl);
   const landen = () => {
     if (nr !== flugNr || spurSchritt < 2) return;
     spur.classList.add("ist-eingetragen");
-    if (!animiert) return zwEnde(spurZahl);
+    if (!animiert) return;
     spur.classList.remove("ist-gelandet");
     void spur.offsetWidth;
     spur.classList.add("ist-gelandet");
-    zwHoch(spurZahl, 650);
   };
   const f = animiert && spurFlug && fluss(spurFlug);
   if (f) Promise.race([f.flug($("#platz-anna"), { dauer: 1200 }), new Promise((r) => setTimeout(r, 1800))]).then(landen);
@@ -576,7 +578,7 @@ function spurStarten() {
     eingetragen = false;
     return;
   }
-  spurZahl ??= zaehlwerk($(".k03 .gz-zahl"), " 9", [0, 0]);
+  spurZahl ??= zaehlwerk($(".k03 [data-zahl]"), " 0", [0, 1]);
   if (spurSchritt < 0) {
     zwAnfang(spurZahl);
     spurSetzen(0);
@@ -592,6 +594,25 @@ function spurStarten() {
     { rootMargin: "-45% 0px -54% 0px" },
   );
   $$(".spur-zone", spur).forEach((z) => spurIo.observe(z));
+}
+const k03Ampel = spur && $(".ampel-glas", spur);
+let fuellIo;
+function fuellenKompakt() {
+  fuellIo?.disconnect();
+  if (!k03Ampel || spurMq.matches || !canObserve || bewegungAus.matches || spur.classList.contains("ist-gefuellt")) return;
+  spurZahl ??= zaehlwerk($(".k03 [data-zahl]"), " 0", [0, 1]);
+  zwAnfang(spurZahl);
+  spur.classList.add("fuellt");
+  fuellIo = new IntersectionObserver(
+    ([e]) => {
+      if (!e.isIntersecting) return;
+      fuellIo.disconnect();
+      spur.classList.add("ist-gefuellt");
+      zwHoch(spurZahl, 1500);
+    },
+    { threshold: 0.6 },
+  );
+  fuellIo.observe(k03Ampel);
 }
 
 // --- Kapitel 4 · Umlaufbahn (ab 1200 × 720): Lage aus dem Telefon (Layout, ohne Bewegung); die Chips kreisen in 40 s um
@@ -703,97 +724,23 @@ if (kreis) {
   kreisMq.addEventListener("change", kreisStarten);
 }
 
-// --- Kapitel 5 · Karten unter dem Zeiger (nur Maus, mit Bewegung): Die Karte unter dem Zeiger neigt sich (höchstens 8°,
-// nachgeführt mit 0,12 je Bild) und hebt sich 26 px, ihr Glanz folgt dem Zeiger; die Lichtkante jeder Karte zeigt zu
-// ihm, ferne Karten schwächer. Beim Verlassen federt sie in 500 ms zurück. Ein Zeiger-Listener, gerechnet je Bild. ---
-const karten = $$(".bento .fkarte");
-const FEDER = CSS.supports("transition-timing-function", "linear(0, 1)") ? getComputedStyle(document.documentElement).getPropertyValue("--feder-ruhig").trim() : "";
-const NEIG0 = "perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)";
-const kartenAn = () => feinMq.matches && !bewegungAus.matches;
-const neig = { rx: 0, ry: 0, z: 0 };
-let kartenTeile = [];
-let kZeiger = null;
-let kSchleife = 0;
-let gehoben = null;
-function kartenVorbereiten() {
-  if (!kartenAn() || kartenTeile.length) return;
-  kartenTeile = karten.map((k) => {
-    const licht = neuEl("span", "fk-licht");
-    const ring = neuEl("span", "fk-ring");
-    const fleck = neuEl("span", "fk-fleck");
-    const glanz = neuEl("span", "fk-glanz");
-    licht.setAttribute("aria-hidden", "true");
-    ring.append(fleck);
-    licht.append(ring, glanz);
-    k.prepend(licht);
-    return { k, fleck, glanz };
+// --- Kapitel 5 · Startbildschirm: Überfahren und Tastaturfokus zeigen den kurzen Satz eines Bereichs ohne Skript
+// (site.css). Ein Tippen oder Klick hält ihn fest (.ist-aktiv), bis ein anderes Symbol gewählt, daneben getippt oder
+// Esc gedrückt wird; ein zweites Tippen auf dasselbe Symbol löst ihn wieder. ---
+const apps = $("[data-apps]");
+if (apps) {
+  const loesen = (ausser) => $$(".app.ist-aktiv", apps).forEach((a) => a !== ausser && a.classList.remove("ist-aktiv"));
+  apps.addEventListener("click", (e) => {
+    const app = e.target instanceof Element ? e.target.closest(".app-knopf")?.closest(".app") : null;
+    if (!app) return;
+    loesen(app);
+    app.classList.toggle("ist-aktiv");
   });
-}
-function loslassen(k) {
-  const von = k.style.transform;
-  k.classList.remove("ist-gehoben");
-  k.style.removeProperty("transform");
-  if (von) k.animate([{ transform: von }, { transform: NEIG0 }], { duration: 500, easing: FEDER || ROLL });
-}
-function kartenBild() {
-  kSchleife = 0;
-  const basis = karten[0]?.offsetParent?.getBoundingClientRect();
-  if (!basis) return;
-  let ziel = null;
-  for (const t of kartenTeile) {
-    const { offsetLeft: x0, offsetTop: y0, offsetWidth: w, offsetHeight: h } = t.k;
-    const x = basis.left + x0;
-    const y = basis.top + y0;
-    t.r = { x, y, w, h };
-    if (!kZeiger) {
-      t.fleck.style.setProperty("opacity", "0");
-      continue;
-    }
-    if (kZeiger.x >= x && kZeiger.x <= x + w && kZeiger.y >= y && kZeiger.y <= y + h) ziel = t;
-    // Lichtkante: Fleck auf dem Rand in Richtung des Zeigers
-    const dx = kZeiger.x - (x + w / 2);
-    const dy = kZeiger.y - (y + h / 2);
-    const s = Math.min(w / 2 / (Math.abs(dx) || 1e-6), h / 2 / (Math.abs(dy) || 1e-6), 1);
-    t.fleck.style.setProperty("translate", `${(w / 2 + dx * s).toFixed(1)}px ${(h / 2 + dy * s).toFixed(1)}px`);
-    t.fleck.style.setProperty("opacity", (Math.max(0.12, 1 - Math.hypot(dx, dy) / 760) * 0.95).toFixed(3));
-  }
-  if (ziel?.k !== gehoben) {
-    if (gehoben) loslassen(gehoben);
-    gehoben = ziel?.k ?? null;
-    neig.rx = neig.ry = neig.z = 0;
-    gehoben?.classList.add("ist-gehoben");
-  }
-  if (!ziel) return;
-  const fx = (kZeiger.x - ziel.r.x) / ziel.r.w;
-  const fy = (kZeiger.y - ziel.r.y) / ziel.r.h;
-  const rx = (0.5 - fy) * 12;
-  const ry = (fx - 0.5) * 16;
-  neig.rx += (rx - neig.rx) * 0.12;
-  neig.ry += (ry - neig.ry) * 0.12;
-  neig.z += (26 - neig.z) * 0.12;
-  ziel.k.style.setProperty("transform", `perspective(900px) rotateX(${neig.rx.toFixed(2)}deg) rotateY(${neig.ry.toFixed(2)}deg) translateZ(${neig.z.toFixed(1)}px)`);
-  ziel.glanz.style.setProperty("translate", `${(fx * ziel.r.w).toFixed(1)}px ${(fy * ziel.r.h).toFixed(1)}px`);
-  if (Math.abs(rx - neig.rx) > 0.02 || Math.abs(ry - neig.ry) > 0.02 || 26 - neig.z > 0.05) kSchleife = requestAnimationFrame(kartenBild);
-}
-const kartenAnstossen = () => {
-  if (!kSchleife) kSchleife = requestAnimationFrame(kartenBild);
-};
-const bereich = karten[0]?.closest(".kapitel");
-if (bereich) {
-  kartenVorbereiten();
-  bereich.addEventListener(
-    "pointermove",
-    (e) => {
-      if (e.pointerType !== "mouse" || !kartenAn()) return;
-      kartenVorbereiten();
-      kZeiger = { x: e.clientX, y: e.clientY };
-      kartenAnstossen();
-    },
-    { passive: true },
-  );
-  bereich.addEventListener("pointerleave", () => {
-    kZeiger = null;
-    kartenAnstossen();
+  document.addEventListener("click", (e) => {
+    if (!(e.target instanceof Node) || !apps.contains(e.target)) loesen();
+  });
+  apps.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") loesen();
   });
 }
 
@@ -1080,10 +1027,14 @@ function alles() {
   waechterStarten();
   walzeStarten();
   spurStarten();
+  fuellenKompakt();
   kreisStarten();
   streifMessen();
 }
-spurMq.addEventListener("change", spurStarten);
+spurMq.addEventListener("change", () => {
+  spurStarten();
+  fuellenKompakt();
+});
 alles();
 fluesseStarten();
 let neuT = 0;
