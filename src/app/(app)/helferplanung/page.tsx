@@ -458,16 +458,8 @@ function OpenShiftRow({ event, shift }: { event: PlanningEvent; shift: PlanningS
             eventId={event.eventId}
             title={shift.title}
             focusAfter={`veranstaltung-${event.eventId}`}
-            trigger={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="-mr-2 text-primary hover:text-primary max-sm:h-11"
-                aria-label={`Helfer für ${shift.title} zuweisen`}
-              >
-                Zuweisen
-              </Button>
-            }
+            // Den Knopf baut der Dialog selbst (kein Element vom Server in `asChild`, siehe AssignDialog).
+            textTrigger={{ className: "-mr-2 text-primary hover:text-primary max-sm:h-11" }}
           />
         ) : null}
       </span>
