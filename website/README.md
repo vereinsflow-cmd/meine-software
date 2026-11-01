@@ -368,7 +368,7 @@ jeder Wechsel ist ein Bogen, der sich beim Scrollen über das Kapitel davor schi
 
 | Kap. | Anker | Fläche | Was geschieht (mit Bewegung) | Ohne Bewegung, ohne Skript, schmal |
 | --- | --- | --- | --- | --- |
-| 1 Einstieg | `#top` | Nacht | Laptop (−17°, leicht von oben, schwache Spiegelung im Boden) und Telefon (−24°) in 3D-Posen über die Hülle `.pose`, Studiolicht, Lichtkanten am Titanrahmen (gemessen), „Fluss“ hinter der Deckelkante, die Pinnnadel auf der Deckelecke. Raster wie Kopfzeile und Kapitel: Text am Inhaltsrand (`--x0`), Geräte bis an den Seitenrand (`--gx`), Maßstab `--u` so, dass alles passt und die Überschrift 16 px unter der Kopfzeile steht. Bis der Laptop posiert, steht seine Hülle um den Weg weiter rechts, den die Drehung ausmacht (Deckelkante bleibt stehen, läuft nie über den Text). Ab 1024 × 720 klebt die Bühne über `--fahrt-strecke` (220svh) und die Kamera fährt in den Laptop: Überschrift fliegt vorbei, das Telefon zieht in seiner Pose rechts hinaus, ab 58 % frontal, ab 88 % Maßstab 1, dann die flache Aufnahme mit drei Marken und der Tafel „Zahlen, die dem Vorstand helfen“ (`#im-detail`); die Kopfzeile fährt dabei aus. Seit 22.10.2026 fährt sie von selbst (Luis: „zu unflüssig“): ein kleines Stück Scrollen, und die Seite fährt in 1,8 s bis zur Tafel; vom Ende ein Stück nach oben fährt zurück (siehe „Kamerafahrt“ unter Leistung) | Bühne in Ruhe, „Im Detail“ als eigener Abschnitt (am Smartphone im Telefon); ohne scroll-driven Animationen drei feste Stufen (dort nichts von selbst) |
+| 1 Einstieg | `#top` | Nacht | Laptop (−17°, leicht von oben, schwache Spiegelung im Boden) und Telefon (−24°) in 3D-Posen über die Hülle `.pose`, Studiolicht, Lichtkanten am Titanrahmen (gemessen), „Fluss“ hinter der Deckelkante, die Pinnnadel auf der Deckelecke. Raster wie Kopfzeile und Kapitel: Text am Inhaltsrand (`--x0`), Geräte bis an den Seitenrand (`--gx`), Maßstab `--u` so, dass alles passt und die Überschrift 16 px unter der Kopfzeile steht. Bis der Laptop posiert, steht seine Hülle um den Weg weiter rechts, den die Drehung ausmacht (Deckelkante bleibt stehen, läuft nie über den Text). Ab 1024 × 720 klebt die Bühne über `--fahrt-strecke` (220svh) und die Kamera fährt in den Laptop: Überschrift fliegt vorbei, das Telefon zieht in seiner Pose rechts hinaus, in einem Zug bis die flache Aufnahme fensterbreit steht (Überblendung bei 74–84 %), mit drei Marken und der Tafel „Zahlen, die dem Vorstand helfen“ (`#im-detail`); die Kopfzeile fährt dabei aus. Seit 22.10.2026 fährt sie von selbst (Luis: „zu unflüssig“): ein kleines Stück Scrollen, und die Seite fährt in 2 s bis zur Tafel; vom Ende ein Stück nach oben fährt zurück (siehe „Kamerafahrt“ unter Leistung) | Bühne in Ruhe, „Im Detail“ als eigener Abschnitt (am Smartphone im Telefon); ohne scroll-driven Animationen drei feste Stufen (dort nichts von selbst) |
 | 2 Ausgangslage | `#ausgangslage` | Nacht | Wortwalze „VereinsFlow bündelt …“: das Wort wechselt an vier Scroll-Zonen (kein Zeitgeber), vier Lichtlinien laufen in den Punkt hinter „Ort“; dann schiebt sich der Papierbogen hoch, der Strom färbt sich an der Kante zu Tinte | die vier Wörter untereinander, harter Schnitt |
 | 3 Helferplanung | `#helferschichten` | Papier | seit 22.10.2026 „radikal einfach“ (Entwurf C, Luis: vorher „zu erdrückend … zu viel Text“): die Überschrift sind die drei Schritte „Schichten anlegen. Helfer tragen sich ein. Helferplan drucken.“, die beim Scrollen nacheinander erscheinen; daneben eine einzige Ampel, die sich von 0 auf 10 von 21 füllt (Lichtkomet in Annas Platz, „noch niemand“ am Grillstand), Telefon klein daneben, in Schritt 3 legt sich der Aushang über die Ampel | drei Sätze und Ampel im Endstand |
 | 4 Unterwegs | `#unterwegs` | Nacht | das Telefon dreht sich ins Bild (wie bisher), ab 1200 × 720 kreisen fünf Glas-Chips auf einer geneigten Umlaufbahn aus Licht | Chips als Reihe |
@@ -481,13 +481,15 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
     nicht (kein halber Zustand). Vom Ende ein Stück nach oben (bzw. Pfeil auf, Bild auf, Umschalt+Leertaste) fährt zurück
     an den Anfang; vom Ende nach unten scrollt man wie immer weiter in Kapitel 2.
   - **Fahren:** je Bild `scrollTo` per `requestAnimationFrame` – gleichmäßige Schritte nach der Uhr, unabhängig davon, wie
-    die Eingabe kam. 1,8 s für die ganze Strecke (kürzere Wege kürzer), Kurve `cubic-bezier(0.3, 0.1, 0.3, 1)` (sofort
-    sichtbar anfahren, lang auslaufen) über einen **Fahrplan**: Im Bild geschieht die Fahrt in zwei Zügen – Kamera an den
-    Laptop (0–58 %) und Zoom der flachen Aufnahme mit Tafel und Marken (94–100 %), beide vergrößern etwa 1,45-fach;
-    dazwischen ändert sich wenig. Gleichmäßig über die Strecke verteilt stand das Bild dort eine halbe Sekunde fast still
-    und der letzte Zoom kam als Ruck. Der Fahrplan gibt der Mitte (58–92 %) 0,45-fache und dem Ende (ab 93,5 %) 7-fache
-    Zeit, mit weichen Übergängen: zwei gleich starke Züge mit gut 0,1 s Atempause (am Zoomtempo je Bild nachgerechnet und
-    an Standbildern geprüft). Ziel ist genau das Ende der Strecke – derselbe Endzustand wie bisher, Tafel ganz im Bild.
+    die Eingabe kam. 2 s für die ganze Strecke (kürzere Wege kürzer), Kurve `cubic-bezier(0.4, 0.08, 0.22, 1)`. Seit
+    2.11.2026 zoomt die Kamera **in einem Zug** (Luis: „immer noch zu unflüssig beim Reinzoomen“): Vorher waren es zwei
+    Züge – Kamera an den Laptop (0–58 %, 1,45-fach in gut 0,3 s), Halt mit Überblendung, dann die flache Aufnahme
+    (94–100 %, noch einmal 1,4-fach in 0,9 s). Jetzt fährt die Kamera vom Einstieg ohne Halt weiter in den Bildschirm, bis
+    die flache Aufnahme fensterbreit steht (`--ks0` → `--kse`, gut 2,2- bis 2,6-fach), um einen festen Punkt etwa in der
+    Mitte des Bildschirms; der Maßstab wächst über die Strecke exponentiell (Bézier-Näherung in `fahrt-kamera`), das
+    Zoomtempo folgt also allein der Kurve: sanft an, um 0,7 s am schnellsten (gut 10 % je 100 ms), lang aus. Die flache
+    Aufnahme fährt deckungsgleich mit (`--fdx`/`--fdy`) und blendet mitten im Zug über (74–84 %, bei 0,96–1,12 s – dann
+    steht der Laptop frontal). Ziel ist genau das Ende der Strecke – derselbe Endzustand wie bisher, Tafel ganz im Bild.
   - **Eingaben während der Fahrt:** Mausrad (`passive: false`, angemeldet nur, solange die Fahrt im Fenster ist), Finger
     (`touchmove` mit `passive: false` nur über der Fahrt) und Tasten werden abgefangen, nichts arbeitet gegeneinander; der
     Rest einer Geste (Schwung des Trackpads, gehaltene Taste, liegender Finger) auch nach der Ankunft – das Mausrad
@@ -507,7 +509,7 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
     Scrollen). Unter 1024 × 720, bei „Bewegung reduzieren“ und ohne scroll-driven Animationen (drei Stufen) ändert sich
     nichts. Fokus und Vorlesen bleiben unberührt: Nichts bekommt oder verliert den Fokus, am DOM ändert sich nichts.
   - **Großes Bild:** wird jetzt schon in Leerlaufzeit geladen, dekodiert und eingesetzt, sobald der Laptop posiert –
-    sonst fiele das Einsetzen mitten in die 1,8 s. Wer vorher losscrollt, löst es wie bisher beim Losfahren aus.
+    sonst fiele das Einsetzen mitten in die 2 s. Wer vorher losscrollt, löst es wie bisher beim Losfahren aus.
   - **Gemessen** mit `tools/fahrt-messen.mjs` (22.10.2026, gleiche Maschine; kalt, Mittel aus drei Läufen; vorher = alter
     Stand, Mausrad wie ein Trackpad durch die ganze Strecke, nachher = ein Stoß von 100 px, `--scroll stoss` bzw.
     `stoss-zurueck`, alter Stand rückwärts mit `trackpad-zurueck`). Verpasste Bilder vorwärts: Chrome 1440 × 900 @2 1 → 1
@@ -557,6 +559,6 @@ WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, da
   und die Pinnnadel; Himmel und Vereinsblau sind Licht und Akzent. Textfarben je Fläche mit gemessenem Kontrast (Werte und
   Verhältnisse oben in `site.css`, `:root`). Die Seite folgt bewusst nicht der hellen oder dunklen Einstellung des Geräts.
 - **Bewegung:** siehe „Gestaltung und Bewegung“. Leicht zu ändern: die Länge der Kamerafahrt (`--fahrt-strecke`, derzeit
-  220svh), wie sie von selbst fährt (`buehne.js`: `FAHRT_DAUER` 1,8 s, `SCHWELLE` 40 px, `fahrtKurve`, `fahrplan`), die
+  220svh), wie sie von selbst fährt (`buehne.js`: `FAHRT_DAUER` 2 s, `SCHWELLE` 40 px, `fahrtKurve`), die
   Dauern im Finale (`buehne.js`, „Kapitel 10 · Finale“), ob Kapitel 5 Nacht bleibt (Klasse `nacht` statt
   `papier` am Abschnitt, Farben folgen den Variablen).

@@ -8177,9 +8177,10 @@ html:not(.js) .k01 .iphone-rim,
 
 /* ==========================================================================
    12a. Kamerafahrt (ab 1024 × 720, mit Bewegung, mit Skript): Die Bühne klebt, die Kamera fährt in den Laptop.
-   Die Geometrie rechnet buehne.js (Variablen an .buehne, in Pixeln): --kx0/--ky0/--ks0 im Einstieg, --kx1/--ky1/--ks1
-   bei 58 % (frontal), --kx2/--ky2 ab 88 % (Maßstab 1, ganze Pixel), --fx/--fy/--fs flache Aufnahme deckungsgleich auf
-   dem Bildschirm. Animiert werden nur Hüllen; Fortschritt = view-timeline --fahrt (Bereich contain der Spur). Die Seite
+   Die Geometrie rechnet buehne.js (Variablen an .buehne, in Pixeln): --kx0/--ky0/--ks0 im Einstieg, --kxe/--kye/--kse
+   am Ende (flache Aufnahme fensterbreit), --fdx/--fdy Ursprung der flachen Aufnahme in der Kamera, --fs ihr Maßstab
+   gegenüber dem Bildschirm; --kx1/--ky1/--ks1, --kx2/--ky2 und --fx/--fy nur noch für die drei Stufen ohne scroll-driven
+   Animationen. Animiert werden nur Hüllen; Fortschritt = view-timeline --fahrt (Bereich contain der Spur). Die Seite
    fährt nach einem kleinen Stück Scrollen von selbst ans Ende bzw. zurück an den Anfang (buehne.js, „Kamerafahrt von
    selbst“) – hier ändert das nichts, die Animationen hängen weiter nur an der Scrollposition.
    ========================================================================== */
@@ -8437,10 +8438,16 @@ html:not(.js) .k01 .iphone-rim,
       animation-range: contain 0% contain 94%;
     }
 
+    /* Überblendung mitten im Zug (74–84 %, auf der Fahrt von selbst bei 0,96–1,12 s): Der Laptop steht dann frontal
+       (.pose dreht sich ab dem Losfahren in 0,9 s), die flache Aufnahme fährt deckungsgleich mit */
     .js .k01 .buehne:has(.showcase-laptop.is-rest) .fahrt-flach {
-      animation: fahrt-flach linear both;
-      animation-timeline: --fahrt;
-      animation-range: contain 88% contain 100%;
+      animation:
+        fahrt-flach linear both,
+        fahrt-flach-ein linear both;
+      animation-timeline: --fahrt, --fahrt;
+      animation-range:
+        contain 0% contain 100%,
+        contain 74% contain 84%;
     }
 
     .js .k01 .fahrt-ende .marke {
@@ -8464,23 +8471,21 @@ html:not(.js) .k01 .iphone-rim,
     }
   }
 
+  /* Ein Zug vom Einstieg, bis die flache Aufnahme fensterbreit steht (Maßstab --ks0 → --kse, gut 2,2- bis 2,6-fach): die
+     Lage linear im Maßstab – die Kamera zoomt um einen festen Punkt (etwa die Mitte des Bildschirms), ohne Halt. Die
+     Kurve macht den Maßstab exponentiell über die Strecke (je Strecke derselbe Faktor, Bézier-Näherung von
+     (r^s − 1)/(r − 1) für r um 2,4); das Tempo bestimmt allein die Fahrt (buehne.js, fahrtKurve). Bis 22.10. waren es
+     zwei Züge mit Halt und Überblendung dazwischen (0–58 % und 94–100 %). */
   @keyframes fahrt-kamera {
     0% {
       translate: var(--kx0) var(--ky0);
       scale: var(--ks0);
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: cubic-bezier(0.33, 0.21, 0.67, 0.5);
     }
 
-    58% {
-      translate: var(--kx1) var(--ky1);
-      scale: var(--ks1);
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
-    }
-
-    88%,
     100% {
-      translate: var(--kx2) var(--ky2);
-      scale: 1;
+      translate: var(--kxe) var(--kye);
+      scale: var(--kse);
     }
   }
 
@@ -8566,24 +8571,28 @@ html:not(.js) .k01 .iphone-rim,
     }
   }
 
+  /* Flache Aufnahme deckungsgleich auf dem Bildschirm in der Kamera: Lage = Kamera + Maßstab der Kamera × (--fdx, --fdy),
+     Maßstab = Maßstab der Kamera × --fs, dieselbe Kurve – am Ende 0 0 und 1 */
   @keyframes fahrt-flach {
     0% {
-      opacity: 0;
-      translate: var(--fx) var(--fy);
-      scale: var(--fs);
-    }
-
-    50% {
-      opacity: 1;
-      translate: var(--fx) var(--fy);
-      scale: var(--fs);
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      translate: calc(var(--kx0) + var(--ks0) * var(--fdx)) calc(var(--ky0) + var(--ks0) * var(--fdy));
+      scale: calc(var(--ks0) * var(--fs));
+      animation-timing-function: cubic-bezier(0.33, 0.21, 0.67, 0.5);
     }
 
     100% {
-      opacity: 1;
       translate: 0 0;
       scale: 1;
+    }
+  }
+
+  @keyframes fahrt-flach-ein {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
     }
   }
 
