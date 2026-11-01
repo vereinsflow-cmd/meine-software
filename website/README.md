@@ -160,8 +160,8 @@ fehlt Edge, nimmt `capture-screenshots.mjs` das Chromium von Playwright).
 | `node tools/geraete-pruefen.mjs`           | Prüft, dass Laptop und Telefon sich wie in `c112a20` bewegen: Bereiche und 51 Keyframes wörtlich, 162 Transformwerte gleich, keine eigene Regel bewegt die Geräte, `site.js` 107–140 wörtlich, Markup der Geräte gleich, dazu die Matrizen zur Laufzeit in Chromium und WebKit (Playwright aus dem Hauptordner) |
 | `node tools/geraete-standbild.mjs`         | Rendert das Schlussbild des Finales aus dem Markup der Startseite und der wörtlichen Gerätebewegung: Laptop zugeklappt bei 1,08 s, Telefon in der Endlage mit ausgeschaltetem Bildschirm, durchsichtiger Hintergrund, WebP mit Alpha in 720, 1080 und 1440 px (jede Breite eigens gezeichnet); meldet die Lage des Zeichens auf dem Deckel in Prozent (für `.zeichen-ziel`/`.zeichen-licht` in `site.css`). `--vorschau <Ordner>` schreibt nur PNG-Bilder |
 | `node tools/kopf-fuss-pruefen.mjs`         | Prüft, dass Kopf- und Fußzeile auf allen fünf Seiten gleich sind (bis auf Pfade, Kapitel-Faden und Schalter der Startseite), die Symbole dafür in jeder Seite stehen und im Markup von `newsletter.php` kein Hochkomma steht |
-| `node tools/fahrt-messen.mjs`              | Misst, wie flüssig die Kamerafahrt (Kapitel 1) ab der Ruhelage der Geräte läuft: Chrome (headless mit GPU, Spur über CDP) und WebKit, kalter und warmer Zwischenspeicher, Mausrad wie ein Trackpad und schnell. Tabellen: gezeigte Bilder und Lücken > 16,7 / 33 / 100 ms, verpasste Bilder je Abschnitt der Fahrt und je Ursache, Hauptthread je Bild (BeginMainFrame, PrePaint), Long Animation Frames, Rasterung, Dekodierung, Pipeline-Kompilierung im GPU-Prozess, Ebenen mit Gründen, Animationen außerhalb des Compositors. `--gegenprobe a,b` (Liste: `--gegenproben`) misst zusätzlich mit abgeschalteter Wirkung, nur im eingebauten Server (`kegelalt`, `titelalt`, `handyalt`, `spiegelaus` stellen je eine frühere Wirkung wieder her, `leer` ändert nichts und zeigt nur, was die Auslieferung einer Gegenprobe selbst ausmacht); weitere Schalter (`--browser`, `--fenster 1280x740@2`, `--runden`, `--json`, `--trace`) im Kopfkommentar |
-| `node tools/b4-pruefen.mjs [schnell]`      | Browserprüfung der Startseite in Chromium, WebKit und „ohne scroll-driven Animationen“, mit und ohne „Bewegung reduzieren“, 320 bis 1920 px: Konsole und CSP, seitliches Scrollen, Text im Fenster bzw. Kasten (je Zeile, auch auf den Unterseiten), Kapitel-Faden (`aria-current`), Einblenden, Geräte in Ruhe, CLS; dazu die Größe von Skripten und Stildatei im Paket (über dem Ziel ein Fehler) |
+| `node tools/fahrt-messen.mjs`              | Misst, wie flüssig die Kamerafahrt (Kapitel 1) ab der Ruhelage der Geräte läuft: Chrome (headless mit GPU, Spur über CDP) und WebKit, kalter und warmer Zwischenspeicher, Mausrad wie ein Trackpad und schnell. Tabellen: gezeigte Bilder und Lücken > 16,7 / 33 / 100 ms, verpasste Bilder je Abschnitt der Fahrt und je Ursache, Hauptthread je Bild (BeginMainFrame, PrePaint), Long Animation Frames, Rasterung, Dekodierung, Pipeline-Kompilierung im GPU-Prozess, Ebenen mit Gründen, Animationen außerhalb des Compositors. `--scroll stoss,stoss-zurueck` misst die Fahrt von selbst (ein Mausrad-Stoß von 100 px am Anfang bzw. vom Ende nach oben). `--gegenprobe a,b` (Liste: `--gegenproben`) misst zusätzlich mit abgeschalteter Wirkung, nur im eingebauten Server (`kegelalt`, `titelalt`, `handyalt`, `spiegelaus` stellen je eine frühere Wirkung wieder her, `leer` ändert nichts und zeigt nur, was die Auslieferung einer Gegenprobe selbst ausmacht); weitere Schalter (`--browser`, `--fenster 1280x740@2`, `--runden`, `--json`, `--trace`) im Kopfkommentar |
+| `node tools/b4-pruefen.mjs [schnell]`      | Browserprüfung der Startseite in Chromium, WebKit und „ohne scroll-driven Animationen“, mit und ohne „Bewegung reduzieren“, 320 bis 1920 px: Konsole und CSP, seitliches Scrollen, Text im Fenster bzw. Kasten (je Zeile, auch auf den Unterseiten), Kapitel-Faden (`aria-current`), Einblenden, Geräte in Ruhe, CLS, Kamerafahrt von selbst (ein Mausrad-Stoß fährt ans Ende und zurück, sonst nur 100 px); dazu die Größe von Skripten und Stildatei im Paket (über dem Ziel ein Fehler) |
 
 Hinweise zu den Aufnahmen:
 
@@ -211,9 +211,9 @@ Hinweise zu den Aufnahmen:
   Dashboard-Kopf als „Vereins-Bühne“, Finanz-Übersicht wie eine Banking-App, Abteilungsfotos, neue Anmeldeseite; Demo-Daten
   wie am 18.10.2026 vorbereitet, am 22.10. geprüft und nicht neu angelegt: 43 Dateien, 2,2 MB):
   - `dashboard` (720 bis 2880 px): Laptop im Einstieg und in der Kamerafahrt, die flache Aufnahme am Ende der Fahrt und
-    „Im Detail“ ohne Fahrt. Die flache Aufnahme wählt zuerst dieselbe Datei wie der Bildschirm (eine Anfrage); sobald die
-    Fahrt beginnt, lädt und dekodiert `buehne.js` genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px, `data-gross`)
-    und setzt sie dann an beiden Bildern ein. Inhalt: Kopfzeile mit Suchfeld, die Vereins-Bühne (Begrüßung, Fotos der
+    „Im Detail“ ohne Fahrt. Die flache Aufnahme wählt zuerst dieselbe Datei wie der Bildschirm (eine Anfrage); sobald der
+    Laptop in seiner Pose steht (in Leerlaufzeit, spätestens beim Losfahren), lädt und dekodiert `buehne.js` genau eine
+    große Fassung (fensterbreit: 1440 bzw. 2880 px, `data-gross`) und setzt sie dann an beiden Bildern ein. Inhalt: Kopfzeile mit Suchfeld, die Vereins-Bühne (Begrüßung, Fotos der
     Abteilungen Fußball, Handball, Tischtennis, Glas-Chips „233 Mitglieder · 18 Termine · 15 Helferplätze“, Knöpfe), die
     Reiter und die Kennzahlkarten. Am Ende der Kamerafahrt liegt die Tafel über dem unteren Teil des 16 : 10-Ausschnitts
     (sichtbar bleiben bei 16 : 10 bis 16 : 9 gut 60 %, in flacheren Fenstern weniger, bei 21 : 9 nur gut 40 %) – die Marken
@@ -368,7 +368,7 @@ jeder Wechsel ist ein Bogen, der sich beim Scrollen über das Kapitel davor schi
 
 | Kap. | Anker | Fläche | Was geschieht (mit Bewegung) | Ohne Bewegung, ohne Skript, schmal |
 | --- | --- | --- | --- | --- |
-| 1 Einstieg | `#top` | Nacht | Laptop (−17°, leicht von oben, schwache Spiegelung im Boden) und Telefon (−24°) in 3D-Posen über die Hülle `.pose`, Studiolicht, Lichtkanten am Titanrahmen (gemessen), „Fluss“ hinter der Deckelkante, die Pinnnadel auf der Deckelecke. Raster wie Kopfzeile und Kapitel: Text am Inhaltsrand (`--x0`), Geräte bis an den Seitenrand (`--gx`), Maßstab `--u` so, dass alles passt und die Überschrift 16 px unter der Kopfzeile steht. Bis der Laptop posiert, steht seine Hülle um den Weg weiter rechts, den die Drehung ausmacht (Deckelkante bleibt stehen, läuft nie über den Text). Ab 1024 × 720 klebt die Bühne über `--fahrt-strecke` (220svh) und die Kamera fährt in den Laptop: Überschrift fliegt vorbei, das Telefon zieht in seiner Pose rechts hinaus, ab 58 % frontal, ab 88 % Maßstab 1, dann die flache Aufnahme mit drei Marken und der Tafel „Zahlen, die dem Vorstand helfen“ (`#im-detail`); die Kopfzeile fährt dabei aus | Bühne in Ruhe, „Im Detail“ als eigener Abschnitt (am Smartphone im Telefon); ohne scroll-driven Animationen drei feste Stufen |
+| 1 Einstieg | `#top` | Nacht | Laptop (−17°, leicht von oben, schwache Spiegelung im Boden) und Telefon (−24°) in 3D-Posen über die Hülle `.pose`, Studiolicht, Lichtkanten am Titanrahmen (gemessen), „Fluss“ hinter der Deckelkante, die Pinnnadel auf der Deckelecke. Raster wie Kopfzeile und Kapitel: Text am Inhaltsrand (`--x0`), Geräte bis an den Seitenrand (`--gx`), Maßstab `--u` so, dass alles passt und die Überschrift 16 px unter der Kopfzeile steht. Bis der Laptop posiert, steht seine Hülle um den Weg weiter rechts, den die Drehung ausmacht (Deckelkante bleibt stehen, läuft nie über den Text). Ab 1024 × 720 klebt die Bühne über `--fahrt-strecke` (220svh) und die Kamera fährt in den Laptop: Überschrift fliegt vorbei, das Telefon zieht in seiner Pose rechts hinaus, ab 58 % frontal, ab 88 % Maßstab 1, dann die flache Aufnahme mit drei Marken und der Tafel „Zahlen, die dem Vorstand helfen“ (`#im-detail`); die Kopfzeile fährt dabei aus. Seit 22.10.2026 fährt sie von selbst (Luis: „zu unflüssig“): ein kleines Stück Scrollen, und die Seite fährt in 1,8 s bis zur Tafel; vom Ende ein Stück nach oben fährt zurück (siehe „Kamerafahrt“ unter Leistung) | Bühne in Ruhe, „Im Detail“ als eigener Abschnitt (am Smartphone im Telefon); ohne scroll-driven Animationen drei feste Stufen (dort nichts von selbst) |
 | 2 Ausgangslage | `#ausgangslage` | Nacht | Wortwalze „VereinsFlow bündelt …“: das Wort wechselt an vier Scroll-Zonen (kein Zeitgeber), vier Lichtlinien laufen in den Punkt hinter „Ort“; dann schiebt sich der Papierbogen hoch, der Strom färbt sich an der Kante zu Tinte | die vier Wörter untereinander, harter Schnitt |
 | 3 Helferplanung | `#helferschichten` | Papier | seit 22.10.2026 „radikal einfach“ (Entwurf C, Luis: vorher „zu erdrückend … zu viel Text“): die Überschrift sind die drei Schritte „Schichten anlegen. Helfer tragen sich ein. Helferplan drucken.“, die beim Scrollen nacheinander erscheinen; daneben eine einzige Ampel, die sich von 0 auf 10 von 21 füllt (Lichtkomet in Annas Platz, „noch niemand“ am Grillstand), Telefon klein daneben, in Schritt 3 legt sich der Aushang über die Ampel | drei Sätze und Ampel im Endstand |
 | 4 Unterwegs | `#unterwegs` | Nacht | das Telefon dreht sich ins Bild (wie bisher), ab 1200 × 720 kreisen fünf Glas-Chips auf einer geneigten Umlaufbahn aus Licht | Chips als Reihe |
@@ -390,7 +390,9 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
 ### Regeln der Bewegung
 
 - Was gelesen wird, erscheint einmal und bleibt; was nur verbindet (Lichtfluss, Licht), darf dauernd laufen. Szenen rasten
-  in festen Zuständen ein (IntersectionObserver-Bänder), gescrubbt wird nur die Kamerafahrt. Keine Scroll-Listener.
+  in festen Zuständen ein (IntersectionObserver-Bänder), gescrubbt wird nur die Kamerafahrt – und die fährt nach einem
+  kleinen Stück Scrollen von selbst (das Skript setzt die Scrollposition je Bild). Keine Scroll-Listener (auch die Fahrt
+  nicht: Wächter, Eingabe-Ereignisse und je Bild ein Blick auf `scrollY`).
 - Bewegt werden nur `transform` (auch `translate`, `rotate`, `scale`), `opacity` und `filter`, dazu Canvas – nie das
   Layout. Kurven `--ease-out`, `--ease-in-out`, `--ease-drawer` und die Federn `--feder-ruhig`/`--feder-rast` (`linear()`,
   sonst `--ease-out`); Dauern: Druck 120 ms, Hover 150 ms, Zustand 200–250 ms, Auftritt 450–600 ms.
@@ -469,6 +471,54 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
   Inspector → Timelines → Rendering Frames). Beim allerersten Zeichnen eines Effekts kompiliert Chrome einmalig eine
   Pipeline im GPU-Prozess (80–160 ms je Effekt, danach im Shader-Speicher von Metal) – zwei Live-Filter weniger heißt zwei
   solche Stopps weniger.
+
+  **Von selbst (seit 22.10.2026).** Luis fand die Fahrt „zu unflüssig“: Man musste die ganze Strecke selbst scrollen, und
+  sie lief so ruckig wie Mausrad oder Trackpad schoben. Die Fahrt bleibt an das Scrollen gebunden (alles oben gilt
+  weiter, `site.css` 12a ist unverändert bis auf den Wächter `.fw-innen` und die Lage des Ankers), aber `buehne.js` („Kamerafahrt von selbst“) fährt die
+  Seite:
+  - **Auslösen:** am Anfang ein kleines Stück nach unten – 40 px Mausrad (oder vier kleine Rasten, für Mäuse am Mac mit
+    4 px je Raste), 32 px mit dem Finger, eine Taste (Pfeil ab, Bild ab, Leertaste). Bis zur Schwelle bewegt sich die Seite
+    nicht (kein halber Zustand). Vom Ende ein Stück nach oben (bzw. Pfeil auf, Bild auf, Umschalt+Leertaste) fährt zurück
+    an den Anfang; vom Ende nach unten scrollt man wie immer weiter in Kapitel 2.
+  - **Fahren:** je Bild `scrollTo` per `requestAnimationFrame` – gleichmäßige Schritte nach der Uhr, unabhängig davon, wie
+    die Eingabe kam. 1,8 s für die ganze Strecke (kürzere Wege kürzer), Kurve `cubic-bezier(0.3, 0.1, 0.3, 1)` (sofort
+    sichtbar anfahren, lang auslaufen) über einen **Fahrplan**: Im Bild geschieht die Fahrt in zwei Zügen – Kamera an den
+    Laptop (0–58 %) und Zoom der flachen Aufnahme mit Tafel und Marken (94–100 %), beide vergrößern etwa 1,45-fach;
+    dazwischen ändert sich wenig. Gleichmäßig über die Strecke verteilt stand das Bild dort eine halbe Sekunde fast still
+    und der letzte Zoom kam als Ruck. Der Fahrplan gibt der Mitte (58–92 %) 0,45-fache und dem Ende (ab 93,5 %) 7-fache
+    Zeit, mit weichen Übergängen: zwei gleich starke Züge mit gut 0,1 s Atempause (am Zoomtempo je Bild nachgerechnet und
+    an Standbildern geprüft). Ziel ist genau das Ende der Strecke – derselbe Endzustand wie bisher, Tafel ganz im Bild.
+  - **Eingaben während der Fahrt:** Mausrad (`passive: false`, angemeldet nur, solange die Fahrt im Fenster ist), Finger
+    (`touchmove` mit `passive: false` nur über der Fahrt) und Tasten werden abgefangen, nichts arbeitet gegeneinander; der
+    Rest einer Geste (Schwung des Trackpads, gehaltene Taste, liegender Finger) auch nach der Ankunft – das Mausrad
+    höchstens 0,9 s, eine neue, stärker werdende Geste geht sofort durch. Die Gegenrichtung (40 px bzw. die Gegentaste)
+    kehrt die Fahrt um. Browser lassen nur die erste Mausrad-Bewegung einer Geste abfangen: Kommt eine Geste von außen in
+    die Strecke (aus Kapitel 2 nach oben), schiebt sie bis 40 px wie immer, dann übernimmt die Fahrt ihr Tempo (Hermite-
+    Kurve mit diesem Anfangstempo) und arbeitet nie gegen sie – schiebt sie weiter, beginnt der Plan dort neu, wohin sie
+    die Seite geschoben hat, und es wird nur gesetzt, was ihr zum Plan fehlt.
+  - **Sonderfälle:** Sprünge (Kopfzeile, Anker, Suche im Text, Fokus), Scrollbalken, Pos1/Ende und eine Gegenbewegung,
+    die sich nicht abfangen lässt, brechen die Fahrt ab. Steht die Seite danach – oder nach dem Laden, Neuladen,
+    Zurückgehen – mitten in der Strecke, fährt sie nach 160 ms Ruhe ans Ende in der letzten Richtung (nach einem Sprung:
+    weg von dem Ende, an dem sie zuletzt stand), sonst ans nähere; geweckt vom Wächter `.fw-innen` (Band oben im
+    Fenster), dann je Bild ein Blick auf `scrollY` – keine Scroll-Listener. `#im-detail` landet genau am Ende (der Anker
+    steht um den Platz der Kopfzeile tiefer, den `scroll-padding-top` beim Springen abzieht; vorher landete er bei 91 %).
+    Fenstergröße: Anfang bzw. Ende werden gehalten (das Ende rückt mit der Fensterhöhe), eine laufende Fahrt steht sofort
+    am Ziel – ebenso bei verborgenem Tab. „Bewegung anhalten“ schaltet das Fahren ab (die Fahrt folgt dann wieder nur dem
+    Scrollen). Unter 1024 × 720, bei „Bewegung reduzieren“ und ohne scroll-driven Animationen (drei Stufen) ändert sich
+    nichts. Fokus und Vorlesen bleiben unberührt: Nichts bekommt oder verliert den Fokus, am DOM ändert sich nichts.
+  - **Großes Bild:** wird jetzt schon in Leerlaufzeit geladen, dekodiert und eingesetzt, sobald der Laptop posiert –
+    sonst fiele das Einsetzen mitten in die 1,8 s. Wer vorher losscrollt, löst es wie bisher beim Losfahren aus.
+  - **Gemessen** mit `tools/fahrt-messen.mjs` (22.10.2026, gleiche Maschine; kalt, Mittel aus drei Läufen; vorher = alter
+    Stand, Mausrad wie ein Trackpad durch die ganze Strecke, nachher = ein Stoß von 100 px, `--scroll stoss` bzw.
+    `stoss-zurueck`, alter Stand rückwärts mit `trackpad-zurueck`). Verpasste Bilder vorwärts: Chrome 1440 × 900 @2 1 → 1
+    (längste Lücke 34 → 34 ms), 1280 × 740 @2 1 → 1 – das eine ist wie bisher ein Bild des Lichtflusses (Canvas) bei
+    58–88 %; WebKit 4,0 → 3,0 (47 → 39 ms) bzw. 2,7 → 3,0 (43 → 37 ms). Rückwärts: Chrome 0 → 0; WebKit 3,0 → 1,3
+    (49 → 41 ms) bzw. 8,3 → 7,0 (90 → 87 ms; bei 1280 × 740 stockt Playwright-WebKit rückwärts bei 2 % und 39 % bei freiem
+    Hauptthread, mit dem alten Stand genauso). Keine Long Animation Frames, keine langen Aufgaben; das Fahren selbst kostet
+    5 ms Skript je Fahrt (0,05 ms je Bild), die Kosten je Bild sind sonst unverändert. Der eigentliche Gewinn ist die
+    Gleichmäßigkeit: Sprünge im Weg je Bild (Änderung zum vorigen Bild über der Hälfte des mittleren Wegs) in Chrome 8 → 0
+    schon gegen ein gleichmäßiges synthetisches Trackpad (echte Eingaben schwanken mehr), WebKit 9 → 2. Videos und Standbilder lagen für Luis
+    in `Desktop/VereinsFlow-Kamerafahrt-automatisch/` (nicht im Repository).
 - **Zählwerke** (`data-zahl`: „10“, „13“, „13.944,47“): `buehne.js` baut nur mit Bewegung je Ziffer ein Fenster mit einer
   Rolle; gerollt wird in ganzen Zeilen, in Ruhe steht immer die ganze Endziffer. Während des Rollens laufen die Fenster
   oben und unten weich aus (Maske `--zw-f`, immer mindestens so breit wie der Versatz der Ziffer) und die Rolle ist
@@ -478,15 +528,17 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
   in `buehne.js`, z. B. „ 0.000,00“) muss gleich lang sein wie die Zahl – Leerzeichen für Stellen, die erst erscheinen. Kein Layout-Springen (CLS 0 gemessen,
   auch beim Neuladen mitten auf der Seite: Kapitel 4 behält mit Umlaufbahn seine Höhe, `--chips-h`; Schalter und
   Kopierknopf stehen mit JavaScript von Anfang an im Layout).
-- **Größen** (20.10.2026): Skripte zusammen 98 KB Quelltext, im Paket 68 KB (ohne Kommentare und Einrückung), übertragen
-  (gzip) 21 KB; Stildatei 302 KB Quelltext, 204 KB im Paket, 39 KB übertragen. `tools/b4-pruefen.mjs` meldet einen Fehler,
-  wenn das Paket die Ziele überschreitet (Skripte 72 / 26 KB, Stildatei 215 / 45 KB).
+- **Größen** (22.10.2026): Skripte zusammen 116 KB Quelltext, im Paket 77 KB (ohne Kommentare und Einrückung), übertragen
+  (gzip) 24 KB – davon kommen gut 11 KB im Paket bzw. 3,3 KB übertragen von der Kamerafahrt von selbst (vorher 66 / 21 KB);
+  Stildatei 301 KB Quelltext, 200 KB im Paket, 38 KB übertragen. `tools/b4-pruefen.mjs` meldet einen Fehler, wenn das Paket
+  die Ziele überschreitet (Skripte 80 / 26 KB – bis 22.10.2026 72 KB im Paket –, Stildatei 215 / 45 KB).
 
 ### Prüfen
 
 `node tools/check-site.mjs --strict` (Verweise, Bilder, CSP-Regeln), `node tools/geraete-pruefen.mjs` (Geräte wie bisher),
 `node tools/b4-pruefen.mjs` (Browser-Matrix: Chromium, WebKit, ohne scroll-driven Animationen, mit und ohne „Bewegung
-reduzieren“, 320 bis 1920 px; dazu je Textzeile, ob sie aus dem Fenster oder aus einem abschneidenden Kasten läuft – auch
+reduzieren“, 320 bis 1920 px; ob ein Mausrad-Stoß die Kamerafahrt von selbst ans Ende und zurück fährt – und nur dort;
+dazu je Textzeile, ob sie aus dem Fenster oder aus einem abschneidenden Kasten läuft – auch
 auf Impressum, Datenschutz und Fehlerseite, denn `overflow-x: clip` an html/body verdeckte das sonst – und die Größe des
 Pakets) und `node tools/kopf-fuss-pruefen.mjs` (Kopf und Fuß auf allen Seiten gleich). Hinweis zu
 WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, das die CSP der Seite ablehnt – die Meldung
@@ -505,5 +557,6 @@ WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, da
   und die Pinnnadel; Himmel und Vereinsblau sind Licht und Akzent. Textfarben je Fläche mit gemessenem Kontrast (Werte und
   Verhältnisse oben in `site.css`, `:root`). Die Seite folgt bewusst nicht der hellen oder dunklen Einstellung des Geräts.
 - **Bewegung:** siehe „Gestaltung und Bewegung“. Leicht zu ändern: die Länge der Kamerafahrt (`--fahrt-strecke`, derzeit
-  220svh), die Dauern im Finale (`buehne.js`, „Kapitel 10 · Finale“), ob Kapitel 5 Nacht bleibt (Klasse `nacht` statt
+  220svh), wie sie von selbst fährt (`buehne.js`: `FAHRT_DAUER` 1,8 s, `SCHWELLE` 40 px, `fahrtKurve`, `fahrplan`), die
+  Dauern im Finale (`buehne.js`, „Kapitel 10 · Finale“), ob Kapitel 5 Nacht bleibt (Klasse `nacht` statt
   `papier` am Abschnitt, Farben folgen den Variablen).

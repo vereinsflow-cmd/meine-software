@@ -8,6 +8,9 @@
 //   - nach dem Durchscrollen ist alles Eingeblendete da (.erscheint.ist-da) und jedes Gerät in Ruhe (.is-rest; bei
 //     „Bewegung reduzieren“: keine Animation an den Geräten)
 //   - Layout-Verschiebung (CLS, nur Chromium) höchstens 0,01
+//   - Kamerafahrt von selbst: Ab 1024 × 720 mit Bewegung und scroll-driven Animationen fährt die Seite nach einem
+//     Mausrad-Stoß von 100 px allein ans Ende der Fahrt (Tafel ganz im Bild) und nach einem Stoß nach oben zurück an den
+//     Anfang; sonst (schmal, „Bewegung reduzieren“, ohne scroll-driven Animationen) scrollt derselbe Stoß nur wie immer
 //   - genau eine Überschrift h1
 //   - kein Text läuft aus seinem Kasten oder aus dem Fenster (je Element gemessen – html und body haben overflow-x: clip,
 //     das Dokument allein zeigte einen abgeschnittenen Text nicht); ebenso auf Impressum, Datenschutz und Fehlerseite
@@ -38,7 +41,8 @@ const melde = (ok, text) => {
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 melde(!/\sstyle="/.test(html), "index.html ohne style=-Attribute");
 // Ziele für das, was auf den Webspace kommt (bereinigt) und was übertragen wird (gzip, wie mod_deflate)
-const ZIEL = { jsPaket: 72, jsGzip: 26, cssPaket: 215, cssGzip: 45 };
+// Skripte im Paket seit 22.10.2026 80 statt 72 KB: Die Kamerafahrt von selbst bringt gut 11 KB (übertragen gut 3 KB)
+const ZIEL = { jsPaket: 80, jsGzip: 26, cssPaket: 215, cssGzip: 45 };
 const kb = (n) => n / 1024;
 const jsQuellen = ["site.js", "buehne.js", "fluss.js"].map((f) => [f, fs.readFileSync(path.join(root, "assets/js", f), "utf8")]);
 const jsPaket = jsQuellen.map(([f, t]) => bereinigeJs(t, f));
@@ -96,6 +100,32 @@ function textUeberlauf() {
     }
   }
   return aus;
+}
+
+// Kamerafahrt von selbst (im Browser gemessen): Stand der Seite, Anfang und Ende der Strecke, Unterkante der Tafel
+function fahrtLage() {
+  const f = document.querySelector("[data-fahrt]");
+  const a = f.getBoundingClientRect().top + scrollY;
+  const t = document.querySelector(".fahrt-ende .tafel");
+  const tafel = t && getComputedStyle(t).display !== "none" ? Math.round(t.getBoundingClientRect().bottom - innerHeight) : null;
+  return { y: scrollY, a, e: a + f.offsetHeight - innerHeight, tafel };
+}
+async function fahrtVonSelbst(page, w, h, erwartet) {
+  const probleme = [];
+  await page.mouse.move(Math.round(w * 0.55), Math.round(h / 2));
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(erwartet ? 2600 : 800);
+  const vor = await page.evaluate(fahrtLage);
+  if (erwartet) {
+    if (Math.abs(vor.y - vor.e) > 2 || vor.tafel === null || Math.abs(vor.tafel) > 2) probleme.push(`Fahrt von selbst: nach einem Stoß bei ${Math.round(vor.y)} statt am Ende ${Math.round(vor.e)} (Tafel ${vor.tafel} px)`);
+    await page.mouse.wheel(0, -100);
+    await page.waitForTimeout(2600);
+    const zurueck = await page.evaluate(fahrtLage);
+    if (Math.abs(zurueck.y - zurueck.a) > 2) probleme.push(`Fahrt zurück: nach einem Stoß nach oben bei ${Math.round(zurueck.y)} statt am Anfang ${Math.round(zurueck.a)}`);
+  } else if (vor.y > 120) probleme.push(`Stoß von 100 px scrollt ${Math.round(vor.y)} px (hier darf nichts von selbst fahren)`);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(200);
+  return probleme;
 }
 
 // --- Server mit den Headern aus _headers ---
@@ -172,6 +202,7 @@ try {
         });
         await page.goto(URL0, { waitUntil: "load" });
         await page.waitForTimeout(900);
+        const fahrtProbleme = await fahrtVonSelbst(page, w, h, bewegung === "no-preference" && !ohneSd && w >= 1024 && h >= 720);
         // Durchscrollen in Schritten (IntersectionObserver und Animationen laufen mit)
         const hoehe = await page.evaluate(() => document.documentElement.scrollHeight);
         const kapitelFehler = [];
@@ -201,7 +232,7 @@ try {
         await page.waitForTimeout(bewegung === "reduce" ? 100 : 600);
         z.ueberlauf = await page.evaluate(textUeberlauf);
         const fall = `${name}${ohneSd ? " ohne scroll-driven" : ""} · ${bewegung === "reduce" ? "Bewegung reduziert" : "mit Bewegung"} · ${w}×${h}`;
-        const probleme = [];
+        const probleme = [...fahrtProbleme];
         if (meldungen.length) probleme.push(`Konsole: ${[...new Set(meldungen)].join(" | ")}`);
         if (z.sw > z.cw) probleme.push(`seitliches Scrollen (${z.sw} > ${z.cw})`);
         if (kapitelFehler.length) probleme.push(`Kapitel: ${kapitelFehler.slice(0, 3).join("; ")}`);

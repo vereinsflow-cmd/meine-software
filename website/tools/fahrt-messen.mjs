@@ -1,6 +1,7 @@
 // Misst, wie flüssig die Kamerafahrt (Kapitel 1) läuft – wiederholbar, damit sich vorher und nachher vergleichen lassen.
-// Je Fall: Seite laden, warten, bis Laptop und Telefon in Ruhe stehen und sich in die Pose gedreht haben (Ruhelage), dann
-// mit dem Mausrad durch die ganze Fahrt bis in Kapitel 2 scrollen und messen:
+// Je Fall: Seite laden, warten, bis Laptop und Telefon in Ruhe stehen und sich in die Pose gedreht haben (Ruhelage) und
+// das große Bild eingesetzt ist (höchstens 4 s), dann mit dem Mausrad durch die ganze Fahrt bis in Kapitel 2 scrollen –
+// oder (seit 22.10.2026, die Fahrt läuft von selbst) mit einem einzigen Stoß von 100 px die Fahrt auslösen – und messen:
 //   - gezeigte Bilder (Chromium: Display::DrawAndSwap im GPU-Prozess, also was wirklich auf den Bildschirm kommt; WebKit:
 //     requestAnimationFrame) und Lücken > 16,7 / > 33 / > 100 ms (gezählt ab 1,5 / 2,5 / 6 Bildern, damit das Zittern
 //     des Taktgebers nicht mitzählt), verpasste Bilder bei 60 Hz
@@ -26,7 +27,13 @@
 //                                                     gut zehn Minuten
 //   --browser chrome,webkit,shell,cft   --fenster 1440x900@1,1280x800@1   --cache kalt,warm   --scroll trackpad,schnell
 //                       (Chromium dazu „geste“ bzw. „geste-schnell“: Input.synthesizeScrollGesture, vom Browser im Bildtakt
-//                       erzeugte Mausrad-Geste mit 700 bzw. 2500 px/s – ohne die Schwebung zwischen 16-ms-Schritten und 60 Hz)
+//                       erzeugte Mausrad-Geste mit 700 bzw. 2500 px/s – ohne die Schwebung zwischen 16-ms-Schritten und 60 Hz;
+//                       „stoss“: ein Mausrad-Stoß von 100 px am Anfang, die Fahrt läuft dann von selbst bis ans Ende;
+//                       „stoss-zurueck“: erst ans Ende, dann ein Stoß von 100 px nach oben, die Fahrt läuft zurück;
+//                       „trackpad-zurueck“, „schnell-zurueck“: vom Ende mit dem Mausrad durch die ganze Fahrt an den Anfang.
+//                       Seit der Fahrt von selbst fangen trackpad/schnell am Anfang dasselbe aus: Die Seite fährt nach
+//                       40 px von selbst, der Rest der Schritte wird abgefangen)
+//   --stoss 100         Weg des Stoßes in px
 //   --runden 2          jeden Fall mehrmals (Mittelwerte in der Tabelle, Einzelwerte im JSON)
 //   --bis ende|kapitel2 Strecke: nur die Fahrt oder bis 0,6 Fensterhöhen in Kapitel 2 (Standard)
 //   --pause 300         ms zwischen Ruhelage und erstem Scrollschritt
@@ -84,6 +91,7 @@ const FENSTER = liste("fenster", "1440x900@1,1440x900@2,1280x800@1,1280x740@2").
 });
 const CACHE = liste("cache", "kalt,warm");
 const SCROLL = liste("scroll", "trackpad,schnell");
+const STOSS = Number(opt("stoss", "100"));
 const RUNDEN = Number(opt("runden", "1"));
 const BIS = opt("bis", "kapitel2");
 const PAUSE = Number(opt("pause", "300"));
@@ -596,6 +604,9 @@ async function ruhelage(page) {
   await page.waitForFunction(() => document.querySelectorAll(".k01 .showcase.is-rest.ist-posiert").length === 2, null, { timeout: 30000 });
   // Pose: Übergang 0,9 s – auf beide transitionend warten (höchstens 2,5 s)
   await page.waitForFunction(() => window.__vf.pose.laptop && window.__vf.pose.handy, null, { timeout: 2500 }).catch(() => {});
+  // Das große Bild lädt die Seite seit 22.10.2026 in Leerlaufzeit vor (buehne.js) – erst danach messen (höchstens 4 s;
+  // ältere Stände laden es erst beim Losfahren)
+  await page.waitForFunction(() => document.querySelector("[data-fahrt-flach] img")?.sizes === "100vw", null, { timeout: 4000 }).catch(() => {});
 }
 
 async function strecke(page) {
@@ -637,9 +648,16 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
   await ruhelage(page);
   const ruheNach = Date.now() - tLaden;
   const s = await strecke(page);
-  const weg = s.ziel - (await page.evaluate(() => scrollY));
+  const stoss = scrollArt.startsWith("stoss");
+  const zurueck = scrollArt.endsWith("-zurueck");
+  if (zurueck) {
+    // erst ans Ende der Fahrt (Tafel), dort zur Ruhe kommen lassen (Kopfzeile fährt aus, Lichtfluss)
+    await page.evaluate((y) => scrollTo(0, y), s.top + s.len);
+    await warte(1800);
+  }
+  const weg = (zurueck ? s.top : s.ziel) - (await page.evaluate(() => scrollY));
   const geste = scrollArt.startsWith("geste") && cdp;
-  const deltas = geste ? [] : schritte(weg, scrollArt.replace(/^geste-?/, "") || "trackpad");
+  const deltas = stoss ? [zurueck ? -STOSS : STOSS] : geste ? [] : schritte(Math.abs(weg), scrollArt.replace(/^geste-?/, "").replace(/-zurueck$/, "") || "trackpad").map((d) => d * Math.sign(weg));
   await page.mouse.move(Math.round(fenster.width * 0.55), Math.round(fenster.height * 0.5));
   await warte(PAUSE);
 

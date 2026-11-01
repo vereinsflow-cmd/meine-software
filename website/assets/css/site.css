@@ -8179,7 +8179,9 @@ html:not(.js) .k01 .iphone-rim,
    12a. Kamerafahrt (ab 1024 × 720, mit Bewegung, mit Skript): Die Bühne klebt, die Kamera fährt in den Laptop.
    Die Geometrie rechnet buehne.js (Variablen an .buehne, in Pixeln): --kx0/--ky0/--ks0 im Einstieg, --kx1/--ky1/--ks1
    bei 58 % (frontal), --kx2/--ky2 ab 88 % (Maßstab 1, ganze Pixel), --fx/--fy/--fs flache Aufnahme deckungsgleich auf
-   dem Bildschirm. Animiert werden nur Hüllen; Fortschritt = view-timeline --fahrt (Bereich contain der Spur).
+   dem Bildschirm. Animiert werden nur Hüllen; Fortschritt = view-timeline --fahrt (Bereich contain der Spur). Die Seite
+   fährt nach einem kleinen Stück Scrollen von selbst ans Ende bzw. zurück an den Anfang (buehne.js, „Kamerafahrt von
+   selbst“) – hier ändert das nichts, die Animationen hängen weiter nur an der Scrollposition.
    ========================================================================== */
 @media (min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion: no-preference) {
   .js .k01 {
@@ -8202,8 +8204,10 @@ html:not(.js) .k01 .iphone-rim,
     display: none;
   }
 
+  /* #im-detail: Ein Sprung landet genau am Ende der Fahrt – der Anker steht um den Platz der Kopfzeile tiefer, den
+     scroll-padding-top beim Springen abzieht (sonst stünde die Seite bei 91 %, mitten in der Strecke) */
   .js .k01 .fahrt-anker {
-    top: calc(100% - 100svh);
+    top: calc(100% - 100svh + var(--kopf-oben) + var(--kopf-hoehe) + 24px);
   }
 
   /* Wächter (oben im Fenster gemessen, buehne.js): Anfang (Pose), ab 30 % (große Bilder), Ende (Kopfzeile aus) */
@@ -8220,6 +8224,13 @@ html:not(.js) .k01 .iphone-rim,
   .js .k01 .fw-ende {
     top: calc((var(--fahrt-strecke) - 100svh) * 0.92);
     height: calc((var(--fahrt-strecke) - 100svh) * 0.08 + 30svh);
+  }
+
+  /* Wächter innen (Kamerafahrt von selbst, buehne.js): im Band nur, wenn die Seite mitten in der Strecke steht – von
+     3 px nach dem Anfang bis 3 px vor dem Ende (das Band ist 1 % der Fensterhöhe hoch) */
+  .js .k01 .fw-innen {
+    top: calc(1svh + 3px);
+    height: calc(var(--fahrt-strecke) - 101svh - 6px);
   }
 
   /* Laptop in der Fahrt: feste Bildschirmbreite (ein Vielfaches von 44 px – ganze Pixel am Rand), Größe über .kamera */
