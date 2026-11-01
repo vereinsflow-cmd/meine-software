@@ -143,6 +143,16 @@ function geometrie() {
   set("--fs", String(Math.round(fs * 100000) / 100000));
   set("--fx", kx2 + bx);
   set("--fy", ky2 + by - fs * (W / 44));
+  // Kamerafahrt in einem Zug (site.css, fahrt-kamera): Die Kamera fährt weiter in den Bildschirm, bis die flache
+  // Aufnahme fensterbreit steht (Maßstab 1/fs, Lage 0 0); die flache Aufnahme hängt mit --fdx/--fdy (ihr Ursprung in der
+  // Kamera bei Maßstab 1) deckungsgleich daran
+  const fdx = bx;
+  const fdy = by - fs * (W / 44);
+  set("--fdx", fdx);
+  set("--fdy", fdy);
+  set("--kse", String(Math.round((1 / fs) * 100000) / 100000));
+  set("--kxe", -fdx / fs);
+  set("--kye", -fdy / fs);
   // Überschrift: gemeinsamer Ursprung für alle Teile (sie fliegen wie ein Stück vorbei)
   if (titel) {
     const ox = titel.offsetWidth * 0.32;
@@ -158,7 +168,7 @@ function geometrie() {
 
 // Bilder für die Nähe: Die flache Aufnahme hat zuerst dieselbe Auswahl wie der Bildschirm (dieselbe Datei, nur eine
 // Anfrage). Genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px) wird geladen und dekodiert und erst dann an
-// beiden Bildern eingesetzt – kein Stocken am Ende der Fahrt, keine dritte Datei. Weil die Fahrt von selbst in 1,8 s
+// beiden Bildern eingesetzt – kein Stocken am Ende der Fahrt, keine dritte Datei. Weil die Fahrt von selbst in 2 s
 // durchläuft (siehe unten), geschieht das schon in Leerlaufzeit, sobald der Laptop in seiner Pose steht (bildVorladen),
 // spätestens beim Losfahren.
 let grosseBilder = false;
@@ -235,9 +245,8 @@ function waechterStarten() {
 // Die Fahrt bleibt an das Scrollen gebunden (site.css), durchscrollen muss sie aber niemand. Ein kleines Stück nach
 // unten am Anfang (40 px Mausrad oder vier kleine Rasten, 32 px mit dem Finger, eine Taste: Pfeil, Bild ab, Leertaste)
 // startet die Fahrt bis ans Ende (Tafel „Zahlen, die dem Vorstand helfen“, #im-detail); vom Ende ein Stück nach oben
-// fährt zurück an den Anfang. Gefahren wird mit scrollTo je Bild (requestAnimationFrame) auf einer eigenen Kurve und
-// einem Fahrplan, 1,8 s für die ganze Strecke (kürzere Wege kürzer) – gleichmäßige Schritte, egal wie Mausrad oder
-// Trackpad schieben.
+// fährt zurück an den Anfang. Gefahren wird mit scrollTo je Bild (requestAnimationFrame) auf einer eigenen Kurve, 2 s
+// für die ganze Strecke (kürzere Wege kürzer) – gleichmäßige Schritte, egal wie Mausrad oder Trackpad schieben.
 //   - Mausrad, Finger und Tasten in Fahrtrichtung fängt das Skript am Anfang, am Ende und während der Fahrt ab
 //     (preventDefault; Mausrad nur, solange die Fahrt im Fenster ist, mit passive: false; Finger nur über der Fahrt).
 //     Den Rest der Geste (Schwung des Trackpads, gehaltene Taste, liegender Finger) auch nach der Ankunft – das Mausrad
@@ -254,46 +263,15 @@ function waechterStarten() {
 //     Fahrt steht sofort am Ziel, ebenso bei verborgenem Tab und beim Schalter „Bewegung anhalten“.
 //   - Fokus und Vorlesen bleiben unberührt: Nichts bekommt oder verliert den Fokus, am DOM ändert sich nichts.
 // ---------------------------------------------------------------------------------------------------------------
-const FAHRT_DAUER = 1800;
+const FAHRT_DAUER = 2000;
 const SCHWELLE = 40;
 const SCHWELLE_FINGER = 32;
-// Kurve über die Zeit: sofort sichtbar anfahren (leichte Anfangssteigung – sonst stand die Seite nach dem Scrollen gut
-// 0,2 s scheinbar still), lang auslaufen. Mit Schwung (eine Geste, die schon schiebt, oder eine Umkehr)
-// stattdessen eine kubische Hermite-Kurve mit diesem Tempo am Anfang und null am Ziel.
-const fahrtKurve = kurve(0.3, 0.1, 0.3, 1);
-// Fahrplan: wie viel Zeit jeder Abschnitt der Strecke bekommt. Im Bild geschieht die Fahrt in zwei Zügen – die Kamera
-// fährt an den Laptop (0–58 %), die flache Aufnahme zoomt auf Fensterbreite (94–100 %, samt Tafel und Marken); beide
-// vergrößern etwa gleich stark (je rund 1,45-fach). Dazwischen ändert sich wenig (58–88 % Maßstab 0,94 → 1, 88–94 %
-// Überblendung auf das gleiche Bild). Gleichmäßig über die Strecke verteilt stand das Bild dort eine halbe Sekunde fast
-// still und der Zoom am Ende lief in einem Ruck. Deshalb: Mitte 0,45-fache Zeit, Ende 7-fache (weiche Übergänge) – zwei
-// gleich starke Züge mit nur gut 0,1 s Atempause (nachgerechnet am Zoomtempo je Bild). Die Animationen selbst
-// (site.css) bleiben unverändert; der Fahrplan bestimmt nur, wann die Seite wo steht.
-const fahrplan = (() => {
-  const N = 1000;
-  const sig = (x, b) => 1 / (1 + Math.exp(-x / b));
-  const dichte = (p) => 1 - 0.55 * sig(p - 0.6, 0.03) * (1 - sig(p - 0.9, 0.03)) + 6 * sig(p - 0.935, 0.012);
-  const tau = new Float64Array(N + 1);
-  for (let i = 1; i <= N; i++) tau[i] = tau[i - 1] + dichte((i - 0.5) / N);
-  for (let i = 1; i <= N; i++) tau[i] /= tau[N];
-  return {
-    // Anteil der Strecke p (0…1) → Anteil der Fahrzeit τ, und zurück
-    tau(p) {
-      const x = Math.min(1, Math.max(0, p)) * N;
-      const i = Math.min(N - 1, Math.floor(x));
-      return tau[i] + (tau[i + 1] - tau[i]) * (x - i);
-    },
-    p(z) {
-      let lo = 0;
-      let hi = N;
-      while (hi - lo > 1) {
-        const m = (lo + hi) >> 1;
-        if (tau[m] < z) lo = m;
-        else hi = m;
-      }
-      return Math.min(1, Math.max(0, (lo + (z - tau[lo]) / (tau[hi] - tau[lo] || 1)) / N));
-    },
-  };
-})();
+// Kurve über die Zeit: Die Kamera zoomt in einem Zug (site.css, fahrt-kamera) – je Strecke um denselben Faktor, das
+// Zoomtempo folgt also dieser Kurve: sanft anfahren, um 0,7 s am schnellsten (gut 10 % je 100 ms), lang auslaufen, nie
+// ein Halt. Bis 22.10. waren es zwei Züge mit einer Überblendung dazwischen (erst 1,45-fach in 0,3 s, dann ein Halt, dann
+// noch einmal 1,4-fach in 0,9 s) – Luis: „immer noch zu unflüssig beim Reinzoomen“. Mit Schwung (eine Geste, die schon
+// schiebt, oder eine Umkehr) stattdessen eine kubische Hermite-Kurve mit diesem Tempo am Anfang und null am Ziel.
+const fahrtKurve = kurve(0.4, 0.08, 0.22, 1);
 const innen = $("[data-fahrt-innen]");
 const auto = {
   an: false, // eingeschaltet (Bühne, scroll-driven Animationen, nicht angehalten)
@@ -332,9 +310,9 @@ const ganz = (y) => {
   return Math.round(y * d) / d;
 };
 
-// Plan von → nach (Seiten-Pixel) ab t0 mit Anfangstempo v0 (px/ms, mit Vorzeichen). Aus der Ruhe nach dem Fahrplan
-// (gerechnet in Fahrzeit τ). Mit Schwung – eine Geste, die die Seite schon schiebt, oder eine Umkehr – geradewegs über
-// die Strecke (der Fahrplan würde das Tempo der Geste zwischen den Abschnitten auf ein Vielfaches springen lassen): Das
+// Plan von → nach (Seiten-Pixel) ab t0 mit Anfangstempo v0 (px/ms, mit Vorzeichen). Aus der Ruhe auf fahrtKurve. Mit
+// Schwung – eine Geste, die die Seite schon schiebt, oder eine Umkehr – stattdessen so, dass die Fahrt mit dem Tempo der
+// Geste beginnt (fahrtKurve finge mit ihrem eigenen an – ein Ruck): Das
 // Tempo geht als Anfangssteigung m der Hermite-Kurve 3s² − 2s³ + m·s(1 − s)² ein, höchstens 2,7 (ab 3 schösse sie über
 // das Ziel) – ein schneller Schwung verkürzt dafür die Fahrt (nicht unter 0,3 s); in Gegenrichtung höchstens 1 (die
 // Seite läuft dann noch höchstens 15 % des Wegs weiter, bevor sie umkehrt).
@@ -347,22 +325,14 @@ function plan(von, nach, v0, t0) {
   const v = (v0 * r) / L;
   if ((v * dauer) / weg > 2.7) dauer = Math.max(300, (2.7 * weg) / v);
   const m = Math.max(-1, Math.min(2.7, (v * dauer) / weg));
-  const l = { von, nach, r, m, t0, dauer, gesetzt: von, tLetzt: t0, z0: (von - g.a) / L, z1: (nach - g.a) / L, fp: false };
-  if (Math.abs(m) < 0.01) {
-    l.m = 0;
-    l.fp = true;
-    l.z0 = fahrplan.tau(l.z0);
-    l.z1 = fahrplan.tau(l.z1);
-    l.dauer = FAHRT_DAUER * (0.4 + 0.6 * Math.min(1, Math.abs(l.z1 - l.z0)));
-  }
-  return l;
+  return { von, nach, r, m: Math.abs(m) < 0.01 ? 0 : m, t0, dauer, gesetzt: von, tLetzt: t0, z0: (von - g.a) / L, z1: (nach - g.a) / L };
 }
 function planLage(l, t) {
   const s = Math.min(1, Math.max(0, (t - l.t0) / l.dauer));
   if (s >= 1) return l.nach;
   const g = strecke();
   const z = l.z0 + (l.z1 - l.z0) * (l.m ? s * s * (3 - 2 * s) + l.m * s * (1 - s) ** 2 : fahrtKurve(s));
-  return g.a + (l.fp ? fahrplan.p(z) : z) * (g.e - g.a);
+  return g.a + z * (g.e - g.a);
 }
 const planTempo = (l, t) => {
   const t1 = Math.min(Math.max(t, l.t0), l.t0 + l.dauer - 8);
