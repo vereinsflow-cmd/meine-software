@@ -29,10 +29,10 @@
   <meta name="twitter:description" content="Vereinsverwaltung mit Helferplanung: Mitglieder, Termine und Schichten an einem Ort. Helfer tragen sich selbst ein, der Vorstand sieht, wo jemand fehlt. Für Sport-, Kultur- und Fördervereine.">
 
   <script src="assets/js/frueh.js?v=20260927-2"></script>
-  <link rel="stylesheet" href="assets/css/site.css?v=2026102202">
+  <link rel="stylesheet" href="assets/css/site.css?v=2026102203">
   <script src="assets/js/site.js?v=2026102001" defer></script>
   <!-- Nur die Startseite: Kamerafahrt, Wortwalze, Magnet-Knöpfe, Lichtkanten und der Lichtfluss (fluss.js, als Modul) -->
-  <script type="module" src="assets/js/buehne.js?v=2026102202"></script>
+  <script type="module" src="assets/js/buehne.js?v=2026102203"></script>
 
   <script type="application/ld+json">
   {
@@ -209,7 +209,8 @@
 
   <!-- ===== Kapitel 1 · Einstieg (Nacht): die Kinobühne. Laptop und Telefon stehen in eigenen 3D-Posen; beim Laden laufen
        ihre echten Bewegungen (wie bisher, site.js), danach drehen sie sich in die Pose. Ab 1024 × 720 mit Bewegung klebt
-       die Bühne, und beim Scrollen fährt die Kamera in den Laptop hinein (buehne.js, site.css „Kamerafahrt“): Die
+       die Bühne, und nach einem kleinen Stück Scrollen fährt die Kamera von selbst in den Laptop hinein (buehne.js
+       „Kamerafahrt von selbst“, site.css „Kamerafahrt“; vom Ende ein Stück nach oben fährt zurück): Die
        Überschrift fliegt vorbei, das Telefon dreht sich weg, der Laptop steht frontal, zuletzt füllt die App das Bild und
        die Tafel „Zahlen, die dem Vorstand helfen“ schiebt sich darüber. Ohne Bewegung, ohne JavaScript und schmal: die
        Bühne in Ruhe, „Im Detail“ als eigener Abschnitt darunter. ===== -->
@@ -219,6 +220,7 @@
       <span class="fahrt-waechter fw-start" aria-hidden="true" data-fahrt-waechter="start"></span>
       <span class="fahrt-waechter fw-mitte" aria-hidden="true" data-fahrt-waechter="mitte"></span>
       <span class="fahrt-waechter fw-ende" aria-hidden="true" data-fahrt-waechter="ende"></span>
+      <span class="fahrt-waechter fw-innen" aria-hidden="true" data-fahrt-innen></span>
       <div class="buehne" data-buehne>
         <div class="buehne-licht" aria-hidden="true">
           <span class="licht licht-blau la"></span>

@@ -4,7 +4,8 @@
 // Finale und der Lichtfluss (fluss.js). Die Geräte selbst bewegt nur
 // site.js (wörtlich wie bisher) – hier werden ihre Zustände (.is-rest) nur gelesen. Laufende Werte gehen per CSSOM
 // (style.setProperty) an die Hüllen; keine Scroll-Listener (Wächter über IntersectionObserver, Bewegung über
-// scroll-driven Animationen in site.css).
+// scroll-driven Animationen in site.css). Die Kamerafahrt fährt nach einem kleinen Stück Scrollen von selbst (die
+// Scrollposition je Bild, siehe „Kamerafahrt von selbst“).
 import { fluesseStarten, fluss } from "./fluss.js?v=2026102001";
 
 const bewegungAus = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -60,6 +61,7 @@ function posieren(showcase) {
   if (showcase.classList.contains("ist-posiert")) return;
   showcase.classList.add("ist-posiert");
   showcase.closest(".geraet")?.classList.add("ist-posiert"); // Hülle: Ausgleich der Pose endet (site.css)
+  if (showcase.dataset.geraet === "laptop") queueMicrotask(bildVorladen); // erst nach dem Start des Moduls (let weiter unten)
   if (showcase.dataset.geraet === "handy") {
     const pose = $(".pose", showcase);
     const fertig = () => randlichter();
@@ -155,9 +157,18 @@ function geometrie() {
 }
 
 // Bilder für die Nähe: Die flache Aufnahme hat zuerst dieselbe Auswahl wie der Bildschirm (dieselbe Datei, nur eine
-// Anfrage). Sobald die Fahrt beginnt, wird genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px) geladen und
-// dekodiert und erst dann an beiden Bildern eingesetzt – kein Stocken am Ende der Fahrt, keine dritte Datei.
+// Anfrage). Genau eine große Fassung (fensterbreit: 1440 bzw. 2880 px) wird geladen und dekodiert und erst dann an
+// beiden Bildern eingesetzt – kein Stocken am Ende der Fahrt, keine dritte Datei. Weil die Fahrt von selbst in 1,8 s
+// durchläuft (siehe unten), geschieht das schon in Leerlaufzeit, sobald der Laptop in seiner Pose steht (bildVorladen),
+// spätestens beim Losfahren.
 let grosseBilder = false;
+let vorladenGeplant = false;
+function bildVorladen() {
+  if (vorladenGeplant || grosseBilder || !buehneMq.matches || !scrollZeit) return;
+  vorladenGeplant = true;
+  if ("requestIdleCallback" in window) requestIdleCallback(bilderNachladen, { timeout: 1500 });
+  else setTimeout(bilderNachladen, 600);
+}
 function bilderNachladen() {
   if (grosseBilder) return;
   grosseBilder = true;
@@ -218,6 +229,442 @@ function waechterStarten() {
   );
   $$("[data-fahrt-waechter]", fahrt).forEach((w) => waechterIo.observe(w));
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Kamerafahrt von selbst (ab 1024 × 720 mit Bewegung und scroll-driven Animationen; nicht bei „Bewegung anhalten“):
+// Die Fahrt bleibt an das Scrollen gebunden (site.css), durchscrollen muss sie aber niemand. Ein kleines Stück nach
+// unten am Anfang (40 px Mausrad oder vier kleine Rasten, 32 px mit dem Finger, eine Taste: Pfeil, Bild ab, Leertaste)
+// startet die Fahrt bis ans Ende (Tafel „Zahlen, die dem Vorstand helfen“, #im-detail); vom Ende ein Stück nach oben
+// fährt zurück an den Anfang. Gefahren wird mit scrollTo je Bild (requestAnimationFrame) auf einer eigenen Kurve und
+// einem Fahrplan, 1,8 s für die ganze Strecke (kürzere Wege kürzer) – gleichmäßige Schritte, egal wie Mausrad oder
+// Trackpad schieben.
+//   - Mausrad, Finger und Tasten in Fahrtrichtung fängt das Skript am Anfang, am Ende und während der Fahrt ab
+//     (preventDefault; Mausrad nur, solange die Fahrt im Fenster ist, mit passive: false; Finger nur über der Fahrt).
+//     Den Rest der Geste (Schwung des Trackpads, gehaltene Taste, liegender Finger) auch nach der Ankunft – das Mausrad
+//     höchstens 0,9 s, eine neue Geste geht sofort durch. Gegenrichtung (40 px bzw. die Gegentaste) kehrt die Fahrt um.
+//   - Browser lassen nur die erste Mausrad-Bewegung einer Geste abfangen: Kommt eine Geste von außen in die Strecke
+//     (z. B. aus Kapitel 2 nach oben), fährt die Seite ab 40 px los und nimmt ihren Schwung mit – nie gegen die Geste:
+//     Schiebt sie weiter in Fahrtrichtung, beginnt der Plan dort neu, wo sie die Seite hingeschoben hat, mit dem Tempo
+//     der Fahrt (kein Sprung, kein Ruck).
+//   - Alles andere gewinnt: Sprünge (Links, Anker, Suche, Fokus), Scrollbalken, Pos1/Ende, Gegenbewegung, die sich
+//     nicht abfangen lässt – die Fahrt bricht ab. Steht die Seite danach (oder nach dem Laden) mitten in der Strecke,
+//     fährt sie nach 160 ms Ruhe ans Ende in der letzten Richtung, ohne Richtung ans nähere Ende (der Wächter
+//     .fw-innen weckt, dann je Bild ein Blick auf scrollY – keine Scroll-Listener).
+//   - Fenstergröße: Am Anfang bzw. am Ende bleibt die Seite dort (das Ende rückt mit der Fensterhöhe); eine laufende
+//     Fahrt steht sofort am Ziel, ebenso bei verborgenem Tab und beim Schalter „Bewegung anhalten“.
+//   - Fokus und Vorlesen bleiben unberührt: Nichts bekommt oder verliert den Fokus, am DOM ändert sich nichts.
+// ---------------------------------------------------------------------------------------------------------------
+const FAHRT_DAUER = 1800;
+const SCHWELLE = 40;
+const SCHWELLE_FINGER = 32;
+// Kurve über die Zeit: sofort sichtbar anfahren (leichte Anfangssteigung – sonst stand die Seite nach dem Scrollen gut
+// 0,2 s scheinbar still), lang auslaufen. Mit Schwung (eine Geste, die schon schiebt, oder eine Umkehr)
+// stattdessen eine kubische Hermite-Kurve mit diesem Tempo am Anfang und null am Ziel.
+const fahrtKurve = kurve(0.3, 0.1, 0.3, 1);
+// Fahrplan: wie viel Zeit jeder Abschnitt der Strecke bekommt. Im Bild geschieht die Fahrt in zwei Zügen – die Kamera
+// fährt an den Laptop (0–58 %), die flache Aufnahme zoomt auf Fensterbreite (94–100 %, samt Tafel und Marken); beide
+// vergrößern etwa gleich stark (je rund 1,45-fach). Dazwischen ändert sich wenig (58–88 % Maßstab 0,94 → 1, 88–94 %
+// Überblendung auf das gleiche Bild). Gleichmäßig über die Strecke verteilt stand das Bild dort eine halbe Sekunde fast
+// still und der Zoom am Ende lief in einem Ruck. Deshalb: Mitte 0,45-fache Zeit, Ende 7-fache (weiche Übergänge) – zwei
+// gleich starke Züge mit nur gut 0,1 s Atempause (nachgerechnet am Zoomtempo je Bild). Die Animationen selbst
+// (site.css) bleiben unverändert; der Fahrplan bestimmt nur, wann die Seite wo steht.
+const fahrplan = (() => {
+  const N = 1000;
+  const sig = (x, b) => 1 / (1 + Math.exp(-x / b));
+  const dichte = (p) => 1 - 0.55 * sig(p - 0.6, 0.03) * (1 - sig(p - 0.9, 0.03)) + 6 * sig(p - 0.935, 0.012);
+  const tau = new Float64Array(N + 1);
+  for (let i = 1; i <= N; i++) tau[i] = tau[i - 1] + dichte((i - 0.5) / N);
+  for (let i = 1; i <= N; i++) tau[i] /= tau[N];
+  return {
+    // Anteil der Strecke p (0…1) → Anteil der Fahrzeit τ, und zurück
+    tau(p) {
+      const x = Math.min(1, Math.max(0, p)) * N;
+      const i = Math.min(N - 1, Math.floor(x));
+      return tau[i] + (tau[i + 1] - tau[i]) * (x - i);
+    },
+    p(z) {
+      let lo = 0;
+      let hi = N;
+      while (hi - lo > 1) {
+        const m = (lo + hi) >> 1;
+        if (tau[m] < z) lo = m;
+        else hi = m;
+      }
+      return Math.min(1, Math.max(0, (lo + (z - tau[lo]) / (tau[hi] - tau[lo] || 1)) / N));
+    },
+  };
+})();
+const innen = $("[data-fahrt-innen]");
+const auto = {
+  an: false, // eingeschaltet (Bühne, scroll-driven Animationen, nicht angehalten)
+  ruhig: false, // Schalter „Bewegung anhalten“
+  geo: null, // Anfang (a) und Ende (e) der Strecke in Seiten-Pixeln
+  lauf: null, // laufende Fahrt
+  nachlauf: null, // Rest einer Geste nach der Ankunft
+  sammel: { r: 0, px: 0, n: 0, t: 0 }, // Eingabe vor der Schwelle
+  rad: { t: -1e9, d: 0 }, // letzte Mausrad-Bewegung (Zeit, Weg)
+  radSpur: [], // Stand der Seite bei den letzten Mausrad-Bewegungen (für ihr Tempo)
+  taste: "", // Taste, deren Wiederholungen bis zum Loslassen abgefangen werden
+  finger: null,
+  richtung: { r: 0, t: -1e9 }, // letzte Bewegung, die nicht abgefangen wurde
+  halt: null, // wo die Seite zuletzt am Anfang oder Ende stand
+  raf: 0,
+  ruhe: 0,
+  radDran: false,
+};
+let autoIo;
+let nahIo;
+
+function strecke() {
+  if (!auto.geo) {
+    const a = fahrt.getBoundingClientRect().top + scrollY;
+    auto.geo = { a, e: a + Math.max(0, fahrt.offsetHeight - innerHeight) };
+  }
+  return auto.geo;
+}
+function lageIn(y, g) {
+  if (Math.abs(y - g.a) <= 2) return "anfang";
+  if (Math.abs(y - g.e) <= 2) return "ende";
+  return y > g.a && y < g.e ? "mitte" : "aussen";
+}
+const ganz = (y) => {
+  const d = window.devicePixelRatio || 1;
+  return Math.round(y * d) / d;
+};
+
+// Plan von → nach (Seiten-Pixel) ab t0 mit Anfangstempo v0 (px/ms, mit Vorzeichen). Aus der Ruhe nach dem Fahrplan
+// (gerechnet in Fahrzeit τ). Mit Schwung – eine Geste, die die Seite schon schiebt, oder eine Umkehr – geradewegs über
+// die Strecke (der Fahrplan würde das Tempo der Geste zwischen den Abschnitten auf ein Vielfaches springen lassen): Das
+// Tempo geht als Anfangssteigung m der Hermite-Kurve 3s² − 2s³ + m·s(1 − s)² ein, höchstens 2,7 (ab 3 schösse sie über
+// das Ziel) – ein schneller Schwung verkürzt dafür die Fahrt (nicht unter 0,3 s); in Gegenrichtung höchstens 1 (die
+// Seite läuft dann noch höchstens 15 % des Wegs weiter, bevor sie umkehrt).
+function plan(von, nach, v0, t0) {
+  const g = strecke();
+  const L = Math.max(1, g.e - g.a);
+  const r = Math.sign(nach - von) || 1;
+  const weg = Math.abs(nach - von) / L || 1e-4;
+  let dauer = FAHRT_DAUER * (0.4 + 0.6 * Math.min(1, weg));
+  const v = (v0 * r) / L;
+  if ((v * dauer) / weg > 2.7) dauer = Math.max(300, (2.7 * weg) / v);
+  const m = Math.max(-1, Math.min(2.7, (v * dauer) / weg));
+  const l = { von, nach, r, m, t0, dauer, gesetzt: von, tLetzt: t0, z0: (von - g.a) / L, z1: (nach - g.a) / L, fp: false };
+  if (Math.abs(m) < 0.01) {
+    l.m = 0;
+    l.fp = true;
+    l.z0 = fahrplan.tau(l.z0);
+    l.z1 = fahrplan.tau(l.z1);
+    l.dauer = FAHRT_DAUER * (0.4 + 0.6 * Math.min(1, Math.abs(l.z1 - l.z0)));
+  }
+  return l;
+}
+function planLage(l, t) {
+  const s = Math.min(1, Math.max(0, (t - l.t0) / l.dauer));
+  if (s >= 1) return l.nach;
+  const g = strecke();
+  const z = l.z0 + (l.z1 - l.z0) * (l.m ? s * s * (3 - 2 * s) + l.m * s * (1 - s) ** 2 : fahrtKurve(s));
+  return g.a + (l.fp ? fahrplan.p(z) : z) * (g.e - g.a);
+}
+const planTempo = (l, t) => {
+  const t1 = Math.min(Math.max(t, l.t0), l.t0 + l.dauer - 8);
+  return (planLage(l, t1 + 8) - planLage(l, t1)) / 8;
+};
+
+function fahren(ziel, t = performance.now(), v0) {
+  const l = auto.lauf;
+  const v = v0 ?? (l ? planTempo(l, t) : 0);
+  auto.sammel.px = auto.sammel.n = 0;
+  auto.nachlauf = null;
+  bilderNachladen();
+  const y = scrollY;
+  if (Math.abs(ziel - y) < 1) {
+    auto.lauf = null;
+    return;
+  }
+  // läuft schon eine Fahrt, geht es nahtlos weiter; sonst steht der Anfang ein Bild zurück (das erste Bild bewegt schon)
+  auto.lauf = plan(y, ziel, v, l ? t : null);
+  if (!auto.raf) auto.raf = requestAnimationFrame(fahrtBild);
+}
+function fahrtBild(t) {
+  auto.raf = 0;
+  let l = auto.lauf;
+  if (!l) return;
+  if (l.t0 === null) l.t0 = l.tLetzt = t - 1000 / 60;
+  const ist = scrollY;
+  const ab = ist - l.gesetzt;
+  let schub = 0;
+  if (Math.abs(ab) > 2) {
+    // von außen bewegt: gegen die Fahrt oder über das Ziel hinaus gewinnt der Eingriff. In Fahrtrichtung (Rest einer
+    // Geste, die sich nicht abfangen ließ) beginnt der Plan beim letzten Bild neu, an der Stelle, wohin die Geste die
+    // Seite geschoben hat, mit dem Tempo der Fahrt bzw. der Geste (dem größeren). Die Geste schiebt im nächsten Bild
+    // wohl wieder etwa so weit – gesetzt wird nur, was ihr zum Plan fehlt (Fahrt und Geste addieren sich nicht).
+    if (Math.sign(ab) !== l.r || (l.nach - ist) * l.r < -2) return abbrechen(Math.sign(ab));
+    const v = Math.max(planTempo(l, l.tLetzt) * l.r, (ab * l.r) / Math.max(8, t - l.tLetzt));
+    l = auto.lauf = plan(ist, l.nach, v * l.r, l.tLetzt);
+    schub = ab;
+  }
+  const fertig = t >= l.t0 + l.dauer;
+  let y = fertig ? l.nach : planLage(l, t);
+  if (schub && !fertig) y = ist + l.r * Math.max(0, (y - ist) * l.r - schub * l.r);
+  y = fertig ? y : ganz(y);
+  if (Math.abs(y - ist) >= 0.25) window.scrollTo(0, y);
+  l.gesetzt = scrollY;
+  l.tLetzt = t;
+  if (!fertig) {
+    auto.raf = requestAnimationFrame(fahrtBild);
+    return;
+  }
+  // angekommen: den Rest der Geste noch abfangen (Mausrad: bis 0,9 s, siehe rad())
+  auto.lauf = null;
+  auto.halt = l.nach;
+  auto.nachlauf = { ziel: l.nach, bis: t + 900 };
+}
+function abbrechen(r = 0) {
+  auto.lauf = null;
+  auto.nachlauf = null;
+  if (auto.raf) cancelAnimationFrame(auto.raf);
+  auto.raf = 0;
+  if (r) auto.richtung = { r, t: performance.now() };
+  ruheAbwarten();
+}
+// Sofort ans Ziel (Fenstergröße, verborgener Tab, Schalter)
+function sofortAnsZiel() {
+  const l = auto.lauf;
+  if (!l) return;
+  abbrechen();
+  auto.geo = null;
+  const g = strecke();
+  auto.halt = l.r > 0 ? g.e : g.a;
+  window.scrollTo(0, auto.halt);
+}
+
+// Mitten in der Strecke, ohne Fahrt (nach dem Laden, Scrollbalken, Sprung, abgebrochener Fahrt): je Bild scrollY
+// lesen; 160 ms ohne Bewegung (und ohne Finger) → ans Ende in der letzten Richtung (gesehen, eben noch gemeldet oder
+// – nach einem Sprung – weg vom Ende, an dem die Seite zuletzt stand), sonst ans nähere
+function ruheAbwarten() {
+  if (auto.ruhe || !auto.an || auto.lauf) return;
+  let y = scrollY;
+  let seit = performance.now();
+  let r = performance.now() - auto.richtung.t < 600 ? auto.richtung.r : auto.halt === null ? 0 : Math.sign(y - auto.halt);
+  const blick = (t) => {
+    auto.ruhe = 0;
+    if (!auto.an || auto.lauf) return;
+    const g = strecke();
+    const jetzt = scrollY;
+    if (lageIn(jetzt, g) !== "mitte") return;
+    if (Math.abs(jetzt - y) > 0.5) {
+      r = Math.sign(jetzt - y);
+      y = jetzt;
+      seit = t;
+    }
+    if (t - seit >= 160 && !auto.finger) {
+      fahren(r > 0 ? g.e : r < 0 ? g.a : jetzt - g.a < g.e - jetzt ? g.a : g.e, t, 0);
+      return;
+    }
+    auto.ruhe = requestAnimationFrame(blick);
+  };
+  auto.ruhe = requestAnimationFrame(blick);
+}
+
+// Eingabe vor der Schwelle sammeln (je Richtung, verfällt nach 400 ms ohne Bewegung)
+function sammeln(r, betrag, t) {
+  const s = auto.sammel;
+  if (s.r !== r || t - s.t > 400) Object.assign(s, { r, px: 0, n: 0 });
+  s.t = t;
+  s.px += betrag;
+  if (betrag >= 3) s.n++;
+  return s.px >= SCHWELLE || s.n >= 4;
+}
+// Mausrad (passive: false, nur solange die Fahrt im Fenster ist)
+function rad(e) {
+  if (!auto.an || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // Zoomen, seitlich: wie immer
+  const dy = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? innerHeight : 1);
+  if (!dy) return;
+  const r = Math.sign(dy);
+  const t = performance.now(); // nicht e.timeStamp: nicht überall in derselben Zeitbasis wie requestAnimationFrame
+  const y = scrollY;
+  const vorher = auto.rad;
+  auto.rad = { t, d: dy };
+  // Tempo der Seite in den letzten 120 ms der Geste (für eine Fahrt, die eine schiebende Geste übernimmt)
+  const spur = (auto.radSpur = [...auto.radSpur.filter((p) => t - p.t <= 120), { t, y }]);
+  const tempo = t - spur[0].t >= 30 ? (y - spur[0].y) / (t - spur[0].t) : 0;
+  const l = auto.lauf;
+  if (l) {
+    if (e.cancelable) e.preventDefault();
+    if (r !== l.r && sammeln(r, Math.abs(dy), t)) fahren(r > 0 ? strecke().e : strecke().a, t);
+    return;
+  }
+  const n = auto.nachlauf;
+  if (n) {
+    // Rest derselben Geste (dicht hintereinander, nicht stärker werdend, gleiche Richtung) – eine neue Geste geht durch
+    const rest = t - vorher.t < 140 && Math.sign(vorher.d) === r && Math.abs(dy) <= Math.abs(vorher.d) * 1.3 + 4;
+    if (rest && t < n.bis && Math.abs(scrollY - n.ziel) <= 2) {
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    auto.nachlauf = null;
+  }
+  const g = strecke();
+  const lage = lageIn(y, g);
+  if (lage === "aussen") return;
+  if (lage === "mitte") {
+    // mitten in der Strecke: gleich in Richtung der Geste, mit dem Tempo, das sie der Seite schon gibt; lässt sie sich
+    // nicht abfangen, erst ab 40 px in der Strecke (bis dahin schiebt sie wie immer)
+    if (e.cancelable) {
+      e.preventDefault();
+      fahren(r > 0 ? g.e : g.a, t, tempo);
+    } else if (r > 0 ? y >= g.a + SCHWELLE : y <= g.e - SCHWELLE) fahren(r > 0 ? g.e : g.a, t, tempo || Math.max(-2, Math.min(2, dy / 16.7)));
+    else auto.richtung = { r, t: performance.now() };
+    return;
+  }
+  auto.halt = y;
+  if ((lage === "anfang") !== r > 0) return; // vom Anfang nach oben, vom Ende nach unten: wie immer
+  if (!e.cancelable) return;
+  e.preventDefault();
+  if (sammeln(r, Math.abs(dy), t)) fahren(r > 0 ? g.e : g.a, t, 0);
+}
+function radAn(an) {
+  if (an === auto.radDran) return;
+  auto.radDran = an;
+  if (an) window.addEventListener("wheel", rad, { passive: false });
+  else window.removeEventListener("wheel", rad, { passive: false });
+}
+
+// Tasten: Pfeil, Bild auf/ab, Leertaste (mit Umschalt nach oben) – nur, wo die Taste die Seite scrollen würde (nicht in
+// Eingabefeldern und Bedienelementen mit eigener Rolle, die Leertaste nicht auf Knöpfen)
+const TASTEN = { ArrowDown: 1, PageDown: 1, " ": 1, ArrowUp: -1, PageUp: -1 };
+function taste(e) {
+  if (!auto.an || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+  const ziel = e.target instanceof Element ? e.target : null;
+  if (ziel?.closest("input, textarea, select, [contenteditable], [role]:not([role='list'])") || (e.key === " " && ziel?.closest("button, summary"))) return;
+  if (e.key === "Home" || e.key === "End") {
+    if (auto.lauf) abbrechen(); // Sprung an Anfang oder Ende der Seite: wie immer
+    return;
+  }
+  const r = e.key === " " && e.shiftKey ? -1 : TASTEN[e.key];
+  if (!r) return;
+  const t = performance.now();
+  const g = strecke();
+  if (auto.lauf) {
+    e.preventDefault();
+    auto.taste = e.key;
+    if (r !== auto.lauf.r && !e.repeat) fahren(r > 0 ? g.e : g.a, t);
+    return;
+  }
+  // gehaltene Taste nach der Ankunft: Wiederholungen bis zum Loslassen abfangen
+  if (e.repeat && e.key === auto.taste && auto.nachlauf && Math.abs(scrollY - auto.nachlauf.ziel) <= 2) {
+    e.preventDefault();
+    return;
+  }
+  const lage = lageIn(scrollY, g);
+  if (lage === "mitte" || (lage === "anfang" && r > 0) || (lage === "ende" && r < 0)) {
+    e.preventDefault();
+    auto.taste = e.key;
+    fahren(r > 0 ? g.e : g.a, t, 0);
+  }
+}
+
+// Finger (nur über der Fahrt; touchmove mit passive: false). Abgefangen wird ab der ersten Bewegung in Fahrtrichtung –
+// später ließe sich ein begonnenes Scrollen nicht mehr aufhalten. Was gefahren ist, bleibt bis zum Abheben abgefangen.
+function fingerAuf(e) {
+  if (!auto.an || e.touches.length !== 1) {
+    auto.finger = null;
+    return;
+  }
+  auto.finger = { y0: e.touches[0].clientY, nativ: false, ab: Boolean(auto.lauf) };
+}
+function fingerZug(e) {
+  const f = auto.finger;
+  if (!f || !auto.an || e.touches.length !== 1) return;
+  const dy = f.y0 - e.touches[0].clientY; // > 0: nach unten scrollen
+  const t = performance.now();
+  const l = auto.lauf;
+  if (l) {
+    if (e.cancelable) e.preventDefault();
+    f.ab = true;
+    // Gegenrichtung ab anderthalb Schwellen kehrt um (gemessen ab dem Aufsetzen bzw. der letzten Umkehr)
+    if (Math.sign(dy) === -l.r && Math.abs(dy) >= SCHWELLE_FINGER * 1.5) {
+      f.y0 = e.touches[0].clientY;
+      fahren(l.r > 0 ? strecke().a : strecke().e, t);
+    }
+    return;
+  }
+  if (f.ab) {
+    if (e.cancelable) e.preventDefault();
+    return;
+  }
+  if (f.nativ) return;
+  const g = strecke();
+  const lage = lageIn(scrollY, g);
+  const r = lage === "anfang" ? 1 : lage === "ende" ? -1 : Math.sign(dy);
+  if (lage === "aussen" || dy * r < 0 || !e.cancelable) {
+    f.nativ = true; // in die andere Richtung (oder schon im Gang): wie immer
+    return;
+  }
+  e.preventDefault();
+  if (Math.abs(dy) >= (lage === "mitte" ? 6 : SCHWELLE_FINGER)) {
+    f.ab = true;
+    fahren(r > 0 ? g.e : g.a, t, 0);
+  }
+}
+function fingerAb(e) {
+  if (!e.touches.length) auto.finger = null;
+}
+
+function autoStarten() {
+  autoIo?.disconnect();
+  nahIo?.disconnect();
+  if (auto.lauf) sofortAnsZiel();
+  if (auto.ruhe) cancelAnimationFrame(auto.ruhe);
+  auto.ruhe = 0;
+  auto.geo = null;
+  auto.nachlauf = null;
+  auto.finger = null;
+  const an = Boolean(fahrt && innen && canObserve && scrollZeit && buehneMq.matches && !auto.ruhig);
+  if (an !== auto.an) {
+    const art = an ? "addEventListener" : "removeEventListener";
+    fahrt?.[art]("touchstart", fingerAuf, { passive: true });
+    fahrt?.[art]("touchmove", fingerZug, { passive: false });
+    fahrt?.[art]("touchend", fingerAb, { passive: true });
+    fahrt?.[art]("touchcancel", fingerAb, { passive: true });
+  }
+  auto.an = an;
+  if (!an) {
+    radAn(false);
+    return;
+  }
+  // Mausrad nur, solange die Fahrt im Fenster ist (sonst blieben alle Gesten der Seite an den Hauptthread gebunden)
+  nahIo = new IntersectionObserver((es) => radAn(es.at(-1).isIntersecting && auto.an));
+  nahIo.observe(fahrt);
+  // Wächter innen (oben im Fenster, wie die übrigen): weckt das Warten auf Ruhe, wenn die Seite in der Strecke steht
+  autoIo = new IntersectionObserver((es) => es.at(-1).isIntersecting && ruheAbwarten(), { rootMargin: "0px 0px -99% 0px" });
+  autoIo.observe(innen);
+  const y = scrollY;
+  if (lageIn(y, strecke()) !== "mitte") auto.halt = lageIn(y, strecke()) === "aussen" ? null : y;
+  if ($(".k01 .showcase-laptop.ist-posiert")) bildVorladen();
+}
+window.addEventListener("keydown", taste);
+window.addEventListener("keyup", (e) => {
+  if (e.key === auto.taste) auto.taste = "";
+});
+window.addEventListener("resize", () => {
+  if (!auto.an) return;
+  if (auto.lauf) return sofortAnsZiel();
+  // Anfang bzw. Ende halten: Das Ende rückt mit der Fensterhöhe (die Strecke ist 120 svh lang)
+  const alt = auto.geo;
+  auto.geo = null;
+  if (!alt) return;
+  const g = strecke();
+  const y = scrollY;
+  if (Math.abs(y - alt.e) <= 2 && Math.abs(g.e - alt.e) > 0.5) window.scrollTo(0, g.e);
+  else if (Math.abs(y - alt.a) <= 2 && Math.abs(g.a - alt.a) > 0.5) window.scrollTo(0, g.a);
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) sofortAnsZiel();
+});
+document.addEventListener("vf:ruhe", (e) => {
+  auto.ruhig = Boolean(e.detail?.ruhig);
+  autoStarten();
+});
 
 // ---------------------------------------------------------------------------------------------------------------
 // Wortwalze: vier Zonen (IntersectionObserver-Band bei 45 %), kein Zeitgeber. Das alte Wort rollt nach oben (CSS-Übergang,
@@ -1025,6 +1472,7 @@ window.addEventListener("beforeprint", () => {
 function alles() {
   geometrie();
   waechterStarten();
+  autoStarten();
   walzeStarten();
   spurStarten();
   fuellenKompakt();
