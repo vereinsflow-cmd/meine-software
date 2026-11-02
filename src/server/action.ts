@@ -60,7 +60,8 @@ const FINANCE_CODES = [
   "DONATION_INVALID",
   "DONATION_LOCKED",
 ] as const;
-const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"]+)`);
+/** Ohne Backtick: Prisma rahmt die Datenbankmeldung ein („Message: `PERIOD_LOCKED: …`“). */
+const FINANCE_MESSAGE = new RegExp(`(?:${FINANCE_CODES.join("|")}): ([^\n"\`]+)`);
 
 export function mapDatabaseError(error: unknown): AppError | null {
   const text = error instanceof Error ? error.message : "";
