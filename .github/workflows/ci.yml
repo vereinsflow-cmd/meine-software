@@ -13,8 +13,8 @@ on:
     paths-ignore:
       - "website/**"
 
-# Ein neuer Push auf einen Pull Request ersetzt dessen laufende Prüfung. Auf main läuft jede Prüfung zu Ende (der nächste
-# Push wartet), damit jeder Commit dort ein Ergebnis bekommt.
+# Ein neuer Push auf einen Pull Request ersetzt dessen laufende Prüfung. Auf main wird eine laufende Prüfung nicht
+# abgebrochen; kommen währenddessen mehrere Pushes, wartet nur der neueste (GitHub hält je Gruppe eine wartende Ausführung).
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
