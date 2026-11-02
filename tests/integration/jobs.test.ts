@@ -832,6 +832,35 @@ describe("Aufbewahrungsfristen", () => {
     expect(await applyRetention()).toMatchObject({ trashAnonymized: 1, failed: 0 });
     expect(await anonymizedCount()).toBe(2);
   });
+
+  it("schwärzt den Namen auch in Benachrichtigungen anderer – nur im eigenen Verein", async () => {
+    const { club, helper } = await clubWithPeople();
+    const other = await clubWithPeople();
+    await fullMember(club.id, { deletedAt: ago(31 * DAY), firstName: "Bruno", lastName: "Benach" });
+    const note = (clubId: string, userId: string) =>
+      prisma.notification.create({
+        data: {
+          clubId,
+          userId,
+          type: "SHIFT_CHANGED",
+          title: "Abmeldung: Bruno Benach",
+          body: "Bruno Benach hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
+        },
+      });
+    const own = await note(club.id, helper.user.id);
+    // Ein gleichnamiger Mensch in einem anderen Verein ist jemand anderes.
+    const foreign = await note(other.club.id, other.helper.user.id);
+
+    await applyRetention();
+
+    expect(await prisma.notification.findUniqueOrThrow({ where: { id: own.id } })).toMatchObject({
+      title: "Abmeldung: Gelöschtes Mitglied",
+      body: "Gelöschtes Mitglied hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
+    });
+    expect(
+      await prisma.notification.findUniqueOrThrow({ where: { id: foreign.id } }),
+    ).toMatchObject({ title: "Abmeldung: Bruno Benach" });
+  });
 });
 
 describe("Job-Läufer", () => {

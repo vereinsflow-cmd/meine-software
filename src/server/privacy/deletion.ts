@@ -17,7 +17,7 @@ import {
 import { assertCan } from "@/server/permissions/policy";
 import { enforceRateLimit } from "@/server/security/rate-limit";
 import type { TenantContext } from "@/server/tenancy/context-core";
-import { anonymizeMemberData, scrubNamesInAudit } from "./anonymize";
+import { anonymizeMemberData, scrubNamesInAudit, scrubNamesInNotifications } from "./anonymize";
 
 /**
  * Löschung des Kontos und der Mitgliedsdaten (Recht auf Löschung, Art. 17 DSGVO).
@@ -25,7 +25,7 @@ import { anonymizeMemberData, scrubNamesInAudit } from "./anonymize";
  * Ablauf: Antrag (mit Passwort-Bestätigung) → Bedenkzeit von 14 Tagen (jederzeit widerrufbar) → automatische Ausführung
  * durch den Hintergrundjob. Bei der Ausführung
  *   - werden die Mitgliedsdaten in ALLEN Vereinen der Person anonymisiert (`anonymizeMemberData`),
- *   - Namen im Änderungsprotokoll geschwärzt,
+ *   - Namen im Änderungsprotokoll und in Benachrichtigungen anderer (z. B. „Löschantrag: …“) geschwärzt,
  *   - offene Einladungen an ihre Adresse gelöscht und
  *   - das Konto samt Sitzungen, Token, Mitgliedschaften, Benachrichtigungen und Kalender-Abos endgültig entfernt.
  * Der Antrag selbst bleibt als Nachweis bestehen (ohne Bezug zu Namen). Vor dem Antrag und bei der Ausführung wird
@@ -255,6 +255,7 @@ export async function executeDeletionRequest(
           anonymized += 1;
       }
       await scrubNamesInAudit(tx, clubIds, [`${user.firstName} ${user.lastName}`]);
+      await scrubNamesInNotifications(tx, clubIds, [`${user.firstName} ${user.lastName}`]);
       await tx.invitation.deleteMany({ where: { email: user.email } });
       // Support-Meldungen dieser Person (freie Texte, können Personenbezug haben) werden mit dem Konto gelöscht; als Bearbeiter
       // eingetragene Verweise auf das Konto werden gelöst.

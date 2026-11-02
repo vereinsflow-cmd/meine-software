@@ -9,7 +9,7 @@ import { todayCalendarDate } from "@/lib/dates";
  * Löschanträgen verwendet. Der Datensatz bleibt als leere Hülle bestehen, damit Auswertungen (Helferstunden,
  * Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber er lässt keinen Rückschluss auf die
  * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten, keine
- * Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll.
+ * Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll oder in Benachrichtigungen anderer Personen.
  */
 export const ANONYMOUS_FIRST_NAME = "Gelöschtes";
 export const ANONYMOUS_LAST_NAME = "Mitglied";
@@ -178,6 +178,7 @@ export async function anonymizeMemberData(
     data: { summary: ANONYMOUS_AUDIT_SUMMARY, changes: Prisma.JsonNull },
   });
   await scrubNamesInAudit(tx, [clubId], [fullName]);
+  await scrubNamesInNotifications(tx, [clubId], [fullName]);
   return true;
 }
 
@@ -207,5 +208,28 @@ export async function scrubNamesInAudit(
        WHERE "clubId" IN (${Prisma.join(clubIds)})
          AND "summary" IS NOT NULL
          AND position(${name} in "summary") > 0`;
+  }
+}
+
+/**
+ * Ersetzt Klarnamen in Titel und Text von Benachrichtigungen (z. B. „Löschantrag: Hans Helfer“, „Hans Helfer hat sich für
+ * „Aufbau“ eingetragen“) – wie im Änderungsprotokoll. Die Benachrichtigung selbst bleibt für den Empfänger erhalten (gelesen
+ * oder nicht, Link); der Aufräumjob entfernt sie wie üblich. Zu kurze Namen werden ignoriert.
+ */
+export async function scrubNamesInNotifications(
+  tx: Tx,
+  clubIds: readonly string[],
+  names: readonly string[],
+): Promise<void> {
+  if (clubIds.length === 0) return;
+  for (const name of new Set(
+    names.map((value) => value.trim()).filter((value) => value.length >= 3),
+  )) {
+    await tx.$executeRaw`
+      UPDATE "Notification"
+         SET "title" = replace("title", ${name}, 'Gelöschtes Mitglied'),
+             "body" = replace("body", ${name}, 'Gelöschtes Mitglied')
+       WHERE "clubId" IN (${Prisma.join(clubIds)})
+         AND (position(${name} in "title") > 0 OR position(${name} in "body") > 0)`;
   }
 }

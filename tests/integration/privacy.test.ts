@@ -675,6 +675,70 @@ describe("Ausführung der Löschung", () => {
     ).not.toContain(email);
   });
 
+  it("schwärzt den Namen auch in Benachrichtigungen anderer (Löschantrag, Schichten, Meldungen)", async () => {
+    const { people, club } = await setup();
+    // Der Mitgliedsdatensatz kann anders heißen als das Konto – beide Namen verschwinden.
+    await prisma.member.update({
+      where: { id: people.person.member.id },
+      data: { firstName: "Johanna" },
+    });
+    const pending = await requestAccountDeletion(
+      { userId: people.person.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    await prisma.notification.createMany({
+      data: [
+        {
+          clubId: club.id,
+          userId: people.other.user.id,
+          type: "SHIFT_CHANGED",
+          title: "Neue Eintragung: Aufbau",
+          body: "Hanna Helfer hat sich für „Aufbau“ (Sommerfest) eingetragen.",
+        },
+        {
+          clubId: club.id,
+          userId: people.admin.user.id,
+          type: "SYSTEM",
+          title: "Neue Meldung: Hallenschlüssel",
+          body: "Frage von Johanna Helfer",
+        },
+        {
+          clubId: club.id,
+          userId: people.admin2.user.id,
+          type: "SHIFT_CHANGED",
+          title: "Neue Eintragung: Abbau",
+          body: "Otto Anders hat sich für „Abbau“ (Sommerfest) eingetragen.",
+        },
+      ],
+    });
+    const texts = async () =>
+      (
+        await prisma.notification.findMany({
+          where: { clubId: club.id },
+          select: { title: true, body: true },
+        })
+      ).map((n) => `${n.title} | ${n.body ?? ""}`);
+    expect((await texts()).filter((t) => t.startsWith("Löschantrag: Hanna Helfer"))).toHaveLength(
+      2,
+    );
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    const after = await texts();
+    expect(after.join("\n")).not.toContain("Hanna Helfer");
+    expect(after.join("\n")).not.toContain("Johanna");
+    expect(after.filter((t) => t.startsWith("Löschantrag: Gelöschtes Mitglied |"))).toHaveLength(2);
+    expect(after).toContain(
+      "Neue Eintragung: Aufbau | Gelöschtes Mitglied hat sich für „Aufbau“ (Sommerfest) eingetragen.",
+    );
+    expect(after).toContain("Neue Meldung: Hallenschlüssel | Frage von Gelöschtes Mitglied");
+    // Benachrichtigungen über andere Personen bleiben unberührt.
+    expect(after).toContain(
+      "Neue Eintragung: Abbau | Otto Anders hat sich für „Abbau“ (Sommerfest) eingetragen.",
+    );
+  });
+
   it("wiederholte Ausführung ist harmlos; nicht fällige Anträge bleiben offen; der Job verarbeitet nur Fälliges", async () => {
     const { people } = await setup();
     const due = await requestAccountDeletion(
