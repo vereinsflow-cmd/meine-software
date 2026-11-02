@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { toDateInputValue, todayCalendarDate } from "@/lib/dates";
+import { createEntry, listAccounts, listCategories, setupLedger } from "@/modules/finance/ledger";
 import { hashPassword } from "@/server/auth/password";
 import { prisma } from "@/server/db/client";
 import { runJobs } from "@/server/jobs/runner";
@@ -313,6 +315,88 @@ describe("Datenexport (Art. 15 und 20 DSGVO)", () => {
     expect(vereinB.benachrichtigungen.map((n) => n.titel)).toEqual(["Nachricht aus Verein B"]);
     const vereinA = asClub(data.vereine.find((v) => v.verein === "Datenschutzverein"));
     expect(vereinA.benachrichtigungen.map((n) => n.titel)).toEqual(["Hallo Hanna"]);
+  });
+
+  describe("Buchungen im Kassenbuch", () => {
+    /** Richtet das Kassenbuch des Vereins ein und liefert eine Funktion, die eine Einnahme bucht. */
+    async function withLedger(clubId: string, adminUserId: string) {
+      const ctx = await contextFor(adminUserId, clubId);
+      await setupLedger(ctx, {
+        ledgerStartDate: `${todayCalendarDate().getUTCFullYear()}-01-01`,
+        bankName: "Girokonto",
+        bankOpening: "1.000,00",
+        withCash: false,
+      });
+      const bank = (await listAccounts(ctx)).find((a) => a.kind === "BANK")!;
+      const category = (await listCategories(ctx)).find((c) => c.name === "Zuschüsse")!;
+      return (
+        description: string,
+        counterparty: { counterparty?: string; counterpartyMemberId?: string } = {},
+      ) =>
+        createEntry(ctx, {
+          kind: "INCOME",
+          accountId: bank.id,
+          bookingDate: toDateInputValue(todayCalendarDate()),
+          description,
+          ...counterparty,
+          lines: [{ categoryId: category.id, amount: "10,00" }],
+        });
+    }
+    const bookingTexts = async (userId: string) =>
+      (
+        asClub((await buildUserDataExport(userId))!.vereine[0]).mitglied.buchungen as {
+          text: string;
+        }[]
+      ).map((b) => b.text);
+
+    it("enthalten nur die dem Mitglied zugeordneten Buchungen – ein frei wählbarer Name findet keine fremden", async () => {
+      const { people, club } = await setup();
+      const book = await withLedger(club.id, people.admin.user.id);
+      await book("Mitgliedsbeitrag eigene Buchung", {
+        counterpartyMemberId: people.person.member.id,
+      });
+      await book("Spende 2026", {
+        counterparty: "Otto Anders",
+        counterpartyMemberId: people.other.member.id,
+      });
+      await book("Miete 2025", { counterparty: "Stadtwerke Musterstadt" });
+
+      // Den Namen im Mitgliedsdatensatz kann die Person steuern (Abteilungsleiter mit members:update für den eigenen
+      // Datensatz, beim Beitritt über eine Einladung ohne Mitglied wählt sie ihn selbst). „e 202“ steckt in „Spende 2026“.
+      await prisma.member.update({
+        where: { id: people.person.member.id },
+        data: { firstName: "e", lastName: "202" },
+      });
+      expect(await bookingTexts(people.person.user.id)).toEqual([
+        "Mitgliedsbeitrag eigene Buchung",
+      ]);
+
+      // Auch der exakte Name eines Gegenübers ohne Mitgliedszuordnung beweist keine Identität.
+      await prisma.member.update({
+        where: { id: people.person.member.id },
+        data: { firstName: "Stadtwerke", lastName: "Musterstadt" },
+      });
+      expect(await bookingTexts(people.person.user.id)).toEqual([
+        "Mitgliedsbeitrag eigene Buchung",
+      ]);
+    });
+
+    it("gleichnamige Mitglieder sehen nicht die Buchungen des anderen", async () => {
+      const { people, club } = await setup();
+      const father = await addUserToClub(club, "MEMBER", {
+        firstName: "Thomas",
+        lastName: "Müller",
+      });
+      const son = await addUserToClub(club, "MEMBER", { firstName: "Thomas", lastName: "Müller" });
+      const book = await withLedger(club.id, people.admin.user.id);
+      await book("Beitrag Thomas Müller", {
+        counterparty: "Thomas Müller",
+        counterpartyMemberId: father.member.id,
+      });
+
+      expect(await bookingTexts(father.user.id)).toEqual(["Beitrag Thomas Müller"]);
+      expect(await bookingTexts(son.user.id)).toEqual([]);
+    });
   });
 
   it("unbekannte oder gelöschte Konten ergeben keinen Export", async () => {

@@ -96,6 +96,12 @@ Alle Funktionen finden Angemeldete unter **„Datenschutz“** (Menü „Persön
 | **Einwilligung widerrufen** (Art. 7)           | Newsletter und Fotoveröffentlichung selbst in „Datenschutz“; jede Änderung wird als neues Ereignis gespeichert (Nachweis bleibt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **Einschränkung, Widerspruch** (Art. 18, 21)   | Mitglied sperren (Status „gesperrt“) bzw. Löschantrag; im Einzelfall über den Verein                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
+**Buchungen im Kassenbuch** stehen im Datenexport nur, wenn sie dem Mitglied zugeordnet sind (Gegenüber ist das Mitglied).
+Buchungen, in denen die Person nur mit ihrem Namen steht (als Gegenüber oder im Buchungstext, ohne Mitgliedszuordnung), werden
+**nicht automatisch exportiert**: Namen sind frei wählbar und nicht eindeutig, ein automatischer Abgleich lieferte auch Buchungen
+anderer Personen. Bei einer Auskunft muss der Verein solche Buchungen von Hand prüfen (Kassenbuch, Suche nach dem Namen – mit
+Recht „Finanzen ansehen“) und der Person gesondert mitteilen.
+
 **Anonymisierung** heißt: Der Datensatz bleibt als leere Hülle („Gelöschtes Mitglied“) bestehen, damit Statistiken (Helferstunden,
 Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber Name, Kontakt, Adresse, Geburtsdatum, Notizen,
 Einwilligungen, Gruppen- und Abteilungszugehörigkeiten und Dokumente der Person sind entfernt bzw. im Papierkorb. Ausnahme sind
