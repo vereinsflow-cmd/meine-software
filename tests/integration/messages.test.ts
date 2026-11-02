@@ -33,6 +33,7 @@ import {
   createShift,
   createUser,
 } from "../helpers/factories";
+import { withQueryLog } from "../helpers/query-log";
 
 const HOUR = 60 * 60 * 1000;
 const first = { page: 1, pageSize: 25, skip: 0 };
@@ -249,6 +250,45 @@ describe("Nachrichten senden", () => {
     expect(preview).toEqual({ reachable: 1, unreachable: 2 }); // Leitung erreichbar; "Ohne Konto" und die gesperrte Helferin nicht
     const result = await send(ctx.admin, { audience: "DEPARTMENT", departmentId: fussball.id });
     expect(result).toMatchObject({ recipients: 1, unreachable: 2 });
+  });
+
+  it("die Vorschau zählt in der Datenbank, statt alle Mitglieder der Zielgruppe zu laden – mit denselben Zahlen wie der Versand", async () => {
+    const { ctx, club, people, fussball, eventH } = await setup();
+    const noAccount = await createMember(club.id, { firstName: "Ohne", lastName: "Konto" });
+    await prisma.memberDepartment.create({
+      data: { clubId: club.id, memberId: noAccount.id, departmentId: fussball.id },
+    });
+    await prisma.clubMembership.update({
+      where: { id: people.helper.membershipId },
+      data: { status: "SUSPENDED" },
+    });
+    const shift = await createShift(club.id, eventH.id, { title: "Aufbau" });
+    await prisma.shiftAssignment.create({
+      data: { clubId: club.id, shiftId: shift.id, memberId: people.member.member.id },
+    });
+
+    const audiences = [
+      // Alle außer dem Absender: Vorstand, Leitung, Max – „Ohne Konto“ und die gesperrte Helferin nicht.
+      [{ audience: "ALL_MEMBERS" as const }, { reachable: 3, unreachable: 2 }],
+      [
+        { audience: "DEPARTMENT" as const, departmentId: fussball.id },
+        { reachable: 1, unreachable: 2 },
+      ],
+      [
+        { audience: "EVENT_HELPERS" as const, eventId: eventH.id },
+        { reachable: 1, unreachable: 0 },
+      ],
+    ] as const;
+    for (const [audience, expected] of audiences) {
+      const logged = withQueryLog(ctx.admin);
+      expect(await previewRecipients(logged.ctx, audience)).toEqual(expected);
+      expect(logged.queries).not.toContain("Member.findMany");
+      const result = await send(ctx.admin, { subject: "Zum Vergleich", ...audience });
+      expect(result).toMatchObject({
+        recipients: expected.reachable,
+        unreachable: expected.unreachable,
+      });
+    }
   });
 
   it("eine Zielgruppe ohne erreichbare Personen wird nicht gesendet – der Entwurf bleibt erhalten", async () => {

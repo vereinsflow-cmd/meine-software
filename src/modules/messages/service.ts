@@ -256,19 +256,27 @@ export async function resolveRecipients(
   return { reachable, unreachable: members.length - reachable.length };
 }
 
-/** Wie viele Personen würde die Nachricht erreichen? (Für die Anzeige im Formular.) */
+/**
+ * Wie viele Personen würde die Nachricht erreichen? (Für die Anzeige im Formular und im Chat.) Nur gezählt – dieselben
+ * Bedingungen wie `resolveRecipients`, aber ohne alle Mitglieder der Zielgruppe zu laden (der Chat fragt bei jedem Öffnen).
+ */
 export async function previewRecipients(
   ctx: TenantContext,
   input: AudienceInput,
 ): Promise<{ reachable: number; unreachable: number }> {
   await checkAudience(ctx, ctx.db, input);
-  const resolved = await resolveRecipients(ctx.db, input.audience, {
-    departmentId: input.departmentId,
-    eventId: input.eventId,
-  });
-  // Wie beim Versand: Der Absender selbst ist kein Empfänger (sonst stünde hier immer einer zu viel).
-  const others = resolved.reachable.filter((r) => r.userId !== ctx.userId);
-  return { reachable: others.length, unreachable: resolved.unreachable };
+  const where = audienceWhere(input.audience, input);
+  const withAccount: Prisma.MemberWhereInput = {
+    userId: { not: null },
+    membership: { is: { status: "ACTIVE" } },
+  };
+  const [all, reachable, others] = await Promise.all([
+    ctx.db.member.count({ where }),
+    ctx.db.member.count({ where: { AND: [where, withAccount] } }),
+    // Wie beim Versand: Der Absender selbst ist kein Empfänger (sonst stünde hier immer einer zu viel).
+    ctx.db.member.count({ where: { AND: [where, withAccount, { userId: { not: ctx.userId } }] } }),
+  ]);
+  return { reachable: others, unreachable: all - reachable };
 }
 
 export interface ComposeOptions {
