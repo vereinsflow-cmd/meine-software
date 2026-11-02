@@ -91,6 +91,13 @@ describe("CSV-Import (parseCsv)", () => {
     expect(() => parseCsv(many)).toThrow(/zu viele Zeilen/);
   });
 
+  it("nennt je Datenzeile die Zeilennummer in der Datei – auch nach Leerzeilen und mehrzeiligen Zellen", () => {
+    expect(parseCsv('\nKopf;X\n\nA;B\n\n"C\nC2";D\n  \nE;F\n').lines).toEqual([4, 6, 9]);
+    expect(parseCsv('a;b\r\nc;"x\r\ny"\r\n\r\ne;f').lines).toEqual([2, 5]);
+    expect(parseCsv("a;b\rc;d\r\re;f").lines).toEqual([2, 4]);
+    expect(parseCsv("Vorname;Nachname\nAnna;Muster").lines).toEqual([2]);
+  });
+
   it("weist leere Dateien ab", () => {
     expect(() => parseCsv("")).toThrow(CsvError);
   });

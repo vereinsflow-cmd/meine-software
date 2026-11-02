@@ -249,6 +249,25 @@ describe("CSV-Import", () => {
     expect(await departmentsOf("Komma")).toEqual([turnen.id, handball.id].sort());
   });
 
+  it("nennt die Zeilennummer der Datei, auch nach Leerzeilen und mehrzeiligen Zellen", async () => {
+    const { ctx } = await setup();
+    const csv = [
+      "Vorname;Nachname;E-Mail;Bemerkung",
+      "",
+      "Gültig;Eins;;",
+      'Mehr;Zeilig;;"Zeile 1',
+      'Zeile 2"',
+      "",
+      "Kaputte;Mail;keine-mail;",
+    ].join("\n");
+    const preview = await previewMemberImport(ctx.board, csv);
+    expect(preview.rows.map((r) => [r.label, r.line])).toEqual([
+      ["Gültig Eins", 3],
+      ["Mehr Zeilig", 4],
+      ["Kaputte Mail", 7],
+    ]);
+  });
+
   it("verlangt Vorname und Nachname als Spalten", async () => {
     const { ctx } = await setup();
     await expect(previewMemberImport(ctx.board, "E-Mail;Telefon\na@b.de;1")).rejects.toMatchObject({

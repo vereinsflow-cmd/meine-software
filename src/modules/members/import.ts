@@ -154,7 +154,7 @@ async function analyze(ctx: TenantContext, csvText: string) {
   const seenNumbers = new Set<string>();
   const seenKeys = new Set<string>();
   const candidates: Candidate[] = parsed.rows.map((cells, index) => {
-    const line = index + 2;
+    const line = parsed.lines[index]!;
     const raw: Record<string, string> = {};
     columns.forEach((field, column) => {
       if (!field) return;
