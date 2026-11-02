@@ -340,7 +340,10 @@ test.describe("Finanzen – Übersicht", () => {
         /^\/finanzen\/kassenbuch\?konto=[0-9a-f-]{36}$/,
       );
     }
-    await expect(page.getByText(/^Zusammen · 2 Konten$/)).toBeVisible();
+    // Girokonto und Barkasse aus `ensureLedger` – andere Tests (banken.spec.ts) legen weitere Konten an; gezählt werden alle.
+    const accounts = await cards.getByRole("link").count();
+    expect(accounts).toBeGreaterThanOrEqual(2);
+    await expect(page.getByText(`Zusammen · ${accounts} Konten`, { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toBeVisible();
 
     // Schnellaktionen: die Ziele sind die bestehenden Seiten bzw. das Fenster „Neue Buchung“.
@@ -478,7 +481,11 @@ test.describe("Finanzen – nur ansehen (eigene Rolle „Kassenprüfung“)", ()
     await expect(actions.getByRole("link")).toHaveText(["Kassenbuch"]);
     await expect(actions.getByRole("button")).toHaveCount(0);
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("list", { name: "Konten" }).getByRole("link")).toHaveCount(2);
+    // Die Konten als Karten (ins Kassenbuch) – mindestens Girokonto und Barkasse; andere Tests legen weitere an.
+    const cards = page.getByRole("list", { name: "Konten" });
+    for (const name of ["Girokonto", "Barkasse"]) {
+      await expect(cards.getByRole("link", { name: new RegExp(`^${name}`) })).toBeVisible();
+    }
     await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toHaveCount(
       0,
     );
