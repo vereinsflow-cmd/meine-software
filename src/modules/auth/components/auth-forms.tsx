@@ -274,6 +274,7 @@ export function AcceptInvitationForm({ token }: { token: string }) {
       <CheckboxField
         form={form}
         name="acceptTerms"
+        required
         label={
           <>
             Ich habe die{" "}

@@ -79,6 +79,7 @@ export function FirstRunForm() {
       <CheckboxField
         form={form}
         name="acceptTerms"
+        required
         label={
           <>
             Ich habe die{" "}
