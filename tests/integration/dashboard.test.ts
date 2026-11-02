@@ -256,6 +256,25 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect((await getDashboard(ctx.member)).members).toBeNull();
   });
 
+  it("eigene Rolle ganz ohne `members:read`: Kennzahlen und Auswertungen ohne Mitglieder-Block statt Fehler", async () => {
+    const { ctx } = await setup();
+    const withoutMembers = {
+      ...ctx.board,
+      permissions: new Map([...ctx.board.permissions].filter(([key]) => key !== "members:read")),
+    };
+    const now = new Date();
+    // Wie die Seite: die Quellen für beide Teile vorab anlegen – für jeden Benutzer, auch ohne Mitgliederrecht.
+    const sources = dashboardSources(withoutMembers, now);
+    const [data, analytics] = await Promise.all([
+      getDashboard(withoutMembers, now, sources),
+      getAnalytics(withoutMembers, now, sources),
+    ]);
+    expect(data.members).toBeNull();
+    expect(data.events).not.toBeNull(); // der Rest der Startseite bleibt
+    expect(analytics.topics.map((topic) => topic.id)).not.toContain("members");
+    expect((await getDashboard(withoutMembers)).members).toBeNull(); // ohne mitgegebene Quellen ebenso
+  });
+
   it("Abteilungen für den Kopf (Fotos): nur aktive, nach Namen, Mitglieder ohne Archiv gezählt – ohne `departments:read` keine", async () => {
     const { ctx, club, fussball, handball } = await setup();
     const old = await createDepartment(club.id, "Alte Herren");

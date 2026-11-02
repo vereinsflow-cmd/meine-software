@@ -50,9 +50,11 @@ export function dashboardSources(ctx: TenantContext, now: Date): DashboardSource
   const years = buildBuckets("Y", now);
   const from = years[0]!.start;
   const to = years[years.length - 1]!.end;
-  const scope = memberReadScope(ctx) ?? {};
   return {
     members: once(async () => {
+      // Erst hier, nicht beim Anlegen: Die Seite legt die Quellen für jeden Benutzer an, und ohne `members:read` wirft der
+      // Filter `FORBIDDEN` – abgerufen wird die Quelle aber nur nach der Prüfung des Aufrufers.
+      const scope = memberReadScope(ctx) ?? {};
       const [records, groups] = await Promise.all([
         ctx.db.member.findMany({
           where: scope,
