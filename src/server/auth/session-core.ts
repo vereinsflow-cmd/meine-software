@@ -26,6 +26,8 @@ export interface ValidSession {
   user: SessionUser;
   activeClubId: string | null;
   expiresAt: Date;
+  /** Ende der Sitzung ohne weitere Aktivität: Inaktivitätsfrist ab der letzten Anfrage, höchstens `expiresAt`. */
+  endsAt: Date;
 }
 
 /** `lastSeenAt` wird höchstens einmal pro Minute aktualisiert (spart Schreibzugriffe). */
@@ -57,10 +59,15 @@ export async function createSessionRecord(input: {
   return { token, expiresAt };
 }
 
-/** Prüft ein Cookie-Token. Gibt `null` zurück, wenn es unbekannt, abgelaufen oder inaktiv ist. */
+/**
+ * Prüft ein Cookie-Token. Gibt `null` zurück, wenn es unbekannt, abgelaufen oder inaktiv ist.
+ * Jede Prüfung zählt als Aktivität und verlängert die Inaktivitätsfrist – außer mit `touch: false` (nur nachfragen, z. B. ob
+ * der Hinweis vor der automatischen Abmeldung nötig ist; das darf die Sitzung nicht am Leben halten).
+ */
 export async function validateSessionToken(
   token: string,
   now = new Date(),
+  { touch = true }: { touch?: boolean } = {},
 ): Promise<ValidSession | null> {
   const id = hashToken(token);
   const session = await prisma.session.findUnique({
@@ -90,14 +97,19 @@ export async function validateSessionToken(
     return null;
   }
 
-  if (now.getTime() - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
+  let lastSeenAt = session.lastSeenAt;
+  if (touch && now.getTime() - lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
     await prisma.session.updateMany({ where: { id }, data: { lastSeenAt: now } });
+    lastSeenAt = now;
   }
+  const endsAt = new Date(
+    Math.min(lastSeenAt.getTime() + env.SESSION_IDLE_MINUTES * 60_000, session.expiresAt.getTime()),
+  );
 
   const { disabledAt: _disabledAt, deletedAt: _deletedAt, ...user } = session.user;
   void _disabledAt;
   void _deletedAt;
-  return { id, user, activeClubId: session.activeClubId, expiresAt: session.expiresAt };
+  return { id, user, activeClubId: session.activeClubId, expiresAt: session.expiresAt, endsAt };
 }
 
 export async function deleteSessionByToken(token: string): Promise<void> {
