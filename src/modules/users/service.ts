@@ -4,7 +4,7 @@ import { issueInvitation } from "@/server/auth/invitations";
 import { getTwoFactorResetInfo, resetTwoFactor } from "@/server/auth/two-factor";
 import { badRequest, forbidden, notFound } from "@/server/errors";
 import { PERMISSIONS, isPermissionKey, type PermissionKey } from "@/server/permissions/catalog";
-import { assertCan, can } from "@/server/permissions/policy";
+import { assertCan, can, grantsCoverRole } from "@/server/permissions/policy";
 import { auditActor, type TenantContext } from "@/server/tenancy/context-core";
 import { assertNotLastAdmin } from "@/modules/members/service";
 import type { InviteInput } from "./schemas";
@@ -17,7 +17,6 @@ import type { InviteInput } from "./schemas";
  *  - Man kann sich nicht selbst sperren, entfernen oder die eigene Rolle ändern (Aussperr-Schutz).
  *  - Der letzte Vereinsadministrator bleibt immer erhalten.
  */
-const SCOPE_RANK: Record<PermissionScope, number> = { OWN: 1, DEPARTMENT: 2, CLUB: 3 };
 
 export interface RoleSummary {
   id: string;
@@ -29,18 +28,6 @@ export interface RoleSummary {
   /** Darf der aktuelle Benutzer diese Rolle vergeben? */
   assignable: boolean;
   userCount: number;
-}
-
-function grantsCoverRole(
-  ctx: TenantContext,
-  role: { permissions: { permissionKey: string; scope: PermissionScope }[] },
-): boolean {
-  return role.permissions.every((grant) => {
-    const own = isPermissionKey(grant.permissionKey)
-      ? ctx.permissions.get(grant.permissionKey)
-      : undefined;
-    return own !== undefined && SCOPE_RANK[own] >= SCOPE_RANK[grant.scope];
-  });
 }
 
 export async function listRoles(ctx: TenantContext): Promise<RoleSummary[]> {

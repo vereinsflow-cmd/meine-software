@@ -5,10 +5,18 @@ import { ageOn, parseCalendarDate, todayCalendarDate } from "@/lib/dates";
 import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import { diffChanges, recordAudit } from "@/server/audit/audit";
 import type { TenantDb, TenantTx } from "@/server/db/tenant";
-import { badRequest, conflict, forbidden, notFound, validationFailed } from "@/server/errors";
+import {
+  AppError,
+  badRequest,
+  conflict,
+  forbidden,
+  notFound,
+  validationFailed,
+} from "@/server/errors";
 import {
   assertCan,
   can,
+  grantsCoverRole,
   scopeFilter,
   scopeOf,
   type ResourceRef,
@@ -427,6 +435,33 @@ export async function assertNotLastAdmin(
     );
 }
 
+const MORE_RIGHTS_TEXT =
+  "Diese Person hat ein Benutzerkonto mit mehr Rechten als du. Austritt, Sperre, Archivieren und Löschen sperren ihren Zugang – das darf nur, wer ihre Rechte selbst vollständig besitzt.";
+
+/**
+ * Austritt, Sperre, Archivieren und Löschen sperren das verknüpfte Benutzerkonto – dieselbe Wirkung wie „Zugang sperren“
+ * unter „Benutzer und Rollen“. Deshalb gilt dieselbe Regel: Wer mehr Rechte hat als man selbst, den sperrt man nicht aus
+ * (sonst sperrte ein Abteilungsleiter über den Mitgliedsstatus den Vorstand). Ist der Zugang schon gesperrt, sperrt die
+ * Aktion niemanden aus. Mit `field` steht die Meldung zusätzlich am Formularfeld (der Status) – dorthin springt das Formular.
+ */
+async function assertMayRevokeAccess(
+  ctx: TenantContext,
+  userId: string | null,
+  field?: "status",
+): Promise<void> {
+  if (!userId) return;
+  const membership = await ctx.db.clubMembership.findFirst({
+    where: { userId, status: "ACTIVE" },
+    select: { role: { select: { permissions: { select: { permissionKey: true, scope: true } } } } },
+  });
+  if (!membership || grantsCoverRole(ctx, membership.role)) return;
+  throw new AppError("FORBIDDEN", MORE_RIGHTS_TEXT, {
+    fieldErrors: field
+      ? { [field]: ["Diesen Status kannst du bei dieser Person nicht setzen."] }
+      : undefined,
+  });
+}
+
 /** Sperrt den Zugang eines verknüpften Benutzerkontos (z. B. bei Austritt oder Archivierung). */
 async function suspendAccess(tx: TenantTx, userId: string | null): Promise<void> {
   if (!userId) return;
@@ -561,6 +596,10 @@ export async function updateMember(
       ? { birthDate: toDate(input.birthDate), internalNotes: input.internalNotes ?? null }
       : {}),
   };
+  // Austritt oder Sperre entzieht dem Benutzerkonto den Zugang zum Verein.
+  const revokesAccess =
+    (after.status === "LEFT" || after.status === "BLOCKED") && existing.status !== after.status;
+  if (revokesAccess) await assertMayRevokeAccess(ctx, existing.userId, "status");
 
   await ctx.db.$transaction(async (tx) => {
     await tx.member.update({ where: { id }, data: after });
@@ -606,11 +645,7 @@ export async function updateMember(
       });
     }
 
-    // Austritt oder Sperre entzieht das Benutzerkonto den Zugang zum Verein.
-    if (
-      (after.status === "LEFT" || after.status === "BLOCKED") &&
-      existing.status !== after.status
-    ) {
+    if (revokesAccess) {
       await assertNotLastAdmin(tx, existing.userId);
       await suspendAccess(tx, existing.userId);
     }
@@ -646,6 +681,7 @@ export async function updateMember(
 export async function archiveMember(ctx: TenantContext, id: string): Promise<void> {
   const member = await loadForAction(ctx, id, "members:archive");
   if (member.archivedAt) return;
+  await assertMayRevokeAccess(ctx, member.userId);
   await ctx.db.$transaction(async (tx) => {
     await assertNotLastAdmin(tx, member.userId);
     await tx.member.update({ where: { id }, data: { archivedAt: new Date() } });
@@ -690,6 +726,7 @@ export async function deleteMember(ctx: TenantContext, id: string): Promise<void
     throw badRequest(
       "Bitte archiviere das Mitglied zuerst. Erst archivierte Mitglieder können gelöscht werden.",
     );
+  await assertMayRevokeAccess(ctx, member.userId);
   await ctx.db.$transaction(async (tx) => {
     await assertNotLastAdmin(tx, member.userId);
     await tx.member.update({ where: { id }, data: { deletedAt: new Date() } });

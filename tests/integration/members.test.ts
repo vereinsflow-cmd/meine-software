@@ -631,6 +631,84 @@ describe("Archivieren, Löschen, Wiederherstellen", () => {
     ).toBe("ACTIVE");
   });
 
+  it("Austritt, Sperre, Archivieren und Löschen sperren nur Konten, deren Rechte man selbst vollständig hat", async () => {
+    const { ctx, club, fussball, board, lead, member } = await setup();
+    const admin2 = await addUserToClub(club, "CLUB_ADMIN"); // nicht der letzte Administrator
+    for (const target of [board, member])
+      await prisma.memberDepartment.create({
+        data: { clubId: club.id, memberId: target.member.id, departmentId: fussball.id },
+      });
+    const statusOf = async (userId: string) =>
+      (await prisma.clubMembership.findFirstOrThrow({ where: { userId, clubId: club.id } })).status;
+    const as = (target: typeof board, status: "LEFT" | "BLOCKED") =>
+      input({
+        firstName: target.member.firstName,
+        lastName: target.member.lastName,
+        status,
+        departmentIds: [fussball.id],
+      });
+    const refused = { code: "FORBIDDEN", message: expect.stringContaining("mehr Rechten als du") };
+
+    // Der Abteilungsleiter sperrt über den Status nicht den Vorstand aus, der in seiner Abteilung spielt …
+    await expect(
+      updateMember(ctx.lead, board.member.id, as(board, "BLOCKED")),
+    ).rejects.toMatchObject({ ...refused, fieldErrors: { status: [expect.any(String)] } });
+    await expect(updateMember(ctx.lead, board.member.id, as(board, "LEFT"))).rejects.toMatchObject(
+      refused,
+    );
+    expect(await statusOf(board.user.id)).toBe("ACTIVE");
+    expect((await prisma.member.findUniqueOrThrow({ where: { id: board.member.id } })).status).toBe(
+      "ACTIVE",
+    );
+    // … ein einfaches Mitglied seiner Abteilung aber schon.
+    await updateMember(ctx.lead, member.member.id, as(member, "BLOCKED"));
+    expect(await statusOf(member.user.id)).toBe("SUSPENDED");
+
+    // Der Vorstand (ohne Benutzerverwaltung) sperrt keinen Administrator – weder per Status noch per Archiv.
+    await expect(
+      updateMember(ctx.board, admin2.member.id, as(admin2, "LEFT")),
+    ).rejects.toMatchObject(refused);
+    await expect(archiveMember(ctx.board, admin2.member.id)).rejects.toMatchObject(refused);
+    expect(await statusOf(admin2.user.id)).toBe("ACTIVE");
+    expect(
+      (await prisma.member.findUniqueOrThrow({ where: { id: admin2.member.id } })).archivedAt,
+    ).toBeNull();
+    // Den Abteilungsleiter (weniger Rechte) archiviert er wie gewohnt.
+    await archiveMember(ctx.board, lead.member.id);
+    expect(await statusOf(lead.user.id)).toBe("SUSPENDED");
+
+    // Löschen: eine eigene Rolle mit Lösch-, aber ohne Benutzerrechte; das Mitglied ist archiviert, sein Konto wieder frei.
+    const cleaner = await prisma.role.create({
+      data: { clubId: club.id, key: "custom:aufraeumer", name: "Aufräumer" },
+    });
+    await prisma.rolePermission.createMany({
+      data: (["members:read", "members:archive", "members:delete"] as const).map(
+        (permissionKey) => ({ clubId: club.id, roleId: cleaner.id, permissionKey, scope: "CLUB" }),
+      ),
+    });
+    const cleanerUser = await addUserToClub(
+      { ...club, roleIds: { ...club.roleIds, AUFRAEUMER: cleaner.id } },
+      "AUFRAEUMER" as never,
+    );
+    const ctxCleaner = await contextFor(cleanerUser.user.id, club.id);
+    await prisma.member.update({
+      where: { id: admin2.member.id },
+      data: { archivedAt: new Date() },
+    });
+    await expect(deleteMember(ctxCleaner, admin2.member.id)).rejects.toMatchObject(refused);
+    expect(await statusOf(admin2.user.id)).toBe("ACTIVE");
+    expect(
+      (await prisma.member.findUniqueOrThrow({ where: { id: admin2.member.id } })).deletedAt,
+    ).toBeNull();
+
+    // Ist der Zugang schon gesperrt, sperrt die Aktion niemanden aus – dann bleibt sie erlaubt.
+    await prisma.clubMembership.update({
+      where: { id: admin2.membershipId },
+      data: { status: "SUSPENDED" },
+    });
+    await expect(deleteMember(ctxCleaner, admin2.member.id)).resolves.toBeUndefined();
+  });
+
   it("gelöschte Mitglieder sind für Rollen ohne Löschrecht unsichtbar", async () => {
     const { ctx } = await setup();
     const { id } = await createMember(ctx.admin, input());
