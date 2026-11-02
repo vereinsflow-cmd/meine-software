@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { todayCalendarDate } from "@/lib/dates";
+import { NOTIFICATION_TITLE_MAX } from "@/modules/notifications/service";
 
 /**
  * Anonymisierung von Personendaten (Art. 17 DSGVO, Speicherbegrenzung).
@@ -236,11 +237,13 @@ export async function scrubNamesInNotifications(
   for (const name of new Set(
     names.map((value) => value.trim()).filter((value) => value.length >= 3),
   )) {
+    // Gekürzt wie in notifyUsers: Bei sehr langen Namen steht nur ihr Anfang im Titel.
+    const request = `Löschantrag: ${name}`.slice(0, NOTIFICATION_TITLE_MAX);
     const reporter = ` von ${name}`;
     const adder = `: ${name} hat dich hinzugefügt`;
     await tx.$executeRaw`
       UPDATE "Notification" SET "title" = 'Löschantrag: Gelöschtes Mitglied'
-       WHERE "clubId" IN (${clubs}) AND "type" = 'SYSTEM' AND "title" = ${`Löschantrag: ${name}`}`;
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SYSTEM' AND "title" = ${request}`;
     await tx.$executeRaw`
       UPDATE "Notification" SET "body" = 'Gelöschtes Mitglied' || substr("body", length(${name}) + 1)
        WHERE "clubId" IN (${clubs}) AND "type" = 'SHIFT_CHANGED'

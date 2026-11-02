@@ -552,6 +552,59 @@ describe("Löschantrag", () => {
   });
 });
 
+/** Die Namensstellen im Wortlaut der Vorlagen: Schicht ein- und austragen, Meldung, beide Chats, Löschantrag. */
+const namePlaces = (name: string) =>
+  [
+    {
+      type: "SHIFT_CHANGED",
+      title: "Neue Eintragung: Aufbau",
+      body: `${name} hat sich für „Aufbau“ (Sommerfest) eingetragen.`,
+    },
+    {
+      type: "SHIFT_CHANGED",
+      title: "Abmeldung: Aufbau",
+      body: `${name} hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.`,
+    },
+    { type: "SYSTEM", title: "Neue Meldung: Hallenschlüssel", body: `Frage von ${name}` },
+    {
+      type: "MESSAGE",
+      title: `Abteilung Fußball: ${name} hat dich hinzugefügt`,
+      body: "Du gehörst jetzt zur Abteilung Fußball und liest im Chat mit.",
+    },
+    {
+      type: "MESSAGE",
+      title: `Teilnehmer · Sommerfest: ${name} hat dich hinzugefügt`,
+      body: "Du bist jetzt für „Sommerfest“ angemeldet und liest im Chat mit.",
+    },
+    {
+      type: "SYSTEM",
+      title: `Löschantrag: ${name}`,
+      body: "Das Konto und die Mitgliedsdaten werden bald automatisch gelöscht bzw. anonymisiert.",
+    },
+  ] as const;
+
+/** Legt die Namensstellen für `name` als Benachrichtigungen an; das Ergebnis liest ihren Wortlaut später wieder. */
+async function placeNames(clubId: string, userId: string, name: string) {
+  const ids: string[] = [];
+  for (const note of namePlaces(name)) {
+    const { id } = await prisma.notification.create({
+      data: { clubId, userId, ...note },
+      select: { id: true },
+    });
+    ids.push(id);
+  }
+  return async () => {
+    const rows = await prisma.notification.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, type: true, title: true, body: true },
+    });
+    return ids.map((id) => {
+      const { type, title, body } = rows.find((row) => row.id === id)!;
+      return { type, title, body };
+    });
+  };
+}
+
 describe("Ausführung der Löschung", () => {
   it("anonymisiert die Mitgliedsdaten in allen Vereinen, schwärzt Namen im Protokoll und löscht das Konto samt Zubehör", async () => {
     const { people, club, event } = await setup();
@@ -886,6 +939,158 @@ describe("Ausführung der Löschung", () => {
       { title: "Löschantrag: Gelöschtes Mitglied" },
       { title: "Löschantrag: Gelöschtes Mitglied" },
     ]);
+  });
+
+  it("schwärzt den Namen im Chat-Titel auch bei einer Veranstaltung mit 150 Zeichen langem Titel", async () => {
+    const { people, club } = await setup();
+    // notifyUsers kürzt Titel auf 200 Zeichen. Gekürzt werden darf nur der Chat-Titel, nicht Name und Ende.
+    const long = await createEvent(club.id, { title: "Sommerfest ".repeat(15).slice(0, 150) });
+    const adam = await contextFor(people.admin2.user.id, club.id);
+    await addChatMembers(adam, {
+      chat: `teilnehmer-${long.id}`,
+      memberIds: [people.other.member.id],
+    });
+    const pending = await requestAccountDeletion(
+      { userId: people.admin2.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    const added = async () =>
+      (
+        await prisma.notification.findFirstOrThrow({
+          where: { clubId: club.id, userId: people.other.user.id, type: "MESSAGE" },
+          select: { title: true },
+        })
+      ).title;
+    const before = await added();
+    expect(before.length).toBeLessThanOrEqual(200);
+    expect(before).toMatch(
+      /^Teilnehmer · Sommerfest Sommerfest .*: Adam Zweitadmin hat dich hinzugefügt$/,
+    );
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    expect(await added()).toBe(
+      before.replace(": Adam Zweitadmin hat", ": Gelöschtes Mitglied hat"),
+    );
+  });
+
+  it("ein Kontoname, der selbst nicht in den Chat-Titel passt, steht dort nicht", async () => {
+    const { people, club, dept } = await setup();
+    // 201 Zeichen: Mit „Abteilung “ und „hat dich hinzugefügt“ über 200 – gekürzt bliebe er nach dem Löschen stehen.
+    await updateOwnName(
+      people.admin2.user.id,
+      { firstName: "A".repeat(100), lastName: "Z".repeat(100) },
+      meta,
+    );
+    const adam = await contextFor(people.admin2.user.id, club.id);
+    await addChatMembers(adam, {
+      chat: `abteilung-${dept.id}`,
+      memberIds: [people.other.member.id],
+    });
+    expect(
+      await prisma.notification.findFirstOrThrow({
+        where: { clubId: club.id, userId: people.other.user.id, type: "MESSAGE" },
+        select: { title: true },
+      }),
+    ).toEqual({ title: "Abteilung Fußball: Der Verein hat dich hinzugefügt" });
+  });
+
+  it("schwärzt den Löschantrag auch bei einem Namen, den notifyUsers im Titel kürzt", async () => {
+    const { people, club } = await setup();
+    // Je Namensteil sind 100 Zeichen erlaubt – „Löschantrag: “ und 201 Zeichen Name passen nicht in 200.
+    await updateOwnName(
+      people.person.user.id,
+      { firstName: "Hanna-Maria-Theresia".repeat(5), lastName: "Helfer-Schmidt-Meier".repeat(5) },
+      meta,
+    );
+    const pending = await requestAccountDeletion(
+      { userId: people.person.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    const requests = async () =>
+      (
+        await prisma.notification.findMany({
+          where: { clubId: club.id, title: { startsWith: "Löschantrag: " } },
+          select: { title: true },
+        })
+      ).map((note) => note.title);
+    const before = await requests();
+    expect(before).toHaveLength(2);
+    for (const title of before) expect(title).toMatch(/^Löschantrag: Hanna-Maria-Theresia.{167}$/);
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    expect(await requests()).toEqual([
+      "Löschantrag: Gelöschtes Mitglied",
+      "Löschantrag: Gelöschtes Mitglied",
+    ]);
+  });
+
+  it("Platzhalter im Namen (_ und %) treffen keinen anderen Namen – an keiner Namensstelle", async () => {
+    const { people, club } = await setup();
+    // Mit LIKE passten „Hanna H_lfer“ (Konto) und „Hanna H%“ (Mitgliedsdatensatz) auch auf „Hanna Helfer“.
+    await updateOwnName(people.other.user.id, { firstName: "Hanna", lastName: "H_lfer" }, meta);
+    await prisma.member.update({
+      where: { id: people.other.member.id },
+      data: { firstName: "Hanna", lastName: "H%" },
+    });
+    const pending = await requestAccountDeletion(
+      { userId: people.other.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    const foreign = await placeNames(club.id, people.admin.user.id, "Hanna Helfer");
+    const own = [
+      await placeNames(club.id, people.admin.user.id, "Hanna H_lfer"),
+      await placeNames(club.id, people.admin.user.id, "Hanna H%"),
+    ];
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    expect(await foreign()).toEqual(namePlaces("Hanna Helfer"));
+    // Die eigenen Namen verschwinden – _ und % zählen wörtlich.
+    for (const read of own) expect(await read()).toEqual(namePlaces("Gelöschtes Mitglied"));
+  });
+
+  it("ein Name trifft keinen längeren Namen, der mit ihm beginnt oder endet", async () => {
+    const { people, club } = await setup();
+    const pending = await requestAccountDeletion(
+      { userId: people.person.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    const own = await placeNames(club.id, people.admin.user.id, "Hanna Helfer");
+    const starts = await placeNames(club.id, people.admin.user.id, "Hanna Helferich");
+    const ends = await placeNames(club.id, people.admin.user.id, "Marie-Hanna Helfer");
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    expect(await own()).toEqual(namePlaces("Gelöschtes Mitglied"));
+    expect(await starts()).toEqual(namePlaces("Hanna Helferich"));
+    expect(await ends()).toEqual(namePlaces("Marie-Hanna Helfer"));
+  });
+
+  it("gleichlautende Benachrichtigungen in einem anderen Verein bleiben unverändert", async () => {
+    const { people, club } = await setup();
+    const b = await createClub("Nachbarverein");
+    const neighbour = await addUserToClub(b, "CLUB_ADMIN", {
+      firstName: "Bernd",
+      lastName: "Nachbar",
+    });
+    const pending = await requestAccountDeletion(
+      { userId: people.person.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    const here = await placeNames(club.id, people.admin.user.id, "Hanna Helfer");
+    const there = await placeNames(b.id, neighbour.user.id, "Hanna Helfer");
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    expect(await here()).toEqual(namePlaces("Gelöschtes Mitglied"));
+    expect(await there()).toEqual(namePlaces("Hanna Helfer"));
   });
 
   it("wiederholte Ausführung ist harmlos; nicht fällige Anträge bleiben offen; der Job verarbeitet nur Fälliges", async () => {
