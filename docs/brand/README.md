@@ -72,3 +72,15 @@ Neue Fassungen kommen als Paket aus der Gestaltung: die Dateien aus `03-software
 und die beiden `symbol-klein`-Dateien wie beschrieben neu ableiten. Ändert sich das Seitenverhältnis, die Maße (`width`/`height`) in
 `brand-logo.tsx` anpassen. Der Test `tests/e2e/logo.spec.ts` prüft, dass das Logo erscheint, beschriftet ist und in der dunklen
 Darstellung die helle Fassung zeigt.
+
+## Logo-Paket und Entwürfe (`docs/brand/`)
+
+Hier liegt alles aus der Logo-Gestaltung vom 4. Oktober 2026, damit nichts nur auf einem Rechner liegt:
+
+- `vereinsflow-logo-paket/` (und dasselbe als `vereinsflow-logo-paket.zip` zum Weitergeben) – das fertige Paket, sortiert nach
+  Einsatzort: Master-Dateien als SVG, PNG und Druck-PDF, Website, Software, App-Symbole für iOS und Android, Social Media;
+  Anleitung in `LIESMICH.md`. Quelle für alle Logo-Dateien der App (siehe oben).
+- `vereinsflow-instagram-profilbild.png` – Profilbild für Instagram.
+- Der Weg dorthin, in zeitlicher Reihenfolge: `entwuerfe/` (vier erste Richtungen), `entwuerfe-2/`, `feinschliff/`,
+  `logo-final/`, `logo-v2/`, `logo-final-v3/` bis `logo-final-v7/` (je mit Übersichtsbild `0-…png`), `logo-ideen/`. Nur zum
+  Nachschlagen – verwendet wird ausschließlich das Paket.

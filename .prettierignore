@@ -21,3 +21,5 @@ tsconfig.json
 website
 # Fremde Skill-Dateien (unverändert aus ihren Quellen übernommen) und alte Arbeitskopien – nicht formatieren.
 .claude
+# Logo-Paket so, wie es aus der Gestaltung kam (docs/brand/README.md) – nicht formatieren.
+docs/brand/vereinsflow-logo-paket
