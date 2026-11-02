@@ -3,14 +3,23 @@ import Papa from "papaparse";
 /**
  * CSV-Import und -Export.
  *
- * Export: Zellen, die mit `=`, `+`, `-`, `@`, Tab oder Zeilenumbruch beginnen, würden Excel und
+ * Export: Zellen, die mit `=`, `+`, `-`, `@`, Tab oder Wagenrücklauf beginnen, würden Excel und
  * LibreOffice als FORMEL ausführen ("CSV-Injection", z. B. `=HYPERLINK(...)` zum Datenabfluss).
  * Papaparse stellt solchen Zellen deshalb ein Hochkomma voran (`escapeFormulae`).
+ * Import: Ein solches Hochkomma wird wieder abgenommen – die eigene Exportdatei lässt sich unverändert einlesen.
  * Excel-Standard für Deutschland: Semikolon als Trennzeichen und UTF-8 mit BOM.
  */
 export type CsvCell = string | number | boolean | Date | null | undefined;
 
 const BOM = "﻿";
+
+/**
+ * Anfangszeichen einer Formel. Eigene Prüfung statt `escapeFormulae: true`: Papaparse prüft dort mit
+ * `/^[=+\-@\t\r].*$/`, und weil „.“ keinen Zeilenumbruch trifft, blieb z. B. „=HYPERLINK(…)\n…“ ungeschützt.
+ */
+const FORMULA_START = /^[=+\-@\t\r]/;
+/** Hochkomma des Formelschutzes (Umkehrung von `FORMULA_START` beim Import). */
+const ESCAPED_FORMULA = /^'(?=[=+\-@\t\r])/;
 
 function cellToString(value: CsvCell): string {
   if (value === null || value === undefined) return "";
@@ -22,7 +31,11 @@ export function toCsv(header: readonly string[], rows: readonly (readonly CsvCel
   const data = [header, ...rows.map((row) => row.map(cellToString))];
   return (
     BOM +
-    Papa.unparse(data as string[][], { delimiter: ";", newline: "\r\n", escapeFormulae: true })
+    Papa.unparse(data as string[][], {
+      delimiter: ";",
+      newline: "\r\n",
+      escapeFormulae: FORMULA_START,
+    })
   );
 }
 
@@ -57,7 +70,10 @@ export function parseCsv(text: string): ParsedCsv {
   if (rows.length > CSV_MAX_ROWS) {
     throw new CsvError(`Die Datei enthält zu viele Zeilen (höchstens ${CSV_MAX_ROWS}).`);
   }
-  return { header: rawHeader.map((cell) => cell.trim()), rows };
+  return {
+    header: rawHeader.map((cell) => cell.trim()),
+    rows: rows.map((row) => row.map((cell) => cell.replace(ESCAPED_FORMULA, ""))),
+  };
 }
 
 /** Vereinheitlicht Spaltennamen: klein, ohne Umlaute, Leer- und Sonderzeichen ("E-Mail" → "email"). */
