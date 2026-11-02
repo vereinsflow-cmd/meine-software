@@ -317,6 +317,8 @@ export async function executeDeletionRequest(
 export interface DeletionRunResult {
   completed: number;
   rejected: number;
+  /** Anträge, deren Ausführung fehlschlug – sie bleiben offen und werden beim nächsten Lauf erneut versucht. */
+  failed: number;
 }
 
 export async function processDueDeletionRequests(
@@ -328,11 +330,21 @@ export async function processDueDeletionRequests(
     select: { id: true },
     take: 50,
   });
-  const result: DeletionRunResult = { completed: 0, rejected: 0 };
+  const result: DeletionRunResult = { completed: 0, rejected: 0, failed: 0 };
   for (const { id } of due) {
-    const outcome = await executeDeletionRequest(id, now);
-    if (outcome === "COMPLETED") result.completed += 1;
-    if (outcome === "REJECTED") result.rejected += 1;
+    // Ein fehlschlagender Antrag (steht als ältester immer vorn) darf die übrigen nicht aufhalten (Fristen nach Art. 17).
+    try {
+      const outcome = await executeDeletionRequest(id, now);
+      if (outcome === "COMPLETED") result.completed += 1;
+      if (outcome === "REJECTED") result.rejected += 1;
+    } catch (error) {
+      result.failed += 1;
+      // Nur Fehlertyp und -code, nie die Meldung (kann Daten der Person enthalten).
+      const code = (error as { code?: unknown } | null)?.code;
+      console.error(
+        `[privacy] Löschantrag konnte nicht ausgeführt werden: ${error instanceof Error ? error.name : "Fehler"}${code ? ` (${String(code)})` : ""}`,
+      );
+    }
   }
   return result;
 }

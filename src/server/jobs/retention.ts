@@ -8,6 +8,7 @@ import {
 import { SUPPORT_RETENTION_MONTHS } from "@/lib/support";
 import { ATTENDANCE_RETENTION_MONTHS } from "@/modules/events/attendance-schemas";
 import { DOCUMENT_TRASH_DAYS } from "@/lib/uploads";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db/client";
 import { anonymizeMemberData } from "@/server/privacy/anonymize";
 import { deleteFile } from "@/server/storage/files";
@@ -21,7 +22,9 @@ import { deleteFile } from "@/server/storage/files";
  *  - Feste Fristen ohne Einstellung: gelöschte Dokumente, erledigte Support-Meldungen, Beitrittsanträge, Anwesenheit
  *    (24 Monate nach dem Termin).
  *
- * Jede Anonymisierung läuft in einer eigenen Transaktion und hinterlässt einen Protokolleintrag (ohne Namen).
+ * Jede Anonymisierung läuft in einer eigenen Transaktion und hinterlässt einen Protokolleintrag (ohne Namen). Scheitert ein
+ * Mitglied oder ein Verein, wird das ohne Namen protokolliert und gezählt (`failed`); die übrigen Mitglieder, Vereine und die
+ * festen Fristen laufen weiter, der nächste Lauf versucht es erneut.
  */
 const DAY = 86_400_000;
 const BATCH = 200;
@@ -38,6 +41,8 @@ export interface RetentionResult {
   applicationsPurged: number;
   /** Gelöschte Anwesenheiten (Termin liegt mehr als 24 Monate zurück). */
   attendancePurged: number;
+  /** Mitglieder bzw. Vereine, bei denen die Bearbeitung fehlschlug (Details im Server-Protokoll, ohne Namen). */
+  failed: number;
 }
 
 /**
@@ -154,6 +159,14 @@ async function anonymizeOne(
   });
 }
 
+/** Protokolliert einen Fehler der Aufbewahrungsroutine – nur Fehlertyp und -code, nie die Meldung (kann Daten enthalten). */
+function logRetentionError(what: string, error: unknown): void {
+  const code = (error as { code?: unknown } | null)?.code;
+  console.error(
+    `[retention] ${what}: ${error instanceof Error ? error.name : "Fehler"}${code ? ` (${String(code)})` : ""}`,
+  );
+}
+
 export async function applyRetention(now: Date = new Date()): Promise<RetentionResult> {
   const result: RetentionResult = {
     trashAnonymized: 0,
@@ -163,72 +176,90 @@ export async function applyRetention(now: Date = new Date()): Promise<RetentionR
     ticketsPurged: 0,
     applicationsPurged: 0,
     attendancePurged: 0,
+    failed: 0,
   };
   const clubs = await prisma.club.findMany({ select: { id: true, settings: true } });
 
+  // Ein Fehler in einem Verein hält weder die übrigen Vereine noch die festen Fristen danach auf.
   for (const club of clubs) {
-    const retention = readRetention(club.settings);
-
-    const trashed = await prisma.member.findMany({
-      where: {
-        clubId: club.id,
-        anonymizedAt: null,
-        deletedAt: { lt: new Date(now.getTime() - retention.trashDays * DAY) },
-      },
-      select: { id: true },
-      take: BATCH,
-    });
-    for (const { id } of trashed)
-      if (await anonymizeOne(club.id, id, "Papierkorb-Frist abgelaufen", now))
-        result.trashAnonymized += 1;
-
-    if (retention.leftMembersMonths > 0) {
-      const cutoff = subtractMonths(now, retention.leftMembersMonths);
-      const left = await prisma.member.findMany({
-        where: {
-          clubId: club.id,
-          status: "LEFT",
-          anonymizedAt: null,
-          // Austrittsdatum, ersatzweise die letzte Änderung des Datensatzes.
-          OR: [{ leftAt: { lt: cutoff } }, { leftAt: null, updatedAt: { lt: cutoff } }],
-        },
-        select: { id: true },
-        take: BATCH,
-      });
-      for (const { id } of left)
-        if (
-          await anonymizeOne(
-            club.id,
-            id,
-            "Aufbewahrungsfrist für ausgetretene Mitglieder abgelaufen",
-            now,
-          )
-        )
-          result.leftAnonymized += 1;
+    try {
+      await applyClubRetention(club, now, result);
+    } catch (error) {
+      result.failed += 1;
+      logRetentionError(`Aufbewahrung fehlgeschlagen (Verein ${club.id})`, error);
     }
-
-    const auditCutoff = subtractMonths(now, retention.auditMonths);
-    // Einträge der Finanzen gehören zu den Büchern (§ 147 AO: 10 Jahre ab Ende des Kalenderjahres) – sie bleiben so lange.
-    const financeCutoff = startOfBerlinDate(berlinParts(now).year - 10, 1, 1);
-    result.auditDeleted += await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT set_config('vereinsflow.audit_purge', 'on', true)`;
-      return (
-        await tx.auditLog.deleteMany({
-          where: {
-            clubId: club.id,
-            createdAt: { lt: auditCutoff },
-            OR: [
-              { action: { not: { startsWith: "finance." } } },
-              { createdAt: { lt: financeCutoff } },
-            ],
-          },
-        })
-      ).count;
-    });
   }
   result.documentsPurged = await purgeDeletedDocuments(now);
   result.ticketsPurged = await purgeOldTickets(now);
   result.applicationsPurged = await purgeOldApplications(now);
   result.attendancePurged = await purgeOldAttendance(now);
   return result;
+}
+
+/** Die Fristen EINES Vereins: Papierkorb, ausgetretene Mitglieder, Änderungsprotokoll. */
+async function applyClubRetention(
+  club: { id: string; settings: Prisma.JsonValue },
+  now: Date,
+  result: RetentionResult,
+): Promise<void> {
+  const retention = readRetention(club.settings);
+  // Ein fehlerhafter Datensatz (z. B. eine verletzte Prüfregel) darf die übrigen nicht aufhalten.
+  const anonymize = async (memberId: string, reason: string) => {
+    try {
+      return await anonymizeOne(club.id, memberId, reason, now);
+    } catch (error) {
+      result.failed += 1;
+      logRetentionError(`Anonymisierung fehlgeschlagen (Verein ${club.id})`, error);
+      return false;
+    }
+  };
+
+  const trashed = await prisma.member.findMany({
+    where: {
+      clubId: club.id,
+      anonymizedAt: null,
+      deletedAt: { lt: new Date(now.getTime() - retention.trashDays * DAY) },
+    },
+    select: { id: true },
+    take: BATCH,
+  });
+  for (const { id } of trashed)
+    if (await anonymize(id, "Papierkorb-Frist abgelaufen")) result.trashAnonymized += 1;
+
+  if (retention.leftMembersMonths > 0) {
+    const cutoff = subtractMonths(now, retention.leftMembersMonths);
+    const left = await prisma.member.findMany({
+      where: {
+        clubId: club.id,
+        status: "LEFT",
+        anonymizedAt: null,
+        // Austrittsdatum, ersatzweise die letzte Änderung des Datensatzes.
+        OR: [{ leftAt: { lt: cutoff } }, { leftAt: null, updatedAt: { lt: cutoff } }],
+      },
+      select: { id: true },
+      take: BATCH,
+    });
+    for (const { id } of left)
+      if (await anonymize(id, "Aufbewahrungsfrist für ausgetretene Mitglieder abgelaufen"))
+        result.leftAnonymized += 1;
+  }
+
+  const auditCutoff = subtractMonths(now, retention.auditMonths);
+  // Einträge der Finanzen gehören zu den Büchern (§ 147 AO: 10 Jahre ab Ende des Kalenderjahres) – sie bleiben so lange.
+  const financeCutoff = startOfBerlinDate(berlinParts(now).year - 10, 1, 1);
+  result.auditDeleted += await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('vereinsflow.audit_purge', 'on', true)`;
+    return (
+      await tx.auditLog.deleteMany({
+        where: {
+          clubId: club.id,
+          createdAt: { lt: auditCutoff },
+          OR: [
+            { action: { not: { startsWith: "finance." } } },
+            { createdAt: { lt: financeCutoff } },
+          ],
+        },
+      })
+    ).count;
+  });
 }

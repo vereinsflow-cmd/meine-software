@@ -41,6 +41,7 @@ export async function anonymizeMemberData(
       anonymizedAt: true,
       archivedAt: true,
       deletedAt: true,
+      joinedAt: true,
       leftAt: true,
     },
   });
@@ -67,6 +68,12 @@ export async function anonymizeMemberData(
     },
   });
 
+  // Austritt heute (Berliner Kalendertag) – aber nie vor dem Eintritt, der auch in der Zukunft liegen darf (Prüfregel
+  // Member_dates_chk; sonst schlüge die Anonymisierung bei jedem Lauf fehl).
+  const today = todayCalendarDate(now);
+  const leftAt =
+    member.leftAt ?? (member.joinedAt && member.joinedAt > today ? member.joinedAt : today);
+
   await tx.member.update({
     where: { id: member.id },
     data: {
@@ -86,9 +93,7 @@ export async function anonymizeMemberData(
       // Verknüpfung zum Benutzerkonto lösen; das Konto selbst wird getrennt behandelt (Konto-Löschung).
       userId: null,
       status: "LEFT",
-      leftAt:
-        member.leftAt ??
-        new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())),
+      leftAt,
       archivedAt: member.archivedAt ?? now,
       deletedAt: member.deletedAt ?? now,
       anonymizedAt: now,
@@ -135,7 +140,6 @@ export async function anonymizeMemberData(
     data: { reason: "anonymisiert" },
   });
   // Familien: ab heute nicht mehr dabei (frühere Zeiträume bleiben), künftige Einträge entfallen.
-  const today = todayCalendarDate(now);
   await tx.feeFamilyMember.updateMany({
     where: {
       clubId,

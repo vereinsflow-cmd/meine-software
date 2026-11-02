@@ -5,6 +5,9 @@ import { purgeStaleData } from "@/server/jobs/cleanup";
 import { runJobs } from "@/server/jobs/runner";
 import { sendEventReminders, sendShiftReminders } from "@/server/jobs/reminders";
 import { applyRetention } from "@/server/jobs/retention";
+import * as anonymize from "@/server/privacy/anonymize";
+import { APPLICATION_PENDING_RETENTION_DAYS } from "@/lib/membership-application";
+import { todayCalendarDate } from "@/lib/dates";
 import { hashToken } from "@/server/security/tokens";
 import { prisma } from "@/server/db/client";
 import type { MailMessage } from "@/server/mail";
@@ -574,6 +577,7 @@ describe("Aufbewahrungsfristen", () => {
       deletedAt?: Date;
       status?: "LEFT" | "ACTIVE";
       leftAt?: Date;
+      joinedAt?: Date;
       firstName?: string;
       lastName?: string;
     } = {},
@@ -597,6 +601,7 @@ describe("Aufbewahrungsfristen", () => {
         deletedAt: overrides.deletedAt ?? null,
         status: overrides.status ?? "ACTIVE",
         leftAt: overrides.leftAt,
+        joinedAt: overrides.joinedAt,
       },
     });
     await prisma.memberDepartment.create({
@@ -761,6 +766,71 @@ describe("Aufbewahrungsfristen", () => {
       (await prisma.auditLog.findMany({ where: { clubId } })).map((e) => e.action).sort();
     expect(await left(club.id)).toEqual(["a.middle", "a.new"]);
     expect(await left(other.club.id)).toEqual(["b.new"]);
+  });
+
+  /** Ein nie entschiedener Beitrittsantrag, dessen Frist abgelaufen ist (globale Bereinigung nach der Vereinsschleife). */
+  const oldApplication = (clubId: string) =>
+    prisma.membershipApplication.create({
+      data: {
+        clubId,
+        firstName: "Alt",
+        lastName: "Antrag",
+        email: "alt-antrag@example.org",
+        consentAt: ago((APPLICATION_PENDING_RETENTION_DAYS + 1) * DAY),
+        consentTextVersion: "1",
+        createdAt: ago((APPLICATION_PENDING_RETENTION_DAYS + 1) * DAY),
+      },
+    });
+
+  it("Eintritt in der Zukunft: anonymisiert mit Austritt am Eintrittstag – der Lauf bricht nicht ab", async () => {
+    const { club } = await clubWithPeople();
+    const other = await clubWithPeople();
+    // Eintritt zum künftigen Datum, die Person ist vorher abgesprungen: archiviert und seit 31 Tagen im Papierkorb.
+    const joinedAt = todayCalendarDate(inMs(30 * DAY));
+    const neverJoined = await fullMember(club.id, { deletedAt: ago(31 * DAY), joinedAt });
+    const application = await oldApplication(other.club.id);
+
+    expect(await applyRetention()).toMatchObject({ failed: 0 });
+    // Der Austritt darf nicht vor dem Eintritt liegen (Prüfregel Member_dates_chk).
+    expect(await prisma.member.findUniqueOrThrow({ where: { id: neverJoined.id } })).toMatchObject({
+      firstName: "Gelöschtes",
+      joinedAt,
+      leftAt: joinedAt,
+      anonymizedAt: expect.any(Date),
+    });
+    expect(await prisma.membershipApplication.count({ where: { id: application.id } })).toBe(0);
+  });
+
+  it("scheitert ein Mitglied, laufen die übrigen Mitglieder, Vereine und Bereinigungen weiter – Protokoll ohne Namen", async () => {
+    const first = await clubWithPeople();
+    const second = await clubWithPeople();
+    const members = [
+      await fullMember(first.club.id, { deletedAt: ago(31 * DAY), lastName: "Erstverein" }),
+      await fullMember(second.club.id, { deletedAt: ago(31 * DAY), lastName: "Zweitverein" }),
+    ];
+    const application = await oldApplication(second.club.id);
+    const spy = vi
+      .spyOn(anonymize, "anonymizeMemberData")
+      .mockRejectedValueOnce(new Error("Max Erstverein: Prüfregel verletzt"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await applyRetention()).toMatchObject({ trashAnonymized: 1, failed: 1 });
+    const anonymizedCount = async () =>
+      prisma.member.count({
+        where: { id: { in: members.map((m) => m.id) }, anonymizedAt: { not: null } },
+      });
+    expect(await anonymizedCount()).toBe(1);
+    expect(await prisma.membershipApplication.count({ where: { id: application.id } })).toBe(0);
+    const logged = error.mock.calls.flat().join(" ");
+    expect(logged).toContain("Anonymisierung fehlgeschlagen");
+    expect(logged).not.toContain("Erstverein");
+    expect(logged).not.toContain("Max");
+    spy.mockRestore();
+    error.mockRestore();
+
+    // Der nächste Lauf holt den Datensatz nach.
+    expect(await applyRetention()).toMatchObject({ trashAnonymized: 1, failed: 0 });
+    expect(await anonymizedCount()).toBe(2);
   });
 });
 

@@ -688,13 +688,13 @@ describe("Ausführung der Löschung", () => {
       new Date(),
     );
 
-    expect(await processDueDeletionRequests()).toEqual({ completed: 1, rejected: 0 });
+    expect(await processDueDeletionRequests()).toEqual({ completed: 1, rejected: 0, failed: 0 });
     expect(await executeDeletionRequest(due.id)).toBe("SKIPPED");
     expect(await prisma.user.findUnique({ where: { id: people.other.user.id } })).not.toBeNull();
     expect(
       (await prisma.deletionRequest.findUniqueOrThrow({ where: { id: notYet.id } })).status,
     ).toBe("PENDING");
-    expect(await processDueDeletionRequests()).toEqual({ completed: 0, rejected: 0 });
+    expect(await processDueDeletionRequests()).toEqual({ completed: 0, rejected: 0, failed: 0 });
   });
 
   it("wurde zwischenzeitlich der letzte Administrator, wird der Antrag abgelehnt – nichts wird gelöscht", async () => {
@@ -772,5 +772,63 @@ describe("Ausführung der Löschung", () => {
     ).toBe("PENDING");
     // Beim nächsten Lauf klappt es.
     expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+  });
+
+  it("ein Eintritt in der Zukunft hält die Löschung nicht auf – Austritt am Eintrittstag", async () => {
+    const { people } = await setup();
+    const joinedAt = todayCalendarDate(new Date(Date.now() + 30 * DAY));
+    await prisma.member.update({ where: { id: people.person.member.id }, data: { joinedAt } });
+    await requestAccountDeletion(
+      { userId: people.person.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 20 * DAY),
+    );
+    await requestAccountDeletion(
+      { userId: people.other.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 19 * DAY),
+    );
+
+    expect(await processDueDeletionRequests()).toEqual({ completed: 2, rejected: 0, failed: 0 });
+    // Der Austritt darf nicht vor dem Eintritt liegen (Prüfregel Member_dates_chk).
+    expect(
+      await prisma.member.findUniqueOrThrow({ where: { id: people.person.member.id } }),
+    ).toMatchObject({ firstName: "Gelöschtes", joinedAt, leftAt: joinedAt });
+    expect(await prisma.user.findUnique({ where: { id: people.other.user.id } })).toBeNull();
+  });
+
+  it("scheitert ein Antrag, laufen die übrigen weiter – er bleibt offen, das Protokoll nennt keinen Namen", async () => {
+    const { people } = await setup();
+    const failing = await requestAccountDeletion(
+      { userId: people.person.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 20 * DAY),
+    );
+    await requestAccountDeletion(
+      { userId: people.other.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 19 * DAY),
+    );
+    // Der älteste Antrag steht immer vorn – scheitert er, dürfen die späteren nicht hängen bleiben.
+    const spy = vi
+      .spyOn(anonymize, "anonymizeMemberData")
+      .mockRejectedValueOnce(new Error("Hanna Helfer: Prüfregel verletzt"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await processDueDeletionRequests()).toEqual({ completed: 1, rejected: 0, failed: 1 });
+    expect(
+      (await prisma.deletionRequest.findUniqueOrThrow({ where: { id: failing.id } })).status,
+    ).toBe("PENDING");
+    expect(await prisma.user.findUnique({ where: { id: people.other.user.id } })).toBeNull();
+    const logged = error.mock.calls.flat().join(" ");
+    expect(logged).toContain("Löschantrag konnte nicht ausgeführt werden");
+    expect(logged).not.toContain("Hanna");
+    expect(logged).not.toContain(people.person.user.email);
+    spy.mockRestore();
+    error.mockRestore();
+
+    // Der nächste Lauf holt den Antrag nach.
+    expect(await processDueDeletionRequests()).toEqual({ completed: 1, rejected: 0, failed: 0 });
+    expect(await prisma.user.findUnique({ where: { id: people.person.user.id } })).toBeNull();
   });
 });
