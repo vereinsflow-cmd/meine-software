@@ -16,12 +16,10 @@ import type {
   TimeSeriesView,
 } from "@/lib/charts/types";
 import { EVENT_TYPE_LABEL, MEMBER_STATUS_LABEL, TASK_STATUS_LABEL } from "@/lib/labels";
-import { eventVisibilityWhere } from "@/modules/events/service";
-import { memberReadScope } from "@/modules/members/service";
-import { listWorkedMinutes } from "@/modules/shifts/service";
 import { countTasksByStatus } from "@/modules/tasks/service";
 import { can, scopeOf } from "@/server/permissions/policy";
 import type { TenantContext } from "@/server/tenancy/context-core";
+import { dashboardSources, type DashboardSources } from "./sources";
 
 /**
  * Auswertungen für das Dashboard: bereits vorhandene Vereinsdaten, zu Zeitreihen und Verteilungen verdichtet – nichts wird
@@ -99,22 +97,13 @@ async function membersTopic(
   ctx: TenantContext,
   now: Date,
   windows: Windows,
+  sources: DashboardSources,
 ): Promise<AnalyticsTopic | null> {
   const scope = scopeOf(ctx, "members:read");
   if (scope !== "CLUB" && scope !== "DEPARTMENT") return null; // „nur eigener Datensatz“ braucht keine Auswertung
-  const scopeWhere = memberReadScope(ctx) ?? {};
-  const [rows, statusGroups] = await Promise.all([
-    // Für den Verlauf zählen auch Archivierte mit (sie waren Mitglieder); der Papierkorb nicht.
-    ctx.db.member.findMany({
-      where: { AND: [{ deletedAt: null }, scopeWhere] },
-      select: { joinedAt: true, leftAt: true, status: true },
-    }),
-    ctx.db.member.groupBy({
-      by: ["status"],
-      where: { AND: [{ archivedAt: null, deletedAt: null }, scopeWhere] },
-      _count: { _all: true },
-    }),
-  ]);
+  const { records, byStatus: statusGroups } = await sources.members();
+  // Für den Verlauf zählen auch Archivierte mit (sie waren Mitglieder); der Papierkorb nicht.
+  const rows = records.filter((record) => record.deletedAt === null);
 
   let skipped = 0;
   const trend: TimeDataset = {
@@ -153,7 +142,7 @@ async function membersTopic(
     unit: { singular: "Mitglied", plural: "Mitglieder", decimals: 0 },
     views: {
       ALL: slicesOf(
-        statusGroups.map((group) => ({ key: group.status, count: group._count._all })),
+        statusGroups.map((group) => ({ key: group.status, count: group.count })),
         MEMBER_STATUS_LABEL,
         MEMBER_STATUS_SLOT,
       ),
@@ -169,21 +158,20 @@ async function membersTopic(
 // Veranstaltungen
 // ---------------------------------------------------------------------------------------------
 
-async function eventsTopic(ctx: TenantContext, windows: Windows): Promise<AnalyticsTopic | null> {
+async function eventsTopic(
+  ctx: TenantContext,
+  windows: Windows,
+  sources: DashboardSources,
+): Promise<AnalyticsTopic | null> {
   if (!can(ctx, "events:read")) return null;
   const widest = windows.Y;
-  const from = widest[0]!.start;
-  const to = widest[widest.length - 1]!.end;
-  const rows = await ctx.db.event.findMany({
-    where: {
-      AND: [
-        eventVisibilityWhere(ctx),
-        // Entwürfe, Abgesagte und Archivierte zählen nicht als stattgefundene oder geplante Veranstaltung.
-        { status: { in: ["PUBLISHED", "COMPLETED"] }, startsAt: { gte: from, lt: to } },
-      ],
-    },
-    select: { startsAt: true, type: true },
-  });
+  const from = widest[0]!.start.getTime();
+  const to = widest[widest.length - 1]!.end.getTime();
+  // Nur veröffentlichte und abgeschlossene: Entwürfe, Abgesagte und Archivierte zählen nicht als stattgefundene oder geplante
+  // Veranstaltung. Die Quelle reicht womöglich über das Jahresende hinaus (30 Tage für die Kennzahl) – hier nur die fünf Jahre.
+  const rows = (await sources.events()).filter(
+    (row) => row.startsAt.getTime() >= from && row.startsAt.getTime() < to,
+  );
 
   const trend: TimeDataset = {
     kind: "time",
@@ -245,13 +233,13 @@ async function eventsTopic(ctx: TenantContext, windows: Windows): Promise<Analyt
 // Helferstunden
 // ---------------------------------------------------------------------------------------------
 
-async function hoursTopic(ctx: TenantContext, windows: Windows): Promise<AnalyticsTopic | null> {
+async function hoursTopic(
+  ctx: TenantContext,
+  windows: Windows,
+  sources: DashboardSources,
+): Promise<AnalyticsTopic | null> {
   if (!can(ctx, "shifts:read")) return null;
-  const widest = windows.Y;
-  const { scope, rows } = await listWorkedMinutes(ctx, {
-    from: widest[0]!.start,
-    to: widest[widest.length - 1]!.end,
-  });
+  const { scope, rows } = await sources.workedMinutes(); // die fünf Jahre von `windows.Y`
 
   const trend: TimeDataset = {
     kind: "time",
@@ -308,15 +296,17 @@ async function tasksTopic(ctx: TenantContext): Promise<AnalyticsTopic | null> {
   return { id: "tasks", label: "Aufgaben", datasets: [byStatus] };
 }
 
+/** `sources`: mit `getDashboard` geteilt (siehe `./sources.ts`) – ohne Angabe lädt die Auswertung sie selbst. */
 export async function getAnalytics(
   ctx: TenantContext,
   now: Date = new Date(),
+  sources: DashboardSources = dashboardSources(ctx, now),
 ): Promise<AnalyticsData> {
   const windows = windowsAt(now);
   const topics = await Promise.all([
-    membersTopic(ctx, now, windows),
-    eventsTopic(ctx, windows),
-    hoursTopic(ctx, windows),
+    membersTopic(ctx, now, windows, sources),
+    eventsTopic(ctx, windows, sources),
+    hoursTopic(ctx, windows, sources),
     tasksTopic(ctx),
   ]);
   return { topics: topics.filter((topic): topic is AnalyticsTopic => topic !== null) };

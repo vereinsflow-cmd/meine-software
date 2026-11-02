@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { getAnalytics } from "@/modules/dashboard/analytics";
 import { getDashboard } from "@/modules/dashboard/service";
+import { dashboardSources } from "@/modules/dashboard/sources";
 import { listUpcomingBirthdays } from "@/modules/members/service";
 import { notifyUsers } from "@/modules/notifications/service";
 import { prisma } from "@/server/db/client";
@@ -12,6 +14,7 @@ import {
   createEvent,
   createShift,
 } from "../helpers/factories";
+import { withQueryLog } from "../helpers/query-log";
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -494,5 +497,23 @@ describe("Dashboard: Mandantentrennung", () => {
     expect(data.birthdays).toEqual([]);
     expect(JSON.stringify(data)).not.toContain("Fest B");
     expect(JSON.stringify(data)).not.toContain("Fremd");
+  });
+});
+
+describe("Dashboard: Abfragen je Aufruf", () => {
+  it("Kennzahlen und Auswertungen laden Mitglieder, Termine und Helferstunden nur einmal", async () => {
+    const { ctx } = await setup();
+    const { ctx: logged, queries } = withQueryLog(ctx.admin);
+    const now = new Date();
+    // Wie die Seite: eine gemeinsame Quelle für beide Teile.
+    const sources = dashboardSources(logged, now);
+    await Promise.all([getDashboard(logged, now, sources), getAnalytics(logged, now, sources)]);
+
+    const times = (operation: string) => queries.filter((query) => query === operation).length;
+    expect(times("Member.groupBy")).toBe(1); // Bestand je Status (vorher 2)
+    expect(times("Member.findMany")).toBe(3); // Verlauf (vorher 2), Geburtstage, Jubiläen
+    expect(times("Event.findMany")).toBe(2); // nächste Termine, Verlauf (vorher 2)
+    expect(times("ShiftAssignment.findMany")).toBe(3); // Helferminuten (vorher 3), eigene Einsätze, offene Schichten
+    expect(queries.length).toBeLessThanOrEqual(28); // vorher 33
   });
 });

@@ -53,6 +53,7 @@ import { greetingFor, heroFigures, heroStage } from "@/modules/dashboard/hero";
 import { getDashboardLayout } from "@/modules/dashboard/layout-service";
 import { getOnboarding } from "@/modules/dashboard/onboarding";
 import { getDashboard } from "@/modules/dashboard/service";
+import { dashboardSources } from "@/modules/dashboard/sources";
 import { SetupFrameSync } from "@/modules/setup/components/setup-frame";
 import {
   DASHBOARD_TABS,
@@ -86,10 +87,12 @@ export default async function DashboardPage({
 }) {
   const [ctx, params] = await Promise.all([requirePageContext(), searchParams]);
   const now = new Date();
+  // Mitglieder, Termine und Helferstunden brauchen Kennzahlen und Diagramme gleichermaßen – EINMAL geladen, beiden mitgegeben.
+  const sources = dashboardSources(ctx, now);
   // Lässt sich die eigene Einstellung nicht lesen (etwa weil ein laufender Server die neue Spalte noch nicht kennt), gilt die
   // Standard-Ansicht – das Dashboard als Startseite soll daran nie scheitern.
   const [data, layout, onboarding] = await Promise.all([
-    getDashboard(ctx),
+    getDashboard(ctx, now, sources),
     getDashboardLayout(ctx).catch(() => null),
     getOnboarding(ctx),
   ]);
@@ -107,7 +110,7 @@ export default async function DashboardPage({
 
   // Einmal berechnen, von mehreren Reitern verwendet. Das `catch` verhindert eine „unbehandelte Ablehnung“, falls kein
   // Reiter die Daten abholt; die Reiter selbst bekommen einen Fehler weiterhin zu sehen.
-  const analytics = getAnalytics(ctx);
+  const analytics = getAnalytics(ctx, now, sources);
   analytics.catch(() => undefined);
 
   /** Eigene Größe einer Karte („Anpassen“); ohne Einstellung „Mittel“. */

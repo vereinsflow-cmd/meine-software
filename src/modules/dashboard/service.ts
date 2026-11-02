@@ -6,6 +6,7 @@ import { buildBuckets } from "@/lib/charts/time-buckets";
 import { berlinParts, daysUntil } from "@/lib/dates";
 import { listRecentActivity, type AuditEntryDto } from "@/modules/audit/service";
 import { eventVisibilityWhere, listEvents, type EventListItem } from "@/modules/events/service";
+import { dashboardSources, EVENT_LOOKAHEAD_DAYS, type DashboardSources } from "./sources";
 import { getOpenPayments, type OpenPayments } from "@/modules/finance/service";
 import {
   canSeeAnniversaries,
@@ -15,7 +16,6 @@ import {
 import {
   canSeeBirthdays,
   listUpcomingBirthdays,
-  memberReadScope,
   type UpcomingBirthday,
 } from "@/modules/members/service";
 import {
@@ -24,12 +24,10 @@ import {
   type NotificationDto,
 } from "@/modules/notifications/service";
 import {
-  getHoursOverview,
   getStaffingOverview,
   listMyAssignments,
   listOpenShifts,
   listStaffingHistory,
-  listWorkedMinutes,
   type MyAssignment,
   type OpenShiftItem,
   type StaffingEvent,
@@ -112,63 +110,54 @@ export interface DashboardData {
 const FIRST_PAGE = { page: 1, pageSize: 5, skip: 0 } as const;
 const DAY = 86_400_000;
 
-async function loadMembers(ctx: TenantContext, now: Date): Promise<DashboardData["members"]> {
+async function loadMembers(
+  ctx: TenantContext,
+  now: Date,
+  sources: DashboardSources,
+): Promise<DashboardData["members"]> {
   const scope = scopeOf(ctx, "members:read");
   if (scope !== "CLUB" && scope !== "DEPARTMENT") return null; // "nur eigener Datensatz" braucht keine Kennzahlen
-  const where = { AND: [{ archivedAt: null, deletedAt: null }, memberReadScope(ctx) ?? {}] };
   // Für den Verlauf alle Mitglieder samt Archiv und Papierkorb: Sie zählen bis zum Archivieren bzw. Löschen mit – genau wie
   // die Zahl auf der Karte (`memberCounts` in quote.ts), der Verlauf endet deshalb immer bei ihr.
-  const [groups, records] = await Promise.all([
-    ctx.db.member.groupBy({ by: ["status"], where, _count: { _all: true } }),
-    ctx.db.member.findMany({
-      where: memberReadScope(ctx) ?? {},
-      select: { joinedAt: true, createdAt: true, archivedAt: true, deletedAt: true },
-    }),
-  ]);
+  const { records, byStatus } = await sources.members();
   const quote = membersQuote(records, now);
   return {
-    total: groups.reduce((sum, group) => sum + group._count._all, 0),
-    byStatus: groups
-      .map((group) => ({ status: group.status, count: group._count._all }))
-      .sort((a, b) => b.count - a.count),
+    total: byStatus.reduce((sum, group) => sum + group.count, 0),
+    byStatus: [...byStatus].sort((a, b) => b.count - a.count),
     scope,
     trend: quote.periods.find((period) => period.id === "6M")!.points.map((point) => point.value),
     quote,
   };
 }
 
-async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData["events"]> {
+async function loadEvents(
+  ctx: TenantContext,
+  now: Date,
+  sources: DashboardSources,
+): Promise<DashboardData["events"]> {
   if (!can(ctx, "events:read")) return null;
   // Für den Kursverlauf: alle Termine ab dem ältesten Stichtag (vor 12 Monaten) bis 30 Tage nach heute
-  const historyFrom = buildBuckets("M", now)[0]!.start;
-  const [upcoming, countNext30Days, historyRows] = await Promise.all([
+  const historyFrom = buildBuckets("M", now)[0]!.start.getTime();
+  const in30Days = now.getTime() + EVENT_LOOKAHEAD_DAYS * DAY;
+  const [upcoming, countNext30Days, rows] = await Promise.all([
     listEvents(ctx, { status: "PUBLISHED", period: "upcoming", request: FIRST_PAGE }),
     ctx.db.event.count({
       where: {
         AND: [
           eventVisibilityWhere(ctx),
-          { status: "PUBLISHED", startsAt: { gte: now, lt: new Date(now.getTime() + 30 * DAY) } },
+          { status: "PUBLISHED", startsAt: { gte: now, lt: new Date(in30Days) } },
         ],
       },
     }),
-    ctx.db.event.findMany({
-      where: {
-        AND: [
-          eventVisibilityWhere(ctx),
-          {
-            status: { in: ["PUBLISHED", "COMPLETED"] },
-            startsAt: { gte: historyFrom, lt: new Date(now.getTime() + 30 * DAY) },
-          },
-        ],
-      },
-      select: { startsAt: true },
-    }),
+    sources.events(),
   ]);
   return {
     upcoming: upcoming.items,
     countNext30Days,
     quote: eventsQuote(
-      historyRows.map((row) => row.startsAt),
+      rows
+        .map((row) => row.startsAt)
+        .filter((startsAt) => startsAt.getTime() >= historyFrom && startsAt.getTime() < in30Days),
       now,
       countNext30Days,
     ),
@@ -176,20 +165,28 @@ async function loadEvents(ctx: TenantContext, now: Date): Promise<DashboardData[
   };
 }
 
-async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData["shifts"]> {
+async function loadShifts(
+  ctx: TenantContext,
+  now: Date,
+  sources: DashboardSources,
+): Promise<DashboardData["shifts"]> {
   if (!can(ctx, "shifts:read")) return null;
   const year = berlinParts(now).year;
   const isOrganizer = can(ctx, "shifts:manage") || can(ctx, "shifts:assign");
   const weeks = buildBuckets("W", now);
-  const years = buildBuckets("Y", now); // der weiteste Zeitraum des Kursverlaufs (5 Jahre)
-  const [mine, open, staffing, hours, worked, history] = await Promise.all([
+  const [mine, open, staffing, worked, history] = await Promise.all([
     listMyAssignments(ctx, { limit: 5 }),
     listOpenShifts(ctx, { limit: 5 }),
     getStaffingOverview(ctx),
-    getHoursOverview(ctx, year),
-    listWorkedMinutes(ctx, { from: years[0]!.start, to: years[years.length - 1]!.end }),
+    sources.workedMinutes(), // der weiteste Zeitraum des Kursverlaufs (5 Jahre bis Ende des laufenden Jahres)
     listStaffingHistory(ctx),
   ]);
+  // Stunden des laufenden Jahres (Berliner Zeit) – dieselben Zeilen und Grenzen wie `getHoursOverview(ctx, year)`, ohne sie
+  // samt Namen ein weiteres Mal zu lesen.
+  const thisYear = buildBuckets("Y", now).at(-1)!;
+  const minutesThisYear = worked.rows
+    .filter((row) => row.at >= thisYear.start && row.at < thisYear.end)
+    .reduce((sum, row) => sum + row.minutes, 0);
   const trend = sumPerBucket(
     worked.rows.map((row) => ({ at: row.at, value: row.minutes / 60 })),
     weeks,
@@ -215,11 +212,11 @@ async function loadShifts(ctx: TenantContext, now: Date): Promise<DashboardData[
           .slice(0, 5)
       : [],
     hours: {
-      minutes: hours.totalMinutes,
-      scope: hours.scope,
+      minutes: minutesThisYear,
+      scope: worked.scope,
       year,
       trend,
-      quote: hoursQuote(worked.rows, now, year, hours.totalMinutes),
+      quote: hoursQuote(worked.rows, now, year, minutesThisYear),
     },
   };
 }
@@ -256,9 +253,11 @@ async function loadTasks(ctx: TenantContext): Promise<DashboardData["tasks"]> {
   return { mine, stats };
 }
 
+/** `sources`: mit `getAnalytics` geteilt (siehe `./sources.ts`) – ohne Angabe lädt das Dashboard sie selbst. */
 export async function getDashboard(
   ctx: TenantContext,
   now: Date = new Date(),
+  sources: DashboardSources = dashboardSources(ctx, now),
 ): Promise<DashboardData> {
   const [
     members,
@@ -273,9 +272,9 @@ export async function getDashboard(
     payments,
     departments,
   ] = await Promise.all([
-    loadMembers(ctx, now),
-    loadEvents(ctx, now),
-    loadShifts(ctx, now),
+    loadMembers(ctx, now, sources),
+    loadEvents(ctx, now, sources),
+    loadShifts(ctx, now, sources),
     loadTasks(ctx),
     countUnread(ctx),
     listNotifications(ctx, { request: FIRST_PAGE }),
