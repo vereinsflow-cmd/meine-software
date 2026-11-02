@@ -7,12 +7,20 @@ import { sendEventReminders, sendShiftReminders } from "@/server/jobs/reminders"
 import { applyRetention } from "@/server/jobs/retention";
 import * as anonymize from "@/server/privacy/anonymize";
 import { APPLICATION_PENDING_RETENTION_DAYS } from "@/lib/membership-application";
-import { todayCalendarDate } from "@/lib/dates";
+import {
+  addBerlinDays,
+  parseBerlinDateTime,
+  toDateInputValue,
+  todayCalendarDate,
+} from "@/lib/dates";
+import { shiftFormSchema } from "@/modules/shifts/schemas";
+import { updateShift } from "@/modules/shifts/service";
 import { hashToken } from "@/server/security/tokens";
 import { prisma } from "@/server/db/client";
 import type { MailMessage } from "@/server/mail";
 import {
   addUserToClub,
+  contextFor,
   createClub,
   createDepartment,
   createEvent,
@@ -107,6 +115,53 @@ describe("Schicht-Erinnerungen", () => {
     });
     await sendShiftReminders();
     expect(await notes(helper.user.id)).toHaveLength(1);
+  });
+
+  it("erinnert nach dem Verschieben der Schicht erneut – 24 Stunden vor dem neuen Termin", async () => {
+    const { club, helper } = await clubWithPeople();
+    const board = await addUserToClub(club, "BOARD");
+    const ctx = await contextFor(board.user.id, club.id);
+    const day = (n: number) => toDateInputValue(addBerlinDays(new Date(), n));
+    const event = await createEvent(club.id, {
+      title: "Sommerfest",
+      startsAt: parseBerlinDateTime(day(1), "08:00")!,
+      endsAt: parseBerlinDateTime(day(8), "22:00")!,
+    });
+    const startsAt = parseBerlinDateTime(day(1), "10:00")!;
+    const shift = await createShift(club.id, event.id, {
+      title: "Aufbau",
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 3 * HOUR),
+    });
+    await prisma.shiftAssignment.create({
+      data: {
+        clubId: club.id,
+        shiftId: shift.id,
+        memberId: helper.member.id,
+        assignedAt: ago(3 * DAY),
+      },
+    });
+    expect(await sendShiftReminders(new Date(startsAt.getTime() - 20 * HOUR))).toBe(1);
+
+    // Wegen Regens eine Woche später.
+    await updateShift(
+      ctx,
+      shift.id,
+      shiftFormSchema.parse({
+        title: "Aufbau",
+        date: day(8),
+        startTime: "10:00",
+        endTime: "13:00",
+        requiredCount: 2,
+        status: "OPEN",
+      }),
+    );
+    const moved = parseBerlinDateTime(day(8), "10:00")!;
+    expect(await sendShiftReminders(new Date(moved.getTime() - 20 * HOUR))).toBe(1);
+    expect(await sendShiftReminders(new Date(moved.getTime() - 19 * HOUR))).toBe(0);
+    const reminders = (await notes(helper.user.id)).filter((n) => n.type === "SHIFT_REMINDER");
+    expect(reminders).toHaveLength(2);
+    expect(reminders[0]!.dedupeKey).not.toBe(reminders[1]!.dedupeKey);
   });
 
   it("sendet keine Erinnerung für: zu früh, schon begonnen, abgesagt, Entwurf, gelöscht, ausgetragen, kürzlich eingetragen, ohne Konto, deaktivierten Verein", async () => {
@@ -284,6 +339,24 @@ describe("Veranstaltungs-Erinnerungen", () => {
     expect(await notes(helper2.user.id)).toHaveLength(0);
     expect(await notes(declined.user.id)).toHaveLength(0);
     expect(await sendEventReminders()).toBe(0);
+  });
+
+  it("erinnert nach dem Verschieben der Veranstaltung erneut", async () => {
+    const { club, helper } = await clubWithPeople();
+    const event = await createEvent(club.id, { title: "Ausflug", startsAt: inMs(20 * HOUR) });
+    await prisma.eventParticipant.create({
+      data: { clubId: club.id, eventId: event.id, memberId: helper.member.id, status: "ACCEPTED" },
+    });
+    expect(await sendEventReminders()).toBe(1);
+
+    const moved = inMs(7 * DAY + 20 * HOUR);
+    await prisma.event.update({
+      where: { id: event.id },
+      data: { startsAt: moved, endsAt: new Date(moved.getTime() + 4 * HOUR) },
+    });
+    expect(await sendEventReminders(new Date(moved.getTime() - 20 * HOUR))).toBe(1);
+    expect(await sendEventReminders(new Date(moved.getTime() - 19 * HOUR))).toBe(0);
+    expect(await notes(helper.user.id)).toHaveLength(2);
   });
 });
 

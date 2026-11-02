@@ -265,6 +265,13 @@ export async function updateShift(
   await guard(() =>
     ctx.db.$transaction(async (tx) => {
       await tx.eventShift.update({ where: { id: shiftId }, data: after });
+      // Neuer Beginn: Die 24-Stunden-Erinnerung gilt dem alten Termin – vor dem neuen kommt eine neue.
+      if (times.startsAt.getTime() !== shift.startsAt.getTime()) {
+        await tx.shiftAssignment.updateMany({
+          where: { shiftId, reminderSentAt: { not: null } },
+          data: { reminderSentAt: null },
+        });
+      }
       if (changes) {
         await recordAudit(tx, auditActor(ctx), {
           action: "shift.updated",

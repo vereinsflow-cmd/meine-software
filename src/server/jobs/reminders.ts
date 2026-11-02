@@ -10,7 +10,8 @@ import { createTenantDb } from "@/server/db/tenant";
  *
  * Doppelte Erinnerungen werden auf zwei Wegen verhindert: `reminderSentAt` an der Eintragung und – als Sicherheitsnetz –
  * der eindeutige Schlüssel (Benutzer, `dedupeKey`) der Benachrichtigung. Läuft ein Job zweimal oder bricht er mittendrin
- * ab, entstehen keine Duplikate.
+ * ab, entstehen keine Duplikate. Der Schlüssel enthält den Beginn: Wird eine Schicht oder Veranstaltung verschoben (und
+ * `reminderSentAt` dabei zurückgesetzt), gibt es vor dem neuen Termin wieder eine Erinnerung.
  */
 const HOUR = 3_600_000;
 export const REMINDER_LEAD_HOURS = 24;
@@ -69,7 +70,8 @@ export async function sendShiftReminders(now: Date = new Date()): Promise<number
       body: `${formatDateShort(shift.startsAt)}, ${formatTimeRange(shift.startsAt, shift.endsAt)}${shift.meetingPoint ? `. Treffpunkt: ${shift.meetingPoint}` : ""}`,
       linkUrl: `/helferplanung/${shift.event.id}?schicht=${first.shiftId}`,
       email: true,
-      dedupeKey: (userId) => `shift-reminder:${assignmentByUser.get(userId)}:24h`,
+      dedupeKey: (userId) =>
+        `shift-reminder:${assignmentByUser.get(userId)}:${shift.startsAt.toISOString()}:24h`,
     });
   }
 
@@ -125,7 +127,7 @@ export async function sendEventReminders(now: Date = new Date()): Promise<number
       body: `${when}${event.locationName ? ` · ${event.locationName}` : ""}`,
       linkUrl: `/veranstaltungen/${event.id}`,
       email: true,
-      dedupeKey: () => `event-reminder:${event.id}:24h`,
+      dedupeKey: () => `event-reminder:${event.id}:${event.startsAt.toISOString()}:24h`,
     });
   }
   return created;
