@@ -18,6 +18,8 @@ import { memberAttendanceSummary } from "@/modules/events/attendance";
 import { ATTENDANCE_RESULT_LABEL } from "@/modules/events/attendance-schemas";
 import { ConsentPanel } from "@/modules/members/components/consent-panel";
 import { MemberActions } from "@/modules/members/components/member-actions";
+import { QualificationCard } from "@/modules/members/components/qualification-card";
+import { listMemberQualifications } from "@/modules/members/qualifications";
 import { getMember, getMemberHistory } from "@/modules/members/service";
 import { MemberFeeCard } from "@/modules/fees/components/member-fee-card";
 import { getMemberFee, memberFeeOptions } from "@/modules/fees/service";
@@ -50,11 +52,12 @@ export default async function MemberDetailPage({
   });
   if (!member) notFound();
 
-  const [history, fee, attendance] = await Promise.all([
+  const [history, fee, attendance, qualifications] = await Promise.all([
     member.private ? getMemberHistory(ctx, id) : Promise.resolve([]),
     getMemberFee(ctx, id),
     // Nur für die Person selbst und Berechtigte (Teilnehmerlisten ihrer Abteilungen) – sonst `null`.
     memberAttendanceSummary(ctx, id),
+    listMemberQualifications(ctx, id),
   ]);
   const ownPage = ctx.memberId === id;
   const feeOptions = fee?.canManage ? await memberFeeOptions(ctx, id) : null;
@@ -163,6 +166,11 @@ export default async function MemberDetailPage({
                 />
               </CardContent>
             </Card>
+          )}
+
+          {/* Ohne Einträge nur für die, die eintragen dürfen – sonst stünde dort eine leere Karte. */}
+          {(qualifications.items.length > 0 || qualifications.canManage) && (
+            <QualificationCard memberId={id} memberName={name} info={qualifications} />
           )}
 
           {member.private && (
