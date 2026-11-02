@@ -133,7 +133,10 @@ async function analyze(ctx: TenantContext, csvText: string) {
     const line = index + 2;
     const raw: Record<string, string> = {};
     columns.forEach((field, column) => {
-      if (field) raw[field] = (cells[column] ?? "").trim();
+      if (!field) return;
+      const value = (cells[column] ?? "").trim();
+      // Mehrere Spalten für dasselbe Feld (z. B. „Telefon“ und „Handy“): Eine leere Zelle verwirft keinen Wert.
+      if (value || raw[field] === undefined) raw[field] = value;
     });
     const label = `${raw.firstName ?? ""} ${raw.lastName ?? ""}`.trim() || "(ohne Namen)";
     const messages: string[] = [];
