@@ -67,10 +67,17 @@ jobs:
       - name: Produktions-Build
         run: npm run build
 
+  # In drei Teilen nebeneinander (Playwright verteilt die Testdateien): Am Stück liefen die rund 480 Tests mit einem Worker
+  # gegen den Dev-Server bis an das Zeitlimit heran. Jeder Teil hat seinen eigenen Postgres-Dienst, das globale Setup baut
+  # darin die Datenbank frisch aus dem Seed auf – keine Testdatei setzt Daten einer anderen voraus.
   e2e:
-    name: Ende-zu-Ende-Tests (Browser)
+    name: Ende-zu-Ende-Tests (Browser, Teil ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     services:
       postgres:
         image: postgres:18
@@ -96,13 +103,14 @@ jobs:
       - run: cp .env.example .env
       - name: Browser installieren
         run: npx playwright install --with-deps chromium
-      - name: Tests (Desktop und Smartphone)
-        run: npx playwright test
-      - name: Berichte sichern (nur bei Fehlern)
-        if: failure()
+      - name: Tests (Desktop und Smartphone, Teil ${{ matrix.shard }} von 3)
+        run: npx playwright test --shard=${{ matrix.shard }}/3
+      # Auch nach einem Abbruch (Zeitlimit): Dann fehlt zwar der HTML-Bericht, die Spuren in test-results sind aber da.
+      - name: Berichte sichern (nur bei Fehlern oder Abbruch)
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-bericht
+          name: playwright-bericht-teil-${{ matrix.shard }}
           path: |
             playwright-report
             test-results
