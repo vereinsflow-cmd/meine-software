@@ -165,7 +165,9 @@ export default async function DashboardPage({
       <div
         role="group"
         aria-label="Kennzahlen"
-        className="grid gap-4 @[40rem]/studio:grid-cols-2 @[66rem]/studio:grid-cols-[minmax(0,1.05fr)_minmax(0,1.25fr)_minmax(0,1.1fr)]"
+        // `grid-cols-1` (= minmax(0, 1fr)): Am Handy ist die eine Spalte so breit wie der Inhalt – ohne wüchse sie auf die
+        // Breite der zwei Kacheln nebeneinander mit ihren längsten Texten und liefe rechts über den Bildschirm.
+        className="grid grid-cols-1 gap-4 @[40rem]/studio:grid-cols-2 @[66rem]/studio:grid-cols-[minmax(0,1.05fr)_minmax(0,1.25fr)_minmax(0,1.1fr)]"
       >
         <Entrance index={0} className="[&>*]:h-full">
           <MembersHero

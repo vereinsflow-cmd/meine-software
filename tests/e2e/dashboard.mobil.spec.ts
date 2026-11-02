@@ -540,6 +540,22 @@ test.describe("Dashboard – große Fassung der Kennzahlen", () => {
     expect(members!.x).toBeGreaterThanOrEqual(0);
     expect(members!.right).toBeLessThanOrEqual(view.width + 1);
     expect(await overflow(page)).toBeLessThanOrEqual(1);
+
+    // Auch auf schmaleren Handys bleiben die Karten im Bild und jeder Wert ganz in seiner Kachel – auch der vierstellige Betrag
+    // bei „Offene Zahlungen“ (Seed: 1.549,50 €). Die Hülle der Reiter schneidet seitlich ab, die Seite selbst scrollt also nie.
+    for (const width of [390, 360, 320]) {
+      await page.setViewportSize({ width, height: view.height });
+      const [card] = await cardBoxes(kpis);
+      expect(card!.right, `${width} px`).toBeLessThanOrEqual(width + 1);
+      const cut = await tiles
+        .locator('[data-slot="kpi-value"]')
+        .evaluateAll((values) =>
+          values
+            .filter((value) => value.scrollWidth > value.clientWidth + 1)
+            .map((value) => value.textContent),
+        );
+      expect(cut, `${width} px`).toEqual([]);
+    }
   });
 
   test("Tablet-Breite (820 px): Mitglieder-Karte und Kacheln nebeneinander, die Helferstunden darunter über die ganze Breite", async ({
