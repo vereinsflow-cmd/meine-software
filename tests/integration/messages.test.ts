@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { chatKeyOf } from "@/modules/messages/chat-format";
 import { getChat } from "@/modules/messages/chats";
 import { messageFormSchema, type MessageFormInput } from "@/modules/messages/schemas";
@@ -16,7 +16,10 @@ import {
   saveDraft,
   sendDraft,
 } from "@/modules/messages/service";
+import { listNotifications } from "@/modules/notifications/service";
 import { prisma } from "@/server/db/client";
+import { sendPendingEmails } from "@/server/jobs/mail-queue";
+import type { MailMessage } from "@/server/mail";
 import { executeDeletionRequest } from "@/server/privacy/deletion";
 import { buildUserDataExport } from "@/server/privacy/export";
 import { checkRateLimit } from "@/server/security/rate-limit";
@@ -1139,6 +1142,34 @@ describe("Entwürfe bearbeiten, gesendete schützen, löschen", () => {
     await expect(deleteMessage(ctx.admin, fromLead.id)).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+  });
+
+  it("Rückruf entfernt die Benachrichtigungen samt noch nicht versendeter E-Mail", async () => {
+    const { ctx } = await setup();
+    const recalled = await send(ctx.admin, {
+      subject: "Versehentlich",
+      body: "Vertrauliche Angaben …",
+      sendEmail: true,
+    });
+    const kept = await send(ctx.admin, { subject: "Bleibt", sendEmail: true });
+    const notes = (id: string) =>
+      prisma.notification.count({ where: { dedupeKey: `message:${id}` } });
+    expect(await notes(recalled.id)).toBe(4);
+
+    await deleteMessage(ctx.admin, recalled.id);
+    expect(await notes(recalled.id)).toBe(0);
+    expect(await notes(kept.id)).toBe(4);
+    const titles = (await listNotifications(ctx.helper, { request: first })).items.map(
+      (n) => n.title,
+    );
+    expect(titles).toEqual(["Neue Nachricht: Bleibt"]);
+
+    // Der nächste Lauf des Mail-Jobs verschickt nur noch die andere Nachricht.
+    const mails = vi.fn<(message: MailMessage) => Promise<void>>().mockResolvedValue(undefined);
+    await sendPendingEmails({ send: mails });
+    const subjectsSent = mails.mock.calls.map(([m]) => m.subject);
+    expect(subjectsSent.filter((s) => s.includes("Versehentlich"))).toEqual([]);
+    expect(subjectsSent.filter((s) => s.includes("Bleibt"))).toHaveLength(4);
   });
 
   it("Text wird nie als HTML behandelt (wird unverändert gespeichert und ausgeliefert)", async () => {

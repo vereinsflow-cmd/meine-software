@@ -704,6 +704,9 @@ export async function deleteMessage(ctx: TenantContext, id: string): Promise<voi
   if (!row) throw notFound("Die Nachricht");
   await ctx.db.$transaction(async (tx) => {
     await tx.message.update({ where: { id }, data: { deletedAt: new Date() } });
+    // Zurückrufen nimmt auch die Benachrichtigungen mit Betreff und Textvorschau zurück – und damit die noch nicht
+    // versendeten E-Mails (der Mail-Job liest aus derselben Tabelle). Schon versendete E-Mails lassen sich nicht zurückholen.
+    await tx.notification.deleteMany({ where: { dedupeKey: `message:${id}` } });
     await recordAudit(tx, auditActor(ctx), {
       action: "message.deleted",
       entityType: "Message",
