@@ -17,9 +17,12 @@ const BOM = "﻿";
  * Anfangszeichen einer Formel. Eigene Prüfung statt `escapeFormulae: true`: Papaparse prüft dort mit
  * `/^[=+\-@\t\r].*$/`, und weil „.“ keinen Zeilenumbruch trifft, blieb z. B. „=HYPERLINK(…)\n…“ ungeschützt.
  */
-const FORMULA_START = /^[=+\-@\t\r]/;
-/** Hochkomma des Formelschutzes (Umkehrung von `FORMULA_START` beim Import). */
-const ESCAPED_FORMULA = /^'(?=[=+\-@\t\r])/;
+const FORMULA_START = /^'*[=+\-@\t\r]/;
+/**
+ * Hochkomma des Formelschutzes (Umkehrung von `FORMULA_START` beim Import). Werte, die schon mit Hochkomma vor einem
+ * Formelzeichen beginnen („'+49“), schützt der Export ebenfalls – sonst nähme der Import ihr echtes Hochkomma ab.
+ */
+const ESCAPED_FORMULA = /^'(?='*[=+\-@\t\r])/;
 
 function cellToString(value: CsvCell): string {
   if (value === null || value === undefined) return "";

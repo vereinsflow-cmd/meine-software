@@ -120,9 +120,20 @@ describe("CSV-Import (parseCsv)", () => {
     expect(parsed.rows.map((row) => row[0])).toEqual(values);
   });
 
+  it("Rundreise auch für Werte, die schon mit Hochkomma vor einem Formelzeichen beginnen", () => {
+    const values = ["'+49 171", "'=x", "''=x", "'@Verein"];
+    const parsed = parseCsv(
+      toCsv(
+        ["Wert"],
+        values.map((value) => [value]),
+      ),
+    );
+    expect(parsed.rows.map((row) => row[0])).toEqual(values);
+  });
+
   it("entfernt nur ein einzelnes Hochkomma vor einem Formelzeichen", () => {
     const parsed = parseCsv("a;b;c;d\n'+49 171;''=x;'Text;x'+y");
-    expect(parsed.rows[0]).toEqual(["+49 171", "''=x", "'Text", "x'+y"]);
+    expect(parsed.rows[0]).toEqual(["+49 171", "'=x", "'Text", "x'+y"]);
   });
 });
 
