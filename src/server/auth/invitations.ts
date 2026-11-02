@@ -60,11 +60,16 @@ export async function issueInvitation(
   if (input.memberId) {
     const member = await prisma.member.findFirst({
       where: { id: input.memberId, clubId: input.clubId, userId: null, deletedAt: null },
-      select: { id: true },
+      select: { archivedAt: true, status: true },
     });
     if (!member)
       throw conflict(
         "Der Mitgliedsdatensatz ist nicht vorhanden oder hat bereits ein Benutzerkonto.",
+      );
+    // Wie beim Annehmen (`joinClub`): Wer archiviert, ausgetreten oder gesperrt ist, bekommt keinen Zugang.
+    if (member.archivedAt || member.status === "LEFT" || member.status === "BLOCKED")
+      throw conflict(
+        "Das Mitglied ist archiviert, ausgetreten oder gesperrt – es wird nicht eingeladen.",
       );
   }
 
@@ -162,8 +167,17 @@ async function joinClub(
   });
 
   if (invitation.memberId) {
+    // Ist das Mitglied inzwischen archiviert, ausgetreten oder gesperrt, gibt eine noch offene Einladung keinen Zugang – die
+    // Mitgliederverwaltung zieht sie dabei zwar zurück, hier gilt die Regel aber auch für ältere Einladungen.
     const linked = await tx.member.updateMany({
-      where: { id: invitation.memberId, clubId: invitation.clubId, userId: null, deletedAt: null },
+      where: {
+        id: invitation.memberId,
+        clubId: invitation.clubId,
+        userId: null,
+        deletedAt: null,
+        archivedAt: null,
+        status: { notIn: ["LEFT", "BLOCKED"] },
+      },
       data: { userId: user.id },
     });
     if (linked.count !== 1) {

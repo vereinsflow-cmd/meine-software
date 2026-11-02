@@ -462,10 +462,23 @@ async function assertMayRevokeAccess(
   });
 }
 
-/** Sperrt den Zugang eines verknüpften Benutzerkontos (z. B. bei Austritt oder Archivierung). */
-async function suspendAccess(tx: TenantTx, userId: string | null): Promise<void> {
-  if (!userId) return;
-  await tx.clubMembership.updateMany({ where: { userId }, data: { status: "SUSPENDED" } });
+/**
+ * Sperrt den Zugang (z. B. bei Austritt oder Archivierung): das verknüpfte Benutzerkonto und offene Einladungen zum
+ * Mitglied. Ohne Konto nähme die Person sonst eine offene Einladung noch an und bekäme Zugang mit der eingeladenen Rolle.
+ */
+async function suspendAccess(
+  tx: TenantTx,
+  member: { id: string; userId: string | null },
+): Promise<void> {
+  await tx.invitation.updateMany({
+    where: { memberId: member.id, acceptedAt: null, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  if (!member.userId) return;
+  await tx.clubMembership.updateMany({
+    where: { userId: member.userId },
+    data: { status: "SUSPENDED" },
+  });
 }
 
 export async function createMember(
@@ -647,7 +660,7 @@ export async function updateMember(
 
     if (revokesAccess) {
       await assertNotLastAdmin(tx, existing.userId);
-      await suspendAccess(tx, existing.userId);
+      await suspendAccess(tx, existing);
     }
 
     const names = new Map(
@@ -685,7 +698,7 @@ export async function archiveMember(ctx: TenantContext, id: string): Promise<voi
   await ctx.db.$transaction(async (tx) => {
     await assertNotLastAdmin(tx, member.userId);
     await tx.member.update({ where: { id }, data: { archivedAt: new Date() } });
-    await suspendAccess(tx, member.userId);
+    await suspendAccess(tx, member);
     await recordAudit(tx, auditActor(ctx), {
       action: "member.archived",
       entityType: "Member",
@@ -730,7 +743,7 @@ export async function deleteMember(ctx: TenantContext, id: string): Promise<void
   await ctx.db.$transaction(async (tx) => {
     await assertNotLastAdmin(tx, member.userId);
     await tx.member.update({ where: { id }, data: { deletedAt: new Date() } });
-    await suspendAccess(tx, member.userId);
+    await suspendAccess(tx, member);
     await recordAudit(tx, auditActor(ctx), {
       action: "member.deleted",
       entityType: "Member",

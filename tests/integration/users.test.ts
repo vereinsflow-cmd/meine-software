@@ -22,6 +22,8 @@ import {
   setUserStatus,
 } from "@/modules/users/service";
 import { acceptInvitationAsNewUser } from "@/server/auth/invitations";
+import { memberFormSchema } from "@/modules/members/schemas";
+import { archiveMember, deleteMember, updateMember } from "@/modules/members/service";
 import { addUserToClub, contextFor, createClub, createMember, unique } from "../helpers/factories";
 
 beforeEach(() => {
@@ -223,6 +225,107 @@ describe("Einladen", () => {
     await expect(revokeInvitation(ctx.admin, fresh!.id)).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+  });
+});
+
+describe("Einladungen ausgetretener, gesperrter und archivierter Mitglieder", () => {
+  const meta = { ip: "unknown", ipPrefix: null };
+  const password = "Zebra-Lampe-Wolke-Tisch-9";
+  const statusInput = (
+    { firstName, lastName }: { firstName: string; lastName: string },
+    status: "LEFT" | "BLOCKED",
+  ) =>
+    memberFormSchema.parse({
+      firstName,
+      lastName,
+      status,
+      departmentIds: [],
+      leaderDepartmentIds: [],
+    });
+
+  /** Lädt ein Mitglied ohne Konto als Vorstand ein; liefert das Token aus der E-Mail. */
+  async function invited(ctx: Awaited<ReturnType<typeof setup>>["ctx"]["admin"], roleId: string) {
+    const target = await createMember(ctx.clubId);
+    const email = `${unique("x")}@example.test`;
+    await inviteUser(ctx, invite({ email, roleId, memberId: target.id }));
+    const token = /einladung\/([A-Za-z0-9_-]+)/.exec(mail.sent.at(-1)!.text)![1]!;
+    return { target, email, token };
+  }
+
+  it("Austritt, Sperre, Archivieren und Löschen ziehen offene Einladungen des Mitglieds zurück", async () => {
+    const { ctx, club } = await setup();
+    const left = await invited(ctx.admin, club.roleIds.BOARD!);
+    const blocked = await invited(ctx.admin, club.roleIds.BOARD!);
+    const archived = await invited(ctx.admin, club.roleIds.BOARD!);
+    const deleted = await invited(ctx.admin, club.roleIds.BOARD!);
+    const untouched = await invited(ctx.admin, club.roleIds.BOARD!);
+
+    await updateMember(ctx.admin, left.target.id, statusInput(left.target, "LEFT"));
+    await updateMember(ctx.admin, blocked.target.id, statusInput(blocked.target, "BLOCKED"));
+    await archiveMember(ctx.admin, archived.target.id);
+    // Archiviert, ohne dass die Einladung dabei zurückgezogen wurde (Stand vor dieser Regel): Das Löschen zieht sie zurück.
+    await prisma.member.update({
+      where: { id: deleted.target.id },
+      data: { archivedAt: new Date() },
+    });
+    await deleteMember(ctx.admin, deleted.target.id);
+
+    expect((await listInvitations(ctx.admin)).map((i) => i.email)).toEqual([untouched.email]);
+    for (const { email, token } of [left, blocked, archived, deleted]) {
+      await expect(
+        acceptInvitationAsNewUser({ token, firstName: "X", lastName: "Y", password }, meta),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      expect(await prisma.user.count({ where: { email } })).toBe(0);
+    }
+    expect(
+      await prisma.invitation.count({ where: { clubId: club.id, revokedAt: { not: null } } }),
+    ).toBe(4);
+  });
+
+  it("eine noch offene Einladung gibt einem inzwischen archivierten, ausgetretenen oder gesperrten Mitglied keinen Zugang", async () => {
+    const { ctx, club } = await setup();
+    const cases = [
+      { archivedAt: new Date() },
+      { status: "LEFT" as const },
+      { status: "BLOCKED" as const },
+    ];
+    for (const change of cases) {
+      const { target, email, token } = await invited(ctx.admin, club.roleIds.BOARD!);
+      // Direkt in der Datenbank – wie eine Einladung, die vor dieser Regel offen blieb.
+      await prisma.member.update({ where: { id: target.id }, data: change });
+
+      await expect(
+        acceptInvitationAsNewUser({ token, firstName: "X", lastName: "Y", password }, meta),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(await prisma.user.count({ where: { email } }), JSON.stringify(change)).toBe(0);
+      expect((await prisma.member.findUniqueOrThrow({ where: { id: target.id } })).userId).toBe(
+        null,
+      );
+    }
+    expect(await prisma.clubMembership.count({ where: { clubId: club.id } })).toBe(4); // nur setup()
+  });
+
+  it("archivierte, ausgetretene und gesperrte Mitglieder werden nicht eingeladen", async () => {
+    const { ctx, club } = await setup();
+    const passive = await createMember(club.id, { status: "PASSIVE" });
+    for (const change of [
+      { archivedAt: new Date() },
+      { status: "LEFT" as const },
+      { status: "BLOCKED" as const },
+    ]) {
+      const target = await createMember(club.id);
+      await prisma.member.update({ where: { id: target.id }, data: change });
+      // Weder in der Auswahl beim Einladen noch über eine selbst gewählte Mitglieds-ID.
+      expect((await listInvitableMembers(ctx.admin)).map((m) => m.id)).toEqual([passive.id]);
+      await expect(
+        inviteUser(ctx.admin, invite({ roleId: club.roleIds.MEMBER!, memberId: target.id })),
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: expect.stringContaining("archiviert, ausgetreten oder gesperrt"),
+      });
+    }
+    expect(await listInvitations(ctx.admin)).toEqual([]);
+    expect(mail.sent).toEqual([]);
   });
 });
 

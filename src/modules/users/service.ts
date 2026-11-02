@@ -146,13 +146,21 @@ export async function listInvitations(ctx: TenantContext): Promise<PendingInvita
   }));
 }
 
-/** Mitglieder ohne Benutzerkonto (Auswahl beim Einladen). Nur mit Leserecht auf Kontaktdaten. */
+/**
+ * Mitglieder ohne Benutzerkonto (Auswahl beim Einladen). Nur mit Leserecht auf Kontaktdaten. Ohne archivierte, ausgetretene
+ * und gesperrte – die lädt `issueInvitation` nicht ein.
+ */
 export async function listInvitableMembers(
   ctx: TenantContext,
 ): Promise<{ id: string; name: string; email: string | null }[]> {
   if (!can(ctx, "users:invite") || !can(ctx, "members:read_contact")) return [];
   const rows = await ctx.db.member.findMany({
-    where: { userId: null, archivedAt: null, deletedAt: null },
+    where: {
+      userId: null,
+      archivedAt: null,
+      deletedAt: null,
+      status: { notIn: ["LEFT", "BLOCKED"] },
+    },
     select: { id: true, firstName: true, lastName: true, email: true },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     take: 500,
