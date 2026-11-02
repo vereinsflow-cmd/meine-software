@@ -214,6 +214,41 @@ describe("CSV-Import", () => {
     ]);
   });
 
+  it("erkennt Abteilungsnamen mit Trennzeichen („Ski/Snowboard“) und trennt mehrere Abteilungen trotzdem", async () => {
+    const { club, ctx, fussball, handball } = await setup();
+    const ski = await createDepartment(club.id, "Ski/Snowboard");
+    const turnen = await createDepartment(club.id, "Turnen, Tanz & Fitness");
+    const csv = [
+      "Vorname;Nachname;Abteilungen",
+      "Sina;Ski;Ski/Snowboard",
+      "Toni;Turner;turnen, tanz & fitness",
+      "Mia;Mehrfach;Ski/Snowboard | Fußball",
+      "Hans;Hand;Fußball/Handball",
+      "Kim;Komma;Turnen, Tanz & Fitness, Handball",
+      "Udo;Unbekannt;Ski/Rodeln",
+    ].join("\n");
+
+    const preview = await previewMemberImport(ctx.board, csv);
+    expect(preview.rows.map((r) => r.status)).toEqual(["ok", "ok", "ok", "ok", "ok", "error"]);
+    expect(preview.rows[5]!.messages.join(" ")).toContain("„Rodeln“");
+
+    await executeMemberImport(ctx.board, csv);
+    const departmentsOf = async (lastName: string) =>
+      (
+        await prisma.memberDepartment.findMany({
+          where: { clubId: club.id, member: { lastName } },
+          select: { departmentId: true },
+        })
+      )
+        .map((d) => d.departmentId)
+        .sort();
+    expect(await departmentsOf("Ski")).toEqual([ski.id]);
+    expect(await departmentsOf("Turner")).toEqual([turnen.id]);
+    expect(await departmentsOf("Mehrfach")).toEqual([ski.id, fussball.id].sort());
+    expect(await departmentsOf("Hand")).toEqual([fussball.id, handball.id].sort());
+    expect(await departmentsOf("Komma")).toEqual([turnen.id, handball.id].sort());
+  });
+
   it("verlangt Vorname und Nachname als Spalten", async () => {
     const { ctx } = await setup();
     await expect(previewMemberImport(ctx.board, "E-Mail;Telefon\na@b.de;1")).rejects.toMatchObject({

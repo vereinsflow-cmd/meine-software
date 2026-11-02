@@ -396,8 +396,9 @@ export const FAQ: readonly FaqSection[] = [
           "Öffne „Mitglieder“ und klicke auf „Import“ (am Handy unter „Weitere Aktionen“). Über „Vorlage herunterladen“ bekommst du eine Beispieldatei mit den richtigen Spalten.",
           "Lade die Datei hoch. Du siehst zuerst eine Vorschau – erst danach wird etwas gespeichert.",
         ],
+        tip: "Mehrere Abteilungen trennst du in der Spalte „Abteilungen“ mit „|“, „;“, „/“ oder Komma (z. B. „Fußball | Handball“). Enthält ein Abteilungsname selbst eines dieser Zeichen, wie „Ski/Snowboard“, wird er trotzdem als eine Abteilung erkannt. Die Abteilungen müssen schon angelegt sein.",
         link: { href: "/mitglieder/import", label: "Zum Import" },
-        keywords: "csv excel tabelle liste hochladen übernehmen",
+        keywords: "csv excel tabelle liste hochladen übernehmen abteilungen sparten",
       },
       {
         id: "mitglied-austritt",

@@ -74,6 +74,30 @@ function normalizeDate(value: string): string {
   return trimmed;
 }
 
+/**
+ * Zerlegt die Abteilungszelle in Namen. Mehrere Abteilungen stehen mit „|“, „;“, „/“ oder Komma darin („Fußball |
+ * Handball“, so auch im Export). Abteilungsnamen dürfen diese Zeichen aber selbst enthalten („Ski/Snowboard“, „Turnen,
+ * Tanz & Fitness“) – deshalb gilt ab jeder Stelle der längste vorhandene Abteilungsname; erst was zu keinem passt, wird
+ * am nächsten Trennzeichen geteilt (und dann als unbekannt gemeldet).
+ */
+function splitDepartmentNames(cell: string, isKnown: (name: string) => boolean): string[] {
+  // Namen an den geraden Stellen, die Trennzeichen dazwischen an den ungeraden.
+  const parts = cell.split(/([|;/]|,(?!\s*\d))/);
+  const text = (from: number, to: number) =>
+    parts
+      .slice(from, to + 1)
+      .join("")
+      .trim();
+  const names: string[] = [];
+  for (let start = 0; start < parts.length;) {
+    let end = parts.length - 1;
+    while (end > start && !isKnown(text(start, end))) end -= 2;
+    names.push(text(start, end));
+    start = end + 2;
+  }
+  return names.filter(Boolean);
+}
+
 export interface ImportRow {
   /** Zeilennummer in der Datei (Kopfzeile = 1). */
   line: number;
@@ -148,10 +172,9 @@ async function analyze(ctx: TenantContext, csvText: string) {
         `Unbekannter Status „${raw.status}“ (erlaubt: aktiv, passiv, ausgetreten, Ehrenmitglied, gesperrt).`,
       );
 
-    const departmentNames = (raw.departments ?? "")
-      .split(/[|;/]|,(?!\s*\d)/)
-      .map((n) => n.trim())
-      .filter(Boolean);
+    const departmentNames = splitDepartmentNames(raw.departments ?? "", (name) =>
+      departmentByName.has(name.toLowerCase()),
+    );
     const departmentIds: string[] = [];
     for (const name of departmentNames) {
       const id = departmentByName.get(name.toLowerCase());
