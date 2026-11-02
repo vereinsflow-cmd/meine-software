@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { prisma } from "@/server/db/client";
+import { anonymizeMemberData } from "@/server/privacy/anonymize";
 import { pageRequest } from "@/lib/search-params";
 import { memberFormSchema, type MemberFormInput } from "@/modules/members/schemas";
 import {
@@ -637,6 +638,30 @@ describe("Archivieren, Löschen, Wiederherstellen", () => {
     await deleteMember(ctx.admin, id);
     await expect(getMember(ctx.board, id)).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(getMember(ctx.admin, id)).resolves.toHaveProperty("deletedAt");
+  });
+
+  it("anonymisierte Mitglieder lassen sich weder aus dem Papierkorb noch aus dem Archiv zurückholen", async () => {
+    const { ctx, club } = await setup();
+    const { id } = await createMember(ctx.admin, input({ lastName: "Anonym" }));
+    await archiveMember(ctx.admin, id);
+    await deleteMember(ctx.admin, id);
+    await prisma.$transaction((tx) => anonymizeMemberData(tx, club.id, id));
+    const refused = {
+      code: "BAD_REQUEST",
+      message: "Anonymisierte Mitglieder lassen sich nicht wiederherstellen.",
+    };
+
+    // Sonst fiele die leere Hülle aus jeder Aufbewahrungsfrist (sie ist ja schon anonymisiert) und ließe sich neu befüllen.
+    await expect(restoreFromTrash(ctx.admin, id)).rejects.toMatchObject(refused);
+    expect(await prisma.member.findUniqueOrThrow({ where: { id } })).toMatchObject({
+      deletedAt: expect.any(Date),
+      archivedAt: expect.any(Date),
+    });
+
+    // Eine schon früher aus dem Papierkorb geholte Hülle bleibt im Archiv.
+    await prisma.member.update({ where: { id }, data: { deletedAt: null } });
+    await expect(restoreMember(ctx.admin, id)).rejects.toMatchObject(refused);
+    expect((await prisma.member.findUniqueOrThrow({ where: { id } })).archivedAt).not.toBeNull();
   });
 });
 

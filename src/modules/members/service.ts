@@ -659,8 +659,18 @@ export async function archiveMember(ctx: TenantContext, id: string): Promise<voi
   });
 }
 
+/**
+ * Anonymisierte Mitglieder sind leere Hüllen ohne Personenbezug. Zurückgeholt fielen sie aus jeder Aufbewahrungsfrist (die
+ * gilt nur für noch nicht anonymisierte) und ließen sich mit einer neuen Person befüllen – deshalb bleiben sie im Papierkorb.
+ */
+function assertNotAnonymized(member: MemberRow): void {
+  if (member.anonymizedAt)
+    throw badRequest("Anonymisierte Mitglieder lassen sich nicht wiederherstellen.");
+}
+
 export async function restoreMember(ctx: TenantContext, id: string): Promise<void> {
   const member = await loadForAction(ctx, id, "members:archive");
+  assertNotAnonymized(member);
   if (!member.archivedAt) return;
   await ctx.db.$transaction(async (tx) => {
     await tx.member.update({ where: { id }, data: { archivedAt: null } });
@@ -695,6 +705,7 @@ export async function deleteMember(ctx: TenantContext, id: string): Promise<void
 
 export async function restoreFromTrash(ctx: TenantContext, id: string): Promise<void> {
   const member = await loadForAction(ctx, id, "members:delete", { includeDeleted: true });
+  assertNotAnonymized(member);
   if (!member.deletedAt) return;
   await ctx.db.$transaction(async (tx) => {
     await tx.member.update({ where: { id }, data: { deletedAt: null } });
