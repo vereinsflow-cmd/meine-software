@@ -235,6 +235,22 @@ test("Dokumente: Filterknopf „Offene Rechnungen“ und Zahlungsstand im Bearbe
   const hallenmiete = await invoiceNameIn(rows.filter({ hasText: euro("1.200,00 €") }));
   const row = documentRow(page, hallenmiete);
   await expect(row).toContainText("überfällig seit 3 Tagen");
+  // Das Schild ist der einzige Hinweis auf den Stand: nicht kleiner als `text-xs` (13 px bei 16 px Grundschrift, docs/DESIGN.md)
+  // und nicht abgeschnitten – auch bei der schmalsten Breite mit Rechnungsspalte (768 px).
+  const badge = row
+    .locator('[data-slot="badge"]')
+    .filter({ hasText: "überfällig seit 3 Tagen", visible: true });
+  for (const width of [1280, 768]) {
+    await page.setViewportSize({ width, height: 800 });
+    const { size, root, cut } = await badge.evaluate((element) => ({
+      size: parseFloat(getComputedStyle(element).fontSize),
+      root: parseFloat(getComputedStyle(document.documentElement).fontSize),
+      cut: element.scrollWidth > element.clientWidth,
+    }));
+    expect(size, `Schriftgröße bei ${width} px`).toBeGreaterThanOrEqual(root * 0.8125 - 0.01);
+    expect(cut, `abgeschnitten bei ${width} px`).toBe(false);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
 
   await chooseFromMenu(page, hallenmiete, "Bearbeiten");
   const edit = page.getByRole("dialog", { name: "Dokument bearbeiten" });
