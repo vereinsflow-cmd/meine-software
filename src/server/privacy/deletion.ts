@@ -25,7 +25,8 @@ import { anonymizeMemberData, scrubNamesInAudit, scrubNamesInNotifications } fro
  * Ablauf: Antrag (mit Passwort-Bestätigung) → Bedenkzeit von 14 Tagen (jederzeit widerrufbar) → automatische Ausführung
  * durch den Hintergrundjob. Bei der Ausführung
  *   - werden die Mitgliedsdaten in ALLEN Vereinen der Person anonymisiert (`anonymizeMemberData`),
- *   - Namen im Änderungsprotokoll und in Benachrichtigungen anderer (z. B. „Löschantrag: …“) geschwärzt,
+ *   - Namen im Änderungsprotokoll und an den Namensstellen von Benachrichtigungen anderer (z. B. „Löschantrag: …“)
+ *     geschwärzt,
  *   - offene Einladungen an ihre Adresse gelöscht und
  *   - das Konto samt Sitzungen, Token, Mitgliedschaften, Benachrichtigungen und Kalender-Abos endgültig entfernt.
  * Der Antrag selbst bleibt als Nachweis bestehen (ohne Bezug zu Namen). Vor dem Antrag und bei der Ausführung wird
@@ -152,6 +153,7 @@ export async function requestAccountDeletion(
     await notifyUsers(createTenantDb(clubId), clubId, {
       userIds: admins.map((admin) => admin.userId),
       type: "SYSTEM",
+      // Namensstelle für scrubNamesInNotifications – Wortlaut nur gemeinsam ändern.
       title: `Löschantrag: ${user.firstName} ${user.lastName}`,
       body: `Das Konto und die Mitgliedsdaten werden am ${formatDateTime(scheduledFor)} Uhr automatisch gelöscht bzw. anonymisiert.`,
       linkUrl: "/datenschutz",

@@ -263,6 +263,7 @@ export async function addChatMembers(
       await notifyUsers(tx, ctx.clubId, {
         userIds: recipients.filter((r) => addedIds.has(r.memberId)).map((r) => r.userId),
         type: "MESSAGE",
+        // Namensstelle für scrubNamesInNotifications (Datenschutz) – Wortlaut nur gemeinsam ändern.
         title: `${title}: ${actor ?? "Der Verein"} hat dich hinzugefügt`,
         body:
           group.audience === "DEPARTMENT"

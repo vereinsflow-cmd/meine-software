@@ -116,8 +116,11 @@ Recht „Finanzen ansehen“) und der Person gesondert mitteilen.
 **Anonymisierung** heißt: Der Datensatz bleibt als leere Hülle („Gelöschtes Mitglied“) bestehen, damit Statistiken (Helferstunden,
 Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber Name, Kontakt, Adresse, Geburtsdatum, Notizen,
 Einwilligungen, Gruppen- und Abteilungszugehörigkeiten und Dokumente der Person sind entfernt bzw. im Papierkorb. In Texten des
-Änderungsprotokolls und in Benachrichtigungen anderer Personen (z. B. „Löschantrag: …“ an den Vorstand, „… hat sich für …
-eingetragen“ an Schichtverantwortliche) ersetzt „Gelöschtes Mitglied“ den Namen. Ausnahme sind steuerliche Aufzeichnungen:
+Änderungsprotokolls ersetzt „Gelöschtes Mitglied“ den Namen. In Benachrichtigungen anderer Personen geschieht das nur an den
+Stellen, an denen die Anwendung selbst den Namen einsetzt („Löschantrag: …“ an den Vorstand, „… hat sich für … eingetragen“ bzw.
+„… ausgetragen“ an Schichtverantwortliche, „Frage von …“ bei Meldungen, „… hat dich hinzugefügt“ im Chat). Freie Texte wie
+Betreff, Nachrichtenvorschau, Schicht- oder Veranstaltungstitel bleiben unverändert – wie Chat-Nachrichten –, denn den Kontonamen
+wählt jede Person selbst. Ausnahme sind steuerliche Aufzeichnungen:
 Buchungen und Spenden behalten den Namen, ein Spender zusätzlich die Anschrift (gesperrt, siehe „Spender und Spenden“). Die Umsetzung
 (`src/server/privacy/`) läuft in einer Transaktion und ist mehrfach ausführbar.
 

@@ -1033,13 +1033,14 @@ describe("Aufbewahrungsfristen", () => {
     const { club, helper } = await clubWithPeople();
     const other = await clubWithPeople();
     await fullMember(club.id, { deletedAt: ago(31 * DAY), firstName: "Bruno", lastName: "Benach" });
+    // Wie signOut sie schreibt: der Name im Text, im Titel nur die Schicht.
     const note = (clubId: string, userId: string) =>
       prisma.notification.create({
         data: {
           clubId,
           userId,
           type: "SHIFT_CHANGED",
-          title: "Abmeldung: Bruno Benach",
+          title: "Abmeldung: Aufbau",
           body: "Bruno Benach hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
         },
       });
@@ -1050,12 +1051,14 @@ describe("Aufbewahrungsfristen", () => {
     await applyRetention();
 
     expect(await prisma.notification.findUniqueOrThrow({ where: { id: own.id } })).toMatchObject({
-      title: "Abmeldung: Gelöschtes Mitglied",
+      title: "Abmeldung: Aufbau",
       body: "Gelöschtes Mitglied hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
     });
     expect(
       await prisma.notification.findUniqueOrThrow({ where: { id: foreign.id } }),
-    ).toMatchObject({ title: "Abmeldung: Bruno Benach" });
+    ).toMatchObject({
+      body: "Bruno Benach hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
+    });
   });
 });
 

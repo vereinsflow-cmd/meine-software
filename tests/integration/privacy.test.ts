@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { toDateInputValue, todayCalendarDate } from "@/lib/dates";
 import { createEntry, listAccounts, listCategories, setupLedger } from "@/modules/finance/ledger";
+import { createTicket } from "@/modules/help/service";
+import { addChatMembers } from "@/modules/messages/chat-members";
+import { signOut, signUp } from "@/modules/shifts/service";
 import { hashPassword } from "@/server/auth/password";
+import { updateOwnName } from "@/server/auth/profile";
 import { prisma } from "@/server/db/client";
 import { runJobs } from "@/server/jobs/runner";
 import * as anonymize from "@/server/privacy/anonymize";
@@ -737,6 +741,151 @@ describe("Ausführung der Löschung", () => {
     expect(after).toContain(
       "Neue Eintragung: Abbau | Otto Anders hat sich für „Abbau“ (Sommerfest) eingetragen.",
     );
+  });
+
+  it("schwärzt den Namen an jeder Stelle, an der die Anwendung ihn einsetzt – über die echten Abläufe", async () => {
+    const { people, club, dept, event } = await setup();
+    // Adam (Vereinsadministrator) trägt sich ein und aus, meldet etwas, fügt Otto einem Chat hinzu und stellt einen
+    // Löschantrag. Ändert sich der Wortlaut einer dieser Benachrichtigungen, muss das Muster beim Schwärzen mitziehen.
+    const adam = await contextFor(people.admin2.user.id, club.id);
+    const abbau = await createShift(club.id, event.id, {
+      title: "Abbau",
+      startsAt: new Date(Date.now() + 5 * DAY + 4 * 3_600_000),
+      endsAt: new Date(Date.now() + 5 * DAY + 6 * 3_600_000),
+    });
+    await prisma.eventShift.update({
+      where: { id: abbau.id },
+      data: { responsibleMemberId: people.admin.member.id },
+    });
+    await signUp(adam, abbau.id);
+    await signOut(adam, abbau.id);
+    await createTicket(
+      adam,
+      {
+        category: "QUESTION",
+        subject: "Hallenschlüssel",
+        description: "Wo liegt der Schlüssel?",
+        pagePath: undefined,
+      },
+      null,
+    );
+    await addChatMembers(adam, {
+      chat: `abteilung-${dept.id}`,
+      memberIds: [people.other.member.id],
+    });
+    const pending = await requestAccountDeletion(
+      { userId: people.admin2.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    const texts = async () =>
+      (
+        await prisma.notification.findMany({
+          where: { clubId: club.id },
+          select: { title: true, body: true },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        })
+      ).map((n) => `${n.title} | ${n.body ?? ""}`);
+    const before = await texts();
+    // Eintragung, Abmeldung, Meldung, Chat, Löschantrag
+    expect(before.filter((t) => t.includes("Adam Zweitadmin"))).toHaveLength(5);
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    // Genau der Name wird ersetzt – sonst ändert sich nichts.
+    expect(await texts()).toEqual(
+      before.map((t) => t.replace("Adam Zweitadmin", "Gelöschtes Mitglied")),
+    );
+  });
+
+  it("ein umbenanntes Konto schwärzt keine freien Texte in Benachrichtigungen anderer", async () => {
+    const { people, club } = await setup();
+    // Missbrauch: Otto nennt sein Konto wie Wörter, die in fremden Benachrichtigungen stehen, und den eigenen
+    // Mitgliedsdatensatz (das kann z. B. eine Abteilungsleitung) wie einen festen Teil der Vorlagen.
+    await updateOwnName(
+      people.other.user.id,
+      { firstName: "Aufbau", lastName: "Sommerfest" },
+      meta,
+    );
+    await prisma.member.update({
+      where: { id: people.other.member.id },
+      data: { firstName: "Neue", lastName: "Eintragung" },
+    });
+    const pending = await requestAccountDeletion(
+      { userId: people.other.user.id, password: PASSWORD },
+      meta,
+      new Date(Date.now() - 15 * DAY),
+    );
+    // Freie Texte: Betreff, Nachrichtenvorschau, Schicht-, Aufgaben- und Veranstaltungstitel, Antwort auf eine Meldung.
+    const foreign = await prisma.notification.createManyAndReturn({
+      data: [
+        {
+          clubId: club.id,
+          userId: people.person.user.id,
+          type: "MESSAGE",
+          title: "Neue Nachricht: Aufbau Sommerfest",
+          body: "Aufbau Sommerfest: Wer hilft am Samstag?",
+        },
+        {
+          clubId: club.id,
+          userId: people.admin.user.id,
+          type: "SHIFT_CHANGED",
+          title: "Neue Eintragung: Aufbau Sommerfest",
+          body: "Hanna Helfer hat sich für „Aufbau Sommerfest“ (Sommerfest) eingetragen.",
+        },
+        {
+          clubId: club.id,
+          userId: people.admin.user.id,
+          type: "SYSTEM",
+          title: "Neue Meldung: Aufbau Sommerfest",
+          body: "Frage von Hanna Helfer",
+        },
+        {
+          clubId: club.id,
+          userId: people.person.user.id,
+          type: "SYSTEM",
+          title: "Deine Meldung „Helferliste“: Erledigt",
+          body: "Die Liste hängt am Brett, mit allen Schichten von Aufbau Sommerfest",
+        },
+        {
+          clubId: club.id,
+          userId: people.person.user.id,
+          type: "TASK_ASSIGNED",
+          title: "Neue Aufgabe: Aufbau Sommerfest",
+        },
+        {
+          clubId: club.id,
+          userId: people.person.user.id,
+          type: "MESSAGE",
+          title: "Teilnehmer · Aufbau Sommerfest: Anna Admin hat dich hinzugefügt",
+          body: "Du bist jetzt für „Aufbau Sommerfest“ angemeldet und liest im Chat mit.",
+        },
+      ],
+      select: { id: true, title: true, body: true },
+    });
+    const byId = <T extends { id: string }>(rows: T[]) =>
+      [...rows].sort((a, b) => (a.id < b.id ? -1 : 1));
+
+    expect(await executeDeletionRequest(pending.id)).toBe("COMPLETED");
+
+    expect(
+      byId(
+        await prisma.notification.findMany({
+          where: { id: { in: foreign.map((note) => note.id) } },
+          select: { id: true, title: true, body: true },
+        }),
+      ),
+    ).toEqual(byId(foreign));
+    // Die eigene Namensstelle verschwindet trotzdem.
+    expect(
+      await prisma.notification.findMany({
+        where: { clubId: club.id, title: { startsWith: "Löschantrag: " } },
+        select: { title: true },
+      }),
+    ).toEqual([
+      { title: "Löschantrag: Gelöschtes Mitglied" },
+      { title: "Löschantrag: Gelöschtes Mitglied" },
+    ]);
   });
 
   it("wiederholte Ausführung ist harmlos; nicht fällige Anträge bleiben offen; der Job verarbeitet nur Fälliges", async () => {

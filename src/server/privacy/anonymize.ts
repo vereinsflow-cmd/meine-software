@@ -9,8 +9,8 @@ import { todayCalendarDate } from "@/lib/dates";
  * Löschanträgen verwendet. Der Datensatz bleibt als leere Hülle bestehen, damit Auswertungen (Helferstunden,
  * Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber er lässt keinen Rückschluss auf die
  * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten,
- * Qualifikationen, keine Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll oder in Benachrichtigungen anderer
- * Personen.
+ * Qualifikationen, keine Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll oder an den Namensstellen von
+ * Benachrichtigungen anderer Personen.
  */
 export const ANONYMOUS_FIRST_NAME = "Gelöschtes";
 export const ANONYMOUS_LAST_NAME = "Mitglied";
@@ -215,9 +215,16 @@ export async function scrubNamesInAudit(
 }
 
 /**
- * Ersetzt Klarnamen in Titel und Text von Benachrichtigungen (z. B. „Löschantrag: Hans Helfer“, „Hans Helfer hat sich für
- * „Aufbau“ eingetragen“) – wie im Änderungsprotokoll. Die Benachrichtigung selbst bleibt für den Empfänger erhalten (gelesen
- * oder nicht, Link); der Aufräumjob entfernt sie wie üblich. Zu kurze Namen werden ignoriert.
+ * Ersetzt Klarnamen in Benachrichtigungen anderer Personen – nur an den Stellen, an denen die Anwendung selbst einen Namen
+ * einsetzt; Typ und der feste Text davor und dahinter müssen passen:
+ *   - „Löschantrag: Name“ (privacy/deletion.ts),
+ *   - „Name hat sich für/aus „…“ …“ zu „Neue Eintragung: …“/„Abmeldung: …“ (shifts/service-assignments.ts),
+ *   - „Kategorie von Name“ zu „Neue Meldung: …“ (help/service.ts),
+ *   - „Abteilung …/Teilnehmer · …: Name hat dich hinzugefügt“ (messages/chat-members.ts).
+ * Freie Texte (Betreff, Nachrichtenvorschau, Schicht-, Veranstaltungs- und Aufgabentitel) bleiben wie Chat-Texte unberührt:
+ * Den Kontonamen wählt jeder selbst – ein Konto „Aufbau Sommerfest“ schwärzte sonst beim Löschen diese Wörter in allen
+ * Benachrichtigungen seiner Vereine. Die Benachrichtigung bleibt für den Empfänger erhalten (gelesen oder nicht, Link); der
+ * Aufräumjob entfernt sie wie üblich. Zu kurze Namen werden ignoriert. Kein LIKE: Namen dürfen % und _ enthalten.
  */
 export async function scrubNamesInNotifications(
   tx: Tx,
@@ -225,14 +232,28 @@ export async function scrubNamesInNotifications(
   names: readonly string[],
 ): Promise<void> {
   if (clubIds.length === 0) return;
+  const clubs = Prisma.join(clubIds);
   for (const name of new Set(
     names.map((value) => value.trim()).filter((value) => value.length >= 3),
   )) {
+    const reporter = ` von ${name}`;
+    const adder = `: ${name} hat dich hinzugefügt`;
     await tx.$executeRaw`
-      UPDATE "Notification"
-         SET "title" = replace("title", ${name}, 'Gelöschtes Mitglied'),
-             "body" = replace("body", ${name}, 'Gelöschtes Mitglied')
-       WHERE "clubId" IN (${Prisma.join(clubIds)})
-         AND (position(${name} in "title") > 0 OR position(${name} in "body") > 0)`;
+      UPDATE "Notification" SET "title" = 'Löschantrag: Gelöschtes Mitglied'
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SYSTEM' AND "title" = ${`Löschantrag: ${name}`}`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "body" = 'Gelöschtes Mitglied' || substr("body", length(${name}) + 1)
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SHIFT_CHANGED'
+         AND ((starts_with("title", 'Neue Eintragung: ') AND starts_with("body", ${`${name} hat sich für „`}))
+           OR (starts_with("title", 'Abmeldung: ') AND starts_with("body", ${`${name} hat sich aus „`})))`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "body" = left("body", -length(${name})) || 'Gelöschtes Mitglied'
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SYSTEM' AND starts_with("title", 'Neue Meldung: ')
+         AND right("body", length(${reporter})) = ${reporter}`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "title" = left("title", -length(${adder})) || ': Gelöschtes Mitglied hat dich hinzugefügt'
+       WHERE "clubId" IN (${clubs}) AND "type" = 'MESSAGE'
+         AND (starts_with("title", 'Abteilung ') OR starts_with("title", 'Teilnehmer · '))
+         AND right("title", length(${adder})) = ${adder}`;
   }
 }
