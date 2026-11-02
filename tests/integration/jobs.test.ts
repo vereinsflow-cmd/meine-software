@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import pg from "pg";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendPendingEmails, MAIL_RETRY_HOURS } from "@/server/jobs/mail-queue";
 import { completePastEvents } from "@/server/jobs/events";
@@ -44,6 +47,21 @@ async function clubWithPeople() {
 
 const notes = (userId: string) =>
   prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
+
+/** Spielt eine Migration als Ganzes in die Datenbank dieser Testdatei ein – wie `prisma migrate deploy`. */
+async function applyMigration(folder: string) {
+  const sql = readFileSync(
+    path.resolve(__dirname, "../../prisma/migrations", folder, "migration.sql"),
+    "utf8",
+  );
+  const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    await db.query(sql);
+  } finally {
+    await db.end();
+  }
+}
 
 describe("Schicht-Erinnerungen", () => {
   it("erinnert 24 Stunden vorher – genau einmal, mit Treffpunkt, Link und vorgemerkter E-Mail", async () => {
@@ -419,6 +437,49 @@ describe("Veranstaltungs-Erinnerungen", () => {
     expect(await sendEventReminders()).toBe(0);
     expect(notify).not.toHaveBeenCalled();
     notify.mockRestore();
+  });
+
+  it("Einspielen von reminderSentAt: Wer schon (mit dem alten Schlüssel ohne Beginn) erinnert wurde, bekommt keine zweite Erinnerung", async () => {
+    const { club, helper, helper2 } = await clubWithPeople();
+    const late = await addUserToClub(club, "MEMBER");
+    const event = await createEvent(club.id, { title: "Ausflug", startsAt: inMs(20 * HOUR) });
+    const moved = await createEvent(club.id, {
+      title: "Verschoben",
+      startsAt: inMs(7 * DAY + 20 * HOUR),
+    });
+    await prisma.eventParticipant.createMany({
+      data: [
+        { clubId: club.id, eventId: event.id, memberId: helper.member.id, status: "ACCEPTED" },
+        // Sagte erst nach dem letzten Lauf des alten Programms zu – noch nicht erinnert.
+        { clubId: club.id, eventId: event.id, memberId: late.member.id, status: "ACCEPTED" },
+        { clubId: club.id, eventId: moved.id, memberId: helper2.member.id, status: "ACCEPTED" },
+      ],
+    });
+    // Was das alte Programm hinterlassen hat: Erinnerungen mit „event-reminder:<Veranstaltung>:24h“. Die zweite galt dem
+    // alten Termin der danach um eine Woche verschobenen Veranstaltung.
+    await prisma.notification.createMany({
+      data: [
+        { userId: helper.user.id, eventId: event.id, title: "Erinnerung: Ausflug" },
+        { userId: helper2.user.id, eventId: moved.id, title: "Erinnerung: Verschoben" },
+      ].map(({ userId, eventId, title }) => ({
+        clubId: club.id,
+        userId,
+        type: "EVENT_REMINDER" as const,
+        title,
+        dedupeKey: `event-reminder:${eventId}:24h`,
+        createdAt: ago(HOUR),
+      })),
+    });
+    // Stand vor der Migration (ihr „Rückgängig“), dann die Migration so einspielen wie beim Aktualisieren.
+    await prisma.$executeRawUnsafe('ALTER TABLE "EventParticipant" DROP COLUMN "reminderSentAt"');
+    await applyMigration("20261102120000_event_participant_reminder");
+
+    expect(await sendEventReminders()).toBe(1); // nur die späte Zusage
+    expect(await notes(helper.user.id)).toHaveLength(1);
+    expect(await notes(late.user.id)).toHaveLength(1);
+    // Vor dem neuen Termin der verschobenen Veranstaltung wird wie sonst erinnert.
+    expect(await sendEventReminders(new Date(moved.startsAt.getTime() - 20 * HOUR))).toBe(1);
+    expect(await notes(helper2.user.id)).toHaveLength(2);
   });
 });
 
