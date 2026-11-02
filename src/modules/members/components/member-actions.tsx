@@ -12,26 +12,32 @@ import {
   restoreMemberAction,
 } from "../actions";
 
-/** Schaltflächen im Kopf der Mitgliederseite. Der Server prüft jede Aktion erneut – hier wird nur ausgeblendet. */
+/**
+ * Schaltflächen im Kopf der Mitgliederseite und im Detailbereich neben der Liste. Der Server prüft jede Aktion erneut – hier
+ * wird nur ausgeblendet. Im Detailbereich (`inList`) ohne „Bearbeiten“ (das steht dort schon) und ohne Sprung zur Liste nach
+ * dem Löschen: Die Liste lädt neu, das Mitglied fällt heraus und das erste der Seite ist gewählt.
+ */
 export function MemberActions({
   id,
   name,
   archived,
   deleted,
   can,
+  inList = false,
 }: {
   id: string;
   name: string;
   archived: boolean;
   deleted: boolean;
   can: { update: boolean; archive: boolean; delete: boolean };
+  inList?: boolean;
 }) {
   const router = useRouter();
   const refresh = () => router.refresh();
 
   return (
     <>
-      {can.update && !deleted && (
+      {can.update && !deleted && !inList && (
         <Button asChild>
           <Link href={`/mitglieder/${id}/bearbeiten`}>
             <PencilIcon /> Bearbeiten
@@ -47,7 +53,7 @@ export function MemberActions({
             </Button>
           }
           title="Mitglied archivieren?"
-          description={`${name} verschwindet aus den normalen Listen, ein verknüpftes Benutzerkonto wird gesperrt. Die Daten bleiben erhalten und das Mitglied kann jederzeit wiederhergestellt werden.`}
+          description={`${name} verschwindet aus den normalen Listen, ein verknüpftes Benutzerkonto wird gesperrt. Die Daten bleiben erhalten und das Mitglied kann jederzeit wiederhergestellt werden. Im Archiv lässt es sich danach auch löschen.`}
           confirmLabel="Archivieren"
           action={() => archiveMemberAction({ id })}
           successMessage="Mitglied archiviert."
@@ -84,7 +90,7 @@ export function MemberActions({
           confirmLabel="In den Papierkorb"
           action={() => deleteMemberAction({ id })}
           successMessage="Mitglied in den Papierkorb verschoben."
-          onSuccess={() => router.push("/mitglieder")}
+          onSuccess={inList ? refresh : () => router.push("/mitglieder")}
         />
       )}
 
