@@ -21,14 +21,16 @@ import { PAYMENT_METHOD_LABEL } from "@/modules/fees/schemas";
 import type { MemberFeeInfo } from "@/modules/fees/service";
 import { birthdayText, membershipDuration, safeColor, tint } from "../display";
 import type { MemberDetail } from "../types";
+import { MemberActions } from "./member-actions";
 import { MemberAvatar } from "./member-avatar";
 
 /**
  * Detailbereich rechts neben der Mitgliederliste (ab `lg`) – wie in der Kontakte- oder Mail-App. Oben ein Band in der Farbe
  * der (ersten) Abteilung als ruhiger Anker, darunter Kontakt, Mitgliedschaft und Benutzerkonto. Alles aus `getMember` und
  * `getMemberFee` – dieselben Dienste wie die Seite des Mitglieds: Was die Rolle dort nicht sieht (Kontakt und Anschrift,
- * Geburtstag, Beitrag), fehlt hier genauso, denn die Dienste schwärzen es bzw. liefern `null`. Alles Weitere (Notizen,
- * Einwilligungen, Verlauf, Archivieren …) steht auf der Seite des Mitglieds („Profil öffnen“).
+ * Geburtstag, Beitrag), fehlt hier genauso, denn die Dienste schwärzen es bzw. liefern `null`. Archivieren, Wiederherstellen
+ * und Löschen gehen hier wie auf der Seite (`MemberActions`); alles Weitere (Notizen, Einwilligungen, Verlauf …) steht auf
+ * der Seite des Mitglieds („Profil öffnen“).
  */
 export function MemberDetailPanel({
   member,
@@ -133,6 +135,14 @@ export function MemberDetailPanel({
                 Profil öffnen <ArrowUpRightIcon />
               </Link>
             </Button>
+            <MemberActions
+              id={member.id}
+              name={name}
+              archived={member.archivedAt !== null}
+              deleted={member.deletedAt !== null}
+              can={member.can}
+              inList
+            />
           </div>
         </div>
 

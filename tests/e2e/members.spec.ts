@@ -17,6 +17,26 @@ async function memberHref(page: Page, name: string): Promise<string | null> {
   return href?.split("?")[0] ?? null;
 }
 
+/** Legt „Tina <Nachname>“ über das Formular an (mit allen Pflichtfeldern) und landet auf ihrer Seite. */
+async function createTina(page: Page, lastName: string): Promise<void> {
+  await page.goto("/mitglieder/neu");
+  await page.getByLabel("Vorname").fill("Tina");
+  await page.getByLabel("Nachname").fill(lastName);
+  await page.getByLabel("E-Mail-Adresse").fill("tina@example.org");
+  await page.getByLabel("Geburtsdatum").fill("1995-06-15");
+  // Beim Neuanlegen Pflicht: Mitgliedsnummer, Funktion, Eintrittsdatum, Kontakt/Anschrift (Land: vorbelegt) und eine Abteilung
+  await page.getByLabel("Mitgliedsnummer").fill(`T-${lastName}`);
+  await page.getByLabel("Funktion im Verein").fill("Übungsleiterin");
+  await page.getByLabel("Eintrittsdatum").fill("2020-04-01");
+  await page.getByLabel("Telefon").fill("0170 1234567");
+  await page.getByLabel("Straße und Hausnummer").fill("Teststraße 1");
+  await page.getByLabel("PLZ").fill("12345");
+  await page.getByRole("textbox", { name: "Ort", exact: true }).fill("Musterstadt");
+  await page.getByRole("group", { name: "Abteilungen" }).getByLabel("Tischtennis").check();
+  await page.getByRole("button", { name: "Mitglied anlegen" }).click();
+  await expect(page).toHaveURL(/\/mitglieder\/[0-9a-f-]{36}$/);
+}
+
 test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
   test.beforeEach(async ({ page }) => {
     await login(page, USERS.admin);
@@ -198,23 +218,7 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
   test("Mitglied anlegen, ansehen, bearbeiten, archivieren, löschen", async ({ page }) => {
     const lastName = `Testperson${Date.now() % 100000}`;
 
-    await page.goto("/mitglieder/neu");
-    await page.getByLabel("Vorname").fill("Tina");
-    await page.getByLabel("Nachname").fill(lastName);
-    await page.getByLabel("E-Mail-Adresse").fill("tina@example.org");
-    await page.getByLabel("Geburtsdatum").fill("1995-06-15");
-    // Beim Neuanlegen Pflicht: Mitgliedsnummer, Funktion, Eintrittsdatum, Kontakt/Anschrift (Land: vorbelegt) und eine Abteilung
-    await page.getByLabel("Mitgliedsnummer").fill(`T-${lastName}`);
-    await page.getByLabel("Funktion im Verein").fill("Übungsleiterin");
-    await page.getByLabel("Eintrittsdatum").fill("2020-04-01");
-    await page.getByLabel("Telefon").fill("0170 1234567");
-    await page.getByLabel("Straße und Hausnummer").fill("Teststraße 1");
-    await page.getByLabel("PLZ").fill("12345");
-    await page.getByRole("textbox", { name: "Ort", exact: true }).fill("Musterstadt");
-    await page.getByRole("group", { name: "Abteilungen" }).getByLabel("Tischtennis").check();
-    await page.getByRole("button", { name: "Mitglied anlegen" }).click();
-
-    await expect(page).toHaveURL(/\/mitglieder\/[0-9a-f-]{36}$/);
+    await createTina(page, lastName);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(`Tina ${lastName}`);
     await expect(page.getByText("tina@example.org")).toBeVisible();
     await expect(page.getByText("15.06.1995")).toBeVisible();
@@ -240,6 +244,49 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
 
     await page.goto("/mitglieder?ansicht=papierkorb");
     await expect(page.getByRole("link", { name: new RegExp(lastName) })).toBeVisible();
+  });
+
+  test("Detailbereich: archivieren, im Archiv löschen, aus dem Papierkorb holen – ohne die Liste zu verlassen", async ({
+    page,
+  }) => {
+    const lastName = `Listenperson${Date.now() % 100000}`;
+    const name = `Tina ${lastName}`;
+    await createTina(page, lastName);
+    const inList = () =>
+      page.getByRole("region", { name: "Mitgliederliste" }).getByRole("link", { name });
+
+    // Aktiv: „Archivieren“ neben „Profil öffnen“, Löschen erst im Archiv
+    await open(page, `/mitglieder?q=${lastName}`);
+    let detail = page.getByRole("region", { name });
+    await expect(detail.getByRole("button", { name: "Löschen" })).toHaveCount(0);
+    await detail.getByRole("button", { name: "Archivieren" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Archivieren" }).click();
+    await expect(page.getByText("Mitglied archiviert.")).toBeVisible();
+    await expect(inList()).toHaveCount(0);
+    await expect(page).toHaveURL(/\/mitglieder\?q=/);
+
+    // Archiv: Wiederherstellen oder Löschen – nach dem Löschen bleibt die Liste stehen
+    await open(page, `/mitglieder?q=${lastName}&ansicht=archiv`);
+    detail = page.getByRole("region", { name });
+    await expect(detail.getByText("Archiviert", { exact: true })).toBeVisible();
+    await expect(detail.getByRole("button", { name: "Wiederherstellen" })).toBeVisible();
+    await detail.getByRole("button", { name: "Löschen" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "In den Papierkorb" }).click();
+    await expect(page.getByText("Mitglied in den Papierkorb verschoben.")).toBeVisible();
+    await expect(inList()).toHaveCount(0);
+    await expect(page).toHaveURL(/ansicht=archiv/);
+
+    // Papierkorb: zurück ins Archiv
+    await open(page, `/mitglieder?q=${lastName}&ansicht=papierkorb`);
+    detail = page.getByRole("region", { name });
+    await expect(detail.getByText("Im Papierkorb", { exact: true })).toBeVisible();
+    await expect(detail.getByRole("link", { name: "Bearbeiten" })).toHaveCount(0);
+    await detail.getByRole("button", { name: "Aus dem Papierkorb holen" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Wiederherstellen" }).click();
+    await expect(page.getByText("Mitglied wiederhergestellt.")).toBeVisible();
+    await expect(inList()).toHaveCount(0);
+    await open(page, `/mitglieder?q=${lastName}&ansicht=archiv`);
+    await expect(inList()).toBeVisible();
   });
 
   test("Formular zeigt Validierungsfehler an den Feldern", async ({ page }) => {
