@@ -17,6 +17,15 @@ async function memberHref(page: Page, name: string): Promise<string | null> {
   return href?.split("?")[0] ?? null;
 }
 
+/** Kalendertag `offset` Tage ab heute (Berlin) als „JJJJ-MM-TT“ – wie die Anwendung, nicht in 24-Stunden-Schritten. */
+const isoDay = (offset: number) => {
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+  const day = new Date(`${today}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + offset);
+  return day.toISOString().slice(0, 10);
+};
+const germanDay = (offset: number) => isoDay(offset).split("-").reverse().join(".");
+
 /** Legt „Tina <Nachname>“ über das Formular an (mit allen Pflichtfeldern) und landet auf ihrer Seite. */
 async function createTina(page: Page, lastName: string): Promise<void> {
   await page.goto("/mitglieder/neu");
@@ -287,6 +296,86 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
     await expect(inList()).toHaveCount(0);
     await open(page, `/mitglieder?q=${lastName}&ansicht=archiv`);
     await expect(inList()).toBeVisible();
+  });
+
+  test("Qualifikationen: hinzufügen, mit Ablauf anzeigen, bearbeiten, entfernen", async ({
+    page,
+  }) => {
+    const lastName = `Lizenz${Date.now() % 100000}`;
+    await createTina(page, lastName);
+    await page.waitForLoadState("networkidle"); // erst danach greifen die Knöpfe der Dialoge
+    const card = page
+      .locator('[data-slot="card"]')
+      .filter({ has: page.getByRole("heading", { level: 2, name: "Qualifikationen" }) });
+    await expect(card.getByText("Noch keine Qualifikationen")).toBeVisible();
+
+    // Trainerlizenz, gültig noch 30 Tage (Berliner Kalendertage)
+    await card.getByRole("button", { name: "Qualifikation hinzufügen" }).click();
+    let dialog = page.getByRole("dialog", { name: "Qualifikation hinzufügen" });
+    await dialog.getByLabel("Art").selectOption({ label: "Trainerlizenz" });
+    await dialog.getByLabel("Bezeichnung").fill("C-Lizenz Breitensport");
+    await dialog.getByLabel("Nummer").fill("LSB-4711");
+    await dialog.getByLabel("Ausgestellt am").fill("2024-03-01");
+    await dialog.getByLabel("Gültig bis").fill(isoDay(30));
+    await dialog.getByLabel("Aussteller").fill("Landessportbund");
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(dialog).toBeHidden();
+    const list = card.getByRole("list", { name: "Qualifikationen" });
+    const trainer = list.getByRole("listitem").filter({ hasText: "C-Lizenz Breitensport" });
+    await expect(trainer).toContainText("Trainerlizenz – C-Lizenz Breitensport");
+    await expect(trainer).toContainText("läuft in 30 Tagen ab");
+    await expect(trainer).toContainText(
+      `Nr. LSB-4711 · Landessportbund · ausgestellt am 01.03.2024 · gültig bis ${germanDay(30)}`,
+    );
+
+    // „Sonstige“ braucht eine Bezeichnung, „Gültig bis“ nie vor „Ausgestellt am“
+    await card.getByRole("button", { name: "Qualifikation hinzufügen" }).click();
+    dialog = page.getByRole("dialog", { name: "Qualifikation hinzufügen" });
+    await dialog.getByLabel("Art").selectOption({ label: "Sonstige" });
+    await dialog.getByLabel("Ausgestellt am").fill("2019-01-01");
+    await dialog.getByLabel("Gültig bis").fill("2018-12-31");
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(
+      dialog.getByText("Bitte gib bei „Sonstige“ an, um welche Qualifikation es geht."),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText("„Gültig bis“ darf nicht vor „Ausgestellt am“ liegen."),
+    ).toBeVisible();
+    await dialog.getByLabel("Bezeichnung").fill("Kampfrichter Leichtathletik");
+    await dialog.getByLabel("Gültig bis").fill("2020-01-31");
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(dialog).toBeHidden();
+    const judge = list.getByRole("listitem").filter({ hasText: "Kampfrichter Leichtathletik" });
+    await expect(judge).toContainText("abgelaufen");
+
+    // Bearbeiten: ohne „Gültig bis“ ist die Lizenz unbefristet, der Hinweis verschwindet
+    await trainer
+      .getByRole("button", { name: "Trainerlizenz – C-Lizenz Breitensport bearbeiten" })
+      .click();
+    dialog = page.getByRole("dialog", { name: "Qualifikation bearbeiten" });
+    await expect(dialog.getByLabel("Gültig bis")).toHaveValue(isoDay(30));
+    await dialog.getByLabel("Gültig bis").fill("");
+    await dialog.getByRole("button", { name: "Speichern" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(trainer).not.toContainText("läuft in");
+    await expect(trainer).not.toContainText("gültig bis");
+
+    // Entfernen mit Rückfrage
+    await judge.getByRole("button", { name: "Kampfrichter Leichtathletik entfernen" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Entfernen" }).click();
+    await expect(page.getByText("Qualifikation entfernt.")).toBeVisible();
+    await expect(judge).toHaveCount(0);
+    await expect(list.getByRole("listitem")).toHaveCount(1);
+
+    // Alles steht im Änderungsverlauf
+    await expect(
+      page.getByText(
+        `Qualifikation von Tina ${lastName} eingetragen: Trainerlizenz – C-Lizenz Breitensport`,
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(`Qualifikation von Tina ${lastName} entfernt: Kampfrichter Leichtathletik`),
+    ).toBeVisible();
   });
 
   test("Formular zeigt Validierungsfehler an den Feldern", async ({ page }) => {

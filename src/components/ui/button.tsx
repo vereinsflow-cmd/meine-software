@@ -3,25 +3,32 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Slot } from "radix-ui";
 
+/**
+ * Tastaturfokus gefüllter Knöpfe: Der Rand im Fokus (`border-ring`) hätte die Farbe der Fläche, sichtbar bliebe nur der
+ * halbdurchsichtige Saum (≈ 2,4 : 1, WCAG 1.4.11 verlangt 3 : 1). Sie zeigen deshalb wie alles ohne eigenen Saum (globals.css)
+ * einen deckenden 2-px-Rahmen in der Markenfarbe mit 2 px Abstand – er liegt auf der Fläche um den Knopf (nachgerechnet in
+ * tests/unit/theme-contrast.test.ts).
+ */
+const FILLED_FOCUS =
+  "focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-ring";
+
 // Beim Drücken federt der Knopf leicht ein (97 %) – nur ohne „Bewegung reduzieren“ (`motion-safe:`); die Farbe wechselt immer.
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,scale] duration-150 ease-out outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 motion-safe:active:not-aria-[haspopup]:scale-[0.97] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/85",
+        default: `bg-primary font-semibold text-primary-foreground shadow-sm hover:bg-primary/85 ${FILLED_FOCUS}`,
         // Grün (z. B. „Neues Mitglied“ auf dem Dashboard). Beim Darüberfahren dunkler bzw. im Dunkeln heller statt
         // durchscheinend – so bleibt die Schrift auch dann über 4,5:1.
-        success:
-          "bg-success font-semibold text-success-foreground shadow-sm hover:bg-[color-mix(in_oklch,var(--success),var(--foreground)_12%)]",
+        success: `bg-success font-semibold text-success-foreground shadow-sm hover:bg-[color-mix(in_oklch,var(--success),var(--foreground)_12%)] ${FILLED_FOCUS}`,
         outline:
           "border-border bg-card shadow-xs hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
-        destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+        destructive: `bg-destructive/10 text-destructive hover:bg-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 ${FILLED_FOCUS}`,
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

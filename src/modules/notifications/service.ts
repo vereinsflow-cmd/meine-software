@@ -87,6 +87,9 @@ export async function markAllNotificationsRead(ctx: TenantContext): Promise<numb
   return result.count;
 }
 
+/** Längere Titel schneidet notifyUsers ab. Vorlagen mit Namensstellen kürzen vorher selbst (Datenschutz). */
+export const NOTIFICATION_TITLE_MAX = 200;
+
 export interface NotifyInput {
   userIds: readonly string[];
   type: NotificationType;
@@ -126,7 +129,7 @@ export async function notifyUsers(
       clubId,
       userId: r.userId,
       type: input.type,
-      title: input.title.slice(0, 200),
+      title: input.title.slice(0, NOTIFICATION_TITLE_MAX),
       body: input.body?.slice(0, 2000) ?? null,
       // Nur interne Pfade: Die Datenbank-Prüfregel lässt `/\…` durch, Browser lesen das wie `//fremde-seite`.
       linkUrl: input.linkUrl ? safeRedirectPath(input.linkUrl, "/benachrichtigungen") : null,

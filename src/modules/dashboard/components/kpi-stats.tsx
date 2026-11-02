@@ -1,5 +1,6 @@
 import { AREA_ICON } from "@/components/shared/area-icons";
 import { formatNumber } from "@/lib/charts/geometry";
+import { formatEuroFromCents } from "@/lib/dates";
 import { CountUp } from "@/components/shared/count-up";
 import { hoursCompare, memberCompare, nextEventCompare, staffingCompare } from "../compare";
 import type { BlockSize } from "../layout-prefs";
@@ -233,6 +234,7 @@ export function PaymentsTile({
     <StudioTile
       label="Offene Zahlungen"
       value={<CountUp value={payments.totalCents} kind="euro" />}
+      valueChars={formatEuroFromCents(payments.totalCents).length}
       chip={
         payments.overdueCount > 0 ? (
           <Chip tone="down" on={on}>

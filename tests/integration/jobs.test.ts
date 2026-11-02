@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import pg from "pg";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendPendingEmails, MAIL_RETRY_HOURS } from "@/server/jobs/mail-queue";
 import { completePastEvents } from "@/server/jobs/events";
@@ -5,11 +8,25 @@ import { purgeStaleData } from "@/server/jobs/cleanup";
 import { runJobs } from "@/server/jobs/runner";
 import { sendEventReminders, sendShiftReminders } from "@/server/jobs/reminders";
 import { applyRetention } from "@/server/jobs/retention";
+import * as anonymize from "@/server/privacy/anonymize";
+import * as notifications from "@/modules/notifications/service";
+import { APPLICATION_PENDING_RETENTION_DAYS } from "@/lib/membership-application";
+import {
+  addBerlinDays,
+  parseBerlinDateTime,
+  toDateInputValue,
+  todayCalendarDate,
+} from "@/lib/dates";
+import { eventFormSchema } from "@/modules/events/schemas";
+import { updateEvent } from "@/modules/events/service";
+import { shiftFormSchema } from "@/modules/shifts/schemas";
+import { updateShift } from "@/modules/shifts/service";
 import { hashToken } from "@/server/security/tokens";
 import { prisma } from "@/server/db/client";
 import type { MailMessage } from "@/server/mail";
 import {
   addUserToClub,
+  contextFor,
   createClub,
   createDepartment,
   createEvent,
@@ -30,6 +47,21 @@ async function clubWithPeople() {
 
 const notes = (userId: string) =>
   prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
+
+/** Spielt eine Migration als Ganzes in die Datenbank dieser Testdatei ein – wie `prisma migrate deploy`. */
+async function applyMigration(folder: string) {
+  const sql = readFileSync(
+    path.resolve(__dirname, "../../prisma/migrations", folder, "migration.sql"),
+    "utf8",
+  );
+  const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    await db.query(sql);
+  } finally {
+    await db.end();
+  }
+}
 
 describe("Schicht-Erinnerungen", () => {
   it("erinnert 24 Stunden vorher – genau einmal, mit Treffpunkt, Link und vorgemerkter E-Mail", async () => {
@@ -104,6 +136,53 @@ describe("Schicht-Erinnerungen", () => {
     });
     await sendShiftReminders();
     expect(await notes(helper.user.id)).toHaveLength(1);
+  });
+
+  it("erinnert nach dem Verschieben der Schicht erneut – 24 Stunden vor dem neuen Termin", async () => {
+    const { club, helper } = await clubWithPeople();
+    const board = await addUserToClub(club, "BOARD");
+    const ctx = await contextFor(board.user.id, club.id);
+    const day = (n: number) => toDateInputValue(addBerlinDays(new Date(), n));
+    const event = await createEvent(club.id, {
+      title: "Sommerfest",
+      startsAt: parseBerlinDateTime(day(1), "08:00")!,
+      endsAt: parseBerlinDateTime(day(8), "22:00")!,
+    });
+    const startsAt = parseBerlinDateTime(day(1), "10:00")!;
+    const shift = await createShift(club.id, event.id, {
+      title: "Aufbau",
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 3 * HOUR),
+    });
+    await prisma.shiftAssignment.create({
+      data: {
+        clubId: club.id,
+        shiftId: shift.id,
+        memberId: helper.member.id,
+        assignedAt: ago(3 * DAY),
+      },
+    });
+    expect(await sendShiftReminders(new Date(startsAt.getTime() - 20 * HOUR))).toBe(1);
+
+    // Wegen Regens eine Woche später.
+    await updateShift(
+      ctx,
+      shift.id,
+      shiftFormSchema.parse({
+        title: "Aufbau",
+        date: day(8),
+        startTime: "10:00",
+        endTime: "13:00",
+        requiredCount: 2,
+        status: "OPEN",
+      }),
+    );
+    const moved = parseBerlinDateTime(day(8), "10:00")!;
+    expect(await sendShiftReminders(new Date(moved.getTime() - 20 * HOUR))).toBe(1);
+    expect(await sendShiftReminders(new Date(moved.getTime() - 19 * HOUR))).toBe(0);
+    const reminders = (await notes(helper.user.id)).filter((n) => n.type === "SHIFT_REMINDER");
+    expect(reminders).toHaveLength(2);
+    expect(reminders[0]!.dedupeKey).not.toBe(reminders[1]!.dedupeKey);
   });
 
   it("sendet keine Erinnerung für: zu früh, schon begonnen, abgesagt, Entwurf, gelöscht, ausgetragen, kürzlich eingetragen, ohne Konto, deaktivierten Verein", async () => {
@@ -281,6 +360,126 @@ describe("Veranstaltungs-Erinnerungen", () => {
     expect(await notes(helper2.user.id)).toHaveLength(0);
     expect(await notes(declined.user.id)).toHaveLength(0);
     expect(await sendEventReminders()).toBe(0);
+  });
+
+  it("erinnert nach dem Verschieben der Veranstaltung erneut", async () => {
+    const { club, helper } = await clubWithPeople();
+    const board = await addUserToClub(club, "BOARD");
+    const ctx = await contextFor(board.user.id, club.id);
+    const day = (n: number) => toDateInputValue(addBerlinDays(new Date(), n));
+    const form = (date: string) =>
+      eventFormSchema.parse({
+        title: "Ausflug",
+        type: "EVENT",
+        visibility: "INTERNAL",
+        startDate: date,
+        startTime: "10:00",
+        endDate: date,
+        endTime: "14:00",
+        allDay: false,
+        registrationRequired: false,
+        waitlistEnabled: false,
+        repeat: "none",
+      });
+    const startsAt = parseBerlinDateTime(day(1), "10:00")!;
+    const event = await createEvent(club.id, {
+      title: "Ausflug",
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 4 * HOUR),
+    });
+    await prisma.eventParticipant.create({
+      data: { clubId: club.id, eventId: event.id, memberId: helper.member.id, status: "ACCEPTED" },
+    });
+    expect(await sendEventReminders(new Date(startsAt.getTime() - 20 * HOUR))).toBe(1);
+
+    // Eine andere Änderung (Ort) lässt die Erinnerung bestehen; erst ein neuer Beginn erinnert erneut.
+    await updateEvent(ctx, event.id, { ...form(day(1)), locationName: "Bootshaus" });
+    expect(await sendEventReminders(new Date(startsAt.getTime() - 19 * HOUR))).toBe(0);
+    await updateEvent(ctx, event.id, form(day(8)));
+    const moved = parseBerlinDateTime(day(8), "10:00")!;
+    expect(await sendEventReminders(new Date(moved.getTime() - 20 * HOUR))).toBe(1);
+    expect(await sendEventReminders(new Date(moved.getTime() - 19 * HOUR))).toBe(0);
+    const reminders = (await notes(helper.user.id)).filter((n) => n.type === "EVENT_REMINDER");
+    expect(reminders).toHaveLength(2);
+  });
+
+  it("mehr als 200 Veranstaltungen in den nächsten 24 Stunden: jede Zusage genau einmal, ein zweiter Lauf fasst sie nicht mehr an", async () => {
+    const { club, helper } = await clubWithPeople();
+    // Zwischen 2 und gut 18 Stunden vorher – alle im Fenster der Erinnerung.
+    const events = await prisma.event.createManyAndReturn({
+      data: Array.from({ length: 250 }, (_, index) => {
+        const startsAt = inMs(2 * HOUR + index * 4 * 60_000);
+        return {
+          clubId: club.id,
+          title: `Training ${index + 1}`,
+          status: "PUBLISHED" as const,
+          startsAt,
+          endsAt: new Date(startsAt.getTime() + HOUR),
+        };
+      }),
+      select: { id: true },
+    });
+    await prisma.eventParticipant.createMany({
+      data: events.map((event) => ({
+        clubId: club.id,
+        eventId: event.id,
+        memberId: helper.member.id,
+        status: "ACCEPTED" as const,
+      })),
+    });
+
+    expect(await sendEventReminders()).toBe(250);
+    const reminders = (await notes(helper.user.id)).filter((n) => n.type === "EVENT_REMINDER");
+    expect(reminders).toHaveLength(250);
+
+    // Wer erinnert ist, wird nicht bei jedem Lauf erneut benachrichtigt (bisher je Veranstaltung bis zu 96-mal am Tag).
+    const notify = vi.spyOn(notifications, "notifyUsers");
+    expect(await sendEventReminders()).toBe(0);
+    expect(notify).not.toHaveBeenCalled();
+    notify.mockRestore();
+  });
+
+  it("Einspielen von reminderSentAt: Wer schon (mit dem alten Schlüssel ohne Beginn) erinnert wurde, bekommt keine zweite Erinnerung", async () => {
+    const { club, helper, helper2 } = await clubWithPeople();
+    const late = await addUserToClub(club, "MEMBER");
+    const event = await createEvent(club.id, { title: "Ausflug", startsAt: inMs(20 * HOUR) });
+    const moved = await createEvent(club.id, {
+      title: "Verschoben",
+      startsAt: inMs(7 * DAY + 20 * HOUR),
+    });
+    await prisma.eventParticipant.createMany({
+      data: [
+        { clubId: club.id, eventId: event.id, memberId: helper.member.id, status: "ACCEPTED" },
+        // Sagte erst nach dem letzten Lauf des alten Programms zu – noch nicht erinnert.
+        { clubId: club.id, eventId: event.id, memberId: late.member.id, status: "ACCEPTED" },
+        { clubId: club.id, eventId: moved.id, memberId: helper2.member.id, status: "ACCEPTED" },
+      ],
+    });
+    // Was das alte Programm hinterlassen hat: Erinnerungen mit „event-reminder:<Veranstaltung>:24h“. Die zweite galt dem
+    // alten Termin der danach um eine Woche verschobenen Veranstaltung.
+    await prisma.notification.createMany({
+      data: [
+        { userId: helper.user.id, eventId: event.id, title: "Erinnerung: Ausflug" },
+        { userId: helper2.user.id, eventId: moved.id, title: "Erinnerung: Verschoben" },
+      ].map(({ userId, eventId, title }) => ({
+        clubId: club.id,
+        userId,
+        type: "EVENT_REMINDER" as const,
+        title,
+        dedupeKey: `event-reminder:${eventId}:24h`,
+        createdAt: ago(HOUR),
+      })),
+    });
+    // Stand vor der Migration (ihr „Rückgängig“), dann die Migration so einspielen wie beim Aktualisieren.
+    await prisma.$executeRawUnsafe('ALTER TABLE "EventParticipant" DROP COLUMN "reminderSentAt"');
+    await applyMigration("20261102120000_event_participant_reminder");
+
+    expect(await sendEventReminders()).toBe(1); // nur die späte Zusage
+    expect(await notes(helper.user.id)).toHaveLength(1);
+    expect(await notes(late.user.id)).toHaveLength(1);
+    // Vor dem neuen Termin der verschobenen Veranstaltung wird wie sonst erinnert.
+    expect(await sendEventReminders(new Date(moved.startsAt.getTime() - 20 * HOUR))).toBe(1);
+    expect(await notes(helper2.user.id)).toHaveLength(2);
   });
 });
 
@@ -574,6 +773,7 @@ describe("Aufbewahrungsfristen", () => {
       deletedAt?: Date;
       status?: "LEFT" | "ACTIVE";
       leftAt?: Date;
+      joinedAt?: Date;
       firstName?: string;
       lastName?: string;
     } = {},
@@ -597,6 +797,7 @@ describe("Aufbewahrungsfristen", () => {
         deletedAt: overrides.deletedAt ?? null,
         status: overrides.status ?? "ACTIVE",
         leftAt: overrides.leftAt,
+        joinedAt: overrides.joinedAt,
       },
     });
     await prisma.memberDepartment.create({
@@ -761,6 +962,103 @@ describe("Aufbewahrungsfristen", () => {
       (await prisma.auditLog.findMany({ where: { clubId } })).map((e) => e.action).sort();
     expect(await left(club.id)).toEqual(["a.middle", "a.new"]);
     expect(await left(other.club.id)).toEqual(["b.new"]);
+  });
+
+  /** Ein nie entschiedener Beitrittsantrag, dessen Frist abgelaufen ist (globale Bereinigung nach der Vereinsschleife). */
+  const oldApplication = (clubId: string) =>
+    prisma.membershipApplication.create({
+      data: {
+        clubId,
+        firstName: "Alt",
+        lastName: "Antrag",
+        email: "alt-antrag@example.org",
+        consentAt: ago((APPLICATION_PENDING_RETENTION_DAYS + 1) * DAY),
+        consentTextVersion: "1",
+        createdAt: ago((APPLICATION_PENDING_RETENTION_DAYS + 1) * DAY),
+      },
+    });
+
+  it("Eintritt in der Zukunft: anonymisiert mit Austritt am Eintrittstag – der Lauf bricht nicht ab", async () => {
+    const { club } = await clubWithPeople();
+    const other = await clubWithPeople();
+    // Eintritt zum künftigen Datum, die Person ist vorher abgesprungen: archiviert und seit 31 Tagen im Papierkorb.
+    const joinedAt = todayCalendarDate(inMs(30 * DAY));
+    const neverJoined = await fullMember(club.id, { deletedAt: ago(31 * DAY), joinedAt });
+    const application = await oldApplication(other.club.id);
+
+    expect(await applyRetention()).toMatchObject({ failed: 0 });
+    // Der Austritt darf nicht vor dem Eintritt liegen (Prüfregel Member_dates_chk).
+    expect(await prisma.member.findUniqueOrThrow({ where: { id: neverJoined.id } })).toMatchObject({
+      firstName: "Gelöschtes",
+      joinedAt,
+      leftAt: joinedAt,
+      anonymizedAt: expect.any(Date),
+    });
+    expect(await prisma.membershipApplication.count({ where: { id: application.id } })).toBe(0);
+  });
+
+  it("scheitert ein Mitglied, laufen die übrigen Mitglieder, Vereine und Bereinigungen weiter – Protokoll ohne Namen", async () => {
+    const first = await clubWithPeople();
+    const second = await clubWithPeople();
+    const members = [
+      await fullMember(first.club.id, { deletedAt: ago(31 * DAY), lastName: "Erstverein" }),
+      await fullMember(second.club.id, { deletedAt: ago(31 * DAY), lastName: "Zweitverein" }),
+    ];
+    const application = await oldApplication(second.club.id);
+    const spy = vi
+      .spyOn(anonymize, "anonymizeMemberData")
+      .mockRejectedValueOnce(new Error("Max Erstverein: Prüfregel verletzt"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await applyRetention()).toMatchObject({ trashAnonymized: 1, failed: 1 });
+    const anonymizedCount = async () =>
+      prisma.member.count({
+        where: { id: { in: members.map((m) => m.id) }, anonymizedAt: { not: null } },
+      });
+    expect(await anonymizedCount()).toBe(1);
+    expect(await prisma.membershipApplication.count({ where: { id: application.id } })).toBe(0);
+    const logged = error.mock.calls.flat().join(" ");
+    expect(logged).toContain("Anonymisierung fehlgeschlagen");
+    expect(logged).not.toContain("Erstverein");
+    expect(logged).not.toContain("Max");
+    spy.mockRestore();
+    error.mockRestore();
+
+    // Der nächste Lauf holt den Datensatz nach.
+    expect(await applyRetention()).toMatchObject({ trashAnonymized: 1, failed: 0 });
+    expect(await anonymizedCount()).toBe(2);
+  });
+
+  it("schwärzt den Namen auch in Benachrichtigungen anderer – nur im eigenen Verein", async () => {
+    const { club, helper } = await clubWithPeople();
+    const other = await clubWithPeople();
+    await fullMember(club.id, { deletedAt: ago(31 * DAY), firstName: "Bruno", lastName: "Benach" });
+    // Wie signOut sie schreibt: der Name im Text, im Titel nur die Schicht.
+    const note = (clubId: string, userId: string) =>
+      prisma.notification.create({
+        data: {
+          clubId,
+          userId,
+          type: "SHIFT_CHANGED",
+          title: "Abmeldung: Aufbau",
+          body: "Bruno Benach hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
+        },
+      });
+    const own = await note(club.id, helper.user.id);
+    // Ein gleichnamiger Mensch in einem anderen Verein ist jemand anderes.
+    const foreign = await note(other.club.id, other.helper.user.id);
+
+    await applyRetention();
+
+    expect(await prisma.notification.findUniqueOrThrow({ where: { id: own.id } })).toMatchObject({
+      title: "Abmeldung: Aufbau",
+      body: "Gelöschtes Mitglied hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
+    });
+    expect(
+      await prisma.notification.findUniqueOrThrow({ where: { id: foreign.id } }),
+    ).toMatchObject({
+      body: "Bruno Benach hat sich aus „Aufbau“ (Sommerfest) ausgetragen – ein Platz ist wieder frei.",
+    });
   });
 });
 

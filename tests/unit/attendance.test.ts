@@ -99,6 +99,19 @@ describe("Zeiträume der Auswertung (Berliner Zeit)", () => {
     const { from, to } = periodRange("4w", now);
     expect(Math.round((to.getTime() - from.getTime()) / 86_400_000)).toBe(28);
   });
+
+  it("„Letzte 3/12 Monate“ beginnen am Monatsende nicht erst Tage später im Folgemonat", () => {
+    const at = (date: string) => parseBerlinDateTime(date, "12:00")!;
+    // Den 31.02. gibt es nicht: Der Zeitraum beginnt am 01.03., nicht am 04.03.
+    expect(periodRange("3m", at("2026-05-31")).from).toEqual(startOfBerlinDate(2026, 3, 1));
+    expect(periodRange("3m", at("2026-05-30")).from).toEqual(startOfBerlinDate(2026, 3, 1));
+    expect(periodRange("3m", at("2026-05-28")).from).toEqual(startOfBerlinDate(2026, 3, 1));
+    expect(periodRange("3m", at("2026-05-27")).from).toEqual(startOfBerlinDate(2026, 2, 28));
+    expect(periodRange("3m", at("2026-12-31")).from).toEqual(startOfBerlinDate(2026, 10, 1));
+    expect(periodRange("3m", at("2026-01-31")).from).toEqual(startOfBerlinDate(2025, 11, 1));
+    expect(periodRange("12m", at("2028-02-29")).from).toEqual(startOfBerlinDate(2027, 3, 1));
+    expect(periodRange("12m", at("2027-02-28")).from).toEqual(startOfBerlinDate(2026, 3, 1));
+  });
 });
 
 describe("Filter aus der Adresse", () => {

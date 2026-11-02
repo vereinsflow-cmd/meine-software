@@ -2,6 +2,7 @@
 
 import { useWatch } from "react-hook-form";
 import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { useActionForm } from "@/hooks/use-action-form";
 import { setupLedgerAction } from "../ledger-actions";
 import { ledgerSetupSchema } from "../ledger-schemas";
@@ -30,6 +31,7 @@ export function LedgerSetupForm({ defaultStart }: { defaultStart: string }) {
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-5">
       <FormError message={formError} />
+      <RequiredLegend />
       <TextField
         form={form}
         name="ledgerStartDate"

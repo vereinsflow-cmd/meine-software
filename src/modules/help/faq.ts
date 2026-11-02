@@ -396,8 +396,9 @@ export const FAQ: readonly FaqSection[] = [
           "Öffne „Mitglieder“ und klicke auf „Import“ (am Handy unter „Weitere Aktionen“). Über „Vorlage herunterladen“ bekommst du eine Beispieldatei mit den richtigen Spalten.",
           "Lade die Datei hoch. Du siehst zuerst eine Vorschau – erst danach wird etwas gespeichert.",
         ],
+        tip: "Mehrere Abteilungen trennst du in der Spalte „Abteilungen“ mit „|“, „;“, „/“ oder Komma (z. B. „Fußball | Handball“). Enthält ein Abteilungsname selbst eines dieser Zeichen, wie „Ski/Snowboard“, wird er trotzdem als eine Abteilung erkannt. Die Abteilungen müssen schon angelegt sein.",
         link: { href: "/mitglieder/import", label: "Zum Import" },
-        keywords: "csv excel tabelle liste hochladen übernehmen",
+        keywords: "csv excel tabelle liste hochladen übernehmen abteilungen sparten",
       },
       {
         id: "mitglied-austritt",
@@ -419,6 +420,18 @@ export const FAQ: readonly FaqSection[] = [
         tip: "Gezählt wird ab dem Eintrittsdatum. Fehlt es bei einem Mitglied, kann es nicht erscheinen – die Seite sagt dir, bei wie vielen das so ist. Wer am 29. Februar eingetreten ist, hat das Jubiläum in Jahren ohne Schalttag am 28. Februar. Die Jubiläen der nächsten Wochen zeigt auch das Dashboard unter „Mitglieder“.",
         link: { href: "/mitglieder/ehrungen", label: "Zu den Ehrungen" },
         keywords: "jubiläum jubilare ehrung ehrennadel mitgliedsjahre treue jahreshauptversammlung",
+      },
+      {
+        id: "qualifikationen",
+        question: "Wo trage ich Lizenzen und Qualifikationen ein (Übungsleiter, Erste Hilfe …)?",
+        steps: [
+          "Öffne „Mitglieder“, wähle die Person und klicke auf „Profil öffnen“.",
+          "Klicke im Abschnitt „Qualifikationen“ auf „Qualifikation hinzufügen“ und wähle die Art – etwa Übungsleiterlizenz, Erste Hilfe oder Schiedsrichter; bei „Sonstige“ gibst du die Bezeichnung selbst ein.",
+          "Trage ein, was du weißt: Nummer, Aussteller, „Ausgestellt am“ und „Gültig bis“. Mit „Bearbeiten“ und „Entfernen“ neben einem Eintrag änderst bzw. löschst du ihn.",
+        ],
+        tip: "Läuft eine Qualifikation in den nächsten 90 Tagen ab, steht „läuft in … Tagen ab“ daneben, danach „abgelaufen“. Die Person sieht ihre Qualifikationen auf ihrer eigenen Seite. Gesundheitsangaben und Führungszeugnisse gehören nicht hierher.",
+        keywords:
+          "lizenz übungsleiter trainer erste hilfe juleica jugendleiter rettungsschwimmer schiedsrichter schein nachweis zertifikat ablauf",
       },
     ],
   },

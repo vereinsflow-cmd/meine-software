@@ -69,3 +69,11 @@ export const getCurrentSession = cache(async (): Promise<ValidSession | null> =>
   if (!token) return null;
   return validateSessionToken(token);
 });
+
+/** Wie `getCurrentSession`, zählt aber nicht als Aktivität: verlängert die Sitzung nicht (nur nachfragen). */
+export async function peekCurrentSession(): Promise<ValidSession | null> {
+  const store = await cookies();
+  const token = store.get(sessionCookieName())?.value;
+  if (!token) return null;
+  return validateSessionToken(token, new Date(), { touch: false });
+}

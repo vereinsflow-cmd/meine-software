@@ -7,6 +7,7 @@ import {
   SubmitButton,
   TextField,
 } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { useActionForm } from "@/hooks/use-action-form";
 import { updateFeeSettingsAction } from "../actions";
 import {
@@ -31,6 +32,7 @@ export function FeeSettingsForm({ defaults }: { defaults: FeeSettingsInput }) {
   });
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
+      <RequiredLegend />
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField
           form={form}

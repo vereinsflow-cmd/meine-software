@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Route } from "@playwright/test";
 import { DEMO_PASSWORD, USERS, login, open } from "./helpers";
 
 test.describe("Profil", () => {
@@ -152,6 +152,42 @@ test.describe("Profil", () => {
     await thirdPage.goto("/dashboard");
     await expect(thirdPage).toHaveURL(/\/anmelden/);
     await third.close();
+    await second.close();
+  });
+
+  test("scheitert eine bestätigte Aktion, steht die Meldung im Fenster und bleibt, bis man es erneut versucht", async ({
+    page,
+    browser,
+  }) => {
+    await page.clock.install();
+    await login(page, USERS.mitglied);
+    const second = await browser.newContext();
+    await login(await second.newPage(), USERS.mitglied);
+    await open(page, "/profil");
+    const devices = page.getByRole("region", { name: "Angemeldete Geräte" });
+
+    // Die Verbindung bricht ab: Die Server Action (POST an die Seite) erreicht den Server nicht.
+    const action = (route: Route) =>
+      route.request().method() === "POST" && "next-action" in route.request().headers()
+        ? route.abort()
+        : route.continue();
+    await page.route("**/profil", action);
+    await devices.getByRole("button", { name: "Auf allen anderen Geräten abmelden" }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Auf allen anderen Geräten abmelden?" });
+    await confirm.getByRole("button", { name: "Abmelden" }).click();
+    const error = confirm.getByRole("alert");
+    await expect(error).toHaveText(
+      "Die Verbindung wurde unterbrochen. Bitte lade die Seite neu und prüfe, ob es geklappt hat.",
+    );
+    // Kein flüchtiger Hinweis, der nach ein paar Sekunden verschwindet: Die Meldung steht weiter im Fenster.
+    await page.clock.fastForward("00:30");
+    await expect(error).toBeVisible();
+
+    // Erneut bestätigen: Die alte Meldung verschwindet, diesmal klappt es.
+    await page.unroute("**/profil", action);
+    await confirm.getByRole("button", { name: "Abmelden" }).click();
+    await expect(confirm).toBeHidden();
+    await expect(page.getByText("Alle anderen Geräte wurden abgemeldet.")).toBeVisible();
     await second.close();
   });
 });

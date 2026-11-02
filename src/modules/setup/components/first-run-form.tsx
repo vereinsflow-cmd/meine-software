@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { useActionForm } from "@/hooks/use-action-form";
 import { firstRunAction } from "../actions";
 import { firstRunSchema } from "../schemas";
@@ -25,6 +26,7 @@ export function FirstRunForm() {
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
+      <RequiredLegend />
       <TextField
         form={form}
         name="clubName"
@@ -79,6 +81,7 @@ export function FirstRunForm() {
       <CheckboxField
         form={form}
         name="acceptTerms"
+        required
         label={
           <>
             Ich habe die{" "}

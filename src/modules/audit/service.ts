@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import type { AuditLog, Prisma } from "@/generated/prisma/client";
 import { AUDIT_MODULES, type AuditModuleKey } from "@/lib/audit-labels";
 import { paged, type PageRequest, type Paged } from "@/lib/search-params";
 import { assertCan } from "@/server/permissions/policy";
@@ -58,22 +58,13 @@ export function auditWhere(query: Omit<AuditQuery, "request">): Prisma.AuditLogW
   };
 }
 
-export async function listAuditEntries(
-  ctx: TenantContext,
-  query: AuditQuery,
-): Promise<Paged<AuditEntryDto>> {
-  assertCan(ctx, "audit:read");
-  const where = auditWhere(query);
-  const [rows, total] = await Promise.all([
-    ctx.db.auditLog.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: query.request.skip,
-      take: query.request.pageSize,
-    }),
-    ctx.db.auditLog.count({ where }),
-  ]);
+const NEWEST_FIRST: Prisma.AuditLogOrderByWithRelationInput[] = [
+  { createdAt: "desc" },
+  { id: "desc" },
+];
 
+/** Einträge samt aufgelöstem Akteur (Name der Person, System oder nicht mehr auflösbar). */
+async function toEntries(ctx: TenantContext, rows: AuditLog[]): Promise<AuditEntryDto[]> {
   const actorIds = [
     ...new Set(rows.map((row) => row.actorUserId).filter((id): id is string => id !== null)),
   ];
@@ -87,7 +78,7 @@ export async function listAuditEntries(
     people.map((person) => [person.userId, `${person.user.firstName} ${person.user.lastName}`]),
   );
 
-  const items = rows.map<AuditEntryDto>((row) => ({
+  return rows.map<AuditEntryDto>((row) => ({
     id: row.id,
     createdAt: row.createdAt,
     action: row.action,
@@ -103,19 +94,39 @@ export async function listAuditEntries(
         : { kind: "UNKNOWN" }
       : { kind: "SYSTEM" },
   }));
-  return paged(items, total, query.request);
+}
+
+export async function listAuditEntries(
+  ctx: TenantContext,
+  query: AuditQuery,
+): Promise<Paged<AuditEntryDto>> {
+  assertCan(ctx, "audit:read");
+  const where = auditWhere(query);
+  const [rows, total] = await Promise.all([
+    ctx.db.auditLog.findMany({
+      where,
+      orderBy: NEWEST_FIRST,
+      skip: query.request.skip,
+      take: query.request.pageSize,
+    }),
+    ctx.db.auditLog.count({ where }),
+  ]);
+  return paged(await toEntries(ctx, rows), total, query.request);
 }
 
 /**
  * Die letzten Ereignisse im Verein (für das Dashboard) – ohne Anmeldungen und Abmeldungen, die kein Vereinsgeschehen sind.
- * Wie das ganze Protokoll nur mit `audit:read`.
+ * Wie das ganze Protokoll nur mit `audit:read`. Ohne Gesamtzahl: Die bräuchte bei jedem Dashboard-Aufruf einen Durchlauf über
+ * das ganze (stetig wachsende) Protokoll des Vereins, angezeigt werden aber nur die neuesten Einträge.
  */
 export async function listRecentActivity(ctx: TenantContext, limit = 6): Promise<AuditEntryDto[]> {
-  const page = await listAuditEntries(ctx, {
-    excludeModules: ["auth"],
-    request: { page: 1, pageSize: limit, skip: 0 },
+  assertCan(ctx, "audit:read");
+  const rows = await ctx.db.auditLog.findMany({
+    where: auditWhere({ excludeModules: ["auth"] }),
+    orderBy: NEWEST_FIRST,
+    take: limit,
   });
-  return page.items;
+  return toEntries(ctx, rows);
 }
 
 /** Personen, die im Protokoll als Akteure vorkommen können (aktuelle Mitglieder des Vereins) – für den Filter. */

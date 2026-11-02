@@ -12,6 +12,7 @@ import {
   TextField,
   TextareaField,
 } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { useActionForm } from "@/hooks/use-action-form";
 import { EVENT_TYPE_LABEL, options } from "@/lib/labels";
 import { FREQUENCY_LABEL } from "@/lib/recurrence";
@@ -61,6 +62,7 @@ export function EventForm({
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid max-w-4xl gap-6">
       <FormError message={formError} />
+      <RequiredLegend />
 
       <Card>
         <CardHeader>

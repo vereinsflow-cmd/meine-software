@@ -100,6 +100,20 @@ describe("mapDatabaseError", () => {
     expect(mapDatabaseError(new Error("SHIFT_FULL"))?.code).toBe("CONFLICT");
   });
 
+  it("gibt den Text der Finanz-Trigger ohne Prismas Backtick-Rahmen weiter", () => {
+    // So verpackt Prisma 7 mit Treiber-Adapter eine RAISE EXCEPTION der Datenbank.
+    const error = new Error(
+      "\nInvalid `prisma.feeRate.update()` invocation:\n\nDatabase error. Code: `23514`. Message: `FEE_RATE_LOCKED: Ein Beitragssatz lässt sich nicht ändern.`",
+    );
+    expect(mapDatabaseError(error)).toMatchObject({
+      code: "CONFLICT",
+      message: "Ein Beitragssatz lässt sich nicht ändern.",
+    });
+    expect(
+      mapDatabaseError(new Error("PERIOD_LOCKED: Der Monat ist abgeschlossen."))?.message,
+    ).toBe("Der Monat ist abgeschlossen.");
+  });
+
   it("übersetzt Prisma-Fehlercodes", () => {
     const make = (code: string) =>
       new Prisma.PrismaClientKnownRequestError("x", { code, clientVersion: "7" });

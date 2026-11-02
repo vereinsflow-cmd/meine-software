@@ -74,6 +74,30 @@ function normalizeDate(value: string): string {
   return trimmed;
 }
 
+/**
+ * Zerlegt die Abteilungszelle in Namen. Mehrere Abteilungen stehen mit „|“, „;“, „/“ oder Komma darin („Fußball |
+ * Handball“, so auch im Export). Abteilungsnamen dürfen diese Zeichen aber selbst enthalten („Ski/Snowboard“, „Turnen,
+ * Tanz & Fitness“) – deshalb gilt ab jeder Stelle der längste vorhandene Abteilungsname; erst was zu keinem passt, wird
+ * am nächsten Trennzeichen geteilt (und dann als unbekannt gemeldet).
+ */
+function splitDepartmentNames(cell: string, isKnown: (name: string) => boolean): string[] {
+  // Namen an den geraden Stellen, die Trennzeichen dazwischen an den ungeraden.
+  const parts = cell.split(/([|;/]|,(?!\s*\d))/);
+  const text = (from: number, to: number) =>
+    parts
+      .slice(from, to + 1)
+      .join("")
+      .trim();
+  const names: string[] = [];
+  for (let start = 0; start < parts.length;) {
+    let end = parts.length - 1;
+    while (end > start && !isKnown(text(start, end))) end -= 2;
+    names.push(text(start, end));
+    start = end + 2;
+  }
+  return names.filter(Boolean);
+}
+
 export interface ImportRow {
   /** Zeilennummer in der Datei (Kopfzeile = 1). */
   line: number;
@@ -110,28 +134,33 @@ async function analyze(ctx: TenantContext, csvText: string) {
 
   const [departments, existing] = await Promise.all([
     ctx.db.department.findMany({ select: { id: true, name: true } }),
+    // Auch Mitglieder im Papierkorb: Ihre Nummer bleibt bis zur Anonymisierung vergeben (eindeutig je Verein).
     ctx.db.member.findMany({
-      where: { deletedAt: null },
-      select: { memberNumber: true, firstName: true, lastName: true, birthDate: true, email: true },
+      select: { memberNumber: true, firstName: true, lastName: true, deletedAt: true },
     }),
   ]);
   const departmentByName = new Map(departments.map((d) => [d.name.trim().toLowerCase(), d.id]));
 
-  const numbers = new Set(existing.map((m) => m.memberNumber).filter((n): n is string => !!n));
+  /** Vergebene Nummern → liegt das Mitglied im Papierkorb? */
+  const numbers = new Map<string, boolean>();
   const keys = new Set<string>();
   const nameKey = (first: string, last: string) =>
     `${first.trim().toLowerCase()}|${last.trim().toLowerCase()}`;
   for (const m of existing) {
-    keys.add(nameKey(m.firstName, m.lastName));
+    if (m.memberNumber) numbers.set(m.memberNumber, m.deletedAt !== null);
+    if (!m.deletedAt) keys.add(nameKey(m.firstName, m.lastName));
   }
 
   const seenNumbers = new Set<string>();
   const seenKeys = new Set<string>();
   const candidates: Candidate[] = parsed.rows.map((cells, index) => {
-    const line = index + 2;
+    const line = parsed.lines[index]!;
     const raw: Record<string, string> = {};
     columns.forEach((field, column) => {
-      if (field) raw[field] = (cells[column] ?? "").trim();
+      if (!field) return;
+      const value = (cells[column] ?? "").trim();
+      // Mehrere Spalten für dasselbe Feld (z. B. „Telefon“ und „Handy“): Eine leere Zelle verwirft keinen Wert.
+      if (value || raw[field] === undefined) raw[field] = value;
     });
     const label = `${raw.firstName ?? ""} ${raw.lastName ?? ""}`.trim() || "(ohne Namen)";
     const messages: string[] = [];
@@ -143,10 +172,9 @@ async function analyze(ctx: TenantContext, csvText: string) {
         `Unbekannter Status „${raw.status}“ (erlaubt: aktiv, passiv, ausgetreten, Ehrenmitglied, gesperrt).`,
       );
 
-    const departmentNames = (raw.departments ?? "")
-      .split(/[|;/]|,(?!\s*\d)/)
-      .map((n) => n.trim())
-      .filter(Boolean);
+    const departmentNames = splitDepartmentNames(raw.departments ?? "", (name) =>
+      departmentByName.has(name.toLowerCase()),
+    );
     const departmentIds: string[] = [];
     for (const name of departmentNames) {
       const id = departmentByName.get(name.toLowerCase());
@@ -187,7 +215,11 @@ async function analyze(ctx: TenantContext, csvText: string) {
         (numbers.has(data.memberNumber) || seenNumbers.has(data.memberNumber))
       ) {
         outcome = "duplicate";
-        messages.push(`Die Mitgliedsnummer ${data.memberNumber} ist bereits vergeben.`);
+        messages.push(
+          numbers.get(data.memberNumber)
+            ? `Die Mitgliedsnummer ${data.memberNumber} ist bereits vergeben (Mitglied im Papierkorb).`
+            : `Die Mitgliedsnummer ${data.memberNumber} ist bereits vergeben.`,
+        );
       } else if (keys.has(key) || seenKeys.has(key)) {
         outcome = "duplicate";
         messages.push(

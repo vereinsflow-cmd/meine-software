@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { todayCalendarDate } from "@/lib/dates";
+import { NOTIFICATION_TITLE_MAX } from "@/modules/notifications/service";
 
 /**
  * Anonymisierung von Personendaten (Art. 17 DSGVO, Speicherbegrenzung).
@@ -8,8 +9,9 @@ import { todayCalendarDate } from "@/lib/dates";
  * Wird von der Aufbewahrungsroutine (Papierkorb-Frist, ausgetretene Mitglieder) und von der Bearbeitung von
  * Löschanträgen verwendet. Der Datensatz bleibt als leere Hülle bestehen, damit Auswertungen (Helferstunden,
  * Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber er lässt keinen Rückschluss auf die
- * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten, keine
- * Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll.
+ * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten,
+ * Qualifikationen, keine Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll oder an den Namensstellen von
+ * Benachrichtigungen anderer Personen.
  */
 export const ANONYMOUS_FIRST_NAME = "Gelöschtes";
 export const ANONYMOUS_LAST_NAME = "Mitglied";
@@ -41,6 +43,7 @@ export async function anonymizeMemberData(
       anonymizedAt: true,
       archivedAt: true,
       deletedAt: true,
+      joinedAt: true,
       leftAt: true,
     },
   });
@@ -67,6 +70,12 @@ export async function anonymizeMemberData(
     },
   });
 
+  // Austritt heute (Berliner Kalendertag) – aber nie vor dem Eintritt, der auch in der Zukunft liegen darf (Prüfregel
+  // Member_dates_chk; sonst schlüge die Anonymisierung bei jedem Lauf fehl).
+  const today = todayCalendarDate(now);
+  const leftAt =
+    member.leftAt ?? (member.joinedAt && member.joinedAt > today ? member.joinedAt : today);
+
   await tx.member.update({
     where: { id: member.id },
     data: {
@@ -86,9 +95,7 @@ export async function anonymizeMemberData(
       // Verknüpfung zum Benutzerkonto lösen; das Konto selbst wird getrennt behandelt (Konto-Löschung).
       userId: null,
       status: "LEFT",
-      leftAt:
-        member.leftAt ??
-        new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())),
+      leftAt,
       archivedAt: member.archivedAt ?? now,
       deletedAt: member.deletedAt ?? now,
       anonymizedAt: now,
@@ -98,6 +105,8 @@ export async function anonymizeMemberData(
   await tx.memberDepartment.deleteMany({ where: { clubId, memberId } });
   await tx.groupMember.deleteMany({ where: { clubId, memberId } });
   await tx.consent.deleteMany({ where: { clubId, memberId } });
+  // Qualifikationen und Lizenzen (Nummern, Aussteller, Notizen) gehören zur Person und haben ohne sie keinen Zweck mehr.
+  await tx.memberQualification.deleteMany({ where: { clubId, memberId } });
   await tx.invitation.deleteMany({ where: { clubId, memberId } }); // enthalten die E-Mail-Adresse
   await tx.membershipApplication.deleteMany({ where: { clubId, memberId } }); // Antrag mit Kontaktdaten und Nachricht
   await tx.eventParticipant.updateMany({ where: { clubId, memberId }, data: { note: null } });
@@ -135,7 +144,6 @@ export async function anonymizeMemberData(
     data: { reason: "anonymisiert" },
   });
   // Familien: ab heute nicht mehr dabei (frühere Zeiträume bleiben), künftige Einträge entfallen.
-  const today = todayCalendarDate(now);
   await tx.feeFamilyMember.updateMany({
     where: {
       clubId,
@@ -174,6 +182,7 @@ export async function anonymizeMemberData(
     data: { summary: ANONYMOUS_AUDIT_SUMMARY, changes: Prisma.JsonNull },
   });
   await scrubNamesInAudit(tx, [clubId], [fullName]);
+  await scrubNamesInNotifications(tx, [clubId], [fullName]);
   return true;
 }
 
@@ -203,5 +212,51 @@ export async function scrubNamesInAudit(
        WHERE "clubId" IN (${Prisma.join(clubIds)})
          AND "summary" IS NOT NULL
          AND position(${name} in "summary") > 0`;
+  }
+}
+
+/**
+ * Ersetzt Klarnamen in Benachrichtigungen anderer Personen – nur an den Stellen, an denen die Anwendung selbst einen Namen
+ * einsetzt; Typ und der feste Text davor und dahinter müssen passen:
+ *   - „Löschantrag: Name“ (privacy/deletion.ts),
+ *   - „Name hat sich für/aus „…“ …“ zu „Neue Eintragung: …“/„Abmeldung: …“ (shifts/service-assignments.ts),
+ *   - „Kategorie von Name“ zu „Neue Meldung: …“ (help/service.ts),
+ *   - „Abteilung …/Teilnehmer · …: Name hat dich hinzugefügt“ (messages/chat-members.ts).
+ * Freie Texte (Betreff, Nachrichtenvorschau, Schicht-, Veranstaltungs- und Aufgabentitel) bleiben wie Chat-Texte unberührt:
+ * Den Kontonamen wählt jeder selbst – ein Konto „Aufbau Sommerfest“ schwärzte sonst beim Löschen diese Wörter in allen
+ * Benachrichtigungen seiner Vereine. Die Benachrichtigung bleibt für den Empfänger erhalten (gelesen oder nicht, Link); der
+ * Aufräumjob entfernt sie wie üblich. Zu kurze Namen werden ignoriert. Kein LIKE: Namen dürfen % und _ enthalten.
+ */
+export async function scrubNamesInNotifications(
+  tx: Tx,
+  clubIds: readonly string[],
+  names: readonly string[],
+): Promise<void> {
+  if (clubIds.length === 0) return;
+  const clubs = Prisma.join(clubIds);
+  for (const name of new Set(
+    names.map((value) => value.trim()).filter((value) => value.length >= 3),
+  )) {
+    // Gekürzt wie in notifyUsers: Bei sehr langen Namen steht nur ihr Anfang im Titel.
+    const request = `Löschantrag: ${name}`.slice(0, NOTIFICATION_TITLE_MAX);
+    const reporter = ` von ${name}`;
+    const adder = `: ${name} hat dich hinzugefügt`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "title" = 'Löschantrag: Gelöschtes Mitglied'
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SYSTEM' AND "title" = ${request}`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "body" = 'Gelöschtes Mitglied' || substr("body", length(${name}) + 1)
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SHIFT_CHANGED'
+         AND ((starts_with("title", 'Neue Eintragung: ') AND starts_with("body", ${`${name} hat sich für „`}))
+           OR (starts_with("title", 'Abmeldung: ') AND starts_with("body", ${`${name} hat sich aus „`})))`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "body" = left("body", -length(${name})) || 'Gelöschtes Mitglied'
+       WHERE "clubId" IN (${clubs}) AND "type" = 'SYSTEM' AND starts_with("title", 'Neue Meldung: ')
+         AND right("body", length(${reporter})) = ${reporter}`;
+    await tx.$executeRaw`
+      UPDATE "Notification" SET "title" = left("title", -length(${adder})) || ': Gelöschtes Mitglied hat dich hinzugefügt'
+       WHERE "clubId" IN (${clubs}) AND "type" = 'MESSAGE'
+         AND (starts_with("title", 'Abteilung ') OR starts_with("title", 'Teilnehmer · '))
+         AND right("title", length(${adder})) = ${adder}`;
   }
 }

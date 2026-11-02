@@ -2,15 +2,15 @@ import "server-only";
 import { calendarDateToInputValue } from "@/lib/dates";
 import { DONATION_KIND_LABEL, purposeLabel, receiptBadge } from "@/modules/donations/format";
 import { addressComplete, donationReceiptState } from "@/modules/donations/receipt-status";
+import { QUALIFICATION_KIND_LABEL } from "@/modules/members/qualification-schemas";
 import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { prisma } from "@/server/db/client";
-import { likeText } from "@/lib/like-pattern";
 
 /**
  * Datenexport für die betroffene Person (Auskunft und Datenübertragbarkeit, Art. 15 und 20 DSGVO).
  *
  * Ausgegeben werden AUSSCHLIESSLICH die Daten der anfragenden Person: ihr Konto, ihre Mitgliedschaften samt
- * Stammdaten, Einwilligungen, Anmeldungen, Anwesenheit (ohne „erfasst von“), Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
+ * Stammdaten, Einwilligungen, Qualifikationen, Anmeldungen, Anwesenheit (ohne „erfasst von“), Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
  * Kalender-Abos (ohne Geheimnisse) und Sitzungen (ohne Token). Angaben über andere Personen (Mitanmeldungen, andere Helfer, Namen in Protokolltexten) sind
  * bewusst NICHT enthalten. Passwort-Hash, Zwei-Faktor-Geheimnis und Token verlassen den Server nie.
  * Das Format ist gut lesbares JSON mit deutschen Schlüsseln.
@@ -80,6 +80,7 @@ export async function buildUserDataExport(
         include: {
           departments: { include: { department: { select: { name: true } } } },
           consents: { orderBy: { recordedAt: "asc" } },
+          qualifications: { orderBy: { createdAt: "asc" } },
           participations: {
             include: { event: { select: { title: true, startsAt: true } } },
             orderBy: { createdAt: "asc" },
@@ -95,10 +96,10 @@ export async function buildUserDataExport(
             orderBy: { recordedAt: "asc" },
             take: LIMIT,
           },
-          // Kassenbuch: Buchungen, bei denen das Mitglied Zahler oder Empfänger war.
+          // Kassenbuch: Buchungen, bei denen das Mitglied Zahler oder Empfänger war – nur über die Zuordnung zum Mitglied,
+          // nie über den Namen: Namen sind frei wählbar und nicht eindeutig, ein Abgleich lieferte Buchungen anderer Personen.
           ledgerEntries: {
             select: {
-              id: true,
               year: true,
               number: true,
               bookingDate: true,
@@ -295,52 +296,6 @@ export async function buildUserDataExport(
   const inClub = <T extends { clubId: string }>(rows: T[], clubId: string) =>
     rows.filter((row) => row.clubId === clubId);
 
-  // Kassenbuch: Buchungen mit dem Mitglied als Gegenüber – und solche, in denen sein Name nur als Text steht („Spende Hans
-  // Müller“), denn auch das sind seine Daten (Art. 15 DSGVO).
-  const ledgerByName = new Map<
-    string,
-    {
-      id: string;
-      year: number;
-      number: number;
-      bookingDate: Date;
-      amountCents: number;
-      description: string;
-      kind: string;
-      account: { name: string };
-    }[]
-  >();
-  await Promise.all(
-    memberships.map(async (membership) => {
-      const member = membership.member;
-      if (!member) return;
-      const fullName = `${member.firstName} ${member.lastName}`.trim();
-      if (fullName.length < 5) return;
-      const rows = await prisma.ledgerEntry.findMany({
-        where: {
-          clubId: membership.clubId,
-          OR: [
-            { counterpartyName: { contains: likeText(fullName), mode: "insensitive" } },
-            { description: { contains: likeText(fullName), mode: "insensitive" } },
-          ],
-        },
-        select: {
-          id: true,
-          year: true,
-          number: true,
-          bookingDate: true,
-          amountCents: true,
-          description: true,
-          kind: true,
-          account: { select: { name: true } },
-        },
-        orderBy: [{ year: "asc" }, { number: "asc" }],
-        take: LIMIT,
-      });
-      ledgerByName.set(membership.id, rows);
-    }),
-  );
-
   const vereine = memberships.map((membership) => {
     const member = membership.member;
     return {
@@ -377,6 +332,16 @@ export async function buildUserDataExport(
               quelle: c.source,
               textVersion: c.textVersion,
             })),
+            qualifikationen: member.qualifications.map((q) => ({
+              art: QUALIFICATION_KIND_LABEL[q.kind],
+              bezeichnung: q.title,
+              nummer: q.number,
+              ausgestelltAm: day(q.issuedOn),
+              gueltigBis: day(q.validUntil),
+              aussteller: q.issuer,
+              notiz: q.note,
+              eingetragenAm: iso(q.createdAt),
+            })),
             veranstaltungen: member.participations.map((p) => ({
               veranstaltung: p.event.title,
               beginn: iso(p.event.startsAt),
@@ -400,12 +365,7 @@ export async function buildUserDataExport(
               notiz: a.note,
               eingetragenAm: iso(a.assignedAt),
             })),
-            buchungen: [
-              ...member.ledgerEntries,
-              ...(ledgerByName.get(membership.id) ?? []).filter(
-                (row) => !member.ledgerEntries.some((own) => own.id === row.id),
-              ),
-            ].map((e) => ({
+            buchungen: member.ledgerEntries.map((e) => ({
               nummer: `${e.year}-${String(e.number).padStart(4, "0")}`,
               datum: day(e.bookingDate),
               konto: e.account.name,

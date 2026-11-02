@@ -1,6 +1,6 @@
 import type { PermissionScope } from "@/generated/prisma/enums";
 import { forbidden } from "@/server/errors";
-import type { PermissionKey } from "./catalog";
+import { isPermissionKey, type PermissionKey } from "./catalog";
 
 /**
  * Berechtigungsprüfung. Reine Funktionen ohne Datenbankzugriff (einzeln testbar).
@@ -64,6 +64,24 @@ export function assertCan(
   if (!can(holder, key, resource)) {
     throw forbidden();
   }
+}
+
+const SCOPE_RANK: Record<PermissionScope, number> = { OWN: 1, DEPARTMENT: 2, CLUB: 3 };
+
+/**
+ * Besitzt der Benutzer jedes Recht der Rolle in mindestens derselben Reichweite? Grundlage gegen Rechteausweitung: Nur
+ * solche Rollen darf man vergeben, und nur wer eine solche Rolle hat, den darf man ändern oder aussperren.
+ */
+export function grantsCoverRole(
+  holder: PermissionHolder,
+  role: { permissions: readonly { permissionKey: string; scope: PermissionScope }[] },
+): boolean {
+  return role.permissions.every((grant) => {
+    const own = isPermissionKey(grant.permissionKey)
+      ? holder.permissions.get(grant.permissionKey)
+      : undefined;
+    return own !== undefined && SCOPE_RANK[own] >= SCOPE_RANK[grant.scope];
+  });
 }
 
 export interface ScopeBuilders<W> {

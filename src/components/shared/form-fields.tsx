@@ -1,8 +1,8 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { FieldError, FieldValues, Path, UseFormReturn } from "react-hook-form";
-import { LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,7 +94,7 @@ export function FieldShell({
       <Label htmlFor={id}>
         {label}
         {required && (
-          <span aria-hidden="true" className="text-destructive">
+          <span aria-hidden="true" data-slot="required-mark" className="text-destructive">
             {" "}
             *
           </span>
@@ -138,6 +138,27 @@ export function TextField<T extends FieldValues>({
 }) {
   const id = useId();
   const error = errorOf(form, name);
+  // Passwörter lassen sich zum Prüfen lesbar machen – wer am Handy blind zehn Zeichen tippt, vertippt sich leicht.
+  const [shown, setShown] = useState(false);
+  const input = (
+    <Input
+      id={id}
+      type={type === "password" && shown ? "text" : type}
+      className={inputClassName}
+      // Beträge: keine Liste alter Eingaben über dem Feld (am Handy verdeckt sie das nächste Feld und lädt zum Fehltippen ein).
+      autoComplete={autoComplete ?? (inputMode === "decimal" ? "off" : undefined)}
+      placeholder={placeholder}
+      inputMode={inputMode}
+      disabled={disabled}
+      aria-invalid={error ? true : undefined}
+      aria-required={required}
+      aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+      defaultValue={type === "password" ? undefined : initialText(form, name)}
+      {...form.register(name, {
+        setValueAs: type === "number" ? (v) => (v === "" ? undefined : Number(v)) : undefined,
+      })}
+    />
+  );
   return (
     <FieldShell
       id={id}
@@ -147,23 +168,26 @@ export function TextField<T extends FieldValues>({
       error={error}
       className={className}
     >
-      <Input
-        id={id}
-        type={type}
-        className={inputClassName}
-        // Beträge: keine Liste alter Eingaben über dem Feld (am Handy verdeckt sie das nächste Feld und lädt zum Fehltippen ein).
-        autoComplete={autoComplete ?? (inputMode === "decimal" ? "off" : undefined)}
-        placeholder={placeholder}
-        inputMode={inputMode}
-        disabled={disabled}
-        aria-invalid={error ? true : undefined}
-        aria-required={required}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        defaultValue={type === "password" ? undefined : initialText(form, name)}
-        {...form.register(name, {
-          setValueAs: type === "number" ? (v) => (v === "" ? undefined : Number(v)) : undefined,
-        })}
-      />
+      {type === "password" ? (
+        <div className="flex gap-2">
+          {input}
+          {/* Umschalter mit gleichbleibendem Namen („Passwort: Anzeigen“, gedrückt = sichtbar) und sichtbarem Text. */}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            aria-pressed={shown}
+            aria-controls={id}
+            className="aria-pressed:bg-muted"
+            onClick={() => setShown((value) => !value)}
+          >
+            {shown ? <EyeOffIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+            <span className="sr-only">{label}: </span>Anzeigen
+          </Button>
+        </div>
+      ) : (
+        input
+      )}
     </FieldShell>
   );
 }
@@ -194,6 +218,7 @@ export function TextareaField<T extends FieldValues>({
         rows={rows}
         disabled={disabled}
         aria-invalid={error ? true : undefined}
+        aria-required={required}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
         defaultValue={initialText(form, name)}
         {...form.register(name)}
@@ -235,6 +260,7 @@ export function SelectField<T extends FieldValues>({
         id={id}
         disabled={disabled}
         aria-invalid={error ? true : undefined}
+        aria-required={required}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
         defaultValue={initialText(form, name)}
         {...form.register(name)}
@@ -285,7 +311,7 @@ export function CheckboxField<T extends FieldValues>({
           <span>
             {label}
             {required && (
-              <span aria-hidden="true" className="text-destructive">
+              <span aria-hidden="true" data-slot="required-mark" className="text-destructive">
                 {" "}
                 *
               </span>

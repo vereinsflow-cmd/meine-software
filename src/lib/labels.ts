@@ -111,6 +111,14 @@ export const MEMBER_FIELD_LABEL: Record<string, string> = {
   internalNotes: "Notizen",
   departments: "Abteilungen",
   logo: "Logo",
+  // Qualifikationen (Änderungsprotokoll „Qualifikation geändert“)
+  art: "Art",
+  bezeichnung: "Bezeichnung",
+  nummer: "Nummer",
+  ausgestelltAm: "Ausgestellt am",
+  gueltigBis: "Gültig bis",
+  aussteller: "Aussteller",
+  notiz: "Notiz",
 };
 
 export function options<T extends string>(

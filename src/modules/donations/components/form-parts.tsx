@@ -91,7 +91,7 @@ export function ChoiceField<T extends FieldValues>({
       <legend className="mb-1.5 text-sm font-medium">
         {legend}
         {required && (
-          <span aria-hidden="true" className="text-destructive">
+          <span aria-hidden="true" data-slot="required-mark" className="text-destructive">
             {" "}
             *
           </span>

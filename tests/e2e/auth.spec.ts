@@ -1,5 +1,19 @@
-import { expect, test } from "@playwright/test";
-import { USERS, greeting, login, logout, open, ringTurns, stageState } from "./helpers";
+import { createHash } from "node:crypto";
+import { expect, test, type BrowserContext } from "@playwright/test";
+import pg from "pg";
+import { databaseUrlFor } from "../setup/env";
+import { E2E_DATABASE } from "./environment";
+import {
+  DEMO_PASSWORD,
+  USERS,
+  greeting,
+  login,
+  logout,
+  open,
+  ringTurns,
+  stageState,
+  waitForHydratedForm,
+} from "./helpers";
 
 test.describe("Anmeldung und Zugriffsschutz", () => {
   test("nicht angemeldete Besucher werden zur Anmeldung geleitet und kehren danach zurück", async ({
@@ -119,6 +133,98 @@ test.describe("Sitzungs-Cookie", () => {
 });
 
 /**
+ * Abmeldung wegen Inaktivität (Frist im Test 60 Minuten): Die Uhr der Seite läuft vor (`page.clock`), die Sitzung auf dem Server
+ * wird in der Test-Datenbank gealtert – so ist die Lage nach einer Stunde ohne Bedienung in Sekunden nachgestellt.
+ */
+test.describe("Abmeldung wegen Inaktivität", () => {
+  /** Kennung der Sitzung in der Datenbank: der SHA-256-Hash des Cookies. */
+  async function sessionId(context: BrowserContext): Promise<string> {
+    const cookie = (await context.cookies()).find((c) => c.name.endsWith("vf_session"));
+    expect(cookie, "Sitzungs-Cookie").toBeDefined();
+    return createHash("sha256").update(cookie!.value).digest("hex");
+  }
+
+  /**
+   * Letzte Aktivität der Sitzung (`lastSeenAt`, in ms) – mit `minutes` vorher um so viele Minuten zurückgestellt: Die Sitzung
+   * altert, als hätte so lange niemand etwas getan. Gerechnet wird vom gespeicherten Wert aus, nicht mit `now()` der Datenbank:
+   * Die App schreibt die Zeit selbst, und ihre Zeitzonen-Umrechnung muss nicht zu der dieser Verbindung passen.
+   */
+  async function lastSeen(context: BrowserContext, minutes = 0): Promise<number> {
+    const db = new pg.Client({ connectionString: databaseUrlFor(E2E_DATABASE) });
+    await db.connect();
+    try {
+      const { rows } = await db.query<{ lastSeenAt: Date }>(
+        `UPDATE "Session" SET "lastSeenAt" = "lastSeenAt" - make_interval(mins => $2) WHERE id = $1
+         RETURNING "lastSeenAt"`,
+        [await sessionId(context), minutes],
+      );
+      expect(rows, "Sitzung in der Datenbank").toHaveLength(1);
+      return rows[0]!.lastSeenAt.getTime();
+    } finally {
+      await db.end();
+    }
+  }
+
+  test("warnt vor dem Ablauf, „Angemeldet bleiben“ verlängert die Sitzung; nach der Abmeldung geht es zurück zur Seite", async ({
+    page,
+    context,
+  }) => {
+    await page.clock.install();
+    await login(page, USERS.helfer);
+    await open(page, "/kalender");
+
+    // Zuletzt vor 59 Minuten benutzt: Kurz vor Ablauf erscheint ein Hinweis mit Countdown – die Seite bleibt, wie sie ist.
+    const aged = await lastSeen(context, 59);
+    await page.clock.fastForward("58:00");
+    const warning = page.getByRole("alertdialog", { name: "Bist du noch da?" });
+    await expect(warning).toBeVisible();
+    await expect(warning.getByRole("timer")).toHaveText(/^Abmeldung in [01]:\d\d$/);
+    await expect(page).toHaveURL(/\/kalender$/);
+
+    // „Angemeldet bleiben“ verlängert die Sitzung auf dem Server (nicht nur in der Seite).
+    await warning.getByRole("button", { name: "Angemeldet bleiben" }).click();
+    await expect(warning).toBeHidden();
+    await expect.poll(() => lastSeen(context)).toBeGreaterThan(aged + 58 * 60_000);
+
+    // Ohne Bedienung über die Frist: Abmeldung mit Hinweis – und nach der Anmeldung zurück zum Kalender.
+    await lastSeen(context, 61);
+    await page.clock.fastForward("01:00:00");
+    await expect(page).toHaveURL(/\/anmelden\?expired=1&next=%2Fkalender$/);
+    await expect(page.getByText("Du wurdest aus Sicherheitsgründen abgemeldet")).toBeVisible();
+    await waitForHydratedForm(page);
+    await page.getByLabel("E-Mail-Adresse").fill(USERS.helfer);
+    await page.getByLabel("Passwort").fill(DEMO_PASSWORD);
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await expect(page).toHaveURL(/\/kalender$/);
+  });
+
+  test("Arbeit in einer anderen Registerkarte hält die Sitzung: kein Hinweis, keine Abmeldung", async ({
+    page,
+    context,
+  }) => {
+    await page.clock.install();
+    await login(page, USERS.helfer);
+    await open(page, "/kalender");
+
+    // Diese Seite war eine Stunde unberührt (ihre Uhr läuft vor), auf dem Server wurde die Sitzung aber eben noch benutzt –
+    // wie von einer anderen Registerkarte. Kurz vor Ablauf fragt die Seite nach (ohne die Sitzung zu verlängern) und erfährt,
+    // dass sie noch läuft.
+    const before = await lastSeen(context);
+    const asked = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/session/ping") && response.request().method() === "GET",
+    );
+    await page.clock.fastForward("58:00");
+    await asked;
+    await page.clock.fastForward("02:30");
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/kalender$/);
+    // Das Nachfragen allein hat die Sitzung nicht verlängert.
+    expect(await lastSeen(context)).toBe(before);
+  });
+});
+
+/**
  * Anmeldeseite als Kinobühne („3D-Fotokarussell“, `LoginStage`): Das Formular bleibt das echte LoginForm, der Ring dahinter ist
  * reine Schmuckszene – mit Knopf zum Anhalten (WCAG 2.2.2), Standbild bei „Bewegung reduzieren“, ohne Fallen für Tastatur
  * und Eingabe. Dieselbe Bühne tragen Passwort vergessen, neues Passwort und der zweite Schritt (Code).
@@ -146,6 +252,7 @@ test.describe("Anmeldeseite als Kinobühne", () => {
       page.getByRole("button", { name: "Bewegung anhalten" }),
       page.getByLabel("E-Mail-Adresse"),
       page.getByLabel("Passwort"),
+      page.getByRole("button", { name: "Passwort: Anzeigen" }),
       page.getByRole("button", { name: "Anmelden" }),
     ]) {
       await page.keyboard.press("Tab");

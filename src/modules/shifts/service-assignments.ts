@@ -89,6 +89,7 @@ export async function signUp(ctx: TenantContext, shiftId: string): Promise<void>
             userIds: [responsibleUser],
             type: "SHIFT_CHANGED",
             title: `Neue Eintragung: ${shift.title}`,
+            // Namensstelle für scrubNamesInNotifications (Datenschutz) – Wortlaut nur gemeinsam ändern.
             body: `${fullName(ctx.user)} hat sich für „${shift.title}“ (${event.title}) eingetragen.`,
             linkUrl: shiftLink(event.id, shift.id),
           });
@@ -123,6 +124,7 @@ export async function signOut(ctx: TenantContext, shiftId: string): Promise<void
           userIds: [responsibleUser],
           type: "SHIFT_CHANGED",
           title: `Abmeldung: ${shift.title}`,
+          // Namensstelle für scrubNamesInNotifications (Datenschutz) – Wortlaut nur gemeinsam ändern.
           body: `${fullName(ctx.user)} hat sich aus „${shift.title}“ (${event.title}) ausgetragen – ein Platz ist wieder frei.`,
           linkUrl: shiftLink(event.id, shift.id),
         });

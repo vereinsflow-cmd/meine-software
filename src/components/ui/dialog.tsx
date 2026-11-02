@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
 import { Button } from "@/components/ui/button";
+import { RequiredLegend } from "@/components/ui/label";
 import { XIcon } from "lucide-react";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -93,9 +94,13 @@ function DialogContent({
   );
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+/** Kopf des Fensters. Steht im Fenster ein Pflichtfeld, erklärt er unter Titel und Beschreibung den Stern. */
+function DialogHeader({ className, children, ...props }: React.ComponentProps<"div">) {
   return (
-    <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props} />
+    <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props}>
+      {children}
+      <RequiredLegend />
+    </div>
   );
 }
 

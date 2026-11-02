@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { eventRow, isCapacityError } from "@/modules/events/service";
-import { notifyUsers } from "@/modules/notifications/service";
+import { NOTIFICATION_TITLE_MAX, notifyUsers } from "@/modules/notifications/service";
 import { recordAudit } from "@/server/audit/audit";
 import { conflict, forbidden, isAppError, notFound } from "@/server/errors";
 import { can, scopeOf } from "@/server/permissions/policy";
@@ -75,6 +75,21 @@ function alreadyInGroup(group: Addable, count: number): string {
   return count === 1
     ? "Diese Person hat schon geantwortet (zugesagt, abgesagt oder auf der Warteliste)."
     : "Die Ausgewählten haben schon geantwortet (zugesagt, abgesagt oder auf der Warteliste).";
+}
+
+/**
+ * „<Chat>: <Name> hat dich hinzugefügt“ – Namensstelle für scrubNamesInNotifications (Datenschutz), Wortlaut nur
+ * gemeinsam ändern. Die Schwärzung erkennt sie am Anfang („Abteilung “, „Teilnehmer · “) und am Ende ab dem Namen. Damit
+ * notifyUsers dort nichts abschneidet, kürzt hier nur der Name des Chats dazwischen. Passt ein überlanger Kontoname selbst
+ * so nicht, steht „Der Verein“ – sonst bliebe er nach dem Löschen gekürzt stehen.
+ */
+function addedTitle(group: Addable, actor: string | null): string {
+  const chat = chatTitle(group.audience, { department: group.name, event: group.name });
+  const kind = chat.length - group.name.length; // „Abteilung “ bzw. „Teilnehmer · “
+  const end = (name: string) => `: ${name} hat dich hinzugefügt`;
+  const tail =
+    actor && kind + end(actor).length <= NOTIFICATION_TITLE_MAX ? end(actor) : end("Der Verein");
+  return chat.slice(0, NOTIFICATION_TITLE_MAX - tail.length) + tail;
 }
 
 const candidateSelect = {
@@ -171,7 +186,6 @@ export async function addChatMembers(
     group.audience === "DEPARTMENT"
       ? { audience: "DEPARTMENT", departmentId: group.departmentId, eventId: null }
       : { audience: "EVENT_PARTICIPANTS", departmentId: null, eventId: group.eventId };
-  const title = chatTitle(group.audience, { department: group.name, event: group.name });
   const actor = (await authorNames(ctx, [{ authorUserId: ctx.userId }])).get(ctx.userId) ?? null;
   const now = new Date();
 
@@ -263,7 +277,7 @@ export async function addChatMembers(
       await notifyUsers(tx, ctx.clubId, {
         userIds: recipients.filter((r) => addedIds.has(r.memberId)).map((r) => r.userId),
         type: "MESSAGE",
-        title: `${title}: ${actor ?? "Der Verein"} hat dich hinzugefügt`,
+        title: addedTitle(group, actor),
         body:
           group.audience === "DEPARTMENT"
             ? `Du gehörst jetzt zur Abteilung ${group.name} und liest im Chat mit.`

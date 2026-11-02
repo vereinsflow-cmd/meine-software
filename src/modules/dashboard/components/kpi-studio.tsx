@@ -237,6 +237,7 @@ export function StudioTile({
   caption,
   hot = false,
   size = "m",
+  valueChars,
 }: {
   label: string;
   value: React.ReactNode;
@@ -246,6 +247,12 @@ export function StudioTile({
   caption?: React.ReactNode;
   hot?: boolean;
   size?: BlockSize;
+  /**
+   * Zeichen des Werts, wenn er lang werden kann (Beträge): Dann wird er in einer schmalen Kachel (Handy) so weit kleiner, dass er
+   * ganz in eine Zeile passt, statt abgeschnitten zu werden – Ziffern mit fester Breite sind rund 0,5 em breit, `100cqi` ist die
+   * Breite des Werts. Passt er, bleibt er so groß wie die übrigen.
+   */
+  valueChars?: number;
 }) {
   return (
     <div
@@ -282,9 +289,18 @@ export function StudioTile({
           className={cn(
             "mt-auto pt-4 font-bold whitespace-nowrap [text-shadow:none]",
             size === "l" ? "text-4xl" : "text-[1.75rem]",
+            valueChars && "@container/kachel",
           )}
         >
-          {value}
+          {valueChars ? (
+            <span
+              style={{ fontSize: `min(1em, calc(100cqi / ${(0.52 * valueChars).toFixed(2)}))` }}
+            >
+              {value}
+            </span>
+          ) : (
+            value
+          )}
         </KpiValue>
         {(chip || caption) && (
           // Auf der blauen Kachel Abstand zum hellen Kreis unten rechts (weiße Schrift wäre darauf unsichtbar)

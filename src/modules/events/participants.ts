@@ -227,6 +227,8 @@ export async function removeParticipant(
   input: { eventId: string; memberId: string },
 ): Promise<void> {
   const event = await eventRow(ctx, input.eventId, "events:manage_participants");
+  if (event.status === "CANCELLED" || event.status === "ARCHIVED")
+    throw conflict("Für diese Veranstaltung sind keine Änderungen mehr möglich.");
   const existing = await ctx.db.eventParticipant.findFirst({
     where: { eventId: event.id, memberId: input.memberId },
     include: { member: { select: { firstName: true, lastName: true } } },

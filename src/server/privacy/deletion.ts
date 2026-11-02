@@ -17,7 +17,7 @@ import {
 import { assertCan } from "@/server/permissions/policy";
 import { enforceRateLimit } from "@/server/security/rate-limit";
 import type { TenantContext } from "@/server/tenancy/context-core";
-import { anonymizeMemberData, scrubNamesInAudit } from "./anonymize";
+import { anonymizeMemberData, scrubNamesInAudit, scrubNamesInNotifications } from "./anonymize";
 
 /**
  * Löschung des Kontos und der Mitgliedsdaten (Recht auf Löschung, Art. 17 DSGVO).
@@ -25,7 +25,8 @@ import { anonymizeMemberData, scrubNamesInAudit } from "./anonymize";
  * Ablauf: Antrag (mit Passwort-Bestätigung) → Bedenkzeit von 14 Tagen (jederzeit widerrufbar) → automatische Ausführung
  * durch den Hintergrundjob. Bei der Ausführung
  *   - werden die Mitgliedsdaten in ALLEN Vereinen der Person anonymisiert (`anonymizeMemberData`),
- *   - Namen im Änderungsprotokoll geschwärzt,
+ *   - Namen im Änderungsprotokoll und an den Namensstellen von Benachrichtigungen anderer (z. B. „Löschantrag: …“)
+ *     geschwärzt,
  *   - offene Einladungen an ihre Adresse gelöscht und
  *   - das Konto samt Sitzungen, Token, Mitgliedschaften, Benachrichtigungen und Kalender-Abos endgültig entfernt.
  * Der Antrag selbst bleibt als Nachweis bestehen (ohne Bezug zu Namen). Vor dem Antrag und bei der Ausführung wird
@@ -152,6 +153,7 @@ export async function requestAccountDeletion(
     await notifyUsers(createTenantDb(clubId), clubId, {
       userIds: admins.map((admin) => admin.userId),
       type: "SYSTEM",
+      // Namensstelle für scrubNamesInNotifications – Wortlaut nur gemeinsam ändern.
       title: `Löschantrag: ${user.firstName} ${user.lastName}`,
       body: `Das Konto und die Mitgliedsdaten werden am ${formatDateTime(scheduledFor)} Uhr automatisch gelöscht bzw. anonymisiert.`,
       linkUrl: "/datenschutz",
@@ -255,6 +257,7 @@ export async function executeDeletionRequest(
           anonymized += 1;
       }
       await scrubNamesInAudit(tx, clubIds, [`${user.firstName} ${user.lastName}`]);
+      await scrubNamesInNotifications(tx, clubIds, [`${user.firstName} ${user.lastName}`]);
       await tx.invitation.deleteMany({ where: { email: user.email } });
       // Support-Meldungen dieser Person (freie Texte, können Personenbezug haben) werden mit dem Konto gelöscht; als Bearbeiter
       // eingetragene Verweise auf das Konto werden gelöst.
@@ -317,6 +320,8 @@ export async function executeDeletionRequest(
 export interface DeletionRunResult {
   completed: number;
   rejected: number;
+  /** Anträge, deren Ausführung fehlschlug – sie bleiben offen und werden beim nächsten Lauf erneut versucht. */
+  failed: number;
 }
 
 export async function processDueDeletionRequests(
@@ -328,11 +333,21 @@ export async function processDueDeletionRequests(
     select: { id: true },
     take: 50,
   });
-  const result: DeletionRunResult = { completed: 0, rejected: 0 };
+  const result: DeletionRunResult = { completed: 0, rejected: 0, failed: 0 };
   for (const { id } of due) {
-    const outcome = await executeDeletionRequest(id, now);
-    if (outcome === "COMPLETED") result.completed += 1;
-    if (outcome === "REJECTED") result.rejected += 1;
+    // Ein fehlschlagender Antrag (steht als ältester immer vorn) darf die übrigen nicht aufhalten (Fristen nach Art. 17).
+    try {
+      const outcome = await executeDeletionRequest(id, now);
+      if (outcome === "COMPLETED") result.completed += 1;
+      if (outcome === "REJECTED") result.rejected += 1;
+    } catch (error) {
+      result.failed += 1;
+      // Nur Fehlertyp und -code, nie die Meldung (kann Daten der Person enthalten).
+      const code = (error as { code?: unknown } | null)?.code;
+      console.error(
+        `[privacy] Löschantrag konnte nicht ausgeführt werden: ${error instanceof Error ? error.name : "Fehler"}${code ? ` (${String(code)})` : ""}`,
+      );
+    }
   }
   return result;
 }

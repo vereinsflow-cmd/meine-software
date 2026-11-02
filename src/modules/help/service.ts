@@ -142,6 +142,7 @@ export async function createTicket(
     userIds: managers.map((manager) => manager.userId),
     type: "SYSTEM",
     title: `Neue Meldung: ${input.subject}`,
+    // Namensstelle für scrubNamesInNotifications (Datenschutz) – Wortlaut nur gemeinsam ändern.
     body: `${SUPPORT_CATEGORY_LABEL[input.category]} von ${ctx.user.firstName} ${ctx.user.lastName}`,
     linkUrl: "/hilfe/meldungen",
     email: true,

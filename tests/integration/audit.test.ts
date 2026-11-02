@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { listAuditActors, listAuditEntries } from "@/modules/audit/service";
+import { listAuditActors, listAuditEntries, listRecentActivity } from "@/modules/audit/service";
 import { prisma } from "@/server/db/client";
 import { addUserToClub, contextFor, createClub } from "../helpers/factories";
+import { withQueryLog } from "../helpers/query-log";
 
 const DAY = 86_400_000;
 const first = { page: 1, pageSize: 25, skip: 0 };
@@ -84,6 +85,26 @@ describe("Änderungsprotokoll", () => {
     expect(page1).toMatchObject({ total: 7, pageCount: 3 });
     const page3 = await listAuditEntries(ctx.admin, { request: { page: 3, pageSize: 3, skip: 6 } });
     expect(page3.items.map((i) => i.summary)).toEqual(["Eintrag 0"]);
+  });
+
+  it("letzte Aktivitäten (Dashboard) zählen das Protokoll nicht – die Protokollseite weiterhin", async () => {
+    const { ctx, club, people } = await setup();
+    for (let index = 0; index < 4; index += 1)
+      await log(club.id, "member.updated", {
+        actorUserId: people.admin.user.id,
+        summary: `Eintrag ${index}`,
+        createdAt: new Date(Date.now() - (4 - index) * 60_000),
+      });
+
+    // Das Dashboard zeigt nur die neuesten Einträge; die Gesamtzahl (ein Durchlauf über das ganze Protokoll) braucht es nicht.
+    const recent = withQueryLog(ctx.admin);
+    const entries = await listRecentActivity(recent.ctx, 2);
+    expect(entries.map((i) => i.summary)).toEqual(["Eintrag 3", "Eintrag 2"]);
+    expect(entries[0]!.actor).toEqual({ kind: "USER", name: "Anna Admin" });
+    expect(recent.queries).not.toContain("AuditLog.count");
+
+    const page = await listAuditEntries(ctx.admin, { request: { page: 1, pageSize: 2, skip: 0 } });
+    expect(page).toMatchObject({ total: 4, pageCount: 2 });
   });
 
   it("filtert nach Bereich, Person, Text und Zeitraum", async () => {

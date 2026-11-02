@@ -648,6 +648,13 @@ export async function updateEvent(
 
   await ctx.db.$transaction(async (tx) => {
     await tx.event.update({ where: { id }, data: after });
+    // Neuer Beginn: Die 24-Stunden-Erinnerung gilt dem alten Termin – vor dem neuen kommt eine neue (wie bei Schichten).
+    if (times.startsAt.getTime() !== before.startsAt.getTime()) {
+      await tx.eventParticipant.updateMany({
+        where: { eventId: id, reminderSentAt: { not: null } },
+        data: { reminderSentAt: null },
+      });
+    }
     // Wurde das Limit erhöht, rücken Wartelisten-Teilnehmer nach.
     if (
       (after.maxParticipants ?? Infinity) > (before.maxParticipants ?? Infinity) ||
@@ -956,6 +963,8 @@ export const isCapacityError = (error: unknown): boolean =>
 /**
  * Lässt Teilnehmer der Warteliste (in der Reihenfolge ihrer Anmeldung) nachrücken, solange Plätze frei sind.
  * Die Datenbank ist die letzte Instanz für das Limit: Meldet sie "voll", wird das Nachrücken beendet.
+ * Nur vor Beginn und solange die Veranstaltung weder abgeschlossen noch abgesagt oder archiviert ist – wer nachträglich
+ * Teilnahmen korrigiert, soll niemandem „deine Anmeldung ist jetzt bestätigt“ für einen vergangenen Termin schicken.
  */
 export async function promoteFromWaitlist(
   ctx: TenantContext,
@@ -964,9 +973,11 @@ export async function promoteFromWaitlist(
 ): Promise<number> {
   const event = await tx.event.findFirst({
     where: { id: eventId },
-    select: { title: true, maxParticipants: true },
+    select: { title: true, maxParticipants: true, status: true, startsAt: true },
   });
   if (!event) return 0;
+  if (event.status !== "DRAFT" && event.status !== "PUBLISHED") return 0;
+  if (event.startsAt.getTime() <= Date.now()) return 0;
   let promoted = 0;
   for (;;) {
     if (event.maxParticipants !== null) {

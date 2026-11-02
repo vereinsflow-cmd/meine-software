@@ -30,8 +30,11 @@ const COLUMNS = {
   plain: "md:grid-cols-[minmax(0,1fr)_2rem]",
 } as const;
 
-/** Kleines Schild in der Rechnungsspalte (etwas kleiner als `ToneBadge` sonst, damit die Zeile ruhig bleibt). */
-const SMALL_BADGE = "h-5 max-w-full min-w-0 px-1.5 text-[0.6875rem]";
+/**
+ * Schild in der Rechnungsspalte: Schrift wie jedes `ToneBadge` (`text-xs`, nie kleiner – docs/DESIGN.md), nur der Rand
+ * etwas schmaler, damit „überfällig seit 12 Tagen“ auch in der 11 rem breiten Spalte ganz zu lesen ist.
+ */
+const SMALL_BADGE = "max-w-full min-w-0 px-2";
 
 /**
  * Dokumentenliste als „Ruhige Liste“ (seit 20.10.2026, Entwurf A – Wunsch Luis): eine Zeile je Dokument, alle gleich hoch.
@@ -243,11 +246,14 @@ function MetaLine({ document, compact = false }: { document: DocumentDto; compac
   );
 }
 
-/** Rechte Spalte am Computer: Betrag rechtsbündig, darunter das Schild. */
+/**
+ * Rechte Spalte am Computer: Betrag rechtsbündig, darunter das Schild. Der knappe Abstand (`gap-0.5`) hält die Zeile so hoch
+ * wie die übrigen (`min-h-16`).
+ */
 function InvoiceColumn({ invoice }: { invoice: DocumentInvoice }) {
   const { amount, tone, text } = invoiceState(invoice);
   return (
-    <div className="flex min-w-0 flex-col items-end gap-1 text-right">
+    <div className="flex min-w-0 flex-col items-end gap-0.5 text-right">
       <span className="sr-only">Rechnung,</span>
       {amount && (
         <span

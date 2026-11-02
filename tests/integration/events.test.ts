@@ -727,6 +727,71 @@ describe("Zu- und Absagen, Teilnehmerlimit, Warteliste", () => {
     });
   });
 
+  it("Nach Beginn, Abschluss oder Absage rückt niemand mehr von der Warteliste nach", async () => {
+    const withWaitlist = async () => {
+      const s = await published({
+        maxParticipants: 1,
+        waitlistEnabled: true,
+        registrationRequired: true,
+      });
+      await respondToEvent(s.ctx.member, { eventId: s.id, response: "ACCEPTED" });
+      expect(await respondToEvent(s.ctx.helper, { eventId: s.id, response: "ACCEPTED" })).toEqual({
+        status: "WAITLISTED",
+      });
+      return s;
+    };
+    const expectStillWaiting = async (s: Awaited<ReturnType<typeof withWaitlist>>) => {
+      const rows = await listParticipants(s.ctx.board, s.id);
+      expect(rows?.find((r) => r.memberId === s.people.helper.member.id)?.status).toBe(
+        "WAITLISTED",
+      );
+      expect(
+        (await notificationsFor(s.people.helper.user.id)).filter((n) =>
+          n.title.includes("nachgerückt"),
+        ),
+      ).toEqual([]);
+    };
+
+    // Abgeschlossen: Teilnahme nachträglich korrigiert, entfernt oder Limit erhöht.
+    const done = await withWaitlist();
+    const absent = { eventId: done.id, memberId: done.people.member.member.id };
+    await completeEvent(done.ctx.board, done.id);
+    await setParticipantStatus(done.ctx.board, { ...absent, status: "DECLINED" });
+    await expectStillWaiting(done);
+    await setParticipantStatus(done.ctx.board, { ...absent, status: "ACCEPTED" });
+    await removeParticipant(done.ctx.board, absent);
+    await expectStillWaiting(done);
+    await updateEvent(
+      done.ctx.board,
+      done.id,
+      form({ maxParticipants: 3, waitlistEnabled: true, registrationRequired: true }),
+    );
+    await expectStillWaiting(done);
+
+    // Läuft gerade (begonnen, noch nicht vorbei): Absage während des Termins.
+    const running = await withWaitlist();
+    await prisma.event.update({
+      where: { id: running.id },
+      data: {
+        startsAt: new Date(Date.now() - 3_600_000),
+        endsAt: new Date(Date.now() + 3_600_000),
+      },
+    });
+    await respondToEvent(running.ctx.member, { eventId: running.id, response: "DECLINED" });
+    await expectStillWaiting(running);
+
+    // Abgesagt: Die Teilnehmerliste ist eingefroren, wie beim Ändern des Status.
+    const cancelled = await withWaitlist();
+    await cancelEvent(cancelled.ctx.board, cancelled.id, "Regen");
+    await expect(
+      removeParticipant(cancelled.ctx.board, {
+        eventId: cancelled.id,
+        memberId: cancelled.people.member.member.id,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expectStillWaiting(cancelled);
+  });
+
   it("Erhöhen des Limits lässt Wartende nachrücken", async () => {
     const { ctx, id } = await published({
       maxParticipants: 1,

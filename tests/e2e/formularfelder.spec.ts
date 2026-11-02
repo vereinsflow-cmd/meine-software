@@ -160,3 +160,53 @@ test.describe("Formulare vor dem Laden der Skripte", () => {
     expect(settings.match(/<input[^>]*name="name"[^>]*>/)?.[0]).toContain('value="TSV Musterstadt');
   });
 });
+
+test.describe("Pflichtfelder und Passwörter", () => {
+  test("ein Stern wird erklärt („* Pflichtfeld“) – in Fenstern und auf Seiten mit Pflichtfeldern, sonst nicht", async ({
+    page,
+  }) => {
+    await login(page, USERS.admin);
+    const legend = (scope: Locator) => scope.getByText("* Pflichtfeld", { exact: true });
+
+    // Fenster mit Pflichtfeld: die Erklärung steht unter der Überschrift
+    await open(page, "/abteilungen");
+    await page.getByRole("button", { name: "Neue Abteilung" }).click();
+    const create = page.getByRole("dialog", { name: "Neue Abteilung" });
+    await expect(legend(create)).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    // Fenster ohne Pflichtfeld: keine Erklärung
+    await open(page, "/kalender");
+    await page.getByRole("button", { name: "Abonnieren" }).click();
+    const feed = page.getByRole("dialog", { name: "Kalender abonnieren" });
+    await expect(feed).toBeVisible();
+    await expect(legend(feed)).toBeHidden();
+    await page.keyboard.press("Escape");
+
+    // Seite mit Pflichtfeldern: in jedem Formular („Mein Profil“: Name und Passwort)
+    await open(page, "/profil");
+    await expect(legend(page.getByRole("main"))).toHaveCount(2);
+    for (const each of await legend(page.getByRole("main")).all()) await expect(each).toBeVisible();
+  });
+
+  test("Passwort anzeigen: der Knopf neben dem Feld macht das Getippte lesbar und wieder unlesbar", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" }); // Bühne als Standbild: nichts bewegt sich unter dem Zeiger
+    await open(page, "/anmelden");
+    const password = page.getByLabel("Passwort");
+    const toggle = page.getByRole("button", { name: "Passwort: Anzeigen" });
+    await password.fill("Mein langes Passwort");
+    await expect(password).toHaveAttribute("type", "password");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    await toggle.click();
+    await expect(password).toHaveAttribute("type", "text");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(password).toHaveValue("Mein langes Passwort");
+
+    await toggle.click();
+    await expect(password).toHaveAttribute("type", "password");
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  });
+});

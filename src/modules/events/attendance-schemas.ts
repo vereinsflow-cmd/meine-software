@@ -221,13 +221,25 @@ export function periodRange(
 ): { from: Date; to: Date } {
   const { year, month, day } = berlinParts(now);
   const to = startOfNextBerlinDay(now);
+  /** Beginn des Tags nach „heute vor n Monaten“ – am Monatsende begrenzt (31.05. → 28.02., Beginn also 01.03.). */
+  const afterMonthsBack = (months: number) => {
+    const target = new Date(Date.UTC(year, month - 1 - months, 1));
+    const lastDay = new Date(
+      Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    return startOfBerlinDate(
+      target.getUTCFullYear(),
+      target.getUTCMonth() + 1,
+      Math.min(day, lastDay) + 1,
+    );
+  };
   switch (period) {
     case "4w":
       return { from: startOfBerlinDate(year, month, day - 27), to };
     case "3m":
-      return { from: startOfBerlinDate(year, month - 3, day + 1), to };
+      return { from: afterMonthsBack(3), to };
     case "12m":
-      return { from: startOfBerlinDate(year, month - 12, day + 1), to };
+      return { from: afterMonthsBack(12), to };
     case "jahr":
       return { from: startOfBerlinDate(year, 1, 1), to };
     case "vorjahr":

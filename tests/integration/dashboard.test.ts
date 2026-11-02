@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { getAnalytics } from "@/modules/dashboard/analytics";
 import { getDashboard } from "@/modules/dashboard/service";
+import { dashboardSources } from "@/modules/dashboard/sources";
 import { listUpcomingBirthdays } from "@/modules/members/service";
 import { notifyUsers } from "@/modules/notifications/service";
 import { prisma } from "@/server/db/client";
@@ -12,6 +14,7 @@ import {
   createEvent,
   createShift,
 } from "../helpers/factories";
+import { withQueryLog } from "../helpers/query-log";
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -251,6 +254,25 @@ describe("Dashboard: Inhalte je Rolle", () => {
     expect((await getDashboard(ctx.helper)).members).toBeNull();
     expect((await getDashboard(ctx.helper)).birthdays).toBeNull();
     expect((await getDashboard(ctx.member)).members).toBeNull();
+  });
+
+  it("eigene Rolle ganz ohne `members:read`: Kennzahlen und Auswertungen ohne Mitglieder-Block statt Fehler", async () => {
+    const { ctx } = await setup();
+    const withoutMembers = {
+      ...ctx.board,
+      permissions: new Map([...ctx.board.permissions].filter(([key]) => key !== "members:read")),
+    };
+    const now = new Date();
+    // Wie die Seite: die Quellen für beide Teile vorab anlegen – für jeden Benutzer, auch ohne Mitgliederrecht.
+    const sources = dashboardSources(withoutMembers, now);
+    const [data, analytics] = await Promise.all([
+      getDashboard(withoutMembers, now, sources),
+      getAnalytics(withoutMembers, now, sources),
+    ]);
+    expect(data.members).toBeNull();
+    expect(data.events).not.toBeNull(); // der Rest der Startseite bleibt
+    expect(analytics.topics.map((topic) => topic.id)).not.toContain("members");
+    expect((await getDashboard(withoutMembers)).members).toBeNull(); // ohne mitgegebene Quellen ebenso
   });
 
   it("Abteilungen für den Kopf (Fotos): nur aktive, nach Namen, Mitglieder ohne Archiv gezählt – ohne `departments:read` keine", async () => {
@@ -494,5 +516,23 @@ describe("Dashboard: Mandantentrennung", () => {
     expect(data.birthdays).toEqual([]);
     expect(JSON.stringify(data)).not.toContain("Fest B");
     expect(JSON.stringify(data)).not.toContain("Fremd");
+  });
+});
+
+describe("Dashboard: Abfragen je Aufruf", () => {
+  it("Kennzahlen und Auswertungen laden Mitglieder, Termine und Helferstunden nur einmal", async () => {
+    const { ctx } = await setup();
+    const { ctx: logged, queries } = withQueryLog(ctx.admin);
+    const now = new Date();
+    // Wie die Seite: eine gemeinsame Quelle für beide Teile.
+    const sources = dashboardSources(logged, now);
+    await Promise.all([getDashboard(logged, now, sources), getAnalytics(logged, now, sources)]);
+
+    const times = (operation: string) => queries.filter((query) => query === operation).length;
+    expect(times("Member.groupBy")).toBe(1); // Bestand je Status (vorher 2)
+    expect(times("Member.findMany")).toBe(3); // Verlauf (vorher 2), Geburtstage, Jubiläen
+    expect(times("Event.findMany")).toBe(2); // nächste Termine, Verlauf (vorher 2)
+    expect(times("ShiftAssignment.findMany")).toBe(3); // Helferminuten (vorher 3), eigene Einsätze, offene Schichten
+    expect(queries.length).toBeLessThanOrEqual(28); // vorher 33
   });
 });

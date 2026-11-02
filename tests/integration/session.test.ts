@@ -68,6 +68,45 @@ describe("Sitzungen", () => {
     expect(await prisma.session.findUnique({ where: { id: hashToken(token) } })).toBeNull();
   });
 
+  it("nennt das Ende ohne weitere Aktivität; die Nachfrage ohne Verlängerung (`touch: false`) schiebt es nicht hinaus", async () => {
+    const user = await createUser();
+    const t0 = new Date();
+    const { token } = await newSession(user.id, t0);
+    const lastSeenAt = async () =>
+      (await prisma.session.findUniqueOrThrow({ where: { id: hashToken(token) } })).lastSeenAt;
+
+    // Nur nachgefragt (der Hinweis vor der Abmeldung): Die Frist läuft weiter von der letzten Aktivität an.
+    const asked = await validateSessionToken(token, new Date(t0.getTime() + 58 * MINUTE), {
+      touch: false,
+    });
+    expect(asked?.endsAt).toEqual(new Date(t0.getTime() + 60 * MINUTE));
+    expect(await lastSeenAt()).toEqual(t0);
+
+    // Eine echte Anfrage („Angemeldet bleiben“) verlängert – ab jetzt wieder volle 60 Minuten.
+    const touched = await validateSessionToken(token, new Date(t0.getTime() + 59 * MINUTE));
+    expect(touched?.endsAt).toEqual(new Date(t0.getTime() + 119 * MINUTE));
+    expect(await lastSeenAt()).toEqual(new Date(t0.getTime() + 59 * MINUTE));
+
+    // Nachfragen nach Ablauf verlängert nichts: Die Sitzung ist beendet.
+    expect(
+      await validateSessionToken(token, new Date(t0.getTime() + 120 * MINUTE), { touch: false }),
+    ).toBeNull();
+    expect(await prisma.session.findUnique({ where: { id: hashToken(token) } })).toBeNull();
+  });
+
+  it("das Ende liegt nie hinter der absoluten Höchstdauer", async () => {
+    const user = await createUser();
+    const t0 = new Date();
+    const { token, expiresAt } = await newSession(user.id, t0);
+
+    const nearEnd = new Date(expiresAt.getTime() - 10 * MINUTE);
+    await prisma.session.update({
+      where: { id: hashToken(token) },
+      data: { lastSeenAt: new Date(nearEnd.getTime() - 2 * MINUTE) },
+    });
+    expect((await validateSessionToken(token, nearEnd))?.endsAt).toEqual(expiresAt);
+  });
+
   it("beendet die Sitzung nach der absoluten Höchstdauer, auch bei ständiger Aktivität", async () => {
     const user = await createUser();
     const t0 = new Date();
