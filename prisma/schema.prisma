@@ -60,6 +60,17 @@ enum MemberStatus {
   BLOCKED
 }
 
+/// Art einer Qualifikation bzw. Lizenz (fester Katalog); `OTHER` = Sonstige mit eigener Bezeichnung.
+enum QualificationKind {
+  INSTRUCTOR_LICENSE
+  TRAINER_LICENSE
+  YOUTH_LEADER_CARD
+  FIRST_AID
+  LIFEGUARD
+  REFEREE
+  OTHER
+}
+
 enum EventStatus {
   DRAFT
   PUBLISHED
@@ -657,6 +668,8 @@ model Member {
   chargeCoverages        ChargeCoverage[]
   /// Als Spender (Name und Anschrift kommen aus dem Mitglied, siehe Donor).
   donor                  Donor?
+  /// Qualifikationen und Lizenzen (Übungsleiterlizenz, Erste Hilfe, Schiedsrichter …).
+  qualifications         MemberQualification[]
 
   @@unique([clubId, id])
   @@unique([clubId, memberNumber])
@@ -761,6 +774,32 @@ model Consent {
   member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
 
   @@index([clubId, memberId, type, recordedAt])
+}
+
+/// Qualifikation oder Lizenz eines Mitglieds (Übungsleiter- und Trainerlizenz, Erste Hilfe, Jugendleiter-Card,
+/// Rettungsschwimmer, Schiedsrichter …). Sichtbar wie das Mitglied selbst (`members:read`), gepflegt mit
+/// `members:update` für dieses Mitglied. Gültig bis nie vor ausgestellt am (CHECK in der Migration). Entfällt beim
+/// Anonymisieren und mit dem Mitglied.
+model MemberQualification {
+  id         String            @id @default(uuid(7))
+  clubId     String
+  memberId   String
+  kind       QualificationKind
+  /// Bezeichnung, z. B. „C-Lizenz Breitensport“; bei „Sonstige“ Pflicht (dann die Art selbst, z. B. „Kampfrichter“).
+  title      String?
+  /// Lizenz- oder Ausweisnummer.
+  number     String?
+  issuedOn   DateTime?         @db.Date
+  validUntil DateTime?         @db.Date
+  /// Ausstellende Stelle, z. B. Landessportbund, DLRG, DRK.
+  issuer     String?
+  note       String?
+  createdAt  DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
+
+  member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)
+
+  @@index([clubId, memberId])
 }
 
 /// Beitrittsantrag über den öffentlichen QR-Code-Link des Vereins. Wer ihn stellt, hat noch KEIN Konto und keinen Zugang:

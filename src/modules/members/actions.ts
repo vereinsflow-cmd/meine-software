@@ -7,6 +7,8 @@ import { badRequest } from "@/server/errors";
 import { parseInput, runAction, type ActionResult } from "@/server/action";
 import { requireTenantContext } from "@/server/tenancy/context";
 import { executeMemberImport, previewMemberImport, type ImportPreview } from "./import";
+import { qualificationSchema } from "./qualification-schemas";
+import { addQualification, removeQualification, updateQualification } from "./qualifications";
 import { consentSchema, idSchema, memberCreateSchema, memberFormSchema } from "./schemas";
 import {
   archiveMember,
@@ -72,6 +74,42 @@ export async function recordConsentAction(input: unknown): Promise<ActionResult>
     refresh(data.memberId);
     return undefined;
   }, "member-consent");
+}
+
+export async function addQualificationAction(
+  memberId: string,
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  return runAction(async () => {
+    const { id } = parseInput(idSchema, { id: memberId });
+    const data = parseInput(qualificationSchema, input);
+    const result = await addQualification(await requireTenantContext(), id, data);
+    refresh(id);
+    return result;
+  }, "member-qualification");
+}
+
+export async function updateQualificationAction(id: string, input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const { id: qualificationId } = parseInput(idSchema, { id });
+    const data = parseInput(qualificationSchema, input);
+    const { memberId } = await updateQualification(
+      await requireTenantContext(),
+      qualificationId,
+      data,
+    );
+    refresh(memberId);
+    return undefined;
+  }, "member-qualification");
+}
+
+export async function removeQualificationAction(input: unknown): Promise<ActionResult> {
+  return runAction(async () => {
+    const { id } = parseInput(idSchema, input);
+    const { memberId } = await removeQualification(await requireTenantContext(), id);
+    refresh(memberId);
+    return undefined;
+  }, "member-qualification");
 }
 
 const importSchema = z.object({

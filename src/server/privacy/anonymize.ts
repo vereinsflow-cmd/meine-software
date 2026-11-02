@@ -8,8 +8,9 @@ import { todayCalendarDate } from "@/lib/dates";
  * Wird von der Aufbewahrungsroutine (Papierkorb-Frist, ausgetretene Mitglieder) und von der Bearbeitung von
  * Löschanträgen verwendet. Der Datensatz bleibt als leere Hülle bestehen, damit Auswertungen (Helferstunden,
  * Teilnehmerzahlen vergangener Veranstaltungen) und Verweise heil bleiben – aber er lässt keinen Rückschluss auf die
- * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten, keine
- * Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll oder in Benachrichtigungen anderer Personen.
+ * Person mehr zu: keine Namen, Kontaktdaten, Geburtsdaten, Notizen, Einwilligungen, Gruppenzugehörigkeiten,
+ * Qualifikationen, keine Anwesenheiten und keine Klartext-Namen im Änderungsprotokoll oder in Benachrichtigungen anderer
+ * Personen.
  */
 export const ANONYMOUS_FIRST_NAME = "Gelöschtes";
 export const ANONYMOUS_LAST_NAME = "Mitglied";
@@ -103,6 +104,8 @@ export async function anonymizeMemberData(
   await tx.memberDepartment.deleteMany({ where: { clubId, memberId } });
   await tx.groupMember.deleteMany({ where: { clubId, memberId } });
   await tx.consent.deleteMany({ where: { clubId, memberId } });
+  // Qualifikationen und Lizenzen (Nummern, Aussteller, Notizen) gehören zur Person und haben ohne sie keinen Zweck mehr.
+  await tx.memberQualification.deleteMany({ where: { clubId, memberId } });
   await tx.invitation.deleteMany({ where: { clubId, memberId } }); // enthalten die E-Mail-Adresse
   await tx.membershipApplication.deleteMany({ where: { clubId, memberId } }); // Antrag mit Kontaktdaten und Nachricht
   await tx.eventParticipant.updateMany({ where: { clubId, memberId }, data: { note: null } });

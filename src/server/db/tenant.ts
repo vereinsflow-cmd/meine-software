@@ -48,6 +48,7 @@ export const MODEL_SCOPE = {
   Group: "tenant",
   GroupMember: "tenant",
   Consent: "tenant",
+  MemberQualification: "tenant",
   MembershipApplication: "tenant",
   Event: "tenant",
   EventParticipant: "tenant",

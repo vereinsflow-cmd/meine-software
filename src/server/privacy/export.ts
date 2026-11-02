@@ -2,6 +2,7 @@ import "server-only";
 import { calendarDateToInputValue } from "@/lib/dates";
 import { DONATION_KIND_LABEL, purposeLabel, receiptBadge } from "@/modules/donations/format";
 import { addressComplete, donationReceiptState } from "@/modules/donations/receipt-status";
+import { QUALIFICATION_KIND_LABEL } from "@/modules/members/qualification-schemas";
 import { AUDIENCE_LABEL } from "@/modules/messages/schemas";
 import { prisma } from "@/server/db/client";
 
@@ -9,7 +10,7 @@ import { prisma } from "@/server/db/client";
  * Datenexport für die betroffene Person (Auskunft und Datenübertragbarkeit, Art. 15 und 20 DSGVO).
  *
  * Ausgegeben werden AUSSCHLIESSLICH die Daten der anfragenden Person: ihr Konto, ihre Mitgliedschaften samt
- * Stammdaten, Einwilligungen, Anmeldungen, Anwesenheit (ohne „erfasst von“), Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
+ * Stammdaten, Einwilligungen, Qualifikationen, Anmeldungen, Anwesenheit (ohne „erfasst von“), Schichten, Aufgaben, Benachrichtigungen, selbst geschriebene Nachrichten,
  * Kalender-Abos (ohne Geheimnisse) und Sitzungen (ohne Token). Angaben über andere Personen (Mitanmeldungen, andere Helfer, Namen in Protokolltexten) sind
  * bewusst NICHT enthalten. Passwort-Hash, Zwei-Faktor-Geheimnis und Token verlassen den Server nie.
  * Das Format ist gut lesbares JSON mit deutschen Schlüsseln.
@@ -79,6 +80,7 @@ export async function buildUserDataExport(
         include: {
           departments: { include: { department: { select: { name: true } } } },
           consents: { orderBy: { recordedAt: "asc" } },
+          qualifications: { orderBy: { createdAt: "asc" } },
           participations: {
             include: { event: { select: { title: true, startsAt: true } } },
             orderBy: { createdAt: "asc" },
@@ -329,6 +331,16 @@ export async function buildUserDataExport(
               am: iso(c.recordedAt),
               quelle: c.source,
               textVersion: c.textVersion,
+            })),
+            qualifikationen: member.qualifications.map((q) => ({
+              art: QUALIFICATION_KIND_LABEL[q.kind],
+              bezeichnung: q.title,
+              nummer: q.number,
+              ausgestelltAm: day(q.issuedOn),
+              gueltigBis: day(q.validUntil),
+              aussteller: q.issuer,
+              notiz: q.note,
+              eingetragenAm: iso(q.createdAt),
             })),
             veranstaltungen: member.participations.map((p) => ({
               veranstaltung: p.event.title,
