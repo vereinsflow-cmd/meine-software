@@ -259,6 +259,8 @@ export async function resolveRecipients(
 /**
  * Wie viele Personen würde die Nachricht erreichen? (Für die Anzeige im Formular und im Chat.) Nur gezählt – dieselben
  * Bedingungen wie `resolveRecipients`, aber ohne alle Mitglieder der Zielgruppe zu laden (der Chat fragt bei jedem Öffnen).
+ * Bekannte Abweichung: Der Versand lädt höchstens 5000 Mitglieder der Zielgruppe, die Vorschau zählt alle. Bei größeren
+ * Zielgruppen nennt sie also mehr Empfänger, als der Versand erreicht (siehe ANALYSE.md, PERF-7).
  */
 export async function previewRecipients(
   ctx: TenantContext,
