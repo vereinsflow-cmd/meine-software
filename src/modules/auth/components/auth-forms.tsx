@@ -6,6 +6,7 @@ import { CircleCheckIcon, InfoIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckboxField, FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { useActionForm } from "@/hooks/use-action-form";
 import {
   acceptInvitationAction,
@@ -42,6 +43,8 @@ export function LoginForm({
     action: loginAction,
   });
 
+  // Ohne Zeile „* Pflichtfeld“ (wie alle Formulare der Anmeldebühne): Hier ist jedes Feld Pflicht, und die Höhe der Bühne ist
+  // so bemessen, dass „Anmelden“ im ersten Bild steht – eine Zeile mehr schob die Karte über den Knopf „Bewegung anhalten“.
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       {notice === "expired" && (
@@ -238,6 +241,7 @@ export function AcceptInvitationForm({ token }: { token: string }) {
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid gap-4">
       <FormError message={formError} />
+      <RequiredLegend />
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
           form={form}

@@ -19,8 +19,6 @@ describe.each([
     const checkbox = markup.match(/<input[^>]*type="checkbox"[^>]*>/)?.[0] ?? "";
     expect(checkbox).toContain('name="acceptTerms"');
     expect(checkbox).toContain('aria-required="true"');
-    expect(markup).toMatch(
-      /zur Kenntnis genommen\.<span aria-hidden="true" class="text-destructive"> \*<\/span>/,
-    );
+    expect(markup).toMatch(/zur Kenntnis genommen\.<span aria-hidden="true"[^>]*> \*<\/span>/);
   });
 });

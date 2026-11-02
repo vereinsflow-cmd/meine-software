@@ -252,6 +252,7 @@ test.describe("Anmeldeseite als Kinobühne", () => {
       page.getByRole("button", { name: "Bewegung anhalten" }),
       page.getByLabel("E-Mail-Adresse"),
       page.getByLabel("Passwort"),
+      page.getByRole("button", { name: "Passwort: Anzeigen" }),
       page.getByRole("button", { name: "Anmelden" }),
     ]) {
       await page.keyboard.press("Tab");

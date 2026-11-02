@@ -147,7 +147,7 @@ function CreateFamilyForm({
       <fieldset className="grid gap-2">
         <legend className="mb-1 text-sm font-medium">
           Mitglieder{" "}
-          <span className="text-destructive" aria-hidden="true">
+          <span aria-hidden="true" data-slot="required-mark" className="text-destructive">
             *
           </span>
         </legend>

@@ -413,7 +413,7 @@ export function UploadDialog({
               <div className="grid gap-1.5">
                 <Label id="upload-datei-titel" htmlFor="upload-datei">
                   {invoiceOnly ? "Datei" : "Dateien"}{" "}
-                  <span aria-hidden="true" className="text-destructive">
+                  <span aria-hidden="true" data-slot="required-mark" className="text-destructive">
                     *
                   </span>
                 </Label>
@@ -595,7 +595,11 @@ export function UploadDialog({
                           <div className="grid content-start gap-1.5">
                             <Label htmlFor="upload-betrag">
                               Betrag in €{" "}
-                              <span aria-hidden="true" className="text-destructive">
+                              <span
+                                aria-hidden="true"
+                                data-slot="required-mark"
+                                className="text-destructive"
+                              >
                                 *
                               </span>
                             </Label>
@@ -698,7 +702,11 @@ export function UploadDialog({
                   <Label htmlFor="upload-veranstaltung">
                     Veranstaltung
                     {requireEvent && (
-                      <span aria-hidden="true" className="text-destructive">
+                      <span
+                        aria-hidden="true"
+                        data-slot="required-mark"
+                        className="text-destructive"
+                      >
                         {" "}
                         *
                       </span>

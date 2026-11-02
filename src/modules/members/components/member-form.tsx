@@ -75,7 +75,7 @@ function DepartmentAssignment({
       <legend className="mb-1 text-sm font-medium">
         Abteilungen
         {required && (
-          <span aria-hidden="true" className="text-destructive">
+          <span aria-hidden="true" data-slot="required-mark" className="text-destructive">
             {" "}
             *
           </span>

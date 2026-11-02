@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { ToneBadge } from "@/components/shared/status-badge";
 import { ConfirmAction } from "@/components/shared/confirm-dialog";
 import { FormError, SubmitButton, TextField } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { useActionForm } from "@/hooks/use-action-form";
 import { formatDateTime } from "@/lib/dates";
 import { changePasswordAction } from "@/modules/auth/actions";
@@ -41,6 +42,7 @@ export function ProfileNameForm({ firstName, lastName }: { firstName: string; la
       <div className="sm:col-span-2">
         <FormError message={formError} />
       </div>
+      <RequiredLegend />
       <TextField form={form} name="firstName" label="Vorname" required autoComplete="given-name" />
       <TextField form={form} name="lastName" label="Nachname" required autoComplete="family-name" />
       <div className="sm:col-span-2">
@@ -103,6 +105,7 @@ export function ChangePasswordForm() {
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid max-w-md gap-4">
       <FormError message={formError} />
+      <RequiredLegend />
       <TextField
         form={form}
         name="currentPassword"

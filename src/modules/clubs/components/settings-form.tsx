@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useWatch } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormError, SubmitButton, TextField, TextareaField } from "@/components/shared/form-fields";
+import { RequiredLegend } from "@/components/ui/label";
 import { PostalCodeCity } from "@/components/shared/postal-code-city";
 import { useActionForm } from "@/hooks/use-action-form";
 import { saveClubSetupDataAction, updateClubSettingsAction } from "../settings-actions";
@@ -34,6 +35,7 @@ export function ClubSettingsForm({
   return (
     <form method="post" onSubmit={onSubmit} noValidate className="grid max-w-4xl gap-6">
       <FormError message={formError} />
+      {!setup && <RequiredLegend />}
       <Card>
         <CardHeader>
           <CardTitle role="heading" aria-level={2}>
