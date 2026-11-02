@@ -8,10 +8,10 @@ import { createTenantDb } from "@/server/db/tenant";
  * Erinnerungen für Helferschichten und Veranstaltungen – 24 Stunden vorher, als Benachrichtigung und (wenn die Person
  * E-Mails wünscht) per E-Mail.
  *
- * Doppelte Erinnerungen werden auf zwei Wegen verhindert: `reminderSentAt` an der Eintragung und – als Sicherheitsnetz –
- * der eindeutige Schlüssel (Benutzer, `dedupeKey`) der Benachrichtigung. Läuft ein Job zweimal oder bricht er mittendrin
- * ab, entstehen keine Duplikate. Der Schlüssel enthält den Beginn: Wird eine Schicht oder Veranstaltung verschoben (und
- * `reminderSentAt` dabei zurückgesetzt), gibt es vor dem neuen Termin wieder eine Erinnerung.
+ * Doppelte Erinnerungen werden auf zwei Wegen verhindert: `reminderSentAt` an der Eintragung bzw. Zusage und – als
+ * Sicherheitsnetz – der eindeutige Schlüssel (Benutzer, `dedupeKey`) der Benachrichtigung. Läuft ein Job zweimal oder
+ * bricht er mittendrin ab, entstehen keine Duplikate. Der Schlüssel enthält den Beginn: Wird eine Schicht oder
+ * Veranstaltung verschoben (und `reminderSentAt` dabei zurückgesetzt), gibt es vor dem neuen Termin wieder eine Erinnerung.
  */
 const HOUR = 3_600_000;
 export const REMINDER_LEAD_HOURS = 24;
@@ -84,51 +84,74 @@ export async function sendShiftReminders(now: Date = new Date()): Promise<number
   return rows.length;
 }
 
-/** Erinnerung an zugesagte Veranstaltungen. Gibt die Zahl der erzeugten Benachrichtigungen zurück. */
-export async function sendEventReminders(now: Date = new Date()): Promise<number> {
-  const events = await prisma.event.findMany({
-    where: {
-      deletedAt: null,
-      status: "PUBLISHED",
-      startsAt: { gt: now, lte: new Date(now.getTime() + REMINDER_LEAD_HOURS * HOUR) },
-      club: { status: "ACTIVE" },
-      participants: { some: { status: "ACCEPTED" } },
-    },
-    select: {
-      id: true,
-      clubId: true,
-      title: true,
-      startsAt: true,
-      endsAt: true,
-      allDay: true,
-      locationName: true,
-      participants: {
-        where: { status: "ACCEPTED", member: { userId: { not: null } } },
-        select: { member: { select: { userId: true } } },
-      },
-    },
-    orderBy: { startsAt: "asc" },
-    take: 200,
-  });
+/** Zusagen je Durchgang. Der Job arbeitet so lange Seiten ab, bis keine Zusage ohne Erinnerung mehr im Fenster liegt. */
+const EVENT_REMINDER_PAGE = 1000;
 
+/**
+ * Erinnerung an zugesagte Veranstaltungen. Gibt die Zahl der erzeugten Benachrichtigungen zurück.
+ *
+ * Wie bei den Schichten nur Zusagen ohne `reminderSentAt` – erinnerte Zusagen fasst kein weiterer Lauf mehr an, und es gibt
+ * keine feste Obergrenze, hinter der spätere Veranstaltungen erst verspätet drankämen.
+ */
+export async function sendEventReminders(now: Date = new Date()): Promise<number> {
   let created = 0;
-  for (const event of events) {
-    const userIds = event.participants
-      .map((participant) => participant.member.userId!)
-      .filter(Boolean);
-    if (userIds.length === 0) continue;
-    const when = event.allDay
-      ? `${formatDateShort(event.startsAt)}, ganztägig`
-      : `${formatDateShort(event.startsAt)}, ${formatTime(event.startsAt)} Uhr`;
-    created += await notifyUsers(createTenantDb(event.clubId), event.clubId, {
-      userIds,
-      type: "EVENT_REMINDER",
-      title: `Erinnerung: ${event.title}`,
-      body: `${when}${event.locationName ? ` · ${event.locationName}` : ""}`,
-      linkUrl: `/veranstaltungen/${event.id}`,
-      email: true,
-      dedupeKey: () => `event-reminder:${event.id}:${event.startsAt.toISOString()}:24h`,
+  for (;;) {
+    const rows = await prisma.eventParticipant.findMany({
+      where: {
+        status: "ACCEPTED",
+        reminderSentAt: null,
+        member: { userId: { not: null } },
+        event: {
+          deletedAt: null,
+          status: "PUBLISHED",
+          startsAt: { gt: now, lte: new Date(now.getTime() + REMINDER_LEAD_HOURS * HOUR) },
+          club: { status: "ACTIVE" },
+        },
+      },
+      select: {
+        id: true,
+        clubId: true,
+        eventId: true,
+        member: { select: { userId: true } },
+        event: {
+          select: { title: true, startsAt: true, allDay: true, locationName: true },
+        },
+      },
+      orderBy: [{ event: { startsAt: "asc" } }, { id: "asc" }],
+      take: EVENT_REMINDER_PAGE,
     });
+    if (rows.length === 0) break;
+
+    const byEvent = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const group = byEvent.get(row.eventId);
+      if (group) group.push(row);
+      else byEvent.set(row.eventId, [row]);
+    }
+
+    for (const group of byEvent.values()) {
+      const { clubId, eventId, event } = group[0]!;
+      const when = event.allDay
+        ? `${formatDateShort(event.startsAt)}, ganztägig`
+        : `${formatDateShort(event.startsAt)}, ${formatTime(event.startsAt)} Uhr`;
+      created += await notifyUsers(createTenantDb(clubId), clubId, {
+        userIds: group.map((row) => row.member.userId!),
+        type: "EVENT_REMINDER",
+        title: `Erinnerung: ${event.title}`,
+        body: `${when}${event.locationName ? ` · ${event.locationName}` : ""}`,
+        linkUrl: `/veranstaltungen/${eventId}`,
+        email: true,
+        dedupeKey: () => `event-reminder:${eventId}:${event.startsAt.toISOString()}:24h`,
+      });
+    }
+
+    // Wie bei den Schichten auch dann erledigt, wenn niemand benachrichtigt werden konnte (z. B. gesperrtes Konto).
+    await prisma.eventParticipant.updateMany({
+      where: { id: { in: rows.map((row) => row.id) }, reminderSentAt: null },
+      data: { reminderSentAt: now },
+    });
+    // Jede Seite wird vollständig vermerkt – die nächste Abfrage liefert also nur noch Offene.
+    if (rows.length < EVENT_REMINDER_PAGE) break;
   }
   return created;
 }

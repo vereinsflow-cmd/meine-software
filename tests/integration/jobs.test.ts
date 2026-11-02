@@ -6,6 +6,7 @@ import { runJobs } from "@/server/jobs/runner";
 import { sendEventReminders, sendShiftReminders } from "@/server/jobs/reminders";
 import { applyRetention } from "@/server/jobs/retention";
 import * as anonymize from "@/server/privacy/anonymize";
+import * as notifications from "@/modules/notifications/service";
 import { APPLICATION_PENDING_RETENTION_DAYS } from "@/lib/membership-application";
 import {
   addBerlinDays,
@@ -13,6 +14,8 @@ import {
   toDateInputValue,
   todayCalendarDate,
 } from "@/lib/dates";
+import { eventFormSchema } from "@/modules/events/schemas";
+import { updateEvent } from "@/modules/events/service";
 import { shiftFormSchema } from "@/modules/shifts/schemas";
 import { updateShift } from "@/modules/shifts/service";
 import { hashToken } from "@/server/security/tokens";
@@ -343,20 +346,79 @@ describe("Veranstaltungs-Erinnerungen", () => {
 
   it("erinnert nach dem Verschieben der Veranstaltung erneut", async () => {
     const { club, helper } = await clubWithPeople();
-    const event = await createEvent(club.id, { title: "Ausflug", startsAt: inMs(20 * HOUR) });
+    const board = await addUserToClub(club, "BOARD");
+    const ctx = await contextFor(board.user.id, club.id);
+    const day = (n: number) => toDateInputValue(addBerlinDays(new Date(), n));
+    const form = (date: string) =>
+      eventFormSchema.parse({
+        title: "Ausflug",
+        type: "EVENT",
+        visibility: "INTERNAL",
+        startDate: date,
+        startTime: "10:00",
+        endDate: date,
+        endTime: "14:00",
+        allDay: false,
+        registrationRequired: false,
+        waitlistEnabled: false,
+        repeat: "none",
+      });
+    const startsAt = parseBerlinDateTime(day(1), "10:00")!;
+    const event = await createEvent(club.id, {
+      title: "Ausflug",
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 4 * HOUR),
+    });
     await prisma.eventParticipant.create({
       data: { clubId: club.id, eventId: event.id, memberId: helper.member.id, status: "ACCEPTED" },
     });
-    expect(await sendEventReminders()).toBe(1);
+    expect(await sendEventReminders(new Date(startsAt.getTime() - 20 * HOUR))).toBe(1);
 
-    const moved = inMs(7 * DAY + 20 * HOUR);
-    await prisma.event.update({
-      where: { id: event.id },
-      data: { startsAt: moved, endsAt: new Date(moved.getTime() + 4 * HOUR) },
-    });
+    // Eine andere Änderung (Ort) lässt die Erinnerung bestehen; erst ein neuer Beginn erinnert erneut.
+    await updateEvent(ctx, event.id, { ...form(day(1)), locationName: "Bootshaus" });
+    expect(await sendEventReminders(new Date(startsAt.getTime() - 19 * HOUR))).toBe(0);
+    await updateEvent(ctx, event.id, form(day(8)));
+    const moved = parseBerlinDateTime(day(8), "10:00")!;
     expect(await sendEventReminders(new Date(moved.getTime() - 20 * HOUR))).toBe(1);
     expect(await sendEventReminders(new Date(moved.getTime() - 19 * HOUR))).toBe(0);
-    expect(await notes(helper.user.id)).toHaveLength(2);
+    const reminders = (await notes(helper.user.id)).filter((n) => n.type === "EVENT_REMINDER");
+    expect(reminders).toHaveLength(2);
+  });
+
+  it("mehr als 200 Veranstaltungen in den nächsten 24 Stunden: jede Zusage genau einmal, ein zweiter Lauf fasst sie nicht mehr an", async () => {
+    const { club, helper } = await clubWithPeople();
+    // Zwischen 2 und gut 18 Stunden vorher – alle im Fenster der Erinnerung.
+    const events = await prisma.event.createManyAndReturn({
+      data: Array.from({ length: 250 }, (_, index) => {
+        const startsAt = inMs(2 * HOUR + index * 4 * 60_000);
+        return {
+          clubId: club.id,
+          title: `Training ${index + 1}`,
+          status: "PUBLISHED" as const,
+          startsAt,
+          endsAt: new Date(startsAt.getTime() + HOUR),
+        };
+      }),
+      select: { id: true },
+    });
+    await prisma.eventParticipant.createMany({
+      data: events.map((event) => ({
+        clubId: club.id,
+        eventId: event.id,
+        memberId: helper.member.id,
+        status: "ACCEPTED" as const,
+      })),
+    });
+
+    expect(await sendEventReminders()).toBe(250);
+    const reminders = (await notes(helper.user.id)).filter((n) => n.type === "EVENT_REMINDER");
+    expect(reminders).toHaveLength(250);
+
+    // Wer erinnert ist, wird nicht bei jedem Lauf erneut benachrichtigt (bisher je Veranstaltung bis zu 96-mal am Tag).
+    const notify = vi.spyOn(notifications, "notifyUsers");
+    expect(await sendEventReminders()).toBe(0);
+    expect(notify).not.toHaveBeenCalled();
+    notify.mockRestore();
   });
 });
 

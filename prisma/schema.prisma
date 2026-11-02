@@ -868,15 +868,17 @@ model Event {
 }
 
 model EventParticipant {
-  id          String            @id @default(uuid(7))
-  clubId      String
-  eventId     String
-  memberId    String
-  status      ParticipantStatus
-  note        String?
-  respondedAt DateTime          @default(now()) @db.Timestamptz(3)
-  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
+  id             String            @id @default(uuid(7))
+  clubId         String
+  eventId        String
+  memberId       String
+  status         ParticipantStatus
+  note           String?
+  respondedAt    DateTime          @default(now()) @db.Timestamptz(3)
+  /// 24-Stunden-Erinnerung verschickt (wie an der Schicht-Eintragung); `updateEvent` leert es, wenn sich der Beginn ändert.
+  reminderSentAt DateTime?         @db.Timestamptz(3)
+  createdAt      DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime          @updatedAt @db.Timestamptz(3)
 
   event  Event  @relation(fields: [clubId, eventId], references: [clubId, id], onDelete: Cascade)
   member Member @relation(fields: [clubId, memberId], references: [clubId, id], onDelete: Cascade)

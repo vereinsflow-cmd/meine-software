@@ -648,6 +648,13 @@ export async function updateEvent(
 
   await ctx.db.$transaction(async (tx) => {
     await tx.event.update({ where: { id }, data: after });
+    // Neuer Beginn: Die 24-Stunden-Erinnerung gilt dem alten Termin – vor dem neuen kommt eine neue (wie bei Schichten).
+    if (times.startsAt.getTime() !== before.startsAt.getTime()) {
+      await tx.eventParticipant.updateMany({
+        where: { eventId: id, reminderSentAt: { not: null } },
+        data: { reminderSentAt: null },
+      });
+    }
     // Wurde das Limit erhöht, rücken Wartelisten-Teilnehmer nach.
     if (
       (after.maxParticipants ?? Infinity) > (before.maxParticipants ?? Infinity) ||
