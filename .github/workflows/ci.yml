@@ -69,7 +69,8 @@ jobs:
     name: Ende-zu-Ende-Tests (Browser, Teil ${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     # Die Tests eines Rechners laufen nacheinander (eine Datenbank) – am Stück brauchten die rund 440 Tests Anfang November 2026
-    # gut 45 Minuten. Deshalb zwei Teile auf zwei Rechnern, jeder mit eigener Datenbank (Playwright teilt nach Testdateien).
+    # 37 Minuten (vor der schnelleren Anmeldung im Test eine Stunde), zu knapp für die Grenze. Deshalb zwei Teile auf zwei
+    # Rechnern, jeder mit eigener Datenbank (Playwright teilt nach Testdateien): je Teil 20 bis 30 Minuten.
     timeout-minutes: 40
     strategy:
       fail-fast: false
