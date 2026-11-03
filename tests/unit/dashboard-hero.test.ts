@@ -133,10 +133,10 @@ describe("Feste Höhe: Das Banner ist so hoch wie sein Ladegerüst, egal was dri
     expect(HERO_BANNER_HEIGHT).toBe("h-[17.125rem] @[40rem]/buehne:h-[17rem]");
   });
 
-  it("Begrüßung: geschätzte Breite in em (Zeichen × 0,55, Umlaute zählen einfach)", () => {
-    expect(heroTitleEms("Guten Abend, Anna")).toBe(9.35);
-    expect(heroTitleEms("Guten Tag, Jürgen")).toBe(9.35);
-    expect(heroTitleEms("Guten Morgen, Sebastian")).toBe(12.65);
+  it("Begrüßung: geschätzte Breite in em (Zeichen × 0,6, Umlaute zählen einfach)", () => {
+    expect(heroTitleEms("Guten Abend, Anna")).toBe(10.2);
+    expect(heroTitleEms("Guten Tag, Jürgen")).toBe(10.2);
+    expect(heroTitleEms("Guten Morgen, Sebastian")).toBe(13.8);
   });
 });
 

@@ -23,3 +23,5 @@ website
 .claude
 # Logo-Paket so, wie es aus der Gestaltung kam (docs/brand/README.md) – nicht formatieren.
 docs/brand/vereinsflow-logo-paket
+# Rechtstext-Entwürfe für die Website: Die HTML-Dateien werden so nach website/ kopiert (docs/recht/README.md) – nicht formatieren.
+docs/recht/*.html

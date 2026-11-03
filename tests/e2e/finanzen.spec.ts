@@ -332,7 +332,8 @@ test.describe("Finanzen – Übersicht", () => {
     await hero.getByRole("button", { name: "Als Diagramm" }).click();
     await expect(hero.getByRole("img")).toBeVisible();
 
-    // Konten als Karten: jede führt ins Kassenbuch dieses Kontos; darunter die Summe.
+    // Konten als Karten: jede führt ins Kassenbuch dieses Kontos; darunter die Summe. Zu den beiden aus der Einrichtung kann
+    // ein früherer Test weitere angelegt haben (banken.spec.ts: „Konto hinzufügen“).
     const cards = page.getByRole("list", { name: "Konten" });
     for (const name of ["Girokonto", "Barkasse"]) {
       await expect(cards.getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute(
@@ -340,7 +341,9 @@ test.describe("Finanzen – Übersicht", () => {
         /^\/finanzen\/kassenbuch\?konto=[0-9a-f-]{36}$/,
       );
     }
-    await expect(page.getByText(/^Zusammen · 2 Konten$/)).toBeVisible();
+    const accounts = await cards.getByRole("link").count();
+    expect(accounts).toBeGreaterThanOrEqual(2);
+    await expect(page.getByText(`Zusammen · ${accounts} Konten`, { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toBeVisible();
 
     // Schnellaktionen: die Ziele sind die bestehenden Seiten bzw. das Fenster „Neue Buchung“.
@@ -478,7 +481,13 @@ test.describe("Finanzen – nur ansehen (eigene Rolle „Kassenprüfung“)", ()
     await expect(actions.getByRole("link")).toHaveText(["Kassenbuch"]);
     await expect(actions.getByRole("button")).toHaveCount(0);
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("list", { name: "Konten" }).getByRole("link")).toHaveCount(2);
+    // Alle Konten wie beim Kassenwart: die beiden aus der Einrichtung, dazu womöglich eines aus banken.spec.ts.
+    const cards = page.getByRole("list", { name: "Konten" });
+    for (const name of ["Girokonto", "Barkasse"]) {
+      await expect(cards.getByRole("link", { name: new RegExp(`^${name}`) })).toBeVisible();
+    }
+    const accounts = await cards.getByRole("link").count();
+    await expect(page.getByText(`Zusammen · ${accounts} Konten`, { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toHaveCount(
       0,
     );

@@ -29,8 +29,18 @@ export const USERS = {
 export const greeting = (firstName: string) =>
   new RegExp(`^Guten (Morgen|Tag|Abend), ${firstName}$`);
 
-/** Meldet über die Oberfläche an – genau wie ein echter Benutzer. */
+/**
+ * Meldet über die Oberfläche an – genau wie ein echter Benutzer, der „Bewegung reduzieren“ eingestellt hat: Die Anmeldebühne
+ * steht dann als Standbild da. Mit Bewegung kostete jede Anmeldung in der CI gut 4 s (3D-Ring ohne Grafikkarte; Playwright wartet
+ * vor dem Klick, bis „Anmelden“ in der sich neigenden Glasfläche stillsteht) – bei rund 440 Anmeldungen die halbe Laufzeit. Die
+ * Bewegung selbst prüft auth.spec.ts. Hatte der Test „Bewegung reduzieren“ nicht selbst eingestellt, gilt danach wieder der
+ * Normalfall.
+ */
 export async function login(page: Page, email: string, password = DEMO_PASSWORD): Promise<void> {
+  const reduced = await page.evaluate(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  if (!reduced) await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/anmelden");
   // Erst wenn React das Formular übernommen hat („hydratisiert“), schickt es per JavaScript ab – vorher täte es der Browser
   // selbst (als POST an die Seite, ohne Anmeldung). React hängt dabei eigene Schlüssel an die DOM-Knoten.
@@ -42,6 +52,7 @@ export async function login(page: Page, email: string, password = DEMO_PASSWORD)
   await page.getByLabel("Passwort").fill(password);
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).not.toHaveURL(/\/anmelden/);
+  if (!reduced) await page.emulateMedia({ reducedMotion: "no-preference" });
 }
 
 /**

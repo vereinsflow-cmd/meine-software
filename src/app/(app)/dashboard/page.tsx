@@ -160,12 +160,14 @@ export default async function DashboardPage({
           },
         ]
       : [];
+  // `grid-cols-1` (= minmax(0, 1fr)) auch am Handy: Ohne feste Spalte wuchs sie mit dem breitesten Inhalt – die Monatsachse der
+  // Helferstunden („Jan 26 … Nov 26“) schob ab November alle Karten über den Bildschirmrand.
   const studioTop =
     studio && members && shifts ? (
       <div
         role="group"
         aria-label="Kennzahlen"
-        className="grid gap-4 @[40rem]/studio:grid-cols-2 @[66rem]/studio:grid-cols-[minmax(0,1.05fr)_minmax(0,1.25fr)_minmax(0,1.1fr)]"
+        className="grid grid-cols-1 gap-4 @[40rem]/studio:grid-cols-2 @[66rem]/studio:grid-cols-[minmax(0,1.05fr)_minmax(0,1.25fr)_minmax(0,1.1fr)]"
       >
         <Entrance index={0} className="[&>*]:h-full">
           <MembersHero

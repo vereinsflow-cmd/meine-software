@@ -6,26 +6,26 @@ Stand: 17.10.2026. Gilt für den noch zu bauenden Bestellvorgang auf vereins-flo
 
 ## 0. Feststehende Eckdaten (in allen Dokumenten identisch)
 
-| Punkt | Festlegung |
-|---|---|
-| Anbieter | H&B Software Solution UG (haftungsbeschränkt) i. G., Oberschlesienstraße 6a, 45711 Datteln, vertreten durch den Geschäftsführer Luis Heidecker. Die Gesellschaft befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen wird beantragt. (Stand 17.10.2026: Zusatz „i. G.“ bis zur Eintragung, keine HRB-Nummer, keine USt-IdNr.; Gesellschafter sind Luis Heidecker und Ben Bleckert, Ben Bleckert ist nicht Geschäftsführer) |
-| Kontakt | kontakt@vereins-flow.com, +49 176 56792302 |
-| Produkt | VereinsFlow, Web-Anwendung (SaaS) zur Vereinsverwaltung: Mitglieder, Termine, Helferschichten, Nachrichten, Dokumente, Finanzen/Kassenbuch; Browser und Android-App |
-| Vertragstyp | Abonnement, Dauerschuldverhältnis; rechtlich eine **digitale Dienstleistung** (§ 327 Abs. 2 Satz 2 BGB) und für das Widerrufsrecht eine **Dienstleistung** (§ 356 Abs. 5, § 357a Abs. 2 BGB) |
-| Laufzeit | unbefristet, keine Mindestlaufzeit; Abrechnungszeitraum Kalendermonat, erster Monat anteilig nach Tagen |
-| Kündigung | Kunde: jederzeit zum Ende des laufenden Kalendermonats – Textform (E-Mail), Kundenkonto oder Kündigungsschaltfläche „Verträge hier kündigen“ (§ 312k BGB). Anbieter: drei Monate zum Monatsende |
-| Preise | Staffel nach Mitgliederzahl, Beträge [BITTE ERGÄNZEN]; Endpreise inkl. USt gegenüber Verbrauchern; Kleinunternehmer-Variante vorgesehen |
-| Zahlung | offen – Variante A: Zahlung über Stripe; Variante B: Zahlung über Mollie; Variante C: Zahlung auf Rechnung per Überweisung (gleiche Bezeichnungen in agb.html § 4 Abs. 4 und datenschutz.html Abschnitt 8) [BITTE ERGÄNZEN: Entscheidung] |
-| Kein kostenloser Tarif, keine Testphase | Demo-Termin vor Vertragsschluss möglich |
-| Datenschutz-Rollen | Kunde Verantwortlicher für Mitgliederdaten, Anbieter Auftragsverarbeiter (Art. 28 DSGVO) – AV-Vertrag ist Anlage 1 der AGB |
+| Punkt                                   | Festlegung                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Anbieter                                | H&B Software Solution UG (haftungsbeschränkt) i. G., Oberschlesienstraße 6a, 45711 Datteln, vertreten durch den Geschäftsführer Luis Heidecker. Die Gesellschaft befindet sich in Gründung; die Eintragung in das Handelsregister des Amtsgerichts Recklinghausen wird beantragt. (Stand 17.10.2026: Zusatz „i. G.“ bis zur Eintragung, keine HRB-Nummer, keine USt-IdNr.; Gesellschafter sind Luis Heidecker und Ben Bleckert, Ben Bleckert ist nicht Geschäftsführer) |
+| Kontakt                                 | kontakt@vereins-flow.com, +49 176 56792302                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Produkt                                 | VereinsFlow, Web-Anwendung (SaaS) zur Vereinsverwaltung: Mitglieder, Termine, Helferschichten, Nachrichten, Dokumente, Finanzen/Kassenbuch; Browser und Android-App                                                                                                                                                                                                                                                                                                     |
+| Vertragstyp                             | Abonnement, Dauerschuldverhältnis; rechtlich eine **digitale Dienstleistung** (§ 327 Abs. 2 Satz 2 BGB) und für das Widerrufsrecht eine **Dienstleistung** (§ 356 Abs. 5, § 357a Abs. 2 BGB)                                                                                                                                                                                                                                                                            |
+| Laufzeit                                | unbefristet, keine Mindestlaufzeit; Abrechnungszeitraum Kalendermonat, erster Monat anteilig nach Tagen                                                                                                                                                                                                                                                                                                                                                                 |
+| Kündigung                               | Kunde: jederzeit zum Ende des laufenden Kalendermonats – Textform (E-Mail), Kundenkonto oder Kündigungsschaltfläche „Verträge hier kündigen“ (§ 312k BGB). Anbieter: drei Monate zum Monatsende                                                                                                                                                                                                                                                                         |
+| Preise                                  | Staffel nach Mitgliederzahl, Beträge [BITTE ERGÄNZEN]; Endpreise inkl. USt gegenüber Verbrauchern; Kleinunternehmer-Variante vorgesehen                                                                                                                                                                                                                                                                                                                                 |
+| Zahlung                                 | offen – Variante A: Zahlung über Stripe; Variante B: Zahlung über Mollie; Variante C: Zahlung auf Rechnung per Überweisung (gleiche Bezeichnungen in agb.html § 4 Abs. 4 und datenschutz.html Abschnitt 8) [BITTE ERGÄNZEN: Entscheidung]                                                                                                                                                                                                                               |
+| Kein kostenloser Tarif, keine Testphase | Demo-Termin vor Vertragsschluss möglich                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Datenschutz-Rollen                      | Kunde Verantwortlicher für Mitgliederdaten, Anbieter Auftragsverarbeiter (Art. 28 DSGVO) – AV-Vertrag ist Anlage 1 der AGB                                                                                                                                                                                                                                                                                                                                              |
 
 ## 1. Begriffe und Kundentypen
 
-| Kundentyp im Checkout | Rechtlich | Widerrufsbelehrung und Opt-in zeigen? | Preisdarstellung | Gerichtsstandsklausel |
-|---|---|---|---|---|
-| Privatperson | Verbraucher (§ 13 BGB) | **Ja** | brutto (PAngV) | nein |
-| Verein / gemeinnützige Organisation | kein Verbraucher; Unternehmer nur bei wirtschaftlicher Tätigkeit (§ 14 BGB) | nein (kein gesetzliches Widerrufsrecht) | brutto, netto und USt in der Rechnung ausgewiesen | nur wenn Kaufmann (praktisch selten) |
-| Unternehmen / Selbständige | Unternehmer (§ 14 BGB) | nein | brutto; netto und USt ausgewiesen | nur wenn Kaufmann, juristische Person des öffentlichen Rechts oder öffentlich-rechtliches Sondervermögen (§ 38 ZPO) |
+| Kundentyp im Checkout               | Rechtlich                                                                   | Widerrufsbelehrung und Opt-in zeigen?   | Preisdarstellung                                  | Gerichtsstandsklausel                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Privatperson                        | Verbraucher (§ 13 BGB)                                                      | **Ja**                                  | brutto (PAngV)                                    | nein                                                                                                                |
+| Verein / gemeinnützige Organisation | kein Verbraucher; Unternehmer nur bei wirtschaftlicher Tätigkeit (§ 14 BGB) | nein (kein gesetzliches Widerrufsrecht) | brutto, netto und USt in der Rechnung ausgewiesen | nur wenn Kaufmann (praktisch selten)                                                                                |
+| Unternehmen / Selbständige          | Unternehmer (§ 14 BGB)                                                      | nein                                    | brutto; netto und USt ausgewiesen                 | nur wenn Kaufmann, juristische Person des öffentlichen Rechts oder öffentlich-rechtliches Sondervermögen (§ 38 ZPO) |
 
 Hinweise:
 
@@ -35,25 +35,25 @@ Hinweise:
 
 ## 2. Rechtsgrundlagen im Überblick (Kurzfassung, Details in quellen.md)
 
-| Norm | Anforderung an Checkout/Konto |
-|---|---|
-| § 312i Abs. 1 BGB, Art. 246c EGBGB | Eingabefehler erkennen und berichtigen können; Informationen zu technischen Schritten, Speicherung des Vertragstexts, Korrekturmöglichkeit, Sprache; unverzügliche elektronische Eingangsbestätigung; AGB bei Vertragsschluss abrufbar und speicherbar |
-| § 312j Abs. 1 BGB | spätestens zu Beginn des Bestellvorgangs: akzeptierte Zahlungsmittel (Lieferbeschränkungen entfallen) |
-| § 312j Abs. 2 BGB | unmittelbar vor der Bestellung, klar, verständlich, hervorgehoben: Art. 246a § 1 Abs. 1 Satz 1 Nr. 1, 5–8, 11a, 14, 15 EGBGB (wesentliche Merkmale, Gesamtpreis, monatliche Gesamtkosten, Laufzeit/Kündigungsbedingungen, Mindestdauer) |
-| § 312j Abs. 3 und 4 BGB | Schaltfläche gut lesbar, Beschriftung ausschließlich „zahlungspflichtig bestellen“ – sonst kommt kein Vertrag zustande |
-| § 312d Abs. 1 BGB, Art. 246a § 1 EGBGB | vollständige vorvertragliche Informationen (Liste in Abschnitt 5) |
-| § 312f Abs. 2 BGB | Vertragsbestätigung auf dauerhaftem Datenträger (E-Mail) innerhalb angemessener Frist, spätestens vor Beginn der Dienstleistung; enthält Art.-246a-Angaben, soweit nicht schon vorher auf dauerhaftem Datenträger übermittelt |
-| § 355, § 356 Abs. 5, § 357a Abs. 2 BGB | 14 Tage Widerruf ab Vertragsschluss; Wertersatz nur bei ausdrücklichem Verlangen des Verbrauchers, vorzeitig zu beginnen, und ordnungsgemäßer Belehrung; Erlöschen nur bei vollständiger Erbringung nach Zustimmung und Kenntnisbestätigung |
-| § 356a BGB (seit 19.6.2026) | Online-Widerrufsfunktion „Vertrag widerrufen“, Bestätigungsfunktion „Widerruf bestätigen“, Eingangsbestätigung mit Datum und Uhrzeit |
-| § 312k BGB | Kündigungsschaltfläche „Verträge hier kündigen“, Bestätigungsseite mit Pflichtfeldern, Bestätigungsschaltfläche „jetzt kündigen“, speicherbare Kündigungserklärung, sofortige Bestätigung in Textform |
-| §§ 327 ff. BGB | Bereitstellung, Aktualisierungen, Mängelrechte, Änderungen (§ 327r), Bereitstellung der Inhalte nach Vertragsende (§ 327p Abs. 3) – gilt für Verbraucher, in den AGB freiwillig für alle |
-| PAngV §§ 1, 3, 6 | Gesamtpreis einschließlich USt, eindeutig zugeordnet, gut lesbar; im Fernabsatz Hinweis, dass USt enthalten ist und ob weitere Kosten anfallen |
-| § 36 VSBG | Hinweis zur Verbraucherschlichtung auf der Website und mit den AGB (Formulierung in AGB § 15) |
-| § 37 VSBG | nach gescheiterter Beschwerde: Hinweis in Textform auf zuständige Verbraucherschlichtungsstelle und (Nicht-)Teilnahme – als Textbaustein im Support hinterlegen |
-| § 14 Abs. 4 UStG, § 27 Abs. 38 UStG, § 147 AO | Rechnungspflichtangaben, E-Rechnung im B2B-Inland mit Übergangsfristen, Aufbewahrung |
-| § 5 DDG | Anbieterkennzeichnung (Impressum) überall erreichbar – Firma mit „i. G.“, Vertretungsberechtigter (Geschäftsführer Luis Heidecker), Satz zur Gründung; Registergericht Amtsgericht Recklinghausen mit HRB-Nummer und USt-IdNr., sobald vorhanden |
-| § 35a GmbHG | Pflichtangaben auf allen Geschäftsbriefen an bestimmte Empfänger (auch E-Mails und Rechnungen): Rechtsform, Sitz der Gesellschaft, Registergericht und Registernummer – sobald eingetragen –, alle Geschäftsführer mit Familiennamen und mindestens einem ausgeschriebenen Vornamen (derzeit: Luis Heidecker). In der Gründungsphase Firma mit „i. G.“; die Handelnden haften bis zur Eintragung persönlich (§ 11 Abs. 2 GmbHG) |
-| VO (EU) 2024/3228 | OS-Plattform eingestellt, VO (EU) Nr. 524/2013 mit Wirkung vom 20.7.2025 aufgehoben – **kein OS-Link** mehr auf der Website |
+| Norm                                          | Anforderung an Checkout/Konto                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| § 312i Abs. 1 BGB, Art. 246c EGBGB            | Eingabefehler erkennen und berichtigen können; Informationen zu technischen Schritten, Speicherung des Vertragstexts, Korrekturmöglichkeit, Sprache; unverzügliche elektronische Eingangsbestätigung; AGB bei Vertragsschluss abrufbar und speicherbar                                                                                                                                                                          |
+| § 312j Abs. 1 BGB                             | spätestens zu Beginn des Bestellvorgangs: akzeptierte Zahlungsmittel (Lieferbeschränkungen entfallen)                                                                                                                                                                                                                                                                                                                           |
+| § 312j Abs. 2 BGB                             | unmittelbar vor der Bestellung, klar, verständlich, hervorgehoben: Art. 246a § 1 Abs. 1 Satz 1 Nr. 1, 5–8, 11a, 14, 15 EGBGB (wesentliche Merkmale, Gesamtpreis, monatliche Gesamtkosten, Laufzeit/Kündigungsbedingungen, Mindestdauer)                                                                                                                                                                                         |
+| § 312j Abs. 3 und 4 BGB                       | Schaltfläche gut lesbar, Beschriftung ausschließlich „zahlungspflichtig bestellen“ – sonst kommt kein Vertrag zustande                                                                                                                                                                                                                                                                                                          |
+| § 312d Abs. 1 BGB, Art. 246a § 1 EGBGB        | vollständige vorvertragliche Informationen (Liste in Abschnitt 5)                                                                                                                                                                                                                                                                                                                                                               |
+| § 312f Abs. 2 BGB                             | Vertragsbestätigung auf dauerhaftem Datenträger (E-Mail) innerhalb angemessener Frist, spätestens vor Beginn der Dienstleistung; enthält Art.-246a-Angaben, soweit nicht schon vorher auf dauerhaftem Datenträger übermittelt                                                                                                                                                                                                   |
+| § 355, § 356 Abs. 5, § 357a Abs. 2 BGB        | 14 Tage Widerruf ab Vertragsschluss; Wertersatz nur bei ausdrücklichem Verlangen des Verbrauchers, vorzeitig zu beginnen, und ordnungsgemäßer Belehrung; Erlöschen nur bei vollständiger Erbringung nach Zustimmung und Kenntnisbestätigung                                                                                                                                                                                     |
+| § 356a BGB (seit 19.6.2026)                   | Online-Widerrufsfunktion „Vertrag widerrufen“, Bestätigungsfunktion „Widerruf bestätigen“, Eingangsbestätigung mit Datum und Uhrzeit                                                                                                                                                                                                                                                                                            |
+| § 312k BGB                                    | Kündigungsschaltfläche „Verträge hier kündigen“, Bestätigungsseite mit Pflichtfeldern, Bestätigungsschaltfläche „jetzt kündigen“, speicherbare Kündigungserklärung, sofortige Bestätigung in Textform                                                                                                                                                                                                                           |
+| §§ 327 ff. BGB                                | Bereitstellung, Aktualisierungen, Mängelrechte, Änderungen (§ 327r), Bereitstellung der Inhalte nach Vertragsende (§ 327p Abs. 3) – gilt für Verbraucher, in den AGB freiwillig für alle                                                                                                                                                                                                                                        |
+| PAngV §§ 1, 3, 6                              | Gesamtpreis einschließlich USt, eindeutig zugeordnet, gut lesbar; im Fernabsatz Hinweis, dass USt enthalten ist und ob weitere Kosten anfallen                                                                                                                                                                                                                                                                                  |
+| § 36 VSBG                                     | Hinweis zur Verbraucherschlichtung auf der Website und mit den AGB (Formulierung in AGB § 15)                                                                                                                                                                                                                                                                                                                                   |
+| § 37 VSBG                                     | nach gescheiterter Beschwerde: Hinweis in Textform auf zuständige Verbraucherschlichtungsstelle und (Nicht-)Teilnahme – als Textbaustein im Support hinterlegen                                                                                                                                                                                                                                                                 |
+| § 14 Abs. 4 UStG, § 27 Abs. 38 UStG, § 147 AO | Rechnungspflichtangaben, E-Rechnung im B2B-Inland mit Übergangsfristen, Aufbewahrung                                                                                                                                                                                                                                                                                                                                            |
+| § 5 DDG                                       | Anbieterkennzeichnung (Impressum) überall erreichbar – Firma mit „i. G.“, Vertretungsberechtigter (Geschäftsführer Luis Heidecker), Satz zur Gründung; Registergericht Amtsgericht Recklinghausen mit HRB-Nummer und USt-IdNr., sobald vorhanden                                                                                                                                                                                |
+| § 35a GmbHG                                   | Pflichtangaben auf allen Geschäftsbriefen an bestimmte Empfänger (auch E-Mails und Rechnungen): Rechtsform, Sitz der Gesellschaft, Registergericht und Registernummer – sobald eingetragen –, alle Geschäftsführer mit Familiennamen und mindestens einem ausgeschriebenen Vornamen (derzeit: Luis Heidecker). In der Gründungsphase Firma mit „i. G.“; die Handelnden haften bis zur Eintragung persönlich (§ 11 Abs. 2 GmbHG) |
+| VO (EU) 2024/3228                             | OS-Plattform eingestellt, VO (EU) Nr. 524/2013 mit Wirkung vom 20.7.2025 aufgehoben – **kein OS-Link** mehr auf der Website                                                                                                                                                                                                                                                                                                     |
 
 ## 3. Ablauf des Checkouts (Schritte und Pflichtinhalte)
 
@@ -130,21 +130,21 @@ Technisch: Jede Checkbox hat ein eigenes `<label>`, Status wird mit Wortlaut-Ver
 
 ## 5. Vorvertragliche Informationen (Art. 246a § 1 EGBGB) – wo sie stehen
 
-| Nr. | Information | Ort |
-|---|---|---|
-| 1 | wesentliche Eigenschaften | Produktseite, Leistungsbeschreibung (AGB § 2), Schritt 4 |
-| 2–4 | Identität, Anschrift, Beschwerdeanschrift | Impressum, AGB „Anbieter“, Fußzeile |
-| 3 | Telefon, E-Mail | Impressum, AGB, Fußzeile |
-| 5, 7, 8 | Gesamtpreis inkl. Steuern, keine Zusatzkosten, monatliche Gesamtkosten | Schritt 1 und 4, Preisseite, AGB § 4 |
-| 10 | Zahlungs- und Leistungsbedingungen, Beschwerdeverfahren | Schritt 3 und 4, AGB § 4, § 15 Abs. 1 |
-| 11b | Hinweis auf gesetzliches Gewährleistungsrecht für digitale Dienstleistungen | AGB § 10 Abs. 1 (Satz „Es gilt das gesetzliche Gewährleistungsrecht …“) – zusätzlich als Satz auf der Preisseite empfehlenswert |
-| 11c | Mindestdauer der Softwareaktualisierungen | AGB § 2 Abs. 6: für die gesamte Vertragslaufzeit |
-| 12 | Kundendienst | AGB § 2 Abs. 7 |
-| 14, 15 | Laufzeit, Kündigungsbedingungen, Mindestdauer (keine) | Schritt 4, AGB § 5 |
-| 17, 18 | Funktionalität, Kompatibilität/Interoperabilität | AGB § 2 Abs. 8 (Systemvoraussetzungen); nötig auch für § 327k Abs. 4 BGB |
-| 19 | außergerichtliche Streitbeilegung | AGB § 15 Abs. 2 |
-| Abs. 2 | Widerrufsbedingungen, Muster-Widerrufsformular, Widerrufsfunktion, Wertersatz | widerruf.html, Schritt 4 (Link), Bestätigungs-E-Mail |
-| Abs. 3 Nr. 2 | Umstände des vorzeitigen Erlöschens | widerruf.html Abschnitt 3 |
+| Nr.          | Information                                                                   | Ort                                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1            | wesentliche Eigenschaften                                                     | Produktseite, Leistungsbeschreibung (AGB § 2), Schritt 4                                                                        |
+| 2–4          | Identität, Anschrift, Beschwerdeanschrift                                     | Impressum, AGB „Anbieter“, Fußzeile                                                                                             |
+| 3            | Telefon, E-Mail                                                               | Impressum, AGB, Fußzeile                                                                                                        |
+| 5, 7, 8      | Gesamtpreis inkl. Steuern, keine Zusatzkosten, monatliche Gesamtkosten        | Schritt 1 und 4, Preisseite, AGB § 4                                                                                            |
+| 10           | Zahlungs- und Leistungsbedingungen, Beschwerdeverfahren                       | Schritt 3 und 4, AGB § 4, § 15 Abs. 1                                                                                           |
+| 11b          | Hinweis auf gesetzliches Gewährleistungsrecht für digitale Dienstleistungen   | AGB § 10 Abs. 1 (Satz „Es gilt das gesetzliche Gewährleistungsrecht …“) – zusätzlich als Satz auf der Preisseite empfehlenswert |
+| 11c          | Mindestdauer der Softwareaktualisierungen                                     | AGB § 2 Abs. 6: für die gesamte Vertragslaufzeit                                                                                |
+| 12           | Kundendienst                                                                  | AGB § 2 Abs. 7                                                                                                                  |
+| 14, 15       | Laufzeit, Kündigungsbedingungen, Mindestdauer (keine)                         | Schritt 4, AGB § 5                                                                                                              |
+| 17, 18       | Funktionalität, Kompatibilität/Interoperabilität                              | AGB § 2 Abs. 8 (Systemvoraussetzungen); nötig auch für § 327k Abs. 4 BGB                                                        |
+| 19           | außergerichtliche Streitbeilegung                                             | AGB § 15 Abs. 2                                                                                                                 |
+| Abs. 2       | Widerrufsbedingungen, Muster-Widerrufsformular, Widerrufsfunktion, Wertersatz | widerruf.html, Schritt 4 (Link), Bestätigungs-E-Mail                                                                            |
+| Abs. 3 Nr. 2 | Umstände des vorzeitigen Erlöschens                                           | widerruf.html Abschnitt 3                                                                                                       |
 
 Entfallen: Nr. 6 (keine personalisierten Preise – falls doch, Hinweis nötig), 9, 11, 11a, 13, 16, 20, 21.
 
@@ -218,14 +218,14 @@ Die Kündigung per E-Mail an kontakt@vereins-flow.com und im Kundenkonto bleibt 
 
 ## 12. Aufbewahrung und Protokollierung
 
-| Was | Wie lange | Grundlage |
-|---|---|---|
-| Rechnungen, Buchungsbelege, Zahlungsnachweise | 8 Jahre ab Schluss des Kalenderjahrs | § 147 Abs. 1 Nr. 4, Abs. 3 AO (Buchungsbelege acht Jahre); § 14b UStG |
-| Handels-/Geschäftsbriefe (Auftragsbestätigungen, Kündigungen, Widerrufe) | 6 Jahre | § 147 Abs. 1 Nr. 2 und 3, Abs. 3 AO; § 257 HGB |
+| Was                                                                                                        | Wie lange                                                                              | Grundlage                                                                              |
+| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Rechnungen, Buchungsbelege, Zahlungsnachweise                                                              | 8 Jahre ab Schluss des Kalenderjahrs                                                   | § 147 Abs. 1 Nr. 4, Abs. 3 AO (Buchungsbelege acht Jahre); § 14b UStG                  |
+| Handels-/Geschäftsbriefe (Auftragsbestätigungen, Kündigungen, Widerrufe)                                   | 6 Jahre                                                                                | § 147 Abs. 1 Nr. 2 und 3, Abs. 3 AO; § 257 HGB                                         |
 | Bestell-Protokoll (Checkbox-Zustände, AGB-/Belehrungs-Version mit Prüfsumme, Zeitstempel, Opt-in-Wortlaut) | Vertragslaufzeit + 3 Jahre (regelmäßige Verjährung § 195 BGB, ab Jahresende § 199 BGB) | Nachweis der Einbeziehung, der Belehrung und des Opt-ins (Beweislast beim Unternehmer) |
-| IP-Adresse der Bestellung | 7 Tage im Klartext, danach Hash | Art. 6 Abs. 1 lit. f DSGVO, Missbrauchsschutz |
-| Kündigungs- und Widerrufserklärungen mit Eingangszeit | wie Geschäftsbriefe, mindestens bis Ablauf der Verjährung | § 312k Abs. 4, § 356a Abs. 4 BGB |
-| Mitgliederdaten des Kunden (Auftragsdaten) | bis Vertragsende + Exportfrist, dann Löschung nach AGB § 9 Abs. 3 / AV-Vertrag | Art. 28 Abs. 3 lit. g DSGVO |
+| IP-Adresse der Bestellung                                                                                  | 7 Tage im Klartext, danach Hash                                                        | Art. 6 Abs. 1 lit. f DSGVO, Missbrauchsschutz                                          |
+| Kündigungs- und Widerrufserklärungen mit Eingangszeit                                                      | wie Geschäftsbriefe, mindestens bis Ablauf der Verjährung                              | § 312k Abs. 4, § 356a Abs. 4 BGB                                                       |
+| Mitgliederdaten des Kunden (Auftragsdaten)                                                                 | bis Vertragsende + Exportfrist, dann Löschung nach AGB § 9 Abs. 3 / AV-Vertrag         | Art. 28 Abs. 3 lit. g DSGVO                                                            |
 
 Alle Rechtstexte versioniert ablegen (Datum, Versionsnummer, Prüfsumme); jede Bestellung referenziert die Version. Alte Versionen bleiben im Kundenkonto für den jeweiligen Vertrag abrufbar (AGB § 3 Abs. 5).
 
@@ -241,17 +241,17 @@ Alle Rechtstexte versioniert ablegen (Datum, Versionsnummer, Prüfsumme); jede B
 
 ## 14. Exakte Zeichenketten (für Entwicklung und Tests)
 
-| Element | Text |
-|---|---|
-| Bestellschaltfläche | `zahlungspflichtig bestellen` |
-| Kündigungsschaltfläche (Website/Konto) | `Verträge hier kündigen` |
-| Bestätigungsschaltfläche Kündigung | `jetzt kündigen` |
-| Widerrufsfunktion | `Vertrag widerrufen` |
-| Bestätigungsfunktion Widerruf | `Widerruf bestätigen` |
-| Betreff Auftragsbestätigung | `Ihre Bestellung bei VereinsFlow – Auftragsbestätigung [Nr.]` |
-| Betreff Kündigungsbestätigung | `Bestätigung Ihrer Kündigung – VereinsFlow` |
-| Betreff Widerrufs-Eingangsbestätigung | `Eingangsbestätigung Ihres Widerrufs – VereinsFlow` |
-| Hinweis VSBG (Website und AGB) | `Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).` |
+| Element                                | Text                                                                                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bestellschaltfläche                    | `zahlungspflichtig bestellen`                                                                                                                  |
+| Kündigungsschaltfläche (Website/Konto) | `Verträge hier kündigen`                                                                                                                       |
+| Bestätigungsschaltfläche Kündigung     | `jetzt kündigen`                                                                                                                               |
+| Widerrufsfunktion                      | `Vertrag widerrufen`                                                                                                                           |
+| Bestätigungsfunktion Widerruf          | `Widerruf bestätigen`                                                                                                                          |
+| Betreff Auftragsbestätigung            | `Ihre Bestellung bei VereinsFlow – Auftragsbestätigung [Nr.]`                                                                                  |
+| Betreff Kündigungsbestätigung          | `Bestätigung Ihrer Kündigung – VereinsFlow`                                                                                                    |
+| Betreff Widerrufs-Eingangsbestätigung  | `Eingangsbestätigung Ihres Widerrufs – VereinsFlow`                                                                                            |
+| Hinweis VSBG (Website und AGB)         | `Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).` |
 
 ## 15. Checkliste vor Live-Gang
 
