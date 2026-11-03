@@ -105,7 +105,7 @@ jobs:
         run: npx playwright test --shard=${{ matrix.shard }}/2
       - name: Berichte sichern (nur bei Fehlern)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-bericht-${{ matrix.shard }}
           path: |
@@ -148,7 +148,7 @@ jobs:
         run: npm run test:prod-smoke
       - name: Berichte sichern (nur bei Fehlern)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prod-smoke-bericht
           path: test-results
