@@ -2,6 +2,7 @@ import path from "node:path";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
+import { addDays, berlinToday, inDaysText } from "./dates";
 import { USERS, chooseTab, login, loginSettled, open } from "./helpers";
 
 /**
@@ -10,20 +11,6 @@ import { USERS, chooseTab, login, loginSettled, open } from "./helpers";
  * (Eintrittsdaten relativ zu heute in Berlin), damit er unabhängig vom Datum des Laufs ist.
  */
 
-/** Heutiger Kalendertag in Berlin als „JJJJ-MM-TT“ – wie die Anwendung rechnet. */
-const berlinToday = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Berlin",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
-const shiftDays = (iso: string, days: number) => {
-  const date = new Date(`${iso}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-};
 const minusYears = (iso: string, years: number) =>
   `${Number(iso.slice(0, 4)) - years}${iso.slice(4)}`;
 
@@ -37,8 +24,8 @@ const NAMES = {
   soon: `Bald${suffix}`, // 75 Jahre in zwei Tagen (Dashboard), Fußball
 };
 // In zwei Tagen (einen Tag später, falls das ein 29. Februar wäre – den gibt es 75 Jahre vorher nicht)
-const soonOffset = shiftDays(today, 2).endsWith("02-29") ? 3 : 2;
-const soonDay = shiftDays(today, soonOffset);
+const soonOffset = addDays(today, 2).endsWith("02-29") ? 3 : 2;
+const soonDay = addDays(today, soonOffset);
 
 /** Legt die Jubilare über den CSV-Import an – genau wie ein Verein seine Mitgliederliste übernimmt. */
 async function importJubilare(page: Page) {
@@ -184,7 +171,7 @@ test.describe.serial("Ehrungen", () => {
     const item = card.getByRole("listitem").filter({ hasText: NAMES.soon });
     await expect(item.getByRole("link", { name: `Berta ${NAMES.soon}` })).toBeVisible();
     await expect(item).toContainText("75 Jahre Mitglied");
-    await expect(item).toContainText(`(in ${soonOffset} Tagen)`);
+    await expect(item).toContainText(`(${inDaysText(soonDay)})`); // nach Mitternacht „(morgen)“
     await card.getByRole("link", { name: "Alle Ehrungen" }).click();
     await expect(page).toHaveURL(/\/mitglieder\/ehrungen$/);
 

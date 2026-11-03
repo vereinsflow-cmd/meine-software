@@ -1,19 +1,12 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { berlinToday, dueBadge, dueText, fromToday, germanDate, seedDay } from "./dates";
 import { USERS, login, open } from "./helpers";
 
 /**
- * Rechnungen und offene Zahlungen. Die Demo-Daten enthalten zwei offene Rechnungen (349,50 € in 14 Tagen fällig,
- * 1.200,00 € seit 3 Tagen überfällig) und eine bezahlte. Hochgeladen wird als Vorstand (Kassenwart) – der Admin lädt in
- * anderen Tests schon viel hoch (Upload-Grenze je Person).
+ * Rechnungen und offene Zahlungen. Die Demo-Daten enthalten zwei offene Rechnungen (349,50 € fällig 14 Tage nach dem Tag
+ * des Seeds, 1.200,00 € fällig 3 Tage davor) und eine bezahlte. Hochgeladen wird als Vorstand (Kassenwart) – der Admin lädt
+ * in anderen Tests schon viel hoch (Upload-Grenze je Person).
  */
-/** Kalendertage ab heute (Berlin) – wie die Anwendung, nicht in 24-Stunden-Schritten (Sommerzeit). */
-const isoDay = (offset: number) => {
-  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
-  const day = new Date(`${today}T00:00:00Z`);
-  day.setUTCDate(day.getUTCDate() + offset);
-  return day.toISOString().slice(0, 10);
-};
-const berlinDay = (offset: number) => isoDay(offset).split("-").reverse().join(".");
 const pdf = (text: string) =>
   Buffer.from(
     `%PDF-1.4\n% ${text}\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n`,
@@ -62,10 +55,10 @@ test("Dashboard: nur Vorstand und Verwaltung sehen die offenen Zahlungen – Sum
   await expect(card).toContainText("1 überfällig");
   const rows = card.getByRole("listitem");
   await expect(rows.first()).toContainText(euro("1.200,00 €"));
-  await expect(rows.first()).toContainText("seit 3 Tagen überfällig");
+  await expect(rows.first()).toContainText(dueText(seedDay(-3))); // am Tag des Seeds „seit 3 Tagen überfällig“
   // Als Kachel im Kennzahlen-Raster steht zuerst nur die dringendste – die übrigen hinter „weitere anzeigen“
   await showAllInvoices(card);
-  await expect(rows.nth(1)).toContainText("fällig in 14 Tagen");
+  await expect(rows.nth(1)).toContainText(dueText(seedDay(14)));
   await expect(card.getByRole("link", { name: /Alle offenen Rechnungen/ })).toHaveAttribute(
     "href",
     "/finanzen/rechnungen?stand=offen",
@@ -101,7 +94,7 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
   await expect(dialog.getByText(/ließ sich gerade nicht auslesen/)).toBeVisible();
   await expect(dialog.getByLabel("Name der Rechnung")).toHaveAttribute(
     "placeholder",
-    `Rechnung vom ${berlinDay(0)}`,
+    `Rechnung vom ${germanDate(berlinToday())}`,
   );
   await expect(dialog.getByLabel(/^Wer darf es sehen/)).toHaveValue("BOARD"); // Rechnungen: zunächst „Nur Vorstand“
   // Zwei Antworten statt eines Häkchens: Ein Klick auf die schon gewählte Antwort wählt sie nicht ab (mit dem
@@ -120,7 +113,9 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
   await expect(dialog.getByText("Bitte gib den Betrag ein.")).toBeVisible();
 
   await dialog.getByLabel(/^Betrag/).fill("89,90");
-  await dialog.getByLabel("Fällig am").fill(isoDay(10));
+  const dueDay = fromToday(10);
+  await dialog.getByLabel("Fällig am").fill(dueDay);
+  const uploaded = berlinToday(); // der Tag im Namen
   await dialog.getByRole("button", { name: "Hochladen", exact: true }).click();
   await expect(
     page.getByText("Rechnung hochgeladen – sie steht jetzt bei den offenen Zahlungen."),
@@ -143,12 +138,12 @@ test("Rechnung hochladen: automatischer Name, Betrag und Fälligkeit, dann auf d
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 
-  const name = `Rechnung vom ${berlinDay(0)}.pdf`;
+  const name = `Rechnung vom ${germanDate(uploaded)}.pdf`;
   const row = documentRow(page, name);
   await expect(row).toHaveCount(1);
   // Rechte Spalte: Betrag und Schild; „Bezahlt“ zartgrün daneben.
   await expect(row).toContainText(euro("89,90 €"));
-  await expect(row).toContainText("fällig in 10 Tagen");
+  await expect(row).toContainText(dueBadge(dueDay)); // „fällig in 10 Tagen“
   await expect(row).toContainText("Nur Vorstand");
   await expect(row.getByRole("button", { name: `„${name}“ als bezahlt markieren` })).toBeVisible();
 
@@ -234,15 +229,16 @@ test("Dokumente: Filterknopf „Offene Rechnungen“ und Zahlungsstand im Bearbe
   // Die Hallenmiete (1.200,00 €) – über den Betrag gefunden, ihr Name hängt am Tag der Demo-Daten.
   const hallenmiete = await invoiceNameIn(rows.filter({ hasText: euro("1.200,00 €") }));
   const row = documentRow(page, hallenmiete);
-  await expect(row).toContainText("überfällig seit 3 Tagen");
+  await expect(row).toContainText(dueBadge(seedDay(-3))); // am Tag des Seeds „überfällig seit 3 Tagen“
 
   await chooseFromMenu(page, hallenmiete, "Bearbeiten");
   const edit = page.getByRole("dialog", { name: "Dokument bearbeiten" });
   await expect(edit.getByLabel(/^Betrag/)).toHaveValue("1200,00");
-  await edit.getByLabel("Fällig am").fill(isoDay(20));
+  const later = fromToday(20);
+  await edit.getByLabel("Fällig am").fill(later);
   await edit.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByText("Dokument gespeichert.")).toBeVisible();
-  await expect(row).toContainText("fällig in 20 Tagen");
+  await expect(row).toContainText(dueBadge(later)); // „fällig in 20 Tagen“
 
   await chooseFromMenu(page, hallenmiete, "Bearbeiten");
   await edit.getByLabel("Zahlungsstand").selectOption("PAID");
@@ -270,6 +266,7 @@ test("Rechnung auslesen: Name, Betrag, Fälligkeit und „schon bezahlt“ werde
   page,
 }) => {
   // Die Antwort der KI wird vorgetäuscht – geprüft wird, was das Fenster daraus macht und was gespeichert wird.
+  const due = fromToday(7);
   let calls = 0;
   await page.route("**/api/rechnungen/auslesen", async (route) => {
     calls += 1;
@@ -281,7 +278,7 @@ test("Rechnung auslesen: Name, Betrag, Fälligkeit und „schon bezahlt“ werde
           prefill: {
             title: "Getränke Müller – Sommerfest",
             amount: "45,80",
-            dueDate: isoDay(7),
+            dueDate: due,
             paid: true,
             note: null,
           },
@@ -307,7 +304,7 @@ test("Rechnung auslesen: Name, Betrag, Fälligkeit und „schon bezahlt“ werde
   // Wechselt man auf „muss noch bezahlt werden“, stehen Betrag und Fälligkeit schon da.
   await dialog.getByRole("radio", { name: "Muss noch bezahlt werden" }).check();
   await expect(dialog.getByLabel(/^Betrag/)).toHaveValue("45,80");
-  await expect(dialog.getByLabel("Fällig am")).toHaveValue(isoDay(7));
+  await expect(dialog.getByLabel("Fällig am")).toHaveValue(due);
   await dialog.getByRole("radio", { name: "Ist schon bezahlt" }).check();
 
   await dialog.getByRole("button", { name: "Hochladen", exact: true }).click();

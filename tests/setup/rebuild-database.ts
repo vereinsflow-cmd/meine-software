@@ -10,9 +10,14 @@ const root = path.resolve(__dirname, "../..");
 /**
  * Baut eine frische Datenbank auf und befüllt sie mit den Demo-Daten (Seed) – Grundlage für alle Tests im Browser
  * (E2E gegen den Dev-Server, Rauchtest gegen den Produktions-Build). Eine vorhandene Datenbank gleichen Namens wird gelöscht.
- * Dateien früherer Läufe (`storageDir`, relativ zum Projekt) gehören zur alten Datenbank und werden entfernt.
+ * Dateien früherer Läufe (`storageDir`, relativ zum Projekt) gehören zur alten Datenbank und werden entfernt. `seedDay`
+ * („JJJJ-MM-TT“) ist der Tag, auf den sich die Demo-Daten beziehen (Vorgabe: heute, siehe SEED_DAY in prisma/seed.ts).
  */
-export async function rebuildDatabase(name: string, storageDir?: string): Promise<void> {
+export async function rebuildDatabase(
+  name: string,
+  storageDir?: string,
+  seedDay?: string,
+): Promise<void> {
   await dropDatabase(name);
   const admin = new pg.Client({ connectionString: ADMIN_DATABASE_URL });
   await admin.connect();
@@ -39,6 +44,7 @@ export async function rebuildDatabase(name: string, storageDir?: string): Promis
       NODE_ENV: "test",
       // Die Belege der Demo-Rechnungen gehören in den Speicher des Testservers, nicht in den echten.
       ...(storageDir ? { STORAGE_DIR: storageDir } : {}),
+      ...(seedDay ? { SEED_DAY: seedDay } : {}),
     },
   });
 }
