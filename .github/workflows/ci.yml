@@ -68,7 +68,8 @@ jobs:
   e2e:
     name: Ende-zu-Ende-Tests (Browser)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # Alle Tests laufen nacheinander (eine Datenbank): Anfang November 2026 rund 440 Tests in gut 40 Minuten.
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:18

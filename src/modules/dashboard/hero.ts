@@ -109,9 +109,10 @@ export const HERO_BANNER_HEIGHT = "h-[17.125rem] @[40rem]/buehne:h-[17rem]";
 
 /**
  * Geschätzte Breite eines Zeichens der Begrüßung in em (halbfett, Laufweite −0,035 em). Gemessen mit den Systemschriften der
- * App: SF Pro (Mac, iPhone) 0,46–0,48, Arial 0,49–0,51, Tahoma (ähnlich breit wie Segoe UI) 0,52–0,54 – mit Reserve 0,55.
+ * App: SF Pro (Mac, iPhone) 0,46–0,48, Arial 0,49–0,51, Tahoma (ähnlich breit wie Segoe UI) 0,52–0,54, Verdana und DejaVu Sans
+ * (Linux, auch die Tests in der CI) 0,56–0,58 – mit Reserve 0,6. Mit 0,55 endete „Guten Morgen, Maximiliane“ dort mit „…“.
  */
-export const HERO_TITLE_EM_PER_CHAR = 0.55;
+export const HERO_TITLE_EM_PER_CHAR = 0.6;
 
 /**
  * Geschätzte Breite der Begrüßung in em. Die Komponente teilt die Breite der Schriftspalte dadurch und nimmt das als

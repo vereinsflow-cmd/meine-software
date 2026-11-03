@@ -354,13 +354,14 @@ export function DashboardHero({
 
             {/* Begrüßung (Überschrift der Seite) – immer EINE Zeile. Schriftgröße: die übliche (Handy 2 rem; ab 40 rem wächst sie mit
                 der Breite des Banners, `cqi`), höchstens aber so groß, dass die Begrüßung in die Schriftspalte passt (Spaltenbreite
-                geteilt durch die geschätzte Breite in em, `heroTitleEms`), mindestens 1,125 rem – ein noch längerer Name endet mit
-                „…“ und ragt nie über die Spalte (dort reicht die Nacht für den Kontrast). Die Zeilenhöhe bleibt die übliche. */}
+                geteilt durch die geschätzte Breite in em, `heroTitleEms`), mindestens 1 rem (ab 40 rem 1,125 rem) – ein noch längerer
+                Name endet mit „…“ und ragt nie über die Spalte (dort reicht die Nacht für den Kontrast). Die Zeilenhöhe bleibt die
+                übliche. */}
             <h1
               style={{ "--hero-title-ems": heroTitleEms(title) } as React.CSSProperties}
               className={cn(
                 "overflow-x-clip font-semibold tracking-[-0.035em] text-ellipsis whitespace-nowrap [text-shadow:0_2px_24px_rgb(6_10_22/0.6)]",
-                "text-[length:max(1.125rem,min(2rem,calc((100cqi_-_2.5rem)_/_var(--hero-title-ems))))] leading-[2.1rem] @max-[40rem]/buehne:mt-auto",
+                "text-[length:max(1rem,min(2rem,calc((100cqi_-_2.5rem)_/_var(--hero-title-ems))))] leading-[2.1rem] @max-[40rem]/buehne:mt-auto",
                 "@[40rem]/buehne:mt-5 @[40rem]/buehne:text-[length:max(1.125rem,min(clamp(2.25rem,4.6cqi,3.5rem),calc((100cqi_-_4rem)_*_0.46_/_var(--hero-title-ems))))]",
                 "@[40rem]/buehne:leading-[calc(clamp(2.25rem,4.6cqi,3.5rem)_*_1.05)]",
               )}

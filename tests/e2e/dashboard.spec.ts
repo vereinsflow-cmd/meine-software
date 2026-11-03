@@ -57,6 +57,26 @@ async function inside(inner: Locator, outer: Locator): Promise<boolean> {
     a.y + a.height <= b.y + b.height + 1
   );
 }
+
+/**
+ * Bild der größten Abteilung mit Foto, gezählt auf /abteilungen (dort nach Namen sortiert; bei Gleichstand gewinnt die erste) –
+ * wie `heroStage`. Nicht fest „Fußball“: Frühere Tests nehmen Mitglieder auf (Beitritt per QR-Code nach Tischtennis).
+ */
+async function largestDepartmentImage(page: Page): Promise<string> {
+  await open(page, "/abteilungen");
+  const cards = page.locator("article").filter({ has: page.locator("img[data-department-image]") });
+  await expect(cards.first()).toContainText(/\d+ Mitglied/);
+  const counted = await cards.evaluateAll((articles) =>
+    articles.map((article) => ({
+      image: article
+        .querySelector("img[data-department-image]")!
+        .getAttribute("data-department-image")!,
+      members: Number(/(\d+) Mitglied/.exec(article.textContent ?? "")![1]),
+    })),
+  );
+  return counted.reduce((largest, next) => (next.members > largest.members ? next : largest)).image;
+}
+
 test.describe("Dashboard", () => {
   test("Vereinsadministrator: vier Reiter mit Kennzahlen, Aufgaben, Terminen, Geburtstagen, Aktivitäten und Auswertungen", async ({
     page,
@@ -422,6 +442,8 @@ test.describe("Dashboard", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1440, height: 900 });
     await login(page, USERS.admin);
+    const largest = await largestDepartmentImage(page);
+    await open(page, "/dashboard");
     const title = page.getByRole("heading", { level: 1, name: greeting("Anna") });
     await expect(title).toBeVisible();
     expect(await inside(title, banner(page))).toBe(true);
@@ -453,7 +475,7 @@ test.describe("Dashboard", () => {
     const main = banner(page).locator('[data-hero-strip="main"] img');
     await expect(main).toHaveAttribute("loading", "eager");
     await expect(main).toHaveAttribute("fetchpriority", "high");
-    await expect(main).toHaveAttribute("data-department-image", "fussball"); // die größte Abteilung
+    await expect(main).toHaveAttribute("data-department-image", largest);
     await expect(banner(page).getByText("Fußball", { exact: true })).toBeVisible();
 
     // Glas-Chips: drei echte Zahlen als Links in ihre Bereiche

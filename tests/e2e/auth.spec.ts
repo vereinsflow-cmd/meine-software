@@ -172,7 +172,10 @@ test.describe("Anmeldeseite als Kinobühne", () => {
     expect((await stageState(page)).motion).toBe("running");
     await expect.poll(() => ringTurns(page)).toBe(true);
 
-    await page.getByRole("button", { name: "Bewegung anhalten" }).click();
+    // Links am Rand geklickt: Dort lag früher das Leuchten der (gekippten) Glasfläche über dem Knopf und schluckte den Klick.
+    await page
+      .getByRole("button", { name: "Bewegung anhalten" })
+      .click({ position: { x: 6, y: 18 } });
     const resume = page.getByRole("button", { name: "Bewegung fortsetzen" });
     await expect(resume).toBeVisible();
     expect((await stageState(page)).motion).toBe("paused");

@@ -83,7 +83,11 @@ test.describe("Familien – Kassenwart", () => {
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Familie Koch" })).toBeVisible();
     await open(page, "/finanzen/beitraege");
-    const row = page.getByRole("row").filter({ hasText: "Familie Koch" });
+    // Die Zeile der Familie (ihr Name ist der Link). Ab dem zweiten Monat eines Quartals zahlen Lukas und Paul bis zur Gründung
+    // noch einzeln – ihre Zeilen nennen dann ebenfalls „Familie Koch“.
+    const row = page
+      .getByRole("row")
+      .filter({ has: page.getByRole("link", { name: "Familie Koch", exact: true }) });
     await expect(row).toContainText("zahlt: Ben Koch");
     await expect(row).toContainText(/Familienbeitrag für Lukas und Paul/);
   });
