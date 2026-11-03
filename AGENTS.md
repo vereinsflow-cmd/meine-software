@@ -20,3 +20,13 @@ E2E_PORT=3400 E2E_DATABASE=vf_e2e_zwei npx playwright test cron.spec.ts
 - Der Datenbankname muss mit `vf_e2e` beginnen (Kleinbuchstaben, Ziffern, `_`). Die Extra-Datenbank wird nach dem Lauf automatisch gelöscht; nach einem abgebrochenen Lauf räumt der nächste Lauf mit demselben Namen sie mit auf.
 - Screenshots und Spuren eines solchen Laufs liegen in `.local/test-results-<Datenbank>` statt in `test-results`.
 - Jeder parallele Lauf braucht seinen eigenen Ordner (Worktree): Im selben Ordner teilen sich die Läufe `.next-e2e`, und Next.js verweigert den zweiten Testserver.
+
+# Tagesangaben in E2E-Tests
+
+Die Demo-Daten liegen relativ zum Tag des Seeds, und ein Lauf kann über Mitternacht gehen – danach ist die Demo-Rechnung „seit 4 Tagen“ statt „seit 3 Tagen“ überfällig. Erwartete Texte wie „fällig in 5 Tagen“ deshalb nie fest hinschreiben, sondern mit `tests/e2e/dates.ts` berechnen: `seedDay(5)` für Demo-Daten, `fromToday(5)` für selbst Angelegtes, `dueText`/`dueBadge`/`inDaysText` für den Text. Nie in 24-Stunden-Schritten rechnen (`Date.now() + 5 * 86_400_000`) – um die Zeitumstellung verrutscht dann der Tag.
+
+Einen Lauf nachstellen, der vor Mitternacht begann (Seed von gestern):
+
+```bash
+E2E_SEED_DAY=2026-11-02 E2E_PORT=3400 E2E_DATABASE=vf_e2e_zwei npx playwright test rechnungen.spec.ts
+```

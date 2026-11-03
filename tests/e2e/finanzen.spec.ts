@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
+import { seedDay } from "./dates";
 import {
   USERS,
   ensureFinanceReader,
   ensureLedger,
-  isoDaysAgo,
   login,
   loginSettled,
   open,
@@ -572,7 +572,7 @@ test.describe("Finanzen – Kassensturz, Konten, Abschluss", () => {
     await login(page, USERS.vorstand);
     await ensureLedger(page);
     await open(page, "/finanzen/abschluss");
-    // Das Kassenbuch beginnt vor 60 Tagen – sein erster Monat ist vorbei.
+    // Das Kassenbuch beginnt 60 Tage vor dem Seed (ensureLedger) – sein erster Monat ist vorbei.
     const close = page.getByRole("button", { name: / abschließen$/ });
     await expect(close).toBeVisible();
     const label = ((await close.textContent()) ?? "").replace(" abschließen", "").trim();
@@ -590,7 +590,7 @@ test.describe("Finanzen – Kassensturz, Konten, Abschluss", () => {
     await page.getByRole("button", { name: "Neue Buchung" }).click();
     const dialog = page.getByRole("dialog", { name: "Neue Buchung" });
     await dialog.getByLabel("Betrag in €").fill("5,00");
-    await dialog.getByLabel("Datum").fill(isoDaysAgo(60)); // Beginn des Kassenbuchs – im abgeschlossenen Monat
+    await dialog.getByLabel("Datum").fill(seedDay(-60)); // Beginn des Kassenbuchs – im abgeschlossenen Monat
     await dialog.getByLabel("Beschreibung").fill("E2E zu spät");
     await dialog.getByLabel("Kategorie").selectOption({ label: "Sportmaterial" });
     await dialog.getByRole("button", { name: "Ausgabe buchen" }).click();

@@ -9,6 +9,7 @@ import {
 } from "@playwright/test";
 import pg from "pg";
 import { databaseUrlFor } from "../setup/env";
+import { fromToday, seedDay } from "./dates";
 import { E2E_DATABASE, appUrlPattern } from "./environment";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
@@ -328,7 +329,7 @@ export async function inviteNewPerson(
  * Anwesenheit, die erst ab einer Stunde vor Beginn erfasst werden kann. Liefert die Kennung der Veranstaltung.
  */
 export async function createPublishedPastTraining(page: Page, title: string): Promise<string> {
-  const day = isoDaysAgo(1);
+  const day = fromToday(-1);
   await open(page, "/veranstaltungen/neu");
   await page.getByLabel("Titel").fill(title);
   await page.getByLabel("Art der Veranstaltung").selectOption({ label: "Training" });
@@ -357,19 +358,14 @@ export async function createPublishedPastTraining(page: Page, title: string): Pr
  * Kassenbuch einrichten, falls noch nicht geschehen (die E2E-Datenbank startet ohne). Mehrere Testdateien brauchen es –
  * alle mit denselben Werten, damit Kontostände überall gleich sind.
  */
-/** „JJJJ-MM-TT“ vor `days` Tagen (Berlin). */
-export function isoDaysAgo(days: number): string {
-  const date = new Date(Date.now() - days * 86_400_000);
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(date);
-}
-
 export async function ensureLedger(page: Page): Promise<void> {
   await open(page, "/finanzen/kassenbuch");
   const setup = page.getByRole("button", { name: "Kassenbuch einrichten" });
   if (await setup.isVisible()) {
-    // Beginn vor 60 Tagen statt am 1. Januar: Die bezahlte Seed-Rechnung (vor 40 Tagen) liegt so zu jeder Jahreszeit im
-    // Kassenbuch – auch im Januar.
-    await page.getByLabel("Kassenbuch beginnt am").fill(isoDaysAgo(60));
+    // Beginn 60 Tage vor dem Seed statt am 1. Januar: Die bezahlte Seed-Rechnung (40 Tage davor) liegt so zu jeder
+    // Jahreszeit im Kassenbuch – auch im Januar. Am Tag des Seeds festgemacht, damit der Beginn auch nach Mitternacht
+    // noch `seedDay(-60)` ist (finanzen.spec.ts bucht dorthin).
+    await page.getByLabel("Kassenbuch beginnt am").fill(seedDay(-60));
     await page.getByLabel("Bank").fill("Sparkasse Musterstadt");
     await page.getByLabel("Anfangsbestand in €").first().fill("11.200,00");
     await page.getByLabel("Anfangsbestand in €").nth(1).fill("239,80");

@@ -1,16 +1,12 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { violations } from "./axe";
+import { dueBadge, fromToday, seedDay } from "./dates";
 import { USERS, animationsDone, login, open, openNavGroup, ringTurns } from "./helpers";
 
 /**
  * Smartphone-Ansicht (Pixel 7, 412 px breit). Läuft nur im Projekt "mobil": `npx playwright test --project=mobil`.
  * Prüft, dass nichts seitlich aus dem Bildschirm läuft und die Bedienung ohne Sidebar funktioniert.
  */
-const berlinDate = (offset: number) =>
-  new Date(Date.now() + offset * 86_400_000).toLocaleDateString("sv-SE", {
-    timeZone: "Europe/Berlin",
-  });
-
 async function horizontalOverflow(page: Page): Promise<number> {
   return page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -55,7 +51,7 @@ test.describe("Smartphone", () => {
 
   test("Kalender: Terminliste statt Tabelle, Ansicht wechselbar", async ({ page }) => {
     await login(page, USERS.admin);
-    await page.goto(`/kalender?ansicht=monat&datum=${berlinDate(5)}`);
+    await page.goto(`/kalender?ansicht=monat&datum=${seedDay(5)}`); // Vorstandssitzung im Seed
     await expect(page.getByRole("table")).toHaveCount(0); // die Monatstabelle ist ausgeblendet …
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible(); // … die Terminliste zeigt den Termin
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
@@ -334,6 +330,7 @@ test.describe("Smartphone", () => {
     // Eigene Rechnung (die Demo-Rechnungen ändern andere Tests): offen, 12,50 €, in 5 Tagen fällig.
     const title = `Mobil-Rechnung-${Date.now() % 100000}`;
     const name = `${title}.pdf`;
+    const due = fromToday(5);
     const created = await page.request.post("/api/dokumente", {
       multipart: {
         file: {
@@ -345,7 +342,7 @@ test.describe("Smartphone", () => {
         isInvoice: "on",
         paymentDue: "true",
         amount: "12,50",
-        dueDate: berlinDate(5),
+        dueDate: due,
         title,
       },
     });
@@ -357,7 +354,7 @@ test.describe("Smartphone", () => {
       .getByRole("listitem")
       .filter({ has: page.getByRole("link", { name, exact: true }) });
     await expect(entry.getByText(/^12,50\s€$/).filter({ visible: true })).toBeVisible();
-    await expect(entry.getByText("fällig in 5 Tagen").filter({ visible: true })).toBeVisible();
+    await expect(entry.getByText(dueBadge(due)).filter({ visible: true })).toBeVisible();
     // Am Handy kein grüner Knopf in der Zeile – „Bezahlt“ steckt im Menü.
     await expect(entry.getByRole("button", { name: /als bezahlt markieren/ })).toBeHidden();
     const menu = page.getByRole("menu");
@@ -378,7 +375,7 @@ test.describe("Smartphone", () => {
     await page.getByRole("button", { name: "Rückgängig" }).click();
     await expect(page.getByText(`„${name}“ ist wieder offen.`)).toBeVisible();
     await page.reload();
-    await expect(entry.getByText("fällig in 5 Tagen").filter({ visible: true })).toBeVisible();
+    await expect(entry.getByText(dueBadge(due)).filter({ visible: true })).toBeVisible();
   });
 
   test("„Neuer Termin“ im Kalender: Knopf erreichbar, das Fenster passt auf den Bildschirm", async ({
