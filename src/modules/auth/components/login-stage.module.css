@@ -728,12 +728,14 @@
     transform: none;
   }
 }
-/* Leuchten hinter der Glasfläche – wird beim Fokus stärker */
+/* Leuchten hinter der Glasfläche – wird beim Fokus stärker. Breit kippt die Schleife die Glasfläche (`transform`); das Leuchten
+   liegt dann über der Kopfzeile und reicht bis unter „Bewegung anhalten“ – es darf keine Klicks schlucken. */
 .glassHolder::before {
   content: "";
   position: absolute;
   inset: -12% -10%;
   z-index: -1;
+  pointer-events: none;
   border-radius: 50%;
   background: radial-gradient(closest-side, rgb(var(--blue) / 0.45), transparent);
   opacity: 0.45;

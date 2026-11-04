@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
+import { seedDay } from "./dates";
 import { USERS, login } from "./helpers";
 
 /**
@@ -126,13 +127,10 @@ test.describe("Helferplan drucken", () => {
   test("Zeitraum grenzt die Veranstaltungen ein", async ({ page }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    // Seed: Arbeitseinsatz am nächsten Samstag (in 1–7 Tagen), Sommerfest eine Woche später (in 8–14 Tagen).
-    // „Bis“ in 7 Tagen (einschließlich) trennt beide an jedem Wochentag – auch samstags, wenn der Arbeitseinsatz
-    // erst in genau 7 Tagen ist. Gerechnet in Berliner Zeit wie im Seed.
-    const bis = new Date(Date.now() + 7 * 86_400_000).toLocaleDateString("sv-SE", {
-      timeZone: "Europe/Berlin",
-    });
-    await page.getByLabel("Bis").fill(bis);
+    // Seed: Arbeitseinsatz am nächsten Samstag (1–7 Tage nach dem Tag des Seeds), Sommerfest eine Woche später (8–14 Tage
+    // danach). „Bis“ 7 Tage nach dem Seed (einschließlich) trennt beide an jedem Wochentag – auch samstags, wenn der
+    // Arbeitseinsatz erst in genau 7 Tagen ist.
+    await page.getByLabel("Bis").fill(seedDay(7));
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
     await expect(notice(page, "Arbeitseinsatz Vereinsheim")).toBeVisible();
     await expect(page.getByRole("heading", { name: /Sommerfest 2026/ })).toHaveCount(0);

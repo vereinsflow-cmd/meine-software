@@ -17,6 +17,7 @@ import {
   parseBerlinDateTime,
   parseCalendarDate,
   toDateInputValue,
+  toTimeInputValue,
 } from "../src/lib/dates";
 import { TERMS_VERSION } from "../src/lib/legal";
 import { hashPassword } from "../src/server/auth/password";
@@ -49,6 +50,20 @@ const at = (day: Date, time: string): Date => {
   if (!value) throw new Error(`Ungültige Zeit ${time}`);
   return value;
 };
+
+/**
+ * „Heute“ der Demo-Daten: Termine, Fristen und Rechnungen liegen relativ zu diesem Tag (Uhrzeit wie jetzt). Die
+ * Ende-zu-Ende-Tests geben ihn mit SEED_DAY („JJJJ-MM-TT“) vor – so wissen sie auch nach Mitternacht noch, worauf sich
+ * „in 5 Tagen“ bezog (tests/e2e/dates.ts).
+ */
+function seedToday(): Date {
+  const now = new Date();
+  const day = process.env.SEED_DAY;
+  if (!day) return now;
+  const today = parseBerlinDateTime(day, toTimeInputValue(now));
+  if (!today) throw new Error(`SEED_DAY muss ein Datum „JJJJ-MM-TT“ sein (ist: "${day}").`);
+  return today;
+}
 
 async function main() {
   const existing = await prisma.club.findUnique({ where: { slug: DEMO_SLUG } });
@@ -388,7 +403,7 @@ async function main() {
   // ---------------------------------------------------------------------------------------------
   // Veranstaltungen
   // ---------------------------------------------------------------------------------------------
-  const today = new Date();
+  const today = seedToday();
   const daysUntilSaturday = (5 - berlinWeekday(today) + 7) % 7;
   const nextSaturday = addBerlinDays(today, daysUntilSaturday === 0 ? 7 : daysUntilSaturday);
   const festDay = addBerlinDays(nextSaturday, 7); // Sommerfest: in ein bis zwei Wochen → Warnungen bei Lücken sichtbar
@@ -1205,8 +1220,8 @@ async function seedFinanceDemo(options: {
 
   // Seed-Jahr = Jahr von „heute − 120 Tage“: Im Januar zeigt die Demo noch das volle Vorjahr. Alles relativ dazu – feste
   // Daten liefen ab (der Bescheid gilt nur 5 Jahre, K9). Spenden nach heute fehlen einfach.
-  const today = toDateInputValue(new Date());
-  const year = Number(toDateInputValue(addBerlinDays(new Date(), -120)).slice(0, 4));
+  const today = toDateInputValue(seedToday());
+  const year = Number(toDateInputValue(addBerlinDays(seedToday(), -120)).slice(0, 4));
   const on = (monthDay: string) => `${year}-${monthDay}`;
 
   await setupLedger(ctx, {

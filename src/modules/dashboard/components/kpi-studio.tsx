@@ -403,10 +403,11 @@ function StepBars({
   steps.forEach((step, index) => {
     if (max > 0 && step.value === max) best = index;
   });
-  // Höchstens sechs Beschriftungen (vom letzten Balken aus gezählt), sonst drängen sie sich.
+  // Höchstens sechs Beschriftungen (vom letzten Balken aus gezählt), sonst drängen sie sich; in schmalen Karten (Handy bis
+  // 360 px: „Jan 26“ stieß dort an „Mär 26“) nur jede zweite davon.
   const every = Math.ceil(steps.length / 6);
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="@container/balken flex flex-1 flex-col">
       <div className={cn("relative flex flex-1 pl-7", large ? "min-h-52" : "min-h-40")}>
         {/* Achse mit Hilfslinien (oben der höchste Wert) */}
         <div aria-hidden="true" className="absolute inset-0 flex flex-col-reverse justify-between">
@@ -439,14 +440,21 @@ function StepBars({
         </div>
       </div>
       <div aria-hidden="true" className="mt-2 flex gap-1.5 pl-7 text-xs text-muted-foreground">
-        {steps.map((step, index) => (
-          <span
-            key={`${step.label}-${index}`}
-            className="flex min-w-0 flex-1 justify-center overflow-visible whitespace-nowrap"
-          >
-            {index % every === (steps.length - 1) % every ? step.label : ""}
-          </span>
-        ))}
+        {steps.map((step, index) => {
+          const fromEnd = steps.length - 1 - index;
+          return (
+            <span
+              key={`${step.label}-${index}`}
+              className="flex min-w-0 flex-1 justify-center overflow-visible whitespace-nowrap"
+            >
+              {fromEnd % every === 0 && (
+                <span className={cn(fromEnd % (2 * every) !== 0 && "@max-[17rem]/balken:hidden")}>
+                  {step.label}
+                </span>
+              )}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,19 +1,13 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { berlinToday, seedDay } from "./dates";
 import { E2E_BASE_URL, appUrlPattern } from "./environment";
 import { USERS, login, open } from "./helpers";
 
-/** Datum (JJJJ-MM-TT) in Europe/Berlin, `offset` Tage ab heute. Die Seed-Daten sind relativ zu "heute" angelegt. */
-function berlinDate(offset: number): string {
-  return new Date(Date.now() + offset * 86_400_000).toLocaleDateString("sv-SE", {
-    timeZone: "Europe/Berlin",
-  });
-}
-
 /** Wie im Seed: Sommerfest = übernächster Samstag (der Samstag dieser Woche, sonst der nächste, plus sieben Tage). */
 function festDay(): string {
-  const weekdayMonday0 = (new Date(`${berlinDate(0)}T12:00:00Z`).getUTCDay() + 6) % 7;
+  const weekdayMonday0 = (new Date(`${seedDay()}T12:00:00Z`).getUTCDay() + 6) % 7;
   const untilSaturday = (5 - weekdayMonday0 + 7) % 7;
-  return berlinDate((untilSaturday === 0 ? 7 : untilSaturday) + 7);
+  return seedDay((untilSaturday === 0 ? 7 : untilSaturday) + 7);
 }
 
 const monthTitle = (date: string) =>
@@ -31,7 +25,7 @@ test.describe("Kalender – Ansichten", () => {
     await page.goto("/kalender");
     await expect(page.getByRole("heading", { level: 1, name: "Kalender" })).toBeVisible();
     const heading = page.getByRole("heading", { level: 2 }).filter({ hasText: /\d{4}$/ });
-    await expect(heading).toHaveText(monthTitle(berlinDate(0)));
+    await expect(heading).toHaveText(monthTitle(berlinToday()));
 
     const table = page.getByRole("table", { name: "Monatsübersicht der Termine" });
     await expect(table).toBeVisible();
@@ -43,20 +37,20 @@ test.describe("Kalender – Ansichten", () => {
 
     await page.getByRole("link", { name: "Nächster Monat" }).click();
     await expect(page).toHaveURL(/datum=\d{4}-\d{2}-01/);
-    await expect(heading).not.toHaveText(monthTitle(berlinDate(0)));
+    await expect(heading).not.toHaveText(monthTitle(berlinToday()));
     await page.getByRole("link", { name: "Vorheriger Monat" }).click();
-    await expect(heading).toHaveText(monthTitle(berlinDate(0)));
+    await expect(heading).toHaveText(monthTitle(berlinToday()));
 
     await page.getByRole("link", { name: "Nächster Monat" }).click();
     await page.getByRole("link", { name: "Heute", exact: true }).click();
-    await expect(heading).toHaveText(monthTitle(berlinDate(0)));
+    await expect(heading).toHaveText(monthTitle(berlinToday()));
   });
 
   test("Woche und Tag: Termin mit Link zur Veranstaltung, Wechsel der Ansicht behält das Datum", async ({
     page,
   }) => {
     await login(page, USERS.admin);
-    const day = berlinDate(5); // Vorstandssitzung im Seed
+    const day = seedDay(5); // Vorstandssitzung im Seed
     await page.goto(`/kalender?ansicht=woche&datum=${day}`);
     await expect(
       page.getByRole("heading", { level: 2 }).filter({ hasText: /^KW \d+/ }),
@@ -86,7 +80,7 @@ test.describe("Kalender – Ansichten", () => {
     page,
   }) => {
     await login(page, USERS.admin);
-    await page.goto(`/kalender?ansicht=liste&datum=${berlinDate(5)}`);
+    await page.goto(`/kalender?ansicht=liste&datum=${seedDay(5)}`);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible();
 
     await page.goto("/kalender?ansicht=tag&datum=2031-01-15");
@@ -104,7 +98,7 @@ test.describe("Kalender – Ansichten", () => {
     await page.goto("/kalender?ansicht=hack&datum=31.02.2026&art=DROP&abteilung=%27%3B--&meine=x");
     await expect(page.getByRole("heading", { level: 1, name: "Kalender" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2 }).filter({ hasText: /\d{4}$/ })).toHaveText(
-      monthTitle(berlinDate(0)),
+      monthTitle(berlinToday()),
     );
   });
 });
@@ -114,7 +108,7 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
   // React (`<div hidden id="S:0">`); `getByLabel` fände dann zwei Felder, `getByRole` nur das sichtbare.
   test("Filter nach Art und Abteilung", async ({ page }) => {
     await login(page, USERS.admin);
-    await page.goto(`/kalender?ansicht=liste&datum=${berlinDate(5)}`);
+    await page.goto(`/kalender?ansicht=liste&datum=${seedDay(5)}`);
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toBeVisible();
 
     await page.getByRole("combobox", { name: "Art", exact: true }).selectOption("TRAINING");
@@ -147,7 +141,7 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
     await expect(page.getByRole("link", { name: /Sommerfest 2026/ }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /Schicht: Kuchenbuffet/ }).first()).toBeVisible();
 
-    await page.goto(`/kalender?ansicht=liste&datum=${berlinDate(5)}`);
+    await page.goto(`/kalender?ansicht=liste&datum=${seedDay(5)}`);
     await page.getByLabel("Nur meine Termine").check();
     await page.getByRole("button", { name: "Filtern" }).click();
     await expect(page).toHaveURL(/meine=1/);
@@ -156,7 +150,7 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
 
   test("Entwürfe sind nur für Verwalter im Kalender sichtbar", async ({ page, browser }) => {
     // Das Handball-Turnier ist im Seed ein Entwurf (in 40 Tagen).
-    const day = berlinDate(40);
+    const day = seedDay(40);
     await login(page, USERS.admin);
     await page.goto(`/kalender?ansicht=liste&datum=${day}`);
     const draft = page.getByRole("link", { name: /Handball-Turnier der Jugend/ });
@@ -174,7 +168,7 @@ test.describe("Kalender – Filter und Sichtbarkeit", () => {
 
   test("Anderer Verein sieht keine Termine des TSV Musterstadt", async ({ page }) => {
     await login(page, USERS.otherAdmin);
-    await page.goto(`/kalender?ansicht=liste&datum=${berlinDate(5)}`);
+    await page.goto(`/kalender?ansicht=liste&datum=${seedDay(5)}`);
     await expect(page.getByRole("heading", { level: 1, name: "Kalender" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Vorstandssitzung/ })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Fußball-Training/ })).toHaveCount(0);
@@ -361,7 +355,7 @@ test.describe("Kalender – iCal", () => {
     playwright,
   }) => {
     await login(page, USERS.admin);
-    await page.goto(`/kalender?ansicht=tag&datum=${berlinDate(5)}`);
+    await page.goto(`/kalender?ansicht=tag&datum=${seedDay(5)}`);
     const href = await page.getByRole("link", { name: /Vorstandssitzung/ }).getAttribute("href");
     const id = href!.split("/").pop()!;
 

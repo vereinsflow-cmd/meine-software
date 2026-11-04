@@ -9,6 +9,7 @@ import {
 } from "@playwright/test";
 import pg from "pg";
 import { databaseUrlFor } from "../setup/env";
+import { fromToday, seedDay } from "./dates";
 import { E2E_DATABASE, appUrlPattern } from "./environment";
 
 /** Passwort der Demo-Benutzer (aus .env, siehe SEED_PASSWORD). Nur für lokale Test-Daten. */
@@ -29,8 +30,18 @@ export const USERS = {
 export const greeting = (firstName: string) =>
   new RegExp(`^Guten (Morgen|Tag|Abend), ${firstName}$`);
 
-/** Meldet über die Oberfläche an – genau wie ein echter Benutzer. */
+/**
+ * Meldet über die Oberfläche an – genau wie ein echter Benutzer, der „Bewegung reduzieren“ eingestellt hat: Die Anmeldebühne
+ * steht dann als Standbild da. Mit Bewegung kostete jede Anmeldung in der CI gut 4 s (3D-Ring ohne Grafikkarte; Playwright wartet
+ * vor dem Klick, bis „Anmelden“ in der sich neigenden Glasfläche stillsteht) – bei rund 440 Anmeldungen die halbe Laufzeit. Die
+ * Bewegung selbst prüft auth.spec.ts. Hatte der Test „Bewegung reduzieren“ nicht selbst eingestellt, gilt danach wieder der
+ * Normalfall.
+ */
 export async function login(page: Page, email: string, password = DEMO_PASSWORD): Promise<void> {
+  const reduced = await page.evaluate(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  if (!reduced) await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/anmelden");
   // Erst wenn React das Formular übernommen hat („hydratisiert“), schickt es per JavaScript ab – vorher täte es der Browser
   // selbst (als POST an die Seite, ohne Anmeldung). React hängt dabei eigene Schlüssel an die DOM-Knoten.
@@ -42,6 +53,7 @@ export async function login(page: Page, email: string, password = DEMO_PASSWORD)
   await page.getByLabel("Passwort").fill(password);
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).not.toHaveURL(/\/anmelden/);
+  if (!reduced) await page.emulateMedia({ reducedMotion: "no-preference" });
 }
 
 /**
@@ -317,7 +329,7 @@ export async function inviteNewPerson(
  * Anwesenheit, die erst ab einer Stunde vor Beginn erfasst werden kann. Liefert die Kennung der Veranstaltung.
  */
 export async function createPublishedPastTraining(page: Page, title: string): Promise<string> {
-  const day = isoDaysAgo(1);
+  const day = fromToday(-1);
   await open(page, "/veranstaltungen/neu");
   await page.getByLabel("Titel").fill(title);
   await page.getByLabel("Art der Veranstaltung").selectOption({ label: "Training" });
@@ -346,19 +358,14 @@ export async function createPublishedPastTraining(page: Page, title: string): Pr
  * Kassenbuch einrichten, falls noch nicht geschehen (die E2E-Datenbank startet ohne). Mehrere Testdateien brauchen es –
  * alle mit denselben Werten, damit Kontostände überall gleich sind.
  */
-/** „JJJJ-MM-TT“ vor `days` Tagen (Berlin). */
-export function isoDaysAgo(days: number): string {
-  const date = new Date(Date.now() - days * 86_400_000);
-  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(date);
-}
-
 export async function ensureLedger(page: Page): Promise<void> {
   await open(page, "/finanzen/kassenbuch");
   const setup = page.getByRole("button", { name: "Kassenbuch einrichten" });
   if (await setup.isVisible()) {
-    // Beginn vor 60 Tagen statt am 1. Januar: Die bezahlte Seed-Rechnung (vor 40 Tagen) liegt so zu jeder Jahreszeit im
-    // Kassenbuch – auch im Januar.
-    await page.getByLabel("Kassenbuch beginnt am").fill(isoDaysAgo(60));
+    // Beginn 60 Tage vor dem Seed statt am 1. Januar: Die bezahlte Seed-Rechnung (40 Tage davor) liegt so zu jeder
+    // Jahreszeit im Kassenbuch – auch im Januar. Am Tag des Seeds festgemacht, damit der Beginn auch nach Mitternacht
+    // noch `seedDay(-60)` ist (finanzen.spec.ts bucht dorthin).
+    await page.getByLabel("Kassenbuch beginnt am").fill(seedDay(-60));
     await page.getByLabel("Bank").fill("Sparkasse Musterstadt");
     await page.getByLabel("Anfangsbestand in €").first().fill("11.200,00");
     await page.getByLabel("Anfangsbestand in €").nth(1).fill("239,80");

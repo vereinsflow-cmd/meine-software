@@ -225,6 +225,13 @@ test.describe("Abmeldung wegen Inaktivität", () => {
 });
 
 /**
+ * Wie lange auf das Stillstehen des Rings gewartet wird. Die Schleife rechnet je Bild höchstens 50 ms: Bei 6–10 Bildern je
+ * Sekunde (gemessen in der CI, ohne Grafikkarte) laufen Auftritt (2,8 s) und Auslaufen in Zeitlupe – allein der Auftritt dauert
+ * dort rund 9 s, nach ihm angehalten stand der Ring nach gut 3 s (am Mac gleich nach dem Laden angehalten: nach 3 s).
+ */
+const STOPPED = { timeout: 20_000 };
+
+/**
  * Anmeldeseite als Kinobühne („3D-Fotokarussell“, `LoginStage`): Das Formular bleibt das echte LoginForm, der Ring dahinter ist
  * reine Schmuckszene – mit Knopf zum Anhalten (WCAG 2.2.2), Standbild bei „Bewegung reduzieren“, ohne Fallen für Tastatur
  * und Eingabe. Dieselbe Bühne tragen Passwort vergessen, neues Passwort und der zweite Schritt (Code).
@@ -275,16 +282,20 @@ test.describe("Anmeldeseite als Kinobühne", () => {
   test("„Bewegung anhalten“ hält den Ring an, bleibt nach dem Neuladen gemerkt; „Bewegung fortsetzen“ dreht wieder", async ({
     page,
   }) => {
+    test.setTimeout(90_000); // langsames Auslaufen ohne Grafikkarte, siehe STOPPED
     await open(page, "/anmelden");
     expect((await stageState(page)).motion).toBe("running");
     await expect.poll(() => ringTurns(page)).toBe(true);
 
-    await page.getByRole("button", { name: "Bewegung anhalten" }).click();
+    // Links am Rand geklickt: Dort lag früher das Leuchten der (gekippten) Glasfläche über dem Knopf und schluckte den Klick.
+    await page
+      .getByRole("button", { name: "Bewegung anhalten" })
+      .click({ position: { x: 6, y: 18 } });
     const resume = page.getByRole("button", { name: "Bewegung fortsetzen" });
     await expect(resume).toBeVisible();
     expect((await stageState(page)).motion).toBe("paused");
-    // Läuft in gut einer Sekunde aus und steht dann.
-    await expect.poll(() => ringTurns(page), { timeout: 5000 }).toBe(false);
+    // Läuft in gut einer Sekunde aus und steht dann (bei wenigen Bildern je Sekunde später, siehe STOPPED).
+    await expect.poll(() => ringTurns(page), STOPPED).toBe(false);
 
     await page.reload();
     await expect(resume).toBeVisible();
@@ -329,10 +340,11 @@ test.describe("Anmeldeseite als Kinobühne", () => {
   test("Ziehen dreht den Ring 1 : 1 mit, ohne Fokus oder Eingabe im Formular zu stören; Ziehen im Feld dreht nicht", async ({
     page,
   }) => {
+    test.setTimeout(90_000); // langsames Auslaufen ohne Grafikkarte, siehe STOPPED
     await open(page, "/anmelden");
     // Angehalten, damit nur das Ziehen dreht.
     await page.getByRole("button", { name: "Bewegung anhalten" }).click();
-    await expect.poll(() => ringTurns(page), { timeout: 5000 }).toBe(false);
+    await expect.poll(() => ringTurns(page), STOPPED).toBe(false);
     const email = page.getByLabel("E-Mail-Adresse");
     await email.fill("niemand@example.org");
     await email.focus();
@@ -346,7 +358,7 @@ test.describe("Anmeldeseite als Kinobühne", () => {
     await expect(email).toBeFocused();
     await expect(email).toHaveValue("niemand@example.org");
     expect(await page.evaluate(() => String(window.getSelection()))).toBe("");
-    await expect.poll(() => ringTurns(page), { timeout: 8000 }).toBe(false);
+    await expect.poll(() => ringTurns(page), STOPPED).toBe(false);
 
     // Text im Feld markieren (Ziehen im Formular) dreht nichts.
     const still = (await stageState(page)).ring;

@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { violations } from "./axe";
+import { seedDay } from "./dates";
 import {
   USERS,
   ensureFinanceReader,
   ensureLedger,
-  isoDaysAgo,
   login,
   loginSettled,
   open,
@@ -332,7 +332,8 @@ test.describe("Finanzen – Übersicht", () => {
     await hero.getByRole("button", { name: "Als Diagramm" }).click();
     await expect(hero.getByRole("img")).toBeVisible();
 
-    // Konten als Karten: jede führt ins Kassenbuch dieses Kontos; darunter die Summe.
+    // Konten als Karten: jede führt ins Kassenbuch dieses Kontos; darunter die Summe. Zu den beiden aus der Einrichtung kann
+    // ein früherer Test weitere angelegt haben (banken.spec.ts: „Konto hinzufügen“).
     const cards = page.getByRole("list", { name: "Konten" });
     for (const name of ["Girokonto", "Barkasse"]) {
       await expect(cards.getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute(
@@ -340,7 +341,6 @@ test.describe("Finanzen – Übersicht", () => {
         /^\/finanzen\/kassenbuch\?konto=[0-9a-f-]{36}$/,
       );
     }
-    // Girokonto und Barkasse aus `ensureLedger` – andere Tests (banken.spec.ts) legen weitere Konten an; gezählt werden alle.
     const accounts = await cards.getByRole("link").count();
     expect(accounts).toBeGreaterThanOrEqual(2);
     await expect(page.getByText(`Zusammen · ${accounts} Konten`, { exact: true })).toBeVisible();
@@ -481,11 +481,13 @@ test.describe("Finanzen – nur ansehen (eigene Rolle „Kassenprüfung“)", ()
     await expect(actions.getByRole("link")).toHaveText(["Kassenbuch"]);
     await expect(actions.getByRole("button")).toHaveCount(0);
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    // Die Konten als Karten (ins Kassenbuch) – mindestens Girokonto und Barkasse; andere Tests legen weitere an.
+    // Alle Konten wie beim Kassenwart: die beiden aus der Einrichtung, dazu womöglich eines aus banken.spec.ts.
     const cards = page.getByRole("list", { name: "Konten" });
     for (const name of ["Girokonto", "Barkasse"]) {
       await expect(cards.getByRole("link", { name: new RegExp(`^${name}`) })).toBeVisible();
     }
+    const accounts = await cards.getByRole("link").count();
+    await expect(page.getByText(`Zusammen · ${accounts} Konten`, { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Konten und Kategorien verwalten" })).toHaveCount(
       0,
     );
@@ -570,7 +572,7 @@ test.describe("Finanzen – Kassensturz, Konten, Abschluss", () => {
     await login(page, USERS.vorstand);
     await ensureLedger(page);
     await open(page, "/finanzen/abschluss");
-    // Das Kassenbuch beginnt vor 60 Tagen – sein erster Monat ist vorbei.
+    // Das Kassenbuch beginnt 60 Tage vor dem Seed (ensureLedger) – sein erster Monat ist vorbei.
     const close = page.getByRole("button", { name: / abschließen$/ });
     await expect(close).toBeVisible();
     const label = ((await close.textContent()) ?? "").replace(" abschließen", "").trim();
@@ -588,7 +590,7 @@ test.describe("Finanzen – Kassensturz, Konten, Abschluss", () => {
     await page.getByRole("button", { name: "Neue Buchung" }).click();
     const dialog = page.getByRole("dialog", { name: "Neue Buchung" });
     await dialog.getByLabel("Betrag in €").fill("5,00");
-    await dialog.getByLabel("Datum").fill(isoDaysAgo(60)); // Beginn des Kassenbuchs – im abgeschlossenen Monat
+    await dialog.getByLabel("Datum").fill(seedDay(-60)); // Beginn des Kassenbuchs – im abgeschlossenen Monat
     await dialog.getByLabel("Beschreibung").fill("E2E zu spät");
     await dialog.getByLabel("Kategorie").selectOption({ label: "Sportmaterial" });
     await dialog.getByRole("button", { name: "Ausgabe buchen" }).click();
