@@ -1,6 +1,7 @@
 import path from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { fromToday, germanDate, inDaysText } from "./dates";
 import { E2E_BASE_URL } from "./environment";
 import { USERS, login, open, openNavGroup } from "./helpers";
 
@@ -16,15 +17,6 @@ async function memberHref(page: Page, name: string): Promise<string | null> {
     .getAttribute("href");
   return href?.split("?")[0] ?? null;
 }
-
-/** Kalendertag `offset` Tage ab heute (Berlin) als „JJJJ-MM-TT“ – wie die Anwendung, nicht in 24-Stunden-Schritten. */
-const isoDay = (offset: number) => {
-  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
-  const day = new Date(`${today}T00:00:00Z`);
-  day.setUTCDate(day.getUTCDate() + offset);
-  return day.toISOString().slice(0, 10);
-};
-const germanDay = (offset: number) => isoDay(offset).split("-").reverse().join(".");
 
 /** Legt „Tina <Nachname>“ über das Formular an (mit allen Pflichtfeldern) und landet auf ihrer Seite. */
 async function createTina(page: Page, lastName: string): Promise<void> {
@@ -316,16 +308,18 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
     await dialog.getByLabel("Bezeichnung").fill("C-Lizenz Breitensport");
     await dialog.getByLabel("Nummer").fill("LSB-4711");
     await dialog.getByLabel("Ausgestellt am").fill("2024-03-01");
-    await dialog.getByLabel("Gültig bis").fill(isoDay(30));
+    // Einmal festgelegt: Läuft der Test über Mitternacht, bleibt das eingetragene Datum dasselbe, nur „in … Tagen“ wird kürzer.
+    const until = fromToday(30);
+    await dialog.getByLabel("Gültig bis").fill(until);
     await dialog.getByLabel("Aussteller").fill("Landessportbund");
     await dialog.getByRole("button", { name: "Speichern" }).click();
     await expect(dialog).toBeHidden();
     const list = card.getByRole("list", { name: "Qualifikationen" });
     const trainer = list.getByRole("listitem").filter({ hasText: "C-Lizenz Breitensport" });
     await expect(trainer).toContainText("Trainerlizenz – C-Lizenz Breitensport");
-    await expect(trainer).toContainText("läuft in 30 Tagen ab");
+    await expect(trainer).toContainText(`läuft ${inDaysText(until)} ab`);
     await expect(trainer).toContainText(
-      `Nr. LSB-4711 · Landessportbund · ausgestellt am 01.03.2024 · gültig bis ${germanDay(30)}`,
+      `Nr. LSB-4711 · Landessportbund · ausgestellt am 01.03.2024 · gültig bis ${germanDate(until)}`,
     );
 
     // „Sonstige“ braucht eine Bezeichnung, „Gültig bis“ nie vor „Ausgestellt am“
@@ -353,7 +347,7 @@ test.describe("Mitgliederverwaltung (Vereinsadministrator)", () => {
       .getByRole("button", { name: "Trainerlizenz – C-Lizenz Breitensport bearbeiten" })
       .click();
     dialog = page.getByRole("dialog", { name: "Qualifikation bearbeiten" });
-    await expect(dialog.getByLabel("Gültig bis")).toHaveValue(isoDay(30));
+    await expect(dialog.getByLabel("Gültig bis")).toHaveValue(until);
     await dialog.getByLabel("Gültig bis").fill("");
     await dialog.getByRole("button", { name: "Speichern" }).click();
     await expect(dialog).toBeHidden();

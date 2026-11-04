@@ -191,6 +191,9 @@ test.describe("Abmeldung wegen Inaktivität", () => {
     await page.clock.fastForward("01:00:00");
     await expect(page).toHaveURL(/\/anmelden\?expired=1&next=%2Fkalender$/);
     await expect(page.getByText("Du wurdest aus Sicherheitsgründen abgemeldet")).toBeVisible();
+    // Wie in `login()`: Ohne „Bewegung reduzieren“ wartet der Klick, bis der Knopf in der sich neigenden Glasfläche stillsteht.
+    // `login()` selbst geht hier nicht – es öffnet /anmelden neu und verlöre die Rückkehradresse (`next`).
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await waitForHydratedForm(page);
     await page.getByLabel("E-Mail-Adresse").fill(USERS.helfer);
     await page.getByLabel("Passwort").fill(DEMO_PASSWORD);
