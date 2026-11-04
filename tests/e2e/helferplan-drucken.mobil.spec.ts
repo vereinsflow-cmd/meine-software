@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { USERS, login, open } from "./helpers";
+import { USERS, animationsDone, login, open } from "./helpers";
 
 /**
  * Helferplan-Druckansicht auf Smartphone (Pixel 7, 412 px) und Tablet-Breite (820 px): Der Button ist gut
@@ -19,6 +19,7 @@ test.describe("Helferplan drucken – mobil", () => {
     await page.getByRole("button", { name: "Weitere Aktionen" }).click();
     const button = page.getByRole("menuitem", { name: "Helferplan drucken" });
     await expect(button).toBeVisible();
+    await animationsDone(page); // das Menü zoomt beim Öffnen von 95 % auf – mitten darin wäre der Eintrag knapp unter 36 px
     const box = (await button.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(36); // gut treffbar (Button-Standardgröße)
 
