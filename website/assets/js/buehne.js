@@ -206,7 +206,7 @@ let waechterIo;
 function waechterStarten() {
   waechterIo?.disconnect();
   if (!buehne || !canObserve) return;
-  buehne.classList.remove("ist-faehrt", "fahrt-1", "fahrt-2");
+  buehne.classList.remove("ist-faehrt", "fahrt-1", "fahrt-2", "am-ende");
   if (!buehneMq.matches) {
     kopf?.classList.remove("ist-weg");
     return;
@@ -220,6 +220,8 @@ function waechterStarten() {
       else setTimeout(randlichter, 950);
     }
     kopf?.classList.toggle("ist-weg", zustand.ende);
+    // Tafel und Schilder am Ende kommen auf der Zeit (site.css, .am-ende) – nicht am Scrollen, das dort nur noch kriecht
+    buehne.classList.toggle("am-ende", zustand.ende || zustand.danach);
     if (faehrt) bilderNachladen();
     if (!scrollZeit) {
       buehne.classList.toggle("fahrt-1", zustand.mitte);
@@ -372,10 +374,20 @@ function fahrtBild(t) {
     l = auto.lauf = plan(ist, l.nach, v * l.r, l.tLetzt);
     schub = ab;
   }
-  const fertig = t >= l.t0 + l.dauer;
+  let fertig = t >= l.t0 + l.dauer;
   let y = fertig ? l.nach : planLage(l, t);
   if (schub && !fertig) y = ist + l.r * Math.max(0, (y - ist) * l.r - schub * l.r);
   y = fertig ? y : ganz(y);
+  // Mindestens ein ganzer Pixel je Bild: Chromium scrollt nur ganze Pixel, und im Auslauf (unter 1 px je Bild) wechselten
+  // sonst Bilder mit 1 px und solche ohne Bewegung – der Zoom stockte kurz vor dem Halt. So geht der letzte Rest in
+  // gleichmäßigen Schritten, die Ankunft rückt um ein paar Bilder vor. Nicht, solange eine Geste mitschiebt.
+  if (!fertig && !schub && (y - ist) * l.r < 1) {
+    y = ist + l.r;
+    if ((l.nach - y) * l.r <= 0) {
+      y = l.nach;
+      fertig = true;
+    }
+  }
   if (Math.abs(y - ist) >= 0.25) window.scrollTo(0, y);
   l.gesetzt = scrollY;
   l.tLetzt = t;

@@ -116,7 +116,7 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   Darum nie Stildatei oder Skripte vom Webspace zurück in den Ordner kopieren.
   Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
   HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum und einer laufenden
-  Nummer, derzeit `?v=2026102201` an der Stildatei und an `buehne.js`, `?v=2026102001` an `site.js` und `fluss.js`,
+  Nummer, derzeit `?v=2026110401` an der Stildatei und an `buehne.js`, `?v=2026102001` an `site.js` und `fluss.js`,
   `?v=20260927-2` an `frueh.js`) – `buehne.js` lädt `fluss.js` selbst (Zeile `import … from "./fluss.js?v=…"`), dort
   ebenfalls. Sonst liefern Browser und der Zwischenspeicher von
   IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
@@ -474,7 +474,7 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
 
   **Von selbst (seit 22.10.2026).** Luis fand die Fahrt „zu unflüssig“: Man musste die ganze Strecke selbst scrollen, und
   sie lief so ruckig wie Mausrad oder Trackpad schoben. Die Fahrt bleibt an das Scrollen gebunden (alles oben gilt
-  weiter, `site.css` 12a ist unverändert bis auf den Wächter `.fw-innen` und die Lage des Ankers), aber `buehne.js` („Kamerafahrt von selbst“) fährt die
+  weiter, `site.css` 12a ist unverändert bis auf den Wächter `.fw-innen`, die Lage des Ankers und – seit 4.11.2026 – Tafel und Schilder am Ende, siehe unten), aber `buehne.js` („Kamerafahrt von selbst“) fährt die
   Seite:
   - **Auslösen:** am Anfang ein kleines Stück nach unten – 40 px Mausrad (oder vier kleine Rasten, für Mäuse am Mac mit
     4 px je Raste), 32 px mit dem Finger, eine Taste (Pfeil ab, Bild ab, Leertaste). Bis zur Schwelle bewegt sich die Seite
@@ -490,6 +490,12 @@ Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
     Zoomtempo folgt also allein der Kurve: sanft an, um 0,7 s am schnellsten (gut 10 % je 100 ms), lang aus. Die flache
     Aufnahme fährt deckungsgleich mit (`--fdx`/`--fdy`) und blendet mitten im Zug über (74–84 %, bei 0,96–1,12 s – dann
     steht der Laptop frontal). Ziel ist genau das Ende der Strecke – derselbe Endzustand wie bisher, Tafel ganz im Bild.
+    Seit 4.11.2026 ist das Ende ruhiger (Luis: „vor allem am Ende der Animation“ unflüssig): Im Auslauf kriecht die Seite
+    mit 0 bis 2 px je Bild (Chromium scrollt nur ganze Pixel), und Tafel und Schilder hingen an den letzten 8 % der
+    Strecke – jeder Pixel schob die Tafel um gut 1 % ihrer Höhe, dazwischen stand sie (gemessen: Bilder ohne Bewegung im
+    Auslauf, Tafel in Sprüngen). Jetzt kommen Tafel (0,6 s, Steigung 2 am Anfang wie bisher) und Schilder (0,35 s, je
+    70 ms versetzt) auf der Zeit, sobald der Wächter „ende“ bei 92 % anschlägt (`.am-ende` an `.buehne`), und die Fahrt
+    bewegt die Seite je Bild mindestens 1 px – der Rest läuft in gleichmäßigen Schritten aus, Ankunft bei gut 1,88 s.
   - **Eingaben während der Fahrt:** Mausrad (`passive: false`, angemeldet nur, solange die Fahrt im Fenster ist), Finger
     (`touchmove` mit `passive: false` nur über der Fahrt) und Tasten werden abgefangen, nichts arbeitet gegeneinander; der
     Rest einer Geste (Schwung des Trackpads, gehaltene Taste, liegender Finger) auch nach der Ankunft – das Mausrad
