@@ -41,6 +41,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Die Werbe-Website ist eine eigenständige statische Seite (Browser-Skript, Node-Werkzeuge) – eigene Prüfung in website/.
     "website/**",
+    // Das Werbevideo ist ein eigenständiges Werkzeug (Szenen-Seite, Node- und Swift-Skripte) – siehe werbevideo/README.md.
+    "werbevideo/**",
   ]),
 ]);
 
