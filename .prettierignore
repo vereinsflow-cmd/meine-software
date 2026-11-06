@@ -25,3 +25,5 @@ website
 docs/brand/vereinsflow-logo-paket
 # Rechtstext-Entwürfe für die Website: Die HTML-Dateien werden so nach website/ kopiert (docs/recht/README.md) – nicht formatieren.
 docs/recht/*.html
+# Das Werbevideo ist ein eigenständiges Werkzeug mit erzeugten Dateien (drehbuch.js, lage.js) – siehe werbevideo/README.md.
+werbevideo
