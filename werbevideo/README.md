@@ -1,10 +1,11 @@
-# Werbevideo VereinsFlow (60 s, Hochformat 9 : 16)
+# Werbevideo VereinsFlow (60 s, Hochformat 9 : 16 und Querformat 16 : 9)
 
 Das Video entsteht vollständig aus diesem Ordner: echte Bilder der App, eine Szenen-Seite (HTML), die jedes Einzelbild
 nur aus der Zeit berechnet, selbst erzeugte Musik und die Mac-Stimme als Platzhalter. Keine fremde Musik, keine
 Videoschnitt-Software, kein ffmpeg – nur Node, Playwright und macOS (AVFoundation).
 
-Fertiges Video: `ausgabe/VereinsFlow-Werbevideo-9x16.mp4` (nicht im Repository, siehe unten „Neu bauen“).
+Fertige Videos (nicht im Repository, siehe unten „Neu bauen“): `ausgabe/VereinsFlow-Werbevideo-9x16.mp4` (Hochformat
+für Instagram/TikTok) und `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat für YouTube und die Website).
 
 ## Ablauf (Drehbuch)
 
@@ -37,8 +38,19 @@ swiftc -O werbevideo/werkzeuge/kodieren.swift -o werbevideo/ausgabe/kodieren
 werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder werbevideo/ausgabe/ton/mischung.wav werbevideo/ausgabe/VereinsFlow-Werbevideo-9x16.mp4
 ```
 
-Zum Ansehen ohne Ton im Browser: `werbevideo/szenen/index.html?play` (oder `?t=14.5` für ein Standbild);
-Standbilder zum Prüfen: `node werbevideo/werkzeuge/rendern.mjs --standbild 14.5,22`.
+Querformat 16 : 9 (YouTube, Website) – dieselben Szenen, Zeiten und derselbe Ton, nur anders angeordnet (Überschrift
+links, Gerät rechts):
+
+```bash
+node werbevideo/werkzeuge/rendern.mjs --format quer   # → ausgabe/bilder-quer/
+werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder-quer werbevideo/ausgabe/ton/mischung.wav werbevideo/ausgabe/VereinsFlow-Werbevideo-16x9.mp4
+```
+
+Zum Ansehen ohne Ton im Browser: `werbevideo/szenen/index.html?play` (oder `?t=14.5` für ein Standbild, mit
+`&format=quer` im Querformat); Standbilder zum Prüfen: `node werbevideo/werkzeuge/rendern.mjs --standbild 14.5,22`
+(dazu `--format quer`).
+
+Fürs Handy (Vorschau unter 30 MB): mit niedrigerer Bitrate kodieren, z. B. `… VereinsFlow-Werbevideo-9x16-handy.mp4 30 3300000`.
 
 ### Eigene Stimme statt Mac-Stimme
 
