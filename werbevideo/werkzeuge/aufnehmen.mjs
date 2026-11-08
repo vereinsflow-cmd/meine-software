@@ -119,7 +119,7 @@ async function textBoxes(page, texts) {
     const out = {};
     for (const el of document.body.querySelectorAll("*")) {
       if (el.children.length) continue;
-      const t = (el.textContent ?? "").trim();
+      const t = (el.textContent ?? "").replace(/\u00a0/g, " ").trim();
       if (!texts.includes(t)) continue;
       const r = el.getBoundingClientRect();
       if (!r.width || r.bottom < 0 || r.top > innerHeight) continue;
@@ -155,7 +155,7 @@ async function hide(page, { cardsWith = [], textsExact = [] }) {
       }
       for (const el of document.body.querySelectorAll("*")) {
         if (el.children.length) continue;
-        if (textsExact.includes((el.textContent ?? "").trim())) el.style.setProperty("color", "transparent", "important");
+        if (textsExact.includes((el.textContent ?? "").replace(/\u00a0/g, " ").trim())) el.style.setProperty("color", "transparent", "important");
       }
     },
     [cardsWith, textsExact],
@@ -291,7 +291,7 @@ async function desktop(browser) {
       await shot(page, "mitglied-gespeichert");
     }
     // Wieder archivieren: Die Mitgliederzahl soll überall 233 bleiben wie auf der Website.
-    for (const name of ARCHIVE_AFTER) {
+    for (const name of [...ARCHIVE_AFTER, ...ARCHIVE_AFTER, ...ARCHIVE_AFTER]) {
       await go(page, `/mitglieder?q=${encodeURIComponent(name)}`);
       const entry = page.getByRole("link", { name: new RegExp(name) }).first();
       if (!(await entry.isVisible().catch(() => false))) continue;
@@ -417,45 +417,48 @@ async function phone(browser) {
     await shot(page, "phone-benachrichtigungen");
   }
 
-  if (wanted("phone-helfer")) {
-    const id = await sommerfestId(page);
-    await go(page, `/helferplanung/${id}`);
-    // Die Benachrichtigung nennt Grillstand und Abbau – die Szene trägt Anna in den Abbau ein.
-    const signUp = page.getByRole("button", { name: "In Abbau eintragen" });
-    const signOut = page.getByRole("button", { name: "Aus Abbau austragen" });
-    if (await signOut.isVisible().catch(() => false)) {
-      await signOut.click();
-      const confirm = page.getByRole("alertdialog").getByRole("button", { name: /austragen/i });
-      if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
-      await page.waitForTimeout(2000);
-      await go(page, `/helferplanung/${id}`);
-    }
-    // Ganze Seite (das Video scrollt darin bis zum Abbau); Lage des Knopfs in Seitenkoordinaten
-    await page.evaluate(() => scrollTo(0, 0));
-    await page.waitForTimeout(400);
-    await normalize(page, { gentle: true });
-    const pageBox = async (locator) => {
-      await locator.scrollIntoViewIfNeeded();
-      const b = await locator.boundingBox();
-      const y = await page.evaluate(() => scrollY);
-      await page.evaluate(() => scrollTo(0, 0));
-      return { ...b, y: b.y + y };
-    };
-    const button = await pageBox(signUp);
-    await page.waitForTimeout(300);
-    await shot(page, "phone-helfer-vorher", { button }, { fullPage: true });
-    await signUp.click();
-    const confirm = page.getByRole("alertdialog").getByRole("button", { name: /eintragen/i });
-    if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
-    await page.waitForTimeout(2500);
-    await go(page, `/helferplanung/${id}`);
-    await page.evaluate(() => scrollTo(0, 0));
-    await page.waitForTimeout(400);
-    await normalize(page, { gentle: true });
-    await shot(page, "phone-helfer-nachher", { button: await pageBox(signOut) }, { fullPage: true });
-  }
+  if (wanted("phone-helfer")) await helferAufnahme(page, "phone-helfer");
 
   await context.close();
+}
+
+/** Helferplan des Sommerfests am Telefon: Anna trägt sich in den Abbau ein (ganze Seite vorher und nachher). */
+async function helferAufnahme(page, name) {
+  const id = await sommerfestId(page);
+  await go(page, `/helferplanung/${id}`);
+  // Die Benachrichtigung nennt Grillstand und Abbau – die Szene trägt Anna in den Abbau ein.
+  const signUp = page.getByRole("button", { name: "In Abbau eintragen" });
+  const signOut = page.getByRole("button", { name: "Aus Abbau austragen" });
+  if (await signOut.isVisible().catch(() => false)) {
+    await signOut.click();
+    const confirm = page.getByRole("alertdialog").getByRole("button", { name: /austragen/i });
+    if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
+    await page.waitForTimeout(2000);
+    await go(page, `/helferplanung/${id}`);
+  }
+  // Ganze Seite (das Video scrollt darin bis zum Abbau); Lage des Knopfs in Seitenkoordinaten
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.waitForTimeout(400);
+  await normalize(page, { gentle: true });
+  const pageBox = async (locator) => {
+    await locator.scrollIntoViewIfNeeded();
+    const b = await locator.boundingBox();
+    const y = await page.evaluate(() => scrollY);
+    await page.evaluate(() => scrollTo(0, 0));
+    return { ...b, y: b.y + y };
+  };
+  const button = await pageBox(signUp);
+  await page.waitForTimeout(300);
+  await shot(page, `${name}-vorher`, { button }, { fullPage: true });
+  await signUp.click();
+  const confirm = page.getByRole("alertdialog").getByRole("button", { name: /eintragen/i });
+  if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
+  await page.waitForTimeout(2500);
+  await go(page, `/helferplanung/${id}`);
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.waitForTimeout(400);
+  await normalize(page, { gentle: true });
+  await shot(page, `${name}-nachher`, { button: await pageBox(signOut) }, { fullPage: true });
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -501,7 +504,103 @@ async function nacht(browser) {
     await normalize(page, { gentle: true });
     await shot(page, "nacht-phone-fest-nachher", { karte: await pageBox(page.getByText("Deine Teilnahme", { exact: true }).first()) }, { fullPage: true });
   }
+  if (wanted("nacht-phone-neu")) {
+    // Neues Mitglied am Telefon: leer, ausgefüllt, angelegt (danach wieder archiviert – 233 bleiben 233)
+    await go(page, "/mitglieder/neu");
+    await hydrated(page);
+    await normalize(page, { gentle: true });
+    const felder = async () =>
+      page.evaluate(() => {
+        const out = {};
+        for (const label of ["Vorname", "Nachname", "Geburtsdatum", "Funktion im Verein"]) {
+          const l = [...document.querySelectorAll("label")].find((x) => x.textContent.replace("*", "").trim() === label);
+          const input = l && document.getElementById(l.htmlFor);
+          if (input) {
+            const r = input.getBoundingClientRect();
+            out[label] = { x: r.x, y: r.y + scrollY, w: r.width, h: r.height };
+          }
+        }
+        return out;
+      });
+    await shot(page, "nacht-phone-neu-leer", { fields: await felder() }, { fullPage: true });
+    await page.getByLabel("Vorname").fill(NEW_MEMBER.first);
+    await page.getByLabel("Nachname").fill(NEW_MEMBER.last);
+    await page.getByLabel("Geburtsdatum").fill("1998-03-14");
+    await page.getByLabel("Funktion im Verein").fill("Spielerin");
+    await page.evaluate(() => { document.activeElement?.blur(); scrollTo(0, 0); });
+    await page.waitForTimeout(300);
+    await shot(page, "nacht-phone-neu-voll", { fields: await felder() }, { fullPage: true });
+    await page.getByLabel("Handball", { exact: true }).check();
+    await page.getByLabel("E-Mail-Adresse").fill(NEW_MEMBER.email);
+    await page.getByLabel("Telefon").fill("0151 23456789");
+    await page.getByLabel("Straße und Hausnummer").fill("Lindenweg 4");
+    await page.getByLabel("PLZ").fill("12345");
+    await page.getByLabel(/^Ort\b/).first().fill("Musterstadt");
+    await page.getByRole("button", { name: "Mitglied anlegen" }).click();
+    await page.waitForURL((u) => !u.pathname.endsWith("/neu"), { timeout: 60_000 });
+    await page.waitForLoadState("networkidle");
+    await page.locator("[data-sonner-toast]").first().waitFor({ timeout: 10_000 }).catch(() => {});
+    await page.waitForTimeout(600);
+    await normalize(page, { gentle: true });
+    await shot(page, "nacht-phone-mitglied");
+    for (const name of [...ARCHIVE_AFTER, ...ARCHIVE_AFTER, ...ARCHIVE_AFTER]) {
+      await go(page, `/mitglieder?q=${encodeURIComponent(name)}`);
+      const entry = page.getByRole("link", { name: new RegExp(name) }).first();
+      if (!(await entry.isVisible().catch(() => false))) continue;
+      await entry.click();
+      await page.waitForTimeout(1500);
+      const archive = page.getByRole("button", { name: "Archivieren", exact: true }).first();
+      if (!(await archive.isVisible().catch(() => false))) continue;
+      await archive.click();
+      const dialog = page.getByRole("alertdialog").or(page.getByRole("dialog"));
+      await dialog.getByRole("button", { name: /Archivieren/ }).last().click();
+      await page.waitForTimeout(2000);
+      console.log("  archiviert:", name);
+    }
+  }
+  if (wanted("nacht-phone-helfer")) await helferAufnahme(page, "nacht-phone-helfer");
+  if (wanted("nacht-phone-chat")) {
+    await go(page, "/nachrichten");
+    await normalize(page, { gentle: true });
+    await shot(page, "nacht-phone-chats");
+    // Gruppen-Chats öffnen sich über ?chat=… (Helfer des Sommerfests)
+    const first = page.locator("a[href*='?chat=helfer-']").first();
+    if (await first.isVisible().catch(() => false)) {
+      await first.click();
+      await page.waitForURL(/chat=/, { timeout: 30_000 });
+      await settle(page, 1200);
+      await normalize(page, { gentle: true });
+      await shot(page, "nacht-phone-chat");
+    }
+  }
   await context.close();
+  if (wanted("nacht-rechner")) {
+    const d = await session(browser, false);
+    // Beitragslauf (fertig) – mit und ohne die großen Beträge (für hochzählende Zahlen)
+    await go(d.page, "/finanzen/beitraege/lauf");
+    let lauf = await d.page.locator("a[href*='/finanzen/beitraege/laeufe/']").first().getAttribute("href").catch(() => null);
+    if (!lauf) {
+      await go(d.page, "/finanzen/beitraege");
+      lauf = await d.page.locator("a[href*='/finanzen/beitraege/laeufe/']").first().getAttribute("href").catch(() => null);
+    }
+    if (lauf) {
+      await go(d.page, lauf);
+      await normalize(d.page);
+      await shot(d.page, "nacht-lauf", { numbers: await textBoxes(d.page, ["7.240,00 €", "231 Beiträge"]) });
+      await hide(d.page, { textsExact: ["7.240,00 €"] });
+      await shot(d.page, "nacht-lauf-ohne-zahl");
+    } else console.log("  kein Beitragslauf gefunden");
+    await go(d.page, `/kalender?ansicht=monat&datum=${FEST_MONTH}`);
+    await normalize(d.page);
+    await shot(d.page, "nacht-kalender");
+    await d.page.evaluate(() => {
+      for (const a of document.querySelectorAll("main a[href^='/veranstaltungen/'], main a[href^='/helferplanung/']")) {
+        if (a.closest("table, [role='grid'], [data-calendar], .grid")) a.style.setProperty("visibility", "hidden", "important");
+      }
+    });
+    await shot(d.page, "nacht-kalender-leer");
+    await d.context.close();
+  }
   if (wanted("nacht-dashboard")) {
     const d = await session(browser, false);
     await go(d.page, "/dashboard");
