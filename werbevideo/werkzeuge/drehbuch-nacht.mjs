@@ -32,69 +32,75 @@ function tippen(t0, dauer, zeichen, max = zeichen) {
 }
 
 export const GERAEUSCHE = [
-  // Logo: Licht fährt herein, Balken landen, Punkt fällt, Unterstrich als Lichtstreifen
+  // Logo: Licht fährt herein, Balken landen, Punkt fällt, Unterstrich als Lichtstreifen, Flug durch das V
   { t: 0.05, art: "wusch", lang: 0.8 },
   ...[0.3, 0.42, 0.56].map((t) => ({ t, art: "karte" })),
   { t: 0.8, art: "plopp" },
   { t: 1.5, art: "strich" },
   { t: 2.02, art: "glanz" },
-  // Handy steigt auf (Einsatz des Grooves), Karten fliegen heraus
+  { t: 2.45, art: "wusch", lang: 0.45 },
+  // Handy fliegt mit einer Drehung ein (Einsatz des Grooves), Karten springen aus dem Bildschirm, Flug hinein
   { t: 2.5, art: "aufprall" },
-  ...[3.0, 3.15, 3.3, 3.45].map((t) => ({ t, art: "karte" })),
-  { t: 6.75, art: "wusch", lang: 0.5 },
-  // Mitglieder: Formular, „Mia“, „Schröder“, Geburtsdatum, Knopf, angelegt
+  { t: 2.9, art: "wusch", lang: 0.8 },
+  ...[3.15, 3.3, 3.45, 3.6].map((t) => ({ t, art: "karte" })),
+  { t: 6.92, art: "wusch", lang: 0.6 },
+  // Mitglieder: Formular, „Mia“, „Schröder“, Geburtsdatum, Knopf, Karte dreht sich um: angelegt; Wisch
   { t: 7.15, art: "auf" },
   ...tippen(7.75, 0.35, 3),
   ...tippen(8.15, 0.35, 8),
   ...tippen(8.7, 0.35, 10),
-  { t: 9.2, art: "karte" },
+  { t: 9.15, art: "karte" },
   { t: 9.57, art: "tipp" },
-  { t: 9.95, art: "erfolg" },
-  ...[10.1, 10.25].map((t) => ({ t, art: "karte" })),
-  { t: 11.9, art: "wusch", lang: 0.4 },
-  // Beiträge: Schritte des Beitragslaufs, vier Kennzahlen, Betrag zählt hoch
-  { t: 12.25, art: "karte" },
+  { t: 9.9, art: "auf" },
+  { t: 10.14, art: "erfolg" },
+  ...[10.22, 10.32].map((t) => ({ t, art: "karte" })),
+  { t: 11.92, art: "wusch", lang: 0.35 },
+  // Beiträge: kommt herein, Schritte, Kennzahlen klappen hoch, Betrag zählt hoch; kippt weg
+  { t: 12.12, art: "wusch", lang: 0.4 },
   ...[12.75, 13.15, 13.55].map((t) => ({ t, art: "plopp" })),
-  ...[13.6, 13.76, 13.92, 14.08].map((t) => ({ t, art: "karte" })),
+  ...[13.45, 13.57, 13.69, 13.81].map((t) => ({ t, art: "karte" })),
   { t: 14.7, art: "erfolg" },
-  { t: 16.95, art: "wusch", lang: 0.4 },
-  // Termine: Kalender kippt herein, Termine ploppen auf, Sommerfest leuchtet, Flug hinein
-  { t: 17.15, art: "auf" },
+  { t: 16.95, art: "wusch", lang: 0.45 },
+  // Termine: Kalender klappt hoch, Termine ploppen auf, Sommerfest leuchtet, Flug hinein
+  { t: 17.2, art: "auf" },
   ...[17.6, 17.85, 18.1, 18.35].map((t) => ({ t, art: "karte" })),
-  { t: 19.4, art: "glanz" },
-  { t: 21.4, art: "wusch", lang: 0.8 },
-  // Zusage
+  { t: 19.35, art: "glanz" },
+  { t: 21.42, art: "wusch", lang: 0.9 },
+  // Zusage; Karte sinkt weg
   { t: 21.8, art: "karte" },
   { t: 22.37, art: "tipp" },
   { t: 22.42, art: "erfolg" },
-  { t: 24.4, art: "wusch", lang: 0.5 },
-  // Stadt: Spuren, Pin, Schritte
+  { t: 24.45, art: "wusch", lang: 0.45 },
+  // Stadt: Spuren, Pin fällt, Schritte, Sturz auf den Sportplatz
   { t: 24.8, art: "strich" },
-  { t: 26.0, art: "plopp" },
+  { t: 26.33, art: "plopp" },
   ...[26.3, 27.1, 27.9].map((t) => ({ t, art: "haken" })),
-  { t: 28.4, art: "wusch", lang: 0.4 },
-  // Helfer: Handy, Antippen „In Abbau eintragen“, eingetragen
+  { t: 28.45, art: "wusch", lang: 0.6 },
+  // Helfer: Handy, Antippen „In Abbau eintragen“, eingetragen; Wisch
   { t: 28.65, art: "auf" },
   { t: 31.02, art: "tipp" },
   { t: 31.17, art: "haken" },
-  { t: 33.4, art: "wusch", lang: 0.4 },
-  // Vereins-Chat: Liste fliegt heraus, Nachricht tippen, senden, Antwort kommt
-  { t: 33.65, art: "auf" },
+  { t: 33.42, art: "wusch", lang: 0.35 },
+  // Vereins-Chat: kommt herein, Liste fliegt heraus, Nachricht tippen, senden, Antwort kommt; Handy fliegt weg
+  { t: 33.6, art: "wusch", lang: 0.4 },
   { t: 33.95, art: "karte" },
   ...tippen(34.6, 0.9, 27, 14),
   { t: 35.52, art: "tipp" },
   { t: 35.6, art: "plopp" },
   { t: 36.35, art: "glocke" },
-  { t: 37.4, art: "wusch", lang: 0.4 },
-  // App-Symbol
+  { t: 37.42, art: "wusch", lang: 0.45 },
+  // App-Symbol dreht sich aus der Tiefe herein, Glanz
   { t: 37.5, art: "tief" },
-  { t: 38.1, art: "glanz" },
-  // Sätze
+  { t: 37.95, art: "wusch", lang: 0.9 },
+  { t: 38.85, art: "glanz" },
+  // Sätze: Schläge, Wörter fliegen weg, „Alles in einem“ wischt herein, „Flow.“ schlägt ein, Flug hinein
   ...[49.5, 50.0, 50.5].map((t) => ({ t, art: "schlag" })),
-  { t: 51.1, art: "karte" },
+  { t: 50.85, art: "wusch", lang: 0.3 },
+  { t: 51.15, art: "wusch", lang: 0.35 },
+  { t: 51.4, art: "tief" },
   { t: 51.55, art: "strich" },
-  { t: 53.4, art: "wusch", lang: 0.5 },
-  // Logo, Schein
+  { t: 53.42, art: "wusch", lang: 0.5 },
+  // Logo schlägt ein, Schein
   { t: 53.5, art: "aufprall" },
   { t: 53.55, art: "glanz" },
   { t: 56.9, art: "schein" },

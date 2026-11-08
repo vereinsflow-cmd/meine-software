@@ -2,14 +2,17 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>VereinsFlow Kurzspot</title>
+<title>VereinsFlow Nacht</title>
 <!--
   Spot „Nacht“ (60 s, 1080 × 1920) für TikTok und Instagram Reels – dunkel, mit Licht und 3D, nach dem Vorbild eines
-  Marken-Spots: Logo mit Lichtstreifen → Handy mit schwebenden Karten → Kapitel Mitglieder, Beiträge, Termine, Zusage,
-  Stadt, Helfer, Vereins-Chat, App-Symbol → Vereinsfotos → „Alles in einem Flow.“ → Logo mit Lichtschein.
+  Marken-Spots: Logo mit Lichtstreifen → Flug durch das Logo, das Handy fliegt mit einer Drehung ein, Karten springen
+  aus dem Bildschirm → Flug in den Bildschirm: Mitglied anlegen → Wisch: Beitragslauf → Kippen: Kalender, Flug ins
+  Sommerfest → Zusage → Kamera über der Musterstadt, Sturz auf den Sportplatz → Helferplan → Wisch: Vereins-Chat →
+  App-Symbol dreht sich ein → Vereinsfotos → Sätze → Logo mit Lichtschein.
   Kein Sprecher, nur Musik (werkzeuge/musik.mjs --nacht, Zeiten in werkzeuge/drehbuch-nacht.mjs).
-  window.seek(t) zeichnet das Bild für die Sekunde t (werkzeuge/rendern.mjs --seite nacht). Vorschau: nacht.html?play
-  oder nacht.html?t=9. App-Bilder im Dunkelmodus: werkzeuge/aufnehmen.mjs --dunkel.
+  window.seek(t) zeichnet das Bild für die Sekunde t. werkzeuge/rendern.mjs --seite nacht mittelt jedes Bild aus
+  mehreren Zeitpunkten (Bewegungsunschärfe wie bei einer Filmkamera; wie viele, sagt window.UNTERBILDER(t)).
+  Vorschau ohne Unschärfe: nacht.html?play oder nacht.html?t=9. App-Bilder im Dunkelmodus: aufnehmen.mjs --dunkel.
 -->
 <style>
 :root{
@@ -21,53 +24,71 @@
 html,body{background:#000;overflow:hidden}
 body.vorschau{display:grid;place-items:start center;background:#222;overflow:auto}
 #film{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--nacht);font-family:var(--ft);color:#fff;-webkit-font-smoothing:antialiased}
+#buehne{position:absolute;inset:0;transform-origin:50% 50%}
 .szene{position:absolute;inset:0;overflow:hidden;display:none}
 .abs{position:absolute}
 .crop{position:absolute;overflow:hidden;background-repeat:no-repeat}
 
-/* Grund: Nacht, Licht, Körnung */
+/* Grund: Nacht, Licht, Körnung, Blitz, Lichtstreifen, Funken */
 .grund{position:absolute;inset:0;background:radial-gradient(1100px 900px at 50% 48%,rgba(58,107,234,.26),rgba(58,107,234,0) 70%),radial-gradient(900px 600px at 50% 104%,rgba(143,176,255,.12),rgba(0,0,0,0) 70%),var(--nacht)}
 #korn{position:absolute;inset:0;background:url(marke/koernung.svg);opacity:.16;mix-blend-mode:screen;pointer-events:none;z-index:90}
 #vignette{position:absolute;inset:0;background:radial-gradient(1250px 1750px at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:89}
 .funke{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(190,210,255,.9),rgba(143,176,255,0) 70%)}
 #schwarz{position:absolute;inset:0;background:#000;z-index:95;opacity:0;pointer-events:none}
+#blitz{position:absolute;inset:0;z-index:88;opacity:0;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(1000px 1400px at 50% 48%,rgba(255,255,255,.95),rgba(175,200,255,.62) 38%,rgba(58,107,234,.2) 72%,rgba(58,107,234,0))}
+.streif{position:absolute;left:-260px;width:1600px;height:46px;margin-top:-23px;z-index:87;opacity:0;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(closest-side,rgba(255,255,255,1),rgba(190,210,255,.75) 22%,rgba(90,140,255,.28) 55%,rgba(58,107,234,0))}
+.streif::after{content:"";position:absolute;left:50%;top:50%;width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.9),rgba(160,190,255,.35) 40%,rgba(58,107,234,0))}
+#spruehen{position:absolute;inset:0;z-index:55;pointer-events:none}
+#spruehen i{position:absolute;left:0;top:0;display:block;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;opacity:0}
 
-/* Überschriften */
-#titel{position:absolute;left:80px;right:60px;top:236px;z-index:60;font:800 86px/1.05 var(--f);letter-spacing:-.03em;color:#fff;filter:drop-shadow(0 6px 30px rgba(6,11,22,.85))}
-#titel .w{display:inline-block;white-space:pre}
-#titel em{font-style:normal;color:var(--himmel)}
+/* Überschriften: Wörter klappen nach oben auf, hervorgehobene Wörter mit Lichtlauf */
+#titel{position:absolute;left:80px;right:60px;top:236px;z-index:60;font:800 86px/1.05 var(--f);letter-spacing:-.03em;color:#fff;filter:drop-shadow(0 6px 30px rgba(6,11,22,.85));perspective:1100px}
+#titel .w{display:inline-block;white-space:pre;transform-origin:50% 100%}
+#titel em,.satz em{font-style:normal;color:transparent;background:linear-gradient(90deg,var(--himmel) 0,var(--himmel) 2860px,#fff 3000px,var(--himmel) 3140px,var(--himmel) 6000px) 0 0/6000px 100% no-repeat;-webkit-background-clip:text;background-clip:text}
 #titel.auf-foto{top:auto;bottom:400px;font-size:92px}
-#titel.auf-foto em{color:#fff}
+#titel.auf-foto em{background:none;color:#fff}
 #titel.gross{font-size:124px}
+#titel.gross .w{transform-origin:50% 60%}
 
 /* 1 Logo */
 #logo-box{position:absolute;left:160px;top:640px;width:760px;filter:drop-shadow(0 0 22px rgba(143,176,255,.5))}
 #logo-box svg{width:100%;height:auto;overflow:visible}
 .lg{transform-box:fill-box;transform-origin:center}
 .kopf{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;background:radial-gradient(circle,rgba(255,230,210,1) 0%,rgba(255,138,94,.85) 22%,rgba(255,138,94,0) 70%);mix-blend-mode:screen}
-.strahl{position:absolute;height:6px;border-radius:6px;background:linear-gradient(90deg,rgba(143,176,255,0),rgba(200,220,255,.95),rgba(143,176,255,0));filter:blur(1px)}
+.strahl{position:absolute;height:7px;border-radius:6px;background:linear-gradient(90deg,rgba(143,176,255,0),rgba(220,232,255,1),rgba(143,176,255,0));box-shadow:0 0 22px 6px rgba(143,176,255,.45)}
 
-/* 3D-Raum und Telefon */
+/* 3D-Raum und Telefon (Rahmen aus Metall, Rückseite mit Kamera, Spiegelung auf dem Glas) */
 .raum{position:absolute;inset:0;perspective:1900px;perspective-origin:50% 46%}
 .welt{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-style:preserve-3d}
-.handy{position:absolute;width:520px;height:1127px;border-radius:84px;background:#0b0b0f;padding:14px;box-shadow:inset 0 0 0 3px #2c2f38,0 0 0 1.5px rgba(143,176,255,.35),0 0 90px rgba(58,107,234,.55),0 60px 120px rgba(0,0,0,.6)}
-.handy .scr{position:relative;width:100%;height:100%;border-radius:70px;overflow:hidden;background:#0a0a0b}
+.handy{position:absolute;width:520px;height:1127px;transform-style:preserve-3d}
+.handy .vorne,.handy .hinten{position:absolute;inset:0;border-radius:86px;-webkit-backface-visibility:hidden;backface-visibility:hidden;background:linear-gradient(135deg,#6b7181 0%,#2a2d35 15%,#4a505d 33%,#1a1c22 57%,#565c6b 80%,#22252c 100%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.24),0 0 0 1px rgba(143,176,255,.22),0 0 110px rgba(58,107,234,.45),0 70px 140px rgba(0,0,0,.6)}
+.handy .vorne{padding:14px}
+.handy .vorne::before{content:"";position:absolute;inset:4px;border-radius:82px;background:#040405}
+.handy .hinten{transform:rotateY(180deg)}
+.handy .hinten::before{content:"";position:absolute;inset:4px;border-radius:82px;background:linear-gradient(160deg,#2c313b,#15171c 55%,#21252f)}
+.handy .hinten img{position:absolute;left:175px;top:480px;width:170px;opacity:.9}
+.handy .kamera{position:absolute;left:34px;top:34px;width:196px;height:196px;border-radius:58px;background:linear-gradient(150deg,#3a3f4b,#191b21);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 8px 20px rgba(0,0,0,.5)}
+.handy .linse{position:absolute;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle at 42% 38%,#5b74a8 0 8%,#141b2b 22%,#05070b 55%,#252932 58%,#0b0c10 72%);box-shadow:0 0 0 4px #2b2f38}
+.handy .taste{position:absolute;width:8px;border-radius:4px;background:linear-gradient(90deg,#1d2026,#6a7080 55%,#2a2d35)}
+.handy .scr{position:relative;width:100%;height:100%;border-radius:72px;overflow:hidden;background:#0a0a0b}
 .handy .insel{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:134px;height:40px;border-radius:22px;background:#000;z-index:5}
-.handy .status{position:absolute;left:0;right:0;top:0;height:58px;display:flex;justify-content:space-between;align-items:center;padding:6px 46px 0 58px;font:600 23px/1 var(--ft);color:#f2f2f2;background:#0a0a0b;z-index:4}
+.handy .status{position:absolute;left:0;right:0;top:0;height:58px;display:flex;justify-content:space-between;align-items:center;padding:8px 40px 0 64px;font:600 23px/1 var(--ft);color:#f2f2f2;background:#0a0a0b;z-index:4}
 .handy .hvp{position:absolute;left:0;top:58px;width:390px;height:844px;transform-origin:0 0;transform:scale(1.2615)}
 .handy .hvp img{position:absolute;left:0;top:0;width:390px}
+.handy .spiegel{position:absolute;inset:0;z-index:7;pointer-events:none;mix-blend-mode:screen;background:linear-gradient(112deg,rgba(255,255,255,0) 36%,rgba(255,255,255,.1) 45%,rgba(255,255,255,.025) 52%,rgba(255,255,255,0) 60%);background-size:280% 100%;background-position:50% 0}
 .glas{position:absolute;box-shadow:0 0 0 1.5px rgba(143,176,255,.28),0 0 60px rgba(58,107,234,.35),0 40px 90px rgba(0,0,0,.55)}
-.licht-kante{position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.18) 48%,rgba(255,255,255,0) 60%);mix-blend-mode:screen}
 .karte-gross{position:absolute;box-shadow:0 0 0 2px rgba(143,176,255,.3),0 0 90px rgba(58,107,234,.45),0 50px 100px rgba(0,0,0,.6)}
 .tipp{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:4px solid rgba(255,255,255,.9);background:rgba(143,176,255,.25);z-index:40}
 .ring-gruen{position:absolute;border-radius:24px;box-shadow:0 0 0 4px rgba(74,222,128,.75),0 0 50px 12px rgba(74,222,128,.35)}
 .ring-blau{position:absolute;border-radius:50%;box-shadow:0 0 0 4px rgba(143,176,255,.9),0 0 40px 10px rgba(143,176,255,.45)}
+.fokus{position:absolute;border-radius:26px;box-shadow:0 0 0 3px rgba(143,176,255,.95),0 0 30px 6px rgba(58,107,234,.55);pointer-events:none}
 .marke{position:absolute;width:5px;background:#8fb0ff;border-radius:3px}
 .zahl{position:absolute;white-space:nowrap;font-variant-numeric:tabular-nums}
+#karten,#b-schritte,#b-karten{position:absolute;inset:0;transform-style:preserve-3d}
 
 /* Stadt */
 .stadt{position:absolute;inset:0;perspective:2200px;perspective-origin:50% 30%}
-.boden{position:absolute;left:-160px;top:420px;width:1400px;height:1400px;transform-style:preserve-3d;transform-origin:50% 50%;
+.boden{position:absolute;width:1400px;height:1400px;transform-style:preserve-3d;
   background:
     repeating-linear-gradient(0deg,rgba(143,176,255,.07) 0 2px,transparent 2px 70px),
     repeating-linear-gradient(90deg,rgba(143,176,255,.07) 0 2px,transparent 2px 70px),
@@ -97,22 +118,25 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
 .schritt.an b{background:var(--signal);box-shadow:0 0 16px rgba(255,138,94,.9)}
 
 /* Chat */
-.blase-neu{position:absolute;right:16px;max-width:300px;background:#005c4b;color:#e9edef;border-radius:14px 4px 14px 14px;padding:9px 12px 8px;font:400 15.5px/1.35 var(--ft);box-shadow:0 1px 1px rgba(0,0,0,.3)}
+.blase-neu{position:absolute;right:16px;max-width:300px;background:#005c4b;color:#e9edef;border-radius:14px 4px 14px 14px;padding:9px 12px 8px;font:400 15.5px/1.35 var(--ft);box-shadow:0 1px 1px rgba(0,0,0,.3);transform-origin:100% 100%}
 .blase-neu small{display:block;text-align:right;font-size:11.5px;color:rgba(233,237,239,.65);margin-top:2px}
 .blase-neu small b{color:#53bdeb;font-weight:600}
-.blase-rein{position:absolute;left:16px;max-width:300px;background:#202c33;color:#e9edef;border-radius:4px 14px 14px 14px;padding:7px 12px 8px;font:400 15.5px/1.35 var(--ft);box-shadow:0 1px 1px rgba(0,0,0,.3)}
+.blase-rein{position:absolute;left:16px;max-width:300px;background:#202c33;color:#e9edef;border-radius:4px 14px 14px 14px;padding:7px 12px 8px;font:400 15.5px/1.35 var(--ft);box-shadow:0 1px 1px rgba(0,0,0,.3);transform-origin:0 0}
 .blase-rein strong{display:block;font:600 13.5px/1.3 var(--ft);color:#ff8a5e}
 .blase-rein small{display:block;text-align:right;font-size:11.5px;color:rgba(233,237,239,.6);margin-top:2px}
 .eingabe{position:absolute;font:400 16px/20px var(--ft);color:#e9edef;white-space:nowrap}
 .eingabe .cursor{display:inline-block;width:2px;height:19px;margin-left:1px;vertical-align:-4px;background:#8fb0ff}
 
-/* App-Symbol */
+/* App-Symbol (Vorder- und Rückseite, dazwischen Schichten als Dicke) */
 .symbol3d{position:absolute;left:310px;top:700px;width:460px;height:460px;transform-style:preserve-3d}
 .symbol3d .lage{position:absolute;inset:0;border-radius:104px;background:#0a1224}
-.symbol3d .vorne{position:absolute;inset:0;border-radius:104px;background:linear-gradient(150deg,#1b2b4d 0%,#0f1c2e 45%,#070d1a 100%);box-shadow:inset 0 0 0 2px rgba(143,176,255,.35),inset 0 2px 30px rgba(143,176,255,.18);overflow:hidden}
-.symbol3d .vorne img{position:absolute;left:70px;top:58px;width:320px}
+.symbol3d .vorne,.symbol3d .hinten{position:absolute;inset:0;border-radius:104px;background:linear-gradient(150deg,#1b2b4d 0%,#0f1c2e 45%,#070d1a 100%);box-shadow:inset 0 0 0 2px rgba(143,176,255,.35),inset 0 2px 30px rgba(143,176,255,.18);overflow:hidden;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.symbol3d .hinten{transform:translateZ(-38px) rotateY(180deg)}
+.symbol3d .vorne img,.symbol3d .hinten img{position:absolute;left:70px;top:58px;width:320px}
+.symbol3d .hinten img{opacity:.5}
 .glanz{position:absolute;inset:-40%;background:linear-gradient(105deg,rgba(255,255,255,0) 40%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 60%)}
 .schatten{position:absolute;left:290px;top:1240px;width:500px;height:90px;border-radius:50%;background:radial-gradient(closest-side,rgba(58,107,234,.55),rgba(58,107,234,0))}
+.aura{position:absolute;left:540px;top:930px;width:1000px;height:1000px;margin:-500px 0 0 -500px;border-radius:50%;background:radial-gradient(closest-side,rgba(90,140,255,.5),rgba(58,107,234,.16) 45%,rgba(58,107,234,0));mix-blend-mode:screen;opacity:0}
 
 /* Fotos (Nacht-Licht) */
 .foto{position:absolute;inset:0;overflow:hidden;background:#000}
@@ -121,9 +145,9 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
 
 /* Sätze und Schluss */
 .satz{position:absolute;left:90px;right:60px;font:800 132px/1.04 var(--f);letter-spacing:-.035em;color:#fff}
-.satz .w{display:inline-block;white-space:pre}
-.satz em{font-style:normal;color:var(--himmel)}
+.satz .w{display:inline-block;white-space:pre;transform-origin:0 60%}
 .unterstrich{position:absolute;height:16px;border-radius:10px;background:var(--signal);box-shadow:0 0 24px rgba(255,138,94,.8);transform-origin:left center}
+.kopflicht{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,244,236,1),rgba(255,138,94,.7) 35%,rgba(255,138,94,0));mix-blend-mode:screen;opacity:0}
 .adresse{position:absolute;left:0;right:0;top:1180px;text-align:center;font:700 60px/1 var(--f);color:var(--himmel);letter-spacing:-.01em}
 .demo{position:absolute;left:0;right:0;top:1270px;text-align:center;font:600 36px/1 var(--ft);color:rgba(230,236,255,.75)}
 .schein{position:absolute;left:540px;top:1000px;width:1400px;height:260px;margin:-130px 0 0 -700px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(200,220,255,.55) 30%,rgba(58,107,234,.25) 60%,rgba(58,107,234,0));mix-blend-mode:screen}
@@ -134,6 +158,7 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
   <div class="grund"></div>
   <div id="funken"></div>
 
+  <div id="buehne">
   <!-- 1 Logo mit Lichtstreifen -->
   <section class="szene" id="s-logo">
     <div class="strahl" id="strahl1" style="top:930px"></div>
@@ -142,13 +167,10 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
     <div class="kopf" id="kopf"></div>
   </section>
 
-  <!-- 2 Handy mit schwebenden Karten -->
+  <!-- 2 Handy fliegt ein, Karten springen aus dem Bildschirm -->
   <section class="szene" id="s-handy">
     <div class="raum"><div class="welt" id="welt">
-      <div class="handy" id="handy" style="left:280px;top:470px">
-        <div class="scr"><div class="insel"></div><div class="status"><span>9:41</span><span>●●●●</span></div>
-          <div class="hvp"><img src="app/nacht-phone-dashboard.png"></div></div>
-      </div>
+      <div class="handy" id="handy" style="left:280px;top:470px"><div class="hvp"><img src="app/nacht-phone-dashboard.png"></div></div>
       <div id="karten"></div>
     </div></div>
   </section>
@@ -156,8 +178,8 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
   <!-- 3 Mitglieder -->
   <section class="szene" id="s-mitglieder">
     <div class="raum"><div class="welt" id="welt-m"><div id="m-form" class="abs" style="inset:0"></div></div></div>
-    <!-- außerhalb des 3D-Raums: liegt flach über dem kippenden Formular, statt es zu durchschneiden -->
-    <div id="m-fertig" class="abs" style="inset:0"></div>
+    <!-- eigener Raum: die Karte „angelegt“ dreht sich herein, nachdem sich das Formular weggedreht hat -->
+    <div class="raum"><div id="m-fertig" class="abs" style="inset:0"></div></div>
   </section>
 
   <!-- 4 Beiträge -->
@@ -195,15 +217,11 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
   <!-- 8 Helfer -->
   <section class="szene" id="s-helfer">
     <div class="raum"><div class="welt" id="welt-h">
-      <div class="handy" id="handy-h" style="left:280px;top:520px">
-        <div class="scr"><div class="insel"></div><div class="status"><span>9:41</span><span>●●●●</span></div>
-          <div class="hvp">
-            <div id="h-vorher" class="abs" style="inset:0"><img src="app/nacht-phone-helfer-vorher.png" style="height:1920px"></div>
-            <div id="h-nachher" class="abs" style="inset:0"><img src="app/nacht-phone-helfer-nachher.png" style="height:1920px"><div class="ring-gruen" id="h-leuchten" style="left:14px;top:1834px;width:362px;height:62px;border-radius:12px"></div></div>
-            <div class="crop" id="h-kopf" style="left:0;top:0;width:390px;height:62px;background-image:url(app/nacht-phone-helfer-vorher.png);background-size:390px 1920px;z-index:3"></div>
-          </div>
-        </div>
-      </div>
+      <div class="handy" id="handy-h" style="left:280px;top:520px"><div class="hvp">
+        <div id="h-vorher" class="abs" style="inset:0"><img src="app/nacht-phone-helfer-vorher.png" style="height:1920px"></div>
+        <div id="h-nachher" class="abs" style="inset:0"><img src="app/nacht-phone-helfer-nachher.png" style="height:1920px"><div class="ring-gruen" id="h-leuchten" style="left:14px;top:1834px;width:362px;height:62px;border-radius:12px"></div></div>
+        <div class="crop" id="h-kopf" style="left:0;top:0;width:390px;height:62px;background-image:url(app/nacht-phone-helfer-vorher.png);background-size:390px 1920px;z-index:3"></div>
+      </div></div>
       <div class="tipp" id="tipp-h"></div>
     </div></div>
   </section>
@@ -212,22 +230,19 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
   <section class="szene" id="s-chat">
     <div class="raum"><div class="welt" id="welt-c">
       <div id="c-liste"></div>
-      <div class="handy" id="handy-c" style="left:300px;top:520px">
-        <div class="scr"><div class="insel"></div><div class="status"><span>9:41</span><span>●●●●</span></div>
-          <div class="hvp"><img src="app/nacht-phone-chat.png" style="height:844px">
-            <div class="abs" id="c-leer" style="left:36px;top:740px;width:272px;height:28px;background:#0a0a0b"></div>
-            <div class="eingabe" id="c-eingabe" style="left:42px;top:744px"></div>
-            <div class="blase-neu" id="c-neu" style="top:318px">Wer bringt den Grill mit? 🔥<small>20:16 <b>✓✓</b></small></div>
-            <div class="blase-rein" id="c-antwort" style="top:396px"><strong>Hans Hellwig</strong>Ich! Steht ab 17 Uhr bereit. 💪<small>20:17</small></div>
-          </div>
-        </div>
-      </div>
+      <div class="handy" id="handy-c" style="left:300px;top:520px"><div class="hvp"><img src="app/nacht-phone-chat.png" style="height:844px">
+        <div class="abs" id="c-leer" style="left:36px;top:740px;width:272px;height:28px;background:#0a0a0b"></div>
+        <div class="eingabe" id="c-eingabe" style="left:42px;top:744px"></div>
+        <div class="blase-neu" id="c-neu" style="top:318px">Wer bringt den Grill mit? 🔥<small>20:16 <b>✓✓</b></small></div>
+        <div class="blase-rein" id="c-antwort" style="top:396px"><strong>Hans Hellwig</strong>Ich! Steht ab 17 Uhr bereit. 💪<small>20:17</small></div>
+      </div></div>
       <div class="tipp" id="tipp-c"></div>
     </div></div>
   </section>
 
   <!-- 10 App-Symbol -->
   <section class="szene" id="s-symbol">
+    <div class="aura" id="aura"></div>
     <div class="schatten" id="schatten"></div>
     <div class="raum"><div class="welt" id="welt5"><div class="symbol3d" id="symbol3d"></div></div></div>
   </section>
@@ -244,6 +259,7 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
     <div class="satz" id="satz1" style="top:620px"><span class="w">Mitglieder.</span><br><span class="w">Beiträge.</span><br><span class="w">Termine.</span></div>
     <div class="satz" id="satz2" style="top:760px"><span class="w">Alles in einem</span><br><span class="w"><em>Flow.</em></span></div>
     <div class="unterstrich" id="unterstrich" style="left:96px;top:1052px;width:300px"></div>
+    <div class="kopflicht" id="kopflicht"></div>
   </section>
 
   <!-- 13 Logo, Adresse, Schein -->
@@ -254,7 +270,13 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
     <div class="demo" id="demo">Jetzt Demo anfragen</div>
   </section>
 
+  <div id="spruehen"></div>
   <h2 id="titel"></h2>
+  </div>
+
+  <div class="streif" id="streif1"></div>
+  <div class="streif" id="streif2"></div>
+  <div id="blitz"></div>
   <div id="vignette"></div>
   <div id="korn"></div>
   <div id="schwarz"></div>
@@ -265,6 +287,7 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
 "use strict";
 const LAGE = window.LAGE;
 const DAUER = 60;
+const TAU = Math.PI * 2;
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, p) => a + (b - a) * p;
@@ -283,8 +306,10 @@ function bezier(x1, y1, x2, y2) {
 const E = {
   lin: (x) => x,
   out: bezier(0.23, 1, 0.32, 1),
+  expo: bezier(0.16, 1, 0.3, 1), // schnell los, sehr weich landen (Anflüge)
   inOut: bezier(0.77, 0, 0.175, 1),
   in: bezier(0.55, 0.055, 0.675, 0.19),
+  inStark: bezier(0.7, 0, 0.84, 0), // langsam los, dann sehr schnell (Abflüge, Zoom hinein)
   soft: bezier(0.25, 0.8, 0.25, 1),
   back: (x) => { const c1 = 1.4, c3 = c1 + 1; return x >= 1 ? 1 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
   spring: (x) => (x >= 1 ? 1 : 1 - Math.exp(-6.5 * x) * Math.cos(9 * x)),
@@ -317,6 +342,16 @@ function at(el, x, y) {
   Object.assign(el.style, { left: x + "px", top: y + "px" });
   return el;
 }
+/** Schmales Lichtband, das schräg über ein Element läuft (das Element schneidet es mit overflow:hidden ab). */
+function lichtband(el, breite = 220) {
+  const i = document.createElement("i");
+  Object.assign(i.style, { position: "absolute", top: "-30%", bottom: "-30%", left: "0", width: breite + "px", background: "linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.2),rgba(255,255,255,0))", transform: "translateX(-600px) skewX(-18deg)", pointerEvents: "none" });
+  el.appendChild(i);
+  return i;
+}
+function band(i, t, a, d, weg) {
+  i.style.transform = `translateX(${lerp(-300, weg, P(t, a, d, E.inOut))}px) skewX(-18deg)`;
+}
 const rnd = (() => { let s = 7; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
 /** Pop: herein (von unten, kleiner), steht; optional raus. */
 function pop(el, t, a, { d = 0.45, dy = 50, s0 = 0.88, e = E.back, extra = "", out = null, outD = 0.2 } = {}) {
@@ -343,6 +378,38 @@ const T = {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
+// Telefon: Metallrahmen mit Tasten, Glas mit Spiegelung, Statusleiste, Rückseite mit Kamera und Symbol
+// ---------------------------------------------------------------------------------------------------------------
+const STATUS_SVG =
+  '<svg width="100" height="22" viewBox="0 0 100 22" fill="#f2f2f2"><rect x="0" y="13.5" width="5" height="7.5" rx="1.3"/><rect x="7.5" y="10" width="5" height="11" rx="1.3"/><rect x="15" y="6.5" width="5" height="14.5" rx="1.3"/><rect x="22.5" y="3" width="5" height="18" rx="1.3"/>' +
+  '<g fill="none" stroke="#f2f2f2" stroke-width="2.7" stroke-linecap="round"><path d="M37.5 8.6a13.5 13.5 0 0 1 18 0"/><path d="M40.9 12.6a8.3 8.3 0 0 1 11.2 0"/></g><circle cx="46.5" cy="17.4" r="2.3"/>' +
+  '<rect x="64" y="3.5" width="31" height="15.5" rx="4.6" fill="none" stroke="#f2f2f2" stroke-opacity=".45" stroke-width="1.6"/><rect x="66.6" y="6.1" width="25.8" height="10.3" rx="2.6"/><path d="M96.8 8.8v5a2.5 2.5 0 0 0 0-5z" fill-opacity=".45"/></svg>';
+function handyRahmen(el) {
+  const innen = [...el.childNodes];
+  el.innerHTML =
+    '<div class="vorne">' +
+    '<i class="taste" style="left:-6px;top:236px;height:58px"></i><i class="taste" style="left:-6px;top:326px;height:104px"></i>' +
+    '<i class="taste" style="left:-6px;top:446px;height:104px"></i><i class="taste" style="right:-6px;top:356px;height:164px"></i>' +
+    `<div class="scr"><div class="insel"></div><div class="status"><span>9:41</span>${STATUS_SVG}</div><div class="spiegel"></div></div>` +
+    "</div>" +
+    '<div class="hinten"><div class="kamera"><i class="linse" style="left:18px;top:18px"></i><i class="linse" style="left:108px;top:18px"></i><i class="linse" style="left:63px;top:106px"></i></div><img src="marke/symbol-weiss.svg" alt=""></div>';
+  const scr = el.querySelector(".scr");
+  const sp = el.querySelector(".spiegel");
+  for (const n of innen) scr.insertBefore(n, sp);
+  return sp;
+}
+/** Spiegelung wandert mit der Drehung des Telefons über das Glas. */
+function spiegel(sp, drehung, t) {
+  const d = clamp((((drehung % 360) + 540) % 360) - 180, -80, 80);
+  sp.style.backgroundPosition = `${50 - d * 0.9 + Math.sin(t * 0.6) * 4}% 0`;
+}
+/** Deckkraft auf die Seiten statt aufs Telefon – sonst würde das 3D flach gerechnet. */
+function deckkraft(el, o) {
+  for (const s of el.querySelectorAll(":scope > .vorne, :scope > .hinten")) s.style.opacity = o;
+}
+const SPIEGEL = { handy: handyRahmen($("#handy")), h: handyRahmen($("#handy-h")), c: handyRahmen($("#handy-c")) };
+
+// ---------------------------------------------------------------------------------------------------------------
 // Aufbau
 // ---------------------------------------------------------------------------------------------------------------
 const FUNKEN = Array.from({ length: 26 }, () => {
@@ -354,27 +421,24 @@ const FUNKEN = Array.from({ length: 26 }, () => {
   return { el, x: rnd() * 1080, y: rnd() * 1920, v: 18 + rnd() * 40, ph: rnd() * 6.28, a: 0.25 + rnd() * 0.5 };
 });
 
-// 2 Karten aus dem dunklen Dashboard schweben um das Handy
+// 2 Karten aus dem dunklen Dashboard springen aus dem Bildschirm und schweben in verschiedener Tiefe um das Handy
 const KARTEN = [
-  { x: 150, y: 510, w: 539, h: 290, r: 24, s: 0.82, pos: [20, 420, 220, 20], von: 3.0 },
-  { x: 717, y: 521, w: 253, h: 217, r: 22, s: 1.3, pos: [690, 600, 320, -24], von: 3.15 },
-  { x: 981, y: 521, w: 253, h: 217, r: 22, s: 1.15, pos: [720, 1190, 180, -20], von: 3.3 },
+  { x: 150, y: 510, w: 539, h: 290, r: 24, s: 0.82, pos: [70, 480, 150, 20], von: 3.15 },
+  { x: 717, y: 521, w: 253, h: 217, r: 22, s: 1.3, pos: [640, 640, 190, -24], von: 3.3 },
+  { x: 981, y: 521, w: 253, h: 217, r: 22, s: 1.15, pos: [690, 1200, 120, -20], von: 3.45 },
 ].map((k) => {
   const el = crop($("#karten"), "app/nacht-dashboard.png", 1280, 800, k.x, k.y, k.w, k.h, k.s, { radius: k.r, cls: "crop glas" });
-  const glanz = document.createElement("div");
-  glanz.className = "licht-kante";
-  el.appendChild(glanz);
-  return { ...k, el, glanz };
+  return { ...k, el, band: lichtband(el) };
 });
 {
   const el = crop($("#karten"), "app/nacht-phone-dashboard.png", 390, 844, 12, 56, 366, 196, 1.35, { radius: 18, cls: "crop glas" });
-  KARTEN.push({ el, pos: [20, 1270, 260, 18], von: 3.45, w: 366, h: 196, s: 1.35 });
+  KARTEN.push({ el, band: lichtband(el), pos: [60, 1265, 170, 18], von: 3.6, w: 366, h: 196, s: 1.35 });
 }
 
 // 3 Mitglieder: Formular (leer → getippt), Knopf, angelegt (Meldung, Kopf, Stammdaten)
 const NEU_H = 2068; // Seitenhöhe der ganzen Aufnahme in CSS-Pixeln
 const MS = 2.2;
-const M = { felder: [] };
+const M = { felder: [], feldLage: [] };
 {
   const fx = 16, fy = 211, fw = 358, fh = 275; // Karte „Stammdaten“ bis unter das Feld Geburtsdatum
   const left = 540 - (fw * MS) / 2, top = 560;
@@ -382,6 +446,7 @@ const M = { felder: [] };
   const F = LAGE["nacht-phone-neu-voll"].fields;
   [["Vorname", "Mia", 7.75], ["Nachname", "Schröder", 8.15], ["Geburtsdatum", "14.03.1998", 8.7]].forEach(([name, text, t0]) => {
     const f = F[name];
+    M.feldLage.push([left + (f.x - fx) * MS - 5, top + (f.y - fy) * MS - 5, f.w * MS + 10, f.h * MS + 10]);
     const x = left + (f.x - fx + 2) * MS, y = top + (f.y - fy + 2) * MS, w = (f.w - 40) * MS, h = (f.h - 4) * MS;
     const blank = at(document.createElement("div"), x, y);
     Object.assign(blank.style, { position: "absolute", width: w + "px", height: h + "px", background: "#212123", borderRadius: "16px" }); // Feldfarbe (verdeckt „dd.mm.yyyy“)
@@ -393,20 +458,23 @@ const M = { felder: [] };
     $("#m-form").appendChild(marke);
     M.felder.push({ el, blank, marke, text, t0, d: 0.35, w });
   });
+  M.fokus = document.createElement("div");
+  M.fokus.className = "fokus";
+  $("#m-form").appendChild(M.fokus);
   const K = { x: 225.6, y: 2016.4, w: 148.4, h: 36 };
   M.knopf = at(crop($("#m-form"), "app/nacht-phone-neu-voll.png", 390, NEU_H, K.x, K.y, K.w, K.h, MS, { radius: 10, cls: "crop karte-gross" }), left + (K.x - fx) * MS, top + fh * MS + 50);
   M.tipp = [left + (K.x - fx + K.w / 2) * MS, top + fh * MS + 50 + (K.h / 2) * MS];
   const tippEl = document.createElement("div");
   tippEl.className = "tipp";
   tippEl.id = "tipp-m";
-  $("#s-mitglieder").appendChild(tippEl);
+  $("#welt-m").appendChild(tippEl);
   const SC = 2.0, l2 = 540 - (358 * SC) / 2;
   // Bildschirm-Fläche in der Seitenfarbe der App: Meldung, Kopf und Stammdaten liegen darauf wie im Handy
   M.panel = at(document.createElement("div"), l2 - 16 * SC, 540 - 16 * SC);
   M.panel.className = "glas";
   Object.assign(M.panel.style, { width: 390 * SC + "px", height: (563 + 16 - 56) * SC + "px", background: "#0a0a0b", borderRadius: "56px" });
   $("#m-fertig").appendChild(M.panel);
-  M.meldung =at(crop($("#m-fertig"), "app/nacht-phone-mitglied.png", 390, 844, 16, 72, 358, 54, SC, { radius: 10, cls: "crop karte-gross" }), l2, 540);
+  M.meldung = at(crop($("#m-fertig"), "app/nacht-phone-mitglied.png", 390, 844, 16, 72, 358, 54, SC, { radius: 10, cls: "crop karte-gross" }), l2, 540);
   // Der Schließen-Knopf der Meldung ragt über ihre linke obere Ecke – dort die (gespiegelte) rechte obere Ecke einsetzen
   const ecke = at(crop(M.meldung, "app/nacht-phone-mitglied.png", 390, 844, 356, 72, 18, 18, SC), 0, 0);
   ecke.style.transform = "scaleX(-1)";
@@ -415,12 +483,13 @@ const M = { felder: [] };
   M.daten = at(crop($("#m-fertig"), "app/nacht-phone-mitglied.png", 390, 844, 16, 259, 358, 304, SC, { radius: 14 }), l2, 540 + (259 - 72) * SC);
 }
 
-// 4 Beiträge: Schritte des Beitragslaufs, vier Kennzahlen, Beträge zählen hoch
+// 4 Beiträge: Schritte des Beitragslaufs, vier Kennzahlen klappen hoch, Beträge zählen hoch
 const B = { ringe: [], zahlen: [] };
 {
   // Karte des Beitragslaufs nur bis zum Ende ihres Textes (rechts ist sie leer), dafür groß
   const SS = 1.5, SW = 640, sl = 540 - (SW * SS) / 2, st = 560;
   B.schritte = at(crop($("#b-schritte"), "app/nacht-lauf.png", 1280, 800, 150, 345, SW, 163, SS, { radius: 15, cls: "crop karte-gross" }), sl, st);
+  B.band = lichtband(B.schritte, 260);
   for (const cx of [187, 343.5, 520]) {
     const d = 34 * SS;
     const r = at(document.createElement("div"), sl + (cx - 150) * SS - d / 2, st + (463 - 345) * SS - d / 2);
@@ -434,6 +503,7 @@ const B = { ringe: [], zahlen: [] };
   [[150, true], [428, true], [706, false], [984, false]].forEach(([x, ohne], i) => {
     const el = crop($("#b-karten"), ohne ? "app/nacht-lauf-ohne-zahl.png" : "app/nacht-lauf.png", 1280, 800, x, 534, 261, 121, KS, { radius: 15, cls: "crop karte-gross" });
     at(el, i % 2 === 0 ? 540 - 18 - KW : 558, i < 2 ? KT : KT + KH + 36);
+    el.style.transformOrigin = "50% 100%";
     if (ohne) {
       const z = document.createElement("div");
       z.className = "zahl";
@@ -443,9 +513,10 @@ const B = { ringe: [], zahlen: [] };
     }
     B[`k${i}`] = el;
   });
+  B.funkenOrt = [540 - 18 - KW + (zahl.x - 150 + zahl.w / 2) * KS, KT + (zahl.y - 534 + zahl.h / 2) * KS];
 }
 
-// 5 Termine: Monatsansicht im Dunkelmodus, Termine ploppen als Lichter auf
+// 5 Termine: Monatsansicht im Dunkelmodus klappt hoch, Termine ploppen als Welle auf
 const KAL = { s: 0.9, x0: 140, y0: 225, w: 1120, h: 575 };
 const CHIPS = [];
 {
@@ -526,6 +597,8 @@ $("#s-zusage").appendChild(tippZ);
   Object.assign(platz.style, { left: pl.bx + "px", top: pl.by + 20 + "px", width: pl.bw + "px", height: pl.bh - 40 + "px" });
   b.appendChild(platz);
   window.PLATZ = { x: pl.bx + pl.bw / 2, y: pl.by + pl.bh / 2 };
+  // Drehpunkt der Kamera ist der Sportplatz: er bleibt beim Kippen, Drehen und beim Sturz an seiner Stelle im Bild
+  Object.assign(b.style, { left: 540 - PLATZ.x + "px", top: 1120 - PLATZ.y + "px", transformOrigin: `${PLATZ.x}px ${PLATZ.y}px` });
   b.appendChild($("#spuren"));
 }
 const S7 = T.stadt[0];
@@ -553,11 +626,11 @@ const SPUREN = [
   }
   const len = pts.slice(1).reduce((s, p, k) => s + Math.hypot(p[0] - pts[k][0], p[1] - pts[k][1]), 0);
   const punkt = document.createElementNS(ns, "circle");
-  punkt.setAttribute("r", "13");
+  punkt.setAttribute("r", "15");
   punkt.setAttribute("fill", "#fff");
-  punkt.style.filter = "drop-shadow(0 0 10px #8fb0ff)";
+  punkt.style.filter = "drop-shadow(0 0 12px #8fb0ff)";
   $("#spuren").appendChild(punkt);
-  return { glow, line, punkt, len, pts, start: S7 + 0.3 + i * 0.15 };
+  return { glow, line, punkt, len, pts, start: S7 + 0.35 + i * 0.12 };
 });
 function punktAuf(pts, s) {
   for (let k = 1; k < pts.length; k++) {
@@ -597,6 +670,7 @@ const C_SENDEN = [300 + 14 + 346 * HS, 520 + 14 + 58 + 754 * HS]; // grüner Sen
   const s = $("#symbol3d");
   let html = "";
   for (let i = 18; i >= 1; i--) html += `<div class="lage" style="transform:translateZ(${-i * 2}px);filter:brightness(${0.55 + (18 - i) * 0.02})"></div>`;
+  html += '<div class="hinten"><img src="marke/symbol-weiss.svg"></div>';
   html += '<div class="vorne"><img src="marke/symbol-weiss.svg"><div class="glanz" id="glanz"></div></div>';
   s.innerHTML = html;
 }
@@ -608,19 +682,135 @@ const FOTOS = [
   { id: "#f-prost", von: 46.5, bis: 49.5, w: 3000, h: 2000, fx: 0.64, fy: 0.47, s0: 1.04, s1: 1.14, dx: 70 },
 ];
 
-// Überschriften
+// Überschriften (verschwinden, bevor die Szene geht)
 const TITEL = [
-  { von: 3.6, bis: 6.6, html: "Alles auf <em>einen Blick.</em>" },
-  { von: 7.15, bis: 11.8, html: "Mitglieder <em>in Sekunden.</em>" },
-  { von: 12.15, bis: 16.8, html: "Beiträge <em>automatisch.</em>" },
-  { von: 17.15, bis: 20.2, html: "Termine, die <em>jeder sieht.</em>" },
-  { von: 28.65, bis: 33.3, html: "Helfer tragen sich<br><em>selbst ein.</em>" },
-  { von: 33.65, bis: 37.3, html: "Alles im <em>Vereins-Chat.</em>" },
-  { von: 37.75, bis: 40.3, html: "Auch <em>unterwegs.</em>" },
-  { von: 40.8, bis: 46.3, html: "Mehr Zeit für das,<br>was zählt.", cls: "auf-foto" },
-  { von: 46.6, bis: 47.95, html: "Weniger Verwaltung.", cls: "auf-foto gross" },
-  { von: 48.05, bis: 49.4, html: "Mehr Verein.", cls: "auf-foto gross" },
+  { von: 3.6, bis: 6.35, html: "Alles auf <em>einen Blick.</em>" },
+  { von: 7.4, bis: 11.62, html: "Mitglieder <em>in Sekunden.</em>" },
+  { von: 12.3, bis: 16.6, html: "Beiträge <em>automatisch.</em>" },
+  { von: 17.35, bis: 20.25, html: "Termine, die <em>jeder sieht.</em>" },
+  { von: 28.9, bis: 30.75, html: "Helfer tragen sich<br><em>selbst ein.</em>" }, // weg, bevor die Kamera ans Handy fährt
+  { von: 33.9, bis: 37.12, html: "Alles im <em>Vereins-Chat.</em>" },
+  { von: 37.95, bis: 40.35, html: "Auch <em>unterwegs.</em>" },
+  { von: 40.85, bis: 46.3, html: "Mehr Zeit für das,<br>was zählt.", cls: "auf-foto" },
+  { von: 46.55, bis: 47.95, html: "Weniger Verwaltung.", cls: "auf-foto gross", stil: "schlag" },
+  { von: 48.0, bis: 49.42, html: "Mehr Verein.", cls: "auf-foto gross", stil: "schlag" },
 ];
+
+// ---------------------------------------------------------------------------------------------------------------
+// Übergänge, Stöße im Takt, Blitze, Lichtstreifen, Funkenregen
+// ---------------------------------------------------------------------------------------------------------------
+/** Wie eine Szene kommt (ab ihrem Beginn) und geht (bis zu ihrem Ende): [Art, Dauer]. Leer = die Szene macht es selbst. */
+const AUFTRITT = {
+  logo: { aus: ["zoom", 0.34], mitte: "540px 757px" }, // Flug durch das V
+  handy: {}, // Anflug und Flug in den Bildschirm macht die Szene selbst
+  mitglieder: { ein: ["tiefe", 0.65], aus: ["wisch", 0.3] },
+  beitraege: { ein: ["wisch", 0.5], aus: ["kipp", 0.35] },
+  termine: {}, // klappt selbst hoch, fliegt selbst ins Sommerfest
+  zusage: { ein: ["tiefe", 0.65], aus: ["sink", 0.35] },
+  stadt: {}, // Kamera fliegt selbst ein und stürzt auf den Sportplatz
+  helfer: { ein: ["tiefe", 0.65], aus: ["wisch", 0.3] },
+  chat: { ein: ["wisch", 0.5], aus: ["weg", 0.35], mitte: "560px 1083px" },
+  symbol: {},
+  gefuehl: {},
+  saetze: { aus: ["zoom", 0.3], mitte: "250px 965px" }, // Flug in „Flow.“
+  ende: {},
+};
+function auftritt(key, t) {
+  const [von, bis] = T[key];
+  const a = AUFTRITT[key];
+  let tr = "", o = 1;
+  if (a.ein && t < von + a.ein[1]) {
+    const [art, d] = a.ein;
+    const p = P(t, von, d, E.expo);
+    if (art === "tiefe") { tr += ` scale(${0.42 + 0.58 * p})`; o *= P(t, von, 0.1); }
+    else if (art === "wisch") tr += ` perspective(1600px) translateX(${(1 - p) * 1300}px) rotateY(${-(1 - p) * 24}deg)`;
+  }
+  if (a.aus && t > bis - a.aus[1]) {
+    const [art, d] = a.aus;
+    const q = P(t, bis - d, d, E.inStark);
+    if (art === "zoom") { tr += ` scale(${1 + 3.4 * q})`; o *= 1 - P(t, bis - d * 0.3, d * 0.3, E.lin); }
+    else if (art === "wisch") tr += ` perspective(1600px) translateX(${-q * 1300}px) rotateY(${q * 24}deg)`;
+    else if (art === "kipp") { tr += ` perspective(1600px) translateY(${-q * 420}px) rotateX(${q * 78}deg)`; o *= 1 - q * q; }
+    else if (art === "sink") { tr += ` perspective(1600px) translateY(${q * 760}px) rotateX(${-q * 58}deg)`; o *= 1 - q * q; }
+    else if (art === "weg") { tr += ` translateY(${-q * 560}px) scale(${1 - 0.78 * q})`; o *= 1 - q; }
+  }
+  return { tr: tr || "none", o, mitte: a.mitte ?? "540px 960px" };
+}
+
+// Stöße (Kamera ruckt kurz näher): Schnitte, Schläge, erste Zählzeit jedes Takts im Groove
+const STOESSE = [
+  [2.5, 0.045], [7.0, 0.03], [12.0, 0.022], [17.0, 0.022], [21.5, 0.03], [24.5, 0.022], [28.5, 0.03], [33.5, 0.022], [37.5, 0.035],
+  [40.5, 0.02], [43.5, 0.012], [46.5, 0.02], [48.0, 0.016], [49.5, 0.05], [50.0, 0.045], [50.5, 0.045], [51.4, 0.035], [53.5, 0.06], [57.0, 0.02],
+];
+for (let x = 4.5; x < 38.5; x += 2) if (!STOESSE.some(([h]) => Math.abs(h - x) < 0.3)) STOESSE.push([x, 0.01]);
+const BLITZE = [
+  [2.5, 0.85], [7.0, 0.6], [10.14, 0.22], [21.5, 0.65], [22.42, 0.22], [28.5, 0.65], [31.17, 0.18], [37.5, 0.5],
+  [40.5, 0.75], [43.5, 0.3], [46.5, 0.38], [49.5, 0.32], [50.0, 0.28], [50.5, 0.28], [51.4, 0.3], [53.5, 0.95],
+];
+// Lichtstreifen (wie Lichtreflex einer Kamera): [Zeit, Höhe im Bild, Stärke]
+const STREIFEN = [
+  [2.5, 760, 1], [10.14, 600, 0.7], [22.42, 1140, 0.6], [31.17, 1374, 0.5], [49.5, 688, 0.55], [50.0, 825, 0.55],
+  [50.5, 962, 0.55], [51.4, 965, 0.5], [53.5, 860, 1], [56.95, 1000, 0.8],
+];
+function stossWert(t) {
+  let v = 0;
+  for (const [h, a] of STOESSE) { const k = t - h; if (k >= 0 && k < 0.7) v += a * Math.exp(-k / 0.11); }
+  return v;
+}
+function blitzWert(t) {
+  let v = 0;
+  for (const [h, a] of BLITZE) { const k = t - h; if (k > -0.05 && k < 0.7) v += a * (k < 0 ? 1 + k / 0.05 : Math.exp(-k / 0.12)); }
+  return Math.min(1, v);
+}
+function drawStreifen(t) {
+  const aktiv = STREIFEN.filter(([h]) => t >= h - 0.04 && t < h + 0.8).slice(-2);
+  [$("#streif1"), $("#streif2")].forEach((el, i) => {
+    const s = aktiv[i];
+    if (!s) { el.style.opacity = 0; return; }
+    const [h, y, a] = s;
+    const k = t - h;
+    el.style.top = y + "px";
+    el.style.opacity = a * (k < 0 ? 1 + k / 0.04 : Math.exp(-k / 0.2));
+    el.style.transform = `scaleX(${0.35 + 0.85 * E.out(clamp((k + 0.04) / 0.35))}) scaleY(${1 - 0.5 * clamp(k / 0.6)})`;
+  });
+}
+// Funkenregen bei Erfolgen (Mitglied angelegt, Betrag erreicht, zugesagt, Fest!, eingetragen, Logo)
+const rnd2 = (() => { let s = 99; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+const FARBEN = { gruen: ["#ffffff", "#b9ffd0", "#4ade80"], blau: ["#ffffff", "#cfe0ff", "#8fb0ff"], orange: ["#ffffff", "#ffd3c2", "#ff8a5e"], bunt: ["#ffffff", "#8fb0ff", "#ff8a5e"] };
+const REGEN = [
+  [10.14, 540, 600, "gruen"], [14.72, B.funkenOrt[0], B.funkenOrt[1], "blau"], [22.42, TIPP_Z[0], TIPP_Z[1], "gruen"],
+  [27.9, 879, 411, "orange"], [31.17, H_TIPP[0], H_TIPP[1], "gruen"], [53.56, 540, 860, "bunt"],
+].map(([t0, x, y, f]) => ({
+  t0, x, y,
+  teile: Array.from({ length: 18 }, (_, i) => {
+    const el = document.createElement("i");
+    const c = FARBEN[f][i % 3];
+    el.style.background = `radial-gradient(circle,${c} 0 28%,${c}cc 42%,${c}00 70%)`;
+    $("#spruehen").appendChild(el);
+    const w = (i / 18) * TAU + rnd2() * 0.4;
+    const v = 420 + rnd2() * 700;
+    return { el, vx: Math.cos(w) * v, vy: Math.sin(w) * v - 260, s: 0.6 + rnd2() * 0.9 };
+  }),
+}));
+function drawRegen(t) {
+  for (const r of REGEN) {
+    const k = t - r.t0;
+    const an = k >= 0 && k < 0.9;
+    for (const p of r.teile) {
+      if (!an) { p.el.style.opacity = 0; continue; }
+      p.el.style.transform = `translate(${r.x + p.vx * k}px,${r.y + p.vy * k + 750 * k * k}px) scale(${p.s * (1 - (0.55 * k) / 0.9)})`;
+      p.el.style.opacity = Math.pow(1 - k / 0.9, 1.4);
+    }
+  }
+}
+
+// Schnelle Stellen: dort mehr Zwischenbilder für die Bewegungsunschärfe (werkzeuge/rendern.mjs)
+const SCHNELL = [
+  [2.1, 3.9], [6.35, 7.75], [9.75, 10.45], [11.65, 12.6], [13.4, 14.05], [16.6, 17.95], [20.4, 22.25], [24.1, 25.85], [27.95, 29.35],
+  [33.15, 34.1], [35.5, 35.85], [37.1, 39.0], [40.45, 41.3], [43.45, 44.1], [46.45, 47.1], [47.95, 48.45], [49.45, 51.9], [53.15, 54.25], [56.85, 57.5],
+];
+window.UNSCHAERFE = 12;
+window.UNTERBILDER = (t) => (SCHNELL.some(([a, b]) => t >= a && t < b) ? 32 : 12);
 
 // ---------------------------------------------------------------------------------------------------------------
 // Szenen
@@ -647,39 +837,55 @@ function drawLogo(t) {
   kopf.style.top = "1064px";
   kopf.style.opacity = t > 1.45 && t < 2.35 ? (u < 1 ? 1 : 1 - P(t, 2.05, 0.3)) : 0;
   [$("#strahl1"), $("#strahl2")].forEach((el, i) => {
-    const p = P(t, 0.0 + i * 0.12, 0.7, E.inOut);
-    Object.assign(el.style, { left: lerp(-700, 1080, p) + "px", width: "700px", opacity: (1 - Math.abs(p - 0.5) * 2) * 0.9 });
+    const p = P(t, 0.0 + i * 0.12, 0.6, E.inOut);
+    Object.assign(el.style, { left: lerp(-900, 1080, p) + "px", width: "900px", opacity: 1 - Math.abs(p - 0.5) * 2 });
   });
-  const z = P(t, 2.2, 0.32, E.in);
-  tf($("#logo-box"), `scale(${1 + 1.4 * z})`, 1 - z);
-  $("#logo-box").style.transformOrigin = "380px 330px";
+  $("#logo-box").style.transform = `scale(${1 + 0.04 * P(t, 0.3, 1.9, E.lin)})`;
+  $("#logo-box").style.transformOrigin = "380px 117px";
 }
 
 function drawHandy(t) {
-  const p = P(t, 2.5, 0.9, E.out);
-  tf($("#welt"), `rotateY(${lerp(10, -8, P(t, 2.5, 4.5, E.lin)) + Math.sin(t * 1.3) * 2}deg)`);
-  $("#welt").style.transformOrigin = "540px 1040px";
-  tf($("#handy"), `translateY(${(1 - p) * 700}px) rotateX(${(1 - p) * 38}deg) translateZ(${(1 - p) * -200}px)`, P(t, 2.5, 0.3));
+  const b = T.handy[0];
+  const an = P(t, b, 1.15, E.expo); // Anflug aus der Tiefe, Rückseite voran, eine Drehung bis zur Vorderseite
+  const flug = P(t, 6.42, 0.58, E.inStark); // Flug in den Bildschirm
+  const gerade = E.inOut(clamp((t - 6.0) / 0.55)); // vor dem Flug gerade ausrichten
+  const ry = kf(t, [[b + 0.2, -14], [6.3, 12, E.inOut]]) * (1 - gerade);
+  const rx = (5 + Math.sin((t - b) * 1.2) * 1.5) * (1 - gerade);
+  const schweben = Math.sin((t - b) * 1.8) * 11 * (1 - gerade);
+  const welt = $("#welt");
+  welt.style.transformOrigin = "540px 1033px";
+  welt.style.transform = `translate3d(0px,${schweben - 150 * flug}px,${1450 * flug}px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+  const h = $("#handy");
+  h.style.transform = `translate3d(0px,${(1 - an) * 320}px,${-(1 - an) * 2800}px) rotateY(${-(1 - an) * 200}deg) rotateX(${(1 - an) * 26}deg) rotateZ(${-(1 - an) * 16}deg)`;
+  deckkraft(h, P(t, b, 0.1));
+  spiegel(SPIEGEL.handy, ry - (1 - an) * 200, t);
   for (const k of KARTEN) {
-    const q = P(t, k.von, 0.75, E.back);
-    const [x, y, z, ry] = k.pos;
-    const bob = Math.sin(t * 1.6 + x * 0.01) * 10;
-    const cx = 540 - (k.w * k.s) / 2, cy = 1000;
-    tf(k.el, `translate3d(${lerp(cx, x, q)}px,${lerp(cy, y, q) + bob}px,${lerp(-300, z, q)}px) rotateY(${lerp(0, ry, q)}deg) scale(${lerp(0.6, 1, q)})`, P(t, k.von, 0.25));
-    if (k.glanz) k.glanz.style.backgroundPosition = `${lerp(-400, 400, P(t, k.von + 0.5, 1.2, E.inOut))}px 0`;
+    const q = P(t, k.von, 0.95, E.expo);
+    const [x, y, z, kry] = k.pos;
+    const cw = k.w * k.s, ch = k.h * k.s;
+    const bob = Math.sin((t - b) * 1.5 + x * 0.013) * 12 * q;
+    k.el.style.transform = `translate3d(${lerp(540 - cw / 2, x, q)}px,${lerp(1000 - ch / 2, y, q) + bob}px,${lerp(30, z, q)}px) rotateY(${lerp(0, kry, q)}deg) scale(${lerp(0.35, 1, q)})`;
+    k.el.style.opacity = P(t, k.von, 0.15);
+    band(k.band, t, k.von + 0.55, 1.0, cw + 300);
   }
-  const z = P(t, 6.65, 0.35, E.in);
-  $("#s-handy").style.transform = `scale(${1 + 1.6 * z})`;
-  $("#s-handy").style.transformOrigin = "540px 940px";
-  $("#s-handy").style.opacity = 1 - P(t, 6.8, 0.2);
 }
 
 function drawMitglieder(t) {
   const b = T.mitglieder[0];
-  const ein = P(t, b, 0.6, E.out);
-  const weg = P(t, b + 2.8, 0.35, E.in);
-  tf($("#m-form"), `translateY(${(1 - ein) * 120 - weg * 220}px) rotateX(${(1 - ein) * 16 + weg * -12}deg) translateZ(${(1 - ein) * -220}px)`, P(t, b, 0.25) * (1 - weg));
-  $("#m-form").style.transformOrigin = "540px 900px";
+  const ein = P(t, b, 0.85, E.expo);
+  const weg = P(t, b + 2.78, 0.26, E.in);
+  const wm = $("#welt-m");
+  wm.style.transformOrigin = "540px 900px";
+  wm.style.transform = `translateZ(${kf(t, [[b + 0.5, 0], [b + 2.75, 120, E.inOut]])}px)`;
+  const form = $("#m-form");
+  form.style.transformOrigin = "540px 880px";
+  form.style.transform = `rotateX(${(1 - ein) * 26}deg) rotateY(${-weg * 90}deg)`;
+  form.style.opacity = weg >= 1 ? 0 : 1;
+  // Fokus wandert von Feld zu Feld
+  const fi = kf(t, [[b + 0.6, 0], [b + 0.96, 0], [b + 1.16, 1], [b + 1.48, 1], [b + 1.68, 2]]);
+  const i0 = Math.min(2, Math.floor(fi)), i1 = Math.min(2, i0 + 1), fr = fi - i0;
+  const r = M.feldLage[i0].map((v, j) => lerp(v, M.feldLage[i1][j], fr));
+  Object.assign(M.fokus.style, { left: r[0] + "px", top: r[1] + "px", width: r[2] + "px", height: r[3] + "px", opacity: P(t, b + 0.55, 0.12) * (1 - P(t, b + 2.1, 0.15)) });
   for (const f of M.felder) {
     const k = clamp((t - f.t0) / f.d);
     const chars = Math.round(k * f.text.length);
@@ -691,204 +897,240 @@ function drawMitglieder(t) {
     f.marke.style.opacity = aktiv ? (Math.floor(t * 6) % 2 === 0 ? 1 : 0.35) : 0;
     f.marke.style.transform = `translateX(${chars * 9.6 * MS}px)`;
   }
-  pop(M.knopf, t, b + 2.2, { d: 0.4, dy: 40, s0: 0.9 });
-  M.knopf.style.transform += ` scale(${1 - 0.06 * Math.sin(clamp((t - (b + 2.5)) / 0.25) * Math.PI)})`;
+  pop(M.knopf, t, b + 2.15, { d: 0.45, dy: 40, s0: 0.85 });
+  M.knopf.style.transform += ` scale(${1 - 0.07 * Math.sin(clamp((t - (b + 2.48)) / 0.25) * Math.PI)})`;
   tipp($("#tipp-m"), t, b + 2.55, M.tipp[0], M.tipp[1]);
-  $("#m-fertig").style.opacity = t >= b + 2.9 ? 1 : 0;
-  pop(M.panel, t, b + 2.9, { d: 0.5, dy: 40, s0: 0.94, e: E.out });
-  pop(M.meldung, t, b + 2.95, { d: 0.45, dy: -60, s0: 0.92 });
-  pop(M.kopf, t, b + 3.1, { d: 0.45, dy: 50, s0: 0.92 });
-  pop(M.daten, t, b + 3.25, { d: 0.5, dy: 70, s0: 0.9 });
-  $("#s-mitglieder").style.opacity = 1 - P(t, T.mitglieder[1] - 0.15, 0.15);
+  // Die Karte dreht sich um: angelegt
+  const mf = $("#m-fertig");
+  const fl = P(t, b + 2.98, 0.6, E.expo);
+  mf.style.transformOrigin = "540px 1030px";
+  mf.style.transform = `rotateY(${(1 - fl) * 90}deg)`;
+  mf.style.opacity = t >= b + 2.98 ? 1 : 0;
+  pop(M.meldung, t, b + 3.12, { d: 0.45, dy: -60, s0: 0.92 });
+  pop(M.kopf, t, b + 3.22, { d: 0.45, dy: 50, s0: 0.94 });
+  pop(M.daten, t, b + 3.32, { d: 0.5, dy: 70, s0: 0.92 });
 }
 
 function drawBeitraege(t) {
   const b = T.beitraege[0];
-  pop(B.schritte, t, b + 0.25, { d: 0.5, dy: -50, s0: 0.92 });
+  const wb = $("#welt-b");
+  wb.style.transformOrigin = "540px 1000px";
+  wb.style.transform = `rotateX(${lerp(9, 3, P(t, b, 5, E.inOut))}deg) rotateY(${kf(t, [[b, 13], [b + 5, -8, E.inOut]])}deg)`;
+  band(B.band, t, b + 0.35, 1.0, 1300);
   B.ringe.forEach((r, i) => {
     const a = b + 0.75 + i * 0.4;
     const k = clamp((t - a) / 0.6);
     r.style.opacity = t >= a ? 0.95 * (1 - k) : 0;
-    r.style.transform = `scale(${0.7 + 0.8 * E.out(k)})`;
+    r.style.transform = `scale(${0.7 + 0.9 * E.out(k)})`;
   });
-  [B.k0, B.k1, B.k2, B.k3].forEach((el, i) => pop(el, t, b + 1.6 + i * 0.16, { d: 0.55, dy: 90, s0: 0.82, extra: `rotateY(${(i % 2 ? -1 : 1) * (1 - P(t, b + 1.6 + i * 0.16, 0.6)) * 25}deg)` }));
+  // Kennzahlen klappen von unten hoch, eine nach der anderen
+  [B.k0, B.k1, B.k2, B.k3].forEach((el, i) => {
+    const a = b + 1.45 + i * 0.12;
+    const p = P(t, a, 0.6, E.expo);
+    el.style.transform = `translateY(${(1 - p) * 170}px) rotateX(${(1 - p) * 88}deg)`;
+    el.style.opacity = P(t, a, 0.1);
+  });
   const z = P(t, b + 1.9, 1.5, E.out);
   for (const el of B.zahlen) el.textContent = euro(Math.round(7240 * z * 100) / 100);
-  tf($("#welt-b"), `rotateX(${4 + Math.sin(t * 1.1) * 2}deg) rotateY(${Math.sin(t * 0.8) * 3}deg)`);
-  $("#welt-b").style.transformOrigin = "540px 1000px";
-  $("#s-beitraege").style.opacity = 1 - P(t, T.beitraege[1] - 0.15, 0.15);
+  const g = t >= b + 2.7 ? Math.exp(-(t - (b + 2.7)) / 0.4) : 0;
+  for (const el of [B.k0, B.k1]) el.style.boxShadow = `0 0 0 ${2 + 2 * g}px rgba(143,176,255,${0.3 + 0.6 * g}),0 0 ${90 + 90 * g}px rgba(58,107,234,${0.45 + 0.45 * g}),0 50px 100px rgba(0,0,0,.6)`;
 }
 
 function drawTermine(t) {
   const b = T.termine[0];
-  const ein = P(t, b, 0.7, E.out);
-  const zoom = P(t, b + 3.3, 1.2, E.in);
+  const ein = P(t, b, 1.0, E.expo);
+  const zoom = P(t, b + 3.15, 1.35, E.inStark);
   const panel = $("#t-kal");
   const pl = parseFloat(panel.style.left);
   const fx = pl + (FEST_CHIP.x + FEST_CHIP.w / 2 - KAL.x0) * KAL.s;
   const fy = 620 + (FEST_CHIP.y + FEST_CHIP.h / 2 - KAL.y0) * KAL.s;
-  const s = 1 + 3.2 * zoom;
+  const drift = lerp(46, -30, P(t, b, 4.4, E.inOut)) * (1 - zoom);
+  const s = (0.84 + 0.12 * ein) * (1 + 7 * zoom);
   panel.style.transformOrigin = `${fx - pl}px ${fy - 620}px`;
-  tf(panel, `translate(${(540 - fx) * zoom}px,${(1060 - fy) * zoom}px) translateY(${(1 - ein) * 160}px) rotateX(${lerp(32, 14, ein) * (1 - zoom)}deg) rotateZ(${-4 * (1 - zoom)}deg) scale(${s * (0.9 + 0.1 * ein)})`, P(t, b, 0.3) * (1 - P(t, T.termine[1] - 0.15, 0.15)));
-  CHIPS.forEach((c, i) => {
-    const a = b + 0.6 + i * 0.05;
-    const p = P(t, a, 0.35, E.back);
-    c.el.style.transform = `translateY(${(1 - p) * 14}px) scale(${0.8 + 0.2 * p})`;
-    c.el.style.opacity = P(t, a, 0.15);
-    c.el.style.boxShadow = c.fest && t > b + 2.4 ? `0 0 0 3px rgba(255,138,94,${0.9 * P(t, b + 2.4, 0.3)}), 0 0 30px rgba(255,138,94,${0.7 * P(t, b + 2.4, 0.3)})` : "none";
-  });
+  panel.style.transform = `translate(${(540 - fx) * zoom + drift}px,${(1000 - fy) * zoom + (1 - ein) * 560}px) rotateX(${lerp(78, 18, ein) * (1 - zoom)}deg) rotateZ(${lerp(-12, -4, ein) * (1 - zoom)}deg) scale(${s})`;
+  panel.style.opacity = P(t, b, 0.15);
+  for (const c of CHIPS) {
+    // Welle von links oben nach rechts unten
+    const a = b + 0.5 + ((c.k.x - 140) / 1120) * 0.5 + ((c.k.y - 380) / 420) * 0.45;
+    const p = P(t, a, 0.45, E.back);
+    c.el.style.transform = `scale(${0.3 + 0.7 * p})`;
+    c.el.style.opacity = P(t, a, 0.1);
+    if (c.fest) {
+      const g = P(t, b + 2.35, 0.3);
+      const ph = t > b + 2.35 ? ((t - (b + 2.35)) % 0.75) / 0.75 : 0;
+      c.el.style.boxShadow = g ? `0 0 0 3px rgba(255,138,94,${0.95 * g}),0 0 34px rgba(255,138,94,${0.75 * g}),0 0 0 ${4 + 22 * ph}px rgba(255,138,94,${0.5 * g * (1 - ph)})` : "none";
+    }
+  }
 }
 
 function drawZusage(t) {
   const b = T.zusage[0];
-  const p = P(t, b, 0.6, E.out);
-  tf($("#welt3"), `rotateX(${(1 - p) * 18 + Math.sin(t * 1.4) * 1.5}deg) rotateY(${Math.sin(t * 1.1) * 3}deg) translateZ(${(1 - p) * -260}px)`, P(t, b, 0.25));
-  $("#welt3").style.transformOrigin = "540px 960px";
+  const w3 = $("#welt3");
+  w3.style.transformOrigin = "540px 960px";
+  w3.style.transform = `translateZ(${lerp(0, 90, P(t, b, 3, E.lin))}px) rotateX(${Math.sin((t - b) * 1.4) * 2}deg) rotateY(${Math.sin((t - b) * 1.1) * 3.5}deg)`;
   tipp(tippZ, t, b + 0.85, TIPP_Z[0], TIPP_Z[1]);
   const done = P(t, b + 0.9, 0.25, E.out);
   Z.vorher.style.opacity = 1 - done;
   Z.nachher.style.opacity = done;
   RING.style.opacity = P(t, b + 0.95, 0.3) * (1 - P(t, b + 2.1, 0.4));
   const zIn = P(t, b + 0.3, 0.5, E.back);
-  const bump = 1 + 0.06 * Math.sin(clamp((t - (b + 1.05)) / 0.3) * Math.PI);
+  const bump = 1 + 0.08 * Math.sin(clamp((t - (b + 1.05)) / 0.3) * Math.PI);
   for (const el of [Z.zahl1, Z.zahl2]) el.style.transform = `translateY(${(1 - zIn) * 80}px) scale(${bump})`;
   Z.zahl1.style.opacity = zIn * (1 - P(t, b + 1.05, 0.2));
   Z.zahl2.style.opacity = zIn * P(t, b + 1.05, 0.2);
-  Z.titel.style.opacity = P(t, b + 0.1, 0.4);
-  $("#s-zusage").style.opacity = 1 - P(t, T.zusage[1] - 0.2, 0.2);
+  tf(Z.titel, `translateY(${(1 - P(t, b + 0.1, 0.6, E.expo)) * 50}px)`, P(t, b + 0.1, 0.3));
 }
 
 function drawStadt(t) {
-  const b = T.stadt[0], len = T.stadt[1] - b;
-  const p = P(t, b, len, E.soft);
-  const ein = P(t, b, 0.7, E.out);
-  const rz = lerp(-34, -48, p), rx = lerp(62, 55, p);
-  $("#boden").style.transform = `translateY(${(1 - ein) * 300}px) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${lerp(0.92, 1.06, p)})`;
-  $("#boden").style.opacity = ein;
-  for (const s of SPUREN) {
-    const q = P(t, s.start, 1.4, E.inOut);
-    for (const el of [s.glow, s.line]) {
-      el.setAttribute("stroke-dasharray", `${s.len} ${s.len}`);
-      el.setAttribute("stroke-dashoffset", String(s.len * (1 - q)));
+  const b = T.stadt[0];
+  const ein = P(t, b, 1.3, E.expo);
+  const sturz = P(t, 28.05, 0.45, E.inStark); // Sturz auf den Sportplatz
+  const rz = kf(t, [[b, -4], [b + 1.5, -30, E.out], [28.5, -46, E.inOut]]);
+  const rx = lerp(lerp(24, 58, ein), 12, sturz);
+  const s = lerp(0.62, 1, ein) * lerp(1, 1.12, P(t, b + 1.3, 2.75, E.inOut)) * (1 + 5.5 * sturz);
+  const boden = $("#boden");
+  boden.style.transform = `translateY(${(1 - ein) * 420}px) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${s})`;
+  boden.style.opacity = P(t, b, 0.2);
+  for (const sp of SPUREN) {
+    const q = P(t, sp.start, 1.1, E.inOut);
+    for (const el of [sp.glow, sp.line]) {
+      el.setAttribute("stroke-dasharray", `${sp.len} ${sp.len}`);
+      el.setAttribute("stroke-dashoffset", String(sp.len * (1 - q)));
     }
-    const [x, y] = punktAuf(s.pts, s.len * q);
-    s.punkt.setAttribute("cx", x);
-    s.punkt.setAttribute("cy", y);
-    s.punkt.style.opacity = q > 0 && q < 1 ? 1 : 0;
+    const [x, y] = punktAuf(sp.pts, sp.len * q);
+    sp.punkt.setAttribute("cx", x);
+    sp.punkt.setAttribute("cy", y);
+    sp.punkt.style.opacity = q > 0 && q < 1 ? 1 : 0;
   }
-  const pinP = P(t, b + 1.5, 0.5, E.back);
-  $("#pin-steh").style.transform = `rotateZ(${-rz}deg) rotateX(${-rx}deg) scale(${pinP})`;
+  // Pin fällt herab, hüpft einmal, Wellen breiten sich aus
+  const fall = P(t, b + 1.45, 0.38, E.in);
+  const land = b + 1.83;
+  const hupf = t > land ? Math.max(0, Math.sin(((t - land) / 0.24) * Math.PI) * Math.exp(-(t - land) / 0.13) * 34) : 0;
+  const pin = $("#pin-steh");
+  pin.style.transform = `rotateZ(${-rz}deg) rotateX(${-rx}deg) translateY(${-(1 - fall) * 560 - hupf}px)`;
+  pin.style.opacity = P(t, b + 1.45, 0.06);
   for (let i = 0; i < 2; i++) {
-    const ph = (((t - (b + 1.7) - i * 0.6) % 1.2) + 1.2) % 1.2 / 1.2;
-    const r = 30 + 150 * ph;
-    Object.assign($("#puls" + i).style, { left: PLATZ.x - r + "px", top: PLATZ.y - r + "px", width: r * 2 + "px", height: r * 2 + "px", opacity: t > b + 1.7 + i * 0.6 ? 0.9 * (1 - ph) : 0 });
+    const ph = ((((t - land - i * 0.55) % 1.1) + 1.1) % 1.1) / 1.1;
+    const r = 30 + 170 * ph;
+    Object.assign($("#puls" + i).style, { left: PLATZ.x - r + "px", top: PLATZ.y - r + "px", width: r * 2 + "px", height: r * 2 + "px", opacity: t > land + i * 0.55 ? 0.9 * (1 - ph) : 0 });
   }
-  const k = P(t, b + 0.3, 0.5, E.back);
-  tf($("#status"), `translateY(${(1 - k) * -60}px) scale(${0.92 + 0.08 * k})`, P(t, b + 0.3, 0.3));
+  const k = P(t, b + 0.3, 0.75, E.expo);
+  tf($("#status"), `translateY(${(1 - k) * -280 - sturz * 560}px) scale(${0.94 + 0.06 * k})`, P(t, b + 0.3, 0.2) * (1 - sturz));
   const fort = kf(t, [[b + 0.7, 0], [b + 1.8, 1 / 3, E.inOut], [b + 2.6, 2 / 3, E.inOut], [b + 3.4, 1, E.inOut]]);
   $("#bahn").style.width = `calc((100% - 28px) * ${fort})`;
   ["#st2", "#st3", "#st4"].forEach((s, i) => $(s).classList.toggle("an", fort >= (i + 1) / 3 - 0.001));
-  $("#s-stadt").style.opacity = 1 - P(t, T.stadt[1] - 0.15, 0.15);
 }
 
 function drawHelfer(t) {
   const b = T.helfer[0];
-  const p = P(t, b, 0.8, E.out);
-  tf($("#welt-h"), `rotateY(${lerp(-14, 6, P(t, b, 5, E.lin))}deg)`);
-  $("#welt-h").style.transformOrigin = "540px 1080px";
-  tf($("#handy-h"), `translateY(${(1 - p) * 600}px) rotateX(${(1 - p) * 30}deg)`, P(t, b, 0.3));
-  const scroll = kf(t, [[b + 0.5, 300], [b + 0.8, 300], [b + 2.1, H_SCROLL, E.inOut]]);
+  const ein = P(t, b, 0.9, E.expo);
+  const ry = kf(t, [[b, -16], [b + 5, 8, E.inOut]]);
+  // Kamera fährt zum Antippen an den Knopf heran und wieder zurück
+  const zt = kf(t, [[b + 2.25, 0], [b + 2.62, 1, E.inOut], [b + 3.7, 1], [b + 4.45, 0, E.inOut]]);
+  const zs = 1 + 0.22 * zt;
+  const c = [540, 1083];
+  const wh = $("#welt-h");
+  wh.style.transformOrigin = `${c[0]}px ${c[1]}px`;
+  wh.style.transform = `translate(${(c[0] - H_TIPP[0]) * (zs - 1)}px,${(c[1] - H_TIPP[1]) * (zs - 1) + Math.sin((t - b) * 1.7) * 9 * (1 - zt)}px) scale(${zs}) rotateY(${ry * (1 - 0.7 * zt)}deg)`;
+  $("#handy-h").style.transform = `translateZ(${-(1 - ein) * 260}px) rotateX(${(1 - ein) * 42}deg)`;
+  spiegel(SPIEGEL.h, ry * (1 - 0.7 * zt), t);
+  const scroll = kf(t, [[b + 0.55, 300], [b + 2.1, H_SCROLL, E.inOut]]);
   const nach = t >= b + 2.65;
   $("#h-vorher").style.visibility = nach ? "hidden" : "visible";
   $("#h-nachher").style.visibility = nach ? "visible" : "hidden";
   for (const id of ["#h-vorher", "#h-nachher"]) $(id).style.transform = `translateY(${-scroll}px)`;
   tipp($("#tipp-h"), t, b + 2.5, H_TIPP[0], H_TIPP[1]);
   $("#h-leuchten").style.opacity = P(t, b + 2.7, 0.3) * (1 - P(t, b + 4.3, 0.5));
-  $("#s-helfer").style.opacity = 1 - P(t, T.helfer[1] - 0.15, 0.15);
 }
 
 function drawChat(t) {
   const b = T.chat[0];
-  const p = P(t, b, 0.7, E.out);
-  tf($("#welt-c"), `rotateY(${lerp(12, -6, P(t, b, 4, E.lin))}deg)`);
-  $("#welt-c").style.transformOrigin = "540px 1080px";
-  tf($("#handy-c"), `translateY(${(1 - p) * 600}px) rotateX(${(1 - p) * 30}deg)`, P(t, b, 0.3));
-  const q = P(t, b + 0.4, 0.7, E.back);
-  tf($("#c-karte"), `translate3d(${(1 - q) * 200}px, ${(1 - q) * -100}px, ${lerp(-300, 200, q)}px) rotateY(${lerp(0, 22, q)}deg) scale(${lerp(0.7, 1, q)})`, P(t, b + 0.4, 0.25));
-  const text = "Wer bringt den Grill mit? 🔥";
-  const zeichen = [...text];
+  const ry = kf(t, [[b, -12], [b + 4, 6, E.inOut]]);
+  // Kamera rückt an das Gespräch heran, sobald gesendet wird
+  const zt = kf(t, [[b + 1.95, 0], [b + 2.7, 1, E.inOut]]);
+  const zs = 1 + 0.12 * zt;
+  const c = [560, 1083], p = [560, 980];
+  const wc = $("#welt-c");
+  wc.style.transformOrigin = `${c[0]}px ${c[1]}px`;
+  wc.style.transform = `translate(${(c[0] - p[0]) * (zs - 1)}px,${(c[1] - p[1]) * (zs - 1) + Math.sin((t - b) * 1.6) * 8}px) scale(${zs}) rotateY(${ry}deg)`;
+  $("#handy-c").style.transform = `rotateY(${-(1 - P(t, b, 0.9, E.expo)) * 32}deg)`;
+  spiegel(SPIEGEL.c, ry - (1 - P(t, b, 0.9, E.expo)) * 32, t);
+  const q = P(t, b + 0.45, 0.85, E.expo);
+  tf($("#c-karte"), `translate3d(${(1 - q) * 260}px,${(1 - q) * -120}px,0px) rotateY(${lerp(0, 22, q)}deg) scale(${lerp(0.5, 1, q)})`, P(t, b + 0.45, 0.15));
+  const zeichen = [..."Wer bringt den Grill mit? 🔥"];
   const n = Math.round(clamp((t - (b + 1.1)) / 0.9) * zeichen.length);
   const tippt = t > b + 1.0 && t < b + 2.05; // Feld hat den Fokus: Platzhalter weg, Text und blinkende Marke
   $("#c-leer").style.visibility = tippt ? "visible" : "hidden";
   $("#c-eingabe").innerHTML = tippt ? `${zeichen.slice(0, n).join("")}<span class="cursor" style="opacity:${Math.floor(t * 6) % 2 === 0 ? 1 : 0.3}"></span>` : "";
   tipp($("#tipp-c"), t, b + 2.0, C_SENDEN[0], C_SENDEN[1]);
-  pop($("#c-neu"), t, b + 2.1, { d: 0.35, dy: 24, s0: 0.85 });
-  pop($("#c-antwort"), t, b + 2.85, { d: 0.35, dy: 24, s0: 0.85 });
-  $("#s-chat").style.opacity = 1 - P(t, T.chat[1] - 0.15, 0.15);
+  // Die Nachricht fliegt aus dem Eingabefeld nach oben in den Verlauf
+  const q2 = P(t, b + 2.08, 0.5, E.expo);
+  tf($("#c-neu"), `translateY(${(1 - q2) * 420}px) scale(${0.6 + 0.4 * q2})`, P(t, b + 2.08, 0.08));
+  pop($("#c-antwort"), t, b + 2.85, { d: 0.4, dy: 30, s0: 0.8 });
 }
 
 function drawSymbol(t) {
   const b = T.symbol[0];
-  const ein = P(t, b, 0.9, E.out);
-  const ry = lerp(-150, 22, P(t, b, 2.6, E.soft));
-  const rx = 12 + Math.sin(t * 1.2) * 4;
-  const y = Math.sin(t * 1.5) * 16 + (1 - ein) * 260;
-  $("#symbol3d").style.transform = `translateY(${y}px) rotateX(${rx}deg) rotateY(${ry}deg) scale(${0.8 + 0.2 * ein})`;
-  $("#symbol3d").style.opacity = P(t, b, 0.25);
-  $("#glanz").style.transform = `translateX(${lerp(-60, 60, P(t, b + 0.6, 1.6, E.inOut))}%)`;
-  $("#schatten").style.opacity = 0.9 * ein;
+  const p = P(t, b, 1.5, E.expo); // zweieinhalb Drehungen aus der Tiefe, dann ruhig
+  const ruhe = P(t, b + 1.0, 0.9, E.inOut);
+  const ry = lerp(-900, 20, p) + Math.sin((t - b) * 1.3) * 7 * ruhe;
+  const rx = lerp(40, 12, p) + Math.sin((t - b) * 1.1) * 3 * ruhe;
+  const y = Math.sin((t - b) * 1.5) * 14 * ruhe + (1 - p) * 160;
+  $("#symbol3d").style.transform = `translate3d(0px,${y}px,${lerp(-2000, 0, p)}px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+  $("#glanz").style.transform = `translateX(${lerp(-60, 60, P(t, b + 1.35, 1.1, E.inOut))}%)`;
+  const landen = t >= b + 1.0 ? Math.exp(-(t - (b + 1.0)) / 0.5) : 0;
+  $("#aura").style.opacity = P(t, b + 0.3, 0.6) * (0.45 + 0.55 * landen);
+  $("#schatten").style.opacity = 0.9 * p;
   $("#schatten").style.transform = `scale(${0.9 + 0.08 * Math.sin(t * 1.5)})`;
-  $("#s-symbol").style.opacity = 1 - P(t, T.symbol[1] - 0.15, 0.15);
 }
 
 function drawGefuehl(t) {
   for (const f of FOTOS) {
     const el = $(f.id);
-    const on = t >= f.von && t < f.bis + 0.2;
+    const on = t >= f.von && t < f.bis;
     el.style.display = on ? "block" : "none";
     if (!on) continue;
     const p = P(t, f.von, f.bis - f.von, E.lin);
+    const landen = 1 + 0.26 * (1 - P(t, f.von, 1.1, E.expo)); // jedes Foto kommt etwas zu nah und setzt sich
     const base = Math.max(1080 / f.w, 1920 / f.h);
-    const s = base * lerp(f.s0, f.s1, p);
+    const s = base * lerp(f.s0, f.s1, p) * landen;
     const img = el.querySelector("img");
     const W = f.w * s, H = f.h * s;
     const left = clamp(540 - f.fx * W + f.dx * (p - 0.5), 1080 - W, 0);
     const top = clamp(960 - f.fy * H, 1920 - H, 0);
     Object.assign(img.style, { width: W + "px", height: H + "px", left: left + "px", top: top + "px" });
-    el.style.opacity = f === FOTOS[0] ? P(t, f.von, 0.3, E.out) : P(t, f.von, 0.15, E.out);
   }
 }
 
-function pops(container, t, start, step) {
-  [...container.querySelectorAll(".w")].forEach((w, i) => {
-    const p = P(t, start + i * step, 0.4, E.back);
-    w.style.transform = `translateY(${(1 - p) * 60}px) scale(${0.9 + 0.1 * p})`;
-    w.style.opacity = P(t, start + i * step, 0.18);
-  });
-}
 function drawSaetze(t) {
   const b = T.saetze[0];
-  const s1 = $("#satz1");
-  pops(s1, t, b, 0.5);
-  const weg = P(t, b + 1.28, 0.22, E.in);
-  tf(s1, `translateY(${-120 * weg}px)`, 1 - weg);
+  // Wörter schlagen auf den Takt ein und fliegen dann nach oben weg
+  [...$("#satz1").querySelectorAll(".w")].forEach((w, i) => {
+    const a = b + i * 0.5;
+    const p = P(t, a, 0.38, E.expo);
+    const weg = P(t, b + 1.27 + i * 0.04, 0.24, E.inStark);
+    w.style.transform = `translateY(${-weg * 1500}px) scale(${1 + 1.6 * (1 - p)})`;
+    w.style.opacity = P(t, a, 0.05) * (1 - P(t, b + 1.4 + i * 0.04, 0.11, E.lin));
+  });
   const s2 = $("#satz2");
   s2.style.opacity = t >= b + 1.6 ? 1 : 0;
-  pops(s2, t, b + 1.6, 0.3);
+  const [w1, w2] = s2.querySelectorAll(".w");
+  w1.style.transform = `translateX(${(1 - P(t, b + 1.6, 0.45, E.expo)) * -1150}px)`;
+  tf(w2, `scale(${1 + 1.3 * (1 - P(t, b + 1.9, 0.4, E.expo))})`, P(t, b + 1.9, 0.05));
+  w2.querySelector("em").style.backgroundPosition = `${lerp(-300, 900, P(t, b + 2.2, 0.8, E.inOut)) - 3000 - w2.offsetLeft}px 0`;
   const u = P(t, b + 2.05, 0.45, E.inOut);
   $("#unterstrich").style.transform = `scaleX(${u})`;
   $("#unterstrich").style.opacity = u > 0 ? 1 : 0;
-  const aus = P(t, T.saetze[1] - 0.2, 0.2, E.in);
-  $("#s-saetze").style.opacity = 1 - aus;
-  $("#s-saetze").style.transform = `scale(${1 + 0.15 * aus})`;
+  Object.assign($("#kopflicht").style, { left: 96 + 300 * u + "px", top: "1060px", opacity: u <= 0 ? 0 : u < 1 ? 1 : Math.max(0, 1 - (t - (b + 2.5)) / 0.3) });
 }
 
 function drawEnde(t) {
   const b = T.ende[0];
-  const p = P(t, b, 0.6, E.back);
-  tf($("#end-logo"), `translateY(${(1 - p) * 60}px) scale(${0.9 + 0.1 * p})`, P(t, b, 0.3));
-  tf($("#adresse"), `translateY(${(1 - P(t, b + 0.4, 0.5, E.out)) * 30}px)`, P(t, b + 0.4, 0.3));
-  tf($("#demo"), `translateY(${(1 - P(t, b + 0.6, 0.5, E.out)) * 30}px)`, P(t, b + 0.6, 0.3));
+  const p = P(t, b, 0.65, E.expo);
+  const zug = lerp(1, 1.05, P(t, b + 0.6, DAUER - b - 0.6, E.lin)); // ganz langsam näher bis zum Schluss
+  tf($("#end-logo"), `scale(${(1 + 1.3 * (1 - p)) * zug})`, P(t, b, 0.06));
+  tf($("#adresse"), `translateY(${(1 - P(t, b + 0.45, 0.6, E.expo)) * 50}px) scale(${zug})`, P(t, b + 0.45, 0.25));
+  tf($("#demo"), `translateY(${(1 - P(t, b + 0.65, 0.6, E.expo)) * 50}px) scale(${zug})`, P(t, b + 0.65, 0.25));
   const fl = b + 3.4;
   const s = P(t, fl, 1.4, E.out);
   const glut = kf(t, [[fl, 0], [fl + 0.6, 1, E.out], [fl + 2.2, 0.85], [DAUER - 0.1, 0, E.in]]);
@@ -913,7 +1155,32 @@ function drawTitel(t) {
     }
     el.innerHTML = out;
   }
-  [...el.querySelectorAll(".w")].forEach((w, i) => pop(w, t, cur.von + i * 0.06, { d: 0.45, dy: 46, s0: 0.92, out: cur.bis - 0.2, outD: 0.2 }));
+  const ws = [...el.querySelectorAll(".w")];
+  // „Schlag“: die ganze Zeile fällt groß ins Bild (von links verankert), sonst klappt Wort für Wort auf
+  el.style.transformOrigin = "0% 50%";
+  el.style.transform = cur.stil === "schlag" ? `scale(${1 + 1.4 * (1 - P(t, cur.von, 0.42, E.expo))})` : "none";
+  ws.forEach((w, i) => {
+    const a = cur.von + i * 0.055;
+    let tr, o;
+    if (cur.stil === "schlag") {
+      tr = "translateY(0px)";
+      o = P(t, cur.von, 0.06);
+    } else {
+      // Wort klappt von unten nach oben auf
+      const p = P(t, a, 0.6, E.expo);
+      tr = `translateY(${(1 - p) * 70}px) rotateX(${-(1 - p) * 95}deg)`;
+      o = P(t, a, 0.14);
+    }
+    const aus = cur.bis - 0.2 - (ws.length - 1 - i) * 0.03; // alle Wörter sind beim Ende weg
+    if (t > aus) {
+      const k = P(t, aus, 0.2, E.in);
+      tr += ` translateY(${-k * 60}px) rotateX(${k * 85}deg)`;
+      o *= 1 - k;
+    }
+    tf(w, tr, o);
+  });
+  const x = lerp(-400, 1400, P(t, cur.von + 0.6, 1.0, E.inOut));
+  for (const em of el.querySelectorAll("em")) em.style.backgroundPosition = `${x - 3000 - em.parentElement.offsetLeft}px 0`;
 }
 
 function drawFunken(t) {
@@ -926,27 +1193,34 @@ function drawFunken(t) {
 }
 
 const SZENEN = [
-  ["#s-logo", "logo", drawLogo, 0.05],
-  ["#s-handy", "handy", drawHandy, 0.05],
-  ["#s-mitglieder", "mitglieder", drawMitglieder, 0],
-  ["#s-beitraege", "beitraege", drawBeitraege, 0],
-  ["#s-termine", "termine", drawTermine, 0],
-  ["#s-zusage", "zusage", drawZusage, 0],
-  ["#s-stadt", "stadt", drawStadt, 0],
-  ["#s-helfer", "helfer", drawHelfer, 0],
-  ["#s-chat", "chat", drawChat, 0],
-  ["#s-symbol", "symbol", drawSymbol, 0],
-  ["#s-gefuehl", "gefuehl", drawGefuehl, 0], // harter Schnitt auf den ersten Schlag der Sätze (49,5 s)
-  ["#s-saetze", "saetze", drawSaetze, 0],
-  ["#s-ende", "ende", drawEnde, 0.01],
-].map(([sel, key, draw, nach]) => ({ el: $(sel), von: T[key][0], bis: T[key][1] + nach, draw }));
+  ["#s-logo", "logo", drawLogo],
+  ["#s-handy", "handy", drawHandy],
+  ["#s-mitglieder", "mitglieder", drawMitglieder],
+  ["#s-beitraege", "beitraege", drawBeitraege],
+  ["#s-termine", "termine", drawTermine],
+  ["#s-zusage", "zusage", drawZusage],
+  ["#s-stadt", "stadt", drawStadt],
+  ["#s-helfer", "helfer", drawHelfer],
+  ["#s-chat", "chat", drawChat],
+  ["#s-symbol", "symbol", drawSymbol],
+  ["#s-gefuehl", "gefuehl", drawGefuehl],
+  ["#s-saetze", "saetze", drawSaetze],
+  ["#s-ende", "ende", drawEnde],
+].map(([sel, key, draw]) => ({ el: $(sel), key, von: T[key][0], bis: key === "ende" ? DAUER + 0.01 : T[key][1], draw }));
 
 function render(t) {
   for (const s of SZENEN) {
     const on = t >= s.von && t < s.bis;
     s.el.style.display = on ? "block" : "none";
-    if (on) s.draw(t);
+    if (!on) continue;
+    s.draw(t);
+    const a = auftritt(s.key, t);
+    Object.assign(s.el.style, { transformOrigin: a.mitte, transform: a.tr, opacity: a.o });
   }
+  $("#buehne").style.transform = `scale(${1 + stossWert(t)})`;
+  $("#blitz").style.opacity = blitzWert(t);
+  drawStreifen(t);
+  drawRegen(t);
   drawFunken(t);
   drawTitel(t);
   $("#schwarz").style.opacity = Math.max(1 - P(t, 0, 0.35), P(t, DAUER - 0.4, 0.4));

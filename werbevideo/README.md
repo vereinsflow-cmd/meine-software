@@ -16,22 +16,28 @@ Leuchtspur, 3D-Objekt, große Sätze, Logo mit Schein) – mit VereinsFlow und d
 
 | Zeit        | Szene                                                                                          |
 | ----------- | ---------------------------------------------------------------------------------------------- |
-| 0–2,5 s     | Logo baut sich mit einem Lichtstreifen auf                                                     |
-| 2,5–7 s     | Handy im Dunkelmodus, Karten aus dem Dashboard schweben herum – „Alles auf einen Blick.“        |
-| 7–12 s      | „Mitglieder in Sekunden.“ – Mia Schröder wird eingetippt und angelegt                          |
-| 12–17 s     | „Beiträge automatisch.“ – Beitragslauf (Prüfen, Vorschau, Erstellen), 7.240,00 € zählen hoch    |
-| 17–21,5 s   | „Termine, die jeder sieht.“ – Termine ploppen in den Kalender, Flug ins Sommerfest              |
+| 0–2,5 s     | Logo baut sich mit einem Lichtstreifen auf, die Kamera fliegt durch das V                       |
+| 2,5–7 s     | Handy fliegt mit einer Drehung aus der Tiefe ein (erst Rückseite, dann Bildschirm), Karten springen heraus – „Alles auf einen Blick.“, dann Flug in den Bildschirm |
+| 7–12 s      | „Mitglieder in Sekunden.“ – Mia Schröder wird eingetippt, die Karte dreht sich um: angelegt      |
+| 12–17 s     | „Beiträge automatisch.“ – wischt herein, Beitragslauf, Kennzahlen klappen hoch, 7.240,00 € zählen hoch |
+| 17–21,5 s   | „Termine, die jeder sieht.“ – Kalender klappt hoch, Termine ploppen als Welle auf, Flug ins Sommerfest |
 | 21,5–24,5 s | „Zusagen“ zum Sommerfest, Häkchen, Teilnehmer 11 → 12                                          |
-| 24,5–28,5 s | 3D-Musterstadt, Leuchtspuren zum Sportplatz, „Eingeladen – Zugesagt – Helfer da – Fest!“        |
-| 28,5–33,5 s | „Helfer tragen sich selbst ein.“ – Anna trägt sich in den Abbau ein                            |
-| 33,5–37,5 s | „Alles im Vereins-Chat.“ – „Wer bringt den Grill mit? 🔥“, die Antwort kommt                    |
-| 37,5–40,5 s | App-Symbol in 3D – „Auch unterwegs.“                                                           |
+| 24,5–28,5 s | Kamera über der 3D-Musterstadt, Leuchtspuren, Pin fällt auf den Sportplatz, dann Sturz hinein   |
+| 28,5–33,5 s | „Helfer tragen sich selbst ein.“ – Anna trägt sich in den Abbau ein, die Kamera fährt heran      |
+| 33,5–37,5 s | „Alles im Vereins-Chat.“ – „Wer bringt den Grill mit? 🔥“ fliegt in den Verlauf, die Antwort kommt |
+| 37,5–40,5 s | App-Symbol dreht sich zweieinhalbmal aus der Tiefe herein – „Auch unterwegs.“                   |
 | 40,5–49,5 s | Fotos (Team, Chor, Anstoßen) – „Mehr Zeit für das, was zählt.“ „Weniger Verwaltung.“ „Mehr Verein.“ |
-| 49,5–53,5 s | „Mitglieder. Beiträge. Termine.“ → „Alles in einem Flow.“                                      |
+| 49,5–53,5 s | „Mitglieder. Beiträge. Termine.“ schlagen auf den Takt ein → „Alles in einem Flow.“, Flug hinein |
 | 53,5–60 s   | Logo, vereins-flow.com, „Jetzt Demo anfragen“, Lichtschein                                     |
 
 Kein Sprecher, nur Musik; 1080 × 1920, 30 Bilder/s, H.264 und AAC (passt für TikTok und Reels). Die Zeiten stehen in
 `werkzeuge/drehbuch-nacht.mjs` (Musik, Geräusche) und in `szenen/nacht.html` (`T`, Bild) – bei Änderungen beide anpassen.
+
+**Bewegungsunschärfe:** Jedes Bild ist der Mittelwert aus 12 Zeitpunkten innerhalb einer halben Bilddauer (an
+schnellen Stellen 32) – wie bei einer Filmkamera; schnelle Flüge und Wischer wirken dadurch weich statt ruckelig.
+Das Rendern dauert so rund 15 Minuten (5 Browser gleichzeitig, `--parallel`). Zum schnellen Prüfen ohne Unschärfe:
+`--unschaerfe 1`. Übergänge, Stöße im Takt, Blitze, Lichtstreifen und Funken stehen in `nacht.html` (`AUFTRITT`,
+`STOESSE`, `BLITZE`, `STREIFEN`, `REGEN`, schnelle Stellen in `SCHNELL`).
 
 ```bash
 node werbevideo/werkzeuge/aufnehmen.mjs --dunkel        # nur nötig für neue App-Bilder (nacht-…, Dunkelmodus)
