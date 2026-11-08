@@ -13,7 +13,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import * as D from "./drehbuch.mjs";
+import * as LANG from "./drehbuch.mjs";
+import * as NACHT from "./drehbuch-nacht.mjs";
+
+// --nacht: Musik für den Kurzspot (szenen/nacht.html, drehbuch-nacht.mjs) statt für das 60-s-Video
+const STUECK = process.argv.includes("--nacht") ? "nacht" : "lang";
+const D = STUECK === "nacht" ? NACHT : LANG;
+const SUFFIX = STUECK === "nacht" ? "-nacht" : "";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const tonDir = path.resolve(here, "..", "ausgabe", "ton");
@@ -418,6 +424,26 @@ const SFX = {
       put(B.fx, idx(t) + n, x, x);
     }
   },
+  // Kurzspot: heller Lichtstreifen (zieht schnell nach oben, Glockenton am Ende)
+  strich(t) {
+    noiseSweep(t, 0.55, 900, 9000, { gain: 0.45, q: 2.2, shape: (p) => Math.sin(Math.PI * p) * (0.4 + 0.6 * p), panFrom: -0.5, panTo: 0.5, send: 0.35 });
+    bell(t + 0.5, 91, { gain: 0.35, len: 0.9, send: 0.5 });
+  },
+  // Kurzspot: tiefer Aufschlag ohne Becken (App-Symbol)
+  tief(t) {
+    let ph = 0;
+    for (let n = 0; n < 1.6 * SR; n++) {
+      const s = n / SR;
+      ph += (42 + 60 * Math.exp(-s * 9)) / SR;
+      const x = Math.sin(TAU * ph) * Math.exp(-s * 2.4) * 0.7;
+      put(B.fx, idx(t) + n, x, x, 0.2);
+    }
+  },
+  // Kurzspot: Lichtschein am Ende (aufsteigendes Rauschen, Glockenakkord)
+  schein(t) {
+    noiseSweep(t - 0.3, 1.2, 400, 6000, { gain: 0.4, q: 0.9, shape: (p) => Math.sin(Math.PI * p) });
+    [72, 76, 79, 84].forEach((m, k) => bell(t + 0.15 + k * 0.08, m, { gain: 0.45, len: 2.4, send: 0.7 }));
+  },
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -452,7 +478,7 @@ const LEAD_ZEITEN = [[22, 29], [36, 44]];
 
 const inRange = (t, ranges) => ranges.some(([a, b]) => t >= a - 1e-6 && t < b - 1e-6);
 
-TAKTE.forEach(([t0, name], k) => {
+if (STUECK === "lang") TAKTE.forEach(([t0, name], k) => {
   const ch = CH[name];
   const t1 = taktEnde(k);
   const len = t1 - t0;
@@ -561,9 +587,61 @@ TAKTE.forEach(([t0, name], k) => {
 });
 
 // Steigerung vor dem Wisch (8–10 s): Wirbel und Rauschen
-for (let k = 0; k < 4; k++) snare(8 + k * BEAT, { gain: 0.25 });
-for (let k = 0; k < 8; k++) snare(9 + k * BEAT / 4, { gain: 0.3 + k * 0.05 });
-noiseSweep(7.9, 2.1, 250, 6500, { gain: 0.6, q: 1.3, shape: (p) => p * p * (p < 0.97 ? 1 : (1 - p) / 0.03) });
+if (STUECK === "lang") {
+  for (let k = 0; k < 4; k++) snare(8 + k * BEAT, { gain: 0.25 });
+  for (let k = 0; k < 8; k++) snare(9 + k * BEAT / 4, { gain: 0.3 + k * 0.05 });
+  noiseSweep(7.9, 2.1, 250, 6500, { gain: 0.6, q: 1.3, shape: (p) => p * p * (p < 0.97 ? 1 : (1 - p) / 0.03) });
+} else arrangeNacht();
+
+/**
+ * Kurzspot (22,5 s): dunkler Teppich, der mit dem Logo aufgeht; Groove ab dem Handy (2,5 s, auf einer Eins);
+ * Schläge auf „Mitglieder. Beiträge. Termine.“; Steigerung zu „Alles in einem Flow.“; Logo auf C; Schein klingt aus.
+ */
+function arrangeNacht() {
+  pad(0.0, 2.5, CH.Am.pad, { gain: 0.9, cutoff: 500, cutoffEnd: 2600, attack: 0.6, release: 0.3 });
+  noiseSweep(1.4, 1.1, 300, 7000, { gain: 0.45, q: 1.2, shape: (p) => p * p });
+  for (const [t0, t1, name] of [[2.5, 4.5, "Am"], [4.5, 6.5, "F"], [6.5, 8.5, "C"], [8.5, 10.5, "G"], [10.5, 12.5, "Am"], [12.5, 13.85, "F"]]) {
+    const ch = CH[name];
+    const beats = Math.round((t1 - t0) / BEAT);
+    pad(t0, t1 - t0, ch.pad, { gain: 0.7, cutoff: 2200, attack: 0.08 });
+    for (const p of [0, 0.75, 1.5, 2.5, 3, 3.5]) if (t0 + p * BEAT < t1) pluck(t0 + p * BEAT, ch.keys, { gain: 0.9, bright: 1 });
+    for (let b = 0; b < beats; b++) {
+      const t = t0 + b * BEAT;
+      kick(t);
+      if (b % 2 === 1) clap(t, { gain: 0.85 });
+      hat(t + BEAT / 2, { open: true, gain: 0.55, pan: 0.2 });
+      for (const s of [0.25, 0.75]) hat(t + s * BEAT, { gain: 0.5, pan: -0.25 });
+      for (const e of [0, 0.5]) bassNote(t + e * BEAT, BEAT * 0.42, ch.bass + (e === 0.5 && b % 2 ? 12 : 0), { gain: 1 });
+    }
+    if (t0 >= 8.5 && MELODIE[name]) for (const [b, m, d] of MELODIE[name]) if (t0 + b * BEAT < t1) lead(t0 + b * BEAT, d * BEAT * 0.9, m, { gain: 0.8 });
+  }
+  [[14.0, "Am"], [14.5, "F"], [15.0, "G"]].forEach(([t, name]) => {
+    kick(t, { gain: 1 });
+    clap(t, { gain: 0.6 });
+    pluck(t, CH[name].keys, { gain: 1, bright: 1, decay: 0.5 });
+    bassNote(t, 0.45, CH[name].bass, { gain: 1 });
+  });
+  pad(15.5, 1.5, CH.G.pad, { gain: 0.9, cutoff: 900, cutoffEnd: 4000, attack: 0.2, release: 0.1 });
+  for (let k = 0; k < 8; k++) snare(16.0 + (k * BEAT) / 4, { gain: 0.2 + k * 0.06 });
+  noiseSweep(15.6, 1.4, 300, 7000, { gain: 0.5, q: 1.4, shape: (p) => p * p });
+  {
+    const ch = CH.C;
+    pad(17.0, 2.5, ch.pad, { gain: 0.9, cutoff: 2600, attack: 0.05, release: 0.4 });
+    for (const p of [0, 0.75, 1.5, 2.5, 3, 3.5, 4, 4.75]) pluck(17.0 + p * BEAT, ch.keys, { gain: 0.85, bright: 1 });
+    for (let b = 0; b < 5; b++) {
+      const t = 17.0 + b * BEAT;
+      kick(t, { gain: 0.9 });
+      if (b % 2 === 1) clap(t, { gain: 0.7 });
+      hat(t + BEAT / 2, { open: true, gain: 0.5 });
+      bassNote(t, BEAT * 0.42, ch.bass, { gain: 0.9 });
+      bassNote(t + BEAT / 2, BEAT * 0.42, ch.bass, { gain: 0.9 });
+    }
+    for (const [b, m, d] of MELODIE.C) lead(17.0 + b * BEAT, d * BEAT * 0.9, m, { gain: 0.8 });
+  }
+  pad(19.5, 2.6, CH.C.pad, { gain: 0.95, cutoff: 2000, attack: 0.3, release: 0.4 });
+  keysPiano(19.5, CH.C.piano, { gain: 1, len: 3.0 });
+  kick(19.5, { gain: 0.8 });
+}
 
 for (const g of D.GERAEUSCHE) SFX[g.art](g.t, g);
 
@@ -757,7 +835,7 @@ function writeWav(file, L, R) {
   fs.writeFileSync(file, Buffer.concat([h, data]));
 }
 
-writeWav(path.join(tonDir, "musik.wav"), music.L, music.R);
+writeWav(path.join(tonDir, `musik${SUFFIX}.wav`), music.L, music.R);
 
 const mixL = new Float32Array(N);
 const mixR = new Float32Array(N);
@@ -769,9 +847,9 @@ for (let n = 0; n < N; n++) {
   mixR[n] = Math.tanh(mixR[n] * 1.05);
 }
 normalizePeak(mixL, mixR, 0.93);
-writeWav(path.join(tonDir, "mischung.wav"), mixL, mixR);
+writeWav(path.join(tonDir, `mischung${SUFFIX}.wav`), mixL, mixR);
 
 let rms = 0;
 for (let n = 0; n < N; n++) rms += mixL[n] * mixL[n] + mixR[n] * mixR[n];
 rms = Math.sqrt(rms / (2 * N));
-console.log(`✔ ausgabe/ton/musik.wav, ausgabe/ton/mischung.wav (RMS ${(20 * Math.log10(rms)).toFixed(1)} dBFS)`);
+console.log(`✔ ausgabe/ton/musik${SUFFIX}.wav, ausgabe/ton/mischung${SUFFIX}.wav (RMS ${(20 * Math.log10(rms)).toFixed(1)} dBFS)`);

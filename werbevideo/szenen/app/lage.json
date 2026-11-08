@@ -4158,5 +4158,847 @@
    "width": 98,
    "height": 44
   }
+ },
+ "nacht-phone-dashboard": {
+  "viewport": {
+   "width": 390,
+   "height": 844
+  },
+  "cards": [
+   {
+    "text": "TM TSV Musterstadt 1898 e.V.",
+    "x": 56,
+    "y": 12,
+    "w": 156,
+    "h": 40,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1 AA",
+    "x": 280,
+    "y": 8,
+    "w": 98,
+    "h": 48,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1",
+    "x": 284,
+    "y": 12,
+    "w": 40,
+    "h": 40,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "AA",
+    "x": 328,
+    "y": 12,
+    "w": 46,
+    "h": 40,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "TM TSV MUSTERSTADT 1898 E.V. Guten Tag, Anna Vereinsadministrator , Sonntag, 8. November 2",
+    "x": 16,
+    "y": 80,
+    "w": 358,
+    "h": 274,
+    "r": 22,
+    "tag": "div"
+   },
+   {
+    "text": "",
+    "x": 16,
+    "y": 80,
+    "w": 358,
+    "h": 274,
+    "r": 22,
+    "tag": "div"
+   },
+   {
+    "text": "TM TSV MUSTERSTADT 1898 E.V.",
+    "x": 36,
+    "y": 96,
+    "w": 255,
+    "h": 32,
+    "r": 33554400,
+    "tag": "p"
+   },
+   {
+    "text": "Neue Veranstaltung",
+    "x": 16,
+    "y": 366,
+    "w": 175,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Neues Mitglied",
+    "x": 199,
+    "y": 366,
+    "w": 175,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "",
+    "x": 314,
+    "y": 96,
+    "w": 44,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Übersicht Termine & Helfer Mitglieder Aufgaben & Aktivität",
+    "x": 16,
+    "y": 438,
+    "w": 563,
+    "h": 52,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "Übersicht",
+    "x": 20,
+    "y": 442,
+    "w": 105,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Termine & Helfer",
+    "x": 129,
+    "y": 442,
+    "w": 153,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Mitglieder",
+    "x": 286,
+    "y": 442,
+    "w": 105,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "",
+    "x": 20,
+    "y": 442,
+    "w": 105,
+    "h": 44,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "6 M 12 M 5 J Mitglieder 233 ▲ +21 (+9,9 %) in 12 Monaten Unverändert gegenüber dem Vormona",
+    "x": 16,
+    "y": 518,
+    "w": 358,
+    "h": 385,
+    "r": 22,
+    "tag": "div"
+   },
+   {
+    "text": "6 M 12 M 5 J",
+    "x": 229,
+    "y": 534,
+    "w": 129,
+    "h": 28,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "12 M",
+    "x": 273,
+    "y": 536,
+    "w": 46,
+    "h": 24,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Alle Mitglieder",
+    "x": 36,
+    "y": 696,
+    "w": 154,
+    "h": 40,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Statistik",
+    "x": 200,
+    "y": 696,
+    "w": 154,
+    "h": 40,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Status · 3 Gruppen Aktiv 208 89 % Passiv 22 9 % Weitere 3 1 %",
+    "x": 36,
+    "y": 752,
+    "w": 318,
+    "h": 131,
+    "r": 18,
+    "tag": "div"
+   },
+   {
+    "text": "Aktiv 208 89 %",
+    "x": 46,
+    "y": 788,
+    "w": 94,
+    "h": 84,
+    "r": 14,
+    "tag": "div"
+   },
+   {
+    "text": "Passiv 22 9 %",
+    "x": 148,
+    "y": 788,
+    "w": 94,
+    "h": 84,
+    "r": 14,
+    "tag": "div"
+   },
+   {
+    "text": "Weitere 3 1 %",
+    "x": 250,
+    "y": 788,
+    "w": 94,
+    "h": 84,
+    "r": 14,
+    "tag": "div"
+   }
+  ]
+ },
+ "nacht-phone-fest-vorher": {
+  "viewport": {
+   "width": 390,
+   "height": 844
+  },
+  "cards": [
+   {
+    "text": "TM TSV Musterstadt 1898 e.V.",
+    "x": 56,
+    "y": 12,
+    "w": 156,
+    "h": 40,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1 AA",
+    "x": 280,
+    "y": 8,
+    "w": 98,
+    "h": 48,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1",
+    "x": 284,
+    "y": 12,
+    "w": 40,
+    "h": 40,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "AA",
+    "x": 328,
+    "y": 12,
+    "w": 46,
+    "h": 40,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Veröffentlicht",
+    "x": 16,
+    "y": 191,
+    "w": 106,
+    "h": 24,
+    "r": 26,
+    "tag": "span"
+   },
+   {
+    "text": "Veranstaltung",
+    "x": 130,
+    "y": 191,
+    "w": 108,
+    "h": 24,
+    "r": 26,
+    "tag": "span"
+   },
+   {
+    "text": "Öffentlich",
+    "x": 247,
+    "y": 191,
+    "w": 83,
+    "h": 24,
+    "r": 26,
+    "tag": "span"
+   },
+   {
+    "text": "Bearbeiten",
+    "x": 16,
+    "y": 227,
+    "w": 132,
+    "h": 36,
+    "r": 10,
+    "tag": "a"
+   },
+   {
+    "text": "Weitere Aktionen",
+    "x": 156,
+    "y": 227,
+    "w": 174,
+    "h": 36,
+    "r": 10,
+    "tag": "button"
+   },
+   {
+    "text": "Deine Teilnahme Anmeldung erforderlich bis 09.06.2027 23:59 Uhr Du hast noch nicht geantwo",
+    "x": 16,
+    "y": 291,
+    "w": 358,
+    "h": 203,
+    "r": 14,
+    "tag": "div"
+   },
+   {
+    "text": "Zusagen",
+    "x": 36,
+    "y": 438,
+    "w": 116,
+    "h": 36,
+    "r": 10,
+    "tag": "button"
+   },
+   {
+    "text": "Absagen",
+    "x": 160,
+    "y": 438,
+    "w": 116,
+    "h": 36,
+    "r": 10,
+    "tag": "button"
+   },
+   {
+    "text": "Details Unser jährliches Vereinsfest mit Grillstand, Kuchenbuffet, Hüpfburg und Musik. All",
+    "x": 16,
+    "y": 518,
+    "w": 358,
+    "h": 620,
+    "r": 14,
+    "tag": "div"
+   }
+  ],
+  "karte": {
+   "x": 36,
+   "y": 310.875,
+   "width": 318,
+   "height": 26.125
+  },
+  "knopf": {
+   "x": 36,
+   "y": 438.25,
+   "width": 116.109375,
+   "height": 36
+  }
+ },
+ "nacht-phone-fest-nachher": {
+  "viewport": {
+   "width": 390,
+   "height": 844
+  },
+  "cards": [
+   {
+    "text": "TM TSV Musterstadt 1898 e.V.",
+    "x": 56,
+    "y": 12,
+    "w": 156,
+    "h": 40,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1 AA",
+    "x": 280,
+    "y": 8,
+    "w": 98,
+    "h": 48,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1",
+    "x": 284,
+    "y": 12,
+    "w": 40,
+    "h": 40,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "AA",
+    "x": 328,
+    "y": 12,
+    "w": 46,
+    "h": 40,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Veröffentlicht",
+    "x": 16,
+    "y": 191,
+    "w": 106,
+    "h": 24,
+    "r": 26,
+    "tag": "span"
+   },
+   {
+    "text": "Veranstaltung",
+    "x": 130,
+    "y": 191,
+    "w": 108,
+    "h": 24,
+    "r": 26,
+    "tag": "span"
+   },
+   {
+    "text": "Öffentlich",
+    "x": 247,
+    "y": 191,
+    "w": 83,
+    "h": 24,
+    "r": 26,
+    "tag": "span"
+   },
+   {
+    "text": "Bearbeiten",
+    "x": 16,
+    "y": 227,
+    "w": 132,
+    "h": 36,
+    "r": 10,
+    "tag": "a"
+   },
+   {
+    "text": "Weitere Aktionen",
+    "x": 156,
+    "y": 227,
+    "w": 174,
+    "h": 36,
+    "r": 10,
+    "tag": "button"
+   },
+   {
+    "text": "Deine Teilnahme Anmeldung erforderlich bis 09.06.2027 23:59 Uhr Du hast zugesagt. Abmelden",
+    "x": 16,
+    "y": 291,
+    "w": 358,
+    "h": 203,
+    "r": 14,
+    "tag": "div"
+   },
+   {
+    "text": "Abmelden",
+    "x": 36,
+    "y": 438,
+    "w": 125,
+    "h": 36,
+    "r": 10,
+    "tag": "button"
+   },
+   {
+    "text": "Details Unser jährliches Vereinsfest mit Grillstand, Kuchenbuffet, Hüpfburg und Musik. All",
+    "x": 16,
+    "y": 518,
+    "w": 358,
+    "h": 620,
+    "r": 14,
+    "tag": "div"
+   }
+  ],
+  "karte": {
+   "x": 36,
+   "y": 310.875,
+   "width": 318,
+   "height": 26.125
+  }
+ },
+ "nacht-dashboard": {
+  "viewport": {
+   "width": 1280,
+   "height": 800
+  },
+  "cards": [
+   {
+    "text": "",
+    "x": 33,
+    "y": 7,
+    "w": 48,
+    "h": 48,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "",
+    "x": 31,
+    "y": 79,
+    "w": 53,
+    "h": 97,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "2 2 offen 1 1 offen",
+    "x": 29,
+    "y": 194,
+    "w": 57,
+    "h": 260,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "",
+    "x": 35,
+    "y": 200,
+    "w": 44,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "AA",
+    "x": 29,
+    "y": 670,
+    "w": 57,
+    "h": 108,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "TM TSV Musterstadt 1898 e.V.",
+    "x": 150,
+    "y": 9,
+    "w": 287,
+    "h": 44,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "Suchen … ⌘K",
+    "x": 526,
+    "y": 9,
+    "w": 422,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "1 AA Anna Adler",
+    "x": 1039,
+    "y": 4,
+    "w": 206,
+    "h": 53,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "1",
+    "x": 1043,
+    "y": 9,
+    "w": 44,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "AA Anna Adler",
+    "x": 1091,
+    "y": 9,
+    "w": 149,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Fußball Handball Tischtennis Jugendarbeit TM TSV MUSTERSTADT 1898 E.V. Guten Tag, Anna Ver",
+    "x": 150,
+    "y": 97,
+    "w": 1095,
+    "h": 299,
+    "r": 29,
+    "tag": "div"
+   },
+   {
+    "text": "",
+    "x": 150,
+    "y": 97,
+    "w": 1095,
+    "h": 299,
+    "r": 29,
+    "tag": "div"
+   },
+   {
+    "text": "Fußball",
+    "x": 638,
+    "y": 123,
+    "w": 85,
+    "h": 29,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "Handball",
+    "x": 796,
+    "y": 123,
+    "w": 95,
+    "h": 29,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "Tischtennis",
+    "x": 946,
+    "y": 123,
+    "w": 113,
+    "h": 29,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "Jugendarbeit",
+    "x": 1103,
+    "y": 123,
+    "w": 125,
+    "h": 29,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "233 Mitglieder",
+    "x": 185,
+    "y": 317,
+    "w": 143,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "17 Termine in 30 Tagen",
+    "x": 337,
+    "y": 317,
+    "w": 118,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "14 offene Helferplätze",
+    "x": 463,
+    "y": 317,
+    "w": 149,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Neue Veranstaltung",
+    "x": 709,
+    "y": 315,
+    "w": 235,
+    "h": 48,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Neues Mitglied",
+    "x": 955,
+    "y": 315,
+    "w": 195,
+    "h": 48,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "",
+    "x": 1161,
+    "y": 315,
+    "w": 48,
+    "h": 48,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Übersicht Termine & Helfer Mitglieder Aufgaben & Aktivität",
+    "x": 150,
+    "y": 427,
+    "w": 611,
+    "h": 53,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "Übersicht",
+    "x": 154,
+    "y": 431,
+    "w": 114,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Termine & Helfer",
+    "x": 272,
+    "y": 431,
+    "w": 166,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Mitglieder",
+    "x": 443,
+    "y": 431,
+    "w": 114,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Aufgaben & Aktivität",
+    "x": 561,
+    "y": 431,
+    "w": 195,
+    "h": 44,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "",
+    "x": 154,
+    "y": 431,
+    "w": 114,
+    "h": 44,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "6 M 12 M 5 J Mitglieder 233 ▲ +21 (+9,9 %) in 12 Monaten Unverändert gegenüber dem Vormona",
+    "x": 150,
+    "y": 510,
+    "w": 539,
+    "h": 423,
+    "r": 24,
+    "tag": "div"
+   },
+   {
+    "text": "6 M 12 M 5 J",
+    "x": 530,
+    "y": 528,
+    "w": 141,
+    "h": 31,
+    "r": 33554400,
+    "tag": "div"
+   },
+   {
+    "text": "12 M",
+    "x": 578,
+    "y": 530,
+    "w": 50,
+    "h": 26,
+    "r": 33554400,
+    "tag": "button"
+   },
+   {
+    "text": "Alle Mitglieder",
+    "x": 172,
+    "y": 706,
+    "w": 242,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Statistik",
+    "x": 424,
+    "y": 706,
+    "w": 242,
+    "h": 44,
+    "r": 33554400,
+    "tag": "a"
+   },
+   {
+    "text": "Status · 3 Gruppen Aktiv 208 89 % Passiv 22 9 % Weitere 3 1 %",
+    "x": 172,
+    "y": 768,
+    "w": 495,
+    "h": 144,
+    "r": 20,
+    "tag": "div"
+   },
+   {
+    "text": "Termine in 30 Tagen 17 ▲ +15 Nächster Termin in 2 Tagen Aufgaben im Verein 5 offen Im Zeit",
+    "x": 706,
+    "y": 510,
+    "w": 539,
+    "h": 423,
+    "r": 24,
+    "tag": "div"
+   },
+   {
+    "text": "Termine in 30 Tagen 17 ▲ +15 Nächster Termin in 2 Tagen",
+    "x": 717,
+    "y": 521,
+    "w": 253,
+    "h": 217,
+    "r": 22,
+    "tag": "div"
+   },
+   {
+    "text": "",
+    "x": 922,
+    "y": 699,
+    "w": 79,
+    "h": 79,
+    "r": 33554400,
+    "tag": "span"
+   },
+   {
+    "text": "Aufgaben im Verein 5 offen Im Zeitplan davon 2 für dich",
+    "x": 981,
+    "y": 521,
+    "w": 253,
+    "h": 217,
+    "r": 22,
+    "tag": "div"
+   },
+   {
+    "text": "Freie Helferplätze 14 ▲ +11 besetzt 11 von 25 Plätzen besetzt",
+    "x": 717,
+    "y": 749,
+    "w": 517,
+    "h": 173,
+    "r": 22,
+    "tag": "div"
+   }
+  ]
  }
 }
