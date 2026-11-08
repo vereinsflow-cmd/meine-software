@@ -4,6 +4,7 @@
 //   node werbevideo/werkzeuge/rendern.mjs                             → ausgabe/bilder/000000.jpg … (30 Bilder/s)
 //   node werbevideo/werkzeuge/rendern.mjs --von 14 --bis 19           → nur ein Abschnitt (zum Prüfen)
 //   … --format quer                                                   → Querformat 1920 × 1080 (Ordner …-quer)
+//   … --seite nacht                                                   → Kurzspot szenen/nacht.html (Ordner …-nacht)
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
@@ -22,16 +23,19 @@ const opt = (name) => {
 };
 const stills = opt("standbild")?.split(",").map(Number);
 const from = Number(opt("von") ?? 0);
-const to = Number(opt("bis") ?? D.DAUER);
+let to = Number(opt("bis") ?? NaN);
 const fps = D.BILDER_PRO_SEKUNDE;
 const quer = opt("format") === "quer";
-const suffix = quer ? "-quer" : "";
+const seite = opt("seite") ?? "index";
+const suffix = (seite !== "index" ? `-${seite}` : "") + (quer ? "-quer" : "");
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: quer ? { width: 1920, height: 1080 } : { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
 page.on("pageerror", (e) => console.error("Seitenfehler:", e.message));
-await page.goto(pathToFileURL(path.join(base, "szenen", "index.html")).href + (quer ? "?format=quer" : ""));
+await page.goto(pathToFileURL(path.join(base, "szenen", `${seite}.html`)).href + (quer ? "?format=quer" : ""));
 await page.waitForFunction(() => typeof window.seek === "function");
+// Länge: Kurzspot nennt sie selbst (window.DAUER), sonst das Drehbuch
+const dauer = (await page.evaluate(() => window.DAUER)) ?? D.DAUER;
 
 if (stills) {
   const dir = path.join(base, "ausgabe", "standbilder" + suffix);
@@ -47,6 +51,7 @@ if (stills) {
   // Ganzer Film: Ordner leeren; nur ein Abschnitt: die übrigen Bilder bleiben (zum Nachbessern einzelner Stellen)
   if (!opt("von") && !opt("bis")) fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
+  if (Number.isNaN(to)) to = dauer;
   const first = Math.round(from * fps);
   const last = Math.round(to * fps);
   const started = Date.now();

@@ -34,6 +34,8 @@ const args = process.argv.slice(2);
 const onlyIndex = args.indexOf("--only");
 const only = onlyIndex >= 0 ? args[onlyIndex + 1].split(",") : null;
 const wanted = (name) => !only || only.includes(name);
+// --dunkel: Bilder für den dunklen Kurzspot (szenen/nacht.html) – App im Dunkelmodus
+const DUNKEL = args.includes("--dunkel");
 
 // Seed-Namen tragen ihre Rolle als Nachnamen – im Bild gewöhnliche Namen (wie website/tools/capture-screenshots.mjs).
 const DEMO_RENAME = [
@@ -183,6 +185,7 @@ async function session(browser, phone = false) {
     locale: "de-DE",
     timezoneId: "Europe/Berlin",
     reducedMotion: "reduce",
+    colorScheme: DUNKEL ? "dark" : "light",
     ...(phone ? { isMobile: true, hasTouch: true } : {}),
   });
   context.setDefaultTimeout(120_000);
@@ -455,11 +458,67 @@ async function phone(browser) {
   await context.close();
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Dunkelmodus für den Kurzspot (nacht-…)
+// ---------------------------------------------------------------------------------------------------------------
+async function nacht(browser) {
+  const { context, page } = await session(browser, true);
+  const pageBox = async (locator) => {
+    await locator.scrollIntoViewIfNeeded();
+    const b = await locator.boundingBox();
+    const y = await page.evaluate(() => scrollY);
+    await page.evaluate(() => scrollTo(0, 0));
+    return { ...b, y: b.y + y };
+  };
+  if (wanted("nacht-phone-dashboard")) {
+    await go(page, "/dashboard");
+    await normalize(page);
+    await shot(page, "nacht-phone-dashboard");
+  }
+  if (wanted("nacht-phone-fest")) {
+    const id = await sommerfestId(page);
+    await go(page, `/veranstaltungen/${id}`);
+    // Anna hat seit dem Seed zugesagt – erst abmelden, damit die Szene das Zusagen zeigen kann
+    const abmelden = page.getByRole("button", { name: /^Abmelden/ }).first();
+    if (await abmelden.isVisible().catch(() => false)) {
+      await abmelden.click();
+      const confirm = page.getByRole("alertdialog").getByRole("button", { name: /Abmelden/ });
+      if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
+      await page.waitForTimeout(2000);
+      await go(page, `/veranstaltungen/${id}`);
+    }
+    const zusagen = page.getByRole("button", { name: /^Zusagen/ }).first();
+    await normalize(page, { gentle: true });
+    const karte = await pageBox(page.getByText("Deine Teilnahme", { exact: true }).first());
+    const knopf = await pageBox(zusagen);
+    await page.waitForTimeout(300);
+    await shot(page, "nacht-phone-fest-vorher", { karte, knopf }, { fullPage: true });
+    await zusagen.click();
+    const confirm = page.getByRole("dialog").getByRole("button", { name: /Zusagen|Bestätigen/ });
+    if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
+    await page.waitForTimeout(2500);
+    await go(page, `/veranstaltungen/${id}`);
+    await normalize(page, { gentle: true });
+    await shot(page, "nacht-phone-fest-nachher", { karte: await pageBox(page.getByText("Deine Teilnahme", { exact: true }).first()) }, { fullPage: true });
+  }
+  await context.close();
+  if (wanted("nacht-dashboard")) {
+    const d = await session(browser, false);
+    await go(d.page, "/dashboard");
+    await normalize(d.page);
+    await shot(d.page, "nacht-dashboard");
+    await d.context.close();
+  }
+}
+
 await fs.mkdir(OUT, { recursive: true });
 const browser = await chromium.launch({ args: ["--lang=de-DE"] });
 try {
-  await desktop(browser);
-  await phone(browser);
+  if (DUNKEL) await nacht(browser);
+  else {
+    await desktop(browser);
+    await phone(browser);
+  }
 } finally {
   await browser.close();
   await fs.writeFile(path.join(OUT, "lage.json"), JSON.stringify(lage, null, 1) + "\n");

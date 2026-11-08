@@ -5,7 +5,26 @@ nur aus der Zeit berechnet, selbst erzeugte Musik und die Mac-Stimme als Platzha
 Videoschnitt-Software, kein ffmpeg – nur Node, Playwright und macOS (AVFoundation).
 
 Fertige Videos (nicht im Repository, siehe unten „Neu bauen“): `ausgabe/VereinsFlow-Werbevideo-9x16.mp4` (Hochformat
-für Instagram/TikTok) und `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat für YouTube und die Website).
+für Instagram/TikTok), `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat für YouTube und die Website) und
+`ausgabe/VereinsFlow-Kurzspot-9x16.mp4` (22,5 s, dunkel, siehe „Kurzspot“).
+
+## Kurzspot „Nacht“ (22,5 s, für TikTok und Instagram Reels)
+
+Nach dem Vorbild eines dunklen Marken-Spots (Logo mit Lichtstreifen, Handy mit schwebenden Karten, Kauf-Moment,
+Stadtkarte mit Leuchtspur, 3D-Objekt, große Sätze, Logo mit Schein) – mit VereinsFlow: Logo baut sich mit einem
+Lichtstreifen auf → Handy im Dunkelmodus, Karten aus dem Dashboard schweben herum → „Zusagen“ zum Sommerfest, Häkchen,
+Teilnehmer 11 → 12 → 3D-Musterstadt, Leuchtspuren laufen zum Sportplatz, Schritte „Eingeladen – Zugesagt – Helfer da –
+Fest!“ → App-Symbol in 3D → „Mitglieder. Beiträge. Termine.“ → „Alles in einem Flow.“ → Logo, vereins-flow.com, Schein.
+Kein Sprecher, nur Musik; 1080 × 1920, 30 Bilder/s, H.264 und AAC (passt für TikTok und Reels).
+
+```bash
+node werbevideo/werkzeuge/aufnehmen.mjs --dunkel        # nur nötig für neue App-Bilder (nacht-…, Dunkelmodus)
+node werbevideo/werkzeuge/musik.mjs --nacht             # → ausgabe/ton/mischung-nacht.wav (drehbuch-nacht.mjs)
+node werbevideo/werkzeuge/rendern.mjs --seite nacht     # → ausgabe/bilder-nacht/
+werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder-nacht werbevideo/ausgabe/ton/mischung-nacht.wav werbevideo/ausgabe/VereinsFlow-Kurzspot-9x16.mp4 30 16000000
+```
+
+Vorschau im Browser: `werbevideo/szenen/nacht.html?play` bzw. `?t=9`.
 
 ## Ablauf (Drehbuch)
 
