@@ -6,25 +6,41 @@ Videoschnitt-Software, kein ffmpeg – nur Node, Playwright und macOS (AVFoundat
 
 Fertige Videos (nicht im Repository, siehe unten „Neu bauen“): `ausgabe/VereinsFlow-Werbevideo-9x16.mp4` (Hochformat
 für Instagram/TikTok), `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat für YouTube und die Website) und
-`ausgabe/VereinsFlow-Kurzspot-9x16.mp4` (22,5 s, dunkel, siehe „Kurzspot“).
+`ausgabe/VereinsFlow-Nacht-9x16.mp4` (60 s, dunkel, siehe „Spot Nacht“).
 
-## Kurzspot „Nacht“ (22,5 s, für TikTok und Instagram Reels)
+## Spot „Nacht“ (60 s, dunkel, für TikTok und Instagram Reels)
 
-Nach dem Vorbild eines dunklen Marken-Spots (Logo mit Lichtstreifen, Handy mit schwebenden Karten, Kauf-Moment,
-Stadtkarte mit Leuchtspur, 3D-Objekt, große Sätze, Logo mit Schein) – mit VereinsFlow: Logo baut sich mit einem
-Lichtstreifen auf → Handy im Dunkelmodus, Karten aus dem Dashboard schweben herum → „Zusagen“ zum Sommerfest, Häkchen,
-Teilnehmer 11 → 12 → 3D-Musterstadt, Leuchtspuren laufen zum Sportplatz, Schritte „Eingeladen – Zugesagt – Helfer da –
-Fest!“ → App-Symbol in 3D → „Mitglieder. Beiträge. Termine.“ → „Alles in einem Flow.“ → Logo, vereins-flow.com, Schein.
-Kein Sprecher, nur Musik; 1080 × 1920, 30 Bilder/s, H.264 und AAC (passt für TikTok und Reels).
+Nach dem Vorbild eines dunklen Marken-Spots (Logo mit Lichtstreifen, Handy mit schwebenden Karten, Stadtkarte mit
+Leuchtspur, 3D-Objekt, große Sätze, Logo mit Schein) – mit VereinsFlow und den Kapiteln des 60-s-Drehbuchs. Bis zum
+08.11.2026 war er ein Kurzspot von 22,5 s (Stand im Commit 003b1d5).
+
+| Zeit        | Szene                                                                                          |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| 0–2,5 s     | Logo baut sich mit einem Lichtstreifen auf                                                     |
+| 2,5–7 s     | Handy im Dunkelmodus, Karten aus dem Dashboard schweben herum – „Alles auf einen Blick.“        |
+| 7–12 s      | „Mitglieder in Sekunden.“ – Mia Schröder wird eingetippt und angelegt                          |
+| 12–17 s     | „Beiträge automatisch.“ – Beitragslauf (Prüfen, Vorschau, Erstellen), 7.240,00 € zählen hoch    |
+| 17–21,5 s   | „Termine, die jeder sieht.“ – Termine ploppen in den Kalender, Flug ins Sommerfest              |
+| 21,5–24,5 s | „Zusagen“ zum Sommerfest, Häkchen, Teilnehmer 11 → 12                                          |
+| 24,5–28,5 s | 3D-Musterstadt, Leuchtspuren zum Sportplatz, „Eingeladen – Zugesagt – Helfer da – Fest!“        |
+| 28,5–33,5 s | „Helfer tragen sich selbst ein.“ – Anna trägt sich in den Abbau ein                            |
+| 33,5–37,5 s | „Alles im Vereins-Chat.“ – „Wer bringt den Grill mit? 🔥“, die Antwort kommt                    |
+| 37,5–40,5 s | App-Symbol in 3D – „Auch unterwegs.“                                                           |
+| 40,5–49,5 s | Fotos (Team, Chor, Anstoßen) – „Mehr Zeit für das, was zählt.“ „Weniger Verwaltung.“ „Mehr Verein.“ |
+| 49,5–53,5 s | „Mitglieder. Beiträge. Termine.“ → „Alles in einem Flow.“                                      |
+| 53,5–60 s   | Logo, vereins-flow.com, „Jetzt Demo anfragen“, Lichtschein                                     |
+
+Kein Sprecher, nur Musik; 1080 × 1920, 30 Bilder/s, H.264 und AAC (passt für TikTok und Reels). Die Zeiten stehen in
+`werkzeuge/drehbuch-nacht.mjs` (Musik, Geräusche) und in `szenen/nacht.html` (`T`, Bild) – bei Änderungen beide anpassen.
 
 ```bash
 node werbevideo/werkzeuge/aufnehmen.mjs --dunkel        # nur nötig für neue App-Bilder (nacht-…, Dunkelmodus)
 node werbevideo/werkzeuge/musik.mjs --nacht             # → ausgabe/ton/mischung-nacht.wav (drehbuch-nacht.mjs)
 node werbevideo/werkzeuge/rendern.mjs --seite nacht     # → ausgabe/bilder-nacht/
-werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder-nacht werbevideo/ausgabe/ton/mischung-nacht.wav werbevideo/ausgabe/VereinsFlow-Kurzspot-9x16.mp4 30 16000000
+werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder-nacht werbevideo/ausgabe/ton/mischung-nacht.wav werbevideo/ausgabe/VereinsFlow-Nacht-9x16.mp4 30 12000000
 ```
 
-Vorschau im Browser: `werbevideo/szenen/nacht.html?play` bzw. `?t=9`.
+Vorschau im Browser: `werbevideo/szenen/nacht.html?play` bzw. `?t=9`. Fürs Handy: `… VereinsFlow-Nacht-9x16-handy.mp4 30 3300000`.
 
 ## Ablauf (Drehbuch)
 
