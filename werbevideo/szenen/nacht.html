@@ -8,7 +8,8 @@
   Marken-Spots: Logo mit Lichtstreifen → Flug durch das Logo, das Handy fliegt mit einer Drehung ein, Karten springen
   aus dem Bildschirm → Flug in den Bildschirm: Mitglied anlegen → Wisch: Beitragslauf → Kippen: Kalender, Flug ins
   Sommerfest → Zusage → Kamera über der Musterstadt, Sturz auf den Sportplatz → Helferplan → Wisch: Vereins-Chat →
-  App-Symbol dreht sich ein → Vereinsfotos → Sätze → Logo mit Lichtschein.
+  App-Symbol dreht sich ein → Vereinsfotos in Fenstern aus den Logo-Balken (Torjubel, Grillen, Feuer, Sommerfest) →
+  Sätze → Logo mit Lichtschein.
   Kein Sprecher, nur Musik (werkzeuge/musik.mjs --nacht, Zeiten in werkzeuge/drehbuch-nacht.mjs).
   window.seek(t) zeichnet das Bild für die Sekunde t. werkzeuge/rendern.mjs --seite nacht mittelt jedes Bild aus
   mehreren Zeitpunkten (Bewegungsunschärfe wie bei einer Filmkamera; wie viele, sagt window.UNTERBILDER(t)).
@@ -138,10 +139,11 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
 .schatten{position:absolute;left:290px;top:1240px;width:500px;height:90px;border-radius:50%;background:radial-gradient(closest-side,rgba(58,107,234,.55),rgba(58,107,234,0))}
 .aura{position:absolute;left:540px;top:930px;width:1000px;height:1000px;margin:-500px 0 0 -500px;border-radius:50%;background:radial-gradient(closest-side,rgba(90,140,255,.5),rgba(58,107,234,.16) 45%,rgba(58,107,234,0));mix-blend-mode:screen;opacity:0}
 
-/* Fotos (Nacht-Licht) */
-.foto{position:absolute;inset:0;overflow:hidden;background:#000}
-.foto img{position:absolute;transform-origin:50% 50%;filter:saturate(.92) brightness(.82) contrast(1.06)}
-.foto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,11,22,.35) 0%,rgba(6,11,22,0) 28%,rgba(6,11,22,0) 46%,rgba(6,11,22,.82) 100%),radial-gradient(1200px 1500px at 50% 45%,rgba(58,107,234,.08) 40%,rgba(6,11,22,.5) 100%)}
+/* Vereinsfotos in Fenstern in Form der Logo-Balken (schräge Parallelogramme) */
+.fenster{position:absolute;background-repeat:no-repeat;filter:saturate(1.08) contrast(1.05)}
+#fenster-rand polygon{fill:none;stroke:rgba(255,255,255,.9);stroke-width:4;stroke-linejoin:round;filter:drop-shadow(0 0 16px rgba(143,176,255,.95))}
+.fp-punkt{position:absolute;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;background:var(--signal);box-shadow:0 0 40px rgba(255,138,94,.8);z-index:30}
+.fp-strich{position:absolute;height:22px;margin-top:-11px;border-radius:11px;background:var(--signal);z-index:30}
 
 /* Sätze und Schluss */
 .satz{position:absolute;left:90px;right:60px;font:800 132px/1.04 var(--f);letter-spacing:-.035em;color:#fff}
@@ -247,11 +249,13 @@ body.vorschau{display:grid;place-items:start center;background:#222;overflow:aut
     <div class="raum"><div class="welt" id="welt5"><div class="symbol3d" id="symbol3d"></div></div></div>
   </section>
 
-  <!-- 11 Vereinsfotos -->
+  <!-- 11 Vereinsfotos in den Balken des Logos: drei Fenster öffnen sich, das mittlere wächst, das Sommerfest füllt das Bild -->
   <section class="szene" id="s-gefuehl">
-    <div class="foto" id="f-team"><img src="fotos/team.jpg"></div>
-    <div class="foto" id="f-chor"><img src="fotos/chor.jpg"></div>
-    <div class="foto" id="f-prost"><img src="fotos/anstossen.jpg"></div>
+    <div id="fenster"></div>
+    <svg id="fenster-rand" width="1080" height="1920" viewBox="0 0 1080 1920" style="position:absolute;left:0;top:0;overflow:visible;z-index:20"></svg>
+    <div id="fp-punkt" class="fp-punkt"></div>
+    <div id="fp-strich1" class="fp-strich" style="width:96px"></div>
+    <div id="fp-strich2" class="fp-strich" style="width:42px"></div>
   </section>
 
   <!-- 12 Sätze -->
@@ -675,12 +679,57 @@ const C_SENDEN = [300 + 14 + 346 * HS, 520 + 14 + 58 + 754 * HS]; // grüner Sen
   s.innerHTML = html;
 }
 
-// 11 Fotos
-const FOTOS = [
-  { id: "#f-team", von: 40.5, bis: 43.5, w: 2000, h: 2500, fx: 0.5, fy: 0.5, s0: 1.04, s1: 1.13, dx: -30 },
-  { id: "#f-chor", von: 43.5, bis: 46.5, w: 3000, h: 2000, fx: 0.58, fy: 0.5, s0: 1.05, s1: 1.12, dx: 160 },
-  { id: "#f-prost", von: 46.5, bis: 49.5, w: 3000, h: 2000, fx: 0.64, fy: 0.47, s0: 1.04, s1: 1.14, dx: 70 },
-];
+// 11 Vereinsfotos in Fenstern aus den Logo-Balken. Balken: [x, y, Breite, Höhe, Schräge] – oben links, die Seiten
+// laufen schräg nach rechts unten wie die weißen Balken im Logo. px/py: welcher Teil des Fotos im Fenster liegt.
+const FENSTER_BILD = {
+  tor: { src: "fotos/torjubel.jpg", W: 3000, H: 2000, px: 0.55, py: 0.3, ph: 0 },
+  grill: { src: "fotos/grillen.jpg", W: 3000, H: 2000, px: 0.62, py: 0.45, ph: 1.7 },
+  feuer: { src: "fotos/feuer-abend.jpg", W: 3000, H: 2000, px: 0.45, py: 0.62, ph: 3.1 },
+  fest: { src: "fotos/sommerfest.jpg", W: 3000, H: 2003, px: 0.86, py: 0.5, ph: 4.4 }, // rechts: lachende Gesichter (Kappe mit Schriftzug bleibt draußen)
+};
+const FE = {};
+for (const key of Object.keys(FENSTER_BILD)) {
+  const el = document.createElement("div");
+  el.className = "fenster";
+  $("#fenster").appendChild(el);
+  const rand = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  $("#fenster-rand").appendChild(rand);
+  FE[key] = { el, rand, ...FENSTER_BILD[key] };
+}
+const BALKEN = {
+  start: [[430, 840, 170, 90, 0.21], [450, 940, 150, 76, 0.21], [470, 1026, 125, 60, 0.21]], // klein wie im Logo
+  offen: [[40, 420, 840, 450, 0.21], [150, 935, 740, 390, 0.21], [250, 1390, 620, 290, 0.21]],
+  zweite: [[-1100, -40, 860, 450, 0.21], [-10, 560, 1000, 900, 0.21], [1150, 1760, 620, 290, 0.21]], // 1 und 3 fliegen hinaus, 2 wächst
+  grillWeg: [-1350, 560, 1000, 900, 0.21],
+  fest: [[1180, 120, 1240, 1680, 0.13], [-190, 120, 1240, 1680, 0.13], [-430, -140, 1940, 2240, 0.13]],
+};
+const lb = (a, b, p) => a.map((v, i) => lerp(v, b[i], p));
+const ecken = ([x, y, w, h, s]) => [[x, y], [x + w, y], [x + w + h * s, y + h], [x + h * s, y + h]];
+const kasten = (pts) => {
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+};
+/**
+ * Fenster auf ein Parallelogramm setzen. Das Foto füllt das Bezugsfenster (wie „cover“, mit leichtem Zoom und Schwenk);
+ * ist der Balken kleiner als der Bezug (schräges Wischen), bleibt das Foto stehen und nur der Ausschnitt wächst.
+ */
+function fenster(f, b, t, { zoom = 1.08, an = true, verlauf = 0, bezug = b } = {}) {
+  if (!an) { f.el.style.display = "none"; f.rand.style.display = "none"; return; }
+  const pts = ecken(b);
+  const [x0, y0, w, h] = kasten(pts);
+  const [rx, ry, rw, rh] = kasten(ecken(bezug));
+  const s = Math.max(rw / f.W, rh / f.H) * zoom;
+  const bw = f.W * s, bh = f.H * s;
+  const bx = rx - x0 + (rw - bw) * clamp(f.px + Math.sin(t * 0.5 + f.ph) * 0.04), by = ry - y0 + (rh - bh) * f.py;
+  Object.assign(f.el.style, {
+    display: "block", left: x0 + "px", top: y0 + "px", width: w + "px", height: h + "px",
+    backgroundImage: `linear-gradient(180deg,rgba(6,11,22,0) 50%,rgba(6,11,22,${verlauf}) 100%),url(${f.src})`,
+    backgroundSize: `100% 100%,${bw}px ${bh}px`, backgroundPosition: `0 0,${bx}px ${by}px`,
+    clipPath: `polygon(${pts.map((p) => `${p[0] - x0}px ${p[1] - y0}px`).join(",")})`,
+  });
+  f.rand.style.display = "block";
+  f.rand.setAttribute("points", pts.map((p) => p.join(",")).join(" "));
+}
 
 // Überschriften (verschwinden, bevor die Szene geht)
 const TITEL = [
@@ -691,7 +740,7 @@ const TITEL = [
   { von: 28.9, bis: 30.75, html: "Helfer tragen sich<br><em>selbst ein.</em>" }, // weg, bevor die Kamera ans Handy fährt
   { von: 33.9, bis: 37.12, html: "Alles im <em>Vereins-Chat.</em>" },
   { von: 37.95, bis: 40.35, html: "Auch <em>unterwegs.</em>" },
-  { von: 40.85, bis: 46.3, html: "Mehr Zeit für das,<br>was zählt.", cls: "auf-foto" },
+  { von: 40.85, bis: 46.3, html: "Mehr Zeit für das,<br>was zählt." },
   { von: 46.55, bis: 47.95, html: "Weniger Verwaltung.", cls: "auf-foto gross", stil: "schlag" },
   { von: 48.0, bis: 49.42, html: "Mehr Verein.", cls: "auf-foto gross", stil: "schlag" },
 ];
@@ -745,7 +794,7 @@ const STOESSE = [
 for (let x = 4.5; x < 38.5; x += 2) if (!STOESSE.some(([h]) => Math.abs(h - x) < 0.3)) STOESSE.push([x, 0.01]);
 const BLITZE = [
   [2.5, 0.85], [7.0, 0.6], [10.14, 0.22], [21.5, 0.65], [22.42, 0.22], [28.5, 0.65], [31.17, 0.18], [37.5, 0.5],
-  [40.5, 0.75], [43.5, 0.3], [46.5, 0.38], [49.5, 0.32], [50.0, 0.28], [50.5, 0.28], [51.4, 0.3], [53.5, 0.95],
+  [40.5, 0.75], [43.5, 0.3], [45.0, 0.15], [46.5, 0.38], [49.5, 0.32], [50.0, 0.28], [50.5, 0.28], [51.4, 0.3], [53.5, 0.95],
 ];
 // Lichtstreifen (wie Lichtreflex einer Kamera): [Zeit, Höhe im Bild, Stärke]
 const STREIFEN = [
@@ -807,7 +856,7 @@ function drawRegen(t) {
 // Schnelle Stellen: dort mehr Zwischenbilder für die Bewegungsunschärfe (werkzeuge/rendern.mjs)
 const SCHNELL = [
   [2.1, 3.9], [6.35, 7.75], [9.75, 10.45], [11.65, 12.6], [13.4, 14.05], [16.6, 17.95], [20.4, 22.25], [24.1, 25.85], [27.95, 29.35],
-  [33.15, 34.1], [35.5, 35.85], [37.1, 39.0], [40.45, 41.3], [43.45, 44.1], [46.45, 47.1], [47.95, 48.45], [49.45, 51.9], [53.15, 54.25], [56.85, 57.5],
+  [33.15, 34.1], [35.5, 35.85], [37.1, 39.0], [40.45, 41.45], [43.45, 44.25], [44.95, 45.5], [46.45, 47.1], [47.95, 48.55], [49.45, 51.9], [53.15, 54.25], [56.85, 57.5],
 ];
 window.UNSCHAERFE = 12;
 window.UNTERBILDER = (t) => (SCHNELL.some(([a, b]) => t >= a && t < b) ? 32 : 12);
@@ -1085,21 +1134,30 @@ function drawSymbol(t) {
 }
 
 function drawGefuehl(t) {
-  for (const f of FOTOS) {
-    const el = $(f.id);
-    const on = t >= f.von && t < f.bis;
-    el.style.display = on ? "block" : "none";
-    if (!on) continue;
-    const p = P(t, f.von, f.bis - f.von, E.lin);
-    const landen = 1 + 0.26 * (1 - P(t, f.von, 1.1, E.expo)); // jedes Foto kommt etwas zu nah und setzt sich
-    const base = Math.max(1080 / f.w, 1920 / f.h);
-    const s = base * lerp(f.s0, f.s1, p) * landen;
-    const img = el.querySelector("img");
-    const W = f.w * s, H = f.h * s;
-    const left = clamp(540 - f.fx * W + f.dx * (p - 0.5), 1080 - W, 0);
-    const top = clamp(960 - f.fy * H, 1920 - H, 0);
-    Object.assign(img.style, { width: W + "px", height: H + "px", left: left + "px", top: top + "px" });
-  }
+  const a = T.gefuehl[0];
+  const auf = [0, 1, 2].map((i) => P(t, a + i * 0.12, 0.85, E.expo)); // drei Balken öffnen sich aus der Mitte
+  const zweite = P(t, 43.5, 0.75, E.expo); // Torjubel und Feuer fliegen hinaus, das Grillen wächst
+  const wisch = P(t, 45.0, 0.55, E.expo); // der Abend am Feuer wischt schräg über das Grillen
+  const raus = P(t, 46.5, 0.5, E.inStark); // das große Fenster fliegt nach links hinaus …
+  const fest = P(t, 46.5, 0.6, E.expo); // … das Sommerfest kommt von rechts …
+  const voll = P(t, 48.0, 0.55, E.expo); // … und füllt das ganze Bild
+  const zoom = 1.06 + 0.06 * P(t, a, 9, E.lin);
+  // solange die drei Fenster offen stehen, schweben sie leicht gegeneinander
+  const schweben = (b, i) => [b[0] + Math.sin((t - a) * 0.9 + i * 1.7) * 16 * (1 - zweite), b[1] + Math.cos((t - a) * 0.7 + i) * 7 * (1 - zweite), b[2], b[3], b[4]];
+  const b1 = schweben(lb(lb(BALKEN.start[0], BALKEN.offen[0], auf[0]), BALKEN.zweite[0], zweite), 0);
+  const b2 = lb(schweben(lb(lb(BALKEN.start[1], BALKEN.offen[1], auf[1]), BALKEN.zweite[1], zweite), 1), BALKEN.grillWeg, raus);
+  const b3 = schweben(lb(lb(BALKEN.start[2], BALKEN.offen[2], auf[2]), BALKEN.zweite[2], zweite), 2);
+  fenster(FE.tor, b1, t, { zoom, an: zweite < 1 });
+  fenster(FE.grill, b2, t, { zoom, an: raus < 1 && wisch < 1 });
+  if (wisch > 0) fenster(FE.feuer, [b2[0] + b2[2] * (1 - wisch), b2[1], b2[2] * wisch, b2[3], b2[4]], t, { zoom, an: raus < 1, bezug: b2 });
+  else fenster(FE.feuer, b3, t, { zoom, an: zweite < 1 });
+  fenster(FE.fest, lb(lb(BALKEN.fest[0], BALKEN.fest[1], fest), BALKEN.fest[2], voll), t, { zoom: 1.04 + 0.05 * P(t, 46.5, 3, E.lin), an: t >= 46.5, verlauf: 0.8 });
+  // Orangener Punkt mit Strichen wie im Logo: unter den drei Fenstern, später neben „Mehr Verein.“
+  const k = t < 46.5 ? P(t, 41.0, 0.45, E.back) * (1 - P(t, 43.5, 0.3, E.in)) : P(t, 48.1, 0.45, E.back);
+  const [px, py] = t < 46.5 ? [420, 1790] : [880, 1830];
+  Object.assign($("#fp-punkt").style, { left: px + "px", top: py + "px", transform: `scale(${k})`, opacity: k > 0 ? 1 : 0 });
+  Object.assign($("#fp-strich1").style, { left: px - 46 - 116 + "px", top: py + "px", transform: `scaleX(${k})`, transformOrigin: "100% 50%", opacity: k > 0 ? 1 : 0 });
+  Object.assign($("#fp-strich2").style, { left: px - 46 - 176 + "px", top: py + "px", transform: `scaleX(${k})`, transformOrigin: "100% 50%", opacity: k > 0 ? 1 : 0 });
 }
 
 function drawSaetze(t) {
@@ -1229,7 +1287,7 @@ function render(t) {
 const ready = (async () => {
   await document.fonts.ready;
   await Promise.all([...document.images].map((img) => (img.complete ? img.decode().catch(() => {}) : new Promise((r) => { img.onload = img.onerror = r; }))));
-  const urls = new Set();
+  const urls = new Set(Object.values(FENSTER_BILD).map((f) => f.src));
   for (const el of document.querySelectorAll(".crop")) {
     const m = /url\("?([^")]+)"?\)/.exec(getComputedStyle(el).backgroundImage);
     if (m) urls.add(m[1]);

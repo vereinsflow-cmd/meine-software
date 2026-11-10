@@ -93,6 +93,12 @@ export const GERAEUSCHE = [
   { t: 37.5, art: "tief" },
   { t: 37.95, art: "wusch", lang: 0.9 },
   { t: 38.85, art: "glanz" },
+  // Vereinsfotos in den Logo-Balken: Fenster öffnen sich, das Grillen wächst, das Feuer wischt herüber, Sommerfest
+  { t: 40.55, art: "auf" },
+  { t: 43.55, art: "wusch", lang: 0.5 },
+  { t: 45.02, art: "auf" },
+  { t: 46.52, art: "wusch", lang: 0.45 },
+  { t: 48.02, art: "auf" },
   // Sätze: Schläge, Wörter fliegen weg, „Alles in einem“ wischt herein, „Flow.“ schlägt ein, Flug hinein
   ...[49.5, 50.0, 50.5].map((t) => ({ t, art: "schlag" })),
   { t: 50.85, art: "wusch", lang: 0.3 },
