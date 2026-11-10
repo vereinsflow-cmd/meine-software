@@ -26,7 +26,7 @@ Leuchtspur, 3D-Objekt, große Sätze, Logo mit Schein) – mit VereinsFlow und d
 | 28,5–33,5 s | „Helfer tragen sich selbst ein.“ – Anna trägt sich in den Abbau ein, die Kamera fährt heran      |
 | 33,5–37,5 s | „Alles im Vereins-Chat.“ – „Wer bringt den Grill mit? 🔥“ fliegt in den Verlauf, die Antwort kommt |
 | 37,5–40,5 s | App-Symbol dreht sich zweieinhalbmal aus der Tiefe herein – „Auch unterwegs.“                   |
-| 40,5–49,5 s | Fotos (Team, Chor, Anstoßen) – „Mehr Zeit für das, was zählt.“ „Weniger Verwaltung.“ „Mehr Verein.“ |
+| 40,5–49,5 s | Vereinsfotos in Fenstern aus den drei Logo-Balken (Torjubel, Grillen, Abend am Feuer) – „Mehr Zeit für das, was zählt.“; das Grillen wächst, das Feuer wischt schräg herüber, das Sommerfest füllt das Bild – „Weniger Verwaltung.“ „Mehr Verein.“ |
 | 49,5–53,5 s | „Mitglieder. Beiträge. Termine.“ schlagen auf den Takt ein → „Alles in einem Flow.“, Flug hinein |
 | 53,5–60 s   | Logo, vereins-flow.com, „Jetzt Demo anfragen“, Lichtschein                                     |
 
@@ -130,7 +130,9 @@ Seed-Namen werden wie bei den Website-Bildern nur im Bild ersetzt (das Repositor
 
 Von [Unsplash](https://unsplash.com) unter der [Unsplash-Lizenz](https://unsplash.com/de/lizenz) (kostenlos, auch für
 Werbung, ohne Pflicht zur Namensnennung; nicht erlaubt: die Fotos unverändert verkaufen). Abgebildete Personen dürfen
-nicht als Fürsprecher von VereinsFlow erscheinen – im Video stehen sie nur für Vereinsleben. Heruntergeladen am 06.11.2026.
+nicht als Fürsprecher von VereinsFlow erscheinen – im Video stehen sie nur für Vereinsleben. Das helle Video nutzt
+Team, Chor, Anstoßen und Handy (heruntergeladen am 06.11.2026), der Spot „Nacht“ Torjubel, Grillen, Feuer und
+Sommerfest (heruntergeladen am 10.11.2026; Ausschnitte so gewählt, dass keine Vereinsnamen oder Marken lesbar sind).
 
 | Datei                  | Motiv                         | Fotograf             | Foto                                     |
 | ---------------------- | ----------------------------- | -------------------- | ---------------------------------------- |
@@ -138,6 +140,10 @@ nicht als Fürsprecher von VereinsFlow erscheinen – im Video stehen sie nur f�
 | `fotos/chor.jpg`       | Chor beim Singen              | Green Liu            | https://unsplash.com/de/fotos/ZaZcvU_WuF8 |
 | `fotos/anstossen.jpg`  | Anstoßen mit Krügen           | Drew Farwell         | https://unsplash.com/de/fotos/9RLk3ZpulUk |
 | `fotos/handy.jpg`      | Hand mit Smartphone           | CoinView App         | https://unsplash.com/de/fotos/h7a6g0ua6LM |
+| `fotos/torjubel.jpg`   | Mannschaft feiert ein Tor     | Alfonso Scarpa       | https://unsplash.com/de/fotos/M6BY8hRGAEI |
+| `fotos/grillen.jpg`    | Grillen im Garten             | Stefan Vibes         | https://unsplash.com/de/fotos/UX_SMoJhekc |
+| `fotos/feuer-abend.jpg`| Abend an der Feuerstelle      | Jefferson Sees       | https://unsplash.com/de/fotos/EegQOt9CmxU |
+| `fotos/sommerfest.jpg` | Fest unter Lichterketten      | Samantha Gades       | https://unsplash.com/de/fotos/fIHozNWfcvs |
 
 Logo und Instagram-Vorlage: `docs/brand/vereinsflow-logo-paket`. Musik und Geräusche: selbst berechnet
 (`werkzeuge/musik.mjs`).
