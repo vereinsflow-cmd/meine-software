@@ -15,11 +15,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as LANG from "./drehbuch.mjs";
 import * as NACHT from "./drehbuch-nacht.mjs";
+import * as REEL from "./drehbuch-reel.mjs";
 
-// --nacht: Musik für den dunklen Spot (szenen/nacht.html, drehbuch-nacht.mjs) statt für das helle 60-s-Video
-const STUECK = process.argv.includes("--nacht") ? "nacht" : "lang";
-const D = STUECK === "nacht" ? NACHT : LANG;
-const SUFFIX = STUECK === "nacht" ? "-nacht" : "";
+// --nacht: Musik für den dunklen Spot (szenen/nacht.html, drehbuch-nacht.mjs), --reel: für das Reel (szenen/reel.html,
+// drehbuch-reel.mjs); ohne Schalter: das helle 60-s-Video
+const STUECK = process.argv.includes("--nacht") ? "nacht" : process.argv.includes("--reel") ? "reel" : "lang";
+const D = { lang: LANG, nacht: NACHT, reel: REEL }[STUECK];
+const SUFFIX = STUECK === "lang" ? "" : `-${STUECK}`;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const tonDir = path.resolve(here, "..", "ausgabe", "ton");
@@ -591,7 +593,8 @@ if (STUECK === "lang") {
   for (let k = 0; k < 4; k++) snare(8 + k * BEAT, { gain: 0.25 });
   for (let k = 0; k < 8; k++) snare(9 + k * BEAT / 4, { gain: 0.3 + k * 0.05 });
   noiseSweep(7.9, 2.1, 250, 6500, { gain: 0.6, q: 1.3, shape: (p) => p * p * (p < 0.97 ? 1 : (1 - p) / 0.03) });
-} else arrangeNacht();
+} else if (STUECK === "nacht") arrangeNacht();
+else arrangeReel();
 
 /**
  * Spot „Nacht“ (60 s): dunkler Teppich, der mit dem Logo aufgeht; Groove ab dem Handy (2,5 s, auf einer Eins) in
@@ -719,6 +722,108 @@ function arrangeNacht() {
   pluck(57.0, CH.C.keys, { gain: 0.8, bright: 1, decay: 0.8 });
   bassNote(57.0, 2.5, CH.C.bass, { gain: 0.7, cutoff: 300 });
   kick(57.0, { gain: 0.85 });
+}
+
+/**
+ * Reel (60 s, 128 BPM, 32 Takte à 1,875 s): Teppich öffnet sich, Wirbel bis zum Flug durch das Logo (3,75 s); Groove
+ * Am F C G – Melodie ab den Mitgliedern, Arpeggio ab dem Beitragslauf, leiser beim Tiefflug über den Kalender, Steigerung
+ * vor dem Sturz ins Sommerfest und vor dem Warp; Schläge auf „Mitglieder. Beiträge. Termine.“, doppeltes Tempo im Warp,
+ * ruhiges Zurückfliegen aus dem Handy, Schlag aufs Logo (55,3125 s), Schlussakkord mit dem Schein (56,25 s).
+ */
+function arrangeReel() {
+  const TAKT = 4 * BEAT;
+  // Vorspann
+  pad(0.0, 3.75, CH.Am.pad, { gain: 0.9, cutoff: 380, cutoffEnd: 3200, attack: 0.9, release: 0.3 });
+  noiseSweep(1.55, 2.2, 250, 8000, { gain: 0.55, q: 1.2, shape: (p) => p * p });
+  for (let k = 0; k < 4; k++) kick(1.875 + k * BEAT, { gain: 0.45 + k * 0.1 });
+  for (let k = 0; k < 8; k++) snare(2.8125 + (k * BEAT) / 4, { gain: 0.22 + k * 0.06 });
+
+  const ZUPFER = [0, 0.75, 1.5, 2.5, 3, 3.5];
+  function groove(t0, t1, name, { melodie = false, arp = false, leise = false, hats16 = false, leadGain = 0.78 } = {}) {
+    const ch = CH[name];
+    const beats = Math.round((t1 - t0) / BEAT);
+    pad(t0, t1 - t0, ch.pad, { gain: leise ? 0.85 : 0.7, cutoff: leise ? 1100 : 2300, attack: 0.08 });
+    for (const p of ZUPFER) if (t0 + p * BEAT < t1 - 1e-6) pluck(t0 + p * BEAT, ch.keys, { gain: leise ? 0.55 : 0.9, bright: leise ? 0.5 : 1 });
+    for (let b = 0; b < beats; b++) {
+      const t = t0 + b * BEAT;
+      if (!leise || b % 2 === 0) kick(t, { gain: leise ? 0.7 : 1 });
+      if (b % 2 === 1) clap(t, { gain: leise ? 0.5 : 0.85 });
+      hat(t + BEAT / 2, { open: true, gain: leise ? 0.35 : 0.55, pan: 0.2 });
+      for (const s of hats16 ? [0.25, 0.5, 0.75] : [0.25, 0.75]) hat(t + s * BEAT, { gain: 0.45, pan: -0.25 });
+      for (const e of [0, 0.5]) bassNote(t + e * BEAT, BEAT * 0.42, ch.bass + (e === 0.5 && b % 2 ? 12 : 0), { gain: leise ? 0.7 : 1 });
+    }
+    if (arp) for (let e = 0; e < beats * 2; e++) pluck(t0 + (e * BEAT) / 2, [ch.keys[e % ch.keys.length] + 12], { gain: 0.3, bright: 0.9, decay: 0.33 });
+    if (melodie) for (const [b, m, d] of MELODIE[name]) if (t0 + b * BEAT < t1 - 1e-6) lead(t0 + b * BEAT, d * BEAT * 0.9, m, { gain: leadGain });
+  }
+  function steigerung(t0, t1) {
+    noiseSweep(t0, t1 - t0, 300, 7500, { gain: 0.5, q: 1.4, shape: (p) => p * p });
+    for (let s = 0; s < 8; s++) snare(t1 - 2 * BEAT + (s * BEAT) / 4, { gain: 0.24 + s * 0.06 });
+  }
+
+  // Groove: Takte 3–25 (3,75–46,875 s)
+  const FOLGE = ["Am", "F", "C", "G"];
+  for (let k = 0; k < 23; k++) {
+    const t0 = 3.75 + k * TAKT, name = FOLGE[k % 4];
+    groove(t0, t0 + TAKT, name, {
+      melodie: (t0 >= 11.25 && t0 < 18.75) || (t0 >= 33.75 && t0 < 41.25),
+      arp: t0 >= 18.75 && !(t0 >= 26.25 && t0 < 30),
+      leise: t0 >= 26.25 && t0 < 30,
+      hats16: t0 >= 41.25,
+    });
+    if ((k + 1) % 4 === 0) for (let s = 0; s < 4; s++) snare(t0 + TAKT - BEAT + (s * BEAT) / 4, { gain: 0.25 + s * 0.08 });
+  }
+  steigerung(31.875, 33.75);
+  steigerung(45.0, 46.875);
+
+  // Warp: drei Schläge, Wirbel, dann doppeltes Tempo bis ins Handy
+  [[46.875, "Am"], [47.344, "F"], [47.813, "G"]].forEach(([t, name]) => {
+    kick(t, { gain: 1 });
+    clap(t, { gain: 0.65 });
+    pluck(t, CH[name].keys, { gain: 1, bright: 1, decay: 0.5 });
+    bassNote(t, 0.42, CH[name].bass, { gain: 1 });
+  });
+  pad(47.813, 0.94, CH.G.pad, { gain: 0.9, cutoff: 900, cutoffEnd: 4200, attack: 0.1, release: 0.1 });
+  for (let s = 0; s < 4; s++) snare(48.28 + (s * BEAT) / 4, { gain: 0.35 + s * 0.08 });
+  for (const [t0, name] of [[48.75, "C"], [50.625, "G"]]) {
+    const ch = CH[name];
+    pad(t0, TAKT, ch.pad, { gain: 0.8, cutoff: 2800, attack: 0.05 });
+    for (const p of ZUPFER) pluck(t0 + p * BEAT, ch.keys, { gain: 0.95, bright: 1 });
+    for (let b = 0; b < 4; b++) {
+      const t = t0 + b * BEAT;
+      kick(t, { gain: 1 });
+      kick(t + BEAT / 2, { gain: 0.55 });
+      if (b % 2 === 1) clap(t, { gain: 0.95 });
+      for (let s = 0; s < 4; s++) hat(t + (s * BEAT) / 4, { gain: s % 2 ? 0.4 : 0.55, open: s === 2, pan: s % 2 ? -0.25 : 0.2 });
+      for (let e = 0; e < 4; e++) bassNote(t + (e * BEAT) / 4, BEAT * 0.22, ch.bass + (e % 2 ? 12 : 0), { gain: 0.95 });
+    }
+    for (const [b, m, d] of MELODIE[name]) lead(t0 + b * BEAT, d * BEAT * 0.9, m, { gain: 0.85 });
+  }
+  noiseSweep(51.4, 1.1, 300, 8000, { gain: 0.55, q: 1.4, shape: (p) => p * p });
+
+  // Ende: ruhig zurück aus dem Handy, Steigerung, Schlag aufs Logo, Schlussakkord mit dem Schein
+  pad(52.5, 1.9, CH.Am.pad, { gain: 0.9, cutoff: 1600, attack: 0.25, release: 0.4 });
+  keysPiano(52.5, CH.Am.piano, { gain: 1, len: 1.9 });
+  pad(53.4375, 0.94, CH.F.pad, { gain: 0.8, cutoff: 1600, attack: 0.2, release: 0.3 });
+  keysPiano(53.4375, CH.F.piano.slice(1), { gain: 0.6, len: 1.0 });
+  pad(54.375, 0.94, CH.G.pad, { gain: 0.9, cutoff: 900, cutoffEnd: 4200, attack: 0.1, release: 0.1 });
+  for (let s = 0; s < 8; s++) snare(54.375 + (s * BEAT) / 4, { gain: 0.2 + s * 0.06 });
+  noiseSweep(54.45, 0.86, 300, 7500, { gain: 0.5, q: 1.4, shape: (p) => p * p });
+  {
+    const ch = CH.C, t0 = 55.3125;
+    pad(t0, 0.94, ch.pad, { gain: 0.9, cutoff: 2600, attack: 0.03, release: 0.3 });
+    pluck(t0, ch.keys, { gain: 1, bright: 1, decay: 0.5 });
+    for (let b = 0; b < 2; b++) {
+      kick(t0 + b * BEAT, { gain: 0.95 });
+      hat(t0 + b * BEAT + BEAT / 2, { open: true, gain: 0.5 });
+      for (const e of [0, 0.5]) bassNote(t0 + b * BEAT + e * BEAT, BEAT * 0.42, ch.bass, { gain: 0.9 });
+    }
+    clap(t0 + BEAT, { gain: 0.7 });
+  }
+  pad(56.25, 3.8, CH.C.pad, { gain: 0.95, cutoff: 2000, attack: 0.3, release: 0.6 });
+  keysPiano(56.25, CH.C.piano, { gain: 1, len: 3.6 });
+  pluck(56.25, CH.C.keys, { gain: 0.8, bright: 1, decay: 0.8 });
+  bassNote(56.25, 3.0, CH.C.bass, { gain: 0.7, cutoff: 300 });
+  kick(56.25, { gain: 0.85 });
 }
 
 for (const g of D.GERAEUSCHE) SFX[g.art](g.t, g);

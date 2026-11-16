@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>VereinsFlow Reel</title>
+<!--
+  Reel (60 s, 1080 × 1920, 128 BPM) für TikTok und Instagram: ein einziger Kameraflug ohne Schnitt durch eine Welt aus
+  echten App-Bildern im Dunkelmodus (keine Fotos).
+  Flug durch das Logo → Tunnel aus Dashboard-Karten, 233 Mitglieder → Mitglied anlegen, die Karte dreht sich um →
+  durch drei Tore des Beitragslaufs, 7.240,00 € → Tiefflug über den Kalender, Termine wachsen hoch, hinein ins
+  Sommerfest → am Helferplan entlang nach unten, eintragen → durch den Vereins-Chat → Warp mit allen Bildschirmen →
+  hinein ins Handy, zurück, Logo.
+  Technik: #welt ist die ganze Welt in 3D; die Kamera (KAMERA, glatte Kurven) bewegt die Welt umgekehrt. Teile, die zu
+  nah an die Kamera kommen oder zu weit weg sind, werden ausgeblendet.
+  window.seek(t) zeichnet das Bild für die Sekunde t; werkzeuge/rendern.mjs --seite reel mittelt je Bild mehrere
+  Zeitpunkte (Bewegungsunschärfe). Zeiten für Musik und Geräusche: werkzeuge/drehbuch-reel.mjs.
+  Vorschau ohne Unschärfe: reel.html?play oder reel.html?t=9.
+-->
+<style>
+:root{
+  --nacht:#05080f; --blau:#3a6bea; --himmel:#8fb0ff; --signal:#ff8a5e; --gruen:#4ade80;
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;
+  --ft:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000;overflow:hidden}
+body.vorschau{display:grid;place-items:start center;background:#222;overflow:auto}
+#film{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--nacht);font-family:var(--ft);color:#fff;-webkit-font-smoothing:antialiased}
+.grund{position:absolute;inset:0;background:radial-gradient(1200px 1000px at 50% 50%,rgba(58,107,234,.24),rgba(58,107,234,0) 70%),radial-gradient(900px 700px at 50% 100%,rgba(143,176,255,.1),rgba(0,0,0,0) 70%),var(--nacht)}
+.crop{position:absolute;overflow:hidden;background-repeat:no-repeat}
+.abs{position:absolute}
+
+/* 3D-Welt: die Kamera sitzt im Blickpunkt von .raum, #welt wird umgekehrt zur Kamera bewegt */
+.raum{position:absolute;inset:0;perspective:1100px;perspective-origin:540px 960px;overflow:hidden}
+#welt{position:absolute;left:540px;top:960px;width:0;height:0;transform-style:preserve-3d;transform-origin:0 0}
+.w{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
+.schirm{position:absolute;border-radius:36px;background-repeat:no-repeat;box-shadow:0 0 0 2px rgba(143,176,255,.45),0 0 90px rgba(58,107,234,.5)}
+.karte{position:absolute;box-shadow:0 0 0 2px rgba(143,176,255,.4),0 0 90px rgba(58,107,234,.45),0 50px 100px rgba(0,0,0,.6)}
+.staub{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,rgba(225,235,255,.95),rgba(143,176,255,.35) 40%,rgba(143,176,255,0) 70%)}
+.balken{position:absolute}
+.zaehler{position:absolute;border-radius:44px;background:linear-gradient(160deg,rgba(28,32,44,.96),rgba(12,14,20,.96));box-shadow:0 0 0 2px rgba(143,176,255,.45),0 0 110px rgba(58,107,234,.55);padding:56px 64px;font-family:var(--f)}
+.zaehler small{display:block;font:600 52px/1 var(--ft);color:rgba(220,230,255,.7)}
+.zaehler b{display:block;font:800 260px/1 var(--f);letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:20px}
+.zaehler i{display:block;font-style:normal;font:600 46px/1.2 var(--ft);color:var(--gruen);margin-top:16px}
+.tor{position:absolute;border-radius:50%}
+.tor-schild{position:absolute;display:flex;align-items:center;gap:30px;font:700 84px/1 var(--f);white-space:nowrap}
+.tor-schild u{display:grid;place-items:center;width:110px;height:110px;border-radius:50%;text-decoration:none;font:800 70px/1 var(--f);color:#06210f}
+.tor-schild em{display:block;font:600 52px/1.2 var(--ft);font-style:normal;color:var(--gruen)}
+.chip{position:absolute;transform-origin:50% 100%}
+.blase{position:absolute;border-radius:40px;padding:34px 44px 30px;font:400 56px/1.3 var(--ft);color:#e9edef;box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 80px rgba(58,107,234,.35);white-space:nowrap}
+.blase small{display:block;text-align:right;font-size:36px;color:rgba(233,237,239,.65);margin-top:6px}
+.blase strong{display:block;font:600 46px/1.3 var(--ft);color:#ff8a5e}
+.tipp{position:absolute;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;border:10px solid rgba(255,255,255,.92);background:rgba(143,176,255,.25)}
+.ring-gruen{position:absolute;box-shadow:0 0 0 8px rgba(74,222,128,.85),0 0 90px 24px rgba(74,222,128,.4)}
+.fokus{position:absolute;border-radius:26px;box-shadow:0 0 0 3px rgba(143,176,255,.95),0 0 30px 6px rgba(58,107,234,.55)}
+.marke{position:absolute;width:5px;background:#8fb0ff;border-radius:3px}
+.zahl{position:absolute;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ring-blau{position:absolute;border-radius:50%;box-shadow:0 0 0 4px rgba(143,176,255,.9),0 0 40px 10px rgba(143,176,255,.45)}
+
+/* Telefon (Metallrahmen, Glas mit Spiegelung, Statusleiste) */
+.handy{position:absolute;width:520px;height:1127px;transform-style:preserve-3d}
+.handy .vorne{position:absolute;inset:0;border-radius:86px;padding:14px;background:linear-gradient(135deg,#6b7181 0%,#2a2d35 15%,#4a505d 33%,#1a1c22 57%,#565c6b 80%,#22252c 100%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.24),0 0 0 1px rgba(143,176,255,.22),0 0 110px rgba(58,107,234,.5),0 70px 140px rgba(0,0,0,.6)}
+.handy .vorne::before{content:"";position:absolute;inset:4px;border-radius:82px;background:#040405}
+.handy .taste{position:absolute;width:8px;border-radius:4px;background:linear-gradient(90deg,#1d2026,#6a7080 55%,#2a2d35)}
+.handy .scr{position:relative;width:100%;height:100%;border-radius:72px;overflow:hidden;background:#0a0a0b}
+.handy .insel{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:134px;height:40px;border-radius:22px;background:#000;z-index:5}
+.handy .status{position:absolute;left:0;right:0;top:0;height:58px;display:flex;justify-content:space-between;align-items:center;padding:8px 40px 0 64px;font:600 23px/1 var(--ft);color:#f2f2f2;background:#0a0a0b;z-index:4}
+.handy .hvp{position:absolute;left:0;top:58px;width:390px;height:844px;transform-origin:0 0;transform:scale(1.2615)}
+.handy .hvp img{position:absolute;left:0;top:0;width:390px}
+.handy .spiegel{position:absolute;inset:0;z-index:7;mix-blend-mode:screen;background:linear-gradient(112deg,rgba(255,255,255,0) 36%,rgba(255,255,255,.1) 45%,rgba(255,255,255,.025) 52%,rgba(255,255,255,0) 60%);background-size:280% 100%;background-position:50% 0}
+
+/* Überlagerungen */
+#tempo{position:absolute;left:0;top:0;z-index:50;mix-blend-mode:screen;pointer-events:none}
+#titel{position:absolute;left:80px;right:60px;top:150px;z-index:60;font:800 88px/1.04 var(--f);letter-spacing:-.03em;color:#fff;filter:drop-shadow(0 6px 30px rgba(3,6,14,.95));perspective:1100px}
+#titel .w2{display:inline-block;white-space:pre;transform-origin:50% 100%}
+#titel em,#schlag em{font-style:normal;color:transparent;background:linear-gradient(90deg,var(--himmel) 0,var(--himmel) 2860px,#fff 3000px,var(--himmel) 3140px,var(--himmel) 6000px) 0 0/6000px 100% no-repeat;-webkit-background-clip:text;background-clip:text}
+#schlag{position:absolute;left:70px;right:40px;top:760px;z-index:61;font:900 170px/1 var(--f);letter-spacing:-.045em;color:#fff;filter:drop-shadow(0 10px 40px rgba(3,6,14,.95));transform-origin:0 50%}
+#schlag .zeile{display:block;white-space:nowrap}
+#unterstrich{position:absolute;height:20px;border-radius:12px;background:var(--signal);box-shadow:0 0 30px rgba(255,138,94,.85);transform-origin:left center;z-index:61}
+#ende{position:absolute;inset:0;z-index:62;pointer-events:none}
+#ende img{position:absolute;left:220px;top:640px;width:640px;filter:drop-shadow(0 0 26px rgba(143,176,255,.5))}
+#ende .adresse{position:absolute;left:0;right:0;top:1200px;text-align:center;font:700 64px/1 var(--f);color:var(--himmel)}
+#ende .demo{position:absolute;left:0;right:0;top:1294px;text-align:center;font:600 38px/1 var(--ft);color:rgba(230,236,255,.78)}
+.schein{position:absolute;left:540px;top:1020px;width:1500px;height:280px;margin:-140px 0 0 -750px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(200,220,255,.55) 30%,rgba(58,107,234,.25) 60%,rgba(58,107,234,0));mix-blend-mode:screen}
+#blitz{position:absolute;inset:0;z-index:88;opacity:0;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(1000px 1400px at 50% 50%,rgba(255,255,255,.95),rgba(175,200,255,.62) 38%,rgba(58,107,234,.2) 72%,rgba(58,107,234,0))}
+.streif{position:absolute;left:-260px;width:1600px;height:50px;margin-top:-25px;z-index:87;opacity:0;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(closest-side,rgba(255,255,255,1),rgba(190,210,255,.75) 22%,rgba(90,140,255,.28) 55%,rgba(58,107,234,0))}
+.streif::after{content:"";position:absolute;left:50%;top:50%;width:260px;height:260px;margin:-130px 0 0 -130px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.9),rgba(160,190,255,.35) 40%,rgba(58,107,234,0))}
+#spruehen{position:absolute;inset:0;z-index:58;pointer-events:none}
+#spruehen i{position:absolute;left:0;top:0;display:block;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;opacity:0}
+#vignette{position:absolute;inset:0;background:radial-gradient(1250px 1750px at 50% 50%,rgba(0,0,0,0) 52%,rgba(0,0,0,.62) 100%);pointer-events:none;z-index:89}
+#korn{position:absolute;inset:0;background:url(marke/koernung.svg);opacity:.15;mix-blend-mode:screen;pointer-events:none;z-index:90}
+#schwarz{position:absolute;inset:0;background:#000;z-index:95;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="film">
+  <div class="grund"></div>
+  <div class="raum"><div id="welt"></div></div>
+  <svg id="tempo" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div id="spruehen"></div>
+  <h2 id="titel"></h2>
+  <div id="schlag"></div>
+  <div id="unterstrich"></div>
+  <div id="ende">
+    <div class="schein" id="schein"></div>
+    <img id="end-logo" src="marke/logo-gestapelt-weiss.svg" alt="">
+    <div class="adresse" id="adresse">vereins-flow.com</div>
+    <div class="demo" id="demo">Jetzt Demo anfragen</div>
+  </div>
+  <div class="streif" id="streif1"></div>
+  <div class="streif" id="streif2"></div>
+  <div id="blitz"></div>
+  <div id="vignette"></div>
+  <div id="korn"></div>
+  <div id="schwarz"></div>
+</div>
+
+<script src="app/lage.js"></script>
+<script>
+"use strict";
+const LAGE = window.LAGE;
+const DAUER = 60;
+const SCHLAG = 60 / 128, TAKT = 4 * SCHLAG; // 0,46875 s und 1,875 s
+const AUGE = 1100; // Abstand des Blickpunkts (perspective)
+const D2R = Math.PI / 180, TAU = Math.PI * 2;
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, p) => a + (b - a) * p;
+function bezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const sx = (t) => ((ax * t + bx) * t + cx) * t, sy = (t) => ((ay * t + by) * t + cy) * t, dsx = (t) => (3 * ax * t + 2 * bx) * t + cx;
+  return (x) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let t = x;
+    for (let i = 0; i < 10; i++) { const e = sx(t) - x; if (Math.abs(e) < 1e-6) break; const d = dsx(t); if (Math.abs(d) < 1e-6) break; t -= e / d; }
+    return sy(clamp(t));
+  };
+}
+const E = {
+  lin: (x) => x,
+  out: bezier(0.23, 1, 0.32, 1),
+  expo: bezier(0.16, 1, 0.3, 1),
+  inOut: bezier(0.77, 0, 0.175, 1),
+  in: bezier(0.55, 0.055, 0.675, 0.19),
+  inStark: bezier(0.7, 0, 0.84, 0),
+  back: (x) => { const c1 = 1.4, c3 = c1 + 1; return x >= 1 ? 1 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
+  spring: (x) => (x >= 1 ? 1 : 1 - Math.exp(-6.5 * x) * Math.cos(9 * x)),
+};
+const P = (t, a, d, e = E.out) => e(clamp((t - a) / d));
+function kf(t, keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    const [t1, v1, e = E.inOut] = keys[i];
+    const [t0, v0] = keys[i - 1];
+    if (t <= t1) { const p = e((t - t0) / (t1 - t0 || 1)); return lerp(v0, v1, p); }
+  }
+  return keys[keys.length - 1][1];
+}
+/** Glatte Kurve durch Stützpunkte [t, Wert] (monotone kubische Hermite-Kurve: keine Überschwinger, Tempo ändert sich weich). */
+function spur(keys) {
+  const n = keys.length, ts = keys.map((k) => k[0]), vs = keys.map((k) => k[1]);
+  const d = [], m = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) d[i] = (vs[i + 1] - vs[i]) / (ts[i + 1] - ts[i]);
+  m[0] = d[0];
+  m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b;
+    if (s > 9) { const tau = 3 / Math.sqrt(s); m[i] = tau * a * d[i]; m[i + 1] = tau * b * d[i]; }
+  }
+  return (t) => {
+    if (t <= ts[0]) return vs[0];
+    if (t >= ts[n - 1]) return vs[n - 1];
+    let i = 0;
+    while (t > ts[i + 1]) i++;
+    const h = ts[i + 1] - ts[i], s = (t - ts[i]) / h, s2 = s * s, s3 = s2 * s;
+    return (2 * s3 - 3 * s2 + 1) * vs[i] + (s3 - 2 * s2 + s) * h * m[i] + (-2 * s3 + 3 * s2) * vs[i + 1] + (s3 - s2) * h * m[i + 1];
+  };
+}
+function tf(el, s, o = 1) {
+  el.style.transform = s;
+  el.style.opacity = o;
+}
+function crop(parent, src, W, H, x, y, w, h, scale, { radius = 0, cls = "crop" } = {}) {
+  const el = document.createElement("div");
+  el.className = cls;
+  Object.assign(el.style, {
+    width: w * scale + "px", height: h * scale + "px", backgroundImage: `url(${src})`,
+    backgroundSize: `${W * scale}px ${H * scale}px`, backgroundPosition: `${-x * scale}px ${-y * scale}px`, borderRadius: radius * scale + "px",
+  });
+  parent.appendChild(el);
+  return el;
+}
+function at(el, x, y) {
+  Object.assign(el.style, { left: x + "px", top: y + "px" });
+  return el;
+}
+const rnd = (() => { let s = 11; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+function pop(el, t, a, { d = 0.45, dy = 50, s0 = 0.88, e = E.back } = {}) {
+  const p = P(t, a, d, e);
+  tf(el, `translateY(${(1 - p) * dy}px) scale(${s0 + (1 - s0) * p})`, P(t, a, d * 0.5, E.out));
+}
+function tipp(el, t, a) {
+  const k = (t - a + 0.15) / 0.45;
+  if (k < 0 || k > 1) { el.style.visibility = "hidden"; return; }
+  el.style.visibility = "visible";
+  el.style.transform = `scale(${k < 0.35 ? 1 - 0.25 * E.out(k / 0.35) : 0.75 + 0.5 * E.out((k - 0.35) / 0.65)})`;
+  el.style.opacity = Math.min(1, k * 5, (1 - k) * 3);
+}
+const euro = (v) => v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+
+// Abschnitte (wie in werkzeuge/drehbuch-reel.mjs), je ein Vielfaches eines Takts (1,875 s)
+const T = {
+  intro: [0, 3.75], dash: [3.75, 11.25], mitglieder: [11.25, 18.75], beitraege: [18.75, 26.25], termine: [26.25, 33.75],
+  helfer: [33.75, 41.25], chat: [41.25, 46.875], warp: [46.875, 52.5], ende: [52.5, 60],
+};
+
+// ---------------------------------------------------------------------------------------------------------------
+// Kamera: Position (x rechts, y unten, z zum Betrachter; vorwärts = z kleiner), Drehung in Grad
+// ---------------------------------------------------------------------------------------------------------------
+const H_Y = 3049; // Höhe des Wegs ab dem Helferplan
+const KAMERA = {
+  z: spur([
+    [0, 2600], [1.5, 0], [2.6, -3500], [3.3, -6200], [3.75, -8000],
+    [5.6, -11500], [7.5, -14800], [9.4, -18000], [11.25, -20900],
+    [12.6, -22400], [15.2, -22480], [16.0, -22560], [16.6, -22660], [18.75, -25200],
+    [19.6, -26000], [20.4, -27300], [21.2, -28600], [22.6, -29950], [24.8, -30100], [26.25, -33200],
+    [27.6, -34600], [29.6, -35700], [31.4, -36500], [33.1, -37000], [33.75, -37650],
+    [35.2, -39600], [37.7, -39640], [39.3, -39700], [40.4, -40500], [41.25, -41600],
+    [43.1, -44200], [45.0, -46800], [46.875, -49500],
+    [48.75, -53800], [50.6, -59500], [52.0, -62900], [52.5, -63350],
+    [54.4, -60500], [60, -60300],
+  ]),
+  x: spur([
+    [0, 0], [3.75, 0], [5.6, -280], [7.5, 300], [9.4, -220], [11.25, 0], [15.2, 0], [16.0, 220], [16.6, 140], [18.75, 0],
+    [24.8, 0], [26.25, 260], [27.6, 0], [29.6, -200], [31.4, 430], [33.1, 597], [33.75, 600], [60, 600],
+  ]),
+  y: spur([
+    [0, 0], [24.8, 0], [26.25, 60], [27.6, -90], [29.6, -40], [31.4, 120], [33.1, 150], [35.2, 150],
+    [37.7, H_Y], [41.25, H_Y], [43.1, H_Y - 60], [45.0, H_Y + 80], [46.875, H_Y], [60, H_Y],
+  ]),
+  yaw: spur([
+    [0, 0], [3.75, 0], [5.6, 7], [7.5, -8], [9.4, 6], [11.25, 0], [15.2, 0], [16.0, 9], [16.6, 5], [18.75, 0],
+    [24.8, 0], [26.25, -6], [27.6, 0], [29.6, 4], [31.4, -10], [33.1, -2], [33.75, 0], [41.25, 0], [43.1, 6], [45.0, -7], [46.875, 0], [60, 0],
+  ]),
+  pitch: spur([
+    [0, 0], [26.25, 0], [27.6, 16], [29.6, 18], [31.4, 9], [33.1, 0], [35.2, 0], [36.2, 8], [37.7, 0], [60, 0],
+  ]),
+  roll: spur([
+    [0, 0], [2.4, 0], [3.75, -14], [5.6, 12], [7.5, -12], [9.4, 10], [11.25, 0], [18.75, 0], [19.6, 8], [21.2, -8], [22.6, 0],
+    [31.4, 0], [33.1, 6], [33.75, 0], [41.25, 0], [43.1, -10], [45.0, 9], [46.875, 0], [48.0, 40], [50.6, 360], [52.5, 360], [60, 360],
+  ]),
+};
+function kamera(t) {
+  return { x: KAMERA.x(t), y: KAMERA.y(t), z: KAMERA.z(t), yaw: KAMERA.yaw(t), pitch: KAMERA.pitch(t), roll: KAMERA.roll(t) };
+}
+/** Weltpunkt → Kamerakoordinaten (z negativ = vor der Kamera). Gleiche Reihenfolge wie die Umkehr-Transformation von #welt. */
+function inKamera(p, k) {
+  let x = p[0] - k.x, y = p[1] - k.y, z = p[2] - k.z, a;
+  a = -k.yaw * D2R; [x, z] = [x * Math.cos(a) + z * Math.sin(a), -x * Math.sin(a) + z * Math.cos(a)];
+  a = -k.pitch * D2R; [y, z] = [y * Math.cos(a) - z * Math.sin(a), y * Math.sin(a) + z * Math.cos(a)];
+  a = -k.roll * D2R; [x, y] = [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+  return [x, y, z];
+}
+function tempo(t) {
+  const a = kamera(t - 0.02), b = kamera(t + 0.02);
+  return Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z) / 0.04;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Teile der Welt: jedes Teil hat einen Ankerpunkt; zu nahe, zu ferne oder zeitlich unpassende Teile werden ausgeblendet
+// ---------------------------------------------------------------------------------------------------------------
+const TEILE = [];
+function teil({ p = [0, 0, 0], r = [0, 0, 0], s = 1, von = -1, bis = 99, immer = false, nah = 140, fern = 15000, kinder = false } = {}) {
+  const el = document.createElement("div");
+  el.className = "w";
+  $("#welt").appendChild(el);
+  const tl = { el, p, r, s, von, bis, immer, nah, fern, kinder, extra: "", alpha: 1, an: true };
+  setze(tl);
+  TEILE.push(tl);
+  return tl;
+}
+function setze(tl) {
+  tl.el.style.transform = `translate3d(${tl.p[0]}px,${tl.p[1]}px,${tl.p[2]}px) rotateY(${tl.r[0]}deg) rotateX(${tl.r[1]}deg) rotateZ(${tl.r[2]}deg) scale(${tl.s})${tl.extra}`;
+}
+function sichtbar(tl, t, k) {
+  let o = tl.alpha;
+  if (t < tl.von || t >= tl.bis) o = 0;
+  else if (!tl.immer) {
+    const d = -inKamera(tl.p, k)[2];
+    o *= clamp((d - tl.nah) / 260) * clamp((tl.fern - d) / 3500);
+  }
+  if (o <= 0.002) {
+    if (tl.an) { tl.el.style.display = "none"; tl.an = false; }
+    return;
+  }
+  if (!tl.an) { tl.el.style.display = ""; tl.an = true; }
+  if (tl.kinder) for (const c of tl.el.children) c.style.opacity = o;
+  else tl.el.style.opacity = o;
+}
+/** Bild-Element mittig um den Anker; Ausschnitt [x, y, b, h] in CSS-Pixeln der Aufnahme (Breite W, Höhe H). */
+function bild(tl, src, W, H, [x, y, w, h], scale, { radius = 16, cls = "crop karte" } = {}) {
+  const el = crop(tl.el, src, W, H, x, y, w, h, scale, { radius, cls });
+  at(el, (-w * scale) / 2, (-h * scale) / 2);
+  return el;
+}
+
+// Sternenstaub entlang des ganzen Wegs (zieht beim Flug als Streifen vorbei)
+const wegX = (z) => (z > -36000 ? 0 : z < -37200 ? 600 : lerp(0, 600, (-36000 - z) / 1200));
+const wegY = (z) => (z > -39600 ? 0 : z < -40800 ? H_Y : lerp(0, H_Y, (-39600 - z) / 1200));
+for (let i = 0; i < 230; i++) {
+  const z = 2500 - rnd() * 69000;
+  const w = rnd() * TAU, r = 700 + rnd() * 2600;
+  const tl = teil({ p: [wegX(z) + Math.cos(w) * r, wegY(z) + Math.sin(w) * r * 1.3, z], nah: 60, fern: 9000 });
+  tl.el.innerHTML = `<div class="staub" style="transform:scale(${0.6 + rnd() * 1.4})"></div>`;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 1 Intro: Logo aus 3D-Balken setzt sich zusammen, die Kamera fliegt durch die Öffnung des V
+// ---------------------------------------------------------------------------------------------------------------
+const LOGO_Z = -7000;
+const logoPunkt = ([x, y]) => { const X = -163.74 + 0.9969 * x, Y = 53.08 + 0.9969 * y; return [(X + 15) * 12, (Y - 45) * 12]; };
+const LOGO = [
+  { farbe: "#ffffff", pts: [[42.32, -40], [91.4, -40], [104.49, 21.58], [55.41, 21.58]], a: 0.25 },
+  { farbe: "#ffffff", pts: [[57.33, 30.58], [106.4, 30.58], [116.87, 79.84], [67.8, 79.84]], a: 0.35 },
+  { farbe: "#ffffff", pts: [[69.71, 88.84], [118.78, 88.84], [127.16, 128.25], [78.09, 128.25]], a: 0.45 },
+  { farbe: "#8fb0ff", pts: [[286.49, -52], [232.13, -52], [193, 21.58], [247.37, 21.58]], a: 0.4 },
+  { farbe: "#8fb0ff", pts: [[242.58, 30.58], [188.22, 30.58], [162.03, 79.84], [216.39, 79.84]], a: 0.5 },
+  { farbe: "#8fb0ff", pts: [[211.6, 88.84], [157.24, 88.84], [136.29, 128.25], [190.65, 128.25]], a: 0.6 },
+  { farbe: "#ff8a5e", pts: [[40.93, 157.22], [55.93, 157.22], [55.93, 167.72], [40.93, 167.72]], a: 1.0, rund: true },
+  { farbe: "#ff8a5e", pts: [[64.93, 157.22], [91.18, 157.22], [91.18, 167.72], [64.93, 167.72]], a: 1.08, rund: true },
+  { farbe: "#ff8a5e", kreis: [126.68, 162.47, 25], a: 1.3 },
+].map((b) => {
+  let pts, cx, cy, w, h;
+  if (b.kreis) {
+    const [x, y] = logoPunkt([b.kreis[0], b.kreis[1]]);
+    const r = b.kreis[2] * 0.9969 * 12;
+    cx = x; cy = y; w = h = 2 * r;
+  } else {
+    pts = b.pts.map(logoPunkt);
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    cx = (Math.min(...xs) + Math.max(...xs)) / 2; cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    w = Math.max(...xs) - Math.min(...xs); h = Math.max(...ys) - Math.min(...ys);
+  }
+  const tl = teil({ p: [cx, cy, LOGO_Z], von: -1, bis: 4.2, kinder: true, nah: 60, fern: 20000 });
+  const form = b.kreis ? "border-radius:50%" : b.rund ? `border-radius:${h / 2}px` : `clip-path:polygon(${pts.map((p) => `${p[0] - cx + w / 2}px ${p[1] - cy + h / 2}px`).join(",")})`;
+  // Dicke: dunklere Lagen dahinter, vorne leuchtend
+  let html = "";
+  for (let k = 5; k >= 1; k--) html += `<div class="balken" style="left:${-w / 2}px;top:${-h / 2}px;width:${w}px;height:${h}px;background:${b.farbe};filter:brightness(${0.35 + (5 - k) * 0.08});transform:translateZ(${-k * 34}px);${form}"></div>`;
+  html += `<div style="position:absolute;left:${-w / 2}px;top:${-h / 2}px;width:${w}px;height:${h}px;filter:drop-shadow(0 0 60px ${b.farbe})"><div style="width:100%;height:100%;background:${b.farbe};${form}"></div></div>`;
+  tl.el.innerHTML = html;
+  const w2 = rnd() * TAU;
+  return { ...b, tl, ziel: [cx, cy, LOGO_Z], weg: [Math.cos(w2) * 1500, Math.sin(w2) * 1500, -1200 - rnd() * 1200] };
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// 2 Tunnel aus Dashboard-Karten, 233 Mitglieder zählen hoch
+// ---------------------------------------------------------------------------------------------------------------
+const DESK = "app/nacht-dashboard.png", PHONE_DASH = "app/nacht-phone-dashboard.png";
+const DASH = [
+  [PHONE_DASH, 390, 844, [0, 0, 390, 844], 1.45, [-980, -560, -9300], [34, 0, -4], 26],
+  [DESK, 1280, 800, [150, 510, 539, 423], 1.7, [940, 440, -10100], [-30, 0, 3], 16],
+  [DESK, 1280, 800, [150, 97, 1095, 299], 1.35, [0, -1250, -11000], [0, -32, 0], 16],
+  [PHONE_DASH, 390, 844, [0, 0, 390, 844], 1.45, [1000, -620, -11900], [-34, 0, 4], 26],
+  [DESK, 1280, 800, [717, 521, 253, 217], 2.6, [-960, 560, -12700], [30, 0, -3], 18],
+  [DESK, 1280, 800, [981, 521, 253, 217], 2.6, [980, 560, -13600], [-32, 0, 3], 18],
+  [DESK, 1280, 800, [717, 749, 517, 173], 2.0, [-820, -820, -15400], [26, -14, -3], 16],
+  [PHONE_DASH, 390, 844, [16, 80, 358, 274], 2.3, [940, 380, -16300], [-34, 0, 4], 18],
+  [DESK, 1280, 800, [172, 768, 495, 144], 2.2, [0, 1150, -17200], [0, 32, 0], 16],
+  [PHONE_DASH, 390, 844, [0, 0, 390, 844], 1.45, [-960, 120, -18300], [34, 0, -4], 26],
+  [DESK, 1280, 800, [706, 510, 539, 423], 1.7, [900, -520, -19200], [-30, 0, 3], 16],
+  [DESK, 1280, 800, [150, 510, 539, 423], 1.5, [-860, -700, -19900], [28, -10, -3], 16],
+  [PHONE_DASH, 390, 844, [16, 518, 358, 326], 2.2, [880, 640, -20300], [-30, 6, 3], 18],
+  [DESK, 1280, 800, [717, 521, 253, 217], 2.4, [-760, 700, -20900], [26, 8, -2], 18],
+  [DESK, 1280, 800, [981, 521, 253, 217], 2.4, [800, -760, -21300], [-26, -8, 2], 18],
+].map(([src, W, H, ausschnitt, s, p, r, rad]) => {
+  const tl = teil({ p, r, von: 2.5, bis: 14 });
+  bild(tl, src, W, H, ausschnitt, s, { radius: rad / s });
+  return tl;
+});
+const Z233 = teil({ p: [-430, -60, -14100], r: [22, 0, 0], von: 3, bis: 12 });
+Z233.el.innerHTML = `<div class="zaehler" style="left:-380px;top:-250px;width:760px"><small>Mitglieder</small><b id="z233">0</b><i>▲ +21 in 12 Monaten</i></div>`;
+
+// ---------------------------------------------------------------------------------------------------------------
+// 3 Mitglied anlegen: Formular (Vorderseite), Karte dreht sich um: angelegt (Rückseite)
+// ---------------------------------------------------------------------------------------------------------------
+const NEU_H = 2068, MS = 2.2;
+const KARTE_Z = -23500;
+const MK = teil({ p: [0, 0, KARTE_Z], von: 9, bis: 18.6, nah: 200 });
+const M = { felder: [], feldLage: [] };
+{
+  const vorne = document.createElement("div");
+  const hinten = document.createElement("div");
+  for (const [el, rot] of [[vorne, 0], [hinten, 180]]) {
+    Object.assign(el.style, { position: "absolute", left: 0, top: 0, width: 0, height: 0, backfaceVisibility: "hidden", webkitBackfaceVisibility: "hidden", transform: `rotateY(${rot}deg)` });
+    MK.el.appendChild(el);
+  }
+  M.vorne = vorne;
+  M.hinten = hinten;
+  const fx = 16, fy = 211, fw = 358, fh = 275;
+  const left = (-fw * MS) / 2, top = -470;
+  M.form = at(crop(vorne, "app/nacht-phone-neu-leer.png", 390, NEU_H, fx, fy, fw, fh, MS, { radius: 14, cls: "crop karte" }), left, top);
+  const F = LAGE["nacht-phone-neu-voll"].fields;
+  [["Vorname", "Mia", 13.0], ["Nachname", "Schröder", 13.45], ["Geburtsdatum", "14.03.1998", 13.95]].forEach(([name, text, t0]) => {
+    const f = F[name];
+    M.feldLage.push([left + (f.x - fx) * MS - 5, top + (f.y - fy) * MS - 5, f.w * MS + 10, f.h * MS + 10]);
+    const x = left + (f.x - fx + 2) * MS, y = top + (f.y - fy + 2) * MS, w = (f.w - 40) * MS, h = (f.h - 4) * MS;
+    const blank = at(document.createElement("div"), x, y);
+    Object.assign(blank.style, { position: "absolute", width: w + "px", height: h + "px", background: "#212123", borderRadius: "16px" });
+    vorne.appendChild(blank);
+    const el = at(crop(vorne, "app/nacht-phone-neu-voll.png", 390, NEU_H, f.x + 2, f.y + 2, f.w - 40, f.h - 4, MS), x, y);
+    const marke = at(document.createElement("div"), x + 12 * MS, y + 8 * MS);
+    marke.className = "marke";
+    marke.style.height = (f.h - 20) * MS + "px";
+    vorne.appendChild(marke);
+    M.felder.push({ el, blank, marke, text, t0, d: 0.35, w });
+  });
+  M.fokus = document.createElement("div");
+  M.fokus.className = "fokus";
+  vorne.appendChild(M.fokus);
+  const K = { x: 225.6, y: 2016.4, w: 148.4, h: 36 };
+  M.knopf = at(crop(vorne, "app/nacht-phone-neu-voll.png", 390, NEU_H, K.x, K.y, K.w, K.h, MS, { radius: 10, cls: "crop karte" }), left + (K.x - fx) * MS, top + fh * MS + 50);
+  M.tipp = document.createElement("div");
+  M.tipp.className = "tipp";
+  at(M.tipp, left + (K.x - fx + K.w / 2) * MS, top + fh * MS + 50 + (K.h / 2) * MS);
+  Object.assign(M.tipp.style, { width: "120px", height: "120px", margin: "-60px 0 0 -60px", borderWidth: "4px" });
+  vorne.appendChild(M.tipp);
+  // Rückseite: Bildschirm-Fläche mit Meldung, Kopf und Stammdaten wie in der App
+  const SC = 2.0, l2 = (-358 * SC) / 2, t2 = -560;
+  const panel = at(document.createElement("div"), l2 - 16 * SC, t2 - 16 * SC);
+  panel.className = "karte";
+  Object.assign(panel.style, { width: 390 * SC + "px", height: (563 + 16 - 56) * SC + "px", background: "#0a0a0b", borderRadius: "56px" });
+  hinten.appendChild(panel);
+  M.meldung = at(crop(hinten, "app/nacht-phone-mitglied.png", 390, 844, 16, 72, 358, 54, SC, { radius: 10, cls: "crop karte" }), l2, t2);
+  at(crop(M.meldung, "app/nacht-phone-mitglied.png", 390, 844, 356, 72, 18, 18, SC), 0, 0).style.transform = "scaleX(-1)";
+  M.kopf = at(crop(hinten, "app/nacht-phone-mitglied.png", 390, 844, 16, 126, 358, 114, SC), l2, t2 + 54 * SC);
+  M.daten = at(crop(hinten, "app/nacht-phone-mitglied.png", 390, 844, 16, 259, 358, 304, SC, { radius: 14 }), l2, t2 + (259 - 72) * SC);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 4 Beitragslauf: drei Tore (Prüfen, Vorschau, Erstellen) zum Durchfliegen, dann Karten und 7.240,00 €
+// ---------------------------------------------------------------------------------------------------------------
+const TORE = [["Prüfen", -26000, 19.6], ["Vorschau", -27300, 20.4], ["Erstellen", -28600, 21.2]].map(([name, z, durch], i) => {
+  const tl = teil({ p: [0, 0, z], von: 15, bis: 22, nah: 40 });
+  tl.el.innerHTML =
+    `<div class="tor" style="left:-560px;top:-560px;width:1120px;height:1120px"></div>` +
+    `<div class="tor-schild" style="left:-300px;top:-860px"><u>${i + 1}</u><div>${name}<em>erledigt</em></div></div>`;
+  return { tl, ring: tl.el.querySelector(".tor"), schild: tl.el.querySelector(".tor-schild"), z, durch };
+});
+const STATION_Z = -31300;
+const B = { zahlen: [], karten: [] };
+{
+  const st = teil({ p: [0, -520, STATION_Z], von: 18, bis: 26.2, nah: 200 });
+  B.schritte = st;
+  B.schritteEl = bild(st, "app/nacht-lauf.png", 1280, 800, [150, 345, 640, 163], 2.0, { radius: 15 });
+  const zahl = LAGE["nacht-lauf"].numbers["7.240,00 €"][0];
+  const KS = 2.0, KW = 261 * KS, KH = 121 * KS;
+  [[150, true], [428, true], [706, false], [984, false]].forEach(([x, ohne], i) => {
+    const tl = teil({ p: [i % 2 === 0 ? -(KW / 2 + 22) : KW / 2 + 22, i < 2 ? -30 : 260, STATION_Z], von: 18, bis: 26.2, nah: 200 });
+    const el = bild(tl, ohne ? "app/nacht-lauf-ohne-zahl.png" : "app/nacht-lauf.png", 1280, 800, [x, 534, 261, 121], KS, { radius: 15 });
+    if (ohne) {
+      const z = document.createElement("div");
+      z.className = "zahl";
+      Object.assign(z.style, { left: (zahl.x - x) * KS + "px", top: (zahl.y - 534) * KS + "px", height: zahl.h * KS + "px", lineHeight: zahl.h * KS + "px", font: `700 ${26.4 * KS}px ${zahl.font.family}`, color: "#f6f7fb" });
+      el.appendChild(z);
+      B.zahlen.push(z);
+    }
+    B.karten.push({ tl, el, start: [...tl.p], i });
+  });
+  B.funken = B.karten[0];
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 5 Kalender als Boden, Termine wachsen hoch wie Häuser, das Sommerfest steigt auf – die Kamera fliegt hinein
+// ---------------------------------------------------------------------------------------------------------------
+const KAL = { s: 4.5, x0: 140, y0: 225, w: 1120, h: 575, mitte: [-800, 650, -38000] };
+const kalWelt = (cx, cy) => [KAL.mitte[0] + (cx - (KAL.x0 + KAL.w / 2)) * KAL.s, KAL.mitte[1], KAL.mitte[2] + (cy - (KAL.y0 + KAL.h / 2)) * KAL.s];
+const BODEN = teil({ p: KAL.mitte, r: [0, 90, 0], von: 24, bis: 34.2, immer: true });
+bild(BODEN, "app/nacht-kalender-leer.png", 1280, 800, [KAL.x0, KAL.y0, KAL.w, KAL.h], KAL.s, { radius: 6, cls: "crop karte" });
+const CHIPS = LAGE["nacht-kalender"].cards
+  .filter((k) => k.h < 70 && k.w < 160 && k.y > 380 && k.x > 140)
+  .map((k) => {
+    const fest = /Sommerfest 2027/.test(k.text);
+    const [x, y, z] = kalWelt(k.x + k.w / 2, k.y + k.h / 2);
+    const tl = teil({ p: [x, y, z], von: 24, bis: fest ? 33.62 : 34.2, nah: fest ? 120 : 160 });
+    const el = crop(tl.el, "app/nacht-kalender.png", 1280, 800, k.x, k.y, k.w, k.h, KAL.s, { radius: k.r, cls: "crop chip" });
+    at(el, (-k.w * KAL.s) / 2, -k.h * KAL.s);
+    return { tl, el, k, fest, boden: [x, y, z], h: k.h * KAL.s };
+  });
+const FEST = CHIPS.find((c) => c.fest);
+
+// ---------------------------------------------------------------------------------------------------------------
+// 6 Helferplan als Wand: die Kamera fährt an ihm nach unten bis zum Abbau und trägt Anna ein
+// ---------------------------------------------------------------------------------------------------------------
+const WAND = { s: 2.6, z: -40800, x: 600, top: 150 - 600 * 2.6 };
+const H_KNOPF = LAGE["nacht-phone-helfer-vorher"].button;
+const HW = {};
+for (const [key, src] of [["vorher", "app/nacht-phone-helfer-vorher.png"], ["nachher", "app/nacht-phone-helfer-nachher.png"]]) {
+  const tl = teil({ p: [WAND.x, WAND.top + 960 * WAND.s, WAND.z], von: 32.5, bis: 40.75, immer: true });
+  const el = bild(tl, src, 390, 1920, [0, 0, 390, 1920], WAND.s, { radius: 18 });
+  HW[key] = { tl, el };
+}
+{
+  const ring = document.createElement("div");
+  ring.className = "ring-gruen";
+  Object.assign(ring.style, { left: (14 - 195) * WAND.s + "px", top: (1834 - 960) * WAND.s + "px", width: 362 * WAND.s + "px", height: 62 * WAND.s + "px", borderRadius: 12 * WAND.s + "px" });
+  HW.nachher.tl.el.appendChild(ring);
+  HW.ring = ring;
+  const tp = document.createElement("div");
+  tp.className = "tipp";
+  at(tp, (H_KNOPF.x + H_KNOPF.width / 2 - 195) * WAND.s, (H_KNOPF.y + H_KNOPF.height / 2 - 960) * WAND.s);
+  HW.vorher.tl.el.appendChild(tp);
+  HW.tipp = tp;
+  HW.knopfWelt = [WAND.x + (H_KNOPF.x + H_KNOPF.width / 2 - 195) * WAND.s, WAND.top + (H_KNOPF.y + H_KNOPF.height / 2) * WAND.s, WAND.z];
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 7 Vereins-Chat: Chat, Gruppen und Nachrichten fliegen vorbei
+// ---------------------------------------------------------------------------------------------------------------
+const CHAT = [];
+{
+  const add = (opts, html, aufAb = null) => { const tl = teil({ von: 39, bis: 46.9, ...opts }); tl.el.innerHTML = html; CHAT.push({ tl, aufAb }); return tl; };
+  const stueck = (src, aus, s, p, r, rad = 14) => { const tl = teil({ p, r, von: 39, bis: 46.9 }); bild(tl, src, 390, 844, aus, s, { radius: rad }); return tl; };
+  stueck("app/nacht-phone-chat.png", [0, 0, 390, 844], 2.1, [60, H_Y - 120, -43700], [30, 0, -3], 20);
+  stueck("app/nacht-phone-chat.png", [16, 80, 358, 64], 2.8, [880, H_Y - 700, -43300], [-24, -10, 2]);
+  // die vier Gruppen aus der Chat-Liste einzeln
+  for (let i = 0; i < 4; i++) stueck("app/nacht-phone-chats.png", [16, 276.75 + i * 72.75, 357, 72.75], 2.6, [1120 - i * 40, H_Y + 120 + i * 230, -44600 - i * 380], [-28, 0, 3], 10);
+  stueck("app/nacht-phone-chat.png", [78, 199, 284, 113], 2.8, [1180, H_Y - 330, -45900], [-16, 0, 0]);
+  stueck("app/nacht-phone-chat.png", [16, 724, 358, 60], 2.6, [-80, H_Y + 520, -46400], [18, 8, -2]);
+  add({ p: [1000, H_Y - 140, -47100], r: [-14, 0, 0] }, `<div class="blase" style="left:-520px;top:-110px;background:#005c4b;border-radius:40px 10px 40px 40px">Wer bringt den Grill mit? 🔥<small>20:16 <b style="color:#53bdeb">✓✓</b></small></div>`, 43.6);
+  add({ p: [260, H_Y + 330, -48300], r: [14, 0, 0] }, `<div class="blase" style="left:-470px;top:-130px;background:#202c33;border-radius:10px 40px 40px 40px"><strong>Hans Hellwig</strong>Ich! Steht ab 17 Uhr bereit. 💪<small>20:17</small></div>`, 44.6);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 8 Warp: Ringe aus allen Bildschirmen; am Ende das Handy, in dessen Bildschirm die Kamera fliegt
+// ---------------------------------------------------------------------------------------------------------------
+const WARP_BILDER = [
+  ["app/nacht-phone-dashboard.png", 390, 844, [0, 0, 390, 844], 0.8],
+  ["app/nacht-phone-mitglied.png", 390, 844, [0, 0, 390, 844], 0.8],
+  ["app/nacht-phone-chat.png", 390, 844, [0, 0, 390, 844], 0.8],
+  ["app/nacht-dashboard.png", 1280, 800, [150, 97, 1095, 299], 0.55],
+  ["app/nacht-kalender.png", 1280, 800, [140, 225, 1120, 575], 0.42],
+  ["app/nacht-lauf.png", 1280, 800, [150, 345, 640, 163], 0.75],
+  ["app/nacht-phone-helfer-nachher.png", 390, 1920, [0, 1500, 390, 420], 0.9],
+  ["app/nacht-phone-fest-nachher.png", 390, 3445, [0, 280, 390, 500], 0.75],
+];
+const WARP = [];
+for (let ring = 0; ring < 17; ring++) {
+  const z = -50300 - ring * 720;
+  for (let j = 0; j < 9; j++) {
+    const w = (j / 9) * TAU + ring * 0.37;
+    const [src, W, H, aus, s] = WARP_BILDER[(ring * 3 + j) % WARP_BILDER.length];
+    const tl = teil({ p: [600 + Math.cos(w) * 980, H_Y + Math.sin(w) * 980, z], r: [Math.sin(w) * 55, -Math.cos(w) * 40, (w / D2R) + 90], von: 44, bis: 53.2, nah: 90 });
+    bild(tl, src, W, H, aus, s, { radius: 16 / s });
+    WARP.push(tl);
+  }
+}
+const HANDY_Z = -64500;
+const ENDHANDY = teil({ p: [600, H_Y, HANDY_Z], s: 2.4, von: 44, bis: 55.4, immer: true });
+ENDHANDY.el.innerHTML = `<div class="handy" style="left:-260px;top:-563.5px"><div class="vorne"><i class="taste" style="left:-6px;top:236px;height:58px"></i><i class="taste" style="left:-6px;top:326px;height:104px"></i><i class="taste" style="left:-6px;top:446px;height:104px"></i><i class="taste" style="right:-6px;top:356px;height:164px"></i><div class="scr"><div class="insel"></div><div class="status"><span>9:41</span><svg width="100" height="22" viewBox="0 0 100 22" fill="#f2f2f2"><rect x="0" y="13.5" width="5" height="7.5" rx="1.3"/><rect x="7.5" y="10" width="5" height="11" rx="1.3"/><rect x="15" y="6.5" width="5" height="14.5" rx="1.3"/><rect x="22.5" y="3" width="5" height="18" rx="1.3"/><g fill="none" stroke="#f2f2f2" stroke-width="2.7" stroke-linecap="round"><path d="M37.5 8.6a13.5 13.5 0 0 1 18 0"/><path d="M40.9 12.6a8.3 8.3 0 0 1 11.2 0"/></g><circle cx="46.5" cy="17.4" r="2.3"/><rect x="64" y="3.5" width="31" height="15.5" rx="4.6" fill="none" stroke="#f2f2f2" stroke-opacity=".45" stroke-width="1.6"/><rect x="66.6" y="6.1" width="25.8" height="10.3" rx="2.6"/></svg></div><div class="hvp"><img src="app/nacht-phone-dashboard.png"></div><div class="spiegel"></div></div></div></div>`;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Überschriften, Schläge, Blitze, Lichtstreifen, Funken, Tempo-Linien
+// ---------------------------------------------------------------------------------------------------------------
+const TITEL = [
+  { von: 0.3, bis: 3.2, html: "Willkommen<br>im <em>Flow.</em>" },
+  { von: 4.2, bis: 10.8, html: "Alles auf<br><em>einen Blick.</em>" },
+  { von: 11.7, bis: 17.9, html: "Mitglieder<br><em>in Sekunden.</em>" },
+  { von: 19.1, bis: 25.8, html: "Beiträge<br><em>automatisch.</em>" },
+  { von: 26.7, bis: 33.1, html: "Termine, die<br><em>jeder sieht.</em>" },
+  { von: 34.25, bis: 40.0, html: "Helfer tragen sich<br><em>selbst ein.</em>" },
+  { von: 41.7, bis: 46.55, html: "Alles im<br><em>Vereins-Chat.</em>" },
+];
+const SCHLAEGE = [
+  { von: 46.875, bis: 47.344, zeilen: ["Mitglieder."] },
+  { von: 47.344, bis: 47.813, zeilen: ["Beiträge."] },
+  { von: 47.813, bis: 48.75, zeilen: ["Termine."] },
+  { von: 48.75, bis: 52.3, zeilen: ["Alles in einem", "<em>Flow.</em>"], strich: true },
+];
+const BLITZE = [
+  [3.55, 0.85], [15.92, 0.22], [19.6, 0.25], [20.4, 0.25], [21.2, 0.3], [24.0, 0.2], [33.5, 0.75], [38.25, 0.22], [40.45, 0.65],
+  [46.875, 0.45], [47.344, 0.3], [47.813, 0.3], [48.75, 0.3], [52.45, 0.55], [55.3125, 0.95],
+];
+const STOESSE = [
+  [3.75, 0.05], [15.92, 0.02], [19.6, 0.025], [20.4, 0.025], [21.2, 0.03], [24.0, 0.02], [33.75, 0.04], [38.25, 0.02], [40.5, 0.04],
+  [46.875, 0.05], [47.344, 0.045], [47.813, 0.045], [48.75, 0.04], [52.5, 0.04], [55.3125, 0.06], [56.25, 0.02],
+];
+for (let x = 5.625; x < 46; x += TAKT) if (!STOESSE.some(([h]) => Math.abs(h - x) < 0.3)) STOESSE.push([x, 0.01]);
+const STREIFEN = [[3.55, 960, 1], [15.95, 760, 0.6], [24.0, 1030, 0.55], [38.28, 960, 0.5], [55.3125, 900, 1], [56.3, 1020, 0.85]];
+const rnd2 = (() => { let s = 99; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+const FARBEN = { gruen: ["#ffffff", "#b9ffd0", "#4ade80"], blau: ["#ffffff", "#cfe0ff", "#8fb0ff"], bunt: ["#ffffff", "#8fb0ff", "#ff8a5e"] };
+const REGEN = [[15.95, 540, 760, "gruen"], [24.0, 360, 1000, "blau"], [38.3, 620, 960, "gruen"], [55.36, 540, 880, "bunt"]].map(([t0, x, y, f]) => ({
+  t0, x, y,
+  teile: Array.from({ length: 22 }, (_, i) => {
+    const el = document.createElement("i");
+    const c = FARBEN[f][i % 3];
+    el.style.background = `radial-gradient(circle,${c} 0 28%,${c}cc 42%,${c}00 70%)`;
+    $("#spruehen").appendChild(el);
+    const w = (i / 22) * TAU + rnd2() * 0.4, v = 480 + rnd2() * 760;
+    return { el, vx: Math.cos(w) * v, vy: Math.sin(w) * v - 280, s: 0.7 + rnd2() * 1.0 };
+  }),
+}));
+// Tempo-Linien: sichtbar, je schneller die Kamera fliegt
+const LINIEN = (() => {
+  const ns = "http://www.w3.org/2000/svg", out = [];
+  for (let i = 0; i < 64; i++) {
+    const l = document.createElementNS(ns, "line");
+    const w = rnd2() * TAU, a = 300 + rnd2() * 420, len = 260 + rnd2() * 520;
+    l.setAttribute("stroke", "#dfe8ff");
+    l.setAttribute("stroke-width", String(1.5 + rnd2() * 3));
+    l.setAttribute("stroke-linecap", "round");
+    $("#tempo").appendChild(l);
+    out.push({ l, w, a, len, ph: rnd2() });
+  }
+  return out;
+})();
+
+// Schnelle Stellen: dort mehr Zwischenbilder für die Bewegungsunschärfe
+const SCHNELL = [[2.0, 4.6], [15.2, 16.3], [18.9, 21.7], [24.8, 26.8], [32.6, 34.3], [37.95, 38.6], [39.9, 41.6], [46.7, 53.4], [54.4, 55.8]];
+window.UNSCHAERFE = 12;
+window.UNTERBILDER = (t) => (SCHNELL.some(([a, b]) => t >= a && t < b) ? 28 : 12);
+
+// ---------------------------------------------------------------------------------------------------------------
+// Zeichnen
+// ---------------------------------------------------------------------------------------------------------------
+function zeichneWelt(t) {
+  // Logo setzt sich zusammen
+  for (const b of LOGO) {
+    const p = P(t, b.a, 1.15, E.expo);
+    b.tl.p = b.ziel.map((v, i) => v + b.weg[i] * (1 - p));
+    b.tl.alpha = P(t, b.a, 0.2);
+    b.tl.extra = ` rotateZ(${(1 - p) * 70}deg)`;
+    setze(b.tl);
+  }
+  // 233 zählt hoch, Karte dreht sich zur Kamera
+  $("#z233").textContent = String(Math.round(233 * P(t, 4.4, 1.5, E.out)));
+  Z233.r = [lerp(40, 14, P(t, 4.5, 3, E.out)), 0, 0];
+  setze(Z233);
+  // Mitglied anlegen
+  {
+    const b = 11.25;
+    const fi = kf(t, [[b + 1.6, 0], [b + 2.08, 0], [b + 2.25, 1], [b + 2.58, 1], [b + 2.75, 2]]);
+    const i0 = Math.min(2, Math.floor(fi)), i1 = Math.min(2, i0 + 1), fr = fi - i0;
+    const r = M.feldLage[i0].map((v, j) => lerp(v, M.feldLage[i1][j], fr));
+    Object.assign(M.fokus.style, { left: r[0] + "px", top: r[1] + "px", width: r[2] + "px", height: r[3] + "px", opacity: P(t, b + 1.5, 0.15) * (1 - P(t, b + 3.2, 0.15)) });
+    for (const f of M.felder) {
+      const k = clamp((t - f.t0) / f.d);
+      const chars = Math.round(k * f.text.length);
+      f.el.style.clipPath = `inset(0 ${Math.max(0, f.w - (14 + chars * 9.6) * MS)}px 0 0)`;
+      f.el.style.opacity = t >= f.t0 ? 1 : 0;
+      f.blank.style.opacity = t >= f.t0 - 0.05 ? 1 : 0;
+      f.marke.style.opacity = t >= f.t0 - 0.05 && t < f.t0 + f.d + 0.1 ? (Math.floor(t * 6) % 2 === 0 ? 1 : 0.35) : 0;
+      f.marke.style.transform = `translateX(${chars * 9.6 * MS}px)`;
+    }
+    pop(M.knopf, t, 14.55, { d: 0.45, dy: 40, s0: 0.85 });
+    M.knopf.style.transform += ` scale(${1 - 0.07 * Math.sin(clamp((t - 14.95) / 0.25) * Math.PI)})`;
+    tipp(M.tipp, t, 15.0);
+    const dreh = P(t, 15.25, 0.75, E.inOut); // Karte dreht sich um: angelegt
+    MK.extra = ` rotateY(${-180 * dreh}deg)`;
+    MK.p = [0, Math.sin(t * 1.3) * 14, KARTE_Z];
+    setze(MK);
+    pop(M.meldung, t, 15.55, { d: 0.45, dy: -60, s0: 0.92 });
+    pop(M.kopf, t, 15.63, { d: 0.45, dy: 50, s0: 0.94 });
+    pop(M.daten, t, 15.71, { d: 0.5, dy: 70, s0: 0.92 });
+  }
+  // Tore leuchten grün auf, kurz bevor die Kamera hindurchfliegt
+  for (const tor of TORE) {
+    const g = P(t, tor.durch - 0.42, 0.25);
+    const farbe = g > 0.5 ? "74,222,128" : "143,176,255";
+    tor.ring.style.boxShadow = `0 0 0 ${10 + 8 * g}px rgba(${farbe},.95),0 0 ${80 + 70 * g}px ${20 + 16 * g}px rgba(${farbe},.55),inset 0 0 70px 14px rgba(${farbe},.35)`;
+    tor.schild.querySelector("u").style.background = g > 0.5 ? "#4ade80" : "#3a4a70";
+    tor.schild.querySelector("u").textContent = g > 0.5 ? "✓" : String(TORE.indexOf(tor) + 1);
+    tor.schild.querySelector("em").style.opacity = g;
+    tor.tl.extra = ` rotateZ(${(t - tor.durch) * 12}deg) scale(${1 + 0.06 * g})`;
+    setze(tor.tl);
+  }
+  // Beträge zählen hoch, dann fliegen die Karten auseinander
+  {
+    const z = P(t, 22.75, 1.3, E.out);
+    for (const el of B.zahlen) el.textContent = euro(Math.round(7240 * z * 100) / 100);
+    const auf = P(t, 24.85, 0.7, E.inStark);
+    for (const c of B.karten) {
+      const sx = c.i % 2 === 0 ? -1 : 1, sy = c.i < 2 ? -1 : 1;
+      c.tl.p = [c.start[0] + sx * 1600 * auf, c.start[1] + sy * 900 * auf, c.start[2] + 600 * auf];
+      c.tl.r = [-sx * 50 * auf, sy * 30 * auf, sx * 20 * auf];
+      setze(c.tl);
+      const g = t >= 24.0 && c.i < 2 ? Math.exp(-(t - 24.0) / 0.4) : 0;
+      c.el.style.boxShadow = `0 0 0 ${2 + 2 * g}px rgba(143,176,255,${0.4 + 0.5 * g}),0 0 ${90 + 90 * g}px rgba(58,107,234,${0.45 + 0.45 * g}),0 50px 100px rgba(0,0,0,.6)`;
+    }
+    B.schritte.p = [0, -520 - 1400 * auf, STATION_Z + 600 * auf];
+    setze(B.schritte);
+  }
+  // Termine wachsen als Welle vom nahen zum fernen Rand hoch, das Sommerfest steigt auf
+  for (const c of CHIPS) {
+    const a = 26.6 + (-37000 - c.boden[2]) / 2400 + (c.boden[0] + 3300) / 9000;
+    const p = P(t, a, 0.55, E.back);
+    if (c.fest) {
+      const auf = P(t, 30.3, 1.1, E.expo);
+      c.tl.p = [c.boden[0], lerp(c.boden[1], 150 + c.h * 0.8, auf), c.boden[2]];
+      c.tl.s = 1 + 0.6 * auf;
+      const g = P(t, 29.8, 0.3);
+      const ph = t > 29.8 ? ((t - 29.8) % 0.75) / 0.75 : 0;
+      c.el.style.boxShadow = g ? `0 0 0 6px rgba(255,138,94,${0.95 * g}),0 0 70px rgba(255,138,94,${0.75 * g}),0 0 0 ${8 + 40 * ph}px rgba(255,138,94,${0.5 * g * (1 - ph)})` : "none";
+    }
+    c.tl.extra = ` scaleY(${Math.max(0.001, p)})`;
+    setze(c.tl);
+  }
+  // Helferplan: vorher → nachher beim Antippen
+  {
+    const nach = t >= 38.25;
+    HW.vorher.tl.alpha = nach ? 0 : 1 - P(t, 40.1, 0.35, E.lin);
+    HW.nachher.tl.alpha = nach ? 1 - P(t, 40.1, 0.35, E.lin) : 0;
+    tipp(HW.tipp, t, 38.1);
+    HW.ring.style.opacity = P(t, 38.3, 0.3) * (1 - P(t, 39.8, 0.4));
+  }
+  // Chat-Nachrichten ploppen auf, wenn die Kamera näher kommt
+  for (const c of CHAT) if (c.aufAb !== null) for (const el of c.tl.el.children) pop(el, t, c.aufAb, { d: 0.45, dy: 60, s0: 0.6 });
+  // Warp-Ringe verschwinden, sobald die Kamera im Handy ist
+  for (const w of WARP) w.alpha = 1 - P(t, 52.35, 0.4, E.lin);
+  // Ende: das Handy dreht sich einmal und fliegt davon
+  {
+    const dreh = P(t, 54.55, 0.75, E.inOut);
+    ENDHANDY.extra = ` rotateY(${360 * dreh}deg) scale(${1 - 0.55 * P(t, 54.8, 0.5, E.inStark)})`;
+    ENDHANDY.p = [600, H_Y + Math.sin(t * 1.4) * 20 * P(t, 52.6, 1), HANDY_Z - 2500 * P(t, 55.0, 0.3, E.inStark)];
+    ENDHANDY.alpha = 1 - P(t, 55.25, 0.08, E.lin);
+    setze(ENDHANDY);
+  }
+}
+
+function zeichneTitel(t) {
+  const el = $("#titel");
+  const cur = TITEL.find((x) => t >= x.von && t < x.bis);
+  if (!cur) { el.style.visibility = "hidden"; return; }
+  el.style.visibility = "visible";
+  if (el.dataset.key !== String(cur.von)) {
+    el.dataset.key = String(cur.von);
+    const tmp = document.createElement("div");
+    tmp.innerHTML = cur.html;
+    let out = "";
+    for (const node of tmp.childNodes) {
+      if (node.nodeName === "BR") { out += "<br>"; continue; }
+      for (const w of node.textContent.split(" ").filter(Boolean)) out += node.nodeType === 1 ? `<span class="w2"><em>${w} </em></span>` : `<span class="w2">${w} </span>`;
+    }
+    el.innerHTML = out;
+  }
+  const ws = [...el.querySelectorAll(".w2")];
+  ws.forEach((w, i) => {
+    const p = P(t, cur.von + i * 0.055, 0.6, E.expo);
+    let tr = `translateY(${(1 - p) * 70}px) rotateX(${-(1 - p) * 95}deg)`;
+    let o = P(t, cur.von + i * 0.055, 0.14);
+    const aus = cur.bis - 0.2 - (ws.length - 1 - i) * 0.03;
+    if (t > aus) { const k = P(t, aus, 0.2, E.in); tr += ` translateY(${-k * 60}px) rotateX(${k * 85}deg)`; o *= 1 - k; }
+    tf(w, tr, o);
+  });
+  const x = lerp(-400, 1400, P(t, cur.von + 0.6, 1.0, E.inOut));
+  for (const em of el.querySelectorAll("em")) em.style.backgroundPosition = `${x - 3000 - em.parentElement.offsetLeft}px 0`;
+}
+
+function zeichneSchlag(t) {
+  const el = $("#schlag"), u = $("#unterstrich");
+  const cur = SCHLAEGE.find((x) => t >= x.von && t < x.bis);
+  if (!cur) { el.style.visibility = "hidden"; u.style.opacity = 0; return; }
+  el.style.visibility = "visible";
+  if (el.dataset.key !== String(cur.von)) {
+    el.dataset.key = String(cur.von);
+    el.innerHTML = cur.zeilen.map((z) => `<span class="zeile">${z}</span>`).join("");
+  }
+  const p = P(t, cur.von, cur.strich ? 0.5 : 0.32, E.expo);
+  const raus = cur.strich ? P(t, cur.bis - 0.25, 0.25, E.inStark) : 0;
+  el.style.transform = `scale(${(1 + 1.4 * (1 - p)) * (1 + 2.2 * raus)})`;
+  el.style.opacity = P(t, cur.von, 0.05) * (1 - raus);
+  if (cur.strich) {
+    const em = el.querySelector("em");
+    em.style.backgroundPosition = `${lerp(-300, 900, P(t, cur.von + 0.6, 0.8, E.inOut)) - 3000}px 0`;
+    const s = P(t, cur.von + 0.45, 0.45, E.inOut);
+    Object.assign(u.style, { left: "76px", top: "1120px", width: "360px", transform: `scaleX(${s})`, opacity: s > 0 ? 1 - raus : 0 });
+  } else u.style.opacity = 0;
+}
+
+function zeichneEnde(t) {
+  const a = 55.3125;
+  $("#ende").style.display = t >= a ? "block" : "none";
+  if (t < a) return;
+  const p = P(t, a, 0.65, E.expo);
+  const zug = lerp(1, 1.05, P(t, a + 0.6, DAUER - a - 0.6, E.lin));
+  tf($("#end-logo"), `scale(${(1 + 1.3 * (1 - p)) * zug})`, P(t, a, 0.06));
+  tf($("#adresse"), `translateY(${(1 - P(t, a + 0.45, 0.6, E.expo)) * 50}px) scale(${zug})`, P(t, a + 0.45, 0.25));
+  tf($("#demo"), `translateY(${(1 - P(t, a + 0.65, 0.6, E.expo)) * 50}px) scale(${zug})`, P(t, a + 0.65, 0.25));
+  const fl = 56.25;
+  const s = P(t, fl, 1.4, E.out);
+  $("#schein").style.transform = `scaleX(${0.05 + 0.95 * s}) scaleY(${0.25 + 0.2 * s})`;
+  $("#schein").style.opacity = kf(t, [[fl, 0], [fl + 0.6, 1, E.out], [fl + 2.2, 0.85], [DAUER - 0.1, 0, E.in]]);
+}
+
+function zeichneEffekte(t) {
+  let blitz = 0;
+  for (const [h, a] of BLITZE) { const k = t - h; if (k > -0.05 && k < 0.7) blitz += a * (k < 0 ? 1 + k / 0.05 : Math.exp(-k / 0.12)); }
+  $("#blitz").style.opacity = Math.min(1, blitz);
+  let stoss = 0;
+  for (const [h, a] of STOESSE) { const k = t - h; if (k >= 0 && k < 0.7) stoss += a * Math.exp(-k / 0.11); }
+  $(".raum").style.transform = `scale(${1 + stoss})`;
+  const aktiv = STREIFEN.filter(([h]) => t >= h - 0.04 && t < h + 0.8).slice(-2);
+  [$("#streif1"), $("#streif2")].forEach((el, i) => {
+    const s = aktiv[i];
+    if (!s) { el.style.opacity = 0; return; }
+    const [h, y, a] = s, k = t - h;
+    el.style.top = y + "px";
+    el.style.opacity = a * (k < 0 ? 1 + k / 0.04 : Math.exp(-k / 0.2));
+    el.style.transform = `scaleX(${0.35 + 0.85 * E.out(clamp((k + 0.04) / 0.35))}) scaleY(${1 - 0.5 * clamp(k / 0.6)})`;
+  });
+  for (const r of REGEN) {
+    const k = t - r.t0, an = k >= 0 && k < 0.9;
+    for (const p of r.teile) {
+      if (!an) { p.el.style.opacity = 0; continue; }
+      p.el.style.transform = `translate(${r.x + p.vx * k}px,${r.y + p.vy * k + 760 * k * k}px) scale(${p.s * (1 - (0.55 * k) / 0.9)})`;
+      p.el.style.opacity = Math.pow(1 - k / 0.9, 1.4);
+    }
+  }
+  // Tempo-Linien
+  const v = tempo(t), st = clamp((v - 900) / 3800) * (t < 55.3 ? 1 : 0);
+  for (const L of LINIEN) {
+    const lauf = (L.ph + t * (0.6 + v / 4000)) % 1;
+    const a = L.a + lauf * 700, b = a + L.len * (0.4 + st);
+    L.l.setAttribute("x1", 540 + Math.cos(L.w) * a);
+    L.l.setAttribute("y1", 960 + Math.sin(L.w) * a);
+    L.l.setAttribute("x2", 540 + Math.cos(L.w) * b);
+    L.l.setAttribute("y2", 960 + Math.sin(L.w) * b);
+    L.l.setAttribute("stroke-opacity", String(st * 0.55 * Math.sin(lauf * Math.PI)));
+  }
+}
+
+function render(t) {
+  const k = kamera(t);
+  zeichneWelt(t);
+  $("#welt").style.transform = `translateZ(${AUGE}px) rotateZ(${-k.roll}deg) rotateX(${-k.pitch}deg) rotateY(${-k.yaw}deg) translate3d(${-k.x}px,${-k.y}px,${-k.z}px)`;
+  for (const tl of TEILE) sichtbar(tl, t, k);
+  zeichneTitel(t);
+  zeichneSchlag(t);
+  zeichneEnde(t);
+  zeichneEffekte(t);
+  $("#schwarz").style.opacity = Math.max(1 - P(t, 0, 0.35), P(t, DAUER - 0.4, 0.4));
+}
+
+const ready = (async () => {
+  await document.fonts.ready;
+  await Promise.all([...document.images].map((img) => (img.complete ? img.decode().catch(() => {}) : new Promise((r) => { img.onload = img.onerror = r; }))));
+  const urls = new Set();
+  for (const el of document.querySelectorAll(".crop")) {
+    const m = /url\("?([^")]+)"?\)/.exec(getComputedStyle(el).backgroundImage);
+    if (m) urls.add(m[1]);
+  }
+  await Promise.all([...urls].map((u) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = u; })));
+})();
+window.DAUER = DAUER;
+window.seek = async (t) => {
+  await ready;
+  render(t);
+  await new Promise((r) => requestAnimationFrame(() => r()));
+};
+const params = new URLSearchParams(location.search);
+if (params.has("play") || params.has("t")) {
+  document.body.classList.add("vorschau");
+  ready.then(() => {
+    if (params.has("t")) render(Number(params.get("t")));
+    else {
+      const t0 = performance.now() - Number(params.get("play") || 0) * 1000;
+      const loop = () => { render(((performance.now() - t0) / 1000) % DAUER); requestAnimationFrame(loop); };
+      loop();
+    }
+  });
+}
+</script>
+</body>
+</html>
