@@ -935,7 +935,12 @@ function readWav(file) {
 }
 
 const voice = new Float32Array(N);
-const vo = D.SPRECHER.map((s) => ({ ...s, samples: readWav(path.join(tonDir, "sprecher", `${s.id}.wav`)) }));
+// Fehlt eine Aufnahme (Stimme noch nicht erzeugt), wird ohne diesen Satz gemischt
+const vo = D.SPRECHER.filter((s) => {
+  const da = fs.existsSync(path.join(tonDir, "sprecher", `${s.id}.wav`));
+  if (!da) console.warn(`! Stimme fehlt: ausgabe/ton/sprecher/${s.id}.wav – ohne diesen Satz gemischt`);
+  return da;
+}).map((s) => ({ ...s, samples: readWav(path.join(tonDir, "sprecher", `${s.id}.wav`)) }));
 let voPeak = 0;
 for (const s of vo) for (const x of s.samples) voPeak = Math.max(voPeak, Math.abs(x));
 for (const s of vo) {

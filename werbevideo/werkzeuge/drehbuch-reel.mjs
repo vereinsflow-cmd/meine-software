@@ -18,8 +18,23 @@ export const SZENEN = [
   { id: "ende", von: 52.5, bis: 60 },
 ];
 
-/** Kein Sprecher – die Sätze stehen groß im Bild. */
-export const SPRECHER = [];
+/**
+ * Sprecher (ElevenLabs-Stimme „Daniel“, werkzeuge/stimme-elevenlabs.mjs): je Abschnitt ein Satz, Beginn in Sekunden.
+ * Jeder Satz muss vor dem nächsten Abschnitt zu Ende sein; das Skript meldet Überschneidungen.
+ */
+export const SPRECHER = [
+  { id: "reel-01-flow", start: 0.45, text: "Dein Verein. Willkommen im Flow." },
+  { id: "reel-02-blick", start: 4.2, text: "Alles auf einen Blick: Mitglieder, Termine, Aufgaben." },
+  { id: "reel-03-mitglieder", start: 11.7, text: "Neue Mitglieder? In Sekunden angelegt." },
+  { id: "reel-04-beitraege", start: 19.1, text: "Beiträge laufen automatisch. Geprüft, erstellt, fertig." },
+  { id: "reel-05-termine", start: 26.7, text: "Termine, die jeder sieht. Auch das Sommerfest." },
+  { id: "reel-06-helfer", start: 34.3, text: "Helfer tragen sich selbst ein. Ganz ohne Telefonkette." },
+  { id: "reel-07-chat", start: 41.7, text: "Und alles Wichtige steht im Vereins-Chat." },
+  { id: "reel-08-flow", start: 48.85, text: "Alles in einem Flow." },
+  { id: "reel-09-ende", start: 55.4, text: "VereinsFlow. Jetzt Demo anfragen." },
+];
+/** Bis wann ein Satz spätestens zu Ende sein muss (Beginn des nächsten Abschnitts bzw. der Schläge). */
+export const SPRECHER_BIS = { "reel-01-flow": 3.75, "reel-02-blick": 11.25, "reel-03-mitglieder": 15.0, "reel-04-beitraege": 24.0, "reel-05-termine": 33.0, "reel-06-helfer": 38.1, "reel-07-chat": 46.875, "reel-08-flow": 52.5, "reel-09-ende": 59.5 };
 
 /** Tippen: ein Anschlag je Zeichen (wie das Bild die Buchstaben zeigt), höchstens `max` Anschläge. */
 function tippen(t0, dauer, zeichen, max = zeichen) {
