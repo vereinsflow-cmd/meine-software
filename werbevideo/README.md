@@ -38,6 +38,22 @@ werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder-reel werbevideo/ausgabe/to
 
 Vorschau im Browser: `werbevideo/szenen/reel.html?play` bzw. `?t=20`. Fürs Handy: `… VereinsFlow-Reel-9x16-handy.mp4 30 3300000`.
 
+**Stimme (ElevenLabs):** Neun Sätze stehen in `werkzeuge/drehbuch-reel.mjs` (`SPRECHER`, mit Beginn und spätestem
+Ende). `werkzeuge/stimme-elevenlabs.mjs` erzeugt sie mit der Stimme „Brian“ (Standardstimme, spricht Deutsch) und
+legt sie als WAV ab; `musik.mjs --reel` mischt sie ein (Musik wird beim Sprechen leiser). Bild muss dafür nicht neu
+gerendert werden – nur Ton neu mischen und kodieren:
+
+```bash
+bash werbevideo/werkzeuge/elevenlabs-schluessel.sh --fenster   # einmalig: API-Schlüssel in einem Mac-Fenster eingeben
+node werbevideo/werkzeuge/stimme-elevenlabs.mjs                # fehlende Sätze erzeugen (--neu: alle neu)
+node werbevideo/werkzeuge/musik.mjs --reel                     # Musik + Stimme
+```
+
+Der Schlüssel liegt nur unter `~/.config/elevenlabs/api-key` (nicht im Projekt). Wichtig: Der kostenlose ElevenLabs-Plan
+erlaubt nur nicht-kommerzielle Nutzung mit Namensnennung – zum Veröffentlichen als Werbung mindestens das
+Starter-Abo. Mit Abo geht auch die Wunschstimme „Daniel – Corporate Narration“ (Stimmen-Bibliothek): in
+`stimme-elevenlabs.mjs` bei `STIMME` eintragen und mit `--neu` neu erzeugen.
+
 ## Spot „Nacht“ (60 s, dunkel, für TikTok und Instagram Reels)
 
 Nach dem Vorbild eines dunklen Marken-Spots (Logo mit Lichtstreifen, Handy mit schwebenden Karten, Stadtkarte mit
