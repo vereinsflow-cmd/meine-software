@@ -48,6 +48,14 @@ await page.goto(pathToFileURL(path.join(base, "szenen", `${seite}.html`)).href +
 await page.waitForFunction(() => typeof window.seek === "function");
 // Länge: der Spot „Nacht“ nennt sie selbst (window.DAUER), sonst das Drehbuch
 const dauer = (await page.evaluate(() => window.DAUER)) ?? D.DAUER;
+/** Erstes Bild erst aufnehmen, wenn die Seite alle Ebenen fertig gezeichnet hat (sonst ist es leer oder halb). */
+async function aufwaermen(t) {
+  await page.evaluate(async (t) => {
+    await window.seek(t);
+    await new Promise((r) => setTimeout(r, 600));
+    await window.seek(t);
+  }, t);
+}
 
 /** Zeitpunkte je Bild: aus --unschaerfe oder aus der Seite (window.UNSCHAERFE, window.UNTERBILDER). */
 async function anzahlen(zeiten) {
@@ -88,6 +96,7 @@ if (stills) {
   const dir = path.join(base, "ausgabe", "standbilder" + suffix);
   fs.mkdirSync(dir, { recursive: true });
   const ns = await anzahlen(stills);
+  await aufwaermen(stills[0]);
   for (const [j, t] of stills.entries()) {
     const file = path.join(dir, `${t.toFixed(2).padStart(5, "0")}.png`);
     await bild(t, ns[j], file);
@@ -125,6 +134,7 @@ if (stills) {
     console.log(`✔ ${last - first} Bilder in ${((Date.now() - started) / 1000).toFixed(0)} s (${laeufe.length} Browser)`);
   } else {
     const ns = await anzahlen(Array.from({ length: last - first }, (_, k) => (first + k) / fps));
+    await aufwaermen(first / fps);
     for (let i = first; i < last; i++) {
       await bild(i / fps, ns[i - first], path.join(dir, `${String(i).padStart(6, "0")}.jpg`));
       if ((i - first) % 150 === 0) console.log(`${teilVon ? `[${first}–${last}] ` : ""}Bild ${i}/${last} (${((Date.now() - started) / 1000).toFixed(0)} s)`);

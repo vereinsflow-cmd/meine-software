@@ -5,8 +5,38 @@ nur aus der Zeit berechnet, selbst erzeugte Musik und die Mac-Stimme als Platzha
 Videoschnitt-Software, kein ffmpeg – nur Node, Playwright und macOS (AVFoundation).
 
 Fertige Videos (nicht im Repository, siehe unten „Neu bauen“): `ausgabe/VereinsFlow-Werbevideo-9x16.mp4` (Hochformat
-für Instagram/TikTok), `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat für YouTube und die Website) und
-`ausgabe/VereinsFlow-Nacht-9x16.mp4` (60 s, dunkel, siehe „Spot Nacht“).
+für Instagram/TikTok), `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat für YouTube und die Website),
+`ausgabe/VereinsFlow-Nacht-9x16.mp4` (60 s, dunkel, siehe „Spot Nacht“) und `ausgabe/VereinsFlow-Reel-9x16.mp4`
+(60 s, ein Kameraflug ohne Schnitt, siehe „Reel“).
+
+## Reel „Flug“ (60 s, ein Kameraflug ohne Schnitt, für TikTok und Instagram Reels)
+
+Die Kamera fliegt 60 Sekunden lang ohne einen Schnitt durch eine Welt aus echten App-Bildern im Dunkelmodus (keine
+Fotos). 128 BPM: ein Takt dauert 1,875 s, 60 s sind genau 32 Takte; jeder Abschnitt beginnt auf einer Eins.
+
+| Zeit          | Station                                                                                       |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| 0–3,75 s      | Die Balken des Logos fliegen zusammen – „Willkommen im Flow.“; die Kamera fliegt durch das V     |
+| 3,75–11,25 s  | Tunnel aus Dashboard-Karten, 233 Mitglieder zählen hoch – „Alles auf einen Blick.“               |
+| 11,25–18,75 s | Mia Schröder wird eingetippt und angelegt, die Karte dreht sich um – „Mitglieder in Sekunden.“   |
+| 18,75–26,25 s | Flug durch drei Tore (Prüfen, Vorschau, Erstellen), 7.240,00 € zählen hoch, die Karten fliegen auseinander – „Beiträge automatisch.“ |
+| 26,25–33,75 s | Tiefflug über den Kalender, Termine wachsen hoch, das Sommerfest steigt auf, Flug hinein – „Termine, die jeder sieht.“ |
+| 33,75–41,25 s | Am Helferplan entlang nach unten bis zum Abbau, Anna trägt sich ein, Flug durch die Wand – „Helfer tragen sich selbst ein.“ |
+| 41,25–46,875 s| Gruppen und Nachrichten fliegen vorbei, „Wer bringt den Grill mit? 🔥“ – „Alles im Vereins-Chat.“ |
+| 46,875–52,5 s | Warp durch Ringe aus allen Bildschirmen, die Kamera dreht sich einmal – „Mitglieder. Beiträge. Termine.“ „Alles in einem Flow.“ – hinein ins Handy |
+| 52,5–60 s     | Zurück aus dem Handy, es dreht sich und fliegt davon; Logo, vereins-flow.com, Lichtschein         |
+
+Technik: `szenen/reel.html` baut die Welt in 3D (`#welt`); die Kamera (`KAMERA`: Position und Drehung als glatte
+Kurven durch Stützpunkte) bewegt die Welt umgekehrt. Teile, die der Kamera zu nah kommen oder zu weit weg sind, werden
+ausgeblendet. Zeiten für Musik und Geräusche: `werkzeuge/drehbuch-reel.mjs`.
+
+```bash
+node werbevideo/werkzeuge/musik.mjs --reel              # → ausgabe/ton/mischung-reel.wav (drehbuch-reel.mjs)
+node werbevideo/werkzeuge/rendern.mjs --seite reel      # → ausgabe/bilder-reel/ (rund 25 Minuten, Bewegungsunschärfe)
+werbevideo/ausgabe/kodieren werbevideo/ausgabe/bilder-reel werbevideo/ausgabe/ton/mischung-reel.wav werbevideo/ausgabe/VereinsFlow-Reel-9x16.mp4 30 12000000
+```
+
+Vorschau im Browser: `werbevideo/szenen/reel.html?play` bzw. `?t=20`. Fürs Handy: `… VereinsFlow-Reel-9x16-handy.mp4 30 3300000`.
 
 ## Spot „Nacht“ (60 s, dunkel, für TikTok und Instagram Reels)
 
