@@ -1,7 +1,9 @@
-// Misst, wie flüssig die Kamerafahrt (Kapitel 1) läuft – wiederholbar, damit sich vorher und nachher vergleichen lassen.
-// Je Fall: Seite laden, warten, bis Laptop und Telefon in Ruhe stehen und sich in die Pose gedreht haben (Ruhelage) und
-// das große Bild eingesetzt ist (höchstens 4 s), dann mit dem Mausrad durch die ganze Fahrt bis in Kapitel 2 scrollen –
-// oder (seit 22.10.2026, die Fahrt läuft von selbst) mit einem einzigen Stoß von 100 px die Fahrt auslösen – und messen:
+// Misst, wie flüssig die gepinnten Bühnen der Startseite laufen (seit Bau 2, 16.11.2026: die Explosion in Kapitel 1 und
+// das große Telefon in Kapitel 6; die Kamerafahrt der Gestaltung B4 gibt es nicht mehr) – wiederholbar, damit sich
+// vorher und nachher vergleichen lassen. Je Fall: Seite laden, warten, bis sie steht (load, Bilder der Explosion
+// dekodiert, 600 ms Ruhe), an den Anfang der Strecke springen (Explosion: Seitenanfang; Telefon: 0,3 Fensterhöhen vor dem
+// Pinnen) und mit dem Mausrad durch die ganze Strecke bis 0,5 Fensterhöhen hinter das Lösen der Bühne scrollen (bei
+// „-zurueck“ von dort rückwärts an den Anfang) – und messen:
 //   - gezeigte Bilder (Chromium: Display::DrawAndSwap im GPU-Prozess, also was wirklich auf den Bildschirm kommt; WebKit:
 //     requestAnimationFrame) und Lücken > 16,7 / > 33 / > 100 ms (gezählt ab 1,5 / 2,5 / 6 Bildern, damit das Zittern
 //     des Taktgebers nicht mitzählt), verpasste Bilder bei 60 Hz
@@ -9,39 +11,40 @@
 //     nächsten Aufgabe: Stil, Layout, Paint, Übergabe – auch in WebKit), Long Animation Frames (mit Skript und Funktion),
 //     lange Aufgaben; Zeit nach Art (Skript, Stil, Layout, Paint, Layer/Commit, GC, Beobachter, Canvas, Dekodierung)
 //   - GPU-Prozess: Stopps beim Zeichnen, davon Pipeline-/Shader-Kompilierung (Dawn/Graphite), Rasterung, Dekodierung
-//   - je verpasstem Bild die Ursache (was in der Lücke lief) und in welchem Abschnitt der Fahrt es geschah
+//   - je verpasstem Bild die Ursache (was in der Lücke lief) und in welchem Abschnitt der Strecke es geschah (Phasen wie
+//     die Keyframe-Offsets in site.css, dazu „vorher“ und „danach“)
 //   - Speicher (JS-Heap, GPU-Speicher des Renderers), CPU-Zeit von Renderer und GPU-Prozess
-//   - (Chromium, eigener Durchgang) Compositing-Ebenen mit Gründen, welche Ebenen während der Fahrt neu gezeichnet bzw.
-//     neu gerastert werden, und welche Animationen nicht auf dem Compositor laufen
+//   - (Chromium, eigener Durchgang je Strecke) Compositing-Ebenen mit Gründen, welche Ebenen während der Strecke neu
+//     gezeichnet bzw. neu gerastert werden, und welche Animationen der Bühnen (ex-*, tf-*, aw-*, mz-*) nicht auf dem
+//     Compositor laufen
 // Browser: „chrome“ = Google Chrome (headless, mit GPU über Metal, Standard), „shell“ = Playwright-Chromium ohne GPU
 // (wie b4-pruefen.mjs), „cft“ = Chrome for Testing, „webkit“ = Playwright-WebKit (nur Hauptthread-Werte; es gibt dort
 // keine Spur und kein Compositing in Bildschirmfotos). Kalt = neues Profil (kein HTTP- und kein GPU-Speicher des Browsers),
-// warm = dasselbe Profil nach einem ersten Besuch mit Durchscrollen und Neustart des Browsers. Den Shader-Speicher von
-// Metal (systemweit) leert das Werkzeug nicht: Was ein Effekt beim allerersten Zeichnen kostet (Pipeline-Kompilierung,
-// 80–160 ms je neuem Effekt), zeigt nur der erste Lauf nach einer Änderung – deshalb steht „Kompil.“ in der Tabelle.
-// Der Server ist eingebaut (Header aus _headers wie tools/serve.mjs, dazu die Cache-Regel für /assets/* – serve.mjs
-// sendet no-store, damit wäre „warm“ nicht warm).
+// warm = dasselbe Profil nach einem ersten Besuch mit Durchscrollen der ganzen Seite und Neustart des Browsers. Den
+// Shader-Speicher von Metal (systemweit) leert das Werkzeug nicht: Was ein Effekt beim allerersten Zeichnen kostet
+// (Pipeline-Kompilierung, 80–160 ms je neuem Effekt), zeigt nur der erste Lauf nach einer Änderung – deshalb steht
+// „Kompil.“ in der Tabelle. Den Energiesparmodus von Chrome schaltet das Werkzeug im Profil aus (sonst 30 Bilder/s im
+// Akkubetrieb unter 20 %). Der Server ist eingebaut (Header aus _headers wie tools/serve.mjs, dazu die Cache-Regel für
+// /assets/* – serve.mjs sendet no-store, damit wäre „warm“ nicht warm).
 //
 //   node tools/fahrt-messen.mjs                       ganze Matrix (chrome, webkit × 1440×900@1, 1440×900@2,
-//                                                     1280×800@1, 1280×740@2 × kalt, warm × trackpad, schnell), dauert
-//                                                     gut zehn Minuten
-//   --browser chrome,webkit,shell,cft   --fenster 1440x900@1,1280x800@1   --cache kalt,warm   --scroll trackpad,schnell
-//                       (Chromium dazu „geste“ bzw. „geste-schnell“: Input.synthesizeScrollGesture, vom Browser im Bildtakt
-//                       erzeugte Mausrad-Geste mit 700 bzw. 2500 px/s – ohne die Schwebung zwischen 16-ms-Schritten und 60 Hz;
-//                       „stoss“: ein Mausrad-Stoß von 100 px am Anfang, die Fahrt läuft dann von selbst bis ans Ende;
-//                       „stoss-zurueck“: erst ans Ende, dann ein Stoß von 100 px nach oben, die Fahrt läuft zurück;
-//                       „trackpad-zurueck“, „schnell-zurueck“: vom Ende mit dem Mausrad durch die ganze Fahrt an den Anfang.
-//                       Seit der Fahrt von selbst fangen trackpad/schnell am Anfang dasselbe aus: Die Seite fährt nach
-//                       40 px von selbst, der Rest der Schritte wird abgefangen)
-//   --stoss 100         Weg des Stoßes in px
+//                                                     1280×800@1, 1280×740@2 × kalt, warm × trackpad, schnell × beide
+//                                                     Strecken), dauert gut zwanzig Minuten
+//   --strecke explosion|telefon|beide                 welche gepinnte Bühne (Standard: beide)
+//   --browser chrome,webkit,shell,cft   --fenster 1440x900@1,1280x800@1   --cache kalt,warm
+//   --scroll trackpad,schnell,geste,geste-schnell,trackpad-zurueck,schnell-zurueck
+//                       trackpad (~700 px/s) und schnell (~2500 px/s): Mausrad-Schritte alle 16 ms, sanft an- und
+//                       auslaufend; geste, geste-schnell (nur Chromium): Input.synthesizeScrollGesture, eine vom Browser
+//                       im Bildtakt erzeugte Mausrad-Geste mit 700 bzw. 2500 px/s – ohne die Schwebung zwischen
+//                       16-ms-Schritten und 60 Hz; „-zurueck“: vom Ende rückwärts durch die Strecke an den Anfang
+//   --vor 0.3 --nach 0.5  Weg vor dem Anfang bzw. hinter dem Ende der Strecke in Fensterhöhen
 //   --runden 2          jeden Fall mehrmals (Mittelwerte in der Tabelle, Einzelwerte im JSON)
-//   --bis ende|kapitel2 Strecke: nur die Fahrt oder bis 0,6 Fensterhöhen in Kapitel 2 (Standard)
-//   --pause 300         ms zwischen Ruhelage und erstem Scrollschritt
+//   --pause 300         ms zwischen Ruhe und erstem Scrollschritt
 //   --gegenprobe a,b    zusätzlich jeden Fall mit abgeschalteter Wirkung (nur für die Messung, über eine angehängte
 //                       Stilregel bzw. ein geändertes HTML im Server, die Dateien bleiben unberührt); Namen siehe GEGENPROBEN,
-//                       mehrere zugleich mit „+“ (kegelalt+titelalt); --gegenproben listet sie auf
+//                       mehrere zugleich mit „+“ (schatten+glanz); --gegenproben listet sie auf
 //   --ohne-ebenen / --nur-ebenen   Durchgang für Ebenen und Animationen weglassen bzw. nur ihn (Standard: mit, nur
-//                       Chromium, einmal je Fenster)
+//                       Chromium, einmal je Fenster und Strecke)
 //   --trace <Ordner>    die Spuren (Chromium) als JSON speichern (in DevTools → Performance ladbar)
 //   --json <Datei>      alle Werte als JSON
 //   --port 4391
@@ -91,9 +94,19 @@ const FENSTER = liste("fenster", "1440x900@1,1440x900@2,1280x800@1,1280x740@2").
 });
 const CACHE = liste("cache", "kalt,warm");
 const SCROLL = liste("scroll", "trackpad,schnell");
-const STOSS = Number(opt("stoss", "100"));
+for (const s of SCROLL) if (!/^(trackpad|schnell|geste|geste-schnell)(-zurueck)?$/.test(s)) throw new Error(`Scroll-Art „${s}“ unbekannt (trackpad, schnell, geste, geste-schnell, je auch mit -zurueck)`);
+// Die gepinnten Bühnen: Element der Zeitleiste (site.css) und die Abschnitte der Strecke (Fortschritt der Zeitleiste bis
+// zur genannten Grenze, wie die Keyframe-Offsets in site.css)
+const STRECKE = {
+  explosion: { sel: "[data-explosion]", name: "Explosion", abschnitte: [[0.15, "0–15 % zerlegt"], [0.72, "15–72 % Zusammenbau"], [0.88, "72–88 % Laptop"], [1.0001, "88–100 % halten"]] },
+  telefon: { sel: "[data-telefon]", name: "Telefon", abschnitte: [[0.06, "0–6 % gedreht"], [0.7, "6–70 % Aufrichten"], [0.8, "70–80 % Glocke"], [1.0001, "80–100 % halten"]] },
+};
+const STRECKEN = liste("strecke", "beide").flatMap((s) => (s === "beide" ? ["explosion", "telefon"] : [s]));
+for (const s of STRECKEN) if (!STRECKE[s]) throw new Error(`Strecke „${s}“ unbekannt (explosion, telefon, beide)`);
+const ABSCHNITTE = (name) => ["vorher", ...STRECKE[name].abschnitte.map(([, n]) => n), "danach"];
 const RUNDEN = Number(opt("runden", "1"));
-const BIS = opt("bis", "kapitel2");
+const VOR = Number(opt("vor", "0.3"));
+const NACH = Number(opt("nach", "0.5"));
 const PAUSE = Number(opt("pause", "300"));
 const PORT = Number(opt("port", "4391"));
 const TRACE_DIR = opt("trace", "");
@@ -102,39 +115,19 @@ const EBENEN = !hat("ohne-ebenen");
 
 // Gegenproben: schalten genau eine Wirkung ab (nur in der Messung; angehängt an site.css bzw. im HTML ersetzt)
 const GEGENPROBEN = {
-  fluss: { text: "Lichtfluss im Einstieg aus", css: ".k01 .fluss { display: none !important; }" },
-  tafelblur: { text: "Tafel ohne backdrop-filter", css: ".fahrt-ende .tafel { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }" },
-  kopfblur: { text: "Kopfzeile ohne backdrop-filter", css: ".kopf-glas { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }" },
-  // „unset“ statt „none“: Chromium kennt -webkit-box-reflect: none nicht (die Deklaration fiele weg)
-  spiegel: { text: "keine Spiegelung (box-reflect) an Laptop und Telefon", css: ".k01 .geraet { -webkit-box-reflect: unset !important; }" },
-  spiegelaus: { text: "alter Stand: Spiegelung des Laptops beim Losfahren abgeschaltet (mit „none“, das nur WebKit kennt)", css: ".k01 .ist-faehrt .geraet-laptop { -webkit-box-reflect: none !important; }" },
-  streif: { text: "Streiflicht auf dem Deckel aus (mix-blend-mode, blur, blendet beim Losfahren aus)", css: ".k01 .streif-laptop { display: none !important; }" },
-  licht: { text: "Licht der Bühne aus (Leuchten, Kegel, Höfe, Rand- und Streiflicht)", css: ".k01 :is(.buehne-licht, .hof, .bodenlicht, .randlicht, .streiflicht) { display: none !important; }" },
-  pose: { text: "kein Übergang der Pose beim Losfahren (springt sofort frontal)", css: ".js .k01 .pose, .js .k01 .geraet-laptop { transition: none !important; }" },
-  flach: { text: "keine flache Aufnahme am Ende", css: ".js .k01 .fahrt-flach { display: none !important; }" },
-  tastatur: { text: "Tastatur des Laptops unsichtbar (nur zum Messen)", css: ".k01 .laptop-keys { visibility: hidden !important; }" },
-  grossbild: { text: "kein Nachladen des großen Bildes beim Losfahren", html: [/ data-gross="[^"]*"/g, ""] },
-  fernegeraete: { text: "Geräte in Kapitel 4 und 6 aus (deren angehaltene Animationen halten sonst ~150 Ebenen)", css: ":is(.k04, .k06) .showcase { display: none !important; }" },
-  poselaptop: { text: "nur der Laptop ohne Pose-Übergang (springt frontal)", css: ".js .k01 .pose-laptop, .js .k01 .geraet-laptop { transition: none !important; }" },
-  eckenrechts: { text: "nur zum Messen: rechte Eckstreifen des Telefons in der Fahrt aus (Ursache der Bilder, die das Wegdrehen kostete)", css: ".js .k01 .ist-faehrt :is(.rim-tr, .rim-br) { display: none !important; }" },
-  handyzu0: { text: "Umbau: Telefon dreht beim Losfahren zur Kamera (auf 0°) – dabei werden Eckstreifen nur verdeckt, nie neu sichtbar", css: ".js .k01 .ist-faehrt .ist-posiert .pose-handy { --pose: perspective(calc(var(--pw) * 9)) rotateY(-0deg); }" },
+  kopfblur: { text: "Kopfleiste ohne backdrop-filter", css: ".kopf::before { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }" },
+  schatten: { text: "Explosion ohne die weichgezeichneten Schatten unter den Ebenen (filter: blur)", css: ".ex-schatten { display: none !important; }" },
+  willchange: { text: "kein will-change an den Bühnen (sonst nur, solange sie nahe am Fenster sind)", css: ".ist-nah *, .ist-nah *::after { will-change: auto !important; }" },
+  glanz: { text: "Metall-Zahlen ohne die beiden zusätzlichen Glanz-Lagen", css: ".metall-glanz.mz-l, .metall-glanz.mz-r { display: none !important; }" },
+  ohnebewegung: { text: "nur zum Messen: alle Animationen der Bühnen aus (Strecken bleiben) – zeigt, was die Bewegung selbst kostet", css: ":is(.ex-strecke, .tf-strecke, .aussage, .metall) :is(*, *::after) { animation: none !important; }" },
   leer: { text: "nur zum Messen: nichts abgeschaltet, nur dieselbe Auslieferung wie bei jeder Gegenprobe (no-store, angehängte Regel)", css: ".vf-gegenprobe-leer { color: inherit; }" },
-  // alter Stand je Maßnahme (zum Gegenprüfen, was eine einzelne Maßnahme bewirkt hat)
-  kegelalt: { text: "alter Stand: Lichtkegel mit filter: blur(28px)", css: ".k01 .lichtkegel { filter: blur(28px); }" },
-  titelalt: {
-    text: "alter Stand: Überschrift mit filter: blur in der Fahrt",
-    css: "@keyframes fahrt-titel { 0% { translate: 0 0; scale: 1; opacity: 1; filter: blur(0); } 70% { opacity: .22; } 100% { translate: 0 -40svh; scale: 1.6; opacity: 0; filter: blur(2px); } }",
-  },
-  handyalt: { text: "alter Stand: Telefon dreht beim Losfahren in 0,9 s auf −62°", css: ".js .k01 .ist-faehrt .ist-posiert .pose-handy { --pose: perspective(calc(var(--pw) * 9)) rotateY(-62deg); }" },
-  posewc: { text: "Umbau: will-change: transform an .pose (Pose-Übergang wie bisher)", css: ".js .k01 .pose { will-change: transform; }" },
-  cv: { text: "content-visibility: auto für die Kapitel 2–10", css: "main > .kapitel:not(.k01) { content-visibility: auto; contain-intrinsic-size: auto 900px; }" },
 };
 const PROBEN = ["", ...liste("gegenprobe", "")];
 if (hat("gegenproben")) {
   for (const [k, v] of Object.entries(GEGENPROBEN)) console.log(`${k.padEnd(14)} ${v.text}`);
   process.exit(0);
 }
-// mehrere zugleich mit „+“, z. B. kegelalt+titelalt
+// mehrere zugleich mit „+“, z. B. schatten+glanz
 const probeVon = (name) => {
   const teile = name.split("+").map((n) => GEGENPROBEN[n]);
   if (teile.some((t) => !t)) throw new Error(`Gegenprobe „${name}“ unbekannt (${Object.keys(GEGENPROBEN).join(", ")})`);
@@ -201,7 +194,7 @@ const server = http.createServer((req, res) => {
 // In der Seite (vor allen Skripten): Messpunkte
 // ---------------------------------------------------------------------------------------------------------------
 function messpunkte() {
-  const vf = (window.__vf = { loaf: [], lt: [], ereignisse: [], bilder: [], laeuft: false, pose: {} });
+  const vf = (window.__vf = { loaf: [], lt: [], ereignisse: [], bilder: [], laeuft: false });
   const jetzt = () => performance.now();
   try {
     new PerformanceObserver((l) => {
@@ -230,55 +223,23 @@ function messpunkte() {
       for (const e of l.getEntries()) vf.lt.push({ start: e.startTime, dauer: e.duration });
     }).observe({ type: "longtask", buffered: true });
   } catch {}
-  document.addEventListener(
-    "transitionend",
-    (e) => {
-      const el = e.target;
-      if (el instanceof Element && el.matches(".k01 .pose") && e.propertyName === "transform") {
-        vf.pose[el.classList.contains("pose-laptop") ? "laptop" : "handy"] = jetzt();
-      }
-    },
-    true,
-  );
-  const fahrtwert = () => {
-    const f = document.querySelector("[data-fahrt]");
-    if (!f) return 0;
-    const top = f.getBoundingClientRect().top + scrollY;
-    const len = f.offsetHeight - innerHeight;
-    return len > 0 ? (scrollY - top) / len : 0;
-  };
-  vf.fahrtwert = fahrtwert;
-  // Zustände der Fahrt (Klassen und Bildwechsel), mit Zeit und Scrollstand
+  // Zustände der Bühnen (.ist-nah: will-change an/aus, bewegung.js) und geladene Bilder, mit Zeit und Scrollstand
   document.addEventListener("DOMContentLoaded", () => {
     const merke = (was) => vf.ereignisse.push({ t: jetzt(), was, y: scrollY });
-    const buehne = document.querySelector("[data-buehne]");
-    const kopf = document.querySelector("[data-kopf]");
-    // je Element nur die Klasse, die dort zählt; gemeldet werden Wechsel gegenüber dem Stand beim Laden
-    const klassen = [
-      [buehne, "ist-faehrt", "buehne"],
-      [kopf, "ist-weg", "kopf"],
-    ].filter(([el]) => el);
-    const zustand = new Map(klassen.map(([el, k]) => [el, el.classList.contains(k)]));
+    const stand = new Map();
     const mo = new MutationObserver((recs) => {
       for (const r of recs) {
-        const el = r.target;
-        if (r.attributeName === "class") {
-          const eintrag = klassen.find(([e]) => e === el);
-          if (!eintrag) continue;
-          const an = el.classList.contains(eintrag[1]);
-          if (zustand.get(el) !== an) {
-            zustand.set(el, an);
-            merke(`${eintrag[2]} ${eintrag[1]} ${an ? "an" : "aus"}`);
-          }
-        } else if (r.attributeName === "srcset") merke(`srcset ${el.closest("[data-fahrt-flach]") ? "flach" : "bildschirm"}`);
+        const an = r.target.classList.contains("ist-nah");
+        if (stand.get(r.target) === an) continue;
+        stand.set(r.target, an);
+        merke(`${r.target.matches("[data-explosion]") ? "Explosion" : "Telefon"} nah ${an ? "an" : "aus"}`);
       }
     });
-    if (buehne) mo.observe(buehne, { attributes: true, attributeFilter: ["class"] });
-    if (kopf) mo.observe(kopf, { attributes: true, attributeFilter: ["class"] });
-    for (const img of document.querySelectorAll(".k01 .laptop-screen img, [data-fahrt-flach] img")) {
-      mo.observe(img, { attributes: true, attributeFilter: ["srcset"] });
-      img.addEventListener("load", () => merke(`geladen ${img.currentSrc.replace(/^.*\//, "").replace(/\?.*$/, "")}`));
+    for (const b of document.querySelectorAll("[data-explosion], [data-telefon]")) {
+      stand.set(b, b.classList.contains("ist-nah"));
+      mo.observe(b, { attributes: true, attributeFilter: ["class"] });
     }
+    for (const img of document.querySelectorAll(".k01 img, .k06 img")) img.addEventListener("load", () => merke(`geladen ${img.currentSrc.replace(/^.*\//, "").replace(/\?.*$/, "")}`));
   });
   // Bildtakt des Hauptthreads (nur während der Messung). Je Bild auch die Renderzeit: vom Ende der rAF-Rückrufe bis zur
   // nächsten Aufgabe (Stil, Layout, Paint und Übergabe an den Compositor laufen dazwischen, in Chromium wie in WebKit)
@@ -565,8 +526,11 @@ const TRACE_KAT = [
 
 const BASIS = `http://127.0.0.1:${PORT}/`;
 const profile = [];
+// Neues Profil. Der Energiesparmodus von Chrome bleibt darin aus: Im Akkubetrieb mit 20 % oder weniger begrenzt Chrome
+// sonst alle Seiten auf 30 Bilder/s (gemessen am 16.11.2026) – das wäre eine Eigenschaft des Rechners, nicht der Seite.
 function neuesProfil() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vf-fahrt-"));
+  fs.writeFileSync(path.join(dir, "Local State"), JSON.stringify({ performance_tuning: { battery_saver_mode: { state: 0 }, high_efficiency_mode: { state: 0 } } }));
   profile.push(dir);
   return dir;
 }
@@ -599,41 +563,47 @@ async function starten(browserName, fenster, profilDir) {
   return { ctx: await pw.chromium.launchPersistentContext(profilDir, launch), chromium: true };
 }
 
-async function ruhelage(page) {
+// Bereit: geladen, Bilder der Explosion dekodiert (bewegung.js tut das ohnehin vorab), dann kurz Ruhe
+async function bereit(page) {
   await page.goto(BASIS, { waitUntil: "load" });
-  await page.waitForFunction(() => document.querySelectorAll(".k01 .showcase.is-rest.ist-posiert").length === 2, null, { timeout: 30000 });
-  // Pose: Übergang 0,9 s – auf beide transitionend warten (höchstens 2,5 s)
-  await page.waitForFunction(() => window.__vf.pose.laptop && window.__vf.pose.handy, null, { timeout: 2500 }).catch(() => {});
-  // Das große Bild lädt die Seite seit 22.10.2026 in Leerlaufzeit vor (buehne.js) – erst danach messen (höchstens 4 s;
-  // ältere Stände laden es erst beim Losfahren)
-  await page.waitForFunction(() => document.querySelector("[data-fahrt-flach] img")?.sizes === "100vw", null, { timeout: 4000 }).catch(() => {});
+  await page.evaluate(() => Promise.all([...document.querySelectorAll(".k01 img")].map((i) => (i.decode ? i.decode().catch(() => {}) : null))));
+  await warte(600);
 }
 
-async function strecke(page) {
-  return page.evaluate((bis) => {
-    const f = document.querySelector("[data-fahrt]");
-    const top = f.getBoundingClientRect().top + scrollY;
-    const len = f.offsetHeight - innerHeight;
-    return { top, len, ziel: Math.round(top + len + (bis === "ende" ? 0 : 0.6 * innerHeight)) };
-  }, BIS);
+// Strecke einer Bühne: Spanne ihrer Zeitleiste wie in site.css (gepinnt: contain, sonst cover; Kopfleiste 52 px
+// abgezogen), Anfang und Ziel des Scrollens
+async function strecke(page, name) {
+  return page.evaluate(
+    ([sel, vor, nach]) => {
+      const el = document.querySelector(sel);
+      const r = el.getBoundingClientRect();
+      const top = r.top + scrollY;
+      const H = innerHeight;
+      const k = 52;
+      const pin = sel === "[data-explosion]" || innerWidth >= 900;
+      const [a, e] = pin ? [top - k, top + r.height - H] : [top - H, top + r.height - k];
+      return { a, e, pin, start: Math.max(0, Math.round(a - vor * H)), ziel: Math.round(e + nach * H) };
+    },
+    [STRECKE[name].sel, VOR, NACH],
+  );
 }
 
 async function aufwaermen(browserName, fenster, profilDir) {
   const { ctx } = await starten(browserName, fenster, profilDir);
   const page = ctx.pages()[0] ?? (await ctx.newPage());
   await page.addInitScript(messpunkte);
-  await ruhelage(page);
-  const s = await strecke(page);
+  await bereit(page);
+  const hoehe = await page.evaluate(() => document.documentElement.scrollHeight);
   await page.mouse.move(fenster.width / 2, fenster.height / 2);
-  for (let y = 0; y <= s.ziel; y += 120) {
+  for (let y = 0; y <= hoehe; y += 160) {
     await page.evaluate((yy) => scrollTo(0, yy), y);
-    await warte(60);
+    await warte(40);
   }
   await warte(500);
   await ctx.close();
 }
 
-async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
+async function fall({ browserName, fenster, streckeName, cache, scrollArt, probe, runde }) {
   probeJetzt = probe;
   const profilDir = neuesProfil();
   if (cache === "warm") await aufwaermen(browserName, fenster, profilDir);
@@ -645,19 +615,16 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
   const cdp = chromium ? await ctx.newCDPSession(page) : null;
   if (chromium) await cdp.send("Performance.enable");
   const tLaden = Date.now();
-  await ruhelage(page);
+  await bereit(page);
   const ruheNach = Date.now() - tLaden;
-  const s = await strecke(page);
-  const stoss = scrollArt.startsWith("stoss");
+  const s = await strecke(page, streckeName);
   const zurueck = scrollArt.endsWith("-zurueck");
-  if (zurueck) {
-    // erst ans Ende der Fahrt (Tafel), dort zur Ruhe kommen lassen (Kopfzeile fährt aus, Lichtfluss)
-    await page.evaluate((y) => scrollTo(0, y), s.top + s.len);
-    await warte(1800);
-  }
-  const weg = (zurueck ? s.top : s.ziel) - (await page.evaluate(() => scrollY));
+  // an den Anfang (bzw. bei „-zurueck“ ans Ziel) springen und dort zur Ruhe kommen lassen
+  await page.evaluate((y) => scrollTo(0, y), zurueck ? s.ziel : s.start);
+  await warte(zurueck ? 1200 : 400);
+  const weg = (zurueck ? s.start : s.ziel) - (await page.evaluate(() => scrollY));
   const geste = scrollArt.startsWith("geste") && cdp;
-  const deltas = stoss ? [zurueck ? -STOSS : STOSS] : geste ? [] : schritte(Math.abs(weg), scrollArt.replace(/^geste-?/, "").replace(/-zurueck$/, "") || "trackpad").map((d) => d * Math.sign(weg));
+  const deltas = geste ? [] : schritte(Math.abs(weg), scrollArt.replace(/^geste-?/, "").replace(/-zurueck$/, "") || "trackpad").map((d) => d * Math.sign(weg));
   await page.mouse.move(Math.round(fenster.width * 0.55), Math.round(fenster.height * 0.5));
   await warte(PAUSE);
 
@@ -678,7 +645,7 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
   const my = Math.round(fenster.height * 0.5);
   const t0Senden = performance.now();
   const sendeDauer = geste
-    ? (await cdp.send("Input.synthesizeScrollGesture", { x: mx, y: my, yDistance: -weg, speed: PROFILE[scrollArt.replace(/^geste-?/, "") || "trackpad"] ?? 700, gestureSourceType: "mouse", preventFling: true }), performance.now() - t0Senden)
+    ? (await cdp.send("Input.synthesizeScrollGesture", { x: mx, y: my, yDistance: -weg, speed: PROFILE[scrollArt.replace(/^geste-?/, "").replace(/-?zurueck$/, "") || "trackpad"] ?? 700, gestureSourceType: "mouse", preventFling: true }), performance.now() - t0Senden)
     : await scrollen(page, cdp, deltas, mx, my);
   // warten, bis die Scrollposition ruht (300 ms unverändert)
   const tRuhe = await page.evaluate(
@@ -709,12 +676,7 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
       lt: v.lt.filter((l) => l.start + l.dauer > v.t0),
       ereignisse: v.ereignisse,
       heap: performance.memory?.usedJSHeapSize ?? null,
-      fahrt: (() => {
-        const f = document.querySelector("[data-fahrt]");
-        return { top: f.getBoundingClientRect().top + scrollY, len: f.offsetHeight - innerHeight };
-      })(),
       endY: scrollY,
-      pose: v.pose,
     };
   });
   const nachher = await metrik();
@@ -734,7 +696,7 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
     const text = teile.join("");
     if (TRACE_DIR) {
       fs.mkdirSync(TRACE_DIR, { recursive: true });
-      fs.writeFileSync(path.join(TRACE_DIR, `fahrt-${browserName}-${fenster.name.replace("@", "-dpr")}-${cache}-${scrollArt}${probe ? `-ohne-${probe}` : ""}-${runde}.json`), text);
+      fs.writeFileSync(path.join(TRACE_DIR, `${streckeName}-${browserName}-${fenster.name.replace("@", "-dpr")}-${cache}-${scrollArt}${probe ? `-ohne-${probe}` : ""}-${runde}.json`), text);
     }
     spur = spurAuswerten(text, { tStart, tRuhe });
   }
@@ -745,14 +707,12 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
   const abst = takt.slice(1).map(([t], i) => t - takt[i][0]);
   const render = takt.map((b) => b[2]).filter((x) => typeof x === "number").sort((a, b) => a - b);
   const quantil = (l, q) => (l.length ? l[Math.min(l.length - 1, Math.floor(q * l.length))] : null);
-  const fahrtwert = (y) => (y - seite.fahrt.top) / seite.fahrt.len;
+  // Fortschritt der Zeitleiste beim Scrollstand y und der Abschnitt der Strecke
+  const fahrtwert = (y) => (y - s.a) / (s.e - s.a);
   const abschnitt = (y) => {
     const p = fahrtwert(y);
-    if (p < 0.05) return "0–5 %";
-    if (p < 0.3) return "5–30 %";
-    if (p < 0.58) return "30–58 %";
-    if (p < 0.88) return "58–88 %";
-    if (p <= 1.0) return "88–100 %";
+    if (p < 0) return "vorher";
+    for (const [bis, name] of STRECKE[streckeName].abschnitte) if (p < bis) return name;
     return "danach";
   };
   // Scrollstand zur Seitenzeit t (aus dem Takt)
@@ -810,12 +770,13 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
   return {
     browser: browserName,
     fenster: fenster.name,
+    strecke: streckeName,
     cache,
     scroll: scrollArt,
     probe,
     runde,
     ruheNach,
-    strecke: { ziel: s.ziel, len: s.len, endY: seite.endY },
+    weg: { start: s.start, ziel: s.ziel, a: s.a, e: s.e, endY: seite.endY },
     sendeDauer,
     dauer: tRuhe - tStart,
     gezeigt: {
@@ -858,9 +819,10 @@ async function fall({ browserName, fenster, cache, scrollArt, probe, runde }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Ebenen und Animationen (Chromium, ohne Zeitmessung): Compositing-Ebenen in der Ruhelage und während der Fahrt, welche
-// Ebenen neu gezeichnet (paintCount) bzw. neu gerastert (RasterTask je Ebene) werden, und welche Animationen nicht auf
-// dem Compositor laufen (Spur „blink.animations“ ab dem Laden)
+// Ebenen und Animationen (Chromium, ohne Zeitmessung): Compositing-Ebenen am Anfang der Strecke und in ihrem Verlauf,
+// welche Ebenen neu gezeichnet (paintCount) bzw. neu gerastert (RasterTask je Ebene) werden – nach einem ersten
+// Durchgang, also ohne das erste Zeichnen –, und welche Animationen der Bühnen nicht auf dem Compositor laufen (Spur
+// „blink.animations“ ab dem Laden)
 // ---------------------------------------------------------------------------------------------------------------
 // CompositorAnimations::FailureReason (Chromium, compositor_animations.h), Bit für Bit
 const GRUENDE_ANIM = [
@@ -869,14 +831,21 @@ const GRUENDE_ANIM = [
   "Transform-Eigenschaft auf diesem Ziel nicht beschleunigt", "Transform hängt von der Boxgröße ab", "Filter verschiebt Pixel (z. B. blur)", "Eigenschaft nicht unterstützt",
   "(veraltet)", "gemischte Keyframe-Typen", "Zeitleiste ohne gültigen Compositing-Zustand", "Animation ohne Wirkung (wegoptimiert)", "betrifft !important", "SVG mit eigener Transform-Eigenschaft",
 ];
-async function ebenenDurchgang(browserName, fenster) {
+async function ebenenDurchgang(browserName, fenster, streckeName) {
   probeJetzt = "";
   const { ctx } = await starten(browserName, fenster, neuesProfil());
   const page = ctx.pages()[0] ?? (await ctx.newPage());
   await page.addInitScript(messpunkte);
   const cdp = await ctx.newCDPSession(page);
   await cdp.send("Tracing.start", { transferMode: "ReturnAsStream", traceConfig: { includedCategories: ["blink.animations", "cc", "disabled-by-default-devtools.timeline", "blink.user_timing"], recordMode: "recordAsMuchAsPossible" } });
-  await ruhelage(page);
+  await bereit(page);
+  const s = await strecke(page, streckeName);
+  // ein erster Durchgang durch die Strecke (alles einmal gezeichnet und gerastert), dann zurück an den Anfang
+  for (let i = 0; i <= 20; i++) {
+    await page.evaluate((y) => scrollTo(0, y), Math.round(s.start + ((s.ziel - s.start) * i) / 20));
+    await warte(50);
+  }
+  await page.evaluate((y) => scrollTo(0, y), s.start);
   await warte(400);
   await cdp.send("DOM.enable");
   await cdp.send("DOM.getDocument", { depth: 0 });
@@ -885,7 +854,6 @@ async function ebenenDurchgang(browserName, fenster) {
     if (e.layers) ebenen = e.layers;
   });
   await cdp.send("LayerTree.enable");
-  const s = await strecke(page);
   const beschreibung = new Map();
   const beschreibe = async (l) => {
     if (!l.backendNodeId) return l.parentLayerId ? "(ohne Element)" : "(Wurzel)";
@@ -907,8 +875,8 @@ async function ebenenDurchgang(browserName, fenster) {
     const flaeche = zeichnen.reduce((a, l) => a + l.width * l.height, 0) * fenster.dpr * fenster.dpr;
     return { name, ebenen: ebenen.length, zeichnend: zeichnen.length, mpx: flaeche / 1e6, liste: ebenen.map((l) => ({ id: l.layerId, node: l.backendNodeId, w: l.width, h: l.height, paint: l.paintCount, zeichnet: l.drawsContent })) };
   };
-  const stand = [await schnapp("Ruhelage")];
-  // Gründe (in der Ruhelage)
+  const stand = [await schnapp("Anfang")];
+  // Gründe (am Anfang der Strecke)
   const gruende = {};
   const beispiele = {};
   for (const l of ebenen) {
@@ -920,11 +888,11 @@ async function ebenenDurchgang(browserName, fenster) {
       b[el] = (b[el] ?? 0) + 1;
     }
   }
-  // Durch die Fahrt in 40 Schritten (paintCount und Rasterung je Ebene)
+  // Durch die Strecke in 40 Schritten (paintCount und Rasterung je Ebene)
   await page.evaluate(() => performance.mark("vf-ebenen-start"));
   const paint0 = new Map(ebenen.map((l) => [l.layerId, l.paintCount]));
   for (let i = 1; i <= 40; i++) {
-    await page.evaluate((y) => scrollTo(0, y), Math.round(s.top + (s.len * i) / 40));
+    await page.evaluate((y) => scrollTo(0, y), Math.round(s.start + ((s.ziel - s.start) * i) / 40));
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     await warte(40);
     if (i === 12 || i === 23 || i === 35 || i === 40) stand.push(await schnapp(`${Math.round((i / 40) * 100)} %`));
@@ -963,12 +931,19 @@ async function ebenenDurchgang(browserName, fenster) {
     if (dd.nodeName) a.ziel = dd.nodeName;
     if (dd.displayName !== undefined) a.eigenschaft = dd.displayName;
     if (dd.name) a.name = dd.name;
-    if (dd.compositeFailed !== undefined) a.fehler = (a.fehler ?? 0) | dd.compositeFailed;
+    // jeder Versuch, die Animation auf den Compositor zu legen, steht als „n“ mit compositeFailed (0 = gelungen) in der
+    // Spur; „fehler“ sammelt alle Gründe, „zuletzt“ ist das Ergebnis des letzten Versuchs (zählt für die Bewertung)
+    if (dd.compositeFailed !== undefined) {
+      a.fehler = (a.fehler ?? 0) | dd.compositeFailed;
+      a.zuletzt = dd.compositeFailed;
+      a.versuche = (a.versuche ?? 0) + 1;
+    }
     if (dd.unsupportedProperties?.length) a.nicht = [...new Set([...(a.nicht ?? []), ...dd.unsupportedProperties])];
     if (e.ph === "e") anim.delete(id);
   }
-  const animationen = alleAnim.filter((a) => a.ziel && /k01|kamera|einstieg|geraet|fluss|buehne|fahrt|kopf|marke|tafel|licht|hof|ruhe|pose|w-pin|w vorn|w hinten|\bw\b/.test(`${a.ziel} ${a.name ?? ""}`));
-  // Rasterung je Ebene während der Fahrt
+  // die Animationen der Bühnen (Namen ex-, tf-, aw-, mz- in site.css; die Geräte von heute heißen vf-*)
+  const animationen = alleAnim.filter((a) => /^(ex|tf|aw|mz)-/.test(a.name ?? "") || /ex-|telefon|glockenfeld|\baw\b|metall/.test(a.ziel ?? ""));
+  // Rasterung je Ebene während der Strecke
   const rasterJe = {};
   for (const e of ev) {
     if (e.name !== "RasterTask" || e.ts < startTs || e.ph !== "X") continue;
@@ -995,10 +970,15 @@ async function ebenenDurchgang(browserName, fenster) {
   await ctx.close();
   return {
     fenster: fenster.name,
+    strecke: streckeName,
     stand: stand.map(({ liste, ...r }) => r),
     gruende,
     beispiele: Object.fromEntries(Object.entries(beispiele).map(([k, v]) => [k, Object.entries(v).sort((a, b) => b[1] - a[1]).slice(0, 6)])),
-    animationen: animationen.map((a) => ({ ...a, gruende: a.fehler ? GRUENDE_ANIM.filter((_, i) => a.fehler & (1 << i)) : [] })),
+    animationen: animationen.map((a) => ({
+      ...a,
+      gruende: a.fehler ? GRUENDE_ANIM.filter((_, i) => a.fehler & (1 << i)) : [],
+      gruendeZuletzt: a.zuletzt ? GRUENDE_ANIM.filter((_, i) => a.zuletzt & (1 << i)) : [],
+    })),
     raster: rasterListe,
     neuGezeichnet: paintListe,
     groesste,
@@ -1011,7 +991,7 @@ async function ebenenDurchgang(browserName, fenster) {
 const zahl = (n, st = 0) => (n === null || n === undefined || Number.isNaN(n) ? "–" : n.toFixed(st).replace(".", ","));
 function tabelle(kopf, zeilen) {
   const breite = kopf.map((k, i) => Math.max(k.length, ...zeilen.map((z) => String(z[i]).length)));
-  const linie = (z) => `| ${z.map((x, i) => (i < 4 || typeof x === "string" && /^[A-Za-zÄÖÜäöü]/.test(x) ? String(x).padEnd(breite[i]) : String(x).padStart(breite[i]))).join(" | ")} |`;
+  const linie = (z) => `| ${z.map((x, i) => (i < 5 || typeof x === "string" && /^[A-Za-zÄÖÜäöü]/.test(x) ? String(x).padEnd(breite[i]) : String(x).padStart(breite[i]))).join(" | ")} |`;
   console.log(linie(kopf));
   console.log(`|${breite.map((b) => "-".repeat(b + 2)).join("|")}|`);
   for (const z of zeilen) console.log(linie(z));
@@ -1031,13 +1011,18 @@ async function main() {
   const ergebnisse = [];
   const ebenen = [];
   const faelle = [];
-  for (const browserName of BROWSER)
-    for (const fenster of FENSTER)
-      for (const cache of CACHE)
-        for (const scrollArt of SCROLL) for (const probe of PROBEN) for (let runde = 1; runde <= RUNDEN; runde++) if (!hat("nur-ebenen")) faelle.push({ browserName, fenster, cache, scrollArt, probe, runde });
-  console.log(`Kamerafahrt messen: ${faelle.length} Fälle (${BROWSER.join(", ")} · ${FENSTER.map((f) => f.name).join(", ")} · ${CACHE.join(", ")} · ${SCROLL.join(", ")}${PROBEN.length > 1 ? ` · Gegenproben ${PROBEN.filter(Boolean).join(", ")}` : ""})`);
+  for (const streckeName of STRECKEN)
+    for (const browserName of BROWSER)
+      for (const fenster of FENSTER)
+        for (const cache of CACHE)
+          for (const scrollArt of SCROLL) {
+            // Gesten erzeugt nur Chromium (CDP)
+            if (scrollArt.startsWith("geste") && browserName === "webkit") continue;
+            for (const probe of PROBEN) for (let runde = 1; runde <= RUNDEN; runde++) if (!hat("nur-ebenen")) faelle.push({ browserName, fenster, streckeName, cache, scrollArt, probe, runde });
+          }
+  console.log(`Gepinnte Bühnen messen: ${faelle.length} Fälle (${STRECKEN.join(", ")} · ${BROWSER.join(", ")} · ${FENSTER.map((f) => f.name).join(", ")} · ${CACHE.join(", ")} · ${SCROLL.join(", ")}${PROBEN.length > 1 ? ` · Gegenproben ${PROBEN.filter(Boolean).join(", ")}` : ""})`);
   for (const [i, f] of faelle.entries()) {
-    const name = `${f.browserName} ${f.fenster.name} ${f.cache} ${f.scrollArt}${f.probe ? ` ohne ${f.probe}` : ""}${RUNDEN > 1 ? ` #${f.runde}` : ""}`;
+    const name = `${f.streckeName} ${f.browserName} ${f.fenster.name} ${f.cache} ${f.scrollArt}${f.probe ? ` ohne ${f.probe}` : ""}${RUNDEN > 1 ? ` #${f.runde}` : ""}`;
     process.stdout.write(`  [${i + 1}/${faelle.length}] ${name} … `);
     try {
       const r = await fall(f);
@@ -1050,32 +1035,34 @@ async function main() {
   if (EBENEN) {
     const chromes = BROWSER.filter((b) => b !== "webkit");
     for (const b of chromes.slice(0, 1))
-      for (const fenster of FENSTER) {
-        process.stdout.write(`  Ebenen ${b} ${fenster.name} … `);
-        try {
-          ebenen.push({ browser: b, ...(await ebenenDurchgang(b, fenster)) });
-          console.log("ok");
-        } catch (e) {
-          console.log(`FEHLER ${e.message.split("\n")[0]}`);
+      for (const streckeName of STRECKEN)
+        for (const fenster of FENSTER) {
+          process.stdout.write(`  Ebenen ${streckeName} ${b} ${fenster.name} … `);
+          try {
+            ebenen.push({ browser: b, ...(await ebenenDurchgang(b, fenster, streckeName)) });
+            console.log("ok");
+          } catch (e) {
+            console.log(`FEHLER ${e.message.split("\n")[0]}`);
+          }
         }
-      }
   }
   console.log("");
 
   // Gruppen (Mittel über Runden)
   const gruppen = new Map();
   for (const r of ergebnisse) {
-    const k = `${r.browser}|${r.fenster}|${r.cache}|${r.scroll}|${r.probe}`;
+    const k = `${r.strecke}|${r.browser}|${r.fenster}|${r.cache}|${r.scroll}|${r.probe}`;
     if (!gruppen.has(k)) gruppen.set(k, []);
     gruppen.get(k).push(r);
   }
   console.log("Bildrate während des Scrollens (gezeigt: Chromium = Bilder des GPU-Prozesses, WebKit = requestAnimationFrame; Lücke > 16,7 ms heißt ≥ 1,5 Bilder, > 33 ms ≥ 2,5 Bilder; verpasst = Bilder bei 60 Hz, die fehlten)");
   tabelle(
-    ["Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", "Dauer s", "Bilder", ">16,7", ">33", ">100", "max ms", "verpasst", "Haupt >16,7/>33/>100", "Lücken >33: HT belegt/frei", "Render ms Median/p95/max", "LoAF n/Σms/max", "Long Tasks n/max", "Heap MB", "GPU-MB"],
+    ["Strecke", "Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", "Dauer s", "Bilder", ">16,7", ">33", ">100", "max ms", "verpasst", "Haupt >16,7/>33/>100", "Lücken >33: HT belegt/frei", "Render ms Median/p95/max", "LoAF n/Σms/max", "Long Tasks n/max", "Heap MB", "GPU-MB"],
     [...gruppen.values()].map((g) => {
       const r = g[0];
       const m = (f, st = 0) => zahl(mittel(g, f), st);
       return [
+        r.strecke,
         r.browser,
         r.fenster,
         r.cache,
@@ -1106,47 +1093,55 @@ async function main() {
     for (const g of mitSpur) for (const r of g) Object.keys(r.spur.ursachen).forEach((k) => alle.add(k));
     const spalten = [...alle].sort();
     tabelle(
-      ["Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", "verpasst", ...spalten],
+      ["Strecke", "Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", "verpasst", ...spalten],
       mitSpur.map((g) => {
         const r = g[0];
-        return [r.browser, r.fenster, r.cache, r.scroll, r.probe ? `ohne ${r.probe}` : "–", zahl(mittel(g, (x) => x.gezeigt.verpasst), 1), ...spalten.map((k) => zahl(mittel(g, (x) => x.spur.ursachen[k] ?? 0), 1))];
+        return [r.strecke, r.browser, r.fenster, r.cache, r.scroll, r.probe ? `ohne ${r.probe}` : "–", zahl(mittel(g, (x) => x.gezeigt.verpasst), 1), ...spalten.map((k) => zahl(mittel(g, (x) => x.spur.ursachen[k] ?? 0), 1))];
       }),
     );
-    console.log("Wo in der Fahrt (verpasste Bilder je Abschnitt; 0–5 % = Losfahren, 58 % frontal, 88 % Maßstab 1, danach = Kapitel 2)");
-    const ab = ["0–5 %", "5–30 %", "30–58 %", "58–88 %", "88–100 %", "danach"];
-    tabelle(
-      ["Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", ...ab],
-      [...gruppen.values()].map((g) => {
-        const r = g[0];
-        return [r.browser, r.fenster, r.cache, r.scroll, r.probe ? `ohne ${r.probe}` : "–", ...ab.map((a) => zahl(mittel(g, (x) => x.phasen[a] ?? 0), 1))];
-      }),
-    );
-    console.log("Kosten je Bild nach Abschnitt (Chromium, ms im Mittel): Hauptthread-Bild (BeginMainFrame) / davon PrePaint / Zeichnen im Compositor");
-    tabelle(
-      ["Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", ...ab],
-      mitSpur.map((g) => {
-        const r = g[0];
-        return [
-          r.browser,
-          r.fenster,
-          r.cache,
-          r.scroll,
-          r.probe ? `ohne ${r.probe}` : "–",
-          ...ab.map((a) => {
-            const f = (sel) => mittel(g, (x) => (x.kosten[a] ? sel(x.kosten[a]) : null));
-            return `${zahl(f((k) => k.bmf / k.n), 1)}/${zahl(f((k) => k.pp / k.n), 1)}/${zahl(f((k) => k.draw / k.dn), 1)}`;
+    for (const sn of STRECKEN) {
+      const ab = ABSCHNITTE(sn);
+      const gs = [...gruppen.values()].filter((g) => g[0].strecke === sn);
+      if (!gs.length) continue;
+      console.log(`Wo in der Strecke ${STRECKE[sn].name} (verpasste Bilder je Abschnitt; Prozent = Fortschritt der Zeitleiste wie die Keyframe-Offsets in site.css)`);
+      tabelle(
+        ["Strecke", "Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", ...ab],
+        gs.map((g) => {
+          const r = g[0];
+          return [r.strecke, r.browser, r.fenster, r.cache, r.scroll, r.probe ? `ohne ${r.probe}` : "–", ...ab.map((a) => zahl(mittel(g, (x) => x.phasen[a] ?? 0), 1))];
+        }),
+      );
+      console.log(`Kosten je Bild nach Abschnitt, ${STRECKE[sn].name} (Chromium, ms im Mittel): Hauptthread-Bild (BeginMainFrame) / davon PrePaint / Zeichnen im Compositor`);
+      tabelle(
+        ["Strecke", "Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", ...ab],
+        mitSpur
+          .filter((g) => g[0].strecke === sn)
+          .map((g) => {
+            const r = g[0];
+            return [
+              r.strecke,
+              r.browser,
+              r.fenster,
+              r.cache,
+              r.scroll,
+              r.probe ? `ohne ${r.probe}` : "–",
+              ...ab.map((a) => {
+                const f = (sel) => mittel(g, (x) => (x.kosten[a] ? sel(x.kosten[a]) : null));
+                return `${zahl(f((k) => k.bmf / k.n), 1)}/${zahl(f((k) => k.pp / k.n), 1)}/${zahl(f((k) => k.draw / k.dn), 1)}`;
+              }),
+            ];
           }),
-        ];
-      }),
-    );
+      );
+    }
     console.log("Arbeit während des Scrollens (ms; Hauptthread nach Art als Selbstzeit, dazu Compositor-Thread, GPU-Prozess, Rasterung, Dekodierung, GC; CPU = Prozesszeit)");
     const arten = ["Skript", "Stil", "Layout", "PrePaint", "Paint", "Layer/Commit", "Canvas", "IntersectionObserver", "ResizeObserver", "HitTest", "GC", "Sonstiges"];
     tabelle(
-      ["Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", ...arten, "Compositor", "GPU-Haupt", "GPU-Stopps n/Σ", "Kompil. n/Σ/max", "Raster n/Σ", "Dekod. n/Σ", "CPU Renderer", "CPU GPU"],
+      ["Strecke", "Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", ...arten, "Compositor", "GPU-Haupt", "GPU-Stopps n/Σ", "Kompil. n/Σ/max", "Raster n/Σ", "Dekod. n/Σ", "CPU Renderer", "CPU GPU"],
       mitSpur.map((g) => {
         const r = g[0];
         const m = (f, st = 0) => zahl(mittel(g, f), st);
         return [
+          r.strecke,
           r.browser,
           r.fenster,
           r.cache,
@@ -1180,19 +1175,19 @@ async function main() {
     const zeilen = [];
     for (const g of mitProbe) {
       const r = g[0];
-      const basis = gruppen.get(`${r.browser}|${r.fenster}|${r.cache}|${r.scroll}|`);
+      const basis = gruppen.get(`${r.strecke}|${r.browser}|${r.fenster}|${r.cache}|${r.scroll}|`);
       if (!basis) continue;
       const vb = mittel(basis, (x) => x.gezeigt.verpasst);
       const vp = mittel(g, (x) => x.gezeigt.verpasst);
       const ht = (gg) => mittel(gg, (x) => (x.spur ? Object.values(x.kosten).reduce((a, k) => a + k.bmf, 0) / Math.max(1, Object.values(x.kosten).reduce((a, k) => a + k.n, 0)) : null));
-      zeilen.push([r.browser, r.fenster, r.cache, r.scroll, `ohne ${r.probe}`, `${zahl(vb, 1)} → ${zahl(vp, 1)}`, zahl(vb - vp, 1), vb ? `${zahl(((vb - vp) / vb) * 100)} %` : "–", `${zahl(mittel(basis, (x) => x.gezeigt.max))} → ${zahl(mittel(g, (x) => x.gezeigt.max))}`, r.spur ? `${zahl(ht(basis), 1)} → ${zahl(ht(g), 1)}` : "–"]);
+      zeilen.push([r.strecke, r.browser, r.fenster, r.cache, r.scroll, `ohne ${r.probe}`, `${zahl(vb, 1)} → ${zahl(vp, 1)}`, zahl(vb - vp, 1), vb ? `${zahl(((vb - vp) / vb) * 100)} %` : "–", `${zahl(mittel(basis, (x) => x.gezeigt.max))} → ${zahl(mittel(g, (x) => x.gezeigt.max))}`, r.spur ? `${zahl(ht(basis), 1)} → ${zahl(ht(g), 1)}` : "–"]);
     }
     zeilen.sort((a, b) => Number(String(b[6]).replace(",", ".")) - Number(String(a[6]).replace(",", ".")));
-    tabelle(["Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", "verpasst", "Wegfall", "Anteil", "max ms", "HT ms/Bild"], zeilen);
+    tabelle(["Strecke", "Browser", "Fenster", "Cache", "Scroll", "Gegenprobe", "verpasst", "Wegfall", "Anteil", "max ms", "HT ms/Bild"], zeilen);
   }
 
   // Zeitachse eines Falls (der erste Fall je Browser/Fenster mit kaltem Cache und Trackpad)
-  console.log("Zeitachse (ms ab dem ersten Scrollschritt, p = Fortschritt der Fahrt in %), je Browser und Fenster der kalte Trackpad-Fall:");
+  console.log("Zeitachse (ms ab dem ersten Scrollschritt, p = Fortschritt der Zeitleiste in %), je Strecke, Browser und Fenster der kalte Trackpad-Fall:");
   for (const r of ergebnisse.filter((x) => x.cache === CACHE[0] && x.scroll === SCROLL[0] && !x.probe && x.runde === 1)) {
     const zeilen = [...r.ereignisse.map((e) => [e.t, `p=${e.p} ${e.was}`])];
     if (r.spur) {
@@ -1208,20 +1203,25 @@ async function main() {
       zeilen.push([l.t, `p=${l.p} Long Animation Frame ${zahl(l.dauer)} ms (Stil+Layout ${zahl(stil)} ms${sk ? `, Skript ${sk.quelle || sk.art}:${sk.funktion || sk.aufrufer} ${zahl(sk.dauer)} ms, erzwungenes Layout ${zahl(sk.erzwungen)} ms` : ""})`]);
     }
     for (const l of r.haupt.luecken) zeilen.push([l.t, `p=${l.p} Bildtakt-Lücke ${zahl(l.ms)} ms, längste Pulspause ${zahl(l.pause)} ms → ${l.belegt ? "Hauptthread belegt" : "Hauptthread frei (Compositor/UI/GPU)"}, Renderzeit davor ${zahl(l.render, 1)} ms`]);
-    console.log(`  ${r.browser} ${r.fenster} (${zahl(r.dauer)} ms gescrollt, Ruhelage nach ${r.ruheNach} ms ab Laden):`);
+    console.log(`  ${r.strecke} ${r.browser} ${r.fenster} (${zahl(r.dauer)} ms gescrollt, bereit nach ${r.ruheNach} ms ab Laden):`);
     for (const [t, text] of zeilen.sort((a, b) => a[0] - b[0])) console.log(`    ${String(t).padStart(6)}  ${text}`);
   }
   console.log("");
 
   for (const e of ebenen) {
-    console.log(`Ebenen ${e.browser} ${e.fenster}: ${e.stand.map((s) => `${s.name}: ${s.ebenen} (${s.zeichnend} zeichnend, ${zahl(s.mpx, 1)} MPx)`).join(" · ")}`);
-    console.log(`  Gründe (Ruhelage): ${Object.entries(e.gruende).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([k, n]) => `${k} ${n}`).join(", ")}`);
+    console.log(`Ebenen ${e.strecke} ${e.browser} ${e.fenster}: ${e.stand.map((s) => `${s.name}: ${s.ebenen} (${s.zeichnend} zeichnend, ${zahl(s.mpx, 1)} MPx)`).join(" · ")}`);
+    console.log(`  Gründe (Anfang der Strecke): ${Object.entries(e.gruende).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([k, n]) => `${k} ${n}`).join(", ")}`);
     for (const [k, n] of Object.entries(e.gruende).sort((a, b) => b[1] - a[1]).slice(0, 6)) console.log(`    ${k} ${n}: ${e.beispiele[k].map(([el, m]) => `${el} ×${m}`).join(", ")}`);
     console.log(`  größte zeichnende Ebenen: ${e.groesste.map((g) => `${g.element} ${g.groesse}`).join("; ")}`);
-    console.log(`  neu gezeichnet während der Fahrt (paintCount): ${e.neuGezeichnet.map((p) => `${p.element} ${p.groesse} +${p.mehr}`).join("; ") || "keine"}`);
-    console.log(`  neu gerastert während der Fahrt (Kacheln/ms): ${e.raster.map((p) => `${p.element} ${p.groesse}: ${p.n}/${zahl(p.ms)}`).join("; ") || "keine"}`);
-    const nicht = e.animationen.filter((a) => a.fehler);
-    console.log(`  Animationen der Bühne: ${e.animationen.length}, davon nicht auf dem Compositor: ${nicht.length}${nicht.length ? ` – ${nicht.map((a) => `${a.ziel} ${a.name ?? a.eigenschaft} (${a.gruende.join(", ")}${a.nicht ? `; ${a.nicht.join(", ")}` : ""})`).join("; ")}` : ""}`);
+    console.log(`  neu gezeichnet während der Strecke (paintCount, nach einem ersten Durchgang): ${e.neuGezeichnet.map((p) => `${p.element} ${p.groesse} +${p.mehr}`).join("; ") || "keine"}`);
+    console.log(`  neu gerastert während der Strecke (Kacheln/ms, nach einem ersten Durchgang): ${e.raster.map((p) => `${p.element} ${p.groesse}: ${p.n}/${zahl(p.ms)}`).join("; ") || "keine"}`);
+    // nicht komponiert = der letzte Versuch scheiterte; „zeitweise“ = ein früherer Versuch scheiterte (etwa solange die
+    // Bühne weit außerhalb des Fensters stand und nichts von ihr gezeichnet war), der letzte gelang
+    const nicht = e.animationen.filter((a) => a.zuletzt);
+    const zeitweise = e.animationen.filter((a) => a.fehler && !a.zuletzt);
+    const nenne = (a, g) => `${a.ziel} ${a.name ?? a.eigenschaft} (${g.join(", ")}${a.nicht ? `; ${a.nicht.join(", ")}` : ""})`;
+    console.log(`  Animationen der Bühnen (ex-, tf-, aw-, mz-): ${e.animationen.length}, davon nicht auf dem Compositor: ${nicht.length}${nicht.length ? ` – ${nicht.map((a) => nenne(a, a.gruendeZuletzt)).join("; ")}` : ""}`);
+    if (zeitweise.length) console.log(`    zeitweise nicht, beim letzten Versuch auf dem Compositor: ${zeitweise.length} – ${zeitweise.map((a) => nenne(a, a.gruende)).join("; ")}`);
   }
   if (JSON_OUT) {
     fs.writeFileSync(JSON_OUT, JSON.stringify({ zeit: new Date().toISOString(), ergebnisse, ebenen }, null, 1));

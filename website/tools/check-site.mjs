@@ -136,9 +136,10 @@ for (const file of textFiles) {
 // Nicht verwendete Bilder
 const isAsset = (f) => /assets[\\/]img[\\/]/.test(f) && /\.(webp|png|jpe?g|svg)$/.test(f);
 // og-image.png: Vorschaubild beim Teilen (nur in <meta>); logo-mail.png und logo-mail@2x.png: Logo in der
-// Bestätigungs-E-Mail von newsletter.php (E-Mail-Programme laden es von der Website). logo-dark.svg nutzt die Seite seit
-// der Gestaltung B4 selbst (Kopfzeile über der Nacht, Fußzeile).
-const referencedElsewhere = new Set(["og-image.png", "logo-mail.png", "logo-mail@2x.png"]);
+// Bestätigungs-E-Mail von newsletter.php (E-Mail-Programme laden es von der Website). logo.svg (helle Fassung aus dem
+// Logo-Paket) zeigt seit der Pro-Gestaltung keine Seite mehr – die Seiten sind durchgehend dunkel und nutzen
+// logo-dark.svg –, tools/make-logo-assets.mjs prüft an ihr aber die Maße der Logo-<img>, tools/og-template.html zeigt sie.
+const referencedElsewhere = new Set(["og-image.png", "logo-mail.png", "logo-mail@2x.png", "logo.svg"]);
 for (const file of files.filter(isAsset)) {
   if (usedFiles.has(path.normalize(file))) continue;
   if (referencedElsewhere.has(path.basename(file))) continue;
