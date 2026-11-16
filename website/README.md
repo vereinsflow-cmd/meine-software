@@ -1,33 +1,33 @@
 # VereinsFlow – Website
 
 Werbeseite für VereinsFlow: eine Startseite (`index.html`) mit Impressum, Datenschutzerklärung und Fehlerseite. Reines HTML
-und CSS mit eigenen Skripten (Kopfzeile und Menü auf allen Seiten, dazu auf der Startseite die Bühnen und der
-Lichtfluss), **keine Cookies, keine Bibliotheken, keine Webfonts, nichts von fremden Servern**. Einzige Ausnahme vom rein
-Statischen: die Anmeldung „Beim Start benachrichtigen“ (`newsletter.php`, braucht PHP – siehe „Benachrichtigung zum Start“).
-Gestaltung „B4 Spektakel“: Nacht und Papier im Wechsel, Studiolicht, ein Lichtfluss als roter Faden (siehe „Gestaltung und
-Bewegung“); die Farben hängen nicht von der Einstellung des Geräts ab. Die Bilder sind echte Aufnahmen der Anwendung
-(Demo-Daten).
+und CSS mit einem eigenen Skript (Menü, aktiver Abschnitt, Start der Geräte-Vorführungen), **keine Cookies, keine
+Bibliotheken, keine Webfonts, nichts von fremden Servern**. Einzige Ausnahme vom rein Statischen: die Anmeldung „Beim Start
+benachrichtigen“ (`newsletter.php`, braucht PHP – siehe „Benachrichtigung zum Start“). Gestaltung „Pro“ (seit 16.11.2026,
+nach den Apple-Pro-Entwürfen): durchgehend Nacht, Glas-Kopfleiste, große Schrift, die App in Glas-Ebenen, Metall-Zahlen
+(siehe „Gestaltung und Bewegung“); die Farben hängen nicht von der Einstellung des Geräts ab. Die Bilder sind echte
+Aufnahmen der Anwendung (Demo-Daten).
 
 Die Website liegt als Ordner `website/` im VereinsFlow-Repository, neben der Anwendung im Hauptordner. Beide haben getrennte
 Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, Docker, CI), die Website prüft sich selbst
 (`node tools/check-site.mjs`, in der CI als `website.yml`).
 
-> **Stand:** Die Seite ist fertig gebaut, aber **noch nicht veröffentlicht**. Alle Angaben sind eingetragen (siehe unten).
+> **Stand:** Die Seite ist **noch nicht veröffentlicht**. Alle Angaben sind eingetragen (siehe unten). Auf dem Branch
+> `website-pro` läuft der Umbau auf die Pro-Gestaltung: Grundgerüst in der Endlage fertig (16.11.2026), die neuen
+> Bewegungen (Explosion, Aussage, Metall-Zahlen, großes Telefon) folgen.
 
 ## Inhalt
 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `index.html`                          | Startseite in zehn Kapiteln: Einstieg mit Kamerafahrt, Ausgangslage, Helferplanung, Unterwegs, Funktionen, Finanzen, Vertrauen, So starten Sie, Fragen, Demo (mit der Anmeldung „Beim Start benachrichtigen“) – siehe „Gestaltung und Bewegung“ |
+| `index.html`                          | Startseite in elf Kapiteln: Einstieg „Schicht für Schicht.“, Ausgangslage, die Geräte von heute, Funktionen, Helferplanung, Unterwegs, Finanzen, Sicherheit, So starten Sie, Fragen, Kontakt (mit der Anmeldung „Beim Start benachrichtigen“) – siehe „Gestaltung und Bewegung“ |
 | `impressum.html`, `datenschutz.html`  | Rechtstexte (ausgefüllt, Stand 26.09.2026)                                                 |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Die ganze Gestaltung, eine Datei für alle Seiten; Farben, Schrift, Abstände und Kurven als Variablen oben in `:root`, das Inhaltsverzeichnis im Kopfkommentar. Laptop und Telefon stehen darin **wörtlich** wie im Stand `c112a20` (zwischen den Markern `@@geraete-…`, Keyframes am Dateiende) |
-| `assets/js/frueh.js`                  | Nur Startseite: setzt `html.js` vor dem ersten Zeichnen – die Höhe der Bühnen stimmt dann schon, wenn der Browser die Scrollposition wiederherstellt |
-| `assets/js/site.js`                   | Alle Seiten: Menü (unter 900 px, mit `inert`, Esc, Fokus zurück), Kopfzeile (Glas hell über Papier, dunkel über der Nacht), Kapitel-Faden mit Pinnnadel und `aria-current`, Einblenden (`.erscheint`), Frage per Sprungmarke öffnen, E-Mail-Adresse kopieren, Fokus-Rückgabe der Popovers, Schalter „Bewegung anhalten“; dazu wörtlich der Start der Geräte-Bewegung (Zeilen 107–140 aus `c112a20`). Ohne Skript bleibt alles nutzbar |
-| `assets/js/buehne.js`                 | Nur Startseite, als Modul: Posen der Geräte in Ruhe, Kamerafahrt, Wortwalze, magnetische Knöpfe, Lichtkanten, Zählwerke, Spur der Helferplanung, Umlaufbahn, Karten unter dem Zeiger, Lichtstreif, Rollen, Startlinie, Aufklappen der Fragen, Finale, Sprungmarken in die Bögen. Liest die Geräte nur (`.is-rest`), bewegt sie nie; nur den Start des Finanz-Laptops zieht es vor (ein Fünftel im Bild statt der Hälfte) |
-| `assets/js/fluss.js`                  | Der Lichtfluss (Canvas 2D, eigener Code), von `buehne.js` geladen; Optionen als `data-…` am `<canvas>` (Liste im Kopfkommentar) |
-| `assets/img/finale-geraete-*.webp`    | Schlussbild des Finales: Laptop und Telefon als Standbild mit durchsichtigem Hintergrund (`tools/geraete-standbild.mjs`) |
-| `assets/img/app/`                     | Aufnahmen der Anwendung (helle Darstellung, `…-light-…`), je Bild genau die Breiten, die die Seite zeigt (siehe „Hinweise zu den Aufnahmen“) |
+| `assets/js/frueh.js`                  | Nur Startseite: setzt `html.js` vor dem ersten Zeichnen – die Strecken der gepinnten Bühnen haben dann schon ihre Höhe, wenn der Browser die Scrollposition wiederherstellt (keine Verschiebung) |
+| `assets/js/bewegung.js`               | Nur Startseite: Begleiter der Bewegung beim Scrollen (die Bewegung selbst steht in `site.css`): Bilder vorab dekodieren, `will-change` nur nahe am Fenster, Rückfall für Browser ohne scroll-driven animations (`currentTime` je Bild), Leseposition beim Umschalten von „Bewegung anhalten“ bzw. „Bewegung reduzieren“ halten |
+| `assets/js/site.js`                   | Alle Seiten: Menü (unter 900 px, mit `inert`, Esc, Fokus zurück), aktiver Abschnitt in Kopfleiste und Menü (`aria-current`), Einblenden (`.erscheint`), Frage per Sprungmarke öffnen, E-Mail-Adresse kopieren, Schalter „Bewegung anhalten“ (`html.ist-ruhig`, Ereignis `vf:ruhe`); dazu wörtlich der Start der Geräte-Bewegung (Zeilen 107–140 aus `c112a20`). Ohne Skript bleibt alles nutzbar |
+| `assets/img/app/`                     | Aufnahmen der Anwendung: in den Geräten von heute die hellen Bilder vom 22.10.2026 (`…-light-…`, `tools/capture-screenshots.mjs`), dazu die Bilder der Pro-Gestaltung aus den Original-Aufnahmen vom 16.11.2026 (Ebenen der Explosion, Schichtkarte, Helferplan, dunkle Telefonbilder; `tools/bilder-pro.mjs`) – je Bild die Breiten, die die Seite zeigt (siehe „Hinweise zu den Aufnahmen“) |
 | `assets/img/`, `assets/brand/`        | Logo (Seite, `logo.svg`), Logo für die Bestätigungs-E-Mail (`logo-mail.png`, `@2x`), Logo-Vorlagen (Presse, Präsentationen) und Vorschaubild `og-image.png` – alles aus dem Logo-Paket (siehe „Logo“) |
 | `favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `android-chrome-*.png`, `site.webmanifest` | Symbole für Browser-Tab, Lesezeichen und Startbildschirm (aus dem Logo-Paket); das Web-Manifest nennt Name und Symbole |
 | `robots.txt`, `sitemap.xml`           | Für Suchmaschinen (Domain `https://vereins-flow.com`)                                         |
@@ -116,9 +116,8 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   Darum nie Stildatei oder Skripte vom Webspace zurück in den Ordner kopieren.
   Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
   HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum und einer laufenden
-  Nummer, derzeit `?v=2026110401` an der Stildatei und an `buehne.js`, `?v=2026102001` an `site.js` und `fluss.js`,
-  `?v=20260927-2` an `frueh.js`) – `buehne.js` lädt `fluss.js` selbst (Zeile `import … from "./fluss.js?v=…"`), dort
-  ebenfalls. Sonst liefern Browser und der Zwischenspeicher von
+  Nummer, derzeit `?v=2026111601` an der Stildatei und an `site.js`, `?v=20260927-2` an `frueh.js`; Module, die andere
+  Module importieren, tragen die Nummer auch dort). Sonst liefern Browser und der Zwischenspeicher von
   IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
   HTML-Seiten fragt der Browser dagegen bei jedem Aufruf nach (`Cache-Control: no-cache`, unverändert kommt nur „304“) –
   so kommen auch die neuen `?v=`-Adressen sofort an.
@@ -152,16 +151,17 @@ fehlt Edge, nimmt `capture-screenshots.mjs` das Chromium von Playwright).
 | `node tools/paket-bauen.mjs`               | Baut `upload/vereinsflow-website.zip` für den Webspace Explorer (Stildatei und Skripte ohne Kommentare; ohne Abhängigkeiten) |
 | `node tools/hochladen.mjs <Server> <Benutzer>` | Lädt die Website per SFTP nach `/public` – dieselben Dateien wie das Paket, die Stildatei ebenso bereinigt (Passwort wird im Terminal abgefragt, auf dem Server wird nichts gelöscht) |
 | `node tools/demo-vorbereiten.mjs`          | Füllt den Demo-Verein der Aufnahme-Datenbank `vf_website` für die Bilder auf (siehe unten); `--entfernen` nimmt alles wieder heraus. Arbeitet mit keiner anderen Datenbank |
-| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all` oder eine zweite Instanz, siehe unten, mit `VF_APP_URL`; Demo vorbereitet; `--only dashboard`; Bilder, die die Seite nicht zeigt, nur mit `--only <Name>`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet). Gibt die Lagen für Marken und Lichtstreif aus |
+| `node tools/bilder-pro.mjs`                | Erzeugt die Bilder der Pro-Gestaltung (Ebenen der Explosion, Schichtkarte, Helferplan, dunkle Telefonbilder) als WebP in den Breiten der Seite aus den Original-Aufnahmen (PNG) des Entwurfs `apple-pro/_bilder` (`--quelle`, `VF_BILDER`); Ausschnitte der Ebenen wie im Entwurf 02; `--nur <Name>`, `--pruefen` |
+| `node tools/capture-screenshots.mjs`       | Nimmt die Anwendungsbilder neu auf (Demo-App muss laufen: `npm run dev:all` oder eine zweite Instanz, siehe unten, mit `VF_APP_URL`; Demo vorbereitet; `--only dashboard`; Bilder, die die Seite nicht zeigt, nur mit `--only <Name>`; `--scheme dark` nimmt dunkel auf, wird derzeit nicht verwendet). Die Seite zeigt davon seit 16.11.2026 nur noch `dashboard`, `phone-schichten` (182–624) und `laptop-finanzen-uebersicht` in den Geräten |
 | `node tools/make-logo-assets.mjs <Logo-Paket>` | Übernimmt Logo-Dateien, Favicons, Vorschaubild und Mail-Logo aus dem Logo-Paket (Ordner `02-website`) und prüft Bildgrößen und die `width`/`height` der Logo-`<img>` (siehe „Logo“); `--pruefen` nur prüfen; ohne Abhängigkeiten |
-| `node tools/make-og-image.mjs <ziel.png>`  | Erzeugt eine zweite Fassung des Vorschaubilds mit den beiden Telefonen (`tools/og-template.html`, mit `site.css`, dem Logo und den Telefonbildern); `--ersetzen` statt eines Ziels ersetzt `assets/img/og-image.png` aus dem Logo-Paket |
+| `node tools/make-og-image.mjs <ziel.png>`  | Erzeugt eine zweite Fassung des Vorschaubilds mit den beiden Telefonen (`tools/og-template.html`, mit `site.css`, dem Logo und den Telefonbildern); `--ersetzen` statt eines Ziels ersetzt `assets/img/og-image.png` aus dem Logo-Paket. Braucht `phone-dashboard` und `phone-helferplanung`, die die Seite seit 16.11.2026 nicht mehr zeigt – vorher mit `capture-screenshots.mjs --only …` erzeugen; die Vorlage nutzt noch Klassen der Gestaltung B4 |
 | `node tools/make-showcase-keyframes.mjs`   | Erzeugt die Keyframes der Vorführungen (Laptop und Telefon drehen sich beim Scrollen) aus den Bewegungsformeln und ersetzt sie am Ende von `assets/css/site.css`; ohne Abhängigkeiten |
-| `node tools/geraete-css.mjs [--pruefen]`   | Setzt Laptop und Telefon **wörtlich** aus dem Stand `c112a20` in `assets/css/site.css` ein (sieben Bereiche zwischen den Markern `@@geraete-…`, Keyframes am Dateiende); `--pruefen` prüft nur. Die Bewegung der Geräte bleibt so unverändert, die neue Gestaltung (B4) bewegt nur die Hüllen `.pose`, `.kamera`, `.geraet` |
-| `node tools/geraete-pruefen.mjs`           | Prüft, dass Laptop und Telefon sich wie in `c112a20` bewegen: Bereiche und 51 Keyframes wörtlich, 162 Transformwerte gleich, keine eigene Regel bewegt die Geräte, `site.js` 107–140 wörtlich, Markup der Geräte gleich, dazu die Matrizen zur Laufzeit in Chromium und WebKit (Playwright aus dem Hauptordner) |
-| `node tools/geraete-standbild.mjs`         | Rendert das Schlussbild des Finales aus dem Markup der Startseite und der wörtlichen Gerätebewegung: Laptop zugeklappt bei 1,08 s, Telefon in der Endlage mit ausgeschaltetem Bildschirm, durchsichtiger Hintergrund, WebP mit Alpha in 720, 1080 und 1440 px (jede Breite eigens gezeichnet); meldet die Lage des Zeichens auf dem Deckel in Prozent (für `.zeichen-ziel`/`.zeichen-licht` in `site.css`). `--vorschau <Ordner>` schreibt nur PNG-Bilder |
-| `node tools/kopf-fuss-pruefen.mjs`         | Prüft, dass Kopf- und Fußzeile auf allen fünf Seiten gleich sind (bis auf Pfade, Kapitel-Faden und Schalter der Startseite), die Symbole dafür in jeder Seite stehen und im Markup von `newsletter.php` kein Hochkomma steht |
-| `node tools/fahrt-messen.mjs`              | Misst, wie flüssig die Kamerafahrt (Kapitel 1) ab der Ruhelage der Geräte läuft: Chrome (headless mit GPU, Spur über CDP) und WebKit, kalter und warmer Zwischenspeicher, Mausrad wie ein Trackpad und schnell. Tabellen: gezeigte Bilder und Lücken > 16,7 / 33 / 100 ms, verpasste Bilder je Abschnitt der Fahrt und je Ursache, Hauptthread je Bild (BeginMainFrame, PrePaint), Long Animation Frames, Rasterung, Dekodierung, Pipeline-Kompilierung im GPU-Prozess, Ebenen mit Gründen, Animationen außerhalb des Compositors. `--scroll stoss,stoss-zurueck` misst die Fahrt von selbst (ein Mausrad-Stoß von 100 px am Anfang bzw. vom Ende nach oben). `--gegenprobe a,b` (Liste: `--gegenproben`) misst zusätzlich mit abgeschalteter Wirkung, nur im eingebauten Server (`kegelalt`, `titelalt`, `handyalt`, `spiegelaus` stellen je eine frühere Wirkung wieder her, `leer` ändert nichts und zeigt nur, was die Auslieferung einer Gegenprobe selbst ausmacht); weitere Schalter (`--browser`, `--fenster 1280x740@2`, `--runden`, `--json`, `--trace`) im Kopfkommentar |
-| `node tools/b4-pruefen.mjs [schnell]`      | Browserprüfung der Startseite in Chromium, WebKit und „ohne scroll-driven Animationen“, mit und ohne „Bewegung reduzieren“, 320 bis 1920 px: Konsole und CSP, seitliches Scrollen, Text im Fenster bzw. Kasten (je Zeile, auch auf den Unterseiten), Kapitel-Faden (`aria-current`), Einblenden, Geräte in Ruhe, CLS, Kamerafahrt von selbst (ein Mausrad-Stoß fährt ans Ende und zurück, sonst nur 100 px); dazu die Größe von Skripten und Stildatei im Paket (über dem Ziel ein Fehler) |
+| `node tools/geraete-css.mjs [--pruefen]`   | Setzt Laptop und Telefon **wörtlich** aus dem Stand `c112a20` in `assets/css/site.css` ein (sieben Bereiche zwischen den Markern `@@geraete-…`, Keyframes am Dateiende); `--pruefen` prüft nur. Die Bewegung der Geräte bleibt so unverändert, die Gestaltung legt nur die Hüllen `.geraet`, `.pose` und `.k03-buehne` fest |
+| `node tools/geraete-pruefen.mjs`           | Prüft, dass Laptop und Telefon sich wie in `c112a20` bewegen: Bereiche und 51 Keyframes wörtlich, 162 Transformwerte gleich, keine eigene Regel bewegt die Geräte, kein Skript in `assets/js/` bewegt sie (außer den wörtlichen Zeilen 107–140 in `site.js`), Markup der Geräte gleich, dazu die Matrizen zur Laufzeit in Chromium und WebKit (Kapitel 3: Laptop und Telefon, Kapitel 7: Laptop der Finanzen; Playwright aus dem Hauptordner) |
+| `node tools/geraete-standbild.mjs`         | (Seit 16.11.2026 nicht mehr auf der Seite.) Rendert das Schlussbild des früheren Finales aus dem Markup der Startseite und der wörtlichen Gerätebewegung: Laptop zugeklappt bei 1,08 s, Telefon in der Endlage mit ausgeschaltetem Bildschirm, durchsichtiger Hintergrund, WebP mit Alpha in 720, 1080 und 1440 px (jede Breite eigens gezeichnet); meldet die Lage des Zeichens auf dem Deckel in Prozent (für `.zeichen-ziel`/`.zeichen-licht` in `site.css`). `--vorschau <Ordner>` schreibt nur PNG-Bilder |
+| `node tools/kopf-fuss-pruefen.mjs`         | Prüft, dass Kopfleiste und Fußzeile auf allen fünf Seiten gleich sind (bis auf Pfade, `data-navi`/`data-kapitel` und den Schalter „Bewegung anhalten“ der Startseite), die Symbole dafür in jeder Seite stehen und im Markup von `newsletter.php` kein Hochkomma steht |
+| `node tools/fahrt-messen.mjs`              | Misst, wie flüssig die gepinnten Bühnen laufen (Explosion in Kapitel 1, großes Telefon in Kapitel 6; `--strecke explosion\|telefon\|beide`): Chrome (headless mit GPU, Spur über CDP; der Energiesparmodus von Chrome ist im Messprofil aus, sonst 30 Bilder/s im Akkubetrieb unter 20 %) und WebKit, kalter und warmer Zwischenspeicher, Mausrad wie ein Trackpad und schnell, Gesten des Browsers (`geste`, `geste-schnell`) und rückwärts (`trackpad-zurueck`, `schnell-zurueck`), je von kurz vor dem Pinnen bis hinter das Lösen der Bühne. Tabellen: gezeigte Bilder und Lücken > 16,7 / 33 / 100 ms, verpasste Bilder je Abschnitt der Strecke (Phasen wie die Keyframes) und je Ursache, Hauptthread je Bild (BeginMainFrame, PrePaint), Long Animation Frames, Rasterung, Dekodierung, Pipeline-Kompilierung im GPU-Prozess, Ebenen mit Gründen, Neuzeichnen und Neurastern nach einem ersten Durchgang, Animationen der Bühnen außerhalb des Compositors. `--gegenprobe a,b` (Liste: `--gegenproben`) misst zusätzlich mit abgeschalteter Wirkung, nur im eingebauten Server; weitere Schalter (`--browser`, `--fenster 1280x740@2`, `--runden`, `--json`, `--trace`) im Kopfkommentar |
+| `node tools/b4-pruefen.mjs [schnell]`      | Browserprüfung der Startseite in Chromium, WebKit und „ohne scroll-driven Animationen“, mit und ohne „Bewegung reduzieren“, 320 bis 1920 px: Konsole und CSP, seitliches Scrollen, Text im Fenster bzw. Kasten (je Zeile, auch auf den Unterseiten und in Zwischenstufen der Bewegung), je Kapitel genau ein passender Eintrag mit `aria-current` in der Kopfleiste, Geräte in Ruhe, CLS, eine h1; die Bewegung beim Scrollen an mehreren Stellen jeder Zeitleiste (Explosion zerlegt → halb → zusammengesetzt → gelöst, Bühne klebt unter der Kopfleiste; Telefon gedreht → gerade, Schichtliste, Feld der Glocke; Wörter der Aussage hellen nacheinander auf; Metall-„13“ neigt sich); Endlage und eingeklappte Strecken bei „Bewegung reduzieren“ und ohne JavaScript; „Bewegung anhalten“ und „Bewegung reduzieren“ zur Laufzeit an mehreren Stellen ohne Sprung; dazu die Größe aller Skripte in `assets/js/` und der Stildatei im Paket (über dem Ziel ein Fehler) |
 
 Hinweise zu den Aufnahmen:
 
@@ -207,37 +207,24 @@ Hinweise zu den Aufnahmen:
   über 700 KB.
 - **Seitenleiste:** Ganze Fenster (Laptop, Dashboard) zeigen die Seitenleiste der Anwendung, wie sie eingestellt ist; die
   optionalen Ausschnitte rechts daneben entstehen mit der breiten Leiste (`sidebar: "breit"` im Skript).
-- **Was die Seite zeigt** (Stand 22.10.2026, alle neu aufgenommen nach dem Umbau der Anwendung vom 21./22.10.2026 –
-  Dashboard-Kopf als „Vereins-Bühne“, Finanz-Übersicht wie eine Banking-App, Abteilungsfotos, neue Anmeldeseite; Demo-Daten
-  wie am 18.10.2026 vorbereitet, am 22.10. geprüft und nicht neu angelegt: 43 Dateien, 2,2 MB):
-  - `dashboard` (720 bis 2880 px): Laptop im Einstieg und in der Kamerafahrt, die flache Aufnahme am Ende der Fahrt und
-    „Im Detail“ ohne Fahrt. Die flache Aufnahme wählt zuerst dieselbe Datei wie der Bildschirm (eine Anfrage); sobald der
-    Laptop in seiner Pose steht (in Leerlaufzeit, spätestens beim Losfahren), lädt und dekodiert `buehne.js` genau eine
-    große Fassung (fensterbreit: 1440 bzw. 2880 px, `data-gross`) und setzt sie dann an beiden Bildern ein. Inhalt: Kopfzeile mit Suchfeld, die Vereins-Bühne (Begrüßung, Fotos der
-    Abteilungen Fußball, Handball, Tischtennis, Glas-Chips „233 Mitglieder · 18 Termine · 15 Helferplätze“, Knöpfe), die
-    Reiter und die Kennzahlkarten. Am Ende der Kamerafahrt liegt die Tafel über dem unteren Teil des 16 : 10-Ausschnitts
-    (sichtbar bleiben bei 16 : 10 bis 16 : 9 gut 60 %, in flacheren Fenstern weniger, bei 21 : 9 nur gut 40 %) – die Marken
-    „Kennzahlen“ und „Termine“ sitzen deshalb auf den Glas-Chips der Bühne, nicht mehr auf den Karten darunter. Ihre
-    Schilder hängen unter den Chips; ab einem Seitenverhältnis von 1,79 : 1 reicht der Platz bis zur Tafel dort nicht mehr
-    (z. B. 1440 × 780, 1536 × 730 und 1920 × 950 – Laptops und Full-HD-Bildschirme mit Browserleiste), dann stehen sie über
-    den Chips; ab 2,13 : 1 (21 : 9) rutschen auch die Chips samt Punkten unter die Tafel, dann entfallen die beiden Marken
-    (`site.css`, Abschnitt 12a; geprüft mit Playwright am Ende der Fahrt von 1024 × 768 bis 3440 × 1440). In „Im Detail“
-    unter 1120 px sind die Schilder kleiner und „Termine“ steht neben „Kennzahlen“.
-  - `phone-dashboard` (312 bis 1170): „Im Detail“ am Smartphone, im Telefon – die Bühne mit dem Foto der größten Abteilung,
-    darunter Knöpfe, Reiter und die Karte „Mitglieder“.
-  - `phone-schichten` (182 bis 780): Telefon im Einstieg (Bildschirm 182/208 CSS-Pixel) und flaches Telefon in Kapitel 3
-    (260/312), dazu `phone-schichten-live-1` (260 bis 780) als Stand vor Annas Eintrag (Kapitel 3, Schritt 1) – gefunden
-    über den Listeneintrag „Schicht Getränkestand“ und die Knöpfe „In Getränkestand eintragen“ bzw. „… austragen“.
-  - `helferplan-druck` (240 bis 800): der Aushang in Kapitel 3.
-  - `phone-helferplanung` (260 bis 780): Telefon in „Unterwegs“ (ab „Meine Einsätze“, damit „Eintragen“ ganz zu sehen ist;
-    Titel und „Neue Schicht“ darüber sind Aufgaben des Vorstands, die Kopfzeile ist im Bild deckend).
-  - `laptop-finanzen-uebersicht` (720 bis 1760): Laptop in „Finanzen“ – die dunkle Karte „Kontostand · alle Konten“
-    (Schnellaktionen, Entwicklung im Monat, offene Rechnungen, Verlauf) und rechts die Kontokarten Barkasse und Girokonto;
-    Überschuss und Spenden stehen in der Anwendung weiter unten, nicht mehr im Bild. Die Zahl neben dem Laptop ist deshalb
-    der Kontostand („13.944,47 €“).
-  - Nicht mehr auf der Seite und deshalb `optional` (entstehen nur mit `--only <Name>`): `einstieg-dashboard`, die
-    Browserfenster und Bildfolgen von `schichten`, `suche`, `mitglieder`, `kalender`, `auswertung`, die Telefonbilder
-    `phone-suche`, `phone-mitglieder`, `phone-kalender`, `phone-auswertung` und die übrigen Finanz-Laptops.
+- **Was die Seite zeigt** (seit 16.11.2026):
+  - In den Geräten von heute die hellen Aufnahmen vom 22.10.2026 (Demo-Daten wie am 18.10.2026 vorbereitet: 233
+    Mitglieder, „Sommerfest 2027“): `dashboard` (720 bis 2880 px; Laptop in Kapitel 3 – Vereins-Bühne mit Begrüßung,
+    Fotos der Abteilungen, Glas-Chips „233 Mitglieder · 18 Termine · 15 Helferplätze“, Reiter und Kennzahlkarten),
+    `phone-schichten` (182 bis 624; Telefon in Kapitel 3, „3 von 4 … Anna Adler (du)“) und
+    `laptop-finanzen-uebersicht` (720 bis 1760; Laptop in Kapitel 7 – die Karte „Kontostand · alle Konten“ und die
+    Kontokarten; die Zahl daneben ist deshalb der Kontostand „13.944,47 €“).
+  - Die Bilder der Pro-Gestaltung kommen aus den Original-Aufnahmen des Entwurfs `apple-pro/_bilder` vom 16.11.2026
+    (Seed-Daten ohne `demo-vorbereiten.mjs`: 24 Mitglieder, „Sommerfest 2026“ am 28.11.2026, „9 von 21 Plätzen besetzt“;
+    Namen wie unten nur im Bild ersetzt), erzeugt mit `tools/bilder-pro.mjs`: die fünf Ebenen und die Grundplatte der
+    Explosion (`ebene-*-light`, `uebersicht-light`), die Schichtkarte (Kapitel 4), der Helferplan (Kapitel 5) und die
+    dunklen Telefonbilder (`handy-tagesablauf-dark`, `handy-schichtliste-dark`, Kapitel 6). Lossy WebP (Qualität 82 bzw.
+    86), leicht nachgeschärft.
+  - Damit zeigen die Bilder Demo-Daten aus **zwei Ständen** (Geräte von heute: 22.10.2026, Pro-Bilder: 16.11.2026). Wer
+    das angleichen will, nimmt die Bilder der Geräte am selben Tag wie die Pro-Bilder neu auf (und passt Alt-Texte und
+    „13.944,47 €“ an).
+  - Nicht mehr auf der Seite (seit 16.11.2026 gelöscht, mit `--only <Name>` wieder herstellbar): `phone-dashboard`,
+    `phone-helferplanung`, `phone-schichten-live-1`, `helferplan-druck` und das Schlussbild `finale-geraete`.
 - Die Bilder gibt es genau in den Breiten, in denen sie auf der Seite stehen (je Pixeldichte eine Datei), damit der Browser
   sie Pixel für Pixel zeichnet und die kleine Schrift scharf bleibt. Wer die Größe eines Geräts in `site.css` ändert
   (`--sw`, `--pw`, `--hw`), gleicht die Breiten im Skript (`widths`, bei Bildfolgen `frameWidths`) und `srcset`/`sizes` im
@@ -246,21 +233,19 @@ Hinweise zu den Aufnahmen:
 - **Datum in den Bildern:** Die Aufnahmen zeigen, was die Anwendung am Aufnahmetag ausrechnet – beim Laptop „Stand
   22.10.2026“, „+25,80 € seit 1. Oktober“, die Einnahmen und Ausgaben des Monats und die Fälligkeit der beiden offenen
   Rechnungen des Seeds („davon 2 überfällig“ in Rot; ihre Fälligkeit rechnet der Seed vom Tag seines Laufs aus,
-  `finanzen-demo.mjs` lässt sie unverändert), im Einstieg das Datum auf der Bühne („Donnerstag, 22. Oktober 2026“), die
+  `finanzen-demo.mjs` lässt sie unverändert), im Laptop von Kapitel 3 das Datum auf der Bühne („Donnerstag, 22. Oktober 2026“), die
   Zahlen der Glas-Chips und „Termine in 30 Tagen“ samt „Nächster Termin heute“, auf dem Aushang „Erstellt am …“, am
   Telefon Angaben wie „in 233 Tagen“. Wer die Bilder später erneuert, nimmt sie deshalb alle am selben Tag neu auf. Die
   Bühne hat eine feste Höhe: Rolle und Datum kürzen sich notfalls mit „…“, darunter verrutscht nichts mehr (bis 20.10.2026
   brach am Smartphone die Zeile mit dem Datum um). Ruhiger wirkte der Laptop mit Rechnungen, die noch nicht fällig sind
   (das hieße, die Fälligkeiten in der Aufnahme-Datenbank in die Zukunft zu legen – sie teilt sich das Reel-Projekt, daher
   bisher nicht geändert).
-- Nach neuen Aufnahmen nachziehen: (1) die Lage der drei Marken auf dem Dashboard (`.m-suche`, `.m-zahlen`, `.m-termine`
-  in `site.css`, in Prozent des 16 : 10-Ausschnitts) und die Anteile der Kontostand-Karte für den Lichtstreif der Finanzen
-  (`streifMessen()` in `buehne.js`, Anteile des Bildes) – beides gibt `capture-screenshots.mjs` beim Aufnehmen aus; rücken
-  Chips oder Datumszeile auf der Bühne, auch die Schwellen der Schilder am Ende der Fahrt (Abschnitt 12a) – und,
-  ändert sich die Ampel, die Bahn des Stroms zu Annas Platz (`data-pfad` an `#fluss-spur`); (2) die Zahlen im Text mit den
-  Bildern abgleichen (233 Mitglieder, „10 von 21“ und Getränkestand 3/4, Kontostand „13.944,47 €“ neben dem Finanz-Laptop
-  samt Startwert des Zählwerks in `buehne.js`) und die Alt-Texte; (2a) zeigen die Bilder Fotos der Abteilungen, deren
-  Fotografen in `THIRD-PARTY-NOTICES.md` nennen; (3) `width`/`height`, wenn sich ein Ausschnitt geändert hat; (4) an allen Bild-Links in `index.html` `?v=`
+- Nach neuen Aufnahmen nachziehen: (1) die Zahlen im Text mit den Bildern abgleichen (Kontostand „13.944,47 €“ neben dem
+  Finanz-Laptop, „Sommerfest 2026“ und „21 Plätze“ in Kapitel 5 und am großen Telefon, Glockenfeld in Kapitel 6) und die
+  Alt-Texte; (2) ändert sich der Helferplan, die Lage der drei Marken darauf (`.bp-1` bis `.bp-3` in `site.css`, Prozent
+  der Aufnahme); ändern sich die Ausschnitte der Ebenen, stimmen die Beschriftungen der Explosion trotzdem (sie hängen
+  nur an der Geometrie); (2a) zeigen die Bilder Fotos der Abteilungen, deren Fotografen in `THIRD-PARTY-NOTICES.md`
+  nennen; (3) `width`/`height`, wenn sich ein Ausschnitt geändert hat; (4) an allen Bild-Links in `index.html` `?v=`
   erhöhen: Browser dürfen Bilder 7 Tage zwischenspeichern (siehe `.htaccess`) und zeigen unter gleicher Adresse sonst
   noch die alten.
 - Eigene Demo-Datenbank nur mit Seed-Daten (so kommen keine eigenen Testeinträge ins Bild):
@@ -287,14 +272,13 @@ kleine Größen bis 32 px eine ruhigere Form (zwei Etappen je Seite, ohne Tempo-
   `og-image.png`, `logo-mail.png` (+ `@2x`) und `assets/brand/*`. Nicht selbst nachzeichnen oder umfärben; ein neues Paket
   übernimmt `node tools/make-logo-assets.mjs <Ordner des Pakets>` (prüft auch Bildgrößen und die `<img>`-Angaben). Danach
   `?v=` an den Links erhöhen.
-- **Kopf- und Fußzeile:** In der Kopfzeile stehen `logo-dark.svg` (über der Nacht) und `logo.svg` (über Papier) mit
-  `width="125" height="28"` übereinander und wechseln nur über die Deckkraft; in der Fußzeile (Nacht) `logo-dark.svg` mit
-  `160 × 36`. Kopien von Kopf und Fuß: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`
+- **Kopf- und Fußzeile:** Alle Seiten sind dunkel; in der Kopfleiste steht `logo-dark.svg` mit `width="125" height="28"`,
+  in der Fußzeile mit `160 × 36`. Die helle Fassung `logo.svg` zeigt keine Seite mehr (sie bleibt für die Werkzeuge und
+  Vorlagen). Kopien von Kopf und Fuß: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`
   (gleich gehalten, `tools/kopf-fuss-pruefen.mjs`).
-- **Pinnnadel:** Der orange Punkt mit den Tempo-Strichen aus dem Logo ist der Schlusspunkt der großen Überschriften
-  („in Fluss●“, „an einem Ort●“, „für Ihren Verein●“), die Spitze des Kapitel-Fadens in der Kopfzeile und die Marke der
-  Kapitel und Schritte (Symbole `pin`, `pin-striche`, `pin-punkt` im Sprite von `index.html`, Formen und Maße wie im
-  Logo-Paket).
+- **Pinnnadel:** Der orange Punkt mit den Tempo-Strichen aus dem Logo war in der Gestaltung B4 Schlusspunkt der großen
+  Überschriften und Spitze des Kapitel-Fadens; die Pro-Gestaltung setzt einen gewöhnlichen Punkt („Schicht für
+  Schicht.“) und nutzt die Symbole nicht mehr.
 - **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen das V in der ruhigeren Form, spiegelpoliert bzw. als
   glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
   Regeln von `.device-mark` in `site.css`).
@@ -343,8 +327,8 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   „Mit dem Absenden willigen Sie ein, dass die VereinsFlow GbR Ihnen E-Mails zum Start und zu wichtigen Neuigkeiten von
   VereinsFlow schickt – selten, höchstens etwa einmal im Monat. Sie bekommen zuerst eine E-Mail mit einem Bestätigungslink.
   Abmelden können Sie sich jederzeit über den Link in jeder E-Mail. Mehr in der Datenschutzerklärung.“
-- **Seiten des Skripts** (`vf_seite`): dieselbe Kopf- und Fußzeile wie Impressum und Datenschutz (Papier mit Fuß auf der
-  Nacht; bei Änderungen an Kopf oder Fuß der Startseite alle Kopien nachziehen: `datenschutz.html`, `impressum.html`,
+- **Seiten des Skripts** (`vf_seite`): dieselbe Kopf- und Fußzeile wie Impressum und Datenschutz (dunkel wie alle Seiten;
+  bei Änderungen an Kopf oder Fuß der Startseite alle Kopien nachziehen: `datenschutz.html`, `impressum.html`,
   `404.html`, `newsletter.php` – `tools/kopf-fuss-pruefen.mjs` vergleicht sie). Das Markup steht dort in einem PHP-String in
   einfachen Hochkommas: kein `'` hineinschreiben (die Prüfung meldet es).
   Der optionale letzte Wert `$symbol` („mail“ oder „circle-check“) setzt ein großes Zeichen über die Überschrift. Nach
@@ -354,203 +338,108 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
 - **Lokale Vorschau:** `tools/serve.mjs` führt kein PHP aus; ein Absenden zeigt dort nur einen Hinweis. Getestet wurde das
   Skript mit PHP als WebAssembly (`@php-wasm/node`, PHP 7.4 und 8.3).
 
-## Gestaltung und Bewegung (B4 „Spektakel“)
+## Gestaltung und Bewegung („Pro“, seit 16.11.2026)
 
-Umgesetzt ist der abgestimmte Entwurf B4 „Spektakel“ (Jury 19.10.2026) mit den Kapiteln und dem roten Faden aus B3:
-Kino-Einstieg mit 3D-Geräten und einer Kamerafahrt in den Laptop, Studiolicht und Lichthöfe statt farbiger Flächen, große
-bewegte Schrift, Karten und Knöpfe, die auf den Zeiger reagieren, und ein Lichtfluss, der durch alle Kapitel zieht
-(„Bringt Vereinsarbeit in Fluss“). Die Geschichte ist das Sommerfest 2027 des Beispiel-Vereins TSV Musterstadt 1898 e.V.
-mit Anna Adler (sie trägt sich am Getränkestand ein, sie ist Vereinsadministratorin). Nacht (`#060B16`) für Einstieg,
-Ausgangslage, Unterwegs, Funktionen und Demo, Papier (`#F6F3EC`) für Helferplanung, Finanzen, Vertrauen, „So starten Sie“ und Fragen;
-jeder Wechsel ist ein Bogen, der sich beim Scrollen über das Kapitel davor schiebt.
+Umgesetzt ist die „Mischung“ aus den Apple-Pro-Entwürfen vom 16.11.2026 (Luis: „baue die website so um wie in der letzten
+Übersicht“): Entwurf 02 „Explosion“ als Einstieg, dazu die Metall-Zahlen aus 05 „Zahlen-Kino“ und das große Telefon aus
+06 „Handy zuerst“. Die Geräte der bisherigen Seite (Laptop und Telefon, die sich von selbst ins Bild drehen) bleiben mit
+genau ihrer Bewegung („baue beides ein“). Durchgehend Nacht (tiefes Nachtblau bis Schwarz, `--nacht-0` `#02040B`), weiße
+Schrift, große eng gesetzte Überschriften mit Punkt, ruhige Unterzeilen in Grau, viel Raum, Pillen-Knöpfe (Hauptaktion
+in Vereinsblau), Kacheln aus Glas. Entfallen sind mit der Gestaltung B4 die Papier-Kapitel, der Kapitel-Faden, der
+Lichtfluss (`fluss.js`), die Kamerafahrt (`buehne.js`) und das Finale mit dem Standbild der Geräte. Die Geschichte bleibt
+der Beispiel-Verein TSV Musterstadt 1898 e.V.; die 21 Plätze sind ausdrücklich als Beispiel aus der Demo gekennzeichnet.
 
-### Die zehn Kapitel
+### Die elf Kapitel
 
-| Kap. | Anker | Fläche | Was geschieht (mit Bewegung) | Ohne Bewegung, ohne Skript, schmal |
-| --- | --- | --- | --- | --- |
-| 1 Einstieg | `#top` | Nacht | Laptop (−17°, leicht von oben, schwache Spiegelung im Boden) und Telefon (−24°) in 3D-Posen über die Hülle `.pose`, Studiolicht, Lichtkanten am Titanrahmen (gemessen), „Fluss“ hinter der Deckelkante, die Pinnnadel auf der Deckelecke. Raster wie Kopfzeile und Kapitel: Text am Inhaltsrand (`--x0`), Geräte bis an den Seitenrand (`--gx`), Maßstab `--u` so, dass alles passt und die Überschrift 16 px unter der Kopfzeile steht. Bis der Laptop posiert, steht seine Hülle um den Weg weiter rechts, den die Drehung ausmacht (Deckelkante bleibt stehen, läuft nie über den Text). Ab 1024 × 720 klebt die Bühne über `--fahrt-strecke` (220svh) und die Kamera fährt in den Laptop: Überschrift fliegt vorbei, das Telefon zieht in seiner Pose rechts hinaus, in einem Zug bis die flache Aufnahme fensterbreit steht (Überblendung bei 74–84 %), mit drei Marken und der Tafel „Zahlen, die dem Vorstand helfen“ (`#im-detail`); die Kopfzeile fährt dabei aus. Seit 22.10.2026 fährt sie von selbst (Luis: „zu unflüssig“): ein kleines Stück Scrollen, und die Seite fährt in 2 s bis zur Tafel; vom Ende ein Stück nach oben fährt zurück (siehe „Kamerafahrt“ unter Leistung) | Bühne in Ruhe, „Im Detail“ als eigener Abschnitt (am Smartphone im Telefon); ohne scroll-driven Animationen drei feste Stufen (dort nichts von selbst) |
-| 2 Ausgangslage | `#ausgangslage` | Nacht | Wortwalze „VereinsFlow bündelt …“: das Wort wechselt an vier Scroll-Zonen (kein Zeitgeber), vier Lichtlinien laufen in den Punkt hinter „Ort“; dann schiebt sich der Papierbogen hoch, der Strom färbt sich an der Kante zu Tinte | die vier Wörter untereinander, harter Schnitt |
-| 3 Helferplanung | `#helferschichten` | Papier | seit 22.10.2026 „radikal einfach“ (Entwurf C, Luis: vorher „zu erdrückend … zu viel Text“): die Überschrift sind die drei Schritte „Schichten anlegen. Helfer tragen sich ein. Helferplan drucken.“, die beim Scrollen nacheinander erscheinen; daneben eine einzige Ampel, die sich von 0 auf 10 von 21 füllt (Lichtkomet in Annas Platz, „noch niemand“ am Grillstand), Telefon klein daneben, in Schritt 3 legt sich der Aushang über die Ampel | drei Sätze und Ampel im Endstand |
-| 4 Unterwegs | `#unterwegs` | Nacht | das Telefon dreht sich ins Bild (wie bisher), ab 1200 × 720 kreisen fünf Glas-Chips auf einer geneigten Umlaufbahn aus Licht | Chips als Reihe |
-| 5 Funktionen | `#funktionen` | Nacht | seit 22.10.2026 wie ein Handy-Startbildschirm: „13 – Alles, was Vereinsarbeit braucht“, Helferschichten als großes oranges Feld, zwölf Symbole in Markenfarben mit je einem Wort, kurzer Satz erst beim Überfahren/Antippen; keine Aufklapp-Texte mehr | Symbole ruhig |
-| 6 Finanzen | `#finanzen` | Papier | ab 1024 px Text links, Laptop rechts (dreht sich wie bisher, steht frontal); einmal ein Lichtstreif über die Kontostand-Karte, „13.944,47 €“ zählt hoch | untereinander, Zahl steht |
-| 7 Vertrauen | `#sicherheit`, `#rollen` | Papier | Datenblatt mit vier Punkten; die fünf Rollen als drei ineinanderliegende, leicht gekippte Milchglas-Rahmen legen sich von außen nach innen, Annas Plakette folgt; „Mehr dazu“ mit sieben Punkten; drei langsame Tintenlinien am Fuß | stehend |
-| 8 So starten Sie | `#ablauf` | Papier | die Startlinie zeichnet sich, die Pinnnadel fährt einmal von 1 über 2 nach 3 und füllt die Punkte | Nadel auf 3 (schmal senkrecht, ohne Nadel) |
-| 9 Fragen | `#faq` (`#ausprobieren`) | Papier | fünf Fragen; beim Aufklappen gleiten die Fragen darunter, die Antwort blendet ein (Chromium: View Transition, sonst Web Animations); eine Sprungmarke öffnet die Frage | sofort auf |
-| 10 Demo | `#kontakt`, `#benachrichtigen` | Nacht | „Eine Demo / für Ihren Verein●“, der leuchtende Demo-Knopf (E-Mail, vorausgefüllt), Anruf, Adresse kopieren; Schlussbild Laptop zugeklappt und Telefon (Standbild); der Strom zieht sich im Pfeil des Knopfs zusammen (1,5 s), der Lichthof atmet einmal, drei Lichtlinien wachsen zum Zeichen auf dem Deckel (0,9 s), das einmal aufleuchtet; darunter die Papier-Insel mit der Anmeldung | Endstand |
+| Kap. | Anker | Inhalt | Bewegung beim Scrollen → Endlage |
+| --- | --- | --- | --- |
+| 1 Einstieg | `#top` | h1 „Schicht für Schicht.“; die App als sechs Glas-Ebenen aus echten Aufnahmen (01 Mitglieder, 02 Termine, 03 Helferschichten, 04 Finanzen, 05 Nachrichten, 06 Übersicht – beschriftet, am Handy als Legende), die sich zum Laptop `.rechner` zusammensetzen; „Alles greift ineinander.“; darunter „Demo anfragen“, „Beim Start benachrichtigen“ und der Hinweis auf die Demodaten | gepinnte Bühne (am Rechner zwei Fensterhöhen Weg, am Handy anderthalb): zerlegt halten, Beschriftung aus, Ebenen fahren zusammen (isometrisch → frontal), Laptop entsteht, „Alles greift ineinander.“ erscheint, halten → zusammengesetzt |
+| 2 Ausgangslage | `#ausgangslage` | „Vereinsarbeit ist Ehrenamt. Die Verwaltung sollte es nicht schwerer machen. Aus Listen, Chats und Rundmails …“ als große Aussage | Wörter (`.aw`) hellen auf → alle hell |
+| 3 Die Geräte von heute | (Tafel `#im-detail`) | „Bringt Vereinsarbeit in Fluss.“, Laptop und Telefon wörtlich (drehen sich ins Bild, sobald sie zur Hälfte sichtbar sind, dann ihre Pose −17° bzw. −24°), drei Aussagen, Tafel „Zahlen, die dem Vorstand helfen“ | wie bisher (CSS-Animationen, `site.js`) |
+| 4 Funktionen | `#funktionen` | Metall-„13“, „Bereiche, die zusammenarbeiten.“, dreizehn Kacheln (Helferschichten groß, mit der Schichtkarte) | Neigung und Glanz der Zahl → ruhig |
+| 5 Helferplanung | `#helferschichten` | Metall-„21“ „Plätze beim Sommerfest.“ (Beispiel aus der Demo), der Helferplan mit drei Marken (Neue Schicht, Eintragen, Drucken), drei Schritte | wie Kapitel 4 |
+| 6 Unterwegs | `#unterwegs` | großes Telefon `.telefon` mit dunklen Aufnahmen, „Ein Tipp. Eingetragen.“ und der Text von heute, das aufgeklappte Feld der Glocke (eine Benachrichtigung **in** VereinsFlow, keine Mitteilung des Telefons); Metall-„24“ „Stunden vorher: die Erinnerung.“ mit dem Hinweis auf Glocke und E-Mail | am Rechner gepinnt (anderthalb Fensterhöhen): Telefon richtet sich auf, Bildschirm wechselt zur Schichtliste, fast gerade klappt das Feld der Glocke auf; am Handy ohne Pinnen beim Durchscrollen → gerade |
+| 7 Finanzen | `#finanzen` | Laptop der Finanzen wörtlich (dreht sich ins Bild, steht frontal), Text, Kontostand, vier Punkte | wie bisher |
+| 8 Sicherheit | `#sicherheit`, `#rollen` | „Mitgliederdaten verdienen mehr als einen Passwortschutz.“, Datenblatt (vier Punkte), Metall-„5“ mit den fünf Rollen und ihrer Reichweite, „Mehr dazu“ | wie Kapitel 4 |
+| 9 So starten Sie | `#ablauf` | Metall-„3“ „Schritte bis zur ersten Einladung.“ und die drei Schritte | wie Kapitel 4 |
+| 10 Fragen | `#faq` (`#ausprobieren`) | fünf Fragen; eine Sprungmarke öffnet die Frage (`site.js`) | – |
+| 11 Kontakt | `#kontakt`, `#benachrichtigen` | „Eine Demo für Ihren Verein.“, Demo-Knopf (E-Mail, vorausgefüllt), Anruf, Adresse kopieren; darunter die Anmeldung „Beim Start benachrichtigt werden“ | – |
 
-Kopfzeile: eine schwebende Glasinsel, über der Nacht dunkel, über Papier hell (gemessen an ihrer Mittellinie, gewechselt nur
-über Deckkraft). Darunter der **Kapitel-Faden**: zehn echte Anker mit Namen (bei Hover und Fokus, nach einem Klick auf einen
-Rastpunkt 1,5 s beim Einrasten – beim bloßen Scrollen nicht; die Rastpunkte stehen nicht in der Tab-Reihenfolge, dieselben
-Ziele haben Navigation und Menü), die Pinnnadel rastet am aktuellen Kapitel ein, je Kapitel genau ein `aria-current` in der Navigation
-(Kapitel 2–4 „Helferplanung“, 8–9 „Fragen“, 10 der Demo-Knopf mit Ring). Unter 900 px Logo, „Demo“ und Menüknopf, der
-Faden nur als Fortschrittsstrich. Fußzeile auf der Nacht mit dem Schalter „Bewegung anhalten“ (im Einstieg rechts unten im
-Seitenrand nur als Zeichen, der Name erscheint bei Zeiger und Fokus).
+**Kopfleiste:** eine Glasleiste über die ganze Breite (`backdrop-filter`), Marke, die Links „Helferplanung“ (Kapitel 5–6),
+„Funktionen“ (4), „Finanzen“ (7), „Sicherheit“ (8), „Fragen“ (9–10) und die Pille „Demo anfragen“ (11); die Marke steht für
+1–3. Das Kapitel unter der Mitte des Fensters (Band bei 45 %) markiert seinen Eintrag mit `aria-current` (`data-navi` ↔
+`data-kapitel`, `site.js`). Unter 900 px Marke, „Demo“ und Menüknopf; das Menü bedeckt das Fenster. **Fußzeile:** Marke,
+Kontakt, Spalten Produkt/Kontakt, Impressum und Datenschutz, der Hinweis auf die Demodaten und – nur auf der Startseite –
+der Schalter „Bewegung anhalten“.
 
-### Regeln der Bewegung
+### Bewegung
 
-- Was gelesen wird, erscheint einmal und bleibt; was nur verbindet (Lichtfluss, Licht), darf dauernd laufen. Szenen rasten
-  in festen Zuständen ein (IntersectionObserver-Bänder), gescrubbt wird nur die Kamerafahrt – und die fährt nach einem
-  kleinen Stück Scrollen von selbst (das Skript setzt die Scrollposition je Bild). Keine Scroll-Listener (auch die Fahrt
-  nicht: Wächter, Eingabe-Ereignisse und je Bild ein Blick auf `scrollY`).
-- Bewegt werden nur `transform` (auch `translate`, `rotate`, `scale`), `opacity` und `filter`, dazu Canvas – nie das
-  Layout. Kurven `--ease-out`, `--ease-in-out`, `--ease-drawer` und die Federn `--feder-ruhig`/`--feder-rast` (`linear()`,
-  sonst `--ease-out`); Dauern: Druck 120 ms, Hover 150 ms, Zustand 200–250 ms, Auftritt 450–600 ms.
-- Bühnen (klebende Szenen) nur mit `(min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion:
-  no-preference)` (Spur und Umlaufbahn ab 1200 px), darunter der „Kompakt-Modus“.
-- Vorzustände (unsichtbar, versetzt) gelten nur mit Skript und Bewegung (`html.js`, in Kapitel 7–10 erst mit `.ist-bereit`,
-  das `buehne.js` setzt); `:focus-within` hebt sie auf. Ohne Skript steht alles im Endstand.
-- **„Bewegung reduzieren“:** alles im Endstand, keine klebenden Bühnen, Kapitel 3 als Kacheln, der Lichtfluss als ein
-  einziges Standbild ohne Schleife, keine Neigung, kein Magnet. Dazu `prefers-reduced-transparency` (Glas fast deckend),
-  `prefers-contrast: more`, `forced-colors` (Licht und Canvas aus) und Druck (Nacht wird Papier, alles im Endstand).
-- **Schalter „Bewegung anhalten“** (WCAG 2.2.2, im Einstieg und in der Fußzeile): hält Lichtfluss, Umlaufbahn und
-  Übergänge an; das Finale steht dann gleich im Endstand. Gilt nur für den Besuch – die Seite speichert nichts im Gerät.
+- **Bewegung beim Scrollen (Bau 2, 16.11.2026):** Explosion (Kapitel 1), Aussage (2), Metall-Zahlen (4, 5, 6, 8, 9) und
+  großes Telefon (6). Bewegt werden nur `transform` und `opacity`, direkt in Keyframes (`site.css` Abschnitt 17, Namen
+  `ex-*`, `tf-*`, `aw-*`, `mz-*`) – keine animierten Variablen, keine Layout-Abfragen je Bild. In 3D ändert sich die
+  Deckkraft nur an Blättern (Bilder, Kanten, Schatten, Glanz, Laptop), nie an den Hüllen mit `preserve-3d`.
+- **Zeitleisten:** je Bühne eine benannte `view-timeline` (Kopfleiste über `view-timeline-inset` abgezogen): `--ex` an
+  `.ex-strecke`, `--tf` an `.tf-strecke`, `--aw` an `.aussage`, `--mz` an jeder `.metall`. Alle Teile einer Bühne laufen
+  über dieselbe Spanne (gepinnt `contain 0–100 %` = genau solange die Bühne klebt; sonst `cover`), die Phasen sind
+  Keyframe-Offsets, jedes Segment beginnt und endet weich (`cubic-bezier(0.33, 0, 0.67, 1)` = smoothstep), und die Endlage
+  steht still, bevor die Bühne sich löst (Explosion ab 88 %, Telefon ab 80 %). Die Wörter der Aussage haben je eine
+  versetzte Spanne (`cover 11–21 %` … `44–54 %`), die Metall-Zahl neigt sich über ihre ganze Spanne (±12° um die
+  Grundneigung, in der Fenstermitte genau die Grundneigung) und ihr Glanz wandert in drei überblendeten Lagen.
+- **Ohne scroll-driven animations** (Firefox, Safari vor 26): dieselben Animationen stehen mit 1 s Dauer still
+  (`paused`), `assets/js/bewegung.js` setzt je Bild `currentTime = Fortschritt × 1 s` (rAF-gebündelt, passive
+  Scroll-Ereignisse, Lage der Bühnen zwischengespeichert und nur bei Größenänderung neu gemessen, nur für Bühnen nahe am
+  Fenster). Die Wörter der Aussage bekommen dort statt der Spanne eine Verzögerung.
+- **`bewegung.js`** außerdem: dekodiert die Bilder der Explosion vorab (`img.decode()`), die des Telefons, sobald es nahe
+  ist; `will-change` nur an Bühnen nahe am Fenster (`.ist-nah`); hält beim Umschalten zur Laufzeit die Leseposition.
+- **„Bewegung reduzieren“, „Bewegung anhalten“ (`html.ist-ruhig`, Ereignis `vf:ruhe`) und ohne Skript:** keine Bewegung, die
+  Endlage – Explosion zusammengesetzt, Telefon gerade, Zahlen ruhig, Aussage hell –, die Strecken sind eingeklappt (kein
+  leerer Scrollweg). Am Handy ist der Einstieg dann so hoch wie sein Inhalt (Laptop direkt über „Alles greift
+  ineinander.“). Wechselt der Zustand zur Laufzeit, rechnet `bewegung.js` die Leseposition um (zwischen den Strecken
+  bleibt alles, wo es war; in einer Strecke bleibt die Bühne oben bzw. steht in der Endlage) – Safari kennt kein
+  Scroll-Anchoring. Die Geräte von heute (Kapitel 3 und 7) bewegen sich wie bisher.
+- Kurven `--ease-out`, `--ease-in-out`; Dauern: Druck 120 ms, Hover 150 ms, Pose 0,9 s.
 
 ### Laptop und Telefon
 
 - Markup, CSS und Bewegung **wörtlich wie `c112a20`**: `tools/geraete-css.mjs` setzt die sieben Gerätebereiche zwischen die
   Marker `@@geraete-…` in `site.css` (Keyframes am Dateiende, `tools/make-showcase-keyframes.mjs` funktioniert unverändert),
-  `site.js` startet sie mit denselben Zeilen wie bisher. Neue Posen, die Kamerafahrt und Licht nur über die Hüllen
-  `.geraet`, `.kamera` und `.pose` sowie über eigene Ebenen; an `.showcase*`, `.laptop*`, `.iphone*` und `.phone` setzt
-  `site.css` außerhalb der wörtlichen Bereiche nur Größen (`--sw`, `--pw`, `--rim`; im Einstieg `--sw` über `--k01-sw`),
-  `object-position` und – bewusste Ausnahme in der Ruhelage – die Eckstreifen des gedrehten Telefons im Einstieg
-  (`.iphone-rim` sichtbar, sonst klafften an den runden Ecken Lücken; keine Bewegung, die Matrizen bleiben gleich).
-  Ausgleich der Pose (`translate` an `.geraet-laptop`, 0,1618 der Bildschirmbreite) und Spiegelung (`-webkit-box-reflect`)
-  sitzen an der Hülle. `tools/geraete-pruefen.mjs` prüft das, auch zur Laufzeit in Chromium und WebKit.
-- **WebKit in Playwright zeigt kein 3D:** Bildschirmfotos aus Playwright-WebKit werden ohne Compositing gezeichnet –
-  jede 3D-Transformation erscheint flach (Gegenprobe: ein einfacher Würfel aus zwei Flächen mit `preserve-3d` ist dort ebenfalls
-  flach, in Chromium räumlich). Dem Laptop fehlt dort deshalb scheinbar das Unterteil (die Tastatur steht senkrecht zur
-  Bildebene und wird zur Linie) – auch auf der alten Seite. Das ist eine Grenze des Werkzeugs, kein Fehler der Seite; die
-  Matrizen prüft `tools/geraete-pruefen.mjs` trotzdem in WebKit. Gegenprobe auf echtem Safari (Mac, iPhone, iPad) steht aus.
-- Je Abschnitt lebt höchstens ein Gerätepaar; das Schlussbild des Finales ist ein Standbild aus der echten Bewegung
-  (`tools/geraete-standbild.mjs`, nach einer Änderung an den Geräten neu erzeugen und die gemeldete Lage des Zeichens in
-  `site.css` bei `.zeichen-ziel`/`.zeichen-licht` eintragen).
+  `site.js` startet sie mit denselben Zeilen wie bisher. Lage und Pose nur über die Hüllen `.geraet`, `.pose` und
+  `.k03-buehne` (Bühne in Kapitel 3, schneidet senkrecht ab, was beim Hereindrehen von unten kommt); an `.showcase*`,
+  `.laptop*`, `.iphone*` und `.phone` setzt `site.css` außerhalb der wörtlichen Bereiche nur Größen (`--sw`, `--pw`,
+  `--rim`), Raster, `object-position` und – bewusste Ausnahme in der Ruhelage – die Eckstreifen des gedrehten Telefons
+  (`.iphone-rim` sichtbar). Spiegelung im Boden an den Hüllen. `tools/geraete-pruefen.mjs` prüft das, auch zur Laufzeit in
+  Chromium und WebKit.
+- Die neuen Geräte heißen deshalb anders: der Laptop der Explosion `.rechner` (einfaches CSS-Gerät in Silber um die
+  Grundplatte), das große Telefon `.telefon` (Titanrahmen wie im Entwurf 06).
+- **WebKit in Playwright zeigt kein 3D:** Bildschirmfotos aus Playwright-WebKit werden ohne Compositing gezeichnet – jede
+  3D-Transformation erscheint flach. Das ist eine Grenze des Werkzeugs, kein Fehler der Seite; die Matrizen prüft
+  `tools/geraete-pruefen.mjs` trotzdem in WebKit. Gegenprobe auf echtem Safari (Mac, iPhone, iPad) steht aus.
 
-### Lichtfluss, Zählwerke und Leistung
+### Leistung und Größen
 
-- **Lichtfluss** (`fluss.js`): ein Strom aus Fasern entlang einer Bahn (`data-pfad`, Anteile der Fläche; schmal
-  `data-pfad-kompakt`), auf der Nacht leuchtend, auf Papier als Tinte; dazu Lichtlinien mit Pulsen, Ziel und Start an
-  Elementen (`data-ziel`, `data-start`), Zwillinge (gleicher Strom in zwei Ebenen: Wechsel Nacht → Papier, Umlaufbahn),
-  Zeiger (weicht aus), Flug (Kapitel 3), Sammeln und Wachsen (Finale). Alle Optionen im Kopfkommentar der Datei.
-- **Leistung:** eine gemeinsame Schleife nur für sichtbare Flächen, angehalten bei verborgenem Tab und mit dem Schalter;
-  Pixeldichte höchstens 1,5 und höchstens 2 Millionen Bildpunkte je Fläche; einen Bildpuffer haben nur Flächen in der Nähe
-  des Fensters (eine Fensterhöhe davor und danach), weiter weg wird er freigegeben (`width = 0`); die ruhigen Grundlinien
-  der Lichtlinien werden in Leerlaufzeit vorgezeichnet, bevor sie ins Bild kommen, und ohne Schatten-Unschärfe (ein breiter,
-  schwacher Strich darunter ist der Schein) – vorher stand die Seite beim ersten Zeichnen bis zu 1,9 s (mit GPU) bzw. 4 s
-  (ohne); je Faser ein vorgezeichneter Strich; auf schwachen Geräten (höchstens 4 Kerne oder 4 GB) halbe Faserzahl und 30
-  Bilder je Sekunde; bei „Daten sparen“ ein Standbild. Über Text leuchtet der Strom gedämpft (`data-leise`: Überschrift im
-  Einstieg, Zahl und Schritte der Helferplanung). Der Strom im Finale läuft an der Kante weich aus (Maske).
-  `backdrop-filter` nur an Kopfzeile, Ampel, Tafel und Popovers (das Bento hat eine Tönung ohne Unschärfe). Bilder mit
-  `width`/`height` und `srcset` in den gezeichneten Breiten, `loading="lazy"` außer im ersten Bildschirm.
-- **Kamerafahrt (Kapitel 1)** – gemessen mit `tools/fahrt-messen.mjs` (20.10.2026, MacBook Air M5, 60 Hz; ab der Ruhelage
-  der Geräte durch die ganze Fahrt bis in Kapitel 2, Mausrad in 16-ms-Schritten). In der Fahrt bewegen sich nur Hüllen
-  über `transform`/`opacity` auf dem Compositor, ohne Live-Filter, und beim Losfahren wird keine Ebene umgebaut. Vier
-  Maßnahmen, die man nicht oder kaum sieht:
-  1. **Lichtkegel ohne `filter: blur(28px)`** – `clip-path` schneidet erst nach dem Filter, die Unschärfe wirkte nur an
-     der Oberkante (höchstens 4/255); diese weiche Kante steht jetzt im Verlauf. Der Filter kostete WebKit beim Abblenden
-     des Lichts (ab 60 %) eine Lücke von 110–120 ms.
-  2. **Spiegelung des Laptops bleibt in der Fahrt** – früher `-webkit-box-reflect: none` beim Losfahren. Chromium kennt
-     diesen Wert nicht (es behielt die Spiegelung also schon immer), WebKit baute dafür die Spiegel-Ebenen neu auf: eine
-     Lücke von 45–130 ms genau beim ersten Scrollen. Jetzt zeigen beide Browser dasselbe; die Spiegelung fährt mit dem
-     Laptop aus dem Bild. (Zum Abschalten in Gegenproben `unset` schreiben, nicht `none`.)
-  3. **Telefon dreht beim Losfahren nicht mehr weg** – es bleibt bei −24° und zieht wie bisher rechts hinaus, wächst und
-     blendet aus. Jede Drehung weg von der Kamera macht Eckstreifen des Rahmens sichtbar, die Chromium erst in diesem
-     Moment rastert: je ein verpasstes Bild (3 von 4). Eine Drehung zur Kamera hin oder gar keine kostet nichts; als flache
-     Hülle gedreht war das Telefon unscharf, an die Fahrt gebunden half die Drehung nicht.
-  4. **Überschrift ohne `filter: blur`** in `fahrt-titel` (höchstens 2 px bei einem Fünftel Deckkraft) – mit Filter lief
-     die Animation in Chromium nicht auf dem Compositor und wurde bis 42 % in jedem Bild neu gerastert.
-
-  Der Übergang des Laptops in die Frontalansicht (0,9 s) bleibt: Er kostet in Chromium je Bild gut 4 ms PrePaint, ohne ihn
-  (Sprung) wird WebKit aber deutlich schlechter. Verpasste Bilder je Durchgang (kalt, Mittel aus drei Läufen, vorher →
-  nachher): Chrome 1440 × 900 @2 Trackpad 4 → 1 (99,3 % der Bilder ≤ 16,7 ms, längste Lücke 33 ms, keine Long Animation
-  Frames, keine langen Aufgaben), 1280 × 740 @2 3 → 1; WebKit 1440 × 900 @2 Trackpad 11 → 4 (längste Lücke 110 → 46 ms),
-  schnell 9 → 1, 1280 × 740 @2 Trackpad 15 → 11, schnell 11 → 3; mit warmem Zwischenspeicher WebKit 11 → 2 bzw. 6 → 3.
-  Grenze: Playwright-WebKit stockt in etwa jedem dritten Lauf (auch mit dem alten Stand, häufiger bei Gegenproben) bei
-  0 %, 42 % und 88 % für 70–130 ms bei freiem Hauptthread – vorher 13–20, jetzt 8–12 verpasste Bilder. Das lässt sich mit
-  keiner einzelnen Wirkung abschalten (die Gegenprobe `leer` zeigt es auch) und ist in echtem Safari gegenzuprüfen (Web
-  Inspector → Timelines → Rendering Frames). Beim allerersten Zeichnen eines Effekts kompiliert Chrome einmalig eine
-  Pipeline im GPU-Prozess (80–160 ms je Effekt, danach im Shader-Speicher von Metal) – zwei Live-Filter weniger heißt zwei
-  solche Stopps weniger.
-
-  **Von selbst (seit 22.10.2026).** Luis fand die Fahrt „zu unflüssig“: Man musste die ganze Strecke selbst scrollen, und
-  sie lief so ruckig wie Mausrad oder Trackpad schoben. Die Fahrt bleibt an das Scrollen gebunden (alles oben gilt
-  weiter, `site.css` 12a ist unverändert bis auf den Wächter `.fw-innen`, die Lage des Ankers und – seit 4.11.2026 – Tafel und Schilder am Ende, siehe unten), aber `buehne.js` („Kamerafahrt von selbst“) fährt die
-  Seite:
-  - **Auslösen:** am Anfang ein kleines Stück nach unten – 40 px Mausrad (oder vier kleine Rasten, für Mäuse am Mac mit
-    4 px je Raste), 32 px mit dem Finger, eine Taste (Pfeil ab, Bild ab, Leertaste). Bis zur Schwelle bewegt sich die Seite
-    nicht (kein halber Zustand). Vom Ende ein Stück nach oben (bzw. Pfeil auf, Bild auf, Umschalt+Leertaste) fährt zurück
-    an den Anfang; vom Ende nach unten scrollt man wie immer weiter in Kapitel 2.
-  - **Fahren:** je Bild `scrollTo` per `requestAnimationFrame` – gleichmäßige Schritte nach der Uhr, unabhängig davon, wie
-    die Eingabe kam. 2 s für die ganze Strecke (kürzere Wege kürzer), Kurve `cubic-bezier(0.4, 0.08, 0.22, 1)`. Seit
-    2.11.2026 zoomt die Kamera **in einem Zug** (Luis: „immer noch zu unflüssig beim Reinzoomen“): Vorher waren es zwei
-    Züge – Kamera an den Laptop (0–58 %, 1,45-fach in gut 0,3 s), Halt mit Überblendung, dann die flache Aufnahme
-    (94–100 %, noch einmal 1,4-fach in 0,9 s). Jetzt fährt die Kamera vom Einstieg ohne Halt weiter in den Bildschirm, bis
-    die flache Aufnahme fensterbreit steht (`--ks0` → `--kse`, gut 2,2- bis 2,6-fach), um einen festen Punkt etwa in der
-    Mitte des Bildschirms; der Maßstab wächst über die Strecke exponentiell (Bézier-Näherung in `fahrt-kamera`), das
-    Zoomtempo folgt also allein der Kurve: sanft an, um 0,7 s am schnellsten (gut 10 % je 100 ms), lang aus. Die flache
-    Aufnahme fährt deckungsgleich mit (`--fdx`/`--fdy`) und blendet mitten im Zug über (74–84 %, bei 0,96–1,12 s – dann
-    steht der Laptop frontal). Ziel ist genau das Ende der Strecke – derselbe Endzustand wie bisher, Tafel ganz im Bild.
-    Seit 4.11.2026 ist das Ende ruhiger (Luis: „vor allem am Ende der Animation“ unflüssig): Im Auslauf kriecht die Seite
-    mit 0 bis 2 px je Bild (Chromium scrollt nur ganze Pixel), und Tafel und Schilder hingen an den letzten 8 % der
-    Strecke – jeder Pixel schob die Tafel um gut 1 % ihrer Höhe, dazwischen stand sie (gemessen: Bilder ohne Bewegung im
-    Auslauf, Tafel in Sprüngen). Jetzt kommen Tafel (0,6 s, Steigung 2 am Anfang wie bisher) und Schilder (0,35 s, je
-    70 ms versetzt) auf der Zeit, sobald der Wächter „ende“ bei 92 % anschlägt (`.am-ende` an `.buehne`), und die Fahrt
-    bewegt die Seite je Bild mindestens 1 px – der Rest läuft in gleichmäßigen Schritten aus, Ankunft bei gut 1,88 s.
-  - **Eingaben während der Fahrt:** Mausrad (`passive: false`, angemeldet nur, solange die Fahrt im Fenster ist), Finger
-    (`touchmove` mit `passive: false` nur über der Fahrt) und Tasten werden abgefangen, nichts arbeitet gegeneinander; der
-    Rest einer Geste (Schwung des Trackpads, gehaltene Taste, liegender Finger) auch nach der Ankunft – das Mausrad
-    höchstens 0,9 s, eine neue, stärker werdende Geste geht sofort durch. Die Gegenrichtung (40 px bzw. die Gegentaste)
-    kehrt die Fahrt um. Browser lassen nur die erste Mausrad-Bewegung einer Geste abfangen: Kommt eine Geste von außen in
-    die Strecke (aus Kapitel 2 nach oben), schiebt sie bis 40 px wie immer, dann übernimmt die Fahrt ihr Tempo (Hermite-
-    Kurve mit diesem Anfangstempo) und arbeitet nie gegen sie – schiebt sie weiter, beginnt der Plan dort neu, wohin sie
-    die Seite geschoben hat, und es wird nur gesetzt, was ihr zum Plan fehlt.
-  - **Sonderfälle:** Sprünge (Kopfzeile, Anker, Suche im Text, Fokus), Scrollbalken, Pos1/Ende und eine Gegenbewegung,
-    die sich nicht abfangen lässt, brechen die Fahrt ab. Steht die Seite danach – oder nach dem Laden, Neuladen,
-    Zurückgehen – mitten in der Strecke, fährt sie nach 160 ms Ruhe ans Ende in der letzten Richtung (nach einem Sprung:
-    weg von dem Ende, an dem sie zuletzt stand), sonst ans nähere; geweckt vom Wächter `.fw-innen` (Band oben im
-    Fenster), dann je Bild ein Blick auf `scrollY` – keine Scroll-Listener. `#im-detail` landet genau am Ende (der Anker
-    steht um den Platz der Kopfzeile tiefer, den `scroll-padding-top` beim Springen abzieht; vorher landete er bei 91 %).
-    Fenstergröße: Anfang bzw. Ende werden gehalten (das Ende rückt mit der Fensterhöhe), eine laufende Fahrt steht sofort
-    am Ziel – ebenso bei verborgenem Tab. „Bewegung anhalten“ schaltet das Fahren ab (die Fahrt folgt dann wieder nur dem
-    Scrollen). Unter 1024 × 720, bei „Bewegung reduzieren“ und ohne scroll-driven Animationen (drei Stufen) ändert sich
-    nichts. Fokus und Vorlesen bleiben unberührt: Nichts bekommt oder verliert den Fokus, am DOM ändert sich nichts.
-  - **Großes Bild:** wird jetzt schon in Leerlaufzeit geladen, dekodiert und eingesetzt, sobald der Laptop posiert –
-    sonst fiele das Einsetzen mitten in die 2 s. Wer vorher losscrollt, löst es wie bisher beim Losfahren aus.
-  - **Gemessen** mit `tools/fahrt-messen.mjs` (22.10.2026, gleiche Maschine; kalt, Mittel aus drei Läufen; vorher = alter
-    Stand, Mausrad wie ein Trackpad durch die ganze Strecke, nachher = ein Stoß von 100 px, `--scroll stoss` bzw.
-    `stoss-zurueck`, alter Stand rückwärts mit `trackpad-zurueck`). Verpasste Bilder vorwärts: Chrome 1440 × 900 @2 1 → 1
-    (längste Lücke 34 → 34 ms), 1280 × 740 @2 1 → 1 – das eine ist wie bisher ein Bild des Lichtflusses (Canvas) bei
-    58–88 %; WebKit 4,0 → 3,0 (47 → 39 ms) bzw. 2,7 → 3,0 (43 → 37 ms). Rückwärts: Chrome 0 → 0; WebKit 3,0 → 1,3
-    (49 → 41 ms) bzw. 8,3 → 7,0 (90 → 87 ms; bei 1280 × 740 stockt Playwright-WebKit rückwärts bei 2 % und 39 % bei freiem
-    Hauptthread, mit dem alten Stand genauso). Keine Long Animation Frames, keine langen Aufgaben; das Fahren selbst kostet
-    5 ms Skript je Fahrt (0,05 ms je Bild), die Kosten je Bild sind sonst unverändert. Der eigentliche Gewinn ist die
-    Gleichmäßigkeit: Sprünge im Weg je Bild (Änderung zum vorigen Bild über der Hälfte des mittleren Wegs) in Chrome 8 → 0
-    schon gegen ein gleichmäßiges synthetisches Trackpad (echte Eingaben schwanken mehr), WebKit 9 → 2. Videos und Standbilder lagen für Luis
-    in `Desktop/VereinsFlow-Kamerafahrt-automatisch/` (nicht im Repository).
-- **Zählwerke** (`data-zahl`: „10“, „13“, „13.944,47“): `buehne.js` baut nur mit Bewegung je Ziffer ein Fenster mit einer
-  Rolle; gerollt wird in ganzen Zeilen, in Ruhe steht immer die ganze Endziffer. Während des Rollens laufen die Fenster
-  oben und unten weich aus (Maske `--zw-f`, immer mindestens so breit wie der Versatz der Ziffer) und die Rolle ist
-  verwischt – beides folgt dem verbleibenden Weg und ist bei der Ankunft null; die vorderen Stellen rasten früh ein, nur
-  die hinteren rollen lange. Bis zum Start ist die Zahl unsichtbar (keine „+0.000,00 €“). Ohne Skript und ohne Bewegung
-  steht die Zahl als Text; für Screenreader steht sie daneben als Satz (`.sr-only`). Der Startwert (`zaehlenBeimErscheinen`
-  in `buehne.js`, z. B. „ 0.000,00“) muss gleich lang sein wie die Zahl – Leerzeichen für Stellen, die erst erscheinen. Kein Layout-Springen (CLS 0 gemessen,
-  auch beim Neuladen mitten auf der Seite: Kapitel 4 behält mit Umlaufbahn seine Höhe, `--chips-h`; Schalter und
-  Kopierknopf stehen mit JavaScript von Anfang an im Layout).
-- **Größen** (22.10.2026): Skripte zusammen 116 KB Quelltext, im Paket 77 KB (ohne Kommentare und Einrückung), übertragen
-  (gzip) 24 KB – davon kommen gut 11 KB im Paket bzw. 3,3 KB übertragen von der Kamerafahrt von selbst (vorher 66 / 21 KB);
-  Stildatei 301 KB Quelltext, 200 KB im Paket, 38 KB übertragen. `tools/b4-pruefen.mjs` meldet einen Fehler, wenn das Paket
-  die Ziele überschreitet (Skripte 80 / 26 KB – bis 22.10.2026 72 KB im Paket –, Stildatei 215 / 45 KB).
+- Bilder mit `width`/`height` und `srcset`/`sizes` in den gezeigten Breiten, `loading="lazy"` außer im ersten Bildschirm
+  (dort die Grundplatte mit `fetchpriority="high"`; die fünf Glas-Ebenen braucht erst die Bewegung).
+- `backdrop-filter` nur an der Kopfleiste; die Tiefe der Metall-Zahlen ist fest vorberechnet (16 Schatten in em), bewegt
+  wird nur ihre Neigung (transform) und die Deckkraft der Glanz-Lagen.
+- Flüssigkeit: `node tools/fahrt-messen.mjs` (Messwerte vom 16.11.2026 im Protokoll des Umbaus): Die Bewegung läuft in
+  Chromium auf dem Compositor (Hauptthread je Bild um 1 ms, keine Long Animation Frames), nach einem ersten Durchgang wird
+  beim Scrollen keine große Ebene neu gerastert.
+- **Größen** (16.11.2026, mit Bewegung): Skripte 19 KB Quelltext, im Paket 10,8 KB, übertragen (gzip) 3,9 KB; Stildatei
+  240 KB Quelltext, im Paket 158 KB, übertragen 30 KB (davon gut 95 KB im Paket die wörtlichen Gerätebereiche).
+  `tools/b4-pruefen.mjs` meldet einen Fehler, wenn das Paket die Ziele überschreitet (Skripte 80 / 26 KB, Stildatei
+  215 / 45 KB).
 
 ### Prüfen
 
 `node tools/check-site.mjs --strict` (Verweise, Bilder, CSP-Regeln), `node tools/geraete-pruefen.mjs` (Geräte wie bisher),
-`node tools/b4-pruefen.mjs` (Browser-Matrix: Chromium, WebKit, ohne scroll-driven Animationen, mit und ohne „Bewegung
-reduzieren“, 320 bis 1920 px; ob ein Mausrad-Stoß die Kamerafahrt von selbst ans Ende und zurück fährt – und nur dort;
-dazu je Textzeile, ob sie aus dem Fenster oder aus einem abschneidenden Kasten läuft – auch
-auf Impressum, Datenschutz und Fehlerseite, denn `overflow-x: clip` an html/body verdeckte das sonst – und die Größe des
-Pakets) und `node tools/kopf-fuss-pruefen.mjs` (Kopf und Fuß auf allen Seiten gleich). Hinweis zu
-WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, das die CSP der Seite ablehnt – die Meldung
-„Refused to apply a stylesheet …“ kommt dann vom Werkzeug, nicht von der Seite.
+`node tools/geraete-css.mjs --pruefen` (Gerätebereiche wörtlich), `node tools/kopf-fuss-pruefen.mjs` (Kopf und Fuß auf allen
+Seiten gleich) und `node tools/b4-pruefen.mjs` (Browser-Matrix: Chromium, WebKit, ohne scroll-driven Animationen, mit und
+ohne „Bewegung reduzieren“, 320 bis 1920 px; je Textzeile, ob sie aus dem Fenster oder aus einem abschneidenden Kasten
+läuft – auch auf Impressum, Datenschutz und Fehlerseite und in Zwischenstufen der Bewegung –, die Zustände der Bühnen an
+mehreren Scroll-Stellen, Endlage ohne Bewegung und ohne JavaScript, Umschalten zur Laufzeit ohne Sprung und die Größe des
+Pakets; `schnell` nur 390 und 1440 px). Flüssigkeit: `node tools/fahrt-messen.mjs` (siehe „Werkzeuge“).
+Hinweis zu WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, das die CSP der Seite ablehnt –
+die Meldung „Refused to apply a stylesheet …“ kommt dann vom Werkzeug, nicht von der Seite.
 
 ## Entscheidungen, die sich leicht ändern lassen
 
@@ -560,11 +449,11 @@ WebKit in Playwright: Bildschirmfotos dort fügen ein eigenes Stylesheet ein, da
   „Beim Start benachrichtigen“ (siehe unten).
 - **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Manrope
   ExtraBold, geneigt) liegt als Vektorgrafik vor.
-- **Farben:** die Farben des Logos – Tinte `#0F1C2E`, Vereinsblau `#3A6BEA`, Himmel `#8FB0FF`, Signalorange `#FF8A5E`,
-  Papier `#F6F3EC` – dazu die Nacht `#060B16`. Signalorange trägt die Hauptaktion („Demo anfragen“, Text in Tinte 7,4 : 1)
-  und die Pinnnadel; Himmel und Vereinsblau sind Licht und Akzent. Textfarben je Fläche mit gemessenem Kontrast (Werte und
-  Verhältnisse oben in `site.css`, `:root`). Die Seite folgt bewusst nicht der hellen oder dunklen Einstellung des Geräts.
-- **Bewegung:** siehe „Gestaltung und Bewegung“. Leicht zu ändern: die Länge der Kamerafahrt (`--fahrt-strecke`, derzeit
-  220svh), wie sie von selbst fährt (`buehne.js`: `FAHRT_DAUER` 2 s, `SCHWELLE` 40 px, `fahrtKurve`), die
-  Dauern im Finale (`buehne.js`, „Kapitel 10 · Finale“), ob Kapitel 5 Nacht bleibt (Klasse `nacht` statt
-  `papier` am Abschnitt, Farben folgen den Variablen).
+- **Farben:** die Farben des Logos – Vereinsblau `#3A6BEA`, Himmel `#8FB0FF`, Signalorange `#FF8A5E` (nur noch im Logo) –
+  dazu die Nacht von Tiefblau bis Schwarz (`--nacht-0` `#02040B` bis `--nacht-3` `#0C1A3C`). Vereinsblau trägt die
+  Hauptaktion („Demo anfragen“, weiße Schrift 4,7 : 1), Himmel ist Licht und Akzent. Textfarben mit gemessenem Kontrast
+  (Werte und Verhältnisse oben in `site.css`, `:root`). Die Seite folgt bewusst nicht der hellen oder dunklen Einstellung
+  des Geräts.
+- **Bewegung:** siehe „Gestaltung und Bewegung“. Leicht zu ändern: Pose der Geräte in Kapitel 3 (`--pose` an
+  `.pose-laptop`/`.pose-handy`), Lage und Neigung der Metall-Zahlen (`--mz-groesse`, `--mz-ry`, `--mz-rx` je Zahl), Größe
+  des Laptops der Explosion (`--ex-bw`) und des großen Telefons (`--tb`).

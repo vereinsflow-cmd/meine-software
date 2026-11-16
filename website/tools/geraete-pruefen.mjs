@@ -7,7 +7,9 @@
 //      Keyframe-Name endet auf „-body“ (site.js erkennt am Ende von *-body die Ruhelage). Erlaubt sind dort nur Größen
 //      (--sw, --pw, --rim), object-position des Bildes und eine bewusste Ausnahme in der Ruhelage: Am gedrehten Telefon
 //      des Einstiegs bleiben die Eckstreifen (.iphone-rim, display) sichtbar, sonst klafften an den runden Ecken Lücken –
-//      das ändert keine Bewegung (die Matrizen unter 7. bleiben gleich), nur ob die Streifen gezeichnet werden.
+//      das ändert keine Bewegung (die Matrizen unter 7. bleiben gleich), nur ob die Streifen gezeichnet werden. Kein
+//      Skript in assets/js/ (außer den wörtlichen Zeilen in site.js, siehe 5.) bewegt die Geräte oder schreibt Stile an
+//      sie – Skripte dürfen ihren Zustand (.is-rest) nur lesen.
 //   5. assets/js/site.js enthält die Zeilen 107–140 von c112a20 wörtlich (Bild-Laden, Start der Vorführungen).
 //   6. Jedes .laptop und .iphone in index.html ist Zeichen für Zeichen das Gerät aus c112a20 – bis auf das <img> im
 //      Bildschirm.
@@ -95,8 +97,19 @@ while ((r = regel.exec(ohneKommentare))) {
 melde(verboten.length === 0, `keine eigene Regel bewegt Bühne oder Geräte${verboten.length ? ": " + verboten.join(" | ") : ""}`);
 const eigeneNamen = [...ohneGeraete.matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1]);
 melde(!eigeneNamen.some((n) => n.endsWith("-body") || n.startsWith("vf-")), `${eigeneNamen.length} eigene Keyframes, keiner heißt vf-* oder endet auf „-body“`);
-const buehneJs = fs.existsSync(path.join(root, "assets/js/buehne.js")) ? lies("assets/js/buehne.js") : "";
-melde(!/\.(laptop|iphone|showcase-scene)\b[^\n]*\.(animate|style)\b/.test(buehneJs) && !/querySelector[^\n]*\.(laptop|iphone)["'][^\n]*\)\.(animate|style)/.test(buehneJs), "buehne.js bewegt die Geräte nicht (liest nur ihren Zustand)");
+// Alle Skripte der Seite (die wörtlichen Zeilen aus c112a20 am Ende von site.js ausgenommen – sie starten die Bewegung)
+const WOERTLICH = "// ---- Wörtlich aus site.js c112a20";
+const skripte = fs
+  .readdirSync(path.join(root, "assets/js"))
+  .filter((f) => f.endsWith(".js"))
+  .map((f) => {
+    const t = lies(`assets/js/${f}`);
+    return [f, f === "site.js" && t.includes(WOERTLICH) ? t.slice(0, t.indexOf(WOERTLICH)) : t];
+  });
+const bewegend = skripte
+  .filter(([, t]) => /\.(laptop|iphone|showcase|showcase-scene|phone)\b[^\n]*\.(animate|style)\b/.test(t) || /querySelector[^\n]*\.(laptop|iphone|showcase|phone)[\w-]*["'][^\n]*\)\.(animate|style)/.test(t))
+  .map(([f]) => f);
+melde(!bewegend.length, `kein Skript bewegt die Geräte (${skripte.map(([f]) => f).join(", ")} lesen nur ihren Zustand)${bewegend.length ? ": " + bewegend.join(", ") : ""}`);
 
 // 5. site.js
 const refJs = git("assets/js/site.js").split("\n").slice(106, 140).join("\n");
@@ -198,11 +211,11 @@ async function laufzeit() {
       { auswahl, typ, ELEMENTE, ZEITEN },
     );
   const FAELLE = [
-    // [Seite, Auswahl des .showcase]
-    ["laptop", ".k01 .showcase-laptop", "#am-rechner"],
-    ["laptop", ".k06 .showcase-laptop", "#am-rechner"],
-    ["iphone", ".k01 .showcase-phone", "section.showcase-phone"],
-    ["iphone", ".k04 .showcase-phone", "section.showcase-phone"],
+    // [Gerät, Auswahl des .showcase auf der Seite, Auswahl in c112a20] – Kapitel 3: Laptop und Telefon von heute,
+    // Kapitel 7: der Laptop der Finanzen
+    ["laptop", ".k03 .showcase-laptop", "#am-rechner"],
+    ["laptop", ".k07 .showcase-laptop", "#am-rechner"],
+    ["iphone", ".k03 .showcase-phone", "section.showcase-phone"],
   ];
   try {
     for (const name of ["chromium", "webkit"]) {

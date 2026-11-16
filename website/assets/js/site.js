@@ -1,15 +1,14 @@
-// VereinsFlow – Website (alle Seiten): Menü, Kopfzeile (Glas hell/dunkel), Kapitel-Faden mit Pinnnadel, Einblenden,
-// Fragen per Sprungmarke, Kopieren der E-Mail-Adresse, Start der Vorführungen (Laptop, Telefon – wörtlich wie bisher)
-// und der Schalter „Bewegung anhalten“. Die Bühne der Startseite (Kamerafahrt, Wortwalze, Lichtfluss) steckt in
-// buehne.js. Ohne JavaScript bleibt alles les- und nutzbar. Keine Bibliotheken, keine Netzwerkzugriffe, kein Speichern
-// im Gerät. Die Content-Security-Policy verbietet Inline-Stile; Werte setzt das Skript per CSSOM (style.setProperty).
+// VereinsFlow – Website (alle Seiten): Menü, aktiver Abschnitt in der Kopfleiste (aria-current), Einblenden, Fragen
+// per Sprungmarke, Kopieren der E-Mail-Adresse, Start der Vorführungen (Laptop, Telefon – wörtlich wie bisher) und der
+// Schalter „Bewegung anhalten“. Ohne JavaScript bleibt alles les- und nutzbar. Keine Bibliotheken, keine
+// Netzwerkzugriffe, kein Speichern im Gerät. Die Content-Security-Policy verbietet Inline-Stile; Werte setzt das Skript
+// per CSSOM (style.setProperty).
 (() => {
   const root = document.documentElement;
   root.classList.add("js");
   const bewegungAus = window.matchMedia("(prefers-reduced-motion: reduce)");
   const darfBewegen = () => !bewegungAus.matches;
   const canObserve = "IntersectionObserver" in window;
-  const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
   const kopf = document.querySelector("[data-kopf]");
 
   // ---- Menü (unter 900 px): Der Knopf steht vor den Menüpunkten. Offen ist alles außer der Kopfzeile gesperrt (inert:
@@ -42,8 +41,7 @@
     });
   }
 
-  // ---- Kopfzeile: verdichtet nach den ersten 8 px (Wächter), helles Glas über Papier. Gemessen wird an der Mittellinie
-  // der Kopfzeile (1 px hohes Band); die Farbe wechselt nur über Deckkraft (site.css). ----
+  // ---- Kopfleiste: nach den ersten 8 px etwas dichter (Wächter am Seitenanfang) ----
   if (kopf) {
     const waechter = document.querySelector("[data-kopf-waechter]");
     if (canObserve && waechter) {
@@ -51,129 +49,27 @@
     } else {
       kopf.classList.add("ist-gescrollt");
     }
-    // Alle Flächen beobachten; liegen zwei unter der Mittellinie (ein Bogen überlappt den Abschnitt davor), zählt die
-    // spätere im Dokument – sie liegt oben
-    const flaechen = [...document.querySelectorAll("main > .kapitel, .subpage main, [data-fuss]")];
-    if (canObserve && flaechen.length) {
-      let band;
-      const unter = new Set();
-      const anwenden = () => {
-        let oben = null;
-        for (const f of flaechen) if (unter.has(f)) oben = f;
-        kopf.classList.toggle("ist-hell", Boolean(oben && (oben.classList.contains("papier") || oben.matches(".subpage main"))));
-      };
-      const beobachten = () => {
-        band?.disconnect();
-        unter.clear();
-        const insel = kopf.querySelector(".kopf-insel");
-        const r = insel ? insel.getBoundingClientRect() : { top: 20, height: 64 };
-        const mitte = Math.max(1, Math.round(r.top + r.height / 2));
-        band = new IntersectionObserver(
-          (entries) => {
-            for (const e of entries) e.isIntersecting ? unter.add(e.target) : unter.delete(e.target);
-            anwenden();
-          },
-          { rootMargin: `-${mitte}px 0px -${Math.max(0, window.innerHeight - mitte - 1)}px 0px` },
-        );
-        flaechen.forEach((f) => band.observe(f));
-      };
-      beobachten();
-      let t = 0;
-      window.addEventListener("resize", () => {
-        clearTimeout(t);
-        t = setTimeout(beobachten, 150);
-      });
-    }
   }
 
-  // ---- Kapitel-Faden: Jedes Kapitel (main [data-kapitel]) wird an einem 1 % hohen Band bei 45 % der Fensterhöhe
-  // gemessen. Dann markiert es seinen Eintrag der Kopfzeile (data-navi: Marke 1, Helferplanung 2–4, Funktionen 5,
-  // Finanzen 6, Sicherheit 7, Fragen 8–9, Demo 10) und seinen Rastpunkt (aria-current="location"). Die Pinnnadel rastet
-  // als Feder ein (CSS), die Tempo-Striche dehnen sich in Fahrtrichtung. Der Name steht bei Hover und Fokus daneben und,
-  // nach einem Klick auf einen Rastpunkt, beim Einrasten 1,5 s lang – beim bloßen Durchscrollen nicht (er läge sonst
-  // über den Überschriften). ----
-  const faden = document.querySelector("[data-faden]");
-  const striche = document.querySelector("[data-faden-striche]");
+  // ---- Aktiver Abschnitt: Jedes Kapitel (main [data-kapitel]) wird an einem 1 % hohen Band bei 45 % der Fensterhöhe
+  // gemessen. Dann trägt sein Eintrag in Kopfleiste und Menü aria-current (data-navi: Marke 1–3, Funktionen 4,
+  // Helferplanung 5–6, Finanzen 7, Sicherheit 8, Fragen 9–10, Demo anfragen 11). Wer die Fußzeile sieht, ist im letzten
+  // Kapitel. ----
   const naviLinks = [...document.querySelectorAll("[data-navi]")];
-  const ziele = [...document.querySelectorAll("[data-ziel]")];
-  if (kopf && ziele.length) {
-    let kapitel = Number(kopf.dataset.kapitel) || 1;
-    let strichAnimation;
-    const markieren = (n) => {
+  const teile = [...document.querySelectorAll("main [data-kapitel]")];
+  if (kopf && naviLinks.length && teile.length) {
+    let kapitel = 0;
+    const setKapitel = (n) => {
+      if (n === kapitel) return;
+      kapitel = n;
+      kopf.dataset.kapitel = String(n);
       for (const a of naviLinks) {
         if (a.dataset.navi.split(" ").includes(String(n))) a.setAttribute("aria-current", "true");
         else a.removeAttribute("aria-current");
       }
-      for (const a of ziele) {
-        if (a.dataset.ziel === String(n)) a.setAttribute("aria-current", "location");
-        else a.removeAttribute("aria-current");
-      }
     };
-    let gewaehlt = 0;
-    let gewaehltBis = 0;
-    ziele.forEach((a) =>
-      a.addEventListener("click", () => {
-        gewaehlt = Number(a.dataset.ziel);
-        gewaehltBis = performance.now() + 2500;
-      }),
-    );
-    const ansagen = (n) => {
-      ziele.forEach((a) => a.classList.remove("ist-angesagt"));
-      const geklickt = n === gewaehlt && performance.now() < gewaehltBis;
-      gewaehlt = 0;
-      if (!geklickt || n === 1 || !kopf.classList.contains("ist-gescrollt") || faden?.matches(":hover, :focus-within")) return;
-      const ziel = ziele[n - 1];
-      if (!ziel) return;
-      void ziel.offsetWidth; // Animation neu starten, falls dasselbe Kapitel kurz nacheinander angesagt wird
-      ziel.classList.add("ist-angesagt");
-    };
-    ziele.forEach((a) =>
-      a.addEventListener("animationend", (e) => {
-        if (e.animationName === "ansage") a.classList.remove("ist-angesagt");
-      }),
-    );
-    markieren(kapitel);
-    const setKapitel = (n) => {
-      if (n === kapitel) return;
-      const vor = n > kapitel;
-      kapitel = n;
-      kopf.dataset.kapitel = String(n);
-      markieren(n);
-      ansagen(n);
-      if (!darfBewegen() || !striche?.animate) return;
-      strichAnimation?.cancel();
-      // vorwärts dehnen sich die Tempo-Striche in Fahrtrichtung (.6 → 1,4 → 1); rückwärts blenden sie während der Fahrt aus
-      strichAnimation = vor
-        ? striche.animate(
-            [
-              { transform: "scaleX(.6)", opacity: 0 },
-              { transform: "scaleX(1.4)", opacity: 1, offset: 0.45 },
-              { transform: "scaleX(1)", opacity: 1 },
-            ],
-            { duration: 520, easing: EASE_OUT },
-          )
-        : striche.animate([{ opacity: 1 }, { opacity: 0, offset: 0.15 }, { opacity: 0, offset: 0.75 }, { opacity: 1 }], {
-            duration: 600,
-            easing: "linear",
-          });
-    };
-    // Namen bei Hover: der erste nach 120 ms (CSS), danach für die Nachbarn sofort, bis der Zeiger 400 ms weg ist
-    if (faden) {
-      let sofort = 0;
-      faden.addEventListener("pointerover", (e) => {
-        if (!(e.target instanceof Element) || !e.target.closest(".faden-ziel")) return;
-        clearTimeout(sofort);
-        ziele.forEach((a) => a.classList.remove("ist-angesagt"));
-        sofort = setTimeout(() => faden.classList.add("sofort"), 150);
-      });
-      faden.addEventListener("pointerout", (e) => {
-        if (!(e.target instanceof Element) || !e.target.closest(".faden-ziel")) return;
-        clearTimeout(sofort);
-        sofort = setTimeout(() => faden.classList.remove("sofort"), 400);
-      });
-    }
-    const teile = document.querySelectorAll("main [data-kapitel]");
-    if (canObserve && teile.length) {
+    setKapitel(Number(kopf.dataset.kapitel) || 1);
+    if (canObserve) {
       const band = new IntersectionObserver(
         (entries) => {
           for (const e of entries) if (e.isIntersecting) setKapitel(Number(e.target.dataset.kapitel));
@@ -181,12 +77,12 @@
         { rootMargin: "-45% 0px -54% 0px" },
       );
       teile.forEach((el) => band.observe(el));
-      // Wer die Fußzeile sieht, ist im letzten Kapitel
       const fuss = document.querySelector("[data-fuss]");
+      const letztes = Number(teile.at(-1).dataset.kapitel);
       if (fuss) {
         new IntersectionObserver(
           ([e]) => {
-            if (e.isIntersecting) setKapitel(10);
+            if (e.isIntersecting) setKapitel(letztes);
           },
           { threshold: 0.3 },
         ).observe(fuss);
@@ -270,23 +166,11 @@
     });
   }
 
-  // ---- Popover der Funktionen: Nach Esc oder × steht der Fokus wieder auf dem Knopf, der es geöffnet hat. Das erledigt
-  // sonst der Browser – Safari fokussiert Knöpfe beim Klick aber nicht und gäbe den Fokus an body zurück. ----
-  for (const pop of document.querySelectorAll("[popover][id]")) {
-    const ausloeser = document.querySelector(`[popovertarget="${pop.id}"]:not([popovertargetaction="hide"])`);
-    pop.addEventListener("toggle", (e) => {
-      if (e.newState !== "closed" || !ausloeser) return;
-      requestAnimationFrame(() => {
-        const fokus = document.activeElement;
-        if (!fokus || fokus === document.body || pop.contains(fokus)) ausloeser.focus({ preventScroll: true });
-      });
-    });
-  }
-
-  // ---- Schalter „Bewegung anhalten“ (WCAG 2.2.2): hält Lichtfluss und Dauerbewegungen an (Ereignis vf:ruhe für
-  // buehne.js). Gilt nur für diesen Besuch – die Seite speichert nichts im Gerät. ----
+  // ---- Schalter „Bewegung anhalten“ (WCAG 2.2.2, Fußzeile der Startseite): setzt html.ist-ruhig und meldet sich als
+  // Ereignis vf:ruhe – die Bewegungen der Startseite (site.css, bewegung.js) halten an bzw. stehen in der Endlage, ohne
+  // dass die Seite springt. Gilt nur für diesen Besuch – die Seite speichert nichts im Gerät. ----
   const ruheKnoepfe = [...document.querySelectorAll("[data-ruhe-knopf]")];
-  if (ruheKnoepfe.length && document.querySelector("canvas[data-fluss]")) {
+  if (ruheKnoepfe.length) {
     let ruhig = false;
     const zeigen = () => {
       for (const k of ruheKnoepfe) {

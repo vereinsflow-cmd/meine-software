@@ -1,9 +1,11 @@
 // Prüft, dass Kopf- und Fußzeile auf allen Seiten gleich sind: index.html, impressum.html, datenschutz.html, 404.html und
-// die Seiten von newsletter.php (vf_seite). Verglichen wird nach dem Angleichen dessen, was je Seite anders sein muss:
+// die Seiten von newsletter.php (vf_seite). Kopf ist die Glasleiste der Pro-Gestaltung (Marke, fünf Links, Pille „Demo
+// anfragen“, Menü), einen Kapitel-Faden gibt es nicht mehr. Verglichen wird nach dem Angleichen dessen, was je Seite
+// anders sein muss:
 //   - Pfade: Die Startseite verlinkt ihre Abschnitte direkt („#faq“, „assets/…“), die Unterseiten mit „index.html#faq“
 //     bzw. „/#faq“ und „/assets/…“, die Marke führt dort zur Startseite statt zum Seitenanfang
-//   - nur auf der Startseite: der Kapitel-Faden (Rastpunkte der zehn Kapitel), die Kennungen data-navi/data-kapitel und der
-//     Schalter „Bewegung anhalten“ (nur dort bewegt sich etwas)
+//   - nur auf der Startseite: die Kennungen data-navi/data-kapitel (aktiver Abschnitt) und der Schalter „Bewegung
+//     anhalten“ in der Fußzeile (nur dort bewegt sich etwas)
 // Dazu: Jede Seite hat die Symbole, die Kopf und Fuß verwenden, und in newsletter.php steht im Markup von Kopf und Fuß kein
 // Hochkomma (die Seite ist dort ein PHP-String in einfachen Hochkommas).
 //   node tools/kopf-fuss-pruefen.mjs
@@ -37,8 +39,6 @@ function element(text, start) {
 
 function angleichen(teil) {
   let t = teil.replace(/<!--[\s\S]*?-->/g, "");
-  const faden = element(t, '<div class="faden"');
-  if (faden) t = t.replace(faden, "");
   const ruhe = t.match(/<button class="ruhe-knopf[\s\S]*?<\/button>/);
   if (ruhe) t = t.replace(ruhe[0], "");
   return t

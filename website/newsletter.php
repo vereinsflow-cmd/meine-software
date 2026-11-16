@@ -38,8 +38,8 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026110401';
-const VF_SKRIPT = '/assets/js/site.js?v=2026102001'; // Menü der Kopfzeile auf dem Smartphone
+const VF_STYLESHEET = '/assets/css/site.css?v=2026111603';
+const VF_SKRIPT = '/assets/js/site.js?v=2026111602'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
 const VF_NACHWEIS_JAHRE = 3;
@@ -82,7 +82,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>' . vf_h($titel) . ' – VereinsFlow</title>
   <meta name="robots" content="noindex">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="dark">
   <link rel="icon" href="/favicon.svg?v=2026100401" type="image/svg+xml">
   <link rel="stylesheet" href="' . vf_h(VF_STYLESHEET) . '">
   <script src="' . vf_h(VF_SKRIPT) . '" defer></script>
@@ -97,17 +97,12 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
   <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
-  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
   <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 </svg>
 
 <header class="kopf" data-kopf>
-  <div class="kopf-insel">
-    <span class="kopf-glas" aria-hidden="true"></span>
-    <a class="kopf-marke" href="/" aria-label="VereinsFlow – zur Startseite">
-      <img class="marke-nacht" src="/assets/img/logo-dark.svg?v=2026100401" alt="" width="125" height="28">
-      <img class="marke-papier" src="/assets/img/logo.svg?v=2026100401" alt="" width="125" height="28">
-    </a>
+  <div class="kopf-leiste">
+    <a class="kopf-marke" href="/" aria-label="VereinsFlow – zur Startseite"><img src="/assets/img/logo-dark.svg?v=2026100401" alt="" width="125" height="28"></a>
     <nav class="kopf-navi" aria-label="Hauptnavigation">
       <a href="/#helferschichten">Helferplanung</a>
       <a href="/#funktionen">Funktionen</a>
@@ -115,7 +110,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
       <a href="/#sicherheit">Sicherheit</a>
       <a href="/#faq">Fragen</a>
     </nav>
-    <a class="knopf knopf-signal knopf-klein kopf-demo" href="/#kontakt"><span>Demo<span class="nur-breit"> anfragen</span></span><span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
+    <a class="pille kopf-demo" href="/#kontakt">Demo<span class="nur-breit"> anfragen</span></a>
     <button class="menue-knopf" type="button" aria-expanded="false" aria-controls="menue" data-menue-knopf>
       <svg class="i i-auf" aria-hidden="true"><use href="#i-menu"/></svg>
       <svg class="i i-zu" aria-hidden="true"><use href="#i-x"/></svg>
@@ -132,8 +127,8 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
       <a href="/#faq">Häufige Fragen<svg class="i" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
     </nav>
     <div class="menue-fuss">
-      <a class="knopf knopf-signal" href="/#kontakt">Demo anfragen<span class="kreis" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span></a>
-      <a class="knopf knopf-glas" href="/#benachrichtigen">Beim Start benachrichtigen</a>
+      <a class="pille pille-gross" href="/#kontakt">Demo anfragen</a>
+      <a class="pille pille-glas pille-gross" href="/#benachrichtigen">Beim Start benachrichtigen</a>
       <a class="menue-tel" href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Anrufen: </span>+49&nbsp;176&nbsp;56792302</span></a>
     </div>
   </div>
@@ -148,7 +143,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   </div>
 </main>
 
-<footer class="fuss nacht" data-fuss>
+<footer class="fuss" data-fuss>
   <div class="breite">
     <div class="fuss-raster">
       <div class="fuss-marke">
@@ -183,6 +178,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
     <div class="fuss-unten">
       <p class="fuss-recht"><span>© 2026 VereinsFlow GbR</span> <a href="/impressum.html">Impressum</a> <a href="/datenschutz.html">Datenschutz</a></p>
       <p>Diese Website setzt keine Cookies und lädt nichts von fremden Servern.</p>
+      <p>Abbildungen mit Demodaten. Beispiel-Verein: TSV Musterstadt 1898&nbsp;e.V.</p>
     </div>
   </div>
 </footer>
