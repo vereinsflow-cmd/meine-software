@@ -9,6 +9,28 @@ für Instagram/TikTok), `ausgabe/VereinsFlow-Werbevideo-16x9.mp4` (Querformat f�
 `ausgabe/VereinsFlow-Nacht-9x16.mp4` (60 s, dunkel, siehe „Spot Nacht“) und `ausgabe/VereinsFlow-Reel-9x16.mp4`
 (60 s, ein Kameraflug ohne Schnitt, siehe „Reel“).
 
+## Reel „Neon“ (60 s, Remotion, eigener Ordner `reel-neon/`)
+
+Dunkles 60-s-Reel (1080 × 1920, 30 fps) mit Sprecher – anders als die Szenen-Seiten hier gebaut mit Remotion (React) als
+eigenständiges Projekt mit eigenen Paketen in `reel-neon/video/` (Hinweise dort in `README.md`). Zwölf Abschnitte von
+„Ihr Verein läuft immer noch über Excel?“ bis „Jetzt Demo anfragen.“: Text in `reel-neon/plan/abschnitte.json`, Ablauf
+in `reel-neon/plan/storyboard.md`, echte App-Bilder der Demo in `reel-neon/video/public/screens/`, Text für den Beitrag
+in `reel-neon/Bildunterschrift.txt`. Alle Zeiten kommen aus `video/src/data/timeline.json` (gebaut von
+`werkzeuge/zeitplan-bauen.mjs`), jede Animation liegt auf dem gesprochenen Wort.
+
+```bash
+cd werbevideo/reel-neon/video && npm ci && cd ..
+node werkzeuge/ton-synth.mjs                     # Musik und Geräusche selbst synthetisiert → video/public/audio, sfx
+node bauen.mjs --elevenlabs                      # Stimme per ElevenLabs (Schlüssel als ELEVENLABS_API_KEY in reel-neon/.env)
+node bauen.mjs ~/Downloads/VereinsFlow-Sprecher-60s-neu.mp3   # oder eigene Aufnahme aus der ElevenLabs-Weboberfläche
+```
+
+`bauen.mjs` baut Zeitplan, Video (etwa eine halbe Stunde), Ton-Master (−14 LUFS) und Titelbild und legt das Ergebnis
+nach `~/Downloads/VereinsFlow-Reel-60s-Neon/` und in Dokumente. Nicht im Repository (siehe `reel-neon/.gitignore`): das
+fertige Video und Titelbild (`out/`), Sprecheraufnahmen (`audio/`), die synthetisierte Musik und Geräusche,
+Referenzbilder und der ElevenLabs-Schlüssel. Für veröffentlichte Werbung die Stimme mit bezahltem ElevenLabs-Tarif
+erzeugen (siehe „Stimme (ElevenLabs)“ unten).
+
 ## Reel „Flug“ (60 s, ein Kameraflug ohne Schnitt, für TikTok und Instagram Reels)
 
 Die Kamera fliegt 60 Sekunden lang ohne einen Schnitt durch eine Welt aus echten App-Bildern im Dunkelmodus (keine

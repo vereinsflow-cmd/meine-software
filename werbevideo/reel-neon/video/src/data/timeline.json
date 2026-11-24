@@ -1,0 +1,1429 @@
+{
+ "fps": 30,
+ "durationInFrames": 1800,
+ "placeholder": false,
+ "voice": {
+  "file": "audio/voice.wav",
+  "source": "stimme-web.mp3",
+  "placed": [
+   {
+    "id": 0,
+    "plan": 0.35,
+    "at": 0.29,
+    "len": 1.984,
+    "endsAt": 2.274,
+    "late": 0
+   },
+   {
+    "id": 1,
+    "plan": 2.97,
+    "at": 2.91,
+    "len": 5.044,
+    "endsAt": 7.954,
+    "late": 0
+   },
+   {
+    "id": 2,
+    "plan": 8.65,
+    "at": 8.59,
+    "len": 1.442,
+    "endsAt": 10.032,
+    "late": 0
+   },
+   {
+    "id": 3,
+    "plan": 10.71,
+    "at": 10.65,
+    "len": 7.169,
+    "endsAt": 17.819,
+    "late": 0
+   },
+   {
+    "id": 4,
+    "plan": 18.44,
+    "at": 18.38,
+    "len": 7.395,
+    "endsAt": 25.775,
+    "late": 0
+   },
+   {
+    "id": 5,
+    "plan": 26.33,
+    "at": 26.27,
+    "len": 5.405,
+    "endsAt": 31.675,
+    "late": 0
+   },
+   {
+    "id": 6,
+    "plan": 32.32,
+    "at": 32.26,
+    "len": 5.925,
+    "endsAt": 38.185,
+    "late": 0
+   },
+   {
+    "id": 7,
+    "plan": 38.93,
+    "at": 38.87,
+    "len": 6.689,
+    "endsAt": 45.559,
+    "late": 0
+   },
+   {
+    "id": 8,
+    "plan": 46.25,
+    "at": 46.19,
+    "len": 1.16,
+    "endsAt": 47.35,
+    "late": 0
+   },
+   {
+    "id": 9,
+    "plan": 47.9,
+    "at": 47.84,
+    "len": 3.724,
+    "endsAt": 51.564,
+    "late": 0
+   },
+   {
+    "id": 10,
+    "plan": 52.18,
+    "at": 52.12,
+    "len": 3.258,
+    "endsAt": 55.378,
+    "late": 0
+   },
+   {
+    "id": 11,
+    "plan": 55.86,
+    "at": 55.8,
+    "len": 1.545,
+    "endsAt": 57.345,
+    "late": 0
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "id": "hook",
+   "from": 0,
+   "to": 2.5,
+   "fromFrame": 0,
+   "toFrame": 75
+  },
+  {
+   "id": "problem",
+   "from": 2.5,
+   "to": 8,
+   "fromFrame": 75,
+   "toFrame": 240
+  },
+  {
+   "id": "frage",
+   "from": 8,
+   "to": 10,
+   "fromFrame": 240,
+   "toFrame": 300
+  },
+  {
+   "id": "mitglieder",
+   "from": 10,
+   "to": 18,
+   "fromFrame": 300,
+   "toFrame": 540
+  },
+  {
+   "id": "termine",
+   "from": 18,
+   "to": 26,
+   "fromFrame": 540,
+   "toFrame": 780
+  },
+  {
+   "id": "helfer",
+   "from": 26,
+   "to": 32,
+   "fromFrame": 780,
+   "toFrame": 960
+  },
+  {
+   "id": "nachrichten",
+   "from": 32,
+   "to": 38.5,
+   "fromFrame": 960,
+   "toFrame": 1155
+  },
+  {
+   "id": "finanzen",
+   "from": 38.5,
+   "to": 46,
+   "fromFrame": 1155,
+   "toFrame": 1380
+  },
+  {
+   "id": "feierabend",
+   "from": 46,
+   "to": 47.5,
+   "fromFrame": 1380,
+   "toFrame": 1425
+  },
+  {
+   "id": "leitsatz",
+   "from": 47.5,
+   "to": 51.5,
+   "fromFrame": 1425,
+   "toFrame": 1545
+  },
+  {
+   "id": "logo",
+   "from": 51.5,
+   "to": 55.5,
+   "fromFrame": 1545,
+   "toFrame": 1665
+  },
+  {
+   "id": "endkarte",
+   "from": 55.5,
+   "to": 60,
+   "fromFrame": 1665,
+   "toFrame": 1800
+  }
+ ],
+ "sections": [
+  {
+   "id": 0,
+   "name": "Hook",
+   "scene": "hook",
+   "text": "Ihr Verein läuft immer noch über Excel?",
+   "start": 0.34,
+   "end": 2.094
+  },
+  {
+   "id": 1,
+   "name": "Problem",
+   "scene": "problem",
+   "text": "Dienstagabend, nach der Arbeit. Die Liste gibt es dreimal. Im Chat zweihundert Nachrichten.",
+   "start": 2.97,
+   "end": 7.774
+  },
+  {
+   "id": 2,
+   "name": "Frage",
+   "scene": "frage",
+   "text": "Und wer kommt am Donnerstag?",
+   "start": 8.65,
+   "end": 9.852
+  },
+  {
+   "id": 3,
+   "name": "Mitglieder",
+   "scene": "mitglieder",
+   "text": "Mit VereinsFlow sind alle Mitglieder an einem Ort. Ihre Excel-Liste nehmen Sie mit. Fehler fallen schon vor dem Speichern auf.",
+   "start": 10.71,
+   "end": 17.639
+  },
+  {
+   "id": 4,
+   "name": "Termine",
+   "scene": "termine",
+   "text": "Das Training am Donnerstag steht im Kalender. Wer kommt, sagt zu. Wer nicht kann, Ganz ohne Rundfrage im Chat.",
+   "start": 18.44,
+   "end": 25.595
+  },
+  {
+   "id": 5,
+   "name": "Helfer",
+   "scene": "helfer",
+   "text": "Fürs Sommerfest tragen sich die Helfer per Fingertipp selbst ein. Und wo noch jemand fehlt, erkennen Sie auf einen Blick.",
+   "start": 26.33,
+   "end": 31.495
+  },
+  {
+   "id": 6,
+   "name": "Nachrichten",
+   "scene": "nachrichten",
+   "text": "Ihre Nachricht geht an alle, an eine Abteilung oder nur an die Helfer. Und Sie sehen, wie viele schon gelesen haben.",
+   "start": 32.32,
+   "end": 38.005
+  },
+  {
+   "id": 7,
+   "name": "Finanzen",
+   "scene": "finanzen",
+   "text": "Bleibt noch die Kasse. Beiträge, Rechnungen und das Kassenbuch mit Belegen. Offene Rechnungen sehen Sie sofort.",
+   "start": 38.93,
+   "end": 45.379
+  },
+  {
+   "id": 8,
+   "name": "Feierabend",
+   "scene": "feierabend",
+   "text": "Dann ist Feierabend.",
+   "start": 46.25,
+   "end": 47.17
+  },
+  {
+   "id": 9,
+   "name": "Leitsatz",
+   "scene": "leitsatz",
+   "text": "Vereinsarbeit ist Ehrenamt. Die Verwaltung sollte es nicht schwerer machen.",
+   "start": 47.9,
+   "end": 51.384
+  },
+  {
+   "id": 10,
+   "name": "Logo",
+   "scene": "logo",
+   "text": "VereinsFlow. Bringt Vereinsarbeit in Fluss.",
+   "start": 52.18,
+   "end": 55.198
+  },
+  {
+   "id": 11,
+   "name": "Endkarte",
+   "scene": "endkarte",
+   "text": "Jetzt Demo anfragen.",
+   "start": 55.86,
+   "end": 57.165
+  }
+ ],
+ "words": [
+  {
+   "text": "Ihr",
+   "key": "ihr",
+   "section": 0,
+   "i": 0,
+   "start": 0.34,
+   "end": 0.517
+  },
+  {
+   "text": "Verein",
+   "key": "verein",
+   "section": 0,
+   "i": 1,
+   "start": 0.528,
+   "end": 0.821
+  },
+  {
+   "text": "läuft",
+   "key": "läuft",
+   "section": 0,
+   "i": 2,
+   "start": 0.84,
+   "end": 1.094
+  },
+  {
+   "text": "immer",
+   "key": "immer",
+   "section": 0,
+   "i": 3,
+   "start": 1.11,
+   "end": 1.364
+  },
+  {
+   "text": "noch",
+   "key": "noch",
+   "section": 0,
+   "i": 4,
+   "start": 1.381,
+   "end": 1.596
+  },
+  {
+   "text": "über",
+   "key": "über",
+   "section": 0,
+   "i": 5,
+   "start": 1.61,
+   "end": 1.826
+  },
+  {
+   "text": "Excel?",
+   "key": "excel",
+   "section": 0,
+   "i": 6,
+   "start": 1.84,
+   "end": 2.094
+  },
+  {
+   "text": "Dienstagabend,",
+   "key": "dienstagabend",
+   "section": 1,
+   "i": 0,
+   "start": 2.97,
+   "end": 3.601
+  },
+  {
+   "text": "nach",
+   "key": "nach",
+   "section": 1,
+   "i": 1,
+   "start": 3.641,
+   "end": 3.883
+  },
+  {
+   "text": "der",
+   "key": "der",
+   "section": 1,
+   "i": 2,
+   "start": 3.899,
+   "end": 4.098
+  },
+  {
+   "text": "Arbeit.",
+   "key": "arbeit",
+   "section": 1,
+   "i": 3,
+   "start": 4.11,
+   "end": 4.439
+  },
+  {
+   "text": "Die",
+   "key": "die",
+   "section": 1,
+   "i": 4,
+   "start": 4.75,
+   "end": 4.95
+  },
+  {
+   "text": "Liste",
+   "key": "liste",
+   "section": 1,
+   "i": 5,
+   "start": 4.963,
+   "end": 5.249
+  },
+  {
+   "text": "gibt",
+   "key": "gibt",
+   "section": 1,
+   "i": 6,
+   "start": 5.268,
+   "end": 5.511
+  },
+  {
+   "text": "es",
+   "key": "es",
+   "section": 1,
+   "i": 7,
+   "start": 5.526,
+   "end": 5.683
+  },
+  {
+   "text": "dreimal.",
+   "key": "dreimal",
+   "section": 1,
+   "i": 8,
+   "start": 5.693,
+   "end": 6.066
+  },
+  {
+   "text": "Im",
+   "key": "im",
+   "section": 1,
+   "i": 9,
+   "start": 6.18,
+   "end": 6.34
+  },
+  {
+   "text": "Chat",
+   "key": "chat",
+   "section": 1,
+   "i": 10,
+   "start": 6.351,
+   "end": 6.6
+  },
+  {
+   "text": "zweihundert",
+   "key": "zweihundert",
+   "section": 1,
+   "i": 11,
+   "start": 6.616,
+   "end": 7.177
+  },
+  {
+   "text": "Nachrichten.",
+   "key": "nachrichten",
+   "section": 1,
+   "i": 12,
+   "start": 7.213,
+   "end": 7.774
+  },
+  {
+   "text": "Und",
+   "key": "und",
+   "section": 2,
+   "i": 0,
+   "start": 8.65,
+   "end": 8.822
+  },
+  {
+   "text": "wer",
+   "key": "wer",
+   "section": 2,
+   "i": 1,
+   "start": 8.833,
+   "end": 9.004
+  },
+  {
+   "text": "kommt",
+   "key": "kommt",
+   "section": 2,
+   "i": 2,
+   "start": 9.015,
+   "end": 9.261
+  },
+  {
+   "text": "am",
+   "key": "am",
+   "section": 2,
+   "i": 3,
+   "start": 9.277,
+   "end": 9.411
+  },
+  {
+   "text": "Donnerstag?",
+   "key": "donnerstag",
+   "section": 2,
+   "i": 4,
+   "start": 9.42,
+   "end": 9.852
+  },
+  {
+   "text": "Mit",
+   "key": "mit",
+   "section": 3,
+   "i": 0,
+   "start": 10.71,
+   "end": 10.915
+  },
+  {
+   "text": "VereinsFlow",
+   "key": "vereinsflow",
+   "section": 3,
+   "i": 1,
+   "start": 10.928,
+   "end": 11.49
+  },
+  {
+   "text": "sind",
+   "key": "sind",
+   "section": 3,
+   "i": 2,
+   "start": 11.526,
+   "end": 11.776
+  },
+  {
+   "text": "alle",
+   "key": "alle",
+   "section": 3,
+   "i": 3,
+   "start": 11.792,
+   "end": 12.042
+  },
+  {
+   "text": "Mitglieder",
+   "key": "mitglieder",
+   "section": 3,
+   "i": 4,
+   "start": 12.057,
+   "end": 12.575
+  },
+  {
+   "text": "an",
+   "key": "an",
+   "section": 3,
+   "i": 5,
+   "start": 12.608,
+   "end": 12.768
+  },
+  {
+   "text": "einem",
+   "key": "einem",
+   "section": 3,
+   "i": 6,
+   "start": 12.779,
+   "end": 13.073
+  },
+  {
+   "text": "Ort.",
+   "key": "ort",
+   "section": 3,
+   "i": 7,
+   "start": 13.092,
+   "end": 13.297
+  },
+  {
+   "text": "Ihre",
+   "key": "ihre",
+   "section": 3,
+   "i": 8,
+   "start": 13.66,
+   "end": 13.925
+  },
+  {
+   "text": "Excel-Liste",
+   "key": "excel-liste",
+   "section": 3,
+   "i": 9,
+   "start": 13.942,
+   "end": 14.49
+  },
+  {
+   "text": "nehmen",
+   "key": "nehmen",
+   "section": 3,
+   "i": 10,
+   "start": 14.525,
+   "end": 14.884
+  },
+  {
+   "text": "Sie",
+   "key": "sie",
+   "section": 3,
+   "i": 11,
+   "start": 14.907,
+   "end": 15.125
+  },
+  {
+   "text": "mit.",
+   "key": "mit",
+   "section": 3,
+   "i": 12,
+   "start": 15.139,
+   "end": 15.356
+  },
+  {
+   "text": "Fehler",
+   "key": "fehler",
+   "section": 3,
+   "i": 13,
+   "start": 15.85,
+   "end": 16.128
+  },
+  {
+   "text": "fallen",
+   "key": "fallen",
+   "section": 3,
+   "i": 14,
+   "start": 16.146,
+   "end": 16.424
+  },
+  {
+   "text": "schon",
+   "key": "schon",
+   "section": 3,
+   "i": 15,
+   "start": 16.442,
+   "end": 16.684
+  },
+  {
+   "text": "vor",
+   "key": "vor",
+   "section": 3,
+   "i": 16,
+   "start": 16.699,
+   "end": 16.868
+  },
+  {
+   "text": "dem",
+   "key": "dem",
+   "section": 3,
+   "i": 17,
+   "start": 16.879,
+   "end": 17.047
+  },
+  {
+   "text": "Speichern",
+   "key": "speichern",
+   "section": 3,
+   "i": 18,
+   "start": 17.058,
+   "end": 17.446
+  },
+  {
+   "text": "auf.",
+   "key": "auf",
+   "section": 3,
+   "i": 19,
+   "start": 17.471,
+   "end": 17.639
+  },
+  {
+   "text": "Das",
+   "key": "das",
+   "section": 4,
+   "i": 0,
+   "start": 18.44,
+   "end": 18.693
+  },
+  {
+   "text": "Training",
+   "key": "training",
+   "section": 4,
+   "i": 1,
+   "start": 18.709,
+   "end": 19.238
+  },
+  {
+   "text": "am",
+   "key": "am",
+   "section": 4,
+   "i": 2,
+   "start": 19.271,
+   "end": 19.469
+  },
+  {
+   "text": "Donnerstag",
+   "key": "donnerstag",
+   "section": 4,
+   "i": 3,
+   "start": 19.482,
+   "end": 20.12
+  },
+  {
+   "text": "steht",
+   "key": "steht",
+   "section": 4,
+   "i": 4,
+   "start": 20.161,
+   "end": 20.524
+  },
+  {
+   "text": "im",
+   "key": "im",
+   "section": 4,
+   "i": 5,
+   "start": 20.547,
+   "end": 20.745
+  },
+  {
+   "text": "Kalender.",
+   "key": "kalender",
+   "section": 4,
+   "i": 6,
+   "start": 20.758,
+   "end": 21.286
+  },
+  {
+   "text": "Wer",
+   "key": "wer",
+   "section": 4,
+   "i": 7,
+   "start": 21.42,
+   "end": 21.656
+  },
+  {
+   "text": "kommt,",
+   "key": "kommt",
+   "section": 4,
+   "i": 8,
+   "start": 21.671,
+   "end": 22.008
+  },
+  {
+   "text": "sagt",
+   "key": "sagt",
+   "section": 4,
+   "i": 9,
+   "start": 22.33,
+   "end": 22.799
+  },
+  {
+   "text": "zu.",
+   "key": "zu",
+   "section": 4,
+   "i": 10,
+   "start": 22.829,
+   "end": 23.131
+  },
+  {
+   "text": "Wer",
+   "key": "wer",
+   "section": 4,
+   "i": 11,
+   "start": 23.26,
+   "end": 23.402
+  },
+  {
+   "text": "nicht",
+   "key": "nicht",
+   "section": 4,
+   "i": 12,
+   "start": 23.411,
+   "end": 23.614
+  },
+  {
+   "text": "kann,",
+   "key": "kann",
+   "section": 4,
+   "i": 13,
+   "start": 23.627,
+   "end": 23.799
+  },
+  {
+   "text": "Ganz",
+   "key": "ganz",
+   "section": 4,
+   "i": 14,
+   "start": 24.27,
+   "end": 24.498
+  },
+  {
+   "text": "ohne",
+   "key": "ohne",
+   "section": 4,
+   "i": 15,
+   "start": 24.512,
+   "end": 24.74
+  },
+  {
+   "text": "Rundfrage",
+   "key": "rundfrage",
+   "section": 4,
+   "i": 16,
+   "start": 24.754,
+   "end": 25.185
+  },
+  {
+   "text": "im",
+   "key": "im",
+   "section": 4,
+   "i": 17,
+   "start": 25.212,
+   "end": 25.359
+  },
+  {
+   "text": "Chat.",
+   "key": "chat",
+   "section": 4,
+   "i": 18,
+   "start": 25.368,
+   "end": 25.595
+  },
+  {
+   "text": "Fürs",
+   "key": "fürs",
+   "section": 5,
+   "i": 0,
+   "start": 26.33,
+   "end": 26.527
+  },
+  {
+   "text": "Sommerfest",
+   "key": "sommerfest",
+   "section": 5,
+   "i": 1,
+   "start": 26.54,
+   "end": 26.948
+  },
+  {
+   "text": "tragen",
+   "key": "tragen",
+   "section": 5,
+   "i": 2,
+   "start": 26.974,
+   "end": 27.242
+  },
+  {
+   "text": "sich",
+   "key": "sich",
+   "section": 5,
+   "i": 3,
+   "start": 27.259,
+   "end": 27.456
+  },
+  {
+   "text": "die",
+   "key": "die",
+   "section": 5,
+   "i": 4,
+   "start": 27.469,
+   "end": 27.631
+  },
+  {
+   "text": "Helfer",
+   "key": "helfer",
+   "section": 5,
+   "i": 5,
+   "start": 27.641,
+   "end": 27.909
+  },
+  {
+   "text": "per",
+   "key": "per",
+   "section": 5,
+   "i": 6,
+   "start": 27.926,
+   "end": 28.088
+  },
+  {
+   "text": "Fingertipp",
+   "key": "fingertipp",
+   "section": 5,
+   "i": 7,
+   "start": 28.098,
+   "end": 28.507
+  },
+  {
+   "text": "selbst",
+   "key": "selbst",
+   "section": 5,
+   "i": 8,
+   "start": 28.533,
+   "end": 28.801
+  },
+  {
+   "text": "ein.",
+   "key": "ein",
+   "section": 5,
+   "i": 9,
+   "start": 28.818,
+   "end": 28.98
+  },
+  {
+   "text": "Und",
+   "key": "und",
+   "section": 5,
+   "i": 10,
+   "start": 29.17,
+   "end": 29.339
+  },
+  {
+   "text": "wo",
+   "key": "wo",
+   "section": 5,
+   "i": 11,
+   "start": 29.349,
+   "end": 29.481
+  },
+  {
+   "text": "noch",
+   "key": "noch",
+   "section": 5,
+   "i": 12,
+   "start": 29.49,
+   "end": 29.695
+  },
+  {
+   "text": "jemand",
+   "key": "jemand",
+   "section": 5,
+   "i": 13,
+   "start": 29.708,
+   "end": 29.987
+  },
+  {
+   "text": "fehlt,",
+   "key": "fehlt",
+   "section": 5,
+   "i": 14,
+   "start": 30.005,
+   "end": 30.247
+  },
+  {
+   "text": "erkennen",
+   "key": "erkennen",
+   "section": 5,
+   "i": 15,
+   "start": 30.262,
+   "end": 30.614
+  },
+  {
+   "text": "Sie",
+   "key": "sie",
+   "section": 5,
+   "i": 16,
+   "start": 30.636,
+   "end": 30.805
+  },
+  {
+   "text": "auf",
+   "key": "auf",
+   "section": 5,
+   "i": 17,
+   "start": 30.816,
+   "end": 30.984
+  },
+  {
+   "text": "einen",
+   "key": "einen",
+   "section": 5,
+   "i": 18,
+   "start": 30.995,
+   "end": 31.237
+  },
+  {
+   "text": "Blick.",
+   "key": "blick",
+   "section": 5,
+   "i": 19,
+   "start": 31.253,
+   "end": 31.495
+  },
+  {
+   "text": "Ihre",
+   "key": "ihre",
+   "section": 6,
+   "i": 0,
+   "start": 32.32,
+   "end": 32.544
+  },
+  {
+   "text": "Nachricht",
+   "key": "nachricht",
+   "section": 6,
+   "i": 1,
+   "start": 32.558,
+   "end": 32.983
+  },
+  {
+   "text": "geht",
+   "key": "geht",
+   "section": 6,
+   "i": 2,
+   "start": 33.01,
+   "end": 33.234
+  },
+  {
+   "text": "an",
+   "key": "an",
+   "section": 6,
+   "i": 3,
+   "start": 33.248,
+   "end": 33.392
+  },
+  {
+   "text": "alle,",
+   "key": "alle",
+   "section": 6,
+   "i": 4,
+   "start": 33.402,
+   "end": 33.626
+  },
+  {
+   "text": "an",
+   "key": "an",
+   "section": 6,
+   "i": 5,
+   "start": 33.76,
+   "end": 33.912
+  },
+  {
+   "text": "eine",
+   "key": "eine",
+   "section": 6,
+   "i": 6,
+   "start": 33.922,
+   "end": 34.159
+  },
+  {
+   "text": "Abteilung",
+   "key": "abteilung",
+   "section": 6,
+   "i": 7,
+   "start": 34.174,
+   "end": 34.622
+  },
+  {
+   "text": "oder",
+   "key": "oder",
+   "section": 6,
+   "i": 8,
+   "start": 34.651,
+   "end": 34.887
+  },
+  {
+   "text": "nur",
+   "key": "nur",
+   "section": 6,
+   "i": 9,
+   "start": 34.902,
+   "end": 35.097
+  },
+  {
+   "text": "an",
+   "key": "an",
+   "section": 6,
+   "i": 10,
+   "start": 35.109,
+   "end": 35.262
+  },
+  {
+   "text": "die",
+   "key": "die",
+   "section": 6,
+   "i": 11,
+   "start": 35.271,
+   "end": 35.466
+  },
+  {
+   "text": "Helfer.",
+   "key": "helfer",
+   "section": 6,
+   "i": 12,
+   "start": 35.478,
+   "end": 35.799
+  },
+  {
+   "text": "Und",
+   "key": "und",
+   "section": 6,
+   "i": 13,
+   "start": 36.22,
+   "end": 36.379
+  },
+  {
+   "text": "Sie",
+   "key": "sie",
+   "section": 6,
+   "i": 14,
+   "start": 36.39,
+   "end": 36.549
+  },
+  {
+   "text": "sehen,",
+   "key": "sehen",
+   "section": 6,
+   "i": 15,
+   "start": 36.559,
+   "end": 36.788
+  },
+  {
+   "text": "wie",
+   "key": "wie",
+   "section": 6,
+   "i": 16,
+   "start": 36.803,
+   "end": 36.962
+  },
+  {
+   "text": "viele",
+   "key": "viele",
+   "section": 6,
+   "i": 17,
+   "start": 36.972,
+   "end": 37.201
+  },
+  {
+   "text": "schon",
+   "key": "schon",
+   "section": 6,
+   "i": 18,
+   "start": 37.216,
+   "end": 37.445
+  },
+  {
+   "text": "gelesen",
+   "key": "gelesen",
+   "section": 6,
+   "i": 19,
+   "start": 37.459,
+   "end": 37.758
+  },
+  {
+   "text": "haben.",
+   "key": "haben",
+   "section": 6,
+   "i": 20,
+   "start": 37.777,
+   "end": 38.005
+  },
+  {
+   "text": "Bleibt",
+   "key": "bleibt",
+   "section": 7,
+   "i": 0,
+   "start": 38.93,
+   "end": 39.188
+  },
+  {
+   "text": "noch",
+   "key": "noch",
+   "section": 7,
+   "i": 1,
+   "start": 39.204,
+   "end": 39.394
+  },
+  {
+   "text": "die",
+   "key": "die",
+   "section": 7,
+   "i": 2,
+   "start": 39.406,
+   "end": 39.562
+  },
+  {
+   "text": "Kasse.",
+   "key": "kasse",
+   "section": 7,
+   "i": 3,
+   "start": 39.572,
+   "end": 39.796
+  },
+  {
+   "text": "Beiträge,",
+   "key": "beiträge",
+   "section": 7,
+   "i": 4,
+   "start": 40.22,
+   "end": 40.84
+  },
+  {
+   "text": "Rechnungen",
+   "key": "rechnungen",
+   "section": 7,
+   "i": 5,
+   "start": 41.04,
+   "end": 41.549
+  },
+  {
+   "text": "und",
+   "key": "und",
+   "section": 7,
+   "i": 6,
+   "start": 41.582,
+   "end": 41.784
+  },
+  {
+   "text": "das",
+   "key": "das",
+   "section": 7,
+   "i": 7,
+   "start": 41.797,
+   "end": 41.999
+  },
+  {
+   "text": "Kassenbuch",
+   "key": "kassenbuch",
+   "section": 7,
+   "i": 8,
+   "start": 42.012,
+   "end": 42.521
+  },
+  {
+   "text": "mit",
+   "key": "mit",
+   "section": 7,
+   "i": 9,
+   "start": 42.553,
+   "end": 42.755
+  },
+  {
+   "text": "Belegen.",
+   "key": "belegen",
+   "section": 7,
+   "i": 10,
+   "start": 42.768,
+   "end": 43.146
+  },
+  {
+   "text": "Offene",
+   "key": "offene",
+   "section": 7,
+   "i": 11,
+   "start": 43.64,
+   "end": 43.971
+  },
+  {
+   "text": "Rechnungen",
+   "key": "rechnungen",
+   "section": 7,
+   "i": 12,
+   "start": 43.992,
+   "end": 44.497
+  },
+  {
+   "text": "sehen",
+   "key": "sehen",
+   "section": 7,
+   "i": 13,
+   "start": 44.529,
+   "end": 44.817
+  },
+  {
+   "text": "Sie",
+   "key": "sie",
+   "section": 7,
+   "i": 14,
+   "start": 44.835,
+   "end": 45.035
+  },
+  {
+   "text": "sofort.",
+   "key": "sofort",
+   "section": 7,
+   "i": 15,
+   "start": 45.048,
+   "end": 45.379
+  },
+  {
+   "text": "Dann",
+   "key": "dann",
+   "section": 8,
+   "i": 0,
+   "start": 46.25,
+   "end": 46.479
+  },
+  {
+   "text": "ist",
+   "key": "ist",
+   "section": 8,
+   "i": 1,
+   "start": 46.494,
+   "end": 46.682
+  },
+  {
+   "text": "Feierabend.",
+   "key": "feierabend",
+   "section": 8,
+   "i": 2,
+   "start": 46.694,
+   "end": 47.17
+  },
+  {
+   "text": "Vereinsarbeit",
+   "key": "vereinsarbeit",
+   "section": 9,
+   "i": 0,
+   "start": 47.9,
+   "end": 48.562
+  },
+  {
+   "text": "ist",
+   "key": "ist",
+   "section": 9,
+   "i": 1,
+   "start": 48.605,
+   "end": 48.813
+  },
+  {
+   "text": "Ehrenamt.",
+   "key": "ehrenamt",
+   "section": 9,
+   "i": 2,
+   "start": 48.827,
+   "end": 49.262
+  },
+  {
+   "text": "Die",
+   "key": "die",
+   "section": 9,
+   "i": 3,
+   "start": 49.56,
+   "end": 49.715
+  },
+  {
+   "text": "Verwaltung",
+   "key": "verwaltung",
+   "section": 9,
+   "i": 4,
+   "start": 49.725,
+   "end": 50.117
+  },
+  {
+   "text": "sollte",
+   "key": "sollte",
+   "section": 9,
+   "i": 5,
+   "start": 50.142,
+   "end": 50.399
+  },
+  {
+   "text": "es",
+   "key": "es",
+   "section": 9,
+   "i": 6,
+   "start": 50.415,
+   "end": 50.537
+  },
+  {
+   "text": "nicht",
+   "key": "nicht",
+   "section": 9,
+   "i": 7,
+   "start": 50.545,
+   "end": 50.768
+  },
+  {
+   "text": "schwerer",
+   "key": "schwerer",
+   "section": 9,
+   "i": 8,
+   "start": 50.782,
+   "end": 51.106
+  },
+  {
+   "text": "machen.",
+   "key": "machen",
+   "section": 9,
+   "i": 9,
+   "start": 51.127,
+   "end": 51.384
+  },
+  {
+   "text": "VereinsFlow.",
+   "key": "vereinsflow",
+   "section": 10,
+   "i": 0,
+   "start": 52.18,
+   "end": 52.847
+  },
+  {
+   "text": "Bringt",
+   "key": "bringt",
+   "section": 10,
+   "i": 1,
+   "start": 53.43,
+   "end": 53.825
+  },
+  {
+   "text": "Vereinsarbeit",
+   "key": "vereinsarbeit",
+   "section": 10,
+   "i": 2,
+   "start": 53.85,
+   "end": 54.608
+  },
+  {
+   "text": "in",
+   "key": "in",
+   "section": 10,
+   "i": 3,
+   "start": 54.656,
+   "end": 54.843
+  },
+  {
+   "text": "Fluss.",
+   "key": "fluss",
+   "section": 10,
+   "i": 4,
+   "start": 54.855,
+   "end": 55.198
+  },
+  {
+   "text": "Jetzt",
+   "key": "jetzt",
+   "section": 11,
+   "i": 0,
+   "start": 55.86,
+   "end": 56.241
+  },
+  {
+   "text": "Demo",
+   "key": "demo",
+   "section": 11,
+   "i": 1,
+   "start": 56.266,
+   "end": 56.589
+  },
+  {
+   "text": "anfragen.",
+   "key": "anfragen",
+   "section": 11,
+   "i": 2,
+   "start": 56.61,
+   "end": 57.165
+  }
+ ]
+}
