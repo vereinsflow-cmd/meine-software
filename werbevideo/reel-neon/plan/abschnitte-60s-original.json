@@ -1,0 +1,86 @@
+[
+ {
+  "id": 0,
+  "abschnitt": "Hook",
+  "plan_von": 0.2,
+  "plan_bis": 2.6,
+  "text": "Ihr Verein läuft immer noch über Excel?"
+ },
+ {
+  "id": 1,
+  "abschnitt": "Problem – Dienstagabend",
+  "plan_von": 3.1,
+  "plan_bis": 7.6,
+  "text": "Dienstagabend, nach der Arbeit. Die Liste gibt es dreimal. Im Chat zweihundert Nachrichten."
+ },
+ {
+  "id": 2,
+  "abschnitt": "Problem – Frage",
+  "plan_von": 7.9,
+  "plan_bis": 9.4,
+  "text": "Und wer kommt am Donnerstag?"
+ },
+ {
+  "id": 3,
+  "abschnitt": "Lösung 1 – Mitglieder",
+  "plan_von": 10.3,
+  "plan_bis": 17.6,
+  "text": "Mit VereinsFlow sind alle Mitglieder an einem Ort. Ihre Excel-Liste nehmen Sie mit. Fehler fallen schon vor dem Speichern auf."
+ },
+ {
+  "id": 4,
+  "abschnitt": "Lösung 2 – Termine",
+  "plan_von": 18.3,
+  "plan_bis": 25.5,
+  "text": "Das Training am Donnerstag steht im Kalender. Wer kommt, sagt zu. Wer nicht kann, sagt ab. Ganz ohne Rundfrage im Chat."
+ },
+ {
+  "id": 5,
+  "abschnitt": "Lösung 3 – Helferschichten",
+  "plan_von": 26.3,
+  "plan_bis": 33.4,
+  "text": "Fürs Sommerfest tragen sich die Helfer per Fingertipp selbst ein. Und wo noch jemand fehlt, erkennen Sie auf einen Blick."
+ },
+ {
+  "id": 6,
+  "abschnitt": "Lösung 4 – Nachrichten",
+  "plan_von": 34.3,
+  "plan_bis": 41.6,
+  "text": "Ihre Nachricht geht an alle, an eine Abteilung oder nur an die Helfer. Und Sie sehen, wie viele schon gelesen haben."
+ },
+ {
+  "id": 7,
+  "abschnitt": "Lösung 5 – Finanzen",
+  "plan_von": 42.1,
+  "plan_bis": 48.3,
+  "text": "Bleibt noch die Kasse. Beiträge, Rechnungen und das Kassenbuch mit Belegen. Offene Rechnungen sehen Sie sofort."
+ },
+ {
+  "id": 8,
+  "abschnitt": "Lösung 5 – Feierabend",
+  "plan_von": 48.6,
+  "plan_bis": 49.8,
+  "text": "Dann ist Feierabend."
+ },
+ {
+  "id": 9,
+  "abschnitt": "CTA – Leitsatz (ruhig, Pause nach „Ehrenamt.“)",
+  "plan_von": 50.3,
+  "plan_bis": 54.6,
+  "text": "Vereinsarbeit ist Ehrenamt. Die Verwaltung sollte es nicht schwerer machen."
+ },
+ {
+  "id": 10,
+  "abschnitt": "CTA – Logo und Claim",
+  "plan_von": 54.35,
+  "plan_bis": 57.4,
+  "text": "VereinsFlow. Bringt Vereinsarbeit in Fluss."
+ },
+ {
+  "id": 11,
+  "abschnitt": "CTA – Aufruf (warm, ohne Druck)",
+  "plan_von": 57.75,
+  "plan_bis": 59.3,
+  "text": "Jetzt Demo anfragen."
+ }
+]

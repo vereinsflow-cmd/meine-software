@@ -1,0 +1,16 @@
+# ElevenLabs-Schlüssel (ELEVENLABS_API_KEY) – nie ins Repository
+.env*
+node_modules/
+# Erzeugtes: fertige Videos, Titelbilder, Ton-Master (out/), Sprecheraufnahmen (audio/), synthetisierte Musik und
+# Geräusche (video/public/audio, video/public/sfx) – zu groß bzw. Stimme mit eigener Lizenz; siehe README.md
+out/
+audio/
+video/out/
+video/public/audio/
+video/public/sfx/
+# Referenzbilder und Prüfaufnahmen – nur lokal
+plan/referenz/
+video/public/referenz/
+pruefung/
+# übersetztes Programm aus werkzeuge/vfvideo.swift
+werkzeuge/bin/

@@ -1,0 +1,3978 @@
+{
+  "created": "2026-10-07T18:01:51.435Z",
+  "source": "VereinsFlow-Demo-App (Datenbank vf_website, Demo-Verein „TSV Musterstadt 1898 e.V.“), angemeldet als Demo-Administratorin „Anna Adler“",
+  "device": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "deviceScaleFactor": 3,
+    "isMobile": true,
+    "hasTouch": true,
+    "colorScheme": "light",
+    "locale": "de-DE",
+    "timezoneId": "Europe/Berlin"
+  },
+  "units": "Alle Koordinaten in Bildpixeln des jeweiligen PNG (CSS-Pixel × 3), Ursprung oben links. scrollY: Scrollposition der Seite (Bildpixel) beim gescrollten Bild.",
+  "notes": [
+    "Namen nur im Bild ersetzt (DEMO_RENAME aus website/tools/capture-screenshots.mjs): z. B. „Anna Admin“ → „Anna Adler“, „Bernd Vorstand“ → „Bernd Vogt“, „Claudia Abteilungsleiterin“ → „Claudia Abel“.",
+    "variant: „oben“ = ab Seitenanfang (1170 × 2532), „ganz“ = ganze Seite (fullPage), „gescrollt“ = ab der wichtigen Stelle direkt unter der Kopfzeile (Kopfzeile deckend).",
+    "visible: „teilweise“ = das Element ragt über den Bildrand (z. B. die Reiterleiste der Finanzen, die am Handy breiter als der Bildschirm ist).",
+    "Im Spot auszumaskieren (Faktenregeln): Dashboard-Chips „+23 (+11,0 %)“ und „+x gegenüber dem Vormonat“; Finanzen-Karten Kontostand, Überschuss und Spenden.",
+    "finanzen-beitraege: Die Zeile „0 per Lastschrift, … per Überweisung“ ist im Bild ausgeblendet (visibility: hidden, Platz bleibt frei).",
+    "termin-detail-ganz: Weiter unten stehen die Karten „Helfer“ („keine Helferschichten geplant“) und „Dokumente“ („Noch keine Dokumente hochgeladen.“) – für den Spot termin-detail.png und termin-detail-teilnehmer.png nehmen.",
+    "schichten*: Die Schicht „Aufbau“ ist voll und hat deshalb keinen Knopf; in schichten-eingetragen überschneiden sich Grillstand und Kuchenbuffet mit der eigenen Schicht (dort steht der Hinweis statt „Eintragen“).",
+    "finanzen-rechnungen: Die grünen Knöpfe „Bezahlt“ sind Aktionen der App (als bezahlt markieren), kein Status.",
+    "Inszenierte Demo-Daten: Finanzen aus werkzeuge/finanzen-demo.mjs, Zu-/Absagen des Trainings am 3. Juni 2027 aus werkzeuge/termin-zusagen.mjs, Import-CSV erfunden (nur Vorschau, nichts gespeichert)."
+  ],
+  "images": [
+    {
+      "file": "dashboard-ganz.png",
+      "width": 1170,
+      "height": 5124,
+      "page": "/dashboard",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Dashboard „Willkommen, Anna!“ mit der Kennzahl Mitglieder (233) – Startbild der Lösung „Mitglieder“. – ganze Seite.",
+      "marks": [
+        {
+          "id": "begruessung",
+          "label": "Überschrift „Willkommen, Anna!“",
+          "text": "Willkommen, Anna!",
+          "box": {
+            "x": 48,
+            "y": 234,
+            "w": 931,
+            "h": 129
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "kennzahl-mitglieder",
+          "label": "Karte „Mitglieder“ (Kennzahl, Verlauf über 12 Monate)",
+          "text": "Mitglieder 233 ▲ +23 (+11,0 %) in 12 Monaten +4 gegenüber dem Vormonat 6 M 12 M 5 J Okt 25 – jetzt",
+          "box": {
+            "x": 48,
+            "y": 1049,
+            "w": 838,
+            "h": 935
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "kennzahl-mitglieder-zahl",
+          "label": "Zahl der Mitglieder (233)",
+          "text": "233",
+          "box": {
+            "x": 108,
+            "y": 1223,
+            "w": 206,
+            "h": 129
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chip-wachstum-12-monate",
+          "label": "Chip „+23 (+11,0 %)“ – im Spot ausmaskiert (keine Wirkungsbehauptung)",
+          "text": "▲ +23 (+11,0 %)",
+          "box": {
+            "x": 108,
+            "y": 1379,
+            "w": 385,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chip-vormonat",
+          "label": "Chip „+x gegenüber dem Vormonat“ – im Spot ausmaskiert",
+          "text": "+4 gegenüber dem Vormonat",
+          "box": {
+            "x": 108,
+            "y": 1475,
+            "w": 690,
+            "h": 77
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-dashboard",
+          "label": "Reiter des Dashboards (Übersicht · Termine & Helfer · Mitglieder …)",
+          "text": "Übersicht Termine & Helfer Mitglieder Aufgaben & Aktivität",
+          "box": {
+            "x": 48,
+            "y": 809,
+            "w": 1745,
+            "h": 156
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "dashboard.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/dashboard",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Dashboard „Willkommen, Anna!“ mit der Kennzahl Mitglieder (233) – Startbild der Lösung „Mitglieder“.",
+      "marks": [
+        {
+          "id": "begruessung",
+          "label": "Überschrift „Willkommen, Anna!“",
+          "text": "Willkommen, Anna!",
+          "box": {
+            "x": 48,
+            "y": 234,
+            "w": 931,
+            "h": 129
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "kennzahl-mitglieder",
+          "label": "Karte „Mitglieder“ (Kennzahl, Verlauf über 12 Monate)",
+          "text": "Mitglieder 233 ▲ +23 (+11,0 %) in 12 Monaten +4 gegenüber dem Vormonat 6 M 12 M 5 J Okt 25 – jetzt",
+          "box": {
+            "x": 48,
+            "y": 1049,
+            "w": 838,
+            "h": 935
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "kennzahl-mitglieder-zahl",
+          "label": "Zahl der Mitglieder (233)",
+          "text": "233",
+          "box": {
+            "x": 108,
+            "y": 1223,
+            "w": 206,
+            "h": 129
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chip-wachstum-12-monate",
+          "label": "Chip „+23 (+11,0 %)“ – im Spot ausmaskiert (keine Wirkungsbehauptung)",
+          "text": "▲ +23 (+11,0 %)",
+          "box": {
+            "x": 108,
+            "y": 1379,
+            "w": 385,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chip-vormonat",
+          "label": "Chip „+x gegenüber dem Vormonat“ – im Spot ausmaskiert",
+          "text": "+4 gegenüber dem Vormonat",
+          "box": {
+            "x": 108,
+            "y": 1475,
+            "w": 690,
+            "h": 77
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-dashboard",
+          "label": "Reiter des Dashboards (Übersicht · Termine & Helfer · Mitglieder …)",
+          "text": "Übersicht Termine & Helfer Mitglieder Aufgaben & Aktivität",
+          "box": {
+            "x": 48,
+            "y": 809,
+            "w": 1745,
+            "h": 156
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "mitglieder-ganz.png",
+      "width": 1170,
+      "height": 4101,
+      "page": "/mitglieder",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Mitgliederliste (233 Einträge, alphabetisch: Abel, Claudia · Adler, Anna · …). – ganze Seite.",
+      "marks": [
+        {
+          "id": "anzahl",
+          "label": "„233 Einträge“",
+          "text": "233 Einträge",
+          "box": {
+            "x": 48,
+            "y": 375,
+            "w": 279,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "erste-zeile",
+          "label": "Erste Zeile „Abel, Claudia“",
+          "text": "Abel, Claudia Abteilungsleiterin Fußball Benutzerkonto Aktiv",
+          "box": {
+            "x": 48,
+            "y": 1076,
+            "w": 1074,
+            "h": 253
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "zweite-zeile",
+          "label": "Zweite Zeile „Adler, Anna“",
+          "text": "Adler, Anna 1. Vorsitzende Benutzerkonto Aktiv",
+          "box": {
+            "x": 48,
+            "y": 1329,
+            "w": 1074,
+            "h": 255
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-import",
+          "label": "Knopf „Import“",
+          "text": "Import",
+          "box": {
+            "x": 48,
+            "y": 606,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-neues-mitglied",
+          "label": "Knopf „Neues Mitglied“",
+          "text": "Neues Mitglied",
+          "box": {
+            "x": 48,
+            "y": 474,
+            "w": 483,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "mitglieder.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/mitglieder",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Mitgliederliste (233 Einträge, alphabetisch: Abel, Claudia · Adler, Anna · …).",
+      "marks": [
+        {
+          "id": "anzahl",
+          "label": "„233 Einträge“",
+          "text": "233 Einträge",
+          "box": {
+            "x": 48,
+            "y": 375,
+            "w": 279,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "erste-zeile",
+          "label": "Erste Zeile „Abel, Claudia“",
+          "text": "Abel, Claudia Abteilungsleiterin Fußball Benutzerkonto Aktiv",
+          "box": {
+            "x": 48,
+            "y": 1076,
+            "w": 1074,
+            "h": 253
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "zweite-zeile",
+          "label": "Zweite Zeile „Adler, Anna“",
+          "text": "Adler, Anna 1. Vorsitzende Benutzerkonto Aktiv",
+          "box": {
+            "x": 48,
+            "y": 1329,
+            "w": 1074,
+            "h": 255
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-import",
+          "label": "Knopf „Import“",
+          "text": "Import",
+          "box": {
+            "x": 48,
+            "y": 606,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-neues-mitglied",
+          "label": "Knopf „Neues Mitglied“",
+          "text": "Neues Mitglied",
+          "box": {
+            "x": 48,
+            "y": 474,
+            "w": 483,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "mitglieder-import-vorschau-ganz.png",
+      "width": 1170,
+      "height": 3075,
+      "page": "/mitglieder/import",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Mitglieder-Import mit erfundener CSV „mitglieder.csv“ (6 Zeilen, Zeile 4 mit ungültiger E-Mail): Schritt „2. Vorschau prüfen“ – NUR Vorschau, nichts gespeichert. – ganze Seite.",
+      "marks": [
+        {
+          "id": "datei",
+          "label": "Gewählte Datei „mitglieder.csv“",
+          "text": "mitglieder.csv",
+          "box": {
+            "x": 676,
+            "y": 1357,
+            "w": 285,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schritt-vorschau",
+          "label": "Karte „2. Vorschau prüfen“ mit den Zählern",
+          "text": "2. Vorschau prüfen 5 gültig 0 Duplikate 1 fehlerhaft",
+          "box": {
+            "x": 48,
+            "y": 1695,
+            "w": 1074,
+            "h": 270
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-gueltig",
+          "label": "Badge „5 gültig“",
+          "text": "5 gültig",
+          "box": {
+            "x": 99,
+            "y": 1842,
+            "w": 207,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-duplikate",
+          "label": "Badge „0 Duplikate“",
+          "text": "0 Duplikate",
+          "box": {
+            "x": 330,
+            "y": 1842,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-fehlerhaft",
+          "label": "Badge „1 fehlerhaft“",
+          "text": "1 fehlerhaft",
+          "box": {
+            "x": 631,
+            "y": 1842,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehlerzeile",
+          "label": "Fehlerzeile (Zeile 4: Meinert, Lasse) mit Badge „Fehler“",
+          "text": "4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 48,
+            "y": 2379,
+            "w": 1809,
+            "h": 123
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "fehler-badge",
+          "label": "Badge „Fehler“",
+          "text": "Fehler",
+          "box": {
+            "x": 608,
+            "y": 2405,
+            "w": 182,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehler-hinweis",
+          "label": "Hinweis zur Fehlerzeile („Bitte gib eine gültige E-Mail-Adresse ein.“) – Spalte „Hinweis“ liegt am Handy rechts außerhalb, siehe …-hinweis.png",
+          "text": "Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 997,
+            "y": 2411,
+            "w": 836,
+            "h": 54
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "tabelle",
+          "label": "Tabelle der Vorschau (Zeile · Mitglied · Ergebnis · Hinweis)",
+          "text": "Zeile Mitglied Ergebnis Hinweis 2 Mila Brockmann wird importiert 3 Jonte Albers wird importiert 4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein",
+          "box": {
+            "x": 48,
+            "y": 2013,
+            "w": 1809,
+            "h": 857
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-importieren",
+          "label": "Knopf „5 Mitglieder importieren“ (wird nie geklickt)",
+          "text": "5 Mitglieder importieren",
+          "box": {
+            "x": 514,
+            "y": 2918,
+            "w": 608,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "mitglieder-import-vorschau-hinweis.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/mitglieder/import",
+      "variant": "gescrollt",
+      "scrollY": 543,
+      "description": "Mitglieder-Import mit erfundener CSV „mitglieder.csv“ (6 Zeilen, Zeile 4 mit ungültiger E-Mail): Schritt „2. Vorschau prüfen“ – NUR Vorschau, nichts gespeichert. – dieselbe Vorschau, Tabelle ganz nach rechts gescrollt: Spalte „Hinweis“ mit „Bitte gib eine gültige E-Mail-Adresse ein.“ in der Fehlerzeile (Spalte „Ergebnis“ dafür links angeschnitten).",
+      "marks": [
+        {
+          "id": "datei",
+          "label": "Gewählte Datei „mitglieder.csv“",
+          "text": "mitglieder.csv",
+          "box": {
+            "x": 676,
+            "y": 814,
+            "w": 285,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schritt-vorschau",
+          "label": "Karte „2. Vorschau prüfen“ mit den Zählern",
+          "text": "2. Vorschau prüfen 5 gültig 0 Duplikate 1 fehlerhaft",
+          "box": {
+            "x": 48,
+            "y": 1152,
+            "w": 1074,
+            "h": 270
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-gueltig",
+          "label": "Badge „5 gültig“",
+          "text": "5 gültig",
+          "box": {
+            "x": 99,
+            "y": 1299,
+            "w": 207,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-duplikate",
+          "label": "Badge „0 Duplikate“",
+          "text": "0 Duplikate",
+          "box": {
+            "x": 330,
+            "y": 1299,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-fehlerhaft",
+          "label": "Badge „1 fehlerhaft“",
+          "text": "1 fehlerhaft",
+          "box": {
+            "x": 631,
+            "y": 1299,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehlerzeile",
+          "label": "Fehlerzeile (Zeile 4: Meinert, Lasse) mit Badge „Fehler“",
+          "text": "4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": -687,
+            "y": 1836,
+            "w": 1809,
+            "h": 123
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "fehler-badge",
+          "label": "Badge „Fehler“",
+          "text": "Fehler",
+          "box": {
+            "x": -127,
+            "y": 1862,
+            "w": 182,
+            "h": 72
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "fehler-hinweis",
+          "label": "Hinweis zur Fehlerzeile („Bitte gib eine gültige E-Mail-Adresse ein.“) – Spalte „Hinweis“ liegt am Handy rechts außerhalb, siehe …-hinweis.png",
+          "text": "Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 262,
+            "y": 1868,
+            "w": 836,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "tabelle",
+          "label": "Tabelle der Vorschau (Zeile · Mitglied · Ergebnis · Hinweis)",
+          "text": "Zeile Mitglied Ergebnis Hinweis 2 Mila Brockmann wird importiert 3 Jonte Albers wird importiert 4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein",
+          "box": {
+            "x": -687,
+            "y": 1470,
+            "w": 1809,
+            "h": 857
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-importieren",
+          "label": "Knopf „5 Mitglieder importieren“ (wird nie geklickt)",
+          "text": "5 Mitglieder importieren",
+          "box": {
+            "x": 514,
+            "y": 2375,
+            "w": 608,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "mitglieder-import-vorschau-tabelle.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/mitglieder/import",
+      "variant": "gescrollt",
+      "scrollY": 543,
+      "description": "Mitglieder-Import mit erfundener CSV „mitglieder.csv“ (6 Zeilen, Zeile 4 mit ungültiger E-Mail): Schritt „2. Vorschau prüfen“ – NUR Vorschau, nichts gespeichert. – ab „tabelle“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "datei",
+          "label": "Gewählte Datei „mitglieder.csv“",
+          "text": "mitglieder.csv",
+          "box": {
+            "x": 676,
+            "y": 814,
+            "w": 285,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schritt-vorschau",
+          "label": "Karte „2. Vorschau prüfen“ mit den Zählern",
+          "text": "2. Vorschau prüfen 5 gültig 0 Duplikate 1 fehlerhaft",
+          "box": {
+            "x": 48,
+            "y": 1152,
+            "w": 1074,
+            "h": 270
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-gueltig",
+          "label": "Badge „5 gültig“",
+          "text": "5 gültig",
+          "box": {
+            "x": 99,
+            "y": 1299,
+            "w": 207,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-duplikate",
+          "label": "Badge „0 Duplikate“",
+          "text": "0 Duplikate",
+          "box": {
+            "x": 330,
+            "y": 1299,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-fehlerhaft",
+          "label": "Badge „1 fehlerhaft“",
+          "text": "1 fehlerhaft",
+          "box": {
+            "x": 631,
+            "y": 1299,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehlerzeile",
+          "label": "Fehlerzeile (Zeile 4: Meinert, Lasse) mit Badge „Fehler“",
+          "text": "4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 48,
+            "y": 1836,
+            "w": 1809,
+            "h": 123
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "fehler-badge",
+          "label": "Badge „Fehler“",
+          "text": "Fehler",
+          "box": {
+            "x": 608,
+            "y": 1862,
+            "w": 182,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehler-hinweis",
+          "label": "Hinweis zur Fehlerzeile („Bitte gib eine gültige E-Mail-Adresse ein.“) – Spalte „Hinweis“ liegt am Handy rechts außerhalb, siehe …-hinweis.png",
+          "text": "Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 997,
+            "y": 1868,
+            "w": 836,
+            "h": 54
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "tabelle",
+          "label": "Tabelle der Vorschau (Zeile · Mitglied · Ergebnis · Hinweis)",
+          "text": "Zeile Mitglied Ergebnis Hinweis 2 Mila Brockmann wird importiert 3 Jonte Albers wird importiert 4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein",
+          "box": {
+            "x": 48,
+            "y": 1470,
+            "w": 1809,
+            "h": 857
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-importieren",
+          "label": "Knopf „5 Mitglieder importieren“ (wird nie geklickt)",
+          "text": "5 Mitglieder importieren",
+          "box": {
+            "x": 514,
+            "y": 2375,
+            "w": 608,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "mitglieder-import-vorschau.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/mitglieder/import",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Mitglieder-Import mit erfundener CSV „mitglieder.csv“ (6 Zeilen, Zeile 4 mit ungültiger E-Mail): Schritt „2. Vorschau prüfen“ – NUR Vorschau, nichts gespeichert.",
+      "marks": [
+        {
+          "id": "datei",
+          "label": "Gewählte Datei „mitglieder.csv“",
+          "text": "mitglieder.csv",
+          "box": {
+            "x": 676,
+            "y": 1357,
+            "w": 285,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schritt-vorschau",
+          "label": "Karte „2. Vorschau prüfen“ mit den Zählern",
+          "text": "2. Vorschau prüfen 5 gültig 0 Duplikate 1 fehlerhaft",
+          "box": {
+            "x": 48,
+            "y": 1695,
+            "w": 1074,
+            "h": 270
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-gueltig",
+          "label": "Badge „5 gültig“",
+          "text": "5 gültig",
+          "box": {
+            "x": 99,
+            "y": 1842,
+            "w": 207,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-duplikate",
+          "label": "Badge „0 Duplikate“",
+          "text": "0 Duplikate",
+          "box": {
+            "x": 330,
+            "y": 1842,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "badge-fehlerhaft",
+          "label": "Badge „1 fehlerhaft“",
+          "text": "1 fehlerhaft",
+          "box": {
+            "x": 631,
+            "y": 1842,
+            "w": 277,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehlerzeile",
+          "label": "Fehlerzeile (Zeile 4: Meinert, Lasse) mit Badge „Fehler“",
+          "text": "4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 48,
+            "y": 2379,
+            "w": 1809,
+            "h": 123
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "fehler-badge",
+          "label": "Badge „Fehler“",
+          "text": "Fehler",
+          "box": {
+            "x": 608,
+            "y": 2405,
+            "w": 182,
+            "h": 72
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "fehler-hinweis",
+          "label": "Hinweis zur Fehlerzeile („Bitte gib eine gültige E-Mail-Adresse ein.“) – Spalte „Hinweis“ liegt am Handy rechts außerhalb, siehe …-hinweis.png",
+          "text": "Bitte gib eine gültige E-Mail-Adresse ein.",
+          "box": {
+            "x": 997,
+            "y": 2411,
+            "w": 836,
+            "h": 54
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "tabelle",
+          "label": "Tabelle der Vorschau (Zeile · Mitglied · Ergebnis · Hinweis)",
+          "text": "Zeile Mitglied Ergebnis Hinweis 2 Mila Brockmann wird importiert 3 Jonte Albers wird importiert 4 Lasse Meinert Fehler Bitte gib eine gültige E-Mail-Adresse ein",
+          "box": {
+            "x": 48,
+            "y": 2013,
+            "w": 1809,
+            "h": 857
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "kalender-donnerstag.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/kalender?ansicht=liste&datum=2027-06-09",
+      "variant": "gescrollt",
+      "scrollY": 2031,
+      "description": "Kalender als Liste, Juni 2027 – mit „Donnerstag, 3. Juni 2027 · 17:00–18:30 · Fußball-Training D-Jugend“. – ab „donnerstag“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "tag-donnerstag",
+          "label": "Tagesüberschrift „Donnerstag, 3. Juni 2027“",
+          "text": "Donnerstag, 3. Juni 2027",
+          "box": {
+            "x": 48,
+            "y": 230,
+            "w": 541,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "termin-d-jugend",
+          "label": "Karte „Fußball-Training D-Jugend“ am Donnerstag, 3. Juni (17:00 – 18:30, Sportplatz)",
+          "text": "17:00 – 18:30 Fußball-Training D-Jugend Training Jugendarbeit Sportplatz",
+          "box": {
+            "x": 48,
+            "y": 316,
+            "w": 1074,
+            "h": 305
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "termin-d-jugend-titel",
+          "label": "Titel „Fußball-Training D-Jugend“ (3. Juni)",
+          "text": "Fußball-Training D-Jugend",
+          "box": {
+            "x": 96,
+            "y": 441,
+            "w": 595,
+            "h": 54
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "kalender-ganz.png",
+      "width": 1170,
+      "height": 13317,
+      "page": "/kalender?ansicht=liste&datum=2027-06-09",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Kalender als Liste, Juni 2027 – mit „Donnerstag, 3. Juni 2027 · 17:00–18:30 · Fußball-Training D-Jugend“. – ganze Seite.",
+      "marks": [
+        {
+          "id": "monat",
+          "label": "Monat „Juni 2027“",
+          "text": "Juni 2027",
+          "box": {
+            "x": 565,
+            "y": 891,
+            "w": 250,
+            "h": 63
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "ansicht-liste",
+          "label": "Umschalter „Liste“",
+          "text": "Liste",
+          "box": {
+            "x": 665,
+            "y": 1026,
+            "w": 173,
+            "h": 96
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "tag-donnerstag",
+          "label": "Tagesüberschrift „Donnerstag, 3. Juni 2027“",
+          "text": "Donnerstag, 3. Juni 2027",
+          "box": {
+            "x": 48,
+            "y": 2261,
+            "w": 541,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "termin-d-jugend",
+          "label": "Karte „Fußball-Training D-Jugend“ am Donnerstag, 3. Juni (17:00 – 18:30, Sportplatz)",
+          "text": "17:00 – 18:30 Fußball-Training D-Jugend Training Jugendarbeit Sportplatz",
+          "box": {
+            "x": 48,
+            "y": 2347,
+            "w": 1074,
+            "h": 305
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "termin-d-jugend-titel",
+          "label": "Titel „Fußball-Training D-Jugend“ (3. Juni)",
+          "text": "Fußball-Training D-Jugend",
+          "box": {
+            "x": 96,
+            "y": 2472,
+            "w": 595,
+            "h": 54
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "kalender.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/kalender?ansicht=liste&datum=2027-06-09",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Kalender als Liste, Juni 2027 – mit „Donnerstag, 3. Juni 2027 · 17:00–18:30 · Fußball-Training D-Jugend“.",
+      "marks": [
+        {
+          "id": "monat",
+          "label": "Monat „Juni 2027“",
+          "text": "Juni 2027",
+          "box": {
+            "x": 565,
+            "y": 891,
+            "w": 250,
+            "h": 63
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "ansicht-liste",
+          "label": "Umschalter „Liste“",
+          "text": "Liste",
+          "box": {
+            "x": 665,
+            "y": 1026,
+            "w": 173,
+            "h": 96
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "tag-donnerstag",
+          "label": "Tagesüberschrift „Donnerstag, 3. Juni 2027“",
+          "text": "Donnerstag, 3. Juni 2027",
+          "box": {
+            "x": 48,
+            "y": 2261,
+            "w": 541,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "termin-d-jugend",
+          "label": "Karte „Fußball-Training D-Jugend“ am Donnerstag, 3. Juni (17:00 – 18:30, Sportplatz)",
+          "text": "17:00 – 18:30 Fußball-Training D-Jugend Training Jugendarbeit Sportplatz",
+          "box": {
+            "x": 48,
+            "y": 2347,
+            "w": 1074,
+            "h": 305
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "termin-d-jugend-titel",
+          "label": "Titel „Fußball-Training D-Jugend“ (3. Juni)",
+          "text": "Fußball-Training D-Jugend",
+          "box": {
+            "x": 96,
+            "y": 2472,
+            "w": 595,
+            "h": 54
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "termin-detail-ganz.png",
+      "width": 1170,
+      "height": 7662,
+      "page": "/veranstaltungen/01a0f349-fae0-7201-bbcc-ddfe64a2429c",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Termin „Fußball-Training D-Jugend“ am Donnerstag, 3. Juni 2027: „Deine Teilnahme“ mit „Zusagen“/„Absagen“ (noch nicht geantwortet), Teilnehmerzahl 9, „9 Zusagen“. – ganze Seite.",
+      "marks": [
+        {
+          "id": "titel",
+          "label": "Titel „Fußball-Training D-Jugend“",
+          "text": "Fußball-Training D-Jugend",
+          "box": {
+            "x": 48,
+            "y": 351,
+            "w": 1073,
+            "h": 105
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "datum",
+          "label": "Datum „Donnerstag, 3. Juni 2027 · 17:00 – 18:30 Uhr“",
+          "text": "Donnerstag, 3. Juni 2027 · 17:00 – 18:30 Uhr",
+          "box": {
+            "x": 48,
+            "y": 486,
+            "w": 971,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-teilnahme",
+          "label": "Karte „Deine Teilnahme“",
+          "text": "Deine Teilnahme Anmeldung optional Du hast noch nicht geantwortet. Zusagen Absagen",
+          "box": {
+            "x": 48,
+            "y": 873,
+            "w": 1074,
+            "h": 545
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "status-teilnahme",
+          "label": "„Du hast noch nicht geantwortet.“",
+          "text": "Du hast noch nicht geantwortet.",
+          "box": {
+            "x": 108,
+            "y": 1151,
+            "w": 674,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-zusagen",
+          "label": "Knopf „Zusagen“ (wird nie geklickt)",
+          "text": "Zusagen",
+          "box": {
+            "x": 108,
+            "y": 1250,
+            "w": 348,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-absagen",
+          "label": "Knopf „Absagen“ (wird nie geklickt)",
+          "text": "Absagen",
+          "box": {
+            "x": 480,
+            "y": 1250,
+            "w": 347,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-teilnehmerzahl",
+          "label": "Karte „Teilnehmerzahl“ (9)",
+          "text": "Teilnehmerzahl 9",
+          "box": {
+            "x": 48,
+            "y": 3582,
+            "w": 1074,
+            "h": 354
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "teilnehmerzahl",
+          "label": "Zahl der Zusagen (9)",
+          "text": "9",
+          "box": {
+            "x": 108,
+            "y": 3786,
+            "w": 46,
+            "h": 84
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "zusagen-text",
+          "label": "„9 Zusagen“ (Teilnehmer)",
+          "text": "9 Zusagen",
+          "box": {
+            "x": 108,
+            "y": 5466,
+            "w": 219,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-teilnehmer",
+          "label": "Karte „Teilnehmer“ mit der Liste der Zusagen",
+          "text": "Teilnehmer 9 Zusagen Mitglied hinzufügen … Abel, Claudia Adler, Anna Albrecht, Dieter Bauer, Doris Bauer, Klaus Bauer, Marco Baumann, Holger Baumann, Martin Bau",
+          "box": {
+            "x": 48,
+            "y": 5313,
+            "w": 1074,
+            "h": 2302
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "termin-detail-teilnehmer.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/veranstaltungen/01a0f349-fae0-7201-bbcc-ddfe64a2429c",
+      "variant": "gescrollt",
+      "scrollY": 5085,
+      "description": "Termin „Fußball-Training D-Jugend“ am Donnerstag, 3. Juni 2027: „Deine Teilnahme“ mit „Zusagen“/„Absagen“ (noch nicht geantwortet), Teilnehmerzahl 9, „9 Zusagen“. – ab „teilnehmer“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "zusagen-text",
+          "label": "„9 Zusagen“ (Teilnehmer)",
+          "text": "9 Zusagen",
+          "box": {
+            "x": 108,
+            "y": 381,
+            "w": 219,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-teilnehmer",
+          "label": "Karte „Teilnehmer“ mit der Liste der Zusagen",
+          "text": "Teilnehmer 9 Zusagen Mitglied hinzufügen … Abel, Claudia Adler, Anna Albrecht, Dieter Bauer, Doris Bauer, Klaus Bauer, Marco Baumann, Holger Baumann, Martin Bau",
+          "box": {
+            "x": 48,
+            "y": 228,
+            "w": 1074,
+            "h": 2302
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "termin-detail.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/veranstaltungen/01a0f349-fae0-7201-bbcc-ddfe64a2429c",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Termin „Fußball-Training D-Jugend“ am Donnerstag, 3. Juni 2027: „Deine Teilnahme“ mit „Zusagen“/„Absagen“ (noch nicht geantwortet), Teilnehmerzahl 9, „9 Zusagen“.",
+      "marks": [
+        {
+          "id": "titel",
+          "label": "Titel „Fußball-Training D-Jugend“",
+          "text": "Fußball-Training D-Jugend",
+          "box": {
+            "x": 48,
+            "y": 351,
+            "w": 1073,
+            "h": 105
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "datum",
+          "label": "Datum „Donnerstag, 3. Juni 2027 · 17:00 – 18:30 Uhr“",
+          "text": "Donnerstag, 3. Juni 2027 · 17:00 – 18:30 Uhr",
+          "box": {
+            "x": 48,
+            "y": 486,
+            "w": 971,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-teilnahme",
+          "label": "Karte „Deine Teilnahme“",
+          "text": "Deine Teilnahme Anmeldung optional Du hast noch nicht geantwortet. Zusagen Absagen",
+          "box": {
+            "x": 48,
+            "y": 873,
+            "w": 1074,
+            "h": 545
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "status-teilnahme",
+          "label": "„Du hast noch nicht geantwortet.“",
+          "text": "Du hast noch nicht geantwortet.",
+          "box": {
+            "x": 108,
+            "y": 1151,
+            "w": 674,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-zusagen",
+          "label": "Knopf „Zusagen“ (wird nie geklickt)",
+          "text": "Zusagen",
+          "box": {
+            "x": 108,
+            "y": 1250,
+            "w": 348,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-absagen",
+          "label": "Knopf „Absagen“ (wird nie geklickt)",
+          "text": "Absagen",
+          "box": {
+            "x": 480,
+            "y": 1250,
+            "w": 347,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "schichten-ganz.png",
+      "width": 1170,
+      "height": 4761,
+      "page": "/helferplanung/01a0f3b7-b07e-705d-930d-a6450f80a475",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Helferplan „Sommerfest 2027“ (Samstag, 12. Juni 2027): Karte „Tagesablauf“ mit den Schichten, „Eintragen“ und freien Plätzen (Aufbau voll, Getränkestand 2 von 4, Grillstand 0 von 3, Kuchenbuffet 1 von 3, Abbau 1 von 6). – ganze Seite.",
+      "marks": [
+        {
+          "id": "titel",
+          "label": "Titel des Helferplans („Sommerfest 2027“)",
+          "text": "Sommerfest 2027",
+          "box": {
+            "x": 48,
+            "y": 351,
+            "w": 1074,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-aufbau",
+          "label": "Schicht „Aufbau“ (Listeneintrag)",
+          "text": "09:00 – 11:00 Uhr Aufbauab 16 Jahren Zelte, Tische und Bänke aufbauen Treffpunkt: Vereinsheim, Lager Verantwortlich: Claudia Abel 5 von 5 · voll Hans Hellwig, L",
+          "box": {
+            "x": 51,
+            "y": 1322,
+            "w": 1068,
+            "h": 728
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-aufbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Aufbau“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-aufbau",
+          "label": "Belegung der Schicht „Aufbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "5 von 5 · voll",
+          "box": {
+            "x": 99,
+            "y": 1803,
+            "w": 265,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-getraenkestand",
+          "label": "Schicht „Getränkestand“ (Listeneintrag)",
+          "text": "12:00 – 15:00 Uhr Getränkestandab 16 Jahren Getränke ausschenken und kassieren Treffpunkt: Getränkestand am Eingang Verantwortlich: Bernd Vogt 2 von 4 · 2 frei ",
+          "box": {
+            "x": 51,
+            "y": 2049,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-getraenkestand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Getränkestand“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 2082,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-getraenkestand",
+          "label": "Belegung der Schicht „Getränkestand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "2 von 4 · 2 frei",
+          "box": {
+            "x": 99,
+            "y": 2533,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-grillstand",
+          "label": "Schicht „Grillstand“ (Listeneintrag)",
+          "text": "12:00 – 16:00 Uhr Grillstandab 18 Jahren Bratwurst und Steaks grillen Treffpunkt: Grillzelt Verantwortlich: Bernd Vogt 0 von 3 · 3 frei Noch niemand eingetragen",
+          "box": {
+            "x": 51,
+            "y": 2715,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-grillstand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Grillstand“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 2748,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-grillstand",
+          "label": "Belegung der Schicht „Grillstand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "0 von 3 · 3 frei",
+          "box": {
+            "x": 99,
+            "y": 3198,
+            "w": 302,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-kuchenbuffet",
+          "label": "Schicht „Kuchenbuffet“ (Listeneintrag)",
+          "text": "13:00 – 17:00 Uhr Kuchenbuffet Kuchen annehmen und verkaufen Treffpunkt: Kuchenzelt Verantwortlich: Bernd Vogt 1 von 3 · 2 frei Maria Mertens Eintragen",
+          "box": {
+            "x": 51,
+            "y": 3380,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-kuchenbuffet",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Kuchenbuffet“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 3413,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-kuchenbuffet",
+          "label": "Belegung der Schicht „Kuchenbuffet“ („x von y · z frei“ bzw. „voll“)",
+          "text": "1 von 3 · 2 frei",
+          "box": {
+            "x": 99,
+            "y": 3864,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-abbau",
+          "label": "Schicht „Abbau“ (Listeneintrag)",
+          "text": "18:00 – 20:00 Uhr Abbauab 16 Jahren Alles abbauen und aufräumen Treffpunkt: Vereinsheim, Lager Verantwortlich: Bernd Vogt 1 von 6 · 5 frei Paul Koch Eintragen",
+          "box": {
+            "x": 51,
+            "y": 4045,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-abbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Abbau“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 4078,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-abbau",
+          "label": "Belegung der Schicht „Abbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "1 von 6 · 5 frei",
+          "box": {
+            "x": 99,
+            "y": 4529,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "schichten-liste.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/helferplanung/01a0f3b7-b07e-705d-930d-a6450f80a475",
+      "variant": "gescrollt",
+      "scrollY": 1821,
+      "description": "Helferplan „Sommerfest 2027“ (Samstag, 12. Juni 2027): Karte „Tagesablauf“ mit den Schichten, „Eintragen“ und freien Plätzen (Aufbau voll, Getränkestand 2 von 4, Grillstand 0 von 3, Kuchenbuffet 1 von 3, Abbau 1 von 6). – ab „liste“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "schicht-aufbau",
+          "label": "Schicht „Aufbau“ (Listeneintrag)",
+          "text": "09:00 – 11:00 Uhr Aufbauab 16 Jahren Zelte, Tische und Bänke aufbauen Treffpunkt: Vereinsheim, Lager Verantwortlich: Claudia Abel 5 von 5 · voll Hans Hellwig, L",
+          "box": {
+            "x": 51,
+            "y": -499,
+            "w": 1068,
+            "h": 728
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-aufbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Aufbau“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-aufbau",
+          "label": "Belegung der Schicht „Aufbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "5 von 5 · voll",
+          "box": {
+            "x": 99,
+            "y": -18,
+            "w": 265,
+            "h": 54
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "schicht-getraenkestand",
+          "label": "Schicht „Getränkestand“ (Listeneintrag)",
+          "text": "12:00 – 15:00 Uhr Getränkestandab 16 Jahren Getränke ausschenken und kassieren Treffpunkt: Getränkestand am Eingang Verantwortlich: Bernd Vogt 2 von 4 · 2 frei ",
+          "box": {
+            "x": 51,
+            "y": 228,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-getraenkestand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Getränkestand“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 261,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-getraenkestand",
+          "label": "Belegung der Schicht „Getränkestand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "2 von 4 · 2 frei",
+          "box": {
+            "x": 99,
+            "y": 712,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-grillstand",
+          "label": "Schicht „Grillstand“ (Listeneintrag)",
+          "text": "12:00 – 16:00 Uhr Grillstandab 18 Jahren Bratwurst und Steaks grillen Treffpunkt: Grillzelt Verantwortlich: Bernd Vogt 0 von 3 · 3 frei Noch niemand eingetragen",
+          "box": {
+            "x": 51,
+            "y": 894,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-grillstand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Grillstand“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 927,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-grillstand",
+          "label": "Belegung der Schicht „Grillstand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "0 von 3 · 3 frei",
+          "box": {
+            "x": 99,
+            "y": 1377,
+            "w": 302,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-kuchenbuffet",
+          "label": "Schicht „Kuchenbuffet“ (Listeneintrag)",
+          "text": "13:00 – 17:00 Uhr Kuchenbuffet Kuchen annehmen und verkaufen Treffpunkt: Kuchenzelt Verantwortlich: Bernd Vogt 1 von 3 · 2 frei Maria Mertens Eintragen",
+          "box": {
+            "x": 51,
+            "y": 1559,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-kuchenbuffet",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Kuchenbuffet“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 1592,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-kuchenbuffet",
+          "label": "Belegung der Schicht „Kuchenbuffet“ („x von y · z frei“ bzw. „voll“)",
+          "text": "1 von 3 · 2 frei",
+          "box": {
+            "x": 99,
+            "y": 2043,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-abbau",
+          "label": "Schicht „Abbau“ (Listeneintrag)",
+          "text": "18:00 – 20:00 Uhr Abbauab 16 Jahren Alles abbauen und aufräumen Treffpunkt: Vereinsheim, Lager Verantwortlich: Bernd Vogt 1 von 6 · 5 frei Paul Koch Eintragen",
+          "box": {
+            "x": 51,
+            "y": 2224,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-abbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Abbau“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 2257,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "schichten.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/helferplanung/01a0f3b7-b07e-705d-930d-a6450f80a475",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Helferplan „Sommerfest 2027“ (Samstag, 12. Juni 2027): Karte „Tagesablauf“ mit den Schichten, „Eintragen“ und freien Plätzen (Aufbau voll, Getränkestand 2 von 4, Grillstand 0 von 3, Kuchenbuffet 1 von 3, Abbau 1 von 6).",
+      "marks": [
+        {
+          "id": "titel",
+          "label": "Titel des Helferplans („Sommerfest 2027“)",
+          "text": "Sommerfest 2027",
+          "box": {
+            "x": 48,
+            "y": 351,
+            "w": 1074,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-aufbau",
+          "label": "Schicht „Aufbau“ (Listeneintrag)",
+          "text": "09:00 – 11:00 Uhr Aufbauab 16 Jahren Zelte, Tische und Bänke aufbauen Treffpunkt: Vereinsheim, Lager Verantwortlich: Claudia Abel 5 von 5 · voll Hans Hellwig, L",
+          "box": {
+            "x": 51,
+            "y": 1322,
+            "w": 1068,
+            "h": 728
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-aufbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Aufbau“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-aufbau",
+          "label": "Belegung der Schicht „Aufbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "5 von 5 · voll",
+          "box": {
+            "x": 99,
+            "y": 1803,
+            "w": 265,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-getraenkestand",
+          "label": "Schicht „Getränkestand“ (Listeneintrag)",
+          "text": "12:00 – 15:00 Uhr Getränkestandab 16 Jahren Getränke ausschenken und kassieren Treffpunkt: Getränkestand am Eingang Verantwortlich: Bernd Vogt 2 von 4 · 2 frei ",
+          "box": {
+            "x": 51,
+            "y": 2049,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-getraenkestand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Getränkestand“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 2082,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "schichten-eingetragen-ganz.png",
+      "width": 1170,
+      "height": 5190,
+      "page": "/helferplanung/01a0f3b7-b07e-705d-930d-a6450f80a475",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Helferplan „Sommerfest 2027“ nach dem Eintragen: Getränkestand 3 von 4, eigener Name, „Austragen“ (Stand wie vor der Aufnahme). – ganze Seite.",
+      "marks": [
+        {
+          "id": "titel",
+          "label": "Titel des Helferplans („Sommerfest 2027“)",
+          "text": "Sommerfest 2027",
+          "box": {
+            "x": 48,
+            "y": 351,
+            "w": 1074,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-aufbau",
+          "label": "Schicht „Aufbau“ (Listeneintrag)",
+          "text": "09:00 – 11:00 Uhr Aufbauab 16 Jahren Zelte, Tische und Bänke aufbauen Treffpunkt: Vereinsheim, Lager Verantwortlich: Claudia Abel 5 von 5 · voll Hans Hellwig, L",
+          "box": {
+            "x": 51,
+            "y": 1322,
+            "w": 1068,
+            "h": 728
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-aufbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Aufbau“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-aufbau",
+          "label": "Belegung der Schicht „Aufbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "5 von 5 · voll",
+          "box": {
+            "x": 99,
+            "y": 1803,
+            "w": 265,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-getraenkestand",
+          "label": "Schicht „Getränkestand“ (Listeneintrag)",
+          "text": "12:00 – 15:00 Uhr Getränkestandab 16 Jahren Getränke ausschenken und kassieren Treffpunkt: Getränkestand am Eingang Verantwortlich: Bernd Vogt 3 von 4 · 1 frei ",
+          "box": {
+            "x": 51,
+            "y": 2049,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-getraenkestand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Getränkestand“ – bei voller Schicht keiner",
+          "text": "Austragen",
+          "box": {
+            "x": 663,
+            "y": 2082,
+            "w": 294,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-getraenkestand",
+          "label": "Belegung der Schicht „Getränkestand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "3 von 4 · 1 frei",
+          "box": {
+            "x": 99,
+            "y": 2533,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-grillstand",
+          "label": "Schicht „Grillstand“ (Listeneintrag)",
+          "text": "12:00 – 16:00 Uhr Grillstandab 18 Jahren Bratwurst und Steaks grillen Treffpunkt: Grillzelt Verantwortlich: Bernd Vogt Überschneidet sich mit deiner Schicht „Ge",
+          "box": {
+            "x": 51,
+            "y": 2715,
+            "w": 1068,
+            "h": 879
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-grillstand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Grillstand“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-grillstand",
+          "label": "Belegung der Schicht „Grillstand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "0 von 3 · 3 frei",
+          "box": {
+            "x": 99,
+            "y": 3412,
+            "w": 302,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-kuchenbuffet",
+          "label": "Schicht „Kuchenbuffet“ (Listeneintrag)",
+          "text": "13:00 – 17:00 Uhr Kuchenbuffet Kuchen annehmen und verkaufen Treffpunkt: Kuchenzelt Verantwortlich: Bernd Vogt Überschneidet sich mit deiner Schicht „Getränkest",
+          "box": {
+            "x": 51,
+            "y": 3594,
+            "w": 1068,
+            "h": 879
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-kuchenbuffet",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Kuchenbuffet“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-kuchenbuffet",
+          "label": "Belegung der Schicht „Kuchenbuffet“ („x von y · z frei“ bzw. „voll“)",
+          "text": "1 von 3 · 2 frei",
+          "box": {
+            "x": 99,
+            "y": 4291,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-abbau",
+          "label": "Schicht „Abbau“ (Listeneintrag)",
+          "text": "18:00 – 20:00 Uhr Abbauab 16 Jahren Alles abbauen und aufräumen Treffpunkt: Vereinsheim, Lager Verantwortlich: Bernd Vogt 1 von 6 · 5 frei Paul Koch Eintragen",
+          "box": {
+            "x": 51,
+            "y": 4473,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-abbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Abbau“ – bei voller Schicht keiner",
+          "text": "Eintragen",
+          "box": {
+            "x": 678,
+            "y": 4506,
+            "w": 279,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-abbau",
+          "label": "Belegung der Schicht „Abbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "1 von 6 · 5 frei",
+          "box": {
+            "x": 99,
+            "y": 4956,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "schichten-eingetragen-liste.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/helferplanung/01a0f3b7-b07e-705d-930d-a6450f80a475",
+      "variant": "gescrollt",
+      "scrollY": 1821,
+      "description": "Helferplan „Sommerfest 2027“ nach dem Eintragen: Getränkestand 3 von 4, eigener Name, „Austragen“ (Stand wie vor der Aufnahme). – ab „liste“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "schicht-aufbau",
+          "label": "Schicht „Aufbau“ (Listeneintrag)",
+          "text": "09:00 – 11:00 Uhr Aufbauab 16 Jahren Zelte, Tische und Bänke aufbauen Treffpunkt: Vereinsheim, Lager Verantwortlich: Claudia Abel 5 von 5 · voll Hans Hellwig, L",
+          "box": {
+            "x": 51,
+            "y": -499,
+            "w": 1068,
+            "h": 728
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-aufbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Aufbau“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-aufbau",
+          "label": "Belegung der Schicht „Aufbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "5 von 5 · voll",
+          "box": {
+            "x": 99,
+            "y": -18,
+            "w": 265,
+            "h": 54
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "schicht-getraenkestand",
+          "label": "Schicht „Getränkestand“ (Listeneintrag)",
+          "text": "12:00 – 15:00 Uhr Getränkestandab 16 Jahren Getränke ausschenken und kassieren Treffpunkt: Getränkestand am Eingang Verantwortlich: Bernd Vogt 3 von 4 · 1 frei ",
+          "box": {
+            "x": 51,
+            "y": 228,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-getraenkestand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Getränkestand“ – bei voller Schicht keiner",
+          "text": "Austragen",
+          "box": {
+            "x": 663,
+            "y": 261,
+            "w": 294,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "belegung-getraenkestand",
+          "label": "Belegung der Schicht „Getränkestand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "3 von 4 · 1 frei",
+          "box": {
+            "x": 99,
+            "y": 712,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-grillstand",
+          "label": "Schicht „Grillstand“ (Listeneintrag)",
+          "text": "12:00 – 16:00 Uhr Grillstandab 18 Jahren Bratwurst und Steaks grillen Treffpunkt: Grillzelt Verantwortlich: Bernd Vogt Überschneidet sich mit deiner Schicht „Ge",
+          "box": {
+            "x": 51,
+            "y": 894,
+            "w": 1068,
+            "h": 879
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-grillstand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Grillstand“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-grillstand",
+          "label": "Belegung der Schicht „Grillstand“ („x von y · z frei“ bzw. „voll“)",
+          "text": "0 von 3 · 3 frei",
+          "box": {
+            "x": 99,
+            "y": 1591,
+            "w": 302,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-kuchenbuffet",
+          "label": "Schicht „Kuchenbuffet“ (Listeneintrag)",
+          "text": "13:00 – 17:00 Uhr Kuchenbuffet Kuchen annehmen und verkaufen Treffpunkt: Kuchenzelt Verantwortlich: Bernd Vogt Überschneidet sich mit deiner Schicht „Getränkest",
+          "box": {
+            "x": 51,
+            "y": 1773,
+            "w": 1068,
+            "h": 879
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-kuchenbuffet",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Kuchenbuffet“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-kuchenbuffet",
+          "label": "Belegung der Schicht „Kuchenbuffet“ („x von y · z frei“ bzw. „voll“)",
+          "text": "1 von 3 · 2 frei",
+          "box": {
+            "x": 99,
+            "y": 2470,
+            "w": 298,
+            "h": 54
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "schichten-eingetragen.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/helferplanung/01a0f3b7-b07e-705d-930d-a6450f80a475",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Helferplan „Sommerfest 2027“ nach dem Eintragen: Getränkestand 3 von 4, eigener Name, „Austragen“ (Stand wie vor der Aufnahme).",
+      "marks": [
+        {
+          "id": "titel",
+          "label": "Titel des Helferplans („Sommerfest 2027“)",
+          "text": "Sommerfest 2027",
+          "box": {
+            "x": 48,
+            "y": 351,
+            "w": 1074,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-aufbau",
+          "label": "Schicht „Aufbau“ (Listeneintrag)",
+          "text": "09:00 – 11:00 Uhr Aufbauab 16 Jahren Zelte, Tische und Bänke aufbauen Treffpunkt: Vereinsheim, Lager Verantwortlich: Claudia Abel 5 von 5 · voll Hans Hellwig, L",
+          "box": {
+            "x": 51,
+            "y": 1322,
+            "w": 1068,
+            "h": 728
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-aufbau",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Aufbau“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "belegung-aufbau",
+          "label": "Belegung der Schicht „Aufbau“ („x von y · z frei“ bzw. „voll“)",
+          "text": "5 von 5 · voll",
+          "box": {
+            "x": 99,
+            "y": 1803,
+            "w": 265,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "schicht-getraenkestand",
+          "label": "Schicht „Getränkestand“ (Listeneintrag)",
+          "text": "12:00 – 15:00 Uhr Getränkestandab 16 Jahren Getränke ausschenken und kassieren Treffpunkt: Getränkestand am Eingang Verantwortlich: Bernd Vogt 3 von 4 · 1 frei ",
+          "box": {
+            "x": 51,
+            "y": 2049,
+            "w": 1068,
+            "h": 665
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "knopf-getraenkestand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Getränkestand“ – bei voller Schicht keiner",
+          "text": "Austragen",
+          "box": {
+            "x": 663,
+            "y": 2082,
+            "w": 294,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-grillstand",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Grillstand“ – bei voller Schicht keiner",
+          "found": false
+        },
+        {
+          "id": "knopf-kuchenbuffet",
+          "label": "Knopf „Eintragen“ (bzw. „Austragen“/„Zuweisen“) der Schicht „Kuchenbuffet“ – bei voller Schicht keiner",
+          "found": false
+        }
+      ]
+    },
+    {
+      "file": "nachrichten.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/nachrichten?chat=alle",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Chat „Alle Mitglieder“ mit der Ankündigung „Arbeitseinsatz am Vereinsheim“ und der Lesestatistik „4/5“ (4 von 5 gelesen).",
+      "marks": [
+        {
+          "id": "chat-kopf",
+          "label": "Kopf des Chats „Alle Mitglieder · Erreicht 5 Personen“",
+          "text": "Alle Mitglieder Erreicht 5 Personen Dienstag, 29. September 2026 ANKÜNDIGUNG Willkommen bei VereinsFlow! Liebe Mitglieder, ab sofort organisieren wir Veranstalt",
+          "box": {
+            "x": 48,
+            "y": 240,
+            "w": 1074,
+            "h": 2244
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "ankuendigung",
+          "label": "Blase der Ankündigung „Arbeitseinsatz am Vereinsheim“",
+          "text": "ANKÜNDIGUNG Arbeitseinsatz am Vereinsheim Wir streichen den Gastraum und räumen das Lager auf. Wer mit anpackt, trägt sich bitte im Helferplan bei „Malerarbeite",
+          "box": {
+            "x": 236,
+            "y": 1237,
+            "w": 847,
+            "h": 522
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "lesestatistik",
+          "label": "Lesestatistik der Ankündigung „4/5“ (App-Text „4 von 5 gelesen“)",
+          "text": "4/5",
+          "box": {
+            "x": 915,
+            "y": 1693,
+            "w": 60,
+            "h": 55
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "lesestatistik-zeile",
+          "label": "Fuß der Ankündigung (Umschlag-Symbol, Uhrzeit, Häkchen, 4/5) – das Umschlag-Symbol (E-Mail) gehört nicht zum Fakt",
+          "text": "Auch per E-Mail gesendet. 18:30 4/5 4 von 5 gelesen",
+          "box": {
+            "x": 266,
+            "y": 1693,
+            "w": 709,
+            "h": 55
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "eingabe",
+          "label": "Eingabefeld „Nachricht schreiben“",
+          "text": "Nachricht schreiben",
+          "box": {
+            "x": 75,
+            "y": 2192,
+            "w": 876,
+            "h": 126
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "nachrichten-liste.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/nachrichten",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Liste der Chats: Alle Mitglieder · Helfer · Sommerfest 2027 · Teilnehmer · Sommerfest 2027 · Abteilung Fußball.",
+      "marks": [
+        {
+          "id": "chat-alle",
+          "label": "Chat „Alle Mitglieder“",
+          "text": "Alle Mitglieder Gestern Bernd: Super Sache! Farbrollen und Abdeckfolie liegen schon im Lager.",
+          "box": {
+            "x": 255,
+            "y": 833,
+            "w": 825,
+            "h": 218
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chat-helfer",
+          "label": "Chat „Helfer · Sommerfest 2027“",
+          "text": "Helfer · Sommerfest 2027 Montag Du: Danke an alle, die sich schon eingetragen haben! Treffpunkt und Uhrzeit stehen bei jeder Schicht im Helferplan.",
+          "box": {
+            "x": 255,
+            "y": 1052,
+            "w": 825,
+            "h": 218
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chat-teilnehmer",
+          "label": "Chat „Teilnehmer · Sommerfest 2027“",
+          "text": "Teilnehmer · Sommerfest 2027 Sonntag Du: Schön, dass ihr zugesagt habt! Wer doch nicht kann, sagt bitte kurz ab – dann rückt jemand von der Warteliste nach.",
+          "box": {
+            "x": 255,
+            "y": 1270,
+            "w": 825,
+            "h": 218
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "chat-abteilung",
+          "label": "Chat „Abteilung Fußball“",
+          "text": "Abteilung Fußball Freitag Claudia: Die neuen Trainingsanzüge sind da! Wer noch keinen hat, kann ihn beim nächsten Training anprobieren.",
+          "box": {
+            "x": 255,
+            "y": 1488,
+            "w": 825,
+            "h": 218
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-cockpit-das-steht-an.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen",
+      "variant": "gescrollt",
+      "scrollY": 3354,
+      "description": "Finanzen › Übersicht: Kontostand, Karte „Offene Rechnungen“ (1.549,50 €, 2 Rechnungen zu bezahlen, davon 1 überfällig), Überschuss und Spenden (im Spot ausmaskiert), Monatszahlen, „Das steht an“. – ab „das-steht-an“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "karte-spenden",
+          "label": "Karte „Spenden 2026“ – im Spot ausmaskiert (Spenden nicht in der Faktenliste)",
+          "text": "Spenden 2026 250,00 € von 1 Spender",
+          "box": {
+            "x": 48,
+            "y": -528,
+            "w": 1074,
+            "h": 624
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "karte-monatszahlen",
+          "label": "Karte „Einnahmen und Ausgaben 2026“ (Monatsdiagramm)",
+          "text": "Einnahmen und Ausgaben 2026 Je Monat, ohne Umbuchungen und Anfangsbestände Kassenbuch öffnen Einnahmen 9.397,50 € Ausgaben 4.111,20 € Als Tabelle 0 2.000 4.000 ",
+          "box": {
+            "x": 48,
+            "y": 168,
+            "w": 1074,
+            "h": 1461
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-das-steht-an",
+          "label": "Karte „Das steht an“",
+          "text": "Das steht an 1 Punkt für dich „Rechnung vom 31.08.2026.pdf“ bezahlen 1.200,00 €, war am 27.09.2026 fällig – seit 10 Tagen überfällig Rechnung ansehen Demnächst ",
+          "box": {
+            "x": 48,
+            "y": 1701,
+            "w": 1074,
+            "h": 1098
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-cockpit-ganz.png",
+      "width": 1170,
+      "height": 8856,
+      "page": "/finanzen",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Finanzen › Übersicht: Kontostand, Karte „Offene Rechnungen“ (1.549,50 €, 2 Rechnungen zu bezahlen, davon 1 überfällig), Überschuss und Spenden (im Spot ausmaskiert), Monatszahlen, „Das steht an“. – ganze Seite.",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 666,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 678,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 678,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 678,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 678,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 678,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "karte-offene-rechnungen",
+          "label": "Karte „Offene Rechnungen“",
+          "text": "Offene Rechnungen 1.549,50 € 2 Rechnungen zu bezahlen davon 1 überfällig",
+          "box": {
+            "x": 48,
+            "y": 1542,
+            "w": 1074,
+            "h": 492
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "offene-rechnungen-betrag",
+          "label": "Betrag offene Rechnungen (1.549,50 €)",
+          "text": "1.549,50 €",
+          "box": {
+            "x": 108,
+            "y": 1713,
+            "w": 525,
+            "h": 120
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "offene-rechnungen-anzahl",
+          "label": "„2 Rechnungen zu bezahlen“",
+          "text": "2 Rechnungen zu bezahlen",
+          "box": {
+            "x": 108,
+            "y": 1859,
+            "w": 566,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "offene-rechnungen-ueberfaellig",
+          "label": "„davon 1 überfällig“",
+          "text": "davon 1 überfällig",
+          "box": {
+            "x": 108,
+            "y": 1930,
+            "w": 379,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-kontostand",
+          "label": "Karte „Kontostand gesamt“ – im Spot ausmaskiert",
+          "text": "Kontostand gesamt 13.944,47 € Girokonto und Barkasse",
+          "box": {
+            "x": 48,
+            "y": 870,
+            "w": 1074,
+            "h": 624
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-ueberschuss",
+          "label": "Karte „Überschuss 2026“ – im Spot ausmaskiert",
+          "text": "Überschuss 2026 +5.286,30 € Einnahmen minus Ausgaben seit 01.07.2026",
+          "box": {
+            "x": 48,
+            "y": 2082,
+            "w": 1074,
+            "h": 696
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-spenden",
+          "label": "Karte „Spenden 2026“ – im Spot ausmaskiert (Spenden nicht in der Faktenliste)",
+          "text": "Spenden 2026 250,00 € von 1 Spender",
+          "box": {
+            "x": 48,
+            "y": 2826,
+            "w": 1074,
+            "h": 624
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-monatszahlen",
+          "label": "Karte „Einnahmen und Ausgaben 2026“ (Monatsdiagramm)",
+          "text": "Einnahmen und Ausgaben 2026 Je Monat, ohne Umbuchungen und Anfangsbestände Kassenbuch öffnen Einnahmen 9.397,50 € Ausgaben 4.111,20 € Als Tabelle 0 2.000 4.000 ",
+          "box": {
+            "x": 48,
+            "y": 3522,
+            "w": 1074,
+            "h": 1461
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-das-steht-an",
+          "label": "Karte „Das steht an“",
+          "text": "Das steht an 1 Punkt für dich „Rechnung vom 31.08.2026.pdf“ bezahlen 1.200,00 €, war am 27.09.2026 fällig – seit 10 Tagen überfällig Rechnung ansehen Demnächst ",
+          "box": {
+            "x": 48,
+            "y": 5055,
+            "w": 1074,
+            "h": 1098
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-cockpit.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Finanzen › Übersicht: Kontostand, Karte „Offene Rechnungen“ (1.549,50 €, 2 Rechnungen zu bezahlen, davon 1 überfällig), Überschuss und Spenden (im Spot ausmaskiert), Monatszahlen, „Das steht an“.",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 666,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 678,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 678,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 678,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 678,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 678,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "karte-offene-rechnungen",
+          "label": "Karte „Offene Rechnungen“",
+          "text": "Offene Rechnungen 1.549,50 € 2 Rechnungen zu bezahlen davon 1 überfällig",
+          "box": {
+            "x": 48,
+            "y": 1542,
+            "w": 1074,
+            "h": 492
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "offene-rechnungen-betrag",
+          "label": "Betrag offene Rechnungen (1.549,50 €)",
+          "text": "1.549,50 €",
+          "box": {
+            "x": 108,
+            "y": 1713,
+            "w": 525,
+            "h": 120
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "offene-rechnungen-anzahl",
+          "label": "„2 Rechnungen zu bezahlen“",
+          "text": "2 Rechnungen zu bezahlen",
+          "box": {
+            "x": 108,
+            "y": 1859,
+            "w": 566,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "offene-rechnungen-ueberfaellig",
+          "label": "„davon 1 überfällig“",
+          "text": "davon 1 überfällig",
+          "box": {
+            "x": 108,
+            "y": 1930,
+            "w": 379,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-kontostand",
+          "label": "Karte „Kontostand gesamt“ – im Spot ausmaskiert",
+          "text": "Kontostand gesamt 13.944,47 € Girokonto und Barkasse",
+          "box": {
+            "x": 48,
+            "y": 870,
+            "w": 1074,
+            "h": 624
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-ueberschuss",
+          "label": "Karte „Überschuss 2026“ – im Spot ausmaskiert",
+          "text": "Überschuss 2026 +5.286,30 € Einnahmen minus Ausgaben seit 01.07.2026",
+          "box": {
+            "x": 48,
+            "y": 2082,
+            "w": 1074,
+            "h": 696
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-beitraege-ganz.png",
+      "width": 1170,
+      "height": 7800,
+      "page": "/finanzen/beitraege",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Finanzen › Beiträge „Wer zahlt was im 4. Quartal 2026“: 6.831,00 € von 230 Mitgliedern, Liste je Mitglied. Die Zeile „0 per Lastschrift, … per Überweisung“ ist im Bild ausgeblendet (kein SEPA/Lastschrift im Spot). – ganze Seite (die ersten 7800 Bildpunkte von 60528).",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 522,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 534,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 534,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 534,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 534,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 534,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "unterreiter",
+          "label": "Unterreiter der Beiträge (Wer zahlt was · Beitragslauf · Offene Beiträge · …)",
+          "text": "Wer zahlt was Beitragslauf Offene Beiträge Beitragsarten Familien",
+          "box": {
+            "x": 48,
+            "y": 726,
+            "w": 1074,
+            "h": 228
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-summe",
+          "label": "Karte „Beiträge zusammen“ (6.831,00 €)",
+          "text": "Beiträge zusammen 6.831,00 €",
+          "box": {
+            "x": 48,
+            "y": 1314,
+            "w": 1074,
+            "h": 336
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "summe",
+          "label": "Summe der Beiträge im Quartal",
+          "text": "6.831,00 €",
+          "box": {
+            "x": 99,
+            "y": 1448,
+            "w": 383,
+            "h": 84
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-mitglieder-mit-beitrag",
+          "label": "Karte „Mitglieder mit Beitrag“",
+          "text": "Mitglieder mit Beitrag 230 davon 2 über einen Familienbeitrag",
+          "box": {
+            "x": 48,
+            "y": 1698,
+            "w": 1074,
+            "h": 336
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "liste",
+          "label": "Tabelle „Wer zahlt was“ (Mitglied · Betrag, erste Zeilen)",
+          "text": "Mitglied Betrag",
+          "box": {
+            "x": 48,
+            "y": 2873,
+            "w": 1074,
+            "h": 120
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-beitraege-liste.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/beitraege",
+      "variant": "gescrollt",
+      "scrollY": 2646,
+      "description": "Finanzen › Beiträge „Wer zahlt was im 4. Quartal 2026“: 6.831,00 € von 230 Mitgliedern, Liste je Mitglied. Die Zeile „0 per Lastschrift, … per Überweisung“ ist im Bild ausgeblendet (kein SEPA/Lastschrift im Spot). – ab „liste“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "liste",
+          "label": "Tabelle „Wer zahlt was“ (Mitglied · Betrag, erste Zeilen)",
+          "text": "Mitglied Betrag",
+          "box": {
+            "x": 48,
+            "y": 227,
+            "w": 1074,
+            "h": 120
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-beitraege.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/beitraege",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Finanzen › Beiträge „Wer zahlt was im 4. Quartal 2026“: 6.831,00 € von 230 Mitgliedern, Liste je Mitglied. Die Zeile „0 per Lastschrift, … per Überweisung“ ist im Bild ausgeblendet (kein SEPA/Lastschrift im Spot).",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 522,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 534,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 534,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 534,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 534,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 534,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "unterreiter",
+          "label": "Unterreiter der Beiträge (Wer zahlt was · Beitragslauf · Offene Beiträge · …)",
+          "text": "Wer zahlt was Beitragslauf Offene Beiträge Beitragsarten Familien",
+          "box": {
+            "x": 48,
+            "y": 726,
+            "w": 1074,
+            "h": 228
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-summe",
+          "label": "Karte „Beiträge zusammen“ (6.831,00 €)",
+          "text": "Beiträge zusammen 6.831,00 €",
+          "box": {
+            "x": 48,
+            "y": 1314,
+            "w": 1074,
+            "h": 336
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "summe",
+          "label": "Summe der Beiträge im Quartal",
+          "text": "6.831,00 €",
+          "box": {
+            "x": 99,
+            "y": 1448,
+            "w": 383,
+            "h": 84
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "karte-mitglieder-mit-beitrag",
+          "label": "Karte „Mitglieder mit Beitrag“",
+          "text": "Mitglieder mit Beitrag 230 davon 2 über einen Familienbeitrag",
+          "box": {
+            "x": 48,
+            "y": 1698,
+            "w": 1074,
+            "h": 336
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-beitraege-offen-ganz.png",
+      "width": 1170,
+      "height": 14160,
+      "page": "/finanzen/beitraege/offen",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Finanzen › Beiträge › Offene Beiträge aus dem Beitragslauf 4. Quartal 2026 (229 Beiträge, fällig 15.10.2026). – ganze Seite.",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 522,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 534,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 534,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 534,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 534,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 534,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "kopf",
+          "label": "„Offen: 6.831,00 € in 229 Beiträgen“",
+          "text": "Offen: 6.831,00 € in 229 Beiträgen",
+          "box": {
+            "x": 48,
+            "y": 375,
+            "w": 749,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "erster-beitrag",
+          "label": "Erster offener Beitrag (B-2026-0001)",
+          "text": "Alexander Graf B-2026-0001 fällig 15.10.2026 · offen 36,00 € Streichen",
+          "box": {
+            "x": 48,
+            "y": 1568,
+            "w": 1074,
+            "h": 245
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-beitraege-offen.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/beitraege/offen",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Finanzen › Beiträge › Offene Beiträge aus dem Beitragslauf 4. Quartal 2026 (229 Beiträge, fällig 15.10.2026).",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 522,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 534,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 534,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 534,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 534,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 534,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "kopf",
+          "label": "„Offen: 6.831,00 € in 229 Beiträgen“",
+          "text": "Offen: 6.831,00 € in 229 Beiträgen",
+          "box": {
+            "x": 48,
+            "y": 375,
+            "w": 749,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "erster-beitrag",
+          "label": "Erster offener Beitrag (B-2026-0001)",
+          "text": "Alexander Graf B-2026-0001 fällig 15.10.2026 · offen 36,00 € Streichen",
+          "box": {
+            "x": 48,
+            "y": 1568,
+            "w": 1074,
+            "h": 245
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-kassenbuch-buchungen.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/kassenbuch",
+      "variant": "gescrollt",
+      "scrollY": 1722,
+      "description": "Finanzen › Kassenbuch: Girokonto und Barkasse, neueste Buchungen zuerst – jede mit Beleg (Datei zum Herunterladen oder Eigenbeleg). – ab „buchungen“, Kopfzeile deckend.",
+      "marks": [
+        {
+          "id": "konto-barkasse",
+          "label": "Konto „Barkasse“ (Kontostand)",
+          "text": "Barkasse , Barkasse 668,90 €",
+          "box": {
+            "x": 48,
+            "y": -264,
+            "w": 1074,
+            "h": 275
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "anzahl-buchungen",
+          "label": "„27 Buchungen“",
+          "text": "27 Buchungen",
+          "box": {
+            "x": 48,
+            "y": 230,
+            "w": 300,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-1",
+          "label": "Neueste Buchung 2026-0027 (Fahrtkosten Auswärtsspiel, Beleg-Foto)",
+          "text": "2026-0027 · 05.10.2026 Fahrtkosten Auswärtsspiel Handball Damen Fahrtkosten · Handball Barkasse Beleg herunterladen: Quittung Fahrtkosten Auswärtsspiel.jpg −64,",
+          "box": {
+            "x": 48,
+            "y": 438,
+            "w": 1074,
+            "h": 506
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-1",
+          "label": "Beleg der Buchung 2026-0027 „Quittung Fahrtkosten Auswärtsspiel.jpg“",
+          "text": "Beleg herunterladen: Quittung Fahrtkosten Auswärtsspiel.jpg",
+          "box": {
+            "x": 72,
+            "y": 788,
+            "w": 562,
+            "h": 131
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-2",
+          "label": "Buchung 2026-0026 (Übungsleiterpauschalen September, Beleg-PDF)",
+          "text": "2026-0026 · 02.10.2026 Übungsleiterpauschalen September Übungsleiter · Jugendarbeit, Handball, Tischtennis Girokonto Beleg herunterladen: Abrechnung Übungsleite",
+          "box": {
+            "x": 48,
+            "y": 944,
+            "w": 1074,
+            "h": 638
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-2",
+          "label": "Beleg „Abrechnung Übungsleiter September 2026.pdf“",
+          "text": "Beleg herunterladen: Abrechnung Übungsleiter September 2026.pdf",
+          "box": {
+            "x": 72,
+            "y": 1426,
+            "w": 562,
+            "h": 131
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-3",
+          "label": "Buchung 2026-0025 (Übungsleiterzuschuss, Einnahme +540,00 €, Beleg-PDF)",
+          "text": "2026-0025 · 01.10.2026 Übungsleiterzuschuss 2. Halbjahr Sportbund Musterkreis Zuschüsse Girokonto Beleg herunterladen: Bewilligung Übungsleiterzuschuss 2026.pdf",
+          "box": {
+            "x": 48,
+            "y": 1582,
+            "w": 1074,
+            "h": 638
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-3",
+          "label": "Beleg „Bewilligung Übungsleiterzuschuss 2026.pdf“",
+          "text": "Beleg herunterladen: Bewilligung Übungsleiterzuschuss 2026.pdf",
+          "box": {
+            "x": 72,
+            "y": 1999,
+            "w": 562,
+            "h": 196
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-4",
+          "label": "Buchung 2026-0024 (Bürobedarf, Kassenbon)",
+          "text": "2026-0024 · 28.09.2026 Druckerpapier, Briefmarken, Ordner Schreibwaren Lange Büro und Porto Barkasse Beleg herunterladen: Kassenbon Bürobedarf.jpg −46,80 € Ausg",
+          "box": {
+            "x": 48,
+            "y": 2221,
+            "w": 1074,
+            "h": 508
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-kassenbuch-ganz.png",
+      "width": 1170,
+      "height": 17577,
+      "page": "/finanzen/kassenbuch",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Finanzen › Kassenbuch: Girokonto und Barkasse, neueste Buchungen zuerst – jede mit Beleg (Datei zum Herunterladen oder Eigenbeleg). – ganze Seite.",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 870,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 882,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 882,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 882,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 882,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 882,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "konto-girokonto",
+          "label": "Konto „Girokonto“ (Kontostand, Sparkasse Musterstadt)",
+          "text": "Girokonto , Bankkonto 13.275,57 € Sparkasse Musterstadt",
+          "box": {
+            "x": 48,
+            "y": 1074,
+            "w": 1074,
+            "h": 336
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "konto-barkasse",
+          "label": "Konto „Barkasse“ (Kontostand)",
+          "text": "Barkasse , Barkasse 668,90 €",
+          "box": {
+            "x": 48,
+            "y": 1458,
+            "w": 1074,
+            "h": 275
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "anzahl-buchungen",
+          "label": "„27 Buchungen“",
+          "text": "27 Buchungen",
+          "box": {
+            "x": 48,
+            "y": 1952,
+            "w": 300,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-1",
+          "label": "Neueste Buchung 2026-0027 (Fahrtkosten Auswärtsspiel, Beleg-Foto)",
+          "text": "2026-0027 · 05.10.2026 Fahrtkosten Auswärtsspiel Handball Damen Fahrtkosten · Handball Barkasse Beleg herunterladen: Quittung Fahrtkosten Auswärtsspiel.jpg −64,",
+          "box": {
+            "x": 48,
+            "y": 2160,
+            "w": 1074,
+            "h": 506
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-1",
+          "label": "Beleg der Buchung 2026-0027 „Quittung Fahrtkosten Auswärtsspiel.jpg“",
+          "text": "Beleg herunterladen: Quittung Fahrtkosten Auswärtsspiel.jpg",
+          "box": {
+            "x": 72,
+            "y": 2510,
+            "w": 562,
+            "h": 131
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-2",
+          "label": "Buchung 2026-0026 (Übungsleiterpauschalen September, Beleg-PDF)",
+          "text": "2026-0026 · 02.10.2026 Übungsleiterpauschalen September Übungsleiter · Jugendarbeit, Handball, Tischtennis Girokonto Beleg herunterladen: Abrechnung Übungsleite",
+          "box": {
+            "x": 48,
+            "y": 2666,
+            "w": 1074,
+            "h": 638
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-2",
+          "label": "Beleg „Abrechnung Übungsleiter September 2026.pdf“",
+          "text": "Beleg herunterladen: Abrechnung Übungsleiter September 2026.pdf",
+          "box": {
+            "x": 72,
+            "y": 3148,
+            "w": 562,
+            "h": 131
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-3",
+          "label": "Buchung 2026-0025 (Übungsleiterzuschuss, Einnahme +540,00 €, Beleg-PDF)",
+          "text": "2026-0025 · 01.10.2026 Übungsleiterzuschuss 2. Halbjahr Sportbund Musterkreis Zuschüsse Girokonto Beleg herunterladen: Bewilligung Übungsleiterzuschuss 2026.pdf",
+          "box": {
+            "x": 48,
+            "y": 3304,
+            "w": 1074,
+            "h": 638
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-3",
+          "label": "Beleg „Bewilligung Übungsleiterzuschuss 2026.pdf“",
+          "text": "Beleg herunterladen: Bewilligung Übungsleiterzuschuss 2026.pdf",
+          "box": {
+            "x": 72,
+            "y": 3721,
+            "w": 562,
+            "h": 196
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-4",
+          "label": "Buchung 2026-0024 (Bürobedarf, Kassenbon)",
+          "text": "2026-0024 · 28.09.2026 Druckerpapier, Briefmarken, Ordner Schreibwaren Lange Büro und Porto Barkasse Beleg herunterladen: Kassenbon Bürobedarf.jpg −46,80 € Ausg",
+          "box": {
+            "x": 48,
+            "y": 3943,
+            "w": 1074,
+            "h": 508
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "beleg-4",
+          "label": "Beleg „Kassenbon Bürobedarf.jpg“",
+          "text": "Beleg herunterladen: Kassenbon Bürobedarf.jpg",
+          "box": {
+            "x": 72,
+            "y": 4360,
+            "w": 562,
+            "h": 65
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-kassenbuch.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/kassenbuch",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Finanzen › Kassenbuch: Girokonto und Barkasse, neueste Buchungen zuerst – jede mit Beleg (Datei zum Herunterladen oder Eigenbeleg).",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 870,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 882,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 882,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 882,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 882,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 882,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "konto-girokonto",
+          "label": "Konto „Girokonto“ (Kontostand, Sparkasse Musterstadt)",
+          "text": "Girokonto , Bankkonto 13.275,57 € Sparkasse Musterstadt",
+          "box": {
+            "x": 48,
+            "y": 1074,
+            "w": 1074,
+            "h": 336
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "konto-barkasse",
+          "label": "Konto „Barkasse“ (Kontostand)",
+          "text": "Barkasse , Barkasse 668,90 €",
+          "box": {
+            "x": 48,
+            "y": 1458,
+            "w": 1074,
+            "h": 275
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "anzahl-buchungen",
+          "label": "„27 Buchungen“",
+          "text": "27 Buchungen",
+          "box": {
+            "x": 48,
+            "y": 1952,
+            "w": 300,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "buchung-1",
+          "label": "Neueste Buchung 2026-0027 (Fahrtkosten Auswärtsspiel, Beleg-Foto)",
+          "text": "2026-0027 · 05.10.2026 Fahrtkosten Auswärtsspiel Handball Damen Fahrtkosten · Handball Barkasse Beleg herunterladen: Quittung Fahrtkosten Auswärtsspiel.jpg −64,",
+          "box": {
+            "x": 48,
+            "y": 2160,
+            "w": 1074,
+            "h": 506
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "beleg-1",
+          "label": "Beleg der Buchung 2026-0027 „Quittung Fahrtkosten Auswärtsspiel.jpg“",
+          "text": "Beleg herunterladen: Quittung Fahrtkosten Auswärtsspiel.jpg",
+          "box": {
+            "x": 72,
+            "y": 2510,
+            "w": 562,
+            "h": 131
+          },
+          "visible": "teilweise"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-rechnungen.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/rechnungen",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Finanzen › Rechnungen (Offen): „Offen zu bezahlen: 1.549,50 €“, 1 überfällig (1.200,00 €), 1 fällig in 7 Tagen (349,50 €).",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 666,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 678,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 678,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 678,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 678,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 678,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "offen-summe",
+          "label": "„Offen zu bezahlen: 1.549,50 €“",
+          "text": "Offen zu bezahlen: 1.549,50 €",
+          "box": {
+            "x": 48,
+            "y": 375,
+            "w": 652,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "hinweis-ueberfaellig",
+          "label": "„1 Rechnung ist überfällig.“",
+          "text": "1 Rechnung ist überfällig.",
+          "box": {
+            "x": 48,
+            "y": 1185,
+            "w": 530,
+            "h": 54
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "rechnung-ueberfaellig",
+          "label": "Überfällige Rechnung (1.200,00 €)",
+          "text": "Rechnung vom 31.08.2026.pdf (herunterladen) Rechnung vom 31.08.2026 seit 10 Tagen überfällig 1.200,00 € Bezahlt",
+          "box": {
+            "x": 48,
+            "y": 1393,
+            "w": 1074,
+            "h": 572
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "rechnung-bald",
+          "label": "Bald fällige Rechnung (349,50 €)",
+          "text": "Rechnung vom 18.09.2026.pdf (herunterladen) Rechnung vom 18.09.2026 fällig in 7 Tagen 349,50 € Bezahlt",
+          "box": {
+            "x": 48,
+            "y": 1964,
+            "w": 1074,
+            "h": 506
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "knopf-hochladen",
+          "label": "Knopf „Rechnung hochladen“",
+          "text": "Rechnung hochladen",
+          "box": {
+            "x": 48,
+            "y": 474,
+            "w": 613,
+            "h": 108
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-rechnungen-bezahlt-ganz.png",
+      "width": 1170,
+      "height": 3753,
+      "page": "/finanzen/rechnungen?stand=bezahlt",
+      "variant": "ganz",
+      "scrollY": 0,
+      "description": "Finanzen › Rechnungen (Bezahlt): vier bezahlte Rechnungen, jede „im Kassenbuch Nr. …“ gebucht. – ganze Seite.",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 666,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 678,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 678,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 678,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 678,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 678,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "erste-rechnung",
+          "label": "Neueste bezahlte Rechnung",
+          "text": "Rechnung vom 02.09.2026.pdf (herunterladen) Rechnung vom 02.09.2026 bezahlt am 12.09.2026 im Kassenbuch Nr. 2026-0019 742,00 €",
+          "box": {
+            "x": 48,
+            "y": 1304,
+            "w": 1074,
+            "h": 572
+          },
+          "visible": "ganz"
+        }
+      ]
+    },
+    {
+      "file": "finanzen-rechnungen-bezahlt.png",
+      "width": 1170,
+      "height": 2532,
+      "page": "/finanzen/rechnungen?stand=bezahlt",
+      "variant": "oben",
+      "scrollY": 0,
+      "description": "Finanzen › Rechnungen (Bezahlt): vier bezahlte Rechnungen, jede „im Kassenbuch Nr. …“ gebucht.",
+      "marks": [
+        {
+          "id": "reiterleiste",
+          "label": "Reiterleiste der Finanzen (Übersicht · Beiträge · Kassenbuch · Rechnungen · Abschluss)",
+          "text": "Übersicht Beiträge Kassenbuch Rechnungen 1 überfällig Abschluss",
+          "box": {
+            "x": 48,
+            "y": 666,
+            "w": 1074,
+            "h": 132
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-uebersicht",
+          "label": "Reiter „Übersicht“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Übersicht",
+          "box": {
+            "x": 60,
+            "y": 678,
+            "w": 289,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-beitraege",
+          "label": "Reiter „Beiträge“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Beiträge",
+          "box": {
+            "x": 361,
+            "y": 678,
+            "w": 261,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-kassenbuch",
+          "label": "Reiter „Kassenbuch“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Kassenbuch",
+          "box": {
+            "x": 634,
+            "y": 678,
+            "w": 341,
+            "h": 108
+          },
+          "visible": "ganz"
+        },
+        {
+          "id": "reiter-rechnungen",
+          "label": "Reiter „Rechnungen“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Rechnungen 1 überfällig",
+          "box": {
+            "x": 987,
+            "y": 678,
+            "w": 426,
+            "h": 108
+          },
+          "visible": "teilweise"
+        },
+        {
+          "id": "reiter-abschluss",
+          "label": "Reiter „Abschluss“ der Finanzen (Reiterleiste ist am Handy breiter als das Bild)",
+          "text": "Abschluss",
+          "box": {
+            "x": 1425,
+            "y": 678,
+            "w": 301,
+            "h": 108
+          },
+          "visible": "ausserhalb"
+        },
+        {
+          "id": "erste-rechnung",
+          "label": "Neueste bezahlte Rechnung",
+          "text": "Rechnung vom 02.09.2026.pdf (herunterladen) Rechnung vom 02.09.2026 bezahlt am 12.09.2026 im Kassenbuch Nr. 2026-0019 742,00 €",
+          "box": {
+            "x": 48,
+            "y": 1304,
+            "w": 1074,
+            "h": 572
+          },
+          "visible": "ganz"
+        }
+      ]
+    }
+  ]
+}
