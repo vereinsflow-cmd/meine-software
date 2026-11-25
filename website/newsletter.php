@@ -38,7 +38,7 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026111603';
+const VF_STYLESHEET = '/assets/css/site.css?v=2026112601';
 const VF_SKRIPT = '/assets/js/site.js?v=2026111602'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
@@ -96,6 +96,9 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
   <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
+  <linearGradient id="ig-verlauf" gradientUnits="userSpaceOnUse" x1="3" y1="21" x2="21" y2="3"><stop offset="0" stop-color="#feda75"/><stop offset=".3" stop-color="#fa7e1e"/><stop offset=".55" stop-color="#d62976"/><stop offset=".8" stop-color="#962fbf"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient>
+  <symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></symbol>
+  <symbol id="i-tiktok" viewBox="0 0 24 24"><path d="M21 7.917v4.034a9.948 9.948 0 0 1-5-1.951v4.5a6.5 6.5 0 1 1-8-6.326v4.326a2.5 2.5 0 1 0 4 2v-11.5h4.083a6.005 6.005 0 0 0 4.917 4.917z"/></symbol>
   <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
   <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 </svg>
@@ -155,6 +158,13 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
           <a href="mailto:kontakt@vereins-flow.com"><svg class="i" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="sr-only">E&#8209;Mail: </span>kontakt@vereins-flow.com</span></a>
           <a href="tel:+4917656792302"><svg class="i" aria-hidden="true"><use href="#i-phone"/></svg><span><span class="sr-only">Telefon: </span>+49&nbsp;176&nbsp;56792302</span></a>
         </address>
+        <div class="fuss-sozial">
+          <h2 class="fuss-sozial-titel">Social Media</h2>
+          <div class="sozial-knoepfe">
+            <a class="sozial-knopf sozial-instagram" href="https://www.instagram.com/vereinsflow.de/" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-instagram"/></svg><span><span class="sr-only">VereinsFlow auf </span>Instagram<span class="sr-only"> (neuer Tab)</span></span></a>
+            <a class="sozial-knopf sozial-tiktok" href="https://www.tiktok.com/@vereinsflow" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-tiktok"/></svg><span><span class="sr-only">VereinsFlow auf </span>TikTok<span class="sr-only"> (neuer Tab)</span></span></a>
+          </div>
+        </div>
       </div>
       <div>
         <h2>Produkt</h2>
