@@ -22,7 +22,7 @@ Erstellt am 17.10.2026 für den geplanten Online-Verkauf (Monatsabo, Online-Chec
 
 1. Platzhalter ausfüllen (`grep -n 'class="fill"' docs/recht/*.html`), `<span class="fill">` und den Kasten `.draft-notice` entfernen. Entscheidungen aus `platzhalter-gesamt.md` abarbeiten, nicht gewählte Zahlungsvarianten streichen.
 2. Anwaltliche Prüfung.
-3. Dateien nach `website/` kopieren (`impressum.html` und `datenschutz.html` ersetzen die heutigen), Fußzeile aller Seiten nach `footer-vorschlag.html` angleichen, `kuendigen.html` und `widerrufen.html` nach `checkout-vorgabe.md` bauen.
+3. Dateien nach `website/` kopieren (`impressum.html` und `datenschutz.html` ersetzen die heutigen – vorher den Abschnitt „6. Social Media: Instagram und TikTok“ aus der heutigen `website/datenschutz.html` übernehmen, seit 26.11.2026 live, samt Zeilen in „Kurz gesagt“, „Überblick“ und Widerspruchsrecht), Fußzeile aller Seiten nach `footer-vorschlag.html` angleichen, `kuendigen.html` und `widerrufen.html` nach `checkout-vorgabe.md` bauen.
 4. `node website/tools/check-site.mjs`, dann `node website/tools/paket-bauen.mjs` → `website/upload/vereinsflow-website.zip`.
 5. Zip und `entpacken.php` bei IONOS in `/public` hochladen, `entpacken.php` im Browser aufrufen, danach Live-Prüfung (siehe `website/README.md`, „Website hochladen“).
 
