@@ -369,8 +369,10 @@ der Beispiel-Verein TSV Musterstadt 1898 e.V.; die 21 Plätze sind ausdrücklich
 „Funktionen“ (4), „Finanzen“ (7), „Sicherheit“ (8), „Fragen“ (9–10) und die Pille „Demo anfragen“ (11); die Marke steht für
 1–3. Das Kapitel unter der Mitte des Fensters (Band bei 45 %) markiert seinen Eintrag mit `aria-current` (`data-navi` ↔
 `data-kapitel`, `site.js`). Unter 900 px Marke, „Demo“ und Menüknopf; das Menü bedeckt das Fenster. **Fußzeile:** Marke,
-Kontakt, Spalten Produkt/Kontakt, Impressum und Datenschutz, der Hinweis auf die Demodaten und – nur auf der Startseite –
-der Schalter „Bewegung anhalten“.
+Kontakt, „Social Media“ (Knöpfe zu Instagram `vereinsflow.de` und TikTok `@vereinsflow`: reine Links in einem neuen Tab, Rand und Symbol in den Farben
+der Apps, Verlauf `#ig-verlauf` im Symbol-Sprite jeder Seite; `check-site.mjs` lässt genau diese Profile als Links nach
+außen zu), Spalten Produkt/Kontakt, Impressum und Datenschutz, der Hinweis auf die Demodaten und – nur auf der
+Startseite – der Schalter „Bewegung anhalten“.
 
 ### Bewegung
 

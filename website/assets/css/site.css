@@ -2812,6 +2812,77 @@ ol.plan {
   font: 600 0.9375rem / 1.3 var(--f-text);
 }
 
+/* „Social Media“: Instagram und TikTok als reine Links – bis zum Klick wird nichts von deren Servern geladen.
+   Rand und Symbol in den Farben der beiden Apps (Verlauf #ig-verlauf im Symbol-Sprite jeder Seite). */
+.fuss-sozial {
+  margin-top: 28px;
+}
+
+.fuss .fuss-sozial-titel {
+  margin-bottom: 12px;
+}
+
+.sozial-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fuss .sozial-knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 20px 10px 16px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--nacht-1), var(--nacht-1)) padding-box,
+    var(--sozial-rand) border-box;
+  color: var(--hell);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sozial-knopf svg.i {
+  width: 22px;
+  height: 22px;
+}
+
+.sozial-instagram {
+  --sozial-rand: linear-gradient(45deg, #feda75, #fa7e1e 30%, #d62976 55%, #962fbf 80%, #4f5bd5);
+}
+
+.sozial-instagram svg.i {
+  stroke: url(#ig-verlauf);
+}
+
+.sozial-tiktok {
+  --sozial-rand: linear-gradient(45deg, #25f4ee, #fe2c55);
+}
+
+.sozial-tiktok svg.i {
+  color: #fff;
+  filter: drop-shadow(-1px -1px 0 #25f4ee) drop-shadow(1px 1px 0 #fe2c55);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fuss .sozial-knopf:hover {
+    background:
+      linear-gradient(rgb(143 176 255 / 10%), rgb(143 176 255 / 10%)) padding-box,
+      linear-gradient(var(--nacht-1), var(--nacht-1)) padding-box,
+      var(--sozial-rand) border-box;
+    color: #fff;
+  }
+}
+
+@media (forced-colors: active) {
+  .fuss .sozial-knopf {
+    border-color: CanvasText;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .fuss a:hover {
     color: var(--hell);

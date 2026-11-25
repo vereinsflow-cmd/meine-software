@@ -53,6 +53,9 @@ function checkReference(fromFile, url, what) {
   if (!fs.existsSync(target)) errors.push(`${rel(fromFile)}: ${what} zeigt auf eine fehlende Datei: ${url}`);
 }
 
+// Gewollte Links nach außen: die Profile von VereinsFlow auf Instagram und TikTok („Social Media“ in der Fußzeile)
+const SOZIALE_PROFILE = /^https:\/\/www\.(instagram\.com|tiktok\.com)\//;
+
 for (const file of htmlFiles) {
   const html = read(file);
   const name = rel(file);
@@ -65,8 +68,12 @@ for (const file of htmlFiles) {
     const href = attr("href");
     const src = attr("src");
     if (tag === "a") {
-      if (href && isExternal(href) && !/^(mailto|tel):/i.test(href)) warnings.push(`${name}: Link auf eine fremde Seite: ${href}`);
-      else if (href) checkReference(file, href, "Link");
+      // „Social Media“ in der Fußzeile: die Profile auf Instagram und TikTok sind gewollt (reine Links, laden nichts);
+      // wer in einem neuen Tab öffnet, braucht rel="noopener"
+      if (/\starget="_blank"/.test(attrs) && !/\srel="[^"]*\bnoopener\b/.test(attrs)) errors.push(`${name}: target="_blank" ohne rel="noopener": ${href}`);
+      if (href && isExternal(href) && !/^(mailto|tel):/i.test(href)) {
+        if (!SOZIALE_PROFILE.test(href)) warnings.push(`${name}: Link auf eine fremde Seite: ${href}`);
+      } else if (href) checkReference(file, href, "Link");
     } else if (tag === "link") {
       if (/rel="(canonical|alternate)"/.test(attrs)) continue; // nur Angabe, wird nicht geladen
       if (href) checkReference(file, href, "link");
