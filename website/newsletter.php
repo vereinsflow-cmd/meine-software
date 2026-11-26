@@ -49,7 +49,7 @@ const VF_MAX_GESAMT = 40;
 const VF_MAX_OFFEN = 500;
 const VF_ERNEUT_NACH = 900; // frühestens nach 15 Minuten eine weitere Bestätigungs-E-Mail an dieselbe Adresse
 const VF_MAX_DATEI = 2000000; // Byte; darüber keine neuen Anmeldungen mehr (Bestätigen und Abmelden gehen weiter)
-const VF_ANBIETER = 'VereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker';
+const VF_ANBIETER = 'VereinsFlow GbR, vertreten durch Luis Heidecker (geschäftsführender Gesellschafter) und Ben Bleckert (Gesellschafter)';
 const VF_ANSCHRIFT = 'Oberschlesienstraße 6a · 45711 Datteln';
 const VF_FUSS = "-- \n" . VF_ANBIETER . "\n" . VF_ANSCHRIFT . ' · ' . VF_ABSENDER . "\n"
     . 'Impressum: ' . VF_BASIS_URL . "/impressum.html\n"

@@ -57,7 +57,7 @@ erscheinen in der Konsole des Browsers. (`index.html` lässt sich zur schnellen 
 
 ## Vor der Veröffentlichung
 
-1. **Angaben sind eingetragen** (Stand 26.09.2026): VereinsFlow GbR (Gesellschafter Ben Bleckert und Luis Heidecker),
+1. **Angaben sind eingetragen** (Stand 26.09.2026): VereinsFlow GbR (Luis Heidecker (geschäftsführender Gesellschafter) und Ben Bleckert (Gesellschafter)),
    Oberschlesienstraße 6a, 45711 Datteln, `kontakt@vereins-flow.com` (auch für die Demo-Anfrage auf der Startseite),
    Hosting bei IONOS, Aufsichtsbehörde LDI NRW, Domain `https://vereins-flow.com`. Damit die Texte stimmen:
    - **IONOS WebAnalytics abschalten.** Es ist bei IONOS standardmäßig an; die Seite verspricht aber „kein Tracking“.
@@ -315,7 +315,7 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
 
   ```
   --
-  VereinsFlow GbR, vertreten durch die Gesellschafter Ben Bleckert und Luis Heidecker
+  VereinsFlow GbR, vertreten durch Luis Heidecker (geschäftsführender Gesellschafter) und Ben Bleckert (Gesellschafter)
   Oberschlesienstraße 6a · 45711 Datteln · kontakt@vereins-flow.com
   Impressum: https://vereins-flow.com/impressum.html
   Datenschutz: https://vereins-flow.com/datenschutz.html#benachrichtigung
