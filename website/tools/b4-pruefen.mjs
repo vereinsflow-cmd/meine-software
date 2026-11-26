@@ -460,7 +460,7 @@ try {
     }
     // Unterseiten: Konsole, CSP und Text im Kasten (schmal bis breit)
     if (!ohneSd) {
-      for (const seite of ["impressum.html", "datenschutz.html", "404.html"]) {
+      for (const seite of ["ueber-uns.html", "impressum.html", "datenschutz.html", "404.html"]) {
         for (const w of schnell ? [320, 390, 1440] : [320, 360, 390, 768, 1024, 1440]) {
           const ctx = await browser.newContext({ viewport: { width: w, height: 800 } });
           const page = await ctx.newPage();

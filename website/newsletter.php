@@ -38,7 +38,7 @@ const VF_BASIS_URL = 'https://vereins-flow.com';
 const VF_ABSENDER = 'kontakt@vereins-flow.com';
 const VF_ABSENDER_NAME = 'VereinsFlow';
 const VF_HINWEIS_AN = 'kontakt@vereins-flow.com'; // bekommt je bestätigter Anmeldung eine kurze Nachricht (ohne Adresse)
-const VF_STYLESHEET = '/assets/css/site.css?v=2026112601';
+const VF_STYLESHEET = '/assets/css/site.css?v=2026112602';
 const VF_SKRIPT = '/assets/js/site.js?v=2026111602'; // Menü der Kopfzeile auf dem Smartphone
 const VF_EINWILLIGUNG = 'formular-2026-09-27'; // Fassung des Einwilligungstextes am Formular (Wortlaut: README.md)
 const VF_FRIST_TAGE = 7;
@@ -182,6 +182,13 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
           <li><a href="/#benachrichtigen">Beim Start benachrichtigen</a></li>
           <li><a href="/#ablauf">So starten Sie</a></li>
           <li><a href="/#faq">Häufige Fragen</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Über uns</h2>
+        <ul role="list">
+          <li><a href="/ueber-uns.html#mission-leitbild">Mission &amp; Leitbild</a></li>
+          <li><a href="/ueber-uns.html#wer-wir-sind">Wer wir sind</a></li>
         </ul>
       </div>
     </div>

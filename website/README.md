@@ -21,6 +21,7 @@ Werkzeuge und Prüfungen: Die Anwendung ignoriert `website/` (Prettier, ESLint, 
 | Datei / Ordner                        | Zweck                                                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `index.html`                          | Startseite in elf Kapiteln: Einstieg „Schicht für Schicht.“, Ausgangslage, die Geräte von heute, Funktionen, Helferplanung, Unterwegs, Finanzen, Sicherheit, So starten Sie, Fragen, Kontakt (mit der Anmeldung „Beim Start benachrichtigen“) – siehe „Gestaltung und Bewegung“ |
+| `ueber-uns.html`                      | Über uns: „Mission & Leitbild“ und „Wer wir sind“, verlinkt in der Fußzeile                 |
 | `impressum.html`, `datenschutz.html`  | Rechtstexte (ausgefüllt, Stand 26.09.2026)                                                 |
 | `404.html`                            | Fehlerseite                                                                                 |
 | `assets/css/site.css`                 | Die ganze Gestaltung, eine Datei für alle Seiten; Farben, Schrift, Abstände und Kurven als Variablen oben in `:root`, das Inhaltsverzeichnis im Kopfkommentar. Laptop und Telefon stehen darin **wörtlich** wie im Stand `c112a20` (zwischen den Markern `@@geraete-…`, Keyframes am Dateiende) |
@@ -371,7 +372,8 @@ der Beispiel-Verein TSV Musterstadt 1898 e.V.; die 21 Plätze sind ausdrücklich
 `data-kapitel`, `site.js`). Unter 900 px Marke, „Demo“ und Menüknopf; das Menü bedeckt das Fenster. **Fußzeile:** Marke,
 Kontakt, „Social Media“ (Knöpfe zu Instagram `vereinsflow.de` und TikTok `@vereinsflow`: reine Links in einem neuen Tab, Rand und Symbol in den Farben
 der Apps, Verlauf `#ig-verlauf` im Symbol-Sprite jeder Seite; `check-site.mjs` lässt genau diese Profile als Links nach
-außen zu), Spalten Produkt/Kontakt, Impressum und Datenschutz, der Hinweis auf die Demodaten und – nur auf der
+außen zu), Spalten Produkt/Kontakt/Über uns (Über uns → `ueber-uns.html#mission-leitbild` und `#wer-wir-sind`), Impressum und
+Datenschutz, der Hinweis auf die Demodaten und – nur auf der
 Startseite – der Schalter „Bewegung anhalten“.
 
 ### Bewegung
