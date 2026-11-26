@@ -1361,15 +1361,37 @@ svg.icon {
 
 .aussage {
   max-width: 1000px;
+  margin-inline: auto;
   color: var(--hell);
-  font: 700 clamp(1.875rem, 1.1rem + 3vw, 3.375rem) / 1.14 var(--f-display);
-  letter-spacing: -0.03em;
-  text-wrap: pretty;
+  text-align: center;
+  text-wrap: balance;
 }
 
-.aussage-teil {
-  display: inline;
-  font: inherit;
+/* „Listen. Chats. Rundmails.“ durchgestrichen und grau, darunter groß „Ein Ablauf.“ und eine ruhige Zeile */
+.aussage-weg {
+  color: var(--titel-leise);
+  font: 700 clamp(2rem, 1.1rem + 3.2vw, 4.5rem) / 1.1 var(--f-display);
+  letter-spacing: -0.03em;
+}
+
+.aussage-weg s {
+  text-decoration-line: line-through;
+  text-decoration-color: rgb(143 176 255 / 75%);
+  text-decoration-thickness: 0.07em;
+}
+
+.aussage-gross {
+  margin-top: clamp(20px, 2.4vw, 36px);
+  color: var(--hell);
+  font: 700 clamp(3rem, 1.4rem + 5.8vw, 7.25rem) / 1.02 var(--f-display);
+  letter-spacing: -0.042em;
+}
+
+.aussage-unter {
+  margin-top: clamp(18px, 2vw, 28px);
+  color: var(--text);
+  font: 500 var(--t-lead) / 1.38 var(--f-text);
+  letter-spacing: -0.014em;
 }
 
 /* ==========================================================================
@@ -6908,9 +6930,13 @@ html:not(.js) .k03 .iphone-rim,
   --aw-i: 13;
 }
 
-/* die Wörter des zweiten Satzes folgen auf die zehn der Überschrift */
-p.aussage-teil .aw {
-  --aw-o: 10;
+/* erst die drei durchgestrichenen Wörter, nach einer Pause „Ein Ablauf.“, dann die Zeile darunter */
+.aussage-gross .aw {
+  --aw-o: 8;
+}
+
+.aussage-unter .aw {
+  --aw-o: 14;
 }
 
 @media (prefers-reduced-motion: no-preference) {
