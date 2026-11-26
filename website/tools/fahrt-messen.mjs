@@ -1,9 +1,14 @@
 // Misst, wie flüssig die gepinnten Bühnen der Startseite laufen (seit Bau 2, 16.11.2026: die Explosion in Kapitel 1 und
 // das große Telefon in Kapitel 6; die Kamerafahrt der Gestaltung B4 gibt es nicht mehr) – wiederholbar, damit sich
 // vorher und nachher vergleichen lassen. Je Fall: Seite laden, warten, bis sie steht (load, Bilder der Explosion
-// dekodiert, 600 ms Ruhe), an den Anfang der Strecke springen (Explosion: Seitenanfang; Telefon: 0,3 Fensterhöhen vor dem
-// Pinnen) und mit dem Mausrad durch die ganze Strecke bis 0,5 Fensterhöhen hinter das Lösen der Bühne scrollen (bei
-// „-zurueck“ von dort rückwärts an den Anfang) – und messen:
+// dekodiert, 600 ms Ruhe), dann
+//   - Telefon: 0,3 Fensterhöhen vor das Pinnen springen und mit dem Mausrad durch die ganze Strecke bis 0,5 Fensterhöhen
+//     hinter das Lösen der Bühne scrollen (bei „-zurueck“ von dort rückwärts an den Anfang),
+//   - Explosion (seit 26.11.2026 selbstlaufend, auf der Zeit): oben ein kleiner Anstoß mit dem Mausrad (80 px), danach
+//     läuft der Zusammenbau von selbst – gemessen wird, bis er fertig ist und die Seite ruht (gut 2,5 s; „anstoss“);
+//     „anstoss-zurueck“: zusammengesetzt bei 80 px, Anstoß nach oben, die Explosion läuft rückwärts auseinander;
+//     „anstoss-weiter“: Anstoß und gleich weiter wie ein Trackpad (900 px), die Bühne löst sich, während sie läuft;
+// und messen:
 //   - gezeigte Bilder (Chromium: Display::DrawAndSwap im GPU-Prozess, also was wirklich auf den Bildschirm kommt; WebKit:
 //     requestAnimationFrame) und Lücken > 16,7 / > 33 / > 100 ms (gezählt ab 1,5 / 2,5 / 6 Bildern, damit das Zittern
 //     des Taktgebers nicht mitzählt), verpasste Bilder bei 60 Hz
@@ -12,11 +17,12 @@
 //     lange Aufgaben; Zeit nach Art (Skript, Stil, Layout, Paint, Layer/Commit, GC, Beobachter, Canvas, Dekodierung)
 //   - GPU-Prozess: Stopps beim Zeichnen, davon Pipeline-/Shader-Kompilierung (Dawn/Graphite), Rasterung, Dekodierung
 //   - je verpasstem Bild die Ursache (was in der Lücke lief) und in welchem Abschnitt der Strecke es geschah (Phasen wie
-//     die Keyframe-Offsets in site.css, dazu „vorher“ und „danach“)
+//     die Keyframe-Offsets in site.css, dazu „vorher“ und „danach“; Explosion: nach der Zeit ihrer Animationen)
 //   - Speicher (JS-Heap, GPU-Speicher des Renderers), CPU-Zeit von Renderer und GPU-Prozess
 //   - (Chromium, eigener Durchgang je Strecke) Compositing-Ebenen mit Gründen, welche Ebenen während der Strecke neu
-//     gezeichnet bzw. neu gerastert werden, und welche Animationen der Bühnen (ex-*, tf-*, aw-*, mz-*) nicht auf dem
-//     Compositor laufen
+//     gezeichnet bzw. neu gerastert werden (Explosion: während des Ablaufs und getrennt nach seinem Ende – dort darf
+//     nichts neu gerastert werden, sonst sähe man einen Sprung von unscharf nach scharf), und welche Animationen der
+//     Bühnen (ex-*, tf-*, aw-*, mz-*) nicht auf dem Compositor laufen
 // Browser: „chrome“ = Google Chrome (headless, mit GPU über Metal, Standard), „shell“ = Playwright-Chromium ohne GPU
 // (wie b4-pruefen.mjs), „cft“ = Chrome for Testing, „webkit“ = Playwright-WebKit (nur Hauptthread-Werte; es gibt dort
 // keine Spur und kein Compositing in Bildschirmfotos). Kalt = neues Profil (kein HTTP- und kein GPU-Speicher des Browsers),
@@ -28,15 +34,18 @@
 // /assets/* – serve.mjs sendet no-store, damit wäre „warm“ nicht warm).
 //
 //   node tools/fahrt-messen.mjs                       ganze Matrix (chrome, webkit × 1440×900@1, 1440×900@2,
-//                                                     1280×800@1, 1280×740@2 × kalt, warm × trackpad, schnell × beide
-//                                                     Strecken), dauert gut zwanzig Minuten
+//                                                     1280×800@1, 1280×740@2 × kalt, warm × beide Strecken; Telefon
+//                                                     trackpad, schnell; Explosion anstoss, anstoss-zurueck), dauert gut
+//                                                     zwanzig Minuten
 //   --strecke explosion|telefon|beide                 welche gepinnte Bühne (Standard: beide)
 //   --browser chrome,webkit,shell,cft   --fenster 1440x900@1,1280x800@1   --cache kalt,warm
-//   --scroll trackpad,schnell,geste,geste-schnell,trackpad-zurueck,schnell-zurueck
+//   --scroll trackpad,schnell,geste,geste-schnell,trackpad-zurueck,schnell-zurueck   (Telefon)
 //                       trackpad (~700 px/s) und schnell (~2500 px/s): Mausrad-Schritte alle 16 ms, sanft an- und
 //                       auslaufend; geste, geste-schnell (nur Chromium): Input.synthesizeScrollGesture, eine vom Browser
 //                       im Bildtakt erzeugte Mausrad-Geste mit 700 bzw. 2500 px/s – ohne die Schwebung zwischen
 //                       16-ms-Schritten und 60 Hz; „-zurueck“: vom Ende rückwärts durch die Strecke an den Anfang
+//            anstoss,anstoss-zurueck,anstoss-weiter   (Explosion, siehe oben; Standard: anstoss,anstoss-zurueck)
+//                       Jede Strecke nimmt aus --scroll die Arten, die zu ihr passen, sonst ihren Standard.
 //   --vor 0.3 --nach 0.5  Weg vor dem Anfang bzw. hinter dem Ende der Strecke in Fensterhöhen
 //   --runden 2          jeden Fall mehrmals (Mittelwerte in der Tabelle, Einzelwerte im JSON)
 //   --pause 300         ms zwischen Ruhe und erstem Scrollschritt
@@ -93,14 +102,25 @@ const FENSTER = liste("fenster", "1440x900@1,1440x900@2,1280x800@1,1280x740@2").
   return { name: f.includes("@") ? f : `${f}@1`, width: Number(m[1]), height: Number(m[2]), dpr: Number(m[3] ?? 1) };
 });
 const CACHE = liste("cache", "kalt,warm");
-const SCROLL = liste("scroll", "trackpad,schnell");
-for (const s of SCROLL) if (!/^(trackpad|schnell|geste|geste-schnell)(-zurueck)?$/.test(s)) throw new Error(`Scroll-Art „${s}“ unbekannt (trackpad, schnell, geste, geste-schnell, je auch mit -zurueck)`);
+const SCROLL = liste("scroll", "");
+const SCROLL_TELEFON = /^(trackpad|schnell|geste|geste-schnell)(-zurueck)?$/;
+const SCROLL_EXPLOSION = /^anstoss(-zurueck|-weiter)?$/;
+for (const s of SCROLL) if (!SCROLL_TELEFON.test(s) && !SCROLL_EXPLOSION.test(s)) throw new Error(`Scroll-Art „${s}“ unbekannt (trackpad, schnell, geste, geste-schnell, je auch mit -zurueck; anstoss, anstoss-zurueck, anstoss-weiter)`);
 // Die gepinnten Bühnen: Element der Zeitleiste (site.css) und die Abschnitte der Strecke (Fortschritt der Zeitleiste bis
-// zur genannten Grenze, wie die Keyframe-Offsets in site.css)
+// zur genannten Grenze, wie die Keyframe-Offsets in site.css). Die Explosion läuft auf der Zeit (zeit: true) – ihre
+// Abschnitte sind Anteile der Dauer ihrer Animationen (2,5 s), rückwärts dieselben Anteile.
 const STRECKE = {
-  explosion: { sel: "[data-explosion]", name: "Explosion", abschnitte: [[0.15, "0–15 % zerlegt"], [0.72, "15–72 % Zusammenbau"], [0.88, "72–88 % Laptop"], [1.0001, "88–100 % halten"]] },
-  telefon: { sel: "[data-telefon]", name: "Telefon", abschnitte: [[0.06, "0–6 % gedreht"], [0.7, "6–70 % Aufrichten"], [0.8, "70–80 % Glocke"], [1.0001, "80–100 % halten"]] },
+  explosion: { sel: "[data-explosion]", name: "Explosion", zeit: true, scroll: SCROLL_EXPLOSION, standard: ["anstoss", "anstoss-zurueck"], abschnitte: [[0.065, "0–6,5 % Beschriftung"], [0.46, "6,5–46 % Zusammenbau"], [0.76, "46–76 % Ebenen in die Platte"], [1.0001, "76–100 % Laptop, Kopf B"]] },
+  telefon: { sel: "[data-telefon]", name: "Telefon", scroll: SCROLL_TELEFON, standard: ["trackpad", "schnell"], abschnitte: [[0.06, "0–6 % gedreht"], [0.7, "6–70 % Aufrichten"], [0.8, "70–80 % Glocke"], [1.0001, "80–100 % halten"]] },
 };
+// Scroll-Arten je Strecke: die passenden aus --scroll, sonst der Standard der Strecke
+const scrollArten = (name) => {
+  const passend = SCROLL.filter((x) => STRECKE[name].scroll.test(x));
+  return passend.length ? passend : STRECKE[name].standard;
+};
+// Explosion: Weg des Anstoßes und des Weiterscrollens (px)
+const ANSTOSS = 80;
+const WEITER = 900;
 const STRECKEN = liste("strecke", "beide").flatMap((s) => (s === "beide" ? ["explosion", "telefon"] : [s]));
 for (const s of STRECKEN) if (!STRECKE[s]) throw new Error(`Strecke „${s}“ unbekannt (explosion, telefon, beide)`);
 const ABSCHNITTE = (name) => ["vorher", ...STRECKE[name].abschnitte.map(([, n]) => n), "danach"];
@@ -119,7 +139,10 @@ const GEGENPROBEN = {
   schatten: { text: "Explosion ohne die weichgezeichneten Schatten unter den Ebenen (filter: blur)", css: ".ex-schatten { display: none !important; }" },
   willchange: { text: "kein will-change an den Bühnen (sonst nur, solange sie nahe am Fenster sind)", css: ".ist-nah *, .ist-nah *::after { will-change: auto !important; }" },
   glanz: { text: "Metall-Zahlen ohne die beiden zusätzlichen Glanz-Lagen", css: ".metall-glanz.mz-l, .metall-glanz.mz-r { display: none !important; }" },
-  ohnebewegung: { text: "nur zum Messen: alle Animationen der Bühnen aus (Strecken bleiben) – zeigt, was die Bewegung selbst kostet", css: ":is(.ex-strecke, .tf-strecke, .aussage, .metall) :is(*, *::after) { animation: none !important; }" },
+  ohnebewegung: {
+    text: "nur zum Messen: alle Animationen der Bühnen aus (Strecken bleiben) – zeigt, was die Bewegung selbst kostet; in der Explosion läuft statt ihrer ein winziger Taktgeber gleicher Dauer (Deckkraft eines 4-px-Punkts), den bewegung.js wie sie startet – sonst zeichnete der Browser nach dem Anstoß gar nichts",
+    css: ":is(.ex-strecke, .tf-strecke, .aussage, .metall) :is(*, *::after) { animation: none !important; } .js .ex-buehne::before { content: \"\"; position: absolute; left: 8px; top: 8px; width: 4px; height: 4px; background: #fff; opacity: 0.02; animation: ex-takt 2.5s linear both paused; } @keyframes ex-takt { from { opacity: 0.02; } to { opacity: 0.06; } }",
+  },
   leer: { text: "nur zum Messen: nichts abgeschaltet, nur dieselbe Auslieferung wie bei jeder Gegenprobe (no-store, angehängte Regel)", css: ".vf-gegenprobe-leer { color: inherit; }" },
 };
 const PROBEN = ["", ...liste("gegenprobe", "")];
@@ -570,6 +593,22 @@ async function bereit(page) {
   await warte(600);
 }
 
+// Explosion: warten, bis keine ihrer Animationen mehr läuft (höchstens 5 s)
+async function exFertig(page) {
+  await page.evaluate(
+    () =>
+      new Promise((fertig) => {
+        const anims = document.querySelector("[data-explosion]").getAnimations({ subtree: true });
+        const t0 = performance.now();
+        const blick = () => {
+          if ((performance.now() - t0 > 200 && !anims.some((a) => a.playState === "running")) || performance.now() - t0 > 5000) fertig();
+          else requestAnimationFrame(blick);
+        };
+        requestAnimationFrame(blick);
+      }),
+  );
+}
+
 // Strecke einer Bühne: Spanne ihrer Zeitleiste wie in site.css (gepinnt: contain, sonst cover; Kopfleiste 52 px
 // abgezogen), Anfang und Ziel des Scrollens
 async function strecke(page, name) {
@@ -618,13 +657,27 @@ async function fall({ browserName, fenster, streckeName, cache, scrollArt, probe
   await bereit(page);
   const ruheNach = Date.now() - tLaden;
   const s = await strecke(page, streckeName);
+  const zeit = Boolean(STRECKE[streckeName].zeit);
   const zurueck = scrollArt.endsWith("-zurueck");
-  // an den Anfang (bzw. bei „-zurueck“ ans Ziel) springen und dort zur Ruhe kommen lassen
-  await page.evaluate((y) => scrollTo(0, y), zurueck ? s.ziel : s.start);
-  await warte(zurueck ? 1200 : 400);
-  const weg = (zurueck ? s.start : s.ziel) - (await page.evaluate(() => scrollY));
+  let weg;
+  if (zeit) {
+    // Explosion: oben (zerlegt); bei „-zurueck“ erst bei 80 px zusammensetzen lassen, dann nach oben anstoßen
+    await page.evaluate(() => scrollTo(0, 0));
+    await warte(400);
+    if (zurueck) {
+      await page.evaluate((y) => scrollTo(0, y), ANSTOSS);
+      await exFertig(page);
+      await warte(400);
+    }
+    weg = zurueck ? -(ANSTOSS + 40) : scrollArt === "anstoss-weiter" ? WEITER : ANSTOSS;
+  } else {
+    // an den Anfang (bzw. bei „-zurueck“ ans Ziel) springen und dort zur Ruhe kommen lassen
+    await page.evaluate((y) => scrollTo(0, y), zurueck ? s.ziel : s.start);
+    await warte(zurueck ? 1200 : 400);
+    weg = (zurueck ? s.start : s.ziel) - (await page.evaluate(() => scrollY));
+  }
   const geste = scrollArt.startsWith("geste") && cdp;
-  const deltas = geste ? [] : schritte(Math.abs(weg), scrollArt.replace(/^geste-?/, "").replace(/-zurueck$/, "") || "trackpad").map((d) => d * Math.sign(weg));
+  const deltas = geste ? [] : schritte(Math.abs(weg), zeit ? "trackpad" : scrollArt.replace(/^geste-?/, "").replace(/-zurueck$/, "") || "trackpad").map((d) => d * Math.sign(weg));
   await page.mouse.move(Math.round(fenster.width * 0.55), Math.round(fenster.height * 0.5));
   await warte(PAUSE);
 
@@ -647,22 +700,36 @@ async function fall({ browserName, fenster, streckeName, cache, scrollArt, probe
   const sendeDauer = geste
     ? (await cdp.send("Input.synthesizeScrollGesture", { x: mx, y: my, yDistance: -weg, speed: PROFILE[scrollArt.replace(/^geste-?/, "").replace(/-?zurueck$/, "") || "trackpad"] ?? 700, gestureSourceType: "mouse", preventFling: true }), performance.now() - t0Senden)
     : await scrollen(page, cdp, deltas, mx, my);
-  // warten, bis die Scrollposition ruht (300 ms unverändert)
-  const tRuhe = await page.evaluate(
-    () =>
+  // warten, bis die Scrollposition ruht (300 ms unverändert) – bei der Explosion auch, bis ihre Animationen fertig sind;
+  // dabei den Stand ihrer Animation im ersten Bild merken, in dem sie läuft (für die Abschnitte nach der Zeit)
+  const { ruhe: tRuhe, ref: exRef, dauer: exD } = await page.evaluate(
+    (zeit) =>
       new Promise((fertig) => {
         let y = scrollY;
         let seit = performance.now();
+        let ende = 0;
+        let ref = null;
+        const anims = zeit ? document.querySelector("[data-explosion]").getAnimations({ subtree: true }).filter((a) => "animationName" in a) : [];
+        const dauer = anims.length ? anims[0].effect.getComputedTiming().endTime : 0;
         const blick = () => {
+          const jetzt = performance.now();
           if (scrollY !== y) {
             y = scrollY;
-            seit = performance.now();
+            seit = jetzt;
           }
-          if (performance.now() - seit > 300) fertig(seit);
+          if (anims.some((a) => a.playState === "running")) {
+            ende = 0;
+            // Stand im Sinne des Zusammenbaus; rückwärts läuft sie mit direction: reverse (bewegung.js)
+            const rueck = anims[0].effect.getTiming().direction === "reverse";
+            if (!ref) ref = { t: jetzt, ct: rueck ? dauer - anims[0].currentTime : anims[0].currentTime, r: rueck ? -1 : 1 };
+          } else if (!ende) ende = jetzt;
+          const animFertig = !zeit || (ref && ende && jetzt - ende > 150) || jetzt - seit > 6000;
+          if (jetzt - seit > 300 && animFertig) fertig({ ruhe: Math.max(seit, zeit && ende ? ende : 0), ref, dauer });
           else requestAnimationFrame(blick);
         };
         requestAnimationFrame(blick);
       }),
+    zeit,
   );
   await warte(200);
   const seite = await page.evaluate(() => {
@@ -715,6 +782,18 @@ async function fall({ browserName, fenster, streckeName, cache, scrollArt, probe
     for (const [bis, name] of STRECKE[streckeName].abschnitte) if (p < bis) return name;
     return "danach";
   };
+  // Explosion (auf der Zeit): Fortschritt ihrer Animationen zur Seitenzeit t (aus dem gemerkten Stand) und Abschnitt
+  const exAnfang = exRef ? exRef.t - (exRef.r > 0 ? exRef.ct : exD - exRef.ct) : Infinity;
+  const exWert = (t) => (exRef ? Math.min(1, Math.max(0, (exRef.ct + (t - exRef.t) * exRef.r) / exD)) : 0);
+  const abschnittBei = (t) => {
+    if (!zeit) return abschnitt(yBei(t));
+    if (t < exAnfang) return "vorher";
+    if (t > exAnfang + exD) return "danach";
+    const p = exWert(t);
+    for (const [bis, name] of STRECKE[streckeName].abschnitte) if (p < bis) return name;
+    return STRECKE[streckeName].abschnitte.at(-1)[1];
+  };
+  const pBei = (t) => Math.round((zeit ? exWert(t) : fahrtwert(yBei(t))) * 100);
   // Scrollstand zur Seitenzeit t (aus dem Takt)
   const yBei = (t) => {
     let y = takt[0]?.[1] ?? 0;
@@ -740,25 +819,25 @@ async function fall({ browserName, fenster, streckeName, cache, scrollArt, probe
       vor = t;
     }
     pause = Math.max(pause, b - vor);
-    taktLuecken.push({ t: Math.round(a - tStart), ms: b - a, pause, belegt: pause >= 0.6 * (b - a), p: Math.round(fahrtwert(takt[i - 1][1]) * 100), render: takt[i - 1][2] });
+    taktLuecken.push({ t: Math.round(a - tStart), ms: b - a, pause, belegt: pause >= 0.6 * (b - a), p: zeit ? pBei(a) : Math.round(fahrtwert(takt[i - 1][1]) * 100), render: takt[i - 1][2] });
   }
   const phasen = {};
   const quelleLuecken = spur ? spur.verpasstJe : abst.map((ms, i) => ({ t: takt[i + 1][0], ms, verpasst: ms > 25 ? Math.max(1, Math.round(ms / 16.667) - 1) : 0 }));
-  for (const l of quelleLuecken) if (l.verpasst) phasen[abschnitt(yBei(l.t))] = (phasen[abschnitt(yBei(l.t))] ?? 0) + l.verpasst;
+  for (const l of quelleLuecken) if (l.verpasst) phasen[abschnittBei(l.t)] = (phasen[abschnittBei(l.t)] ?? 0) + l.verpasst;
   const lueckenGezeigt = spur ? spur.luecken : abst;
   // Kosten je Bild nach Abschnitt (Chromium): Hauptthread-Bild (BeginMainFrame), davon PrePaint, Zeichnen im Compositor
   const kosten = {};
   if (spur) {
     for (const [t, ms, pp] of spur.bmfListe) {
       if (t > tRuhe) continue;
-      const k = (kosten[abschnitt(yBei(t))] ??= { n: 0, bmf: 0, pp: 0, dn: 0, draw: 0 });
+      const k = (kosten[abschnittBei(t)] ??= { n: 0, bmf: 0, pp: 0, dn: 0, draw: 0 });
       k.n++;
       k.bmf += ms;
       k.pp += pp;
     }
     for (const [t, ms] of spur.drawListe) {
       if (t > tRuhe) continue;
-      const k = (kosten[abschnitt(yBei(t))] ??= { n: 0, bmf: 0, pp: 0, dn: 0, draw: 0 });
+      const k = (kosten[abschnittBei(t)] ??= { n: 0, bmf: 0, pp: 0, dn: 0, draw: 0 });
       k.dn++;
       k.draw += ms;
     }
@@ -802,18 +881,19 @@ async function fall({ browserName, fenster, streckeName, cache, scrollArt, probe
       ms: seite.loaf.reduce((a, l) => a + l.dauer, 0),
       max: Math.max(0, ...seite.loaf.map((l) => l.dauer)),
       skripte: loafSkripte,
-      liste: seite.loaf.map((l) => ({ ...l, t: Math.round(l.start - tStart), p: Math.round(fahrtwert(yBei(l.start)) * 100) })),
+      liste: seite.loaf.map((l) => ({ ...l, t: Math.round(l.start - tStart), p: pBei(l.start) })),
     },
     lt: { n: seite.lt.length, ms: seite.lt.reduce((a, l) => a + l.dauer, 0), max: Math.max(0, ...seite.lt.map((l) => l.dauer)), liste: seite.lt.map((l) => ({ ...l, y: yBei(l.start) })) },
     phasen,
     kosten,
-    ereignisse: seite.ereignisse.filter((e) => e.t >= tStart - 50).map((e) => ({ ...e, t: Math.round(e.t - tStart), p: Math.round(fahrtwert(e.y) * 100) })),
+    ereignisse: seite.ereignisse.filter((e) => e.t >= tStart - 50).map((e) => ({ ...e, t: Math.round(e.t - tStart), p: zeit ? pBei(e.t) : Math.round(fahrtwert(e.y) * 100) })),
     heapMB: (nachher.JSHeapUsedSize ?? seite.heap ?? 0) / 1048576 || null,
     metriken: chromium
       ? { stilMs: d("RecalcStyleDuration") * 1000, layoutMs: d("LayoutDuration") * 1000, skriptMs: d("ScriptDuration") * 1000, aufgabenMs: d("TaskDuration") * 1000, layouts: d("LayoutCount"), stile: d("RecalcStyleCount") }
       : null,
     cpu: Object.fromEntries(Object.keys(cpuNachher).map((k) => [k, (cpuNachher[k] - (cpuVorher[k] ?? 0)) * 1000])),
-    spur: spur && { ...spur, bmfListe: undefined, drawListe: undefined, verpasstJe: spur.verpasstJe.map((v) => ({ ...v, t: Math.round(v.t - tStart), p: Math.round(fahrtwert(yBei(v.t)) * 100) })), anfragen: spur.anfragen.map((a) => ({ ...a, t: Math.round(a.t - tStart) })), dekodierung: { ...spur.dekodierung, liste: spur.dekodierung.liste.map((x) => ({ ...x, t: Math.round(x.t - tStart), p: Math.round(fahrtwert(yBei(x.t)) * 100) })) }, gpuStopps: spur.gpuStopps.map((g) => ({ ...g, t: Math.round(g.t - tStart), p: Math.round(fahrtwert(yBei(g.t)) * 100) })), hauptLang: spur.hauptLang.map((h) => ({ ...h, t: Math.round(h.t - tStart), p: Math.round(fahrtwert(yBei(h.t)) * 100) })) },
+    spur: spur && { ...spur, bmfListe: undefined, drawListe: undefined, verpasstJe: spur.verpasstJe.map((v) => ({ ...v, t: Math.round(v.t - tStart), p: pBei(v.t) })), anfragen: spur.anfragen.map((a) => ({ ...a, t: Math.round(a.t - tStart) })), dekodierung: { ...spur.dekodierung, liste: spur.dekodierung.liste.map((x) => ({ ...x, t: Math.round(x.t - tStart), p: pBei(x.t) })) }, gpuStopps: spur.gpuStopps.map((g) => ({ ...g, t: Math.round(g.t - tStart), p: pBei(g.t) })), hauptLang: spur.hauptLang.map((h) => ({ ...h, t: Math.round(h.t - tStart), p: pBei(h.t) })) },
+    explosion: zeit ? { dauer: exD, anfang: exRef ? Math.round(exAnfang - tStart) : null, richtung: exRef?.r ?? null } : undefined,
     konsole,
   };
 }
@@ -831,6 +911,12 @@ const GRUENDE_ANIM = [
   "Transform-Eigenschaft auf diesem Ziel nicht beschleunigt", "Transform hängt von der Boxgröße ab", "Filter verschiebt Pixel (z. B. blur)", "Eigenschaft nicht unterstützt",
   "(veraltet)", "gemischte Keyframe-Typen", "Zeitleiste ohne gültigen Compositing-Zustand", "Animation ohne Wirkung (wegoptimiert)", "betrifft !important", "SVG mit eigener Transform-Eigenschaft",
 ];
+// Stand der Ebenen: Anzahl, zeichnende, Fläche (MPx) und je Ebene Größe und paintCount
+function ebenenStand(ebenen, fenster) {
+  const zeichnen = ebenen.filter((l) => l.drawsContent);
+  const flaeche = zeichnen.reduce((a, l) => a + l.width * l.height, 0) * fenster.dpr * fenster.dpr;
+  return { ebenen: ebenen.length, zeichnend: zeichnen.length, mpx: flaeche / 1e6, liste: ebenen.map((l) => ({ id: l.layerId, node: l.backendNodeId, w: l.width, h: l.height, paint: l.paintCount, zeichnet: l.drawsContent })) };
+}
 async function ebenenDurchgang(browserName, fenster, streckeName) {
   probeJetzt = "";
   const { ctx } = await starten(browserName, fenster, neuesProfil());
@@ -840,13 +926,23 @@ async function ebenenDurchgang(browserName, fenster, streckeName) {
   await cdp.send("Tracing.start", { transferMode: "ReturnAsStream", traceConfig: { includedCategories: ["blink.animations", "cc", "disabled-by-default-devtools.timeline", "blink.user_timing"], recordMode: "recordAsMuchAsPossible" } });
   await bereit(page);
   const s = await strecke(page, streckeName);
-  // ein erster Durchgang durch die Strecke (alles einmal gezeichnet und gerastert), dann zurück an den Anfang
-  for (let i = 0; i <= 20; i++) {
-    await page.evaluate((y) => scrollTo(0, y), Math.round(s.start + ((s.ziel - s.start) * i) / 20));
-    await warte(50);
+  const zeit = Boolean(STRECKE[streckeName].zeit);
+  if (zeit) {
+    // Explosion: einmal zusammensetzen und wieder auseinander laufen lassen (alles einmal gezeichnet und gerastert)
+    await page.evaluate((y) => scrollTo(0, y), ANSTOSS);
+    await exFertig(page);
+    await page.evaluate(() => scrollTo(0, 0));
+    await exFertig(page);
+    await warte(400);
+  } else {
+    // ein erster Durchgang durch die Strecke (alles einmal gezeichnet und gerastert), dann zurück an den Anfang
+    for (let i = 0; i <= 20; i++) {
+      await page.evaluate((y) => scrollTo(0, y), Math.round(s.start + ((s.ziel - s.start) * i) / 20));
+      await warte(50);
+    }
+    await page.evaluate((y) => scrollTo(0, y), s.start);
+    await warte(400);
   }
-  await page.evaluate((y) => scrollTo(0, y), s.start);
-  await warte(400);
   await cdp.send("DOM.enable");
   await cdp.send("DOM.getDocument", { depth: 0 });
   let ebenen = [];
@@ -871,9 +967,7 @@ async function ebenenDurchgang(browserName, fenster, streckeName) {
   const schnapp = async (name) => {
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     await warte(250);
-    const zeichnen = ebenen.filter((l) => l.drawsContent);
-    const flaeche = zeichnen.reduce((a, l) => a + l.width * l.height, 0) * fenster.dpr * fenster.dpr;
-    return { name, ebenen: ebenen.length, zeichnend: zeichnen.length, mpx: flaeche / 1e6, liste: ebenen.map((l) => ({ id: l.layerId, node: l.backendNodeId, w: l.width, h: l.height, paint: l.paintCount, zeichnet: l.drawsContent })) };
+    return { ...ebenenStand(ebenen, fenster), name };
   };
   const stand = [await schnapp("Anfang")];
   // Gründe (am Anfang der Strecke)
@@ -888,14 +982,38 @@ async function ebenenDurchgang(browserName, fenster, streckeName) {
       b[el] = (b[el] ?? 0) + 1;
     }
   }
-  // Durch die Strecke in 40 Schritten (paintCount und Rasterung je Ebene)
+  // Durch die Strecke in 40 Schritten (paintCount und Rasterung je Ebene); Explosion: Anstoß, Ablauf mit Ständen bei
+  // 25/50/75 % der Dauer, dann ihr Ende (Marke „vf-ebenen-ende“: was danach neu gerastert wird, zählt eigens), 1 s Ruhe,
+  // danach rückwärts
   await page.evaluate(() => performance.mark("vf-ebenen-start"));
   const paint0 = new Map(ebenen.map((l) => [l.layerId, l.paintCount]));
-  for (let i = 1; i <= 40; i++) {
-    await page.evaluate((y) => scrollTo(0, y), Math.round(s.start + ((s.ziel - s.start) * i) / 40));
+  let paintEnde = null;
+  if (zeit) {
+    const dauer = await page.evaluate(() => document.querySelector(".ex-stapel").getAnimations()[0].effect.getComputedTiming().endTime);
+    const t0 = Date.now();
+    await page.evaluate((y) => scrollTo(0, y), ANSTOSS);
+    for (const q of [0.25, 0.5, 0.75]) {
+      await warte(Math.max(0, t0 + q * dauer - Date.now()));
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
+      stand.push({ ...ebenenStand(ebenen, fenster), name: `${q * 100} %` });
+    }
+    await exFertig(page);
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    await warte(40);
-    if (i === 12 || i === 23 || i === 35 || i === 40) stand.push(await schnapp(`${Math.round((i / 40) * 100)} %`));
+    await page.evaluate(() => performance.mark("vf-ebenen-ende"));
+    paintEnde = new Map(ebenen.map((l) => [l.layerId, l.paintCount]));
+    await warte(1000);
+    stand.push(await schnapp("Ende + 1 s"));
+    await page.evaluate(() => performance.mark("vf-ebenen-rueck"));
+    await page.evaluate(() => scrollTo(0, 0));
+    await exFertig(page);
+    stand.push(await schnapp("rückwärts zerlegt"));
+  } else {
+    for (let i = 1; i <= 40; i++) {
+      await page.evaluate((y) => scrollTo(0, y), Math.round(s.start + ((s.ziel - s.start) * i) / 40));
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await warte(40);
+      if (i === 12 || i === 23 || i === 35 || i === 40) stand.push(await schnapp(`${Math.round((i / 40) * 100)} %`));
+    }
   }
   const paintMehr = new Map();
   for (const l of ebenen) {
@@ -943,14 +1061,22 @@ async function ebenenDurchgang(browserName, fenster, streckeName) {
   }
   // die Animationen der Bühnen (Namen ex-, tf-, aw-, mz- in site.css; die Geräte von heute heißen vf-*)
   const animationen = alleAnim.filter((a) => /^(ex|tf|aw|mz)-/.test(a.name ?? "") || /ex-|telefon|glockenfeld|\baw\b|metall/.test(a.ziel ?? ""));
-  // Rasterung je Ebene während der Strecke
+  // Rasterung je Ebene während der Strecke (Explosion: auch eigens nach dem Ende ihres Ablaufs)
+  const endeTs = ev.find((e) => e.name === "vf-ebenen-ende")?.ts ?? Infinity;
+  const rueckTs = ev.find((e) => e.name === "vf-ebenen-rueck")?.ts ?? Infinity;
   const rasterJe = {};
+  const rasterNachEnde = {};
   for (const e of ev) {
     if (e.name !== "RasterTask" || e.ts < startTs || e.ph !== "X") continue;
     const id = String(e.args?.tileData?.layerId ?? "?");
     const r = (rasterJe[id] ??= { n: 0, ms: 0 });
     r.n++;
     r.ms += e.dur / 1000;
+    if (e.ts >= endeTs && e.ts < rueckTs) {
+      const q = (rasterNachEnde[id] ??= { n: 0, ms: 0 });
+      q.n++;
+      q.ms += e.dur / 1000;
+    }
   }
   const info = new Map(ebenen.map((l) => [l.layerId, l]));
   const rasterListe = [];
@@ -962,6 +1088,22 @@ async function ebenenDurchgang(browserName, fenster, streckeName) {
   for (const [id, mehr] of [...paintMehr].filter(([, m]) => m !== 0).sort((a, b) => (typeof b[1] === "number" ? b[1] : 0) - (typeof a[1] === "number" ? a[1] : 0)).slice(0, 12)) {
     const l = info.get(id);
     paintListe.push({ id, mehr, element: await beschreibe(l), groesse: `${Math.round(l.width)}×${Math.round(l.height)}` });
+  }
+  // Explosion: nach dem Ende ihres Ablaufs neu gerastert bzw. neu gezeichnet (bis zum Rückwärtslauf)
+  const nachEnde = [];
+  if (paintEnde) {
+    for (const [id, r] of Object.entries(rasterNachEnde).sort((a, b) => b[1].ms - a[1].ms).slice(0, 8)) {
+      const l = info.get(id);
+      nachEnde.push({ art: "gerastert", id, ...r, element: l ? await beschreibe(l) : "(Ebene nicht mehr da)", groesse: l ? `${Math.round(l.width)}×${Math.round(l.height)}` : "" });
+    }
+    const beimEnde = stand.find((x) => x.name === "Ende + 1 s");
+    for (const x of beimEnde?.liste ?? []) {
+      const vor = paintEnde.get(x.id);
+      if (vor !== undefined && x.paint > vor) {
+        const l = info.get(x.id);
+        nachEnde.push({ art: "gezeichnet", id: x.id, n: x.paint - vor, element: l ? await beschreibe(l) : "?", groesse: `${Math.round(x.w)}×${Math.round(x.h)}` });
+      }
+    }
   }
   const groesste = [];
   for (const l of [...ebenen].filter((x) => x.drawsContent).sort((a, b) => b.width * b.height - a.width * a.height).slice(0, 8)) {
@@ -981,6 +1123,7 @@ async function ebenenDurchgang(browserName, fenster, streckeName) {
     })),
     raster: rasterListe,
     neuGezeichnet: paintListe,
+    nachEnde: paintEnde ? nachEnde : null,
     groesste,
   };
 }
@@ -1015,12 +1158,12 @@ async function main() {
     for (const browserName of BROWSER)
       for (const fenster of FENSTER)
         for (const cache of CACHE)
-          for (const scrollArt of SCROLL) {
+          for (const scrollArt of scrollArten(streckeName)) {
             // Gesten erzeugt nur Chromium (CDP)
             if (scrollArt.startsWith("geste") && browserName === "webkit") continue;
             for (const probe of PROBEN) for (let runde = 1; runde <= RUNDEN; runde++) if (!hat("nur-ebenen")) faelle.push({ browserName, fenster, streckeName, cache, scrollArt, probe, runde });
           }
-  console.log(`Gepinnte Bühnen messen: ${faelle.length} Fälle (${STRECKEN.join(", ")} · ${BROWSER.join(", ")} · ${FENSTER.map((f) => f.name).join(", ")} · ${CACHE.join(", ")} · ${SCROLL.join(", ")}${PROBEN.length > 1 ? ` · Gegenproben ${PROBEN.filter(Boolean).join(", ")}` : ""})`);
+  console.log(`Gepinnte Bühnen messen: ${faelle.length} Fälle (${STRECKEN.join(", ")} · ${BROWSER.join(", ")} · ${FENSTER.map((f) => f.name).join(", ")} · ${CACHE.join(", ")} · ${STRECKEN.map((n) => scrollArten(n).join(", ")).join(" | ")}${PROBEN.length > 1 ? ` · Gegenproben ${PROBEN.filter(Boolean).join(", ")}` : ""})`);
   for (const [i, f] of faelle.entries()) {
     const name = `${f.streckeName} ${f.browserName} ${f.fenster.name} ${f.cache} ${f.scrollArt}${f.probe ? ` ohne ${f.probe}` : ""}${RUNDEN > 1 ? ` #${f.runde}` : ""}`;
     process.stdout.write(`  [${i + 1}/${faelle.length}] ${name} … `);
@@ -1188,7 +1331,7 @@ async function main() {
 
   // Zeitachse eines Falls (der erste Fall je Browser/Fenster mit kaltem Cache und Trackpad)
   console.log("Zeitachse (ms ab dem ersten Scrollschritt, p = Fortschritt der Zeitleiste in %), je Strecke, Browser und Fenster der kalte Trackpad-Fall:");
-  for (const r of ergebnisse.filter((x) => x.cache === CACHE[0] && x.scroll === SCROLL[0] && !x.probe && x.runde === 1)) {
+  for (const r of ergebnisse.filter((x) => x.cache === CACHE[0] && x.scroll === scrollArten(x.strecke)[0] && !x.probe && x.runde === 1)) {
     const zeilen = [...r.ereignisse.map((e) => [e.t, `p=${e.p} ${e.was}`])];
     if (r.spur) {
       for (const g of r.spur.gpuStopps) zeilen.push([g.t, `p=${g.p} GPU-Stopp ${zahl(g.ms)} ms`]);
@@ -1215,6 +1358,7 @@ async function main() {
     console.log(`  größte zeichnende Ebenen: ${e.groesste.map((g) => `${g.element} ${g.groesse}`).join("; ")}`);
     console.log(`  neu gezeichnet während der Strecke (paintCount, nach einem ersten Durchgang): ${e.neuGezeichnet.map((p) => `${p.element} ${p.groesse} +${p.mehr}`).join("; ") || "keine"}`);
     console.log(`  neu gerastert während der Strecke (Kacheln/ms, nach einem ersten Durchgang): ${e.raster.map((p) => `${p.element} ${p.groesse}: ${p.n}/${zahl(p.ms)}`).join("; ") || "keine"}`);
+    if (e.nachEnde) console.log(`  nach dem Ende des Ablaufs (1 s Ruhe) neu gerastert/gezeichnet: ${e.nachEnde.map((p) => `${p.art} ${p.element} ${p.groesse}: ${p.n}${p.ms !== undefined ? `/${zahl(p.ms)} ms` : ""}`).join("; ") || "nichts"}`);
     // nicht komponiert = der letzte Versuch scheiterte; „zeitweise“ = ein früherer Versuch scheiterte (etwa solange die
     // Bühne weit außerhalb des Fensters stand und nichts von ihr gezeichnet war), der letzte gelang
     const nicht = e.animationen.filter((a) => a.zuletzt);

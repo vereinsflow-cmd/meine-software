@@ -12,12 +12,18 @@
 //   - genau eine Überschrift h1
 //   - kein Text läuft aus seinem Kasten oder aus dem Fenster (je Element gemessen – html und body haben overflow-x: clip,
 //     das Dokument allein zeigte einen abgeschnittenen Text nicht); ebenso auf Impressum, Datenschutz und Fehlerseite
-//   - Bewegung beim Scrollen (seit Bau 2, statt der Kamerafahrt) an mehreren Stellen jeder Zeitleiste, berechnet wie in
-//     site.css (gepinnt: contain, sonst cover, die Kopfleiste abgezogen):
-//       Explosion: am Anfang zerlegt (Stapel gedreht, Beschriftung bzw. Legende sichtbar, Laptop und „Alles greift
-//       ineinander.“ unsichtbar), in der Mitte halb (Beschriftung aus, Stapel zwischen zerlegt und frontal, Bühne klebt
-//       unter der Kopfleiste), am Ende zusammengesetzt (Stapel frontal, Laptop und Kopf B sichtbar, Ebenen aus), danach
-//       gelöst (Bühne fährt mit der Seite, Endlage bleibt);
+//   - Explosion (seit 26.11.2026 selbstlaufend, auf der Zeit): oben zerlegt (Stapel gedreht, Beschriftung bzw. Legende
+//     sichtbar, Laptop und „Alles greift ineinander.“ unsichtbar); nach einem kleinen Scrollen (60 px) läuft sie von
+//     selbst: nach 1 s wirklich dazwischen (Beschriftung aus, Stapel zwischen zerlegt und frontal, alle Teile im
+//     Gleichschritt, Bühne klebt unter der Kopfleiste), nach dem Ende zusammengesetzt (Stapel frontal, Laptop und Kopf B
+//     sichtbar, Ebenen aus; Dauer 2,4–2,8 s), hinter der kurzen Strecke gelöst (Bühne fährt mit der Seite, Endlage
+//     bleibt); zurück ganz oben läuft sie rückwärts (nach 1 s dazwischen) und liegt wieder zerlegt da; Richtungswechsel
+//     mitten im Ablauf: kehrt vom aktuellen Stand um (kein Neustart, kein Sprung: Zeitschritt je Bild höchstens zwei
+//     Bilder über dem Bildabstand); Laden mitten auf der Seite (Sprungmarke #funktionen, Neuladen mit
+//     wiederhergestellter Leseposition): sofort zusammengesetzt, nichts läuft; an jeder Stelle kein seitliches Scrollen,
+//     oben, dazwischen und am Ende kein Text außerhalb von Fenster oder Kasten
+//   - Bewegung beim Scrollen (seit Bau 2) an mehreren Stellen jeder Zeitleiste, berechnet wie in site.css (gepinnt:
+//     contain, sonst cover, die Kopfleiste abgezogen):
 //       Telefon: am Anfang gedreht, Bildschirm A, Feld der Glocke aus; am Ende gerade, Schichtliste, Feld sichtbar; am
 //       Rechner gepinnt; Telefon und Feld der Glocke verdecken nie die Textspalte (am Handy: stehen unter dem Text); Aussage: Wörter hellen nacheinander auf; Metall-„13“: neigt sich zwischen Ein- und Auslaufen;
 //       an jeder Stelle kein seitliches Scrollen, an den Zwischenstufen kein Text außerhalb von Fenster oder Kasten
@@ -229,18 +235,9 @@ async function bewegungPruefen(page, w) {
     }
     return z;
   };
-  // Explosion
-  let z = await an("[data-explosion]", "contain", 0);
-  if (!(z.stapel > 0.3 && z.marken > 0.95 && z.kopfB < 0.05 && z.rechner < 0.05 && z.ebene > 0.9)) f.push(`Explosion am Anfang nicht zerlegt (${JSON.stringify({ stapel: z.stapel, marken: z.marken, kopfB: z.kopfB, rechner: z.rechner, ebene: z.ebene })})`);
-  const start = z.stapel;
-  z = await an("[data-explosion]", "contain", 0.43, true);
-  if (!(z.marken < 0.02 && z.stapel > 0.05 && z.stapel < start - 0.05)) f.push(`Explosion in der Mitte nicht halb (${JSON.stringify({ stapel: z.stapel, marken: z.marken })})`);
-  if (!nah(z.buehne, kopf)) f.push(`Bühne der Explosion klebt nicht unter der Kopfleiste (oben ${z.buehne})`);
-  z = await an("[data-explosion]", "contain", 1, true);
-  if (!(z.stapel < 0.002 && z.rechner > 0.98 && z.kopfB > 0.98 && z.ebene < 0.02 && z.marken < 0.02)) f.push(`Explosion am Ende nicht zusammengesetzt (${JSON.stringify({ stapel: z.stapel, rechner: z.rechner, kopfB: z.kopfB, ebene: z.ebene })})`);
-  const ende = z.buehne;
-  z = await an("[data-explosion]", "contain", 1.25);
-  if (!(z.buehne < ende - 20 && z.stapel < 0.002 && z.kopfB > 0.98)) f.push(`Explosion danach nicht gelöst oder nicht in der Endlage (oben ${z.buehne} statt < ${ende - 20})`);
+  // Explosion (auf der Zeit; Laden mitten auf der Seite am Ende dieser Prüfung)
+  await explosionPruefen(page, f);
+  let z;
   // Telefon: am Rechner gepinnt (contain), am Handy cover
   const tf = breit ? "contain" : "cover";
   const [t0, t1] = breit ? [0, 1] : [0.05, 0.75];
@@ -273,7 +270,143 @@ async function bewegungPruefen(page, w) {
   const a = new DOMMatrixReadOnlyLite(m0);
   const b = new DOMMatrixReadOnlyLite(m1);
   if (a.abstand(b) < 0.02) f.push(`Metall-„13“ neigt sich nicht (${m0} / ${m1})`);
+  await mittenLaden(page, f);
   return f;
+}
+
+// Zustand der Animationen der Explosion: Anzahl, wie viele laufen, je Animation der Stand im Sinne des Zusammenbaus
+// (0 zerlegt … Dauer zusammengesetzt) und die Richtung (rückwärts läuft sie mit direction: reverse), Dauer
+function exAnimationen() {
+  const a = document.querySelector("[data-explosion]").getAnimations({ subtree: true }).filter((x) => "animationName" in x);
+  const d = a.length ? a[0].effect.getComputedTiming().endTime : 0;
+  const rueck = (x) => x.effect.getTiming().direction === "reverse" || x.playbackRate < 0;
+  return { n: a.length, laeuft: a.filter((x) => x.playState === "running").length, t: a.map((x) => (rueck(x) ? d - x.currentTime : x.currentTime)), r: a.map((x) => (rueck(x) ? -1 : 1)), d };
+}
+// warten, bis an der Explosion nichts mehr läuft (höchstens 4 s)
+async function exWarten(page, max = 4000) {
+  const t0 = Date.now();
+  let s = await page.evaluate(exAnimationen);
+  while (s.laeuft && Date.now() - t0 < max) {
+    await page.waitForTimeout(80);
+    s = await page.evaluate(exAnimationen);
+  }
+  return s;
+}
+const zerlegt = (z) => z.stapel > 0.3 && z.marken > 0.95 && z.kopfB < 0.05 && z.rechner < 0.05 && z.ebene > 0.9;
+const zusammen = (z) => z.stapel < 0.002 && z.rechner > 0.98 && z.kopfB > 0.98 && z.ebene < 0.02 && z.marken < 0.02;
+const kurz = (z) => JSON.stringify({ stapel: +z.stapel.toFixed(3), marken: +z.marken.toFixed(2), kopfB: +z.kopfB.toFixed(2), rechner: +z.rechner.toFixed(2), ebene: +z.ebene.toFixed(2) });
+
+// Explosion, selbstlaufend: oben zerlegt → kleines Scrollen → läuft von selbst → zusammengesetzt → gelöst → oben
+// rückwärts → zerlegt; Richtungswechsel mitten im Ablauf
+async function explosionPruefen(page, f) {
+  const kopf = 52;
+  const nah = (a, b, t = 1.5) => a !== null && Math.abs(a - b) <= t;
+  const hin = async (y, warten, ueberlauf, wo) => {
+    await page.evaluate((yy) => window.scrollTo(0, yy), y);
+    if (warten) await page.waitForTimeout(warten);
+    await dreiBilder(page);
+    const z = await page.evaluate(zustand);
+    if (z.sw > z.cw) f.push(`Explosion ${wo}: seitliches Scrollen (${z.sw} > ${z.cw})`);
+    if (ueberlauf) {
+      const u = await page.evaluate(textUeberlauf);
+      if (u.length) f.push(`Explosion ${wo}: Text läuft über: ${u.slice(0, 3).join("; ")}`);
+    }
+    return z;
+  };
+  const gleichschritt = (s) => Math.max(...s.t) - Math.min(...s.t) <= 2 && new Set(s.r).size === 1;
+  await hin(0, 0, false, "oben");
+  await exWarten(page);
+  let z = await hin(0, 0, true, "oben");
+  if (!zerlegt(z)) f.push(`Explosion oben nicht zerlegt (${kurz(z)})`);
+  const start = z.stapel;
+  // kleines Stück scrollen: der Zusammenbau läuft von selbst
+  z = await hin(60, 1000, true, "nach 1 s");
+  let s = await page.evaluate(exAnimationen);
+  if (!(s.laeuft === s.n && s.n > 30 && s.t[0] > 700 && s.t[0] < 1700 && s.r[0] === 1)) f.push(`Explosion läuft nach kleinem Scrollen nicht von selbst (${s.laeuft}/${s.n} laufen, Zeit ${Math.round(s.t[0])} ms, Richtung ${s.r[0]})`);
+  if (!gleichschritt(s)) f.push(`Explosion nicht im Gleichschritt (Zeiten ${Math.round(Math.min(...s.t))}–${Math.round(Math.max(...s.t))} ms)`);
+  if (!(z.marken < 0.02 && z.stapel > 0.02 && z.stapel < start - 0.05)) f.push(`Explosion nach 1 s nicht dazwischen (${kurz(z)})`);
+  if (!nah(z.buehne, kopf)) f.push(`Bühne der Explosion klebt nicht unter der Kopfleiste (oben ${z.buehne})`);
+  s = await exWarten(page);
+  z = await hin(60, 0, true, "am Ende");
+  if (s.laeuft || !zusammen(z)) f.push(`Explosion am Ende nicht zusammengesetzt (${kurz(z)}, laufen noch ${s.laeuft})`);
+  if (!nah(z.buehne, kopf)) f.push(`Bühne der Explosion am Ende nicht unter der Kopfleiste (oben ${z.buehne})`);
+  if (s.d < 2400 || s.d > 2800) f.push(`Dauer der Explosion ${s.d} ms (erwartet 2,4–2,8 s)`);
+  // hinter die kurze Strecke: gelöst, Endlage bleibt
+  const y125 = await page.evaluate(stelle, ["[data-explosion]", "contain", 1.25]);
+  z = await hin(y125, 80, false, "gelöst");
+  if (!(z.buehne < kopf - 20 && zusammen(z))) f.push(`Explosion danach nicht gelöst oder nicht in der Endlage (oben ${z.buehne}, ${kurz(z)})`);
+  // zurück ganz nach oben: läuft rückwärts auseinander
+  z = await hin(0, 1000, true, "rückwärts nach 1 s");
+  s = await page.evaluate(exAnimationen);
+  if (!(s.laeuft === s.n && s.r[0] === -1 && s.t[0] > 800 && s.t[0] < 1700)) f.push(`Explosion läuft oben nicht rückwärts (${s.laeuft}/${s.n} laufen, Zeit ${Math.round(s.t[0])} ms, Richtung ${s.r[0]})`);
+  if (!(z.kopfB < 0.05 && z.stapel > 0.004 && z.stapel < start - 0.05)) f.push(`Explosion rückwärts nach 1 s nicht dazwischen (${kurz(z)})`);
+  await exWarten(page);
+  z = await hin(0, 0, true, "oben (wieder)");
+  if (!zerlegt(z)) f.push(`Explosion oben nicht wieder zerlegt (${kurz(z)})`);
+  // Richtungswechsel mitten im Ablauf: je Bild die Zeit der Animation – sie kehrt um, ohne Sprung und ohne Neustart
+  await page.evaluate((y) => window.scrollTo(0, y), 60);
+  await page.waitForTimeout(800);
+  const spur = await page.evaluate(
+    () =>
+      new Promise((fertig) => {
+        const a = document.querySelector(".ex-stapel").getAnimations()[0];
+        const d = a.effect.getComputedTiming().endTime;
+        const werte = [];
+        const t0 = performance.now();
+        let gewechselt = false;
+        const bild = (t) => {
+          const rueck = a.effect.getTiming().direction === "reverse" || a.playbackRate < 0;
+          werte.push([t, rueck ? d - a.currentTime : a.currentTime, rueck ? -1 : 1]);
+          if (!gewechselt && performance.now() - t0 > 150) {
+            gewechselt = true;
+            window.scrollTo(0, 0);
+          }
+          if (performance.now() - t0 < 700) requestAnimationFrame(bild);
+          else fertig(werte);
+        };
+        requestAnimationFrame(bild);
+      }),
+  );
+  const schritte = spur.slice(1).map(([t, ct], i) => ({ dt: t - spur[i][0], dct: ct - spur[i][1] }));
+  const groesster = Math.max(...schritte.map((x) => Math.abs(x.dct) - x.dt));
+  const vor = spur.filter(([, , r]) => r === 1).length;
+  const zurueck = spur.filter(([, , r]) => r === -1).length;
+  const tUm = Math.max(...spur.map(([, ct]) => ct));
+  if (!(vor >= 3 && zurueck >= 3)) f.push(`Richtungswechsel: keine Umkehr (${vor} Bilder vorwärts, ${zurueck} rückwärts)`);
+  if (groesster > 2 * 16.7) f.push(`Richtungswechsel mit Sprung (Zeitschritt bis ${Math.round(groesster)} ms über dem Bildabstand)`);
+  if (!(tUm > 600 && tUm < 1400 && spur.at(-1)[1] < tUm - 200)) f.push(`Richtungswechsel nicht vom aktuellen Stand (Umkehr bei ${Math.round(tUm)} ms, zuletzt ${Math.round(spur.at(-1)[1])} ms)`);
+  s = await exWarten(page);
+  z = await hin(0, 0, false, "nach dem Richtungswechsel");
+  if (s.laeuft || !zerlegt(z)) f.push(`Explosion nach dem Richtungswechsel nicht wieder zerlegt (${kurz(z)})`);
+  return z;
+}
+
+// Laden mitten auf der Seite (Sprungmarke, Neuladen mit wiederhergestellter Leseposition): sofort zusammengesetzt,
+// ohne Ablauf; danach wieder die Startseite oben
+async function mittenLaden(page, f) {
+  for (const [wo, laden] of [
+    ["Sprungmarke #funktionen", () => page.goto(URL0 + "#funktionen", { waitUntil: "load" })],
+    [
+      "Neuladen mitten auf der Seite",
+      async () => {
+        await page.goto(URL0, { waitUntil: "load" });
+        await page.evaluate(() => window.scrollTo(0, Math.round(document.querySelector(".k04").getBoundingClientRect().top + scrollY)));
+        await page.waitForTimeout(600); // WebKit merkt sich die Leseposition erst nach einer Weile (150 ms: noch nicht)
+        await page.reload({ waitUntil: "load" });
+      },
+    ],
+  ]) {
+    await laden();
+    await dreiBilder(page);
+    const s1 = await page.evaluate(exAnimationen);
+    await page.waitForTimeout(400);
+    const s2 = await page.evaluate(exAnimationen);
+    const z = await page.evaluate(zustand);
+    const y = await page.evaluate(() => scrollY);
+    if (y < 200) f.push(`${wo}: Leseposition ${y} px (erwartet mitten auf der Seite)`);
+    if (s1.laeuft || s2.laeuft || !zusammen(z) || Math.min(...s2.t) < s2.d) f.push(`${wo}: nicht sofort zusammengesetzt (${s1.laeuft}/${s2.laeuft} laufen, ${kurz(z)})`);
+  }
+  await page.goto(URL0, { waitUntil: "load" });
 }
 
 // Matrix aus der berechneten transform-Angabe (matrix(…) oder matrix3d(…)) – im Node-Prozess, ohne DOM
@@ -441,6 +574,7 @@ try {
         }));
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.waitForTimeout(bewegung === "reduce" ? 100 : 600);
+        await exWarten(page); // oben läuft die Explosion rückwärts auseinander
         z.ueberlauf = await page.evaluate(textUeberlauf);
         z.bewegung = bewegung === "reduce" ? endlageFehler(await page.evaluate(zustand)) : await bewegungPruefen(page, w);
         const fall = `${name}${ohneSd ? " ohne scroll-driven" : ""} · ${bewegung === "reduce" ? "Bewegung reduziert" : "mit Bewegung"} · ${w}×${h}`;

@@ -18,8 +18,8 @@
     14. Unterseiten (Impressum, Datenschutz, 404, Seiten von newsletter.php)
     15. GERÄTE WÖRTLICH (Laptop und Telefon wie in c112a20, eingesetzt von tools/geraete-css.mjs – nicht von Hand ändern)
     16. Geräte in der neuen Seite: Hüllen .geraet, .pose, .k03-buehne und Größen (--sw, --pw) je Kapitel
-    17. Bewegung (nur prefers-reduced-motion: no-preference): Pose der Geräte, Übergänge, Bewegung beim Scrollen
-        (Explosion, Aussage, Metall-Zahlen, großes Telefon: Strecken, Zeitleisten, Keyframes)
+    17. Bewegung (nur prefers-reduced-motion: no-preference): Pose der Geräte, Übergänge, die selbstlaufende Explosion
+        und die Bewegung beim Scrollen (Aussage, Metall-Zahlen, großes Telefon): Strecken, Zeitleisten, Keyframes
     18. Bevorzugungen (weniger Bewegung, weniger Transparenz, erzwungene Farben) und Druck
     19. Ganz am Ende, wörtlich: die Keyframes der Geräte (tools/make-showcase-keyframes.mjs ersetzt sie dort)
    Regeln:
@@ -29,10 +29,10 @@
      wörtlichen Bereiche nur Größen (--sw, --pw, --rim), Raster und display der Eckstreifen des gedrehten Telefons – nie
      transform, opacity, filter, animation, clip-path, mask oder overflow (geprüft von tools/geraete-pruefen.mjs). Die
      neuen Geräte heißen deshalb anders: .rechner (Laptop der Explosion) und .telefon (großes Telefon).
-   - Bewegung beim Scrollen (Abschnitt 17) nur über transform und opacity, direkt in Keyframes (CSS scroll-driven
-     animations, sonst assets/js/bewegung.js). Die Endlage steht in den Abschnitten 3, 5, 6 und 10: Explosion
-     zusammengesetzt (--ex-s: 1), Telefon gerade (--tf-p: 1), Zahlen ruhig, Aussage hell. So auch ohne Skript, bei
-     „Bewegung reduzieren“ und mit „Bewegung anhalten“ (dann ohne Strecken).
+   - Bewegung (Abschnitt 17) nur über transform und opacity, direkt in Keyframes (die Explosion auf der Zeit, gestartet
+     von assets/js/bewegung.js; die übrigen Bühnen mit CSS scroll-driven animations, sonst bewegung.js). Die Endlage steht
+     in den Abschnitten 3, 5, 6 und 10: Explosion zusammengesetzt (--ex-s: 1), Telefon gerade (--tf-p: 1), Zahlen ruhig,
+     Aussage hell. So auch ohne Skript, bei „Bewegung reduzieren“ und mit „Bewegung anhalten“ (dann ohne Strecken).
    - Systemschrift, keine Webfonts. Farben der Marke wie im Logo-Paket.
    ========================================================================== */
 
@@ -6829,21 +6829,27 @@ html:not(.js) .k03 .iphone-rim,
   transition: none;
 }
 
-/* --- Bewegung beim Scrollen (Bau 2): Explosion, Aussage, Metall-Zahlen, großes Telefon ---------------------------------
+/* --- Bewegung (Bau 2; Explosion selbstlaufend seit 26.11.2026): Explosion, Aussage, Metall-Zahlen, großes Telefon -------
    Nur mit Skript (html.js setzt frueh.js vor dem ersten Zeichnen), ohne „Bewegung reduzieren“ und ohne „Bewegung
    anhalten“ (html.ist-ruhig) – sonst steht die Endlage aus den Abschnitten 3, 5, 6 und 10, die Strecken sind eingeklappt.
    - Bewegt werden nur transform und opacity, und zwar direkt in den Keyframes (feste Maße je Teil über var(), keine
      animierten Variablen): So rechnet in Chromium und Safari der Compositor jedes Bild, nicht der Hauptthread.
    - In 3D (preserve-3d an .ex-stapel und .ex-ebene) ändert sich die Deckkraft nur an Blättern (Bilder, Kanten, Schatten,
      Glanz, Laptop) – Deckkraft unter 1 an einer 3D-Hülle würde den Raum plätten.
-   - Jede Bühne hat EINE Zeitleiste: die Strecke der Explosion (--ex) und des Telefons (--tf), die Aussage (--aw), jede
-     Metall-Zahl (--mz). Alle Teile einer Bühne laufen über dieselbe Spanne (gepinnt: contain 0–100 % = genau solange
-     die Bühne steht; sonst cover), die Phasen sind Keyframe-Offsets, jedes Segment beginnt und endet weich
+   - Explosion: läuft auf der Zeit, nicht am Scrollstand. Ihre Animationen (2,5 s) stehen hier am Anfang still (paused =
+     zerlegt); assets/js/bewegung.js spielt sie ab, sobald die Seite ein kleines Stück gescrollt ist (play(), Zeitleiste
+     des Dokuments), und rückwärts, wenn sie wieder ganz oben steht (playbackRate −1). Die Bühne klebt dabei unter der
+     Kopfleiste, die Strecke ist nur eine halbe Fensterhöhe länger als die Bühne. Dieselben Keyframes in allen Browsern
+     (keine animation-timeline nötig); die Phasen sind Keyframe-Offsets.
+   - Aussage, Telefon und Metall-Zahlen folgen dem Scrollen, je Bühne EINE Zeitleiste: die Strecke des Telefons (--tf),
+     die Aussage (--aw), jede Metall-Zahl (--mz). Alle Teile einer Bühne laufen über dieselbe Spanne (gepinnt: contain
+     0–100 % = genau solange die Bühne steht; sonst cover), jedes Segment beginnt und endet weich
      (cubic-bezier(0.33, 0, 0.67, 1) = smoothstep), am Ende steht die Endlage still, bevor die Bühne sich löst.
-   - Mit scroll-driven animations (@supports weiter unten) folgen die Animationen der Zeitleiste. Ohne sie stehen
-     dieselben Animationen mit 1 s Dauer still (paused), und assets/js/bewegung.js setzt ihre Zeit nach dem Scrollstand
+     Mit scroll-driven animations (@supports weiter unten) folgen die Animationen der Zeitleiste. Ohne sie stehen
+     dieselben Animationen mit 1 s Dauer still (paused), und bewegung.js setzt ihre Zeit nach dem Scrollstand
      (currentTime = Fortschritt × 1 s) – eine Quelle für die Bewegung.
-   - will-change nur, solange eine Bühne nahe am Fenster ist (.ist-nah, bewegung.js).
+   - will-change nur, solange eine Bühne nahe am Fenster ist (.ist-nah, bewegung.js) – nicht an den Ablauf gebunden: Am
+     Ende einer Animation fällt nichts weg, es wird nichts neu gerastert.
    ------------------------------------------------------------------------------------------------------------------ */
 .aw {
   --aw-i: 0;
@@ -6908,13 +6914,14 @@ p.aussage-teil .aw {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Strecken: am Rechner zwei Fensterhöhen Weg für die Explosion, eineinhalb für das Telefon; die Bühne klebt unter der
-     Kopfleiste. Am Handy ist der Weg der Explosion kürzer, das Telefon klebt nicht (es richtet sich beim Durchscrollen
-     auf). Gepinnt ist die Bühne genau das Fenster ohne Kopfleiste – auch bei wenig Höhe (320 × 568, 1280 × 600) ohne
-     Mindesthöhe, sonst schnitte das Fenster ihren unteren Rand ab (Legende, Stapel, „Alles greift ineinander.“). */
+  /* Strecken: Die Explosion läuft von selbst (auf der Zeit) – ihre Bühne klebt nur eine halbe Fensterhöhe lang unter der
+     Kopfleiste: Man sieht den Ablauf auch, wenn man gleich weiterscrollt, und hat keinen langen leeren Weg. Das Telefon
+     hat am Rechner eineinhalb Fensterhöhen Weg; am Handy klebt es nicht (es richtet sich beim Durchscrollen auf). Gepinnt
+     ist die Bühne genau das Fenster ohne Kopfleiste – auch bei wenig Höhe (320 × 568, 1280 × 600) ohne Mindesthöhe,
+     sonst schnitte das Fenster ihren unteren Rand ab (Legende, Stapel, „Alles greift ineinander.“). */
   .js:not(.ist-ruhig) .ex-strecke {
-    height: calc(100vh - var(--kopf-h) + 200vh);
-    height: calc(100svh - var(--kopf-h) + 200vh);
+    height: calc(100vh - var(--kopf-h) + 50vh);
+    height: calc(100svh - var(--kopf-h) + 50vh);
   }
 
   .js:not(.ist-ruhig) .ex-buehne {
@@ -6933,7 +6940,13 @@ p.aussage-teil .aw {
     animation-play-state: paused;
   }
 
-  /* Explosion (Kapitel 1) */
+  /* Explosion (Kapitel 1): auf der Zeit, 2,5 s; angehalten am Anfang (zerlegt), bewegung.js spielt sie vor- und
+     rückwärts ab. Alle Teile haben dieselbe Dauer – so bleiben sie beim Umkehren im Gleichschritt. */
+  .js:not(.ist-ruhig) :is(.ex-stapel, .ex-ebene, .ex-schatten, .ex-kante, .ex-bild, .ex-boden, .ex-achse, .ex-marken, .ex-legende, .rechner, .ex-kopf-b),
+  .js:not(.ist-ruhig) .ex-ebene::after {
+    animation-duration: 2.5s;
+  }
+
   .js:not(.ist-ruhig) .ex-stapel {
     animation-name: ex-stapel;
   }
@@ -7050,11 +7063,6 @@ p.aussage-teil .aw {
   }
 
   @media (max-width: 899px) {
-    .js:not(.ist-ruhig) .ex-strecke {
-      height: calc(100vh - var(--kopf-h) + 150vh);
-      height: calc(100svh - var(--kopf-h) + 150vh);
-    }
-
     /* Bühne in Fensterhöhe (Platz für die zerlegte Lage und die Legende); zusammengesetzt rückt der Laptop an „Alles
        greift ineinander.“ heran – sonst bliebe dort die Lücke der zerlegten Lage */
     .js:not(.ist-ruhig) .ex-buehne {
@@ -7110,15 +7118,10 @@ p.aussage-teil .aw {
 }
 
 /* Mit scroll-driven animations: die Zeitleisten (die Kopfleiste abgezogen) und je Bühne die Spanne. Verlangt wird auch
-   animation-range – ohne Spanne liefe jede Animation über „cover“ und die gepinnten Bühnen bewegten sich vor dem Pinnen
-   (bewegung.js fragt dasselbe ab). */
+   animation-range – ohne Spanne liefe jede Animation über „cover“ und die gepinnte Bühne des Telefons bewegte sich vor
+   dem Pinnen (bewegung.js fragt dasselbe ab). Die Explosion braucht keine Zeitleiste (sie läuft auf der Zeit). */
 @supports (animation-timeline: view()) and (animation-range: contain 0% contain 100%) {
   @media (prefers-reduced-motion: no-preference) {
-    .js:not(.ist-ruhig) .ex-strecke {
-      view-timeline: --ex block;
-      view-timeline-inset: var(--kopf-h) 0px;
-    }
-
     .js:not(.ist-ruhig) .tf-strecke {
       view-timeline: --tf block;
       view-timeline-inset: var(--kopf-h) 0px;
@@ -7132,13 +7135,6 @@ p.aussage-teil .aw {
     .js:not(.ist-ruhig) .metall {
       view-timeline: --mz block;
       view-timeline-inset: var(--kopf-h) 0px;
-    }
-
-    .js:not(.ist-ruhig) :is(.ex-stapel, .ex-ebene, .ex-schatten, .ex-kante, .ex-bild, .ex-boden, .ex-achse, .ex-marken, .ex-legende, .rechner, .ex-kopf-b),
-    .js:not(.ist-ruhig) .ex-ebene::after {
-      animation-play-state: running;
-      animation-timeline: --ex;
-      animation-range: contain 0% contain 100%;
     }
 
     .js:not(.ist-ruhig) :is(.telefon, .telefon-bild-b, .glockenfeld) {
@@ -7170,17 +7166,19 @@ p.aussage-teil .aw {
 }
 
 /* Keyframes (Namen ex-, tf-, aw-, mz-). Die Endlage steht jeweils am Ende und gleicht der aus Abschnitt 3, 5 und 10.
-   Explosion: 0–5 % zerlegt, 5–15 % blendet die Beschriftung aus, 15–72 % fährt der Stapel zusammen (isometrisch →
-   frontal, die Abstände schrumpfen), 54–74 % tauchen die Ebenen in die Grundplatte, 60–82 % entsteht der Laptop,
-   72–88 % erscheint „Alles greift ineinander.“, ab 88 % steht alles still. */
+   Explosion (auf der Zeit, 2,5 s; Prozent der Dauer, in Klammern ab dem Auslösen): 0–13 % (0–0,33 s) blendet die
+   Beschriftung aus, 6,5–76 % (0,16–1,9 s) fährt der Stapel zusammen (isometrisch → frontal, die Abstände schrumpfen;
+   sanft an, lang und weich aus: cubic-bezier(0.32, 0, 0.18, 1)), Kanten, Schatten, Glanz und Boden blenden dabei aus, 46–74 %
+   (1,15–1,85 s) tauchen die Ebenen in die Grundplatte, 54–82 % (1,35–2,05 s) entsteht der Laptop, 69–100 %
+   (1,73–2,5 s) erscheint „Alles greift ineinander.“. Rückwärts (playbackRate −1) dieselben Wege in umgekehrter Folge. */
 @keyframes ex-stapel {
   0%,
-  15% {
+  6.5% {
     transform: translate(var(--ex-x0), var(--ex-y0)) scale(var(--ex-k0)) rotateX(57deg) rotateZ(-34deg);
-    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+    animation-timing-function: cubic-bezier(0.32, 0, 0.18, 1);
   }
 
-  72%,
+  76%,
   100% {
     transform: translate(0px, var(--ex-ye, 0px)) scale(1) rotateX(0deg) rotateZ(0deg);
   }
@@ -7188,12 +7186,12 @@ p.aussage-teil .aw {
 
 @keyframes ex-ebene {
   0%,
-  15% {
+  6.5% {
     transform: translateZ(calc((var(--ex-i) - 2.5) * var(--ex-ab) + var(--ex-i) * 0.6px));
-    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+    animation-timing-function: cubic-bezier(0.32, 0, 0.18, 1);
   }
 
-  72%,
+  76%,
   100% {
     transform: translateZ(calc(var(--ex-i) * 0.6px));
   }
@@ -7201,17 +7199,17 @@ p.aussage-teil .aw {
 
 @keyframes ex-schatten {
   0%,
-  15% {
+  6.5% {
     transform: translateZ(calc(var(--ex-ab) * -0.9 - 1px)) translate(calc(var(--ex-bw) * 0.023), calc(var(--ex-bw) * 0.034));
     opacity: 1;
-    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+    animation-timing-function: cubic-bezier(0.32, 0, 0.18, 1);
   }
 
-  66% {
+  58% {
     opacity: 0;
   }
 
-  72%,
+  76%,
   100% {
     transform: translateZ(-1px) translate(calc(var(--ex-bw) * 0.023), calc(var(--ex-bw) * 0.034));
     opacity: 0;
@@ -7220,13 +7218,13 @@ p.aussage-teil .aw {
 
 @keyframes ex-schatten-basis {
   0%,
-  15% {
+  6.5% {
     transform: translateZ(calc(var(--ex-ab) * -0.7 - 2px)) translate(calc(var(--ex-bw) * 0.034), calc(var(--ex-bw) * 0.057));
     opacity: 1;
-    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+    animation-timing-function: cubic-bezier(0.32, 0, 0.18, 1);
   }
 
-  72%,
+  76%,
   100% {
     transform: translateZ(-2px) translate(calc(var(--ex-bw) * 0.034), calc(var(--ex-bw) * 0.057));
     opacity: 0;
@@ -7235,12 +7233,12 @@ p.aussage-teil .aw {
 
 @keyframes ex-kante {
   0%,
-  15% {
+  6.5% {
     opacity: 1;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  62%,
+  48%,
   100% {
     opacity: 0;
   }
@@ -7248,12 +7246,12 @@ p.aussage-teil .aw {
 
 @keyframes ex-glanz {
   0%,
-  15% {
+  6.5% {
     opacity: 1;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  70%,
+  66%,
   100% {
     opacity: 0;
   }
@@ -7261,12 +7259,12 @@ p.aussage-teil .aw {
 
 @keyframes ex-glanz-basis {
   0%,
-  15% {
+  6.5% {
     opacity: 1;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  72%,
+  76%,
   100% {
     opacity: 0.12;
   }
@@ -7274,7 +7272,7 @@ p.aussage-teil .aw {
 
 @keyframes ex-bild {
   0%,
-  54% {
+  46% {
     opacity: 0.94;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
@@ -7287,38 +7285,36 @@ p.aussage-teil .aw {
 
 @keyframes ex-boden {
   0%,
-  15% {
+  6.5% {
     opacity: 1;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  72%,
+  76%,
   100% {
     opacity: 0;
   }
 }
 
 @keyframes ex-achse {
-  0%,
-  5% {
+  0% {
     opacity: 0.9;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  15%,
+  13%,
   100% {
     opacity: 0;
   }
 }
 
 @keyframes ex-marken {
-  0%,
-  5% {
+  0% {
     opacity: 1;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  15%,
+  13%,
   100% {
     opacity: 0;
   }
@@ -7326,7 +7322,7 @@ p.aussage-teil .aw {
 
 @keyframes ex-rechner {
   0%,
-  60% {
+  54% {
     opacity: 0;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
@@ -7339,12 +7335,11 @@ p.aussage-teil .aw {
 
 @keyframes ex-kopf-b {
   0%,
-  72% {
+  69% {
     opacity: 0;
     animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
   }
 
-  88%,
   100% {
     opacity: 1;
   }
