@@ -2768,7 +2768,7 @@ ol.plan {
 
 .fuss-raster {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
   gap: 36px 40px;
 }
 
@@ -3299,6 +3299,271 @@ ol.plan {
 @media (max-width: 559px) {
   .mail-facts div {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Über uns (ueber-uns.html): „Mission & Leitbild“ und „Wer wir sind“ – Abschnitte mit Linie, Zwischenüberschriften,
+   Fließtext mit Punkten, vier Leitsätze als Karten, nummerierte Schritte und ein Kontaktblock */
+.ueber .page-head {
+  max-width: 52rem;
+  margin-bottom: clamp(36px, 5vw, 64px);
+}
+
+.ueber .page-head .lead {
+  max-width: 42rem;
+}
+
+.ueber-inhalt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ueber-inhalt a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgb(143 176 255 / 8%);
+  box-shadow: inset 0 0 0 1px var(--linie-stark);
+  color: var(--hell);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ueber-teil {
+  padding: clamp(56px, 7vw, 96px) 0;
+  border-top: 1px solid var(--linie);
+  scroll-margin-top: 56px;
+}
+
+.ueber-teil > .titel-3 {
+  max-width: 48rem;
+}
+
+.ueber-spalten {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(32px, 5vw, 72px);
+  margin-top: clamp(36px, 4vw, 56px);
+}
+
+.ueber h3 {
+  margin-bottom: 12px;
+  color: var(--hell);
+  font: 650 clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem) / 1.25 var(--f-display);
+  letter-spacing: -0.015em;
+}
+
+.ueber-text h3:not(:first-child) {
+  margin-top: 36px;
+}
+
+.ueber-text p,
+.leitsatz p,
+.ueber-liste li,
+.ueber-schritte li {
+  color: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.ueber-text p + p {
+  margin-top: 14px;
+}
+
+.ueber-liste {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ueber-liste li {
+  position: relative;
+  padding-left: 26px;
+}
+
+.ueber-liste li::before {
+  position: absolute;
+  top: 0.62em;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--himmel);
+  box-shadow: 0 0 0 4px rgb(143 176 255 / 15%);
+  content: "";
+}
+
+.leitbild-kopf {
+  margin-top: clamp(48px, 6vw, 80px);
+}
+
+.leitbild {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.leitsatz {
+  padding: 28px 28px 30px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgb(143 176 255 / 6%), rgb(143 176 255 / 0%));
+  box-shadow: inset 0 0 0 1px var(--linie-stark);
+}
+
+.leitsatz svg.i {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 16px;
+  color: var(--himmel);
+}
+
+.leitsatz h4 {
+  margin-bottom: 8px;
+  color: var(--hell);
+  font: 650 1.25rem / 1.3 var(--f-display);
+  letter-spacing: -0.01em;
+}
+
+.leitsatz .ueber-liste li {
+  font-size: 1rem;
+}
+
+.personen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 40rem;
+  margin-top: 32px;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  box-shadow: inset 0 0 0 1px var(--linie-stark);
+  color: var(--text);
+}
+
+.person b {
+  display: block;
+  color: var(--hell);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.person-zeichen {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2f5ff2, #8fb0ff);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ueber-schritte {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+  counter-reset: schritt;
+}
+
+.ueber-schritte li {
+  position: relative;
+  padding-left: 48px;
+  counter-increment: schritt;
+}
+
+.ueber-schritte li::before {
+  display: grid;
+  position: absolute;
+  top: 0;
+  left: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blau);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1;
+  content: counter(schritt);
+}
+
+.ueber-schritte b {
+  color: var(--hell);
+}
+
+.ueber-kontakt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px 40px;
+  margin-top: clamp(40px, 5vw, 64px);
+  padding: clamp(24px, 3vw, 36px);
+  border-radius: 26px;
+  background: rgb(143 176 255 / 5%);
+  box-shadow: inset 0 0 0 1px var(--linie-stark);
+}
+
+.ueber-kontakt dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 18px;
+  margin-top: 12px;
+  font-size: 1.0625rem;
+}
+
+.ueber-kontakt dt {
+  color: var(--leise);
+}
+
+.ueber-kontakt dd {
+  color: var(--hell);
+}
+
+.ueber-kontakt dd a {
+  color: var(--himmel);
+  text-decoration: none;
+}
+
+.ueber-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 899px) {
+  .ueber-spalten,
+  .leitbild,
+  .ueber-kontakt {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 559px) {
+  .personen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ueber-kontakt dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .ueber-kontakt dd + dt {
+    margin-top: 10px;
   }
 }
 

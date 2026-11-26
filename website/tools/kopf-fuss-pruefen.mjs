@@ -14,7 +14,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SEITEN = ["index.html", "impressum.html", "datenschutz.html", "404.html", "newsletter.php"];
+const SEITEN = ["index.html", "ueber-uns.html", "impressum.html", "datenschutz.html", "404.html", "newsletter.php"];
 let fehler = 0;
 const melde = (ok, text) => {
   console.log(`${ok ? "ok  " : "FEHL"} ${text}`);
