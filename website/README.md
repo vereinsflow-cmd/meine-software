@@ -267,22 +267,32 @@ Das Logo „Punktring“ (seit 28.11.2026, vorher das „V“ aus drei Etappen v
 Mitglieder) bilden eine Sprechblase – unten links öffnet sich der Ring, drei kleiner werdende Punkte laufen als Zipfel heraus –,
 in der Mitte ein Kleeblatt-Knoten (alles ist verbunden). Farben rundum Grün `#34D399` → Türkis `#22D3EE` → Vereinsblau
 `#3A6BEA`, der Knoten Grün → Vereinsblau; daneben die Wortmarke „VereinsFlow“ (Manrope ExtraBold, gerade, ohne Unterstrich),
-„Vereins“ weiß auf dunklem Grund, „Flow“ im Verlauf Türkis → Vereinsblau. Für kleine Größen (Favicon, Kopf- und Fußzeile)
-gibt es die **kleine Form**: der Ring als durchgehender Bogen mit Lücke und Zipfel aus zwei Punkten, ein kräftigerer Knoten;
-die **kompakte Fassung** stellt sie neben den Namen. Einzelheiten: `docs/brand/vereinsflow-logo-paket/LIESMICH.md`.
+„Vereins“ weiß auf dunklem Grund, „Flow“ im Verlauf Türkis → Vereinsblau. Das Logo ist **größenabhängig** (seit 28.11.2026,
+wie bei großen Marken): je kleiner, desto weniger Punktringe mit größeren Punkten, damit überall Punkte sichtbar bleiben.
+Die **kompakte Fassung** stellt das Zeichen neben einen etwas größeren Namen. Einzelheiten und Mindestgrößen:
+`docs/brand/vereinsflow-logo-paket/LIESMICH.md` („Welche Fassung bei welcher Größe“).
+
+| Einsatz auf der Website                         | Größe                              | Fassung                         | Datei                                |
+| ----------------------------------------------- | ---------------------------------- | ------------------------------- | ------------------------------------ |
+| Browser-Tab                                     | 16 px (ICO 16 / 32 / 48)           | P1 · 1 Ring, Tinte-Kachel       | `favicon.svg`, `favicon.ico`         |
+| Kopfleiste (Handy) / Kopfleiste / Fußzeile      | 115 × 28 / 124 × 30 / 148 × 36 px  | kompakt mit P2 · 2 Ringe        | `assets/img/logo-dark.svg`           |
+| Kopf der Bestätigungs-E-Mail                    | gezeigt 300 × 46 px                | kompakt mit P3 · 3 Ringe        | `assets/img/logo-mail.png` (+ `@2x`) |
+| Startbildschirm, Web-Manifest                   | 180 / 192 / 512 px                 | Original · 4 Ringe              | `apple-touch-icon.png`, `android-chrome-*.png` |
+| Vorschaubild beim Teilen, Vorlagen              | groß                               | Original · 4 Ringe              | `assets/img/og-image.png`, `assets/brand/*` |
 
 - **Quelle aller Logo-Dateien ist das Logo-Paket** der Gestaltung (Ordner `02-website`, Dateien mit denselben Namen wie hier):
   `favicon.svg`/`.ico`, `apple-touch-icon.png`, `android-chrome-192/512.png`, `assets/img/logo.svg`, `logo-dark.svg`,
   `og-image.png`, `logo-mail.png` (+ `@2x`) und `assets/brand/*`. Nicht selbst nachzeichnen oder umfärben; ein neues Paket
   übernimmt `node tools/make-logo-assets.mjs <Ordner des Pakets>` (prüft auch Bildgrößen und die `<img>`-Angaben). Danach
-  `?v=` an den Links erhöhen – auch in `site.webmanifest` (heute `?v=2026112801` an Favicons, Manifest, Logo und
-  `og-image.png`).
-- **Favicons und Startbildschirm:** `favicon.svg`/`favicon.ico` (16, 32, 48 px) zeigen die kleine Form auf einer Kachel in
-  Tinte `#0F1C2E` – der Knoten dort etwas größer und in aufgehellten Tönen, damit er bei 16 px nicht zum Fleck wird;
+  `?v=` an den Links der geänderten Dateien erhöhen (heute `?v=2026112802` an `favicon.svg`, `favicon.ico`, `logo-dark.svg`
+  und dem Link auf `site.webmanifest`; `?v=2026112801` an `apple-touch-icon.png`, `og-image.png` und den Symbolen in
+  `site.webmanifest`, die sich am 28.11. nicht mehr geändert haben).
+- **Favicons und Startbildschirm:** `favicon.svg`/`favicon.ico` (16, 32, 48 px) zeigen P1 (1 Ring) auf einer Kachel in
+  Tinte `#0F1C2E` – der Knoten dort in aufgehellten Tönen, damit er bei 16 px nicht in der Kachel absäuft;
   `apple-touch-icon.png` (180) und `android-chrome-192/512.png` (Manifest) zeigen das Original mit den Punktringen.
-- **Kopf- und Fußzeile:** Alle Seiten sind dunkel; dort steht `logo-dark.svg`, die **kompakte** Fassung (kleine Form + Name,
+- **Kopf- und Fußzeile:** Alle Seiten sind dunkel; dort steht `logo-dark.svg`, die **kompakte** Fassung (P2 + Name,
   viewBox 840,24 × 204 ≈ 4,12 : 1) – in der Kopfleiste mit `width="124" height="30"` (unter 480 px per CSS 115 × 28), in der
-  Fußzeile mit `148 × 36` (`.kopf-marke img`, `.fuss-marke img` in `site.css`). Die Halbtonfassung mit den Punktringen
+  Fußzeile mit `148 × 36` (`.kopf-marke img`, `.fuss-marke img` in `site.css`). Das Original mit vier feinen Punktringen
   verschwämme in dieser Höhe. Die helle Fassung `logo.svg` zeigt keine Seite mehr (sie bleibt für die Werkzeuge und
   Vorlagen). Kopien von Kopf und Fuß: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`
   (gleich gehalten, `tools/kopf-fuss-pruefen.mjs`).
@@ -308,7 +318,7 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   `/vereinsflow-daten` mitsichern und bei einem Umzug mitnehmen. ZIP-Paket, Entpack-Helfer und SFTP-Upload berühren ihn nicht.
 - **Bestätigungs-E-Mail:** gestaltet (HTML) und zusätzlich als reiner Text für Programme ohne HTML; Texte in
   `vf_mail_bestaetigen` und `vf_mail_bestaetigen_html`. Das Logo darin ist `assets/img/logo-mail.png` aus dem Logo-Paket
-  (570 × 87 mit der kompakten Fassung des Logos in der Mitte, gezeigt 300 px breit und mittig; für hohe Pixeldichte `logo-mail@2x.png` per `srcset`)
+  (570 × 87 mit der kompakten Fassung des Logos – P3, 3 Ringe – in der Mitte, gezeigt 300 px breit und mittig; für hohe Pixeldichte `logo-mail@2x.png` per `srcset`)
   und wird von der Website geladen – die Dateien nicht umbenennen oder löschen, sonst fehlt das Logo auch in
   bereits verschickten E-Mails. Die Mail enthält bewusst nichts aus dem Formular (auch nicht den Vereinsnamen).
 - **Hinweis ans Team:** Je bestätigter Anmeldung geht eine kurze E-Mail an `kontakt@vereins-flow.com` – bewusst ohne Adresse,

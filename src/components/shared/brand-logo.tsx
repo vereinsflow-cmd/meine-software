@@ -10,10 +10,12 @@ import { cn } from "@/lib/utils";
  * HTML, CSS blendet das unpassende aus (`dark:`) – so ist beim Umschalten der Darstellung nichts nachzuladen, und das ausgeblendete
  * Bild lesen Screenreader nicht vor.
  *
- *   horizontal  kompakte Fassung: kleine Form des Zeichens links, Wortmarke rechts – für Kopfzeilen und Seitenleisten (die
- *               Halbtonpunkte verschwämmen bei 40–44 px Höhe)
- *   stacked     Zeichen (mit Punktringen) oben, Wortmarke darunter – für die Anmeldung
- *   icon        nur das Zeichen (mit Punktringen, ab gut 100 px), ohne Wortmarke
+ *   horizontal  kompakte Fassung mit P3 (Zeichen mit 3 Punktringen links, Wortmarke rechts) – für Kopfzeilen und
+ *               Seitenleisten (die vier feinen Punktringe des Originals verschwämmen bei 40–44 px Höhe)
+ *   stacked     Zeichen im Original (4 Punktringe) oben, Wortmarke darunter – für die Anmeldung
+ *   icon        nur das Zeichen im Original (4 Punktringe), ohne Wortmarke – erst ab 112 px Höhe; kleiner die Fassungen mit
+ *               weniger Ringen (`symbol-klein.svg` = P1 bis 29 px, P2/P3 als symbol-mittel/-gross im Logo-Paket).
+ *               Derzeit nirgends verwendet; `Brand` setzt dafür ohne `logoClassName` nur 2 rem – dann eine Größe angeben.
  */
 export type LogoVariant = "horizontal" | "stacked" | "icon";
 

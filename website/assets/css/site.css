@@ -634,8 +634,8 @@ svg.icon {
   border-radius: 8px;
 }
 
-/* Logo „Punktring“ in der kompakten Fassung (kleine Form + Name, 840 × 204 ≈ 4,12 : 1): Bei dieser Höhe bleiben Ring,
-   Zipfel und Knoten lesbar – die Halbtonfassung verschwämme hier. */
+/* Logo „Punktring“ in der kompakten Fassung mit P2 (Zeichen mit 2 Punktringen + Name, 840 × 204 ≈ 4,12 : 1): Bei dieser
+   Höhe bleiben die Punkte, Zipfel und Knoten lesbar – die vier feinen Punktringe des Originals verschwämmen hier. */
 .kopf-marke img {
   width: 124px;
   height: 30px;
