@@ -41,7 +41,7 @@ export function Sidebar({ groups, userName }: { groups: NavGroup[]; userName: st
       >
         <div className="flex h-(--app-header-height) shrink-0 items-center justify-center">
           {/* Das Zeichen in einem weißen Kreis – wie das runde Logo der Vorlage, aber in den Farben des Logos (auch im Dunkeln weiß).
-              Bei 1,75 rem die kleine Form (Ring als Bogen, kräftiger Knoten): Die feinen Punktringe verschwämmen hier. */}
+              Bei 1,75 rem die Fassung P1 (ein Punktring mit größeren Punkten): Die vier feinen Punktringe verschwämmen hier. */}
           <Link
             href="/dashboard"
             aria-label="VereinsFlow – Startseite"

@@ -83,7 +83,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <title>' . vf_h($titel) . ' – VereinsFlow</title>
   <meta name="robots" content="noindex">
   <meta name="color-scheme" content="dark">
-  <link rel="icon" href="/favicon.svg?v=2026112801" type="image/svg+xml">
+  <link rel="icon" href="/favicon.svg?v=2026112802" type="image/svg+xml">
   <link rel="stylesheet" href="' . vf_h(VF_STYLESHEET) . '">
   <script src="' . vf_h(VF_SKRIPT) . '" defer></script>
 </head>
@@ -105,7 +105,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
 
 <header class="kopf" data-kopf>
   <div class="kopf-leiste">
-    <a class="kopf-marke" href="/" aria-label="VereinsFlow – zur Startseite"><img src="/assets/img/logo-dark.svg?v=2026112801" alt="" width="124" height="30"></a>
+    <a class="kopf-marke" href="/" aria-label="VereinsFlow – zur Startseite"><img src="/assets/img/logo-dark.svg?v=2026112802" alt="" width="124" height="30"></a>
     <nav class="kopf-navi" aria-label="Hauptnavigation">
       <a href="/#helferschichten">Helferplanung</a>
       <a href="/#funktionen">Funktionen</a>
@@ -150,7 +150,7 @@ function vf_seite(int $status, string $titel, string $text, string $zusatz = '',
   <div class="breite">
     <div class="fuss-raster">
       <div class="fuss-marke">
-        <img src="/assets/img/logo-dark.svg?v=2026112801" alt="VereinsFlow" width="148" height="36">
+        <img src="/assets/img/logo-dark.svg?v=2026112802" alt="VereinsFlow" width="148" height="36">
         <p>Bringt Vereinsarbeit in Fluss. Vereinsverwaltung mit Helferplanung&nbsp;– für Vorstand, Abteilungen und Helfer.</p>
         <!-- Absender und Kontakt: dieselben Angaben wie im Impressum -->
         <address class="fuss-kontakt">
