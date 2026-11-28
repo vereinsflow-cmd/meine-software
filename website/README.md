@@ -117,7 +117,7 @@ Der Ordner (ohne `tools/`, `upload/`, `README.md`, `Vorschau-starten.cmd` und `V
   Darum nie Stildatei oder Skripte vom Webspace zurück in den Ordner kopieren.
   Wurden `assets/css/site.css` oder die Skripte in `assets/js/` geändert, vorher die Versionsnummer an ihren Links in allen
   HTML-Dateien und in `newsletter.php` (`VF_STYLESHEET`, `VF_SKRIPT`) erhöhen (`?v=` mit dem Datum und einer laufenden
-  Nummer, derzeit `?v=2026111601` an der Stildatei und an `site.js`, `?v=20260927-2` an `frueh.js`; Module, die andere
+  Nummer, derzeit `?v=2026112801` an der Stildatei und `?v=2026111602` an `site.js`, `?v=20260927-2` an `frueh.js`; Module, die andere
   Module importieren, tragen die Nummer auch dort). Sonst liefern Browser und der Zwischenspeicher von
   IONOS bis zu einen Tag lang die alte Datei aus (sie dürfen CSS und JS einen Tag lang zwischenspeichern, siehe `.htaccess`).
   HTML-Seiten fragt der Browser dagegen bei jedem Aufruf nach (`Cache-Control: no-cache`, unverändert kommt nur „304“) –
@@ -263,25 +263,34 @@ Hinweise zu den Aufnahmen:
 
 ## Logo
 
-Das Logo (seit Oktober 2026): ein „V“ aus drei schwarzen (`#1A1A1A`) Etappen links und drei blauen (Vereinsblau `#3A6BEA`)
-rechts, darunter ein oranger Punkt (Signalorange `#FF8A5E`) mit Tempo-Strichen; daneben die Wortmarke „VereinsFlow“ (Manrope
-ExtraBold, geneigt) mit orangem Unterstrich. Für dunkle Flächen gibt es eine weiße Fassung mit Himmel-Blau (`#8FB0FF`), für
-kleine Größen bis 32 px eine ruhigere Form (zwei Etappen je Seite, ohne Tempo-Striche).
+Das Logo „Punktring“ (seit 28.11.2026, vorher das „V“ aus drei Etappen vom Oktober 2026): vier Ringe aus Punkten (die
+Mitglieder) bilden eine Sprechblase – unten links öffnet sich der Ring, drei kleiner werdende Punkte laufen als Zipfel heraus –,
+in der Mitte ein Kleeblatt-Knoten (alles ist verbunden). Farben rundum Grün `#34D399` → Türkis `#22D3EE` → Vereinsblau
+`#3A6BEA`, der Knoten Grün → Vereinsblau; daneben die Wortmarke „VereinsFlow“ (Manrope ExtraBold, gerade, ohne Unterstrich),
+„Vereins“ weiß auf dunklem Grund, „Flow“ im Verlauf Türkis → Vereinsblau. Für kleine Größen (Favicon, Kopf- und Fußzeile)
+gibt es die **kleine Form**: der Ring als durchgehender Bogen mit Lücke und Zipfel aus zwei Punkten, ein kräftigerer Knoten;
+die **kompakte Fassung** stellt sie neben den Namen. Einzelheiten: `docs/brand/vereinsflow-logo-paket/LIESMICH.md`.
 
 - **Quelle aller Logo-Dateien ist das Logo-Paket** der Gestaltung (Ordner `02-website`, Dateien mit denselben Namen wie hier):
   `favicon.svg`/`.ico`, `apple-touch-icon.png`, `android-chrome-192/512.png`, `assets/img/logo.svg`, `logo-dark.svg`,
   `og-image.png`, `logo-mail.png` (+ `@2x`) und `assets/brand/*`. Nicht selbst nachzeichnen oder umfärben; ein neues Paket
   übernimmt `node tools/make-logo-assets.mjs <Ordner des Pakets>` (prüft auch Bildgrößen und die `<img>`-Angaben). Danach
-  `?v=` an den Links erhöhen.
-- **Kopf- und Fußzeile:** Alle Seiten sind dunkel; in der Kopfleiste steht `logo-dark.svg` mit `width="125" height="28"`,
-  in der Fußzeile mit `160 × 36`. Die helle Fassung `logo.svg` zeigt keine Seite mehr (sie bleibt für die Werkzeuge und
+  `?v=` an den Links erhöhen – auch in `site.webmanifest` (heute `?v=2026112801` an Favicons, Manifest, Logo und
+  `og-image.png`).
+- **Favicons und Startbildschirm:** `favicon.svg`/`favicon.ico` (16, 32, 48 px) zeigen die kleine Form auf einer Kachel in
+  Tinte `#0F1C2E` – der Knoten dort etwas größer und in aufgehellten Tönen, damit er bei 16 px nicht zum Fleck wird;
+  `apple-touch-icon.png` (180) und `android-chrome-192/512.png` (Manifest) zeigen das Original mit den Punktringen.
+- **Kopf- und Fußzeile:** Alle Seiten sind dunkel; dort steht `logo-dark.svg`, die **kompakte** Fassung (kleine Form + Name,
+  viewBox 840,24 × 204 ≈ 4,12 : 1) – in der Kopfleiste mit `width="124" height="30"` (unter 480 px per CSS 115 × 28), in der
+  Fußzeile mit `148 × 36` (`.kopf-marke img`, `.fuss-marke img` in `site.css`). Die Halbtonfassung mit den Punktringen
+  verschwämme in dieser Höhe. Die helle Fassung `logo.svg` zeigt keine Seite mehr (sie bleibt für die Werkzeuge und
   Vorlagen). Kopien von Kopf und Fuß: `index.html`, `impressum.html`, `datenschutz.html`, `404.html`, `newsletter.php`
   (gleich gehalten, `tools/kopf-fuss-pruefen.mjs`).
 - **Pinnnadel:** Der orange Punkt mit den Tempo-Strichen aus dem Logo war in der Gestaltung B4 Schlusspunkt der großen
   Überschriften und Spitze des Kapitel-Fadens; die Pro-Gestaltung setzt einen gewöhnlichen Punkt („Schicht für
   Schicht.“) und nutzt die Symbole nicht mehr.
-- **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen das V in der ruhigeren Form, spiegelpoliert bzw. als
-  glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
+- **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen noch das **alte** V in der ruhigeren Form (offen: auf das
+  neue Zeichen umstellen), spiegelpoliert bzw. als glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
   Regeln von `.device-mark` in `site.css`).
 - **Aufnahmen der Anwendung** zeigen das Logo der Anwendung (Seitenleiste im Dashboard und im Laptop) – ändert es sich dort,
   die Bilder neu aufnehmen (siehe „Hinweise zu den Aufnahmen“).
@@ -299,7 +308,7 @@ Besucher können sich im Abschnitt `#benachrichtigen` für eine E-Mail zum Start
   `/vereinsflow-daten` mitsichern und bei einem Umzug mitnehmen. ZIP-Paket, Entpack-Helfer und SFTP-Upload berühren ihn nicht.
 - **Bestätigungs-E-Mail:** gestaltet (HTML) und zusätzlich als reiner Text für Programme ohne HTML; Texte in
   `vf_mail_bestaetigen` und `vf_mail_bestaetigen_html`. Das Logo darin ist `assets/img/logo-mail.png` aus dem Logo-Paket
-  (570 × 87 mit dem Logo in der Mitte, gezeigt 300 px breit und mittig; für hohe Pixeldichte `logo-mail@2x.png` per `srcset`)
+  (570 × 87 mit der kompakten Fassung des Logos in der Mitte, gezeigt 300 px breit und mittig; für hohe Pixeldichte `logo-mail@2x.png` per `srcset`)
   und wird von der Website geladen – die Dateien nicht umbenennen oder löschen, sonst fehlt das Logo auch in
   bereits verschickten E-Mails. Die Mail enthält bewusst nichts aus dem Formular (auch nicht den Vereinsnamen).
 - **Hinweis ans Team:** Je bestätigter Anmeldung geht eine kurze E-Mail an `kontakt@vereins-flow.com` – bewusst ohne Adresse,
@@ -467,8 +476,8 @@ die Meldung „Refused to apply a stylesheet …“ kommt dann vom Werkzeug, nic
   (siehe `/registrieren` der Anwendung). Ein Kontaktformular gibt es bewusst nicht; das einzige Formular ist die Anmeldung
   „Beim Start benachrichtigen“ (siehe unten).
 - **Schrift:** Systemschrift des Geräts (auf Apple-Geräten SF Pro, unter Windows Segoe UI). Die Wortmarke des Logos (Manrope
-  ExtraBold, geneigt) liegt als Vektorgrafik vor.
-- **Farben:** die Farben des Logos – Vereinsblau `#3A6BEA`, Himmel `#8FB0FF`, Signalorange `#FF8A5E` (nur noch im Logo) –
+  ExtraBold, gerade) liegt als Vektorgrafik vor.
+- **Farben:** Vereinsblau `#3A6BEA` (auch im Logo) und Himmel `#8FB0FF` (Signalorange gehörte zum alten Logo, es kommt nicht mehr vor) –
   dazu die Nacht von Tiefblau bis Schwarz (`--nacht-0` `#02040B` bis `--nacht-3` `#0C1A3C`). Vereinsblau trägt die
   Hauptaktion („Demo anfragen“, weiße Schrift 4,7 : 1), Himmel ist Licht und Akzent. Textfarben mit gemessenem Kontrast
   (Werte und Verhältnisse oben in `site.css`, `:root`). Die Seite folgt bewusst nicht der hellen oder dunklen Einstellung

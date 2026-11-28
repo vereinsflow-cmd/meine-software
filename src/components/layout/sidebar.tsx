@@ -40,14 +40,15 @@ export function Sidebar({ groups, userName }: { groups: NavGroup[]; userName: st
         className="sticky top-0 z-40 hidden h-dvh flex-col text-foreground lg:flex print:hidden"
       >
         <div className="flex h-(--app-header-height) shrink-0 items-center justify-center">
-          {/* Das Symbol in einem weißen Kreis – wie das runde Logo der Vorlage, aber in den Farben des Logos (auch im Dunkeln weiß). */}
+          {/* Das Zeichen in einem weißen Kreis – wie das runde Logo der Vorlage, aber in den Farben des Logos (auch im Dunkeln weiß).
+              Bei 1,75 rem die kleine Form (Ring als Bogen, kräftiger Knoten): Die feinen Punktringe verschwämmen hier. */}
           <Link
             href="/dashboard"
             aria-label="VereinsFlow – Startseite"
             className="grid size-11 place-items-center rounded-full bg-white shadow-xs ring-1 ring-black/5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- SVG-Datei aus public/, next/image brächte hier nichts */}
-            <img src="/brand/symbol.svg" width={1000} height={1000} alt="" className="size-7" />
+            <img src="/brand/symbol-klein.svg" width={204} height={204} alt="" className="size-7" />
           </Link>
         </div>
         <NavRail groups={groups} userName={userName} onExpand={onToggle} />

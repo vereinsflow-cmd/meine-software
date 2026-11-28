@@ -1,17 +1,19 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Das VereinsFlow-Logo: ein „V“ aus drei Etappen (links Schwarz, rechts Vereinsblau) mit orangefarbenem Punkt und Tempo-Strichen,
- * daneben bzw. darunter die Wortmarke „VereinsFlow“ (kursiv, orange unterstrichen).
+ * Das VereinsFlow-Logo „Punktring“: vier Ringe aus Punkten bilden eine Sprechblase (Lücke und Zipfel unten links), in der Mitte
+ * ein Kleeblatt-Knoten; Farben Grün → Türkis → Vereinsblau. Daneben bzw. darunter die Wortmarke „VereinsFlow“ (gerade, „Flow“ im
+ * Verlauf).
  *
  * Die Grafiken sind die SVG-Dateien aus dem Logo-Paket in `public/brand/` (siehe docs/brand/README.md), unverändert eingebunden.
- * Für die dunkle Darstellung gibt es je eine helle Fassung (Schwarz → Weiß, Vereinsblau → Himmel). Beide Bilder stehen im HTML,
- * CSS blendet das unpassende aus (`dark:`) – so ist beim Umschalten der Darstellung nichts nachzuladen, und das ausgeblendete Bild
- * lesen Screenreader nicht vor.
+ * Für die dunkle Darstellung gibt es je eine helle Fassung (`-weiss`: Name weiß, hellere Verlaufstöne). Beide Bilder stehen im
+ * HTML, CSS blendet das unpassende aus (`dark:`) – so ist beim Umschalten der Darstellung nichts nachzuladen, und das ausgeblendete
+ * Bild lesen Screenreader nicht vor.
  *
- *   horizontal  Symbol links, Wortmarke rechts – für Kopfzeilen und Seitenleisten
- *   stacked     Symbol oben, Wortmarke darunter – für die Anmeldung
- *   icon        nur das Symbol, ohne Wortmarke
+ *   horizontal  kompakte Fassung: kleine Form des Zeichens links, Wortmarke rechts – für Kopfzeilen und Seitenleisten (die
+ *               Halbtonpunkte verschwämmen bei 40–44 px Höhe)
+ *   stacked     Zeichen (mit Punktringen) oben, Wortmarke darunter – für die Anmeldung
+ *   icon        nur das Zeichen (mit Punktringen, ab gut 100 px), ohne Wortmarke
  */
 export type LogoVariant = "horizontal" | "stacked" | "icon";
 
@@ -21,16 +23,16 @@ const LOGOS: Record<LogoVariant, LogoFiles> = {
   horizontal: {
     light: "/brand/logo.svg",
     dark: "/brand/logo-weiss.svg",
-    width: 1325,
-    height: 298,
+    width: 840,
+    height: 204,
   },
   stacked: {
     light: "/brand/logo-gestapelt.svg",
     dark: "/brand/logo-gestapelt-weiss.svg",
-    width: 819,
-    height: 485,
+    width: 462,
+    height: 304,
   },
-  icon: { light: "/brand/symbol.svg", dark: "/brand/symbol-weiss.svg", width: 1000, height: 1000 },
+  icon: { light: "/brand/symbol.svg", dark: "/brand/symbol-weiss.svg", width: 210, height: 210 },
 };
 
 export function BrandLogo({

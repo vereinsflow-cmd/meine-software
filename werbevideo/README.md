@@ -213,5 +213,5 @@ Sommerfest (heruntergeladen am 10.11.2026; Ausschnitte so gewählt, dass keine V
 | `fotos/feuer-abend.jpg`| Abend an der Feuerstelle      | Jefferson Sees       | https://unsplash.com/de/fotos/EegQOt9CmxU |
 | `fotos/sommerfest.jpg` | Fest unter Lichterketten      | Samantha Gades       | https://unsplash.com/de/fotos/fIHozNWfcvs |
 
-Logo und Instagram-Vorlage: `docs/brand/vereinsflow-logo-paket`. Musik und Geräusche: selbst berechnet
+Logo und Instagram-Vorlage: `docs/brand/alt-2026-10-logo-paket` (das Logo vom Oktober 2026). Musik und Geräusche: selbst berechnet
 (`werkzeuge/musik.mjs`).

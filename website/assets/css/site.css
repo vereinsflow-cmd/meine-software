@@ -634,9 +634,11 @@ svg.icon {
   border-radius: 8px;
 }
 
+/* Logo „Punktring“ in der kompakten Fassung (kleine Form + Name, 840 × 204 ≈ 4,12 : 1): Bei dieser Höhe bleiben Ring,
+   Zipfel und Knoten lesbar – die Halbtonfassung verschwämme hier. */
 .kopf-marke img {
-  width: 125px;
-  height: 28px;
+  width: 124px;
+  height: 30px;
 }
 
 .kopf-navi {
@@ -739,8 +741,8 @@ svg.icon {
   }
 
   .kopf-marke img {
-    width: 116px;
-    height: 26px;
+    width: 115px;
+    height: 28px;
   }
 }
 
@@ -2795,7 +2797,7 @@ ol.plan {
 }
 
 .fuss-marke img {
-  width: 160px;
+  width: 148px;
   height: 36px;
 }
 
