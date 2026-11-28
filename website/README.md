@@ -299,11 +299,28 @@ Die **kompakte Fassung** stellt das Zeichen neben einen etwas größeren Namen. 
 - **Pinnnadel:** Der orange Punkt mit den Tempo-Strichen aus dem Logo war in der Gestaltung B4 Schlusspunkt der großen
   Überschriften und Spitze des Kapitel-Fadens; die Pro-Gestaltung setzt einen gewöhnlichen Punkt („Schicht für
   Schicht.“) und nutzt die Symbole nicht mehr.
-- **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen noch das **alte** V in der ruhigeren Form (offen: auf das
-  neue Zeichen umstellen), spiegelpoliert bzw. als glänzende Einlage (Symbole `i-mark-mirror` und `i-mark-gloss` am Anfang von `index.html`; Größe und Lage bestimmen die
-  Regeln von `.device-mark` in `site.css`).
-- **Aufnahmen der Anwendung** zeigen das Logo der Anwendung (Seitenleiste im Dashboard und im Laptop) – ändert es sich dort,
-  die Bilder neu aufnehmen (siehe „Hinweise zu den Aufnahmen“).
+- **Laptop-Deckel und Telefon-Rückseite** der Vorführungen zeigen seit 28.11.2026 das **neue Zeichen** (vorher das alte V)
+  – wie bei großen Marken **einfarbig im Material** des Geräts: spiegelpoliert auf dem Deckel (Metallverlauf, Knoten
+  dunkler), als glänzende Einlage im warmen Rückglas des Telefons, mit feiner Lichtkante und leichter Weichzeichnung.
+  Ring-Stufe nach der gezeichneten Größe: Deckel **P3** (bei 1440 px Fensterbreite etwa 38–43 px hoch, bei 390 px etwa
+  19–22 px – 2- bzw. 3-fach 58–87 Gerätepixel), Rückseite **P1** (etwa 27 bzw. 12 px). Weil die Punkte viel weniger
+  Fläche tragen als das V, ist der Metallverlauf des Deckels 20 % dunkler als beim V und die Punkte sind etwas kräftiger
+  gezeichnet (sonst bei 390 px nur ein grauer Schleier); auf der Rückseite ist der Knoten heller und etwas dünner und
+  der Ring kräftiger (sonst lief der Knoten bei 390 px zu einem dunklen Klumpen zu). Symbole `i-mark-mirror` und
+  `i-mark-gloss` am Anfang von `index.html`, in derselben Box wie das V (viewBox im Seitenverhältnis von `.device-mark`,
+  das Zeichen mittig, 92 % der Höhe, auf der Rückseite 95 %) – `site.css` und die Bewegung der Geräte sind unverändert.
+  Erzeugt mit dem Generator des Logo-Pakets (`geraetezeichen.mjs` neben `lib.mjs`, Kopie in
+  `VereinsFlow-Medien/logo-punktring/generator/`; ohne Schalter erzeugt er genau den Stand in `index.html`).
+- **Aufnahmen der Anwendung** zeigen das Logo der Anwendung. Seit 28.11.2026 ist dort das **neue Zeichen** eingesetzt (nur im
+  Bild, keine neue Aufnahme): in der schmalen Symbolleiste oben links `symbol-klein.svg` (P1) im weißen Kreis wie in
+  `src/components/layout/sidebar.tsx`, in Chromium in der Pixeldichte des Bildes gezeichnet, nur das Innere des Kreises
+  ersetzt – in `uebersicht-light` und `helferplan-light` (über bearbeitete Kopien der Original-Aufnahmen
+  `rechner-dashboard-hell.png` und `rechner-helferplanung-hell.png` in `VereinsFlow-Medien/website-entwurf/apple-pro/_bilder-logo-punktring/`
+  und `tools/bilder-pro.mjs --quelle <dieser Ordner> --nur <Name>`; mit den unveränderten Originalen käme das alte V zurück)
+  und in `laptop-finanzen-uebersicht-light` (jede Breite einzeln, WebP Qualität 92 wie bisher). Die übrigen Bilder zeigen
+  kein Logo (Ausschnitte ohne Seitenleiste, Telefon-Kopfzeile ohne Logo). Ändert sich das Logo der Anwendung wieder, die
+  Bilder neu aufnehmen (siehe „Hinweise zu den Aufnahmen“) oder genauso ersetzen; danach `?v=` an den Bildern erhöhen
+  (heute `?v=2026112803` an diesen drei Motiven).
 
 ## Benachrichtigung zum Start (`newsletter.php`)
 
