@@ -25,6 +25,7 @@ import { prisma } from "../src/server/db/client";
 import { isDatabaseUnreachable } from "../src/server/db/unreachable";
 import { provisionClub } from "../src/server/platform/provision";
 import { saveFile } from "../src/server/storage/files";
+import { at, demoEventDates } from "./seed-dates";
 
 if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED !== "1") {
   throw new Error("Seed-Daten dürfen nicht in Produktion eingespielt werden.");
@@ -44,12 +45,6 @@ function rng(seed: number) {
 const random = rng(2026);
 const pick = <T>(items: readonly T[]): T => items[Math.floor(random() * items.length)]!;
 const between = (min: number, max: number) => Math.floor(random() * (max - min + 1)) + min;
-
-const at = (day: Date, time: string): Date => {
-  const value = parseBerlinDateTime(toDateInputValue(day), time);
-  if (!value) throw new Error(`Ungültige Zeit ${time}`);
-  return value;
-};
 
 /**
  * „Heute“ der Demo-Daten: Termine, Fristen und Rechnungen liegen relativ zu diesem Tag (Uhrzeit wie jetzt). Die
@@ -404,9 +399,8 @@ async function main() {
   // Veranstaltungen
   // ---------------------------------------------------------------------------------------------
   const today = seedToday();
-  const daysUntilSaturday = (5 - berlinWeekday(today) + 7) % 7;
-  const nextSaturday = addBerlinDays(today, daysUntilSaturday === 0 ? 7 : daysUntilSaturday);
-  const festDay = addBerlinDays(nextSaturday, 7); // Sommerfest: in ein bis zwei Wochen → Warnungen bei Lücken sichtbar
+  // Sommerfest in ein bis zwei Wochen, Arbeitseinsatz in drei Tagen (Hinweis auf unbesetzte Schichten) – siehe seed-dates.ts
+  const { festDay, workAssignment } = demoEventDates(today);
 
   const sommerfest = await prisma.event.create({
     data: {
@@ -566,8 +560,8 @@ async function main() {
         type: "WORK_ASSIGNMENT",
         status: "PUBLISHED",
         visibility: "INTERNAL",
-        startsAt: at(nextSaturday, "09:00"),
-        endsAt: at(nextSaturday, "13:00"),
+        startsAt: workAssignment.startsAt,
+        endsAt: workAssignment.endsAt,
         locationName: "Vereinsheim",
         maxParticipants: 20,
         registrationRequired: true,
@@ -580,8 +574,8 @@ async function main() {
           clubId: club.id,
           eventId: event.id,
           title: "Malerarbeiten",
-          startsAt: at(nextSaturday, "09:00"),
-          endsAt: at(nextSaturday, "13:00"),
+          startsAt: workAssignment.startsAt,
+          endsAt: workAssignment.endsAt,
           requiredCount: 4,
           meetingPoint: "Haupteingang",
         },
