@@ -6,7 +6,7 @@
      2. Grundlagen: Schrift, Fokus, Hilfsklassen
      3. Bausteine: Raster, Überschriften, Pillen-Knöpfe, Kapitelmarke, Hinweise, Metall-Zahlen
      4. Kopfleiste (Glas) und Menü
-     5. Kapitel 1 · Explosion „Schicht für Schicht.“ (Endlage; die Bewegung steht in Abschnitt 17)
+     5. Kapitel 1 · Explosion „Ihr Verein in einer App.“ (Endlage; die Bewegung steht in Abschnitt 17)
      6. Kapitel 2 · Aussage
      7. Kapitel 3 · Die Geräte von heute (Text und Bühne; Größen der Geräte in Abschnitt 16)
      8. Kapitel 4 · 13 Bereiche
@@ -802,8 +802,8 @@ svg.icon {
 }
 
 /* ==========================================================================
-   5. Kapitel 1 · Explosion „Schicht für Schicht.“ (Entwurf 02)
-   Die Bühne ist eine Fensterhöhe hoch: oben „Schicht für Schicht.“, in der Mitte die Szene, unten „Alles greift
+   5. Kapitel 1 · Explosion „Ihr Verein in einer App.“ (Entwurf 02)
+   Die Bühne ist eine Fensterhöhe hoch: oben „Ihr Verein in einer App.“, in der Mitte die Szene, unten „Alles greift
    ineinander.“. Die Szene ist ein Größen-Container: --u ist ein Entwurfs-Pixel (am Rechner 1440 × 560 Szene, am Handy
    390 × 420), alle Maße hängen daran – so sitzen Ebenen, Laptop und Beschriftungen in jeder Fenstergröße gleich.
    Zustand (hier die Endlage; die Bewegung in Abschnitt 17 animiert transform und opacity mit denselben Formeln):
