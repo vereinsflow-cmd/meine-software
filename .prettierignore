@@ -21,8 +21,9 @@ tsconfig.json
 website
 # Fremde Skill-Dateien (unverändert aus ihren Quellen übernommen) und alte Arbeitskopien – nicht formatieren.
 .claude
-# Logo-Paket so, wie es aus der Gestaltung kam (docs/brand/README.md) – nicht formatieren.
+# Logo-Pakete so, wie sie aus der Gestaltung kamen (docs/brand/README.md) – nicht formatieren.
 docs/brand/vereinsflow-logo-paket
+docs/brand/alt-2026-10-logo-paket
 # Rechtstext-Entwürfe für die Website: Die HTML-Dateien werden so nach website/ kopiert (docs/recht/README.md) – nicht formatieren.
 docs/recht/*.html
 # Das Werbevideo ist ein eigenständiges Werkzeug mit erzeugten Dateien (drehbuch.js, lage.js) – siehe werbevideo/README.md.

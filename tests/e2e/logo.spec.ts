@@ -12,7 +12,7 @@ test.describe("Logo", () => {
     await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt.svg");
     const box = (await logo.boundingBox())!;
     expect(box.width).toBeGreaterThan(200);
-    expect(box.height).toBeGreaterThan(box.width * 0.5); // gestapelt: deutlich höher als die flache Fassung (0,22)
+    expect(box.height).toBeGreaterThan(box.width * 0.5); // gestapelt: deutlich höher als die flache Fassung (0,24)
   });
 
   test("Anmeldebühne: helle Wortmarke quer oben links als Link zur Startseite – in heller wie dunkler Darstellung (die Bühne ist immer Nacht)", async ({
@@ -67,7 +67,7 @@ test.describe("Logo", () => {
     await expect(nav.getByRole("link", { name: "Änderungsprotokoll" })).toBeInViewport();
   });
 
-  test("dunkle Darstellung: helle Fassung des Logos (weiße Schrift, Himmelblau) statt der schwarzen", async ({
+  test("dunkle Darstellung: helle Fassung des Logos (weiße Schrift, hellere Verlaufstöne) statt der dunklen", async ({
     page,
   }) => {
     const logo = page.locator("header img:visible");
@@ -84,7 +84,7 @@ test.describe("Logo", () => {
     await expect(logo).toHaveAttribute("src", "/brand/logo-gestapelt-weiss.svg");
   });
 
-  test("Symbolleiste zeigt das volle Symbol auf weißer Kachel als Link zum Dashboard – auch in dunkler Darstellung", async ({
+  test("Symbolleiste zeigt das Zeichen in der kleinen Form auf weißer Kachel als Link zum Dashboard – auch in dunkler Darstellung", async ({
     page,
   }) => {
     await login(page, USERS.admin);
@@ -93,7 +93,7 @@ test.describe("Logo", () => {
     await expect(link).toHaveCSS("background-color", "rgb(255, 255, 255)");
     const logo = link.locator("img:visible");
     await expect(logo).toHaveCount(1);
-    await expect(logo).toHaveAttribute("src", "/brand/symbol.svg");
+    await expect(logo).toHaveAttribute("src", "/brand/symbol-klein.svg");
     const box = (await logo.boundingBox())!;
     expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(1); // nur das Symbol, ohne Wortmarke
     // Die Leiste ist immer dunkel, die Kachel immer weiß – deshalb steht fest die helle Fassung, auch bei dunkler Seite.
@@ -101,7 +101,7 @@ test.describe("Logo", () => {
     await open(page, "/mitglieder");
     await expect(page.locator("html")).toHaveClass(/dark/);
     await expect(logo).toHaveCount(1);
-    await expect(logo).toHaveAttribute("src", "/brand/symbol.svg");
+    await expect(logo).toHaveAttribute("src", "/brand/symbol-klein.svg");
   });
 
   test("breite Seitenleiste zeigt das waagerechte Logo, nicht angeschnitten; eingeklappt wieder das Symbol", async ({
@@ -131,7 +131,7 @@ test.describe("Logo", () => {
     }).toPass({ timeout: 5_000 });
 
     await collapse.click();
-    await expect(logo).toHaveAttribute("src", "/brand/symbol.svg");
+    await expect(logo).toHaveAttribute("src", "/brand/symbol-klein.svg");
   });
 
   test("Smartphone-Menü: Logo steht oben im ausgeklappten Menü", async ({ page }) => {

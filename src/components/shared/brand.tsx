@@ -17,8 +17,8 @@ export function Brand({
   href?: string | null;
   variant?: LogoVariant;
 }) {
-  // gestapelt: 16 rem breit; horizontal: 2,75 rem hoch – die SVG-Datei hat oben und unten Schutzraum, sichtbar sind gut 2 rem
-  // (passt in Seitenleiste und Menü); Symbol: 2 rem.
+  // gestapelt: 16 rem breit; horizontal (kompakte Fassung): 2,75 rem hoch – die SVG-Datei hat rundum einen schmalen Rand, sichtbar
+  // sind gut 2,4 rem (passt in Seitenleiste und Menü); Symbol: 2 rem.
   const size = variant === "stacked" ? "w-64" : variant === "icon" ? "size-8" : "h-11";
   const classes = cn("inline-flex", className);
   return href ? (
