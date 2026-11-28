@@ -127,9 +127,8 @@ test.describe("Helferplan drucken", () => {
   test("Zeitraum grenzt die Veranstaltungen ein", async ({ page }) => {
     await login(page, USERS.admin);
     await page.goto("/helferplanung/drucken");
-    // Seed: Arbeitseinsatz am nächsten Samstag (1–7 Tage nach dem Tag des Seeds), Sommerfest eine Woche später (8–14 Tage
-    // danach). „Bis“ 7 Tage nach dem Seed (einschließlich) trennt beide an jedem Wochentag – auch samstags, wenn der
-    // Arbeitseinsatz erst in genau 7 Tagen ist.
+    // Seed: Arbeitseinsatz drei Tage nach dem Tag des Seeds, Sommerfest am übernächsten Samstag (8–14 Tage danach, siehe
+    // prisma/seed-dates.ts). „Bis“ 7 Tage nach dem Seed (einschließlich) trennt beide an jedem Wochentag.
     await page.getByLabel("Bis").fill(seedDay(7));
     await page.getByRole("button", { name: "Auswahl anwenden" }).click();
     await expect(notice(page, "Arbeitseinsatz Vereinsheim")).toBeVisible();

@@ -291,7 +291,8 @@ test.describe("Dashboard", () => {
     // Schnellzugriffe bleiben in jedem Reiter erreichbar (über den Reitern)
     await expect(page.getByRole("link", { name: "Neue Veranstaltung", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Neues Mitglied" })).toBeVisible();
-    // Der Hinweis auf unbesetzte Schichten steht über den Reitern und bleibt bei jedem Reiter sichtbar
+    // Der Hinweis auf unbesetzte Schichten steht über den Reitern und bleibt bei jedem Reiter sichtbar. Im Seed sorgt dafür
+    // die leere Schicht „Malerarbeiten“ drei Tage nach dem Seed – an jedem Wochentag und zu jeder Uhrzeit (prisma/seed-dates.ts).
     await expect(page.getByText("Helferschichten sind noch nicht besetzt")).toBeVisible();
   });
 
