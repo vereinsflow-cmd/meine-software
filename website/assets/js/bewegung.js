@@ -9,6 +9,8 @@
 //     bleibt alles, wie es ist (kein Flattern). Die Seite selbst scrollt dabei nie, Eingaben werden nicht abgefangen.
 //     Wird die Seite mitten geladen (Neuladen mit wiederhergestellter Leseposition, Sprungmarke), steht die Explosion
 //     gleich zusammengesetzt da, ebenso nach einem Sprung weit hinter die Bühne,
+//   - meldet, wann die Explosion zerlegt in Ruhe liegt (.ist-zerlegt an der Strecke, Ablauf beendet): Nur dann hebt die
+//     Maus in site.css einzelne Ebenen heraus (Abschnitt 17, „Herausheben“; reine CSS-Sache, hier kein Zeigerereignis),
 //   - dekodiert die Bilder der Explosion vorab (img.decode) und die des Telefons, sobald es nahe ist (sonst würde beim
 //     Einblenden nachgerastert), und gibt will-change nur Bühnen nahe am Fenster (.ist-nah, IntersectionObserver),
 //   - führt ohne scroll-driven animations (Firefox, ältere Safari) Aussage, Metall-Zahlen und Telefon nach dem Scrollstand:
@@ -182,6 +184,24 @@
       a.playbackRate = 1;
       a.startTime = jetzt - (rueck ? d - stand : stand);
     }
+    exRuhe();
+  };
+  // Zerlegt in Ruhe (Ziel 0, Ablauf beendet): .ist-zerlegt an der Strecke – erst dann hebt die Maus Ebenen heraus
+  // (site.css Abschnitt 17). Läuft sie gerade auseinander, wird nach der restlichen Zeit noch einmal nachgesehen; mit dem
+  // Ziel 1 (oder ohne Bewegung) fällt die Klasse sofort weg.
+  let ruheUhr = 0;
+  const exRuhe = () => {
+    window.clearTimeout(ruheUhr);
+    ruheUhr = 0;
+    if (!ex) return;
+    if (!aktiv || exZiel) {
+      ex.el.classList.remove("ist-zerlegt");
+      return;
+    }
+    const jetzt = performance.now();
+    const rest = exAnims.reduce((m, a) => Math.max(m, exStand(a, jetzt)), 0);
+    if (rest <= 0) ex.el.classList.add("ist-zerlegt");
+    else ruheUhr = window.setTimeout(exRuhe, rest + 40);
   };
   // beim Scrollen: nur die Schwellen vergleichen (keine Layout-Abfrage), nur beim Überschreiten etwas tun
   const exPruefen = () => {

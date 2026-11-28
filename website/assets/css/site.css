@@ -19,7 +19,8 @@
     15. GERÄTE WÖRTLICH (Laptop und Telefon wie in c112a20, eingesetzt von tools/geraete-css.mjs – nicht von Hand ändern)
     16. Geräte in der neuen Seite: Hüllen .geraet, .pose, .k03-buehne und Größen (--sw, --pw) je Kapitel
     17. Bewegung (nur prefers-reduced-motion: no-preference): Pose der Geräte, Übergänge, die selbstlaufende Explosion
-        und die Bewegung beim Scrollen (Aussage, Metall-Zahlen, großes Telefon): Strecken, Zeitleisten, Keyframes
+        samt Herausheben der Ebenen mit der Maus und die Bewegung beim Scrollen (Aussage, Metall-Zahlen, großes
+        Telefon): Strecken, Zeitleisten, Keyframes
     18. Bevorzugungen (weniger Bewegung, weniger Transparenz, erzwungene Farben) und Druck
     19. Ganz am Ende, wörtlich: die Keyframes der Geräte (tools/make-showcase-keyframes.mjs ersetzt sie dort)
    Regeln:
@@ -811,6 +812,7 @@ svg.icon {
      --ex-f  Glas der Ebenen 1–5 (taucht in die Grundplatte: 1 … 0)
      --ex-g  Laptop (.rechner) um die Grundplatte (0 … 1)
      --ex-a  Kopf oben, --ex-b Kopf unten (Deckkraft)
+   Mit der Maus heben sich die zerlegten Ebenen einzeln heraus (Abschnitt 17, „Herausheben“).
    ========================================================================== */
 .k01 {
   --ex-s: 1;
@@ -943,24 +945,46 @@ svg.icon {
   transform: translateZ(calc((var(--ex-i) - 2.5) * var(--ex-ab) * (1 - var(--ex-s)) + var(--ex-i) * 0.6px));
 }
 
-.ex-e1 {
+/* --ex-i: Ebene 0 (Grundplatte) … 5 (oben); dieselbe Nummer tragen ihre Treffer-Fläche (.ex-t*) und ihre Beschriftung
+   (.ex-m*) für das Herausheben mit der Maus (Abschnitt 17) */
+.ex-t0,
+.ex-m0 {
+  --ex-i: 0;
+}
+
+.ex-e1,
+.ex-t1,
+.ex-m1 {
   --ex-i: 1;
 }
 
-.ex-e2 {
+.ex-e2,
+.ex-t2,
+.ex-m2 {
   --ex-i: 2;
 }
 
-.ex-e3 {
+.ex-e3,
+.ex-t3,
+.ex-m3 {
   --ex-i: 3;
 }
 
-.ex-e4 {
+.ex-e4,
+.ex-t4,
+.ex-m4 {
   --ex-i: 4;
 }
 
-.ex-e5 {
+.ex-e5,
+.ex-t5,
+.ex-m5 {
   --ex-i: 5;
+}
+
+/* Treffer-Flächen des Heraushebens: nur mit Bewegung und Maus da (Abschnitt 17) */
+.ex-treffer {
+  display: none;
 }
 
 /* Grundplatte: 16 : 10, ihr Glas bleibt (sie wird zum Bildschirm) */
@@ -7142,6 +7166,274 @@ html:not(.js) .k03 .iphone-rim,
 
   .js:not(.ist-ruhig) .ist-nah .glockenfeld {
     will-change: transform, opacity;
+  }
+}
+
+/* --- Herausheben (Kapitel 1, seit 28.11.2026): Zeigt die Maus auf eine Ebene der zerlegten Explosion oder auf ihre
+   Beschriftung, hebt sich diese Ebene entlang ihrer Normalen aus dem Stapel, die Ebenen darüber rücken weiter nach oben
+   (sie liegt frei), die übrigen werden dunkler, ihre Beschriftung leuchtet auf, die anderen treten zurück.
+   - Lage je Ebene in Abständen --ex-ab (--ex-hub): gewählt +0,4, darüber +1,0, darunter 0 – und, solange eine Ebene
+     darüber liegt, alle 0,55 tiefer (der Stapel öffnet sich an der gewählten Ebene): Sonst ragte die obere Ebene in
+     die Unterzeile, über ihr sind in jeder Fenstergröße nur etwa 38 Entwurfs-Pixel frei.
+   - Nur mit Maus (hover, pointer: fine), ab 900 px (darunter keine Beschriftung), mit Bewegung und Skript, und nur
+     solange die Explosion zerlegt in Ruhe liegt: bewegung.js setzt dann .ist-zerlegt an der Strecke. Setzt sie sich
+     zusammen, fällt die Klasse weg und alles kehrt weich in die Ruhe zurück; die Explosion selbst bleibt unberührt.
+     Ohne Wahl gilt für Ebenen und Bilder kein eigener Wert (translate und filter: none).
+   - Treffer-Flächen, damit nichts pendelt: unsichtbare Flächen (.ex-treffer) an der Ruhelage der Ebenen im Stapel und je
+     Beschriftung eine Zeile (.ex-marke::before, 64 Entwurfs-Pixel hoch, wie der Zeilenabstand). Sie gleiten nicht mit,
+     springen aber mit der Wahl: Die gewählte Ebene hält zusätzlich ihre angezeigte Lage (::before), die Ebenen darüber
+     sind vorn um ihren Hub gekürzt – so hält die sichtbare, leuchtende Fläche die Wahl. Pendeln kann das nicht: Mit
+     einer neuen Wahl wächst keine Fläche über der neuen Ebene, der Zeiger liegt danach sicher auf ihr. Alles andere in der Bühne nimmt dann keine Zeigerereignisse an (auch das unsichtbare „Alles
+     greift ineinander.“ über dem unteren Rand der Grundplatte). Keine fokussierbaren Elemente, die Beschriftung bleibt
+     aria-hidden, der Zeiger bleibt der Pfeil.
+   - Die Wahl: :has() setzt --ex-wahl (0 … 5; 6 = keine) an der Szene, jede Ebene und Beschriftung rechnet daraus mit
+     ihrer Nummer --ex-i: --ex-ob (liegt darüber), --ex-gw (gewählt), --ex-hub (Lage), --ex-dunkel (eine andere ist gewählt).
+   - Bewegt wird nur, was die Keyframes der Explosion nicht animieren: translate an den Ebenen (ihr transform gehört
+     ex-ebene), filter an den Bildern, box-shadow am Glanz ::after (seine Deckkraft gehört ex-glanz), Deckkraft und
+     translate der Beschriftung (2D, außerhalb des Stapels). Übergänge setzen vom aktuellen Wert neu an: hinein 0,42 s,
+     heraus 0,64 s, cubic-bezier(0.22, 1, 0.36, 1).
+   - Die Beschriftung wandert mit, Strich und Punkt enden weiter an der linken Kante ihrer Ebene. Verschiebung des
+     Punkts am Schirm je Abstand --ex-ab in Entwurfs-Pixeln (--ex-mx, --ex-my), aus der Projektion des Stapels (Neigung,
+     Maßstab --ex-k0, Perspektive) für den Endpunkt jedes Strichs gerechnet (--ex-dx, --ex-dy). Der Text folgt davon nur
+     0,4 der Höhe, den Rest nimmt der Strich (skewY um seinen Anfang, der Punkt dreht zurück und bleibt rund): So bleibt
+     jede Beschriftung in ihrer Zeile – dort, wo ihre feste Treffer-Zeile liegt.
+   ------------------------------------------------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  .js:not(.ist-ruhig) .ex-szene {
+    --ex-wahl: 6;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-t0, .ex-m0):hover) {
+    --ex-wahl: 0;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-t1, .ex-m1):hover) {
+    --ex-wahl: 1;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-t2, .ex-m2):hover) {
+    --ex-wahl: 2;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-t3, .ex-m3):hover) {
+    --ex-wahl: 3;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-t4, .ex-m4):hover) {
+    --ex-wahl: 4;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-t5, .ex-m5):hover) {
+    --ex-wahl: 5;
+  }
+
+  .js:not(.ist-ruhig) :is(.ex-ebene, .ex-treffer, .ex-marke) {
+    --ex-ob: clamp(0, var(--ex-i) - var(--ex-wahl), 1);
+    --ex-gw: calc(clamp(0, var(--ex-i) - var(--ex-wahl) + 1, 1) - var(--ex-ob));
+    --ex-hub: calc(-0.55 * clamp(0, 5 - var(--ex-wahl), 1) + 0.4 * var(--ex-gw) + var(--ex-ob));
+    --ex-dunkel: calc(clamp(0, 6 - var(--ex-wahl), 1) - var(--ex-gw));
+  }
+
+  .js:not(.ist-ruhig) .ex-marke {
+    --ex-dx: calc(var(--ex-hub) * var(--ex-mx) * var(--u));
+    --ex-dy: calc(var(--ex-hub) * var(--ex-my) * var(--u));
+  }
+
+  /* Verschiebung der Beschriftung am Schirm je Abstand --ex-ab (Entwurfs-Pixel) */
+  .js:not(.ist-ruhig) .ex-m5 {
+    --ex-mx: -5.05;
+    --ex-my: -64.6;
+  }
+
+  .js:not(.ist-ruhig) .ex-m4 {
+    --ex-mx: -4.82;
+    --ex-my: -61.7;
+  }
+
+  .js:not(.ist-ruhig) .ex-m3 {
+    --ex-mx: -4.57;
+    --ex-my: -59.1;
+  }
+
+  .js:not(.ist-ruhig) .ex-m2 {
+    --ex-mx: -4.3;
+    --ex-my: -56.6;
+  }
+
+  .js:not(.ist-ruhig) .ex-m1 {
+    --ex-mx: -4.03;
+    --ex-my: -54.3;
+  }
+
+  .js:not(.ist-ruhig) .ex-m0 {
+    --ex-mx: -4.65;
+    --ex-my: -52.1;
+  }
+
+  /* Übergänge (heraus; hinein weiter unten kürzer) */
+  .js:not(.ist-ruhig) .ex-ebene {
+    transition: translate 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-bild {
+    transition: filter 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-ebene::after {
+    transition: box-shadow 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-marke {
+    transition: opacity 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-strich::before {
+    transition:
+      opacity 0.64s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-marke > * {
+    transition:
+      translate 0.64s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-strich {
+    transform-origin: 0 50%;
+  }
+
+  .js:not(.ist-ruhig) .ex-strich::after {
+    transition: transform 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .js:not(.ist-ruhig) .ex-marke .ex-nr {
+    transition:
+      color 0.64s cubic-bezier(0.22, 1, 0.36, 1),
+      text-shadow 0.64s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Zerlegt in Ruhe: feste Treffer-Flächen, alles andere in der Bühne ohne Zeigerereignisse */
+  /* Ebenen über der gewählten: vorn um ihren Hub gekürzt (--ex-schnitt; die Verschiebung in der Ebene, die am Schirm dem
+     Hub entlang der Normalen entspricht: je Abstand 0,861 nach rechts und 1,277 nach oben ohne Perspektive, mit ihr in
+     den unteren Ebenen weniger – Faktor 0,7 + 0,045 × Nummer, gemessen, eher etwas zu viel als zu wenig) */
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-treffer {
+    --ex-schnitt: calc(var(--ex-ob) * var(--ex-hub) * var(--ex-ab) * (0.7 + 0.045 * var(--ex-i)));
+    display: block;
+    position: absolute;
+    left: calc(var(--ex-pw) / -2 + 0.861 * var(--ex-schnitt));
+    top: calc(var(--ex-pw) * -0.26785);
+    width: calc(var(--ex-pw) - 0.861 * var(--ex-schnitt));
+    height: calc(var(--ex-pw) * 0.5357 - 1.277 * var(--ex-schnitt));
+    transform: translateZ(calc((var(--ex-i) - 2.5) * var(--ex-ab) + var(--ex-i) * 0.6px));
+    transform-style: preserve-3d;
+    pointer-events: auto;
+  }
+
+  /* Gewählte Ebene: zusätzlich ihre angezeigte Lage (sofort, ohne Übergang); an den anderen auf null verkleinert */
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-treffer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateZ(calc(var(--ex-hub) * var(--ex-ab))) scale(var(--ex-gw));
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-t0 {
+    left: calc(var(--ex-bw) / -2);
+    top: calc(var(--ex-bw) * -0.3125);
+    width: var(--ex-bw);
+    height: calc(var(--ex-bw) * 0.625);
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt :is(.ex-stapel > :not(.ex-treffer), .ex-kopf-b) {
+    pointer-events: none;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-marke {
+    cursor: default;
+    user-select: none;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-marke::before {
+    content: "";
+    position: absolute;
+    left: -16px;
+    right: -10px;
+    top: 50%;
+    height: calc(64 * var(--u));
+    translate: 0 -50%;
+    pointer-events: auto;
+  }
+
+  /* Punkt am Strichende, gefüllt in den Farben des Zeichens (nur sichtbar an der gewählten Beschriftung) */
+  .js:not(.ist-ruhig) .ex-strich::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    right: -4px;
+    top: -4px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #34d399, #22d3ee 50%, #3a6bea);
+    box-shadow:
+      0 0 0 1.5px rgb(236 253 250 / 90%),
+      0 0 12px 2px rgb(34 211 238 / 55%);
+    opacity: 0;
+  }
+
+  /* Eine Ebene gewählt: Werte und die kürzeren Übergänge hinein */
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-ebene {
+    translate: 0 0 calc(var(--ex-hub) * var(--ex-ab));
+    transition-duration: 0.42s;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-bild {
+    filter: brightness(calc(1 - 0.3 * var(--ex-dunkel)));
+    transition-duration: 0.42s;
+  }
+
+  /* Glas der gewählten Ebene: hellere Lichtkante, dazu ein Schein in den Farben des Zeichens (Grün, Türkis, Blau) */
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-ebene::after {
+    box-shadow:
+      inset 0 0 0 1px rgb(196 218 255 / calc(0.42 + 0.5 * var(--ex-gw))),
+      inset 1px 1px 0 rgb(255 255 255 / calc(0.35 + 0.45 * var(--ex-gw))),
+      0 0 0 1px rgb(94 234 212 / calc(0.6 * var(--ex-gw))),
+      calc(var(--ex-bw) * -0.014) calc(var(--ex-bw) * -0.01) calc(var(--ex-bw) * 0.05) rgb(52 211 153 / calc(0.4 * var(--ex-gw))),
+      0 0 calc(var(--ex-bw) * 0.035) rgb(34 211 238 / calc(0.32 * var(--ex-gw))),
+      calc(var(--ex-bw) * 0.016) calc(var(--ex-bw) * 0.018) calc(var(--ex-bw) * 0.06) rgb(58 107 234 / calc(0.55 * var(--ex-gw)));
+    transition-duration: 0.42s;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-marke {
+    opacity: calc(1 - 0.5 * var(--ex-dunkel));
+    transition-duration: 0.42s;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-marke > * {
+    translate: var(--ex-dx) calc(0.4 * var(--ex-dy));
+    transition-duration: 0.42s;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-strich {
+    transform: skewY(atan2(calc(0.6 * var(--ex-dy)), calc((300 + var(--ex-ax)) * var(--u) - 12px)));
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-strich::before,
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-strich::after {
+    transform: skewY(atan2(calc(-0.6 * var(--ex-dy)), calc((300 + var(--ex-ax)) * var(--u) - 12px)));
+    transition-duration: 0.42s;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-marke .ex-nr {
+    color: rgb(calc(143 + 112 * var(--ex-gw)) calc(176 + 79 * var(--ex-gw)) 255);
+    text-shadow: 0 0 14px rgb(34 211 238 / calc(0.75 * var(--ex-gw)));
+    transition-duration: 0.42s;
+  }
+
+  .js:not(.ist-ruhig) .ist-zerlegt .ex-szene:has(:is(.ex-treffer, .ex-marke):hover) .ex-strich::before {
+    opacity: var(--ex-gw);
+    transition-duration: 0.42s;
   }
 }
 
